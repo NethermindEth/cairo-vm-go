@@ -1,6 +1,9 @@
 name: Cairo VM
 
-on: main
+on: 
+  push:
+    branches:
+      - main
 
 jobs:
     build:
