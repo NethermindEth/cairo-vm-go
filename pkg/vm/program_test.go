@@ -1,15 +1,15 @@
 package vm
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
-    f "github.com/NethermindEth/juno/core/felt"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestValidPrime(t *testing.T) {
 	testData := []byte(`
        {
-          "prime": "0x800000000000011000000000000000000000000000000000000000000000001",
           "compiler_version": "2.1.0",
           "bytecode": [
             "0xa0680017fff8000",
@@ -19,8 +19,11 @@ func TestValidPrime(t *testing.T) {
           ]
        }
     `)
-	_, err := ParseProgram(testData)
+	program, err := ProgramFromJSON(testData)
 	require.NoError(t, err)
+	assert.Equal(t, "2.1.0", program.CompilerVersion)
+	assert.Len(t, program.Bytecode, 4)
+	assert.Equal(t, "0x482680017ffa8000", program.Bytecode[2].String())
 
 }
 
