@@ -1,4 +1,4 @@
-name: Cairo VM
+name: Test
 
 on: 
   push:
