@@ -1,5 +1,5 @@
 # source: https://github.com/golangci/golangci-lint-action
-name: golangci-lint
+name: Golangci Linting
 on:
   push:
     branches:
