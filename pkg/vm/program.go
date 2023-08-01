@@ -45,14 +45,14 @@ func (b Builtin) MarshalJSON() ([]byte, error) {
 		return []byte("segment_arena"), nil
 
 	}
-	return nil, fmt.Errorf("Error marshaling builtin with unknow identifer: %d", uint8(b))
+	return nil, fmt.Errorf("error marshaling builtin with unknow identifer: %d", uint8(b))
 }
 
 func (b *Builtin) UnmarshalJSON(data []byte) error {
 	builtinName, err := strconv.Unquote(string(data))
-    if err != nil {
-        return fmt.Errorf("Error unmarsahling builtin: %w", err)
-    }
+	if err != nil {
+		return fmt.Errorf("error unmarsahling builtin: %w", err)
+	}
 
 	switch builtinName {
 	case "output":
@@ -73,10 +73,10 @@ func (b *Builtin) UnmarshalJSON(data []byte) error {
 		*b = Poseidon
 	case "segment_arena":
 		*b = SegmentArena
-    default:
-	    return fmt.Errorf("Error unmarsahling unknwon builtin name: %s", builtinName)
+	default:
+		return fmt.Errorf("error unmarsahling unknwon builtin name: %s", builtinName)
 	}
-    return nil
+	return nil
 }
 
 type EntryPointInfo struct {
