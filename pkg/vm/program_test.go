@@ -50,9 +50,9 @@ func TestEmptyEntryPointTypeParsing(t *testing.T) {
 	require.NoError(t, err)
 
 	entryPoints := program.EntryPoints
-	assert.Len(t, entryPoints.External, 0)
-	assert.Len(t, entryPoints.L1Handler, 0)
-	assert.Len(t, entryPoints.Constructor, 0)
+	assert.Empty(t, entryPoints.External)
+	assert.Empty(t, entryPoints.L1Handler)
+	assert.Empty(t, entryPoints.Constructor)
 
 }
 
