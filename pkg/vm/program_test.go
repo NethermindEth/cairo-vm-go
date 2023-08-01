@@ -117,6 +117,6 @@ func TestInvalidBuiltin(t *testing.T) {
       }
     `)
 	_, err := ProgramFromJSON(testData)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 }
