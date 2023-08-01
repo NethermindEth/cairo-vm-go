@@ -10,13 +10,7 @@ import (
 func TestCompilerVersionParsing(t *testing.T) {
 	testData := []byte(`
        {
-          "compiler_version": "2.1.0",
-          "bytecode": [
-            "0xa0680017fff8000",
-            "0x7",
-            "0x482680017ffa8000",
-            "0x100000000000000000000000000000000"
-          ]
+          "compiler_version": "2.1.0"
        }
     `)
 	program, err := ProgramFromJSON(testData)
@@ -100,7 +94,7 @@ func TestEntryPointInfoParsing(t *testing.T) {
 
 	assert.Len(t, entryPointInfo.Builtins, 9)
 	for i := 0; i < 9; i++ {
-		assert.Equal(t, Builtin(i + 1),  entryPointInfo.Builtins[i])
+		assert.Equal(t, Builtin(i+1), entryPointInfo.Builtins[i])
 	}
 }
 
@@ -123,6 +117,6 @@ func TestInvalidBuiltin(t *testing.T) {
       }
     `)
 	_, err := ProgramFromJSON(testData)
-    assert.NotNil(t, err)
+	assert.NotNil(t, err)
 
 }
