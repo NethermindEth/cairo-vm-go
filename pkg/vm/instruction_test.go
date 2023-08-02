@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"math/big"
 	"testing"
 
 	f "github.com/NethermindEth/juno/core/felt"
@@ -10,9 +9,9 @@ import (
 
 func TestAssertEq(t *testing.T) {
 	instruction := Instruction{
-		Off0:        (*new(f.Felt).SetUint64(0)),
-		Off1:        (*new(f.Felt).SetBigInt(big.NewInt(-1))),
-		Off2:        (*new(f.Felt).SetUint64(1)),
+		Off0:        0,
+		Off1:        -1,
+		Off2:        1,
 		Imm:         (new(f.Felt).SetUint64(1)),
 		DstRegister: Ap,
 		Op0Register: Fp,
@@ -35,9 +34,9 @@ func TestAssertEq(t *testing.T) {
 
 func TestJmp(t *testing.T) {
 	instruction := Instruction{
-		Off0:        (*new(f.Felt).SetBigInt(big.NewInt(-1))),
-		Off1:        (*new(f.Felt).SetUint64(2)),
-		Off2:        (*new(f.Felt).SetUint64(0)),
+		Off0:        -1,
+		Off1:        2,
+		Off2:        0,
 		Imm:         nil,
 		DstRegister: Fp,
 		Op0Register: Ap,
@@ -61,9 +60,9 @@ func TestJmp(t *testing.T) {
 
 func TestJnz(t *testing.T) {
 	instruction := Instruction{
-		Off0:        (*new(f.Felt).SetUint64(3)),
-		Off1:        (*new(f.Felt).SetBigInt(big.NewInt(-1))),
-		Off2:        (*new(f.Felt).SetBigInt(big.NewInt(-16))),
+		Off0:        3,
+		Off1:        -1,
+		Off2:        -16,
 		Imm:         nil,
 		DstRegister: Ap,
 		Op0Register: Fp,
@@ -86,9 +85,9 @@ func TestJnz(t *testing.T) {
 
 func TestCall(t *testing.T) {
 	instruction := Instruction{
-		Off0:        (*new(f.Felt).SetUint64(0)),
-		Off1:        (*new(f.Felt).SetUint64(1)),
-		Off2:        (*new(f.Felt).SetUint64(1)),
+		Off0:        0,
+		Off1:        1,
+		Off2:        1,
 		Imm:         (new(f.Felt).SetUint64(1234)),
 		DstRegister: Ap,
 		Op0Register: Ap,
@@ -111,9 +110,9 @@ func TestCall(t *testing.T) {
 
 func TestRet(t *testing.T) {
 	instruction := Instruction{
-		Off0:        (*new(f.Felt).SetBigInt(big.NewInt(-2))),
-		Off1:        (*new(f.Felt).SetBigInt(big.NewInt(-1))),
-		Off2:        (*new(f.Felt).SetBigInt(big.NewInt(-1))),
+		Off0:        -2,
+		Off1:        -1,
+		Off2:        -1,
 		Imm:         nil,
 		DstRegister: Fp,
 		Op0Register: Fp,
@@ -136,9 +135,9 @@ func TestRet(t *testing.T) {
 
 func TestAddAp(t *testing.T) {
 	instruction := Instruction{
-		Off0:        (*new(f.Felt).SetBigInt(big.NewInt(-1))),
-		Off1:        (*new(f.Felt).SetBigInt(big.NewInt(-1))),
-		Off2:        (*new(f.Felt).SetUint64(1)),
+		Off0:        -1,
+		Off1:        -1,
+		Off2:        1,
 		Imm:         (new(f.Felt).SetUint64(123)),
 		DstRegister: Fp,
 		Op0Register: Fp,

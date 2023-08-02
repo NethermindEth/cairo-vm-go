@@ -26,51 +26,51 @@ const (
 type ResLogic uint8
 
 const (
-	Op1 ResLogic = iota
-	AddOperands
+	AddOperands ResLogic = iota
 	MulOperands
 	Unconstrained
+	Op1
 )
 
 type PcUpdate uint8
 
 const (
-	NextInstr PcUpdate = iota
-	Jump
+	Jump PcUpdate = iota
 	JumpRel
 	Jnz
+	NextInstr
 )
 
 type ApUpdate uint8
 
 const (
-	SameAp ApUpdate = iota
-	AddImm
+	AddImm ApUpdate = iota
 	Add1
+	SameAp
 	Add2
 )
 
 type FpUpdate uint8
 
 const (
-	SameFp FpUpdate = iota
-	ApPlus2
+	ApPlus2 FpUpdate = iota
 	Dst
+	SameFp
 )
 
 type Opcode uint8
 
 const (
-	Nop Opcode = iota
-	AssertEq
-	Call
+	Call Opcode = iota
 	Ret
+	AssertEq
+	Nop
 )
 
 type Instruction struct {
-	Off0 f.Felt
-	Off1 f.Felt
-	Off2 f.Felt
+	Off0 int16
+	Off1 int16
+	Off2 int16
 
 	Imm *f.Felt
 
@@ -93,81 +93,91 @@ func (instr Instruction) Size() uint8 {
 	return 1
 }
 
-var (
-	dstRegBit         uint = 0
-	op0RegBit         uint = 1
-	op1ImmBit         uint = 2
-	op1FpBit          uint = 3
-	op1ApBit          uint = 4
-	resAddBit         uint = 5
-	resMulBit         uint = 6
-	pcJumpAbsBit      uint = 7
-	pcJumpRelBit      uint = 8
-	pcJnzBit          uint = 9
-	apAddBit          uint = 10
-	apAdd1Bit         uint = 11
-	opcodeCallBit     uint = 12
-	opcodeRetBit      uint = 13
-	opcodeAssertEqBit uint = 14
-	//reservedBit       uint = 15
-	offsetBits    uint = 16
-	numberOfFlags uint = 15
+const (
+	dstRegBit         = 0
+	op0RegBit         = 1
+	op1ImmBit         = 2
+	op1FpBit          = 3
+	op1ApBit          = 4
+	resAddBit         = 5
+	resMulBit         = 6
+	pcJumpAbsBit      = 7
+	pcJumpRelBit      = 8
+	pcJnzBit          = 9
+	apAddBit          = 10
+	apAdd1Bit         = 11
+	opcodeCallBit     = 12
+	opcodeRetBit      = 13
+	opcodeAssertEqBit = 14
+	//reservedBit        = 15
+	offsetBits    = 16
+	numberOfFlags = 15
 )
 
-func decodeInstructionValues(encoding *big.Int) (flags *big.Int, off0_enc *big.Int, off1_enc *big.Int, off2_enc *big.Int, err error) {
-	if encoding.Cmp(new(big.Int).Lsh(big.NewInt(1), 3*offsetBits+numberOfFlags)) >= 0 {
-		return nil, nil, nil, nil, fmt.Errorf("unsupported instruction")
+func decodeInstructionValues(encoding *big.Int) (flags uint16, off0Enc uint16, off1Enc uint16, off2Enc uint16, err error) {
+	if encoding.Cmp(new(big.Int).Lsh(big.NewInt(1), uint(3*offsetBits+numberOfFlags))) >= 0 {
+		return 0, 0, 0, 0, fmt.Errorf("unsupported instruction")
 	}
 
-	off0_enc = big.NewInt(0)
-	off1_enc = big.NewInt(0)
-	off2_enc = big.NewInt(0)
-	flags = big.NewInt(0)
+	// After this we can safely assume encoding < 2^63
+	var uintEncoding = encoding.Uint64()
 
-	off0_enc.And(encoding, big.NewInt(1<<offsetBits-1))
-	off1_enc.And(encoding.Rsh(encoding, offsetBits), big.NewInt(1<<offsetBits-1))
-	off2_enc.And(encoding.Rsh(encoding, offsetBits), big.NewInt(1<<offsetBits-1))
-	flags.Rsh(encoding, offsetBits)
+	// first, second and third 16 bits of the instruction encoding respectively
+	off0Enc = uint16(uintEncoding & (1<<offsetBits - 1))
+	off1Enc = uint16((uintEncoding >> offsetBits) & (1<<offsetBits - 1))
+	off2Enc = uint16((uintEncoding >> (2 * offsetBits)) & (1<<offsetBits - 1))
+	// bits 48..63
+	flags = uint16(uintEncoding >> (3 * offsetBits))
 	err = nil
 
 	return
 }
 
+// Given []uint16 of 0s or 1s returns the set bit if there's only one such
+// and return len(bits) in case there's no set bits.
+// If there are more than 1 set bits return an error.
+func oneHot(bits ...uint16) (uint16, error) {
+	var checkSum uint16 = 0
+	setBit := len(bits)
+
+	// checking
+	for i, bit := range bits {
+		checkSum += bit
+
+		if bit == 1 {
+			setBit = i
+		}
+	}
+
+	if checkSum > 1 {
+		return 0, fmt.Errorf("decoding wrong sequence of bits: %v", bits)
+	}
+
+	return uint16(setBit), nil
+}
+
 func DecodeInstruction(instruction *f.Felt, imm *f.Felt) (*Instruction, error) {
 	var instr *Instruction = new(Instruction)
 
-	var encoding big.Int
-	instruction.BigInt(&encoding)
-
-	flags, off0_enc, off1_enc, off2_enc, err := decodeInstructionValues(new(big.Int).Set(&encoding))
+	// break down the instruction into 4 16-bit segments
+	flags, off0Enc, off1Enc, off2Enc, err := decodeInstructionValues(instruction.BigInt(big.NewInt(0)))
 
 	if err != nil {
-		return nil, fmt.Errorf("error during decoding an instruction: %w", err)
+		return nil, fmt.Errorf("error decoding an instruction: %w", err)
 	}
 
-	var flag big.Int
-	if flag.And(flag.Rsh(flags, dstRegBit), big.NewInt(1)).Cmp(big.NewInt(1)) == 0 {
-		instr.DstRegister = Fp
-	} else {
-		instr.DstRegister = Ap
+	instr.DstRegister = Register((flags >> dstRegBit) & 1)
+	instr.Op0Register = Register((flags >> op0RegBit) & 1)
+
+	op1Addr, err := oneHot((flags>>op1ImmBit)&1, (flags>>op1ApBit)&1, (flags>>op1FpBit)&1)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding op1_addr of instruction: %w", err)
 	}
 
-	if flag.And(flag.Rsh(flags, op0RegBit), big.NewInt(1)).Cmp(big.NewInt(1)) == 0 {
-		instr.Op0Register = Fp
-	} else {
-		instr.Op0Register = Ap
-	}
+	instr.Op1Addr = Op1Addr(op1Addr)
 
-	instr.Op1Addr = map[[3]uint64]Op1Addr{
-		[...]uint64{1, 0, 0}: Imm,
-		[...]uint64{0, 1, 0}: ApPlusOff2,
-		[...]uint64{0, 0, 1}: FpPlustOff2,
-		[...]uint64{0, 0, 0}: Op0,
-	}[[...]uint64{
-		flag.And(flag.Rsh(flags, op1ImmBit), big.NewInt(1)).Uint64(),
-		flag.And(flag.Rsh(flags, op1ApBit), big.NewInt(1)).Uint64(),
-		flag.And(flag.Rsh(flags, op1FpBit), big.NewInt(1)).Uint64()}]
-
+	// if the address to draw op1 from is set to be the imm
+	// check the imm argument
 	if instr.Op1Addr == Imm {
 		if imm == nil {
 			return nil, fmt.Errorf("op1_addr is Op1Addr.IMM, but no immediate given")
@@ -179,57 +189,60 @@ func DecodeInstruction(instruction *f.Felt, imm *f.Felt) (*Instruction, error) {
 		instr.Imm = nil
 	}
 
-	instr.PcUpdate = map[[3]uint64]PcUpdate{
-		[...]uint64{1, 0, 0}: Jump,
-		[...]uint64{0, 1, 0}: JumpRel,
-		[...]uint64{0, 0, 1}: Jnz,
-		[...]uint64{0, 0, 0}: NextInstr,
-	}[[...]uint64{
-		flag.And(flag.Rsh(flags, pcJumpAbsBit), big.NewInt(1)).Uint64(),
-		flag.And(flag.Rsh(flags, pcJumpRelBit), big.NewInt(1)).Uint64(),
-		flag.And(flag.Rsh(flags, pcJnzBit), big.NewInt(1)).Uint64()}]
+	pcUpdate, err := oneHot((flags>>pcJumpAbsBit)&1, (flags>>pcJumpRelBit)&1, (flags>>pcJnzBit)&1)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding pc_update of instruction: %w", err)
+	}
+
+	instr.PcUpdate = PcUpdate(pcUpdate)
 
 	var defaultResLogic ResLogic
 
+	// (0, 0) bits at pc_update corespond to different
+	// scenarios depending on the instruction.
+	// For JNZ the result is not constrained
 	if instr.PcUpdate == Jnz {
 		defaultResLogic = Unconstrained
 	} else {
 		defaultResLogic = Op1
 	}
 
-	instr.Res = map[[2]uint64]ResLogic{
-		[...]uint64{1, 0}: AddOperands,
-		[...]uint64{0, 1}: MulOperands,
-		[...]uint64{0, 0}: defaultResLogic,
-	}[[...]uint64{
-		flag.And(flag.Rsh(flags, resAddBit), big.NewInt(1)).Uint64(),
-		flag.And(flag.Rsh(flags, resMulBit), big.NewInt(1)).Uint64()}]
+	res, err := oneHot((flags>>resAddBit)&1, (flags>>resMulBit)&1)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding res_logic of instruction: %w", err)
+	}
 
+	if res == 2 {
+		instr.Res = defaultResLogic
+	} else {
+		instr.Res = ResLogic(res)
+	}
+
+	// Moreover, the result must be unconstrained in case of JNZ
 	if instr.PcUpdate == Jnz && instr.Res != Unconstrained {
 		return nil, fmt.Errorf("jnz opcode must have Unconstrained res logic")
 	}
 
-	instr.ApUpdate = map[[2]uint64]ApUpdate{
-		[...]uint64{1, 0}: AddImm,
-		[...]uint64{0, 1}: Add1,
-		[...]uint64{0, 0}: SameAp,
-	}[[...]uint64{
-		flag.And(flag.Rsh(flags, apAddBit), big.NewInt(1)).Uint64(),
-		flag.And(flag.Rsh(flags, apAdd1Bit), big.NewInt(1)).Uint64()}]
+	apUpdate, err := oneHot((flags>>apAddBit)&1, (flags>>apAdd1Bit)&1)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding ap_update of instruction: %w", err)
+	}
 
-	instr.Opcode = map[[3]uint64]Opcode{
-		[...]uint64{1, 0, 0}: Call,
-		[...]uint64{0, 1, 0}: Ret,
-		[...]uint64{0, 0, 1}: AssertEq,
-		[...]uint64{0, 0, 0}: Nop,
-	}[[...]uint64{
-		flag.And(flag.Rsh(flags, opcodeCallBit), big.NewInt(1)).Uint64(),
-		flag.And(flag.Rsh(flags, opcodeRetBit), big.NewInt(1)).Uint64(),
-		flag.And(flag.Rsh(flags, opcodeAssertEqBit), big.NewInt(1)).Uint64()}]
+	instr.ApUpdate = ApUpdate(apUpdate)
+
+	opcode, err := oneHot((flags>>opcodeCallBit)&1, (flags>>opcodeRetBit)&1, (flags>>opcodeAssertEqBit)&1)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding opcode of instruction: %w", err)
+	}
+
+	instr.Opcode = Opcode(opcode)
 
 	if instr.Opcode == Call {
+		// (0, 0) bits for ap_update also stand for different
+		// behaviour in different opcodes.
+		// Call treats (0, 0) as ADD2 logic
 		if instr.ApUpdate != SameAp {
-			return nil, fmt.Errorf("CALL must have update_ap is ADD2")
+			return nil, fmt.Errorf("CALL must have ap_update = ADD2")
 		}
 		instr.ApUpdate = Add2
 	}
@@ -243,10 +256,10 @@ func DecodeInstruction(instruction *f.Felt, imm *f.Felt) (*Instruction, error) {
 		instr.FpUpdate = SameFp
 	}
 
-	var offset f.Felt
-	instr.Off0 = *offset.SetBigInt(off0_enc.Sub(off0_enc, big.NewInt(1<<(offsetBits-1))))
-	instr.Off1 = *offset.SetBigInt(off1_enc.Sub(off1_enc, big.NewInt(1<<(offsetBits-1))))
-	instr.Off2 = *offset.SetBigInt(off2_enc.Sub(off2_enc, big.NewInt(1<<(offsetBits-1))))
+	// Turning unsigned offsets into signed ones
+	instr.Off0 = int16(int(off0Enc) - (1 << (offsetBits - 1)))
+	instr.Off1 = int16(int(off1Enc) - (1 << (offsetBits - 1)))
+	instr.Off2 = int16(int(off2Enc) - (1 << (offsetBits - 1)))
 
 	return instr, nil
 }
