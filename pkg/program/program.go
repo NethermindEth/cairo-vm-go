@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	f "github.com/NethermindEth/juno/core/felt"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type Builtin uint8
@@ -80,8 +80,8 @@ func (b *Builtin) UnmarshalJSON(data []byte) error {
 }
 
 type EntryPointInfo struct {
-	Selector f.Felt    `json:"selector"`
-	Offset   f.Felt    `json:"offset"`
+	Selector f.Element `json:"selector"`
+	Offset   f.Element `json:"offset"`
 	Builtins []Builtin `json:"builtins"`
 }
 
@@ -93,7 +93,7 @@ type EntryPointByType struct {
 
 type Program struct {
 	// Prime is fixed to be 0x800000000000011000000000000000000000000000000000000000000000001 and wont fit in a f.Felt
-	Bytecode        []f.Felt         `json:"bytecode"`
+	Bytecode        []f.Element      `json:"bytecode"`
 	CompilerVersion string           `json:"compiler_version"`
 	EntryPoints     EntryPointByType `json:"entry_points_by_type"`
 	// todo(rodro): Add remaining Json field

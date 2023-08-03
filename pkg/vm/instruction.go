@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
-	f "github.com/NethermindEth/juno/core/felt"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type Register uint8
@@ -72,7 +72,7 @@ type Instruction struct {
 	Off1 int16
 	Off2 int16
 
-	Imm *f.Felt
+	Imm *f.Element
 
 	DstRegister Register
 	Op0Register Register
@@ -156,7 +156,7 @@ func oneHot(bits ...uint16) (uint16, error) {
 	return uint16(setBit), nil
 }
 
-func DecodeInstruction(instruction *f.Felt, imm *f.Felt) (*Instruction, error) {
+func DecodeInstruction(instruction *f.Element, imm *f.Element) (*Instruction, error) {
 	var instr *Instruction = new(Instruction)
 
 	// break down the instruction into 4 16-bit segments
@@ -182,7 +182,7 @@ func DecodeInstruction(instruction *f.Felt, imm *f.Felt) (*Instruction, error) {
 		if imm == nil {
 			return nil, fmt.Errorf("op1_addr is Op1Addr.IMM, but no immediate given")
 		} else {
-			var immFelt f.Felt
+			var immFelt f.Element
 			instr.Imm = immFelt.Set(imm)
 		}
 	} else {
