@@ -4,10 +4,10 @@ type VirtualMachine struct {
 	// todo(rodro): define state fields
 }
 
-func NewVirtualMachine(program *Program) *VirtualMachine {
+func NewVirtualMachine() *VirtualMachine {
 	return &VirtualMachine{}
 }
 
 func (vm *VirtualMachine) Run() error {
-    return nil
+	return nil
 }
