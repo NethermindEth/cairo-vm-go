@@ -1,4 +1,4 @@
-package vm
+package memory
 
 import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"

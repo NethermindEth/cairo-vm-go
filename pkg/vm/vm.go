@@ -1,6 +1,7 @@
 package vm
 
 import (
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -18,7 +19,7 @@ type VirtualMachineConfig struct {
 
 type VirtualMachine struct {
 	Context              Context
-	MemorySegmentManager MemorySegmentManager
+	MemorySegmentManager mem.MemorySegmentManager
 	Config               VirtualMachineConfig
 }
 
@@ -26,7 +27,7 @@ type VirtualMachine struct {
 func NewVirtualMachine(programBytecode *[]f.Element, config VirtualMachineConfig) *VirtualMachine {
 	return &VirtualMachine{
 		Context{Fp: 0, Ap: 0, Pc: 0},
-		CreateMemorySegmentManager(programBytecode),
+		mem.CreateMemorySegmentManager(programBytecode),
 		config,
 	}
 }
