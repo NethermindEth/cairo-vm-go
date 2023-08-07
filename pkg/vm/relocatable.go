@@ -3,7 +3,7 @@ package vm
 import (
 	"fmt"
 
-	f "github.com/NethermindEth/juno/core/felt"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 // The default segment that represents ordinary felts.
@@ -12,11 +12,11 @@ const feltSegment = 0
 // A virtual memory address of the form SegmentIndex:Offset.
 type Relocatable struct {
 	SegmentIndex uint64
-	Offset       f.Felt
+	Offset       f.Element
 }
 
 // Creates a relocatable out of its components.
-func NewRelocatable(segment uint64, offset *f.Felt) *Relocatable {
+func NewRelocatable(segment uint64, offset *f.Element) *Relocatable {
 	return &Relocatable{SegmentIndex: segment, Offset: *offset}
 }
 
@@ -84,7 +84,7 @@ func (r *Relocatable) SetUint64(v uint64) *Relocatable {
 }
 
 // Sets a relocatable into the relocatable of the form 0:v.
-func (r *Relocatable) SetFelt(v *f.Felt) *Relocatable {
+func (r *Relocatable) SetFelt(v *f.Element) *Relocatable {
 	r.SegmentIndex = feltSegment
 	r.Offset.Set(v)
 

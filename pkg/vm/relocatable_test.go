@@ -3,15 +3,15 @@ package vm
 import (
 	"testing"
 
-	f "github.com/NethermindEth/juno/core/felt"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAddFelt(t *testing.T) {
 	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Felt).SetUint64(10))
+	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
 	r2 := new(Relocatable).SetUint64(2)
-	expected := NewRelocatable(2, new(f.Felt).SetUint64(12))
+	expected := NewRelocatable(2, new(f.Element).SetUint64(12))
 
 	res, err := r.Add(r1, r2)
 
@@ -23,8 +23,8 @@ func TestAddFelt(t *testing.T) {
 
 func TestAddRelocatable(t *testing.T) {
 	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Felt).SetUint64(10))
-	r2 := NewRelocatable(2, new(f.Felt).SetUint64(2))
+	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
+	r2 := NewRelocatable(2, new(f.Element).SetUint64(2))
 
 	r, err := r.Add(r1, r2)
 
@@ -34,9 +34,9 @@ func TestAddRelocatable(t *testing.T) {
 
 func TestSubFelt(t *testing.T) {
 	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Felt).SetUint64(10))
+	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
 	r2 := new(Relocatable).SetUint64(2)
-	expected := NewRelocatable(2, new(f.Felt).SetUint64(8))
+	expected := NewRelocatable(2, new(f.Element).SetUint64(8))
 
 	res, err := r.Sub(r1, r2)
 
@@ -48,8 +48,8 @@ func TestSubFelt(t *testing.T) {
 
 func TestSubSameSegment(t *testing.T) {
 	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Felt).SetUint64(10))
-	r2 := NewRelocatable(2, new(f.Felt).SetUint64(2))
+	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
+	r2 := NewRelocatable(2, new(f.Element).SetUint64(2))
 	expected := new(Relocatable).SetUint64(8)
 
 	res, err := r.Sub(r1, r2)
@@ -62,8 +62,8 @@ func TestSubSameSegment(t *testing.T) {
 
 func TestSubDifferentSegment(t *testing.T) {
 	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Felt).SetUint64(10))
-	r2 := NewRelocatable(1, new(f.Felt).SetUint64(2))
+	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
+	r2 := NewRelocatable(1, new(f.Element).SetUint64(2))
 
 	r, err := r.Sub(r1, r2)
 
@@ -73,7 +73,7 @@ func TestSubDifferentSegment(t *testing.T) {
 
 func TestRelocate1(t *testing.T) {
 	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Felt).SetUint64(10))
+	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
 	expected := new(Relocatable).SetUint64(52)
 
 	res, err := r.Relocate(r1, &map[uint64]*Relocatable{
@@ -87,11 +87,11 @@ func TestRelocate1(t *testing.T) {
 
 func TestRelocate2(t *testing.T) {
 	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Felt).SetUint64(10))
-	expected := NewRelocatable(10, new(f.Felt).SetUint64(11))
+	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
+	expected := NewRelocatable(10, new(f.Element).SetUint64(11))
 
 	res, err := r.Relocate(r1, &map[uint64]*Relocatable{
-		2: NewRelocatable(10, new(f.Felt).SetUint64(1)),
+		2: NewRelocatable(10, new(f.Element).SetUint64(1)),
 	})
 
 	assert.NoError(t, err)
@@ -101,10 +101,10 @@ func TestRelocate2(t *testing.T) {
 
 func TestRelocateMissingRule(t *testing.T) {
 	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Felt).SetUint64(10))
+	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
 
 	res, err := r.Relocate(r1, &map[uint64]*Relocatable{
-		3: NewRelocatable(10, new(f.Felt).SetUint64(1)),
+		3: NewRelocatable(10, new(f.Element).SetUint64(1)),
 	})
 
 	assert.Error(t, err)

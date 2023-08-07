@@ -1,7 +1,7 @@
 package vm
 
 import (
-	f "github.com/NethermindEth/juno/core/felt"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type Context struct {
@@ -23,7 +23,7 @@ type VirtualMachine struct {
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
-func NewVirtualMachine(programBytecode *[]f.Felt, config VirtualMachineConfig) *VirtualMachine {
+func NewVirtualMachine(programBytecode *[]f.Element, config VirtualMachineConfig) *VirtualMachine {
 	return &VirtualMachine{
 		Context{Fp: 0, Ap: 0, Pc: 0},
 		CreateMemorySegmentManager(programBytecode),

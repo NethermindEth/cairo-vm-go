@@ -1,11 +1,11 @@
 package vm
 
 import (
-	f "github.com/NethermindEth/juno/core/felt"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type MemorySegment struct {
-	Cells []f.Felt
+	Cells []f.Element
 }
 
 type MemorySegmentManager struct {
@@ -19,7 +19,7 @@ type MemorySegmentManager struct {
 	BuiltinSegments *[]MemorySegment
 }
 
-func CreateMemorySegmentManager(programBytecode *[]f.Felt) MemorySegmentManager {
+func CreateMemorySegmentManager(programBytecode *[]f.Element) MemorySegmentManager {
 	return MemorySegmentManager{
 		ProgramSegment:   &MemorySegment{Cells: *programBytecode},
 		ExecutionSegment: nil,
