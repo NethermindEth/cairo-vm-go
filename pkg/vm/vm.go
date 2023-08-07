@@ -36,6 +36,10 @@ func (vm *VirtualMachine) RunStep() error {
 	return nil
 }
 
-func (vm *VirtualMachine) RunInstruction() error {
+func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
+	return nil
+}
+
+func (vm *VirtualMachine) RunHint(instruction *Instruction) error {
 	return nil
 }
