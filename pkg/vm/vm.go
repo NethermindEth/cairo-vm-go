@@ -18,16 +18,16 @@ type VirtualMachineConfig struct {
 }
 
 type VirtualMachine struct {
-	Context              Context
-	MemorySegmentManager mem.MemorySegmentManager
-	Config               VirtualMachineConfig
+	Context       Context
+	MemoryManager mem.MemoryManager
+	Config        VirtualMachineConfig
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
 func NewVirtualMachine(programBytecode *[]f.Element, config VirtualMachineConfig) *VirtualMachine {
 	return &VirtualMachine{
 		Context{Fp: 0, Ap: 0, Pc: 0},
-		mem.CreateMemorySegmentManager(programBytecode),
+		mem.CreateMemoryManager(programBytecode),
 		config,
 	}
 }
