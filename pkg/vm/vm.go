@@ -1,27 +1,45 @@
 package vm
 
-import f "github.com/NethermindEth/juno/core/felt"
+import (
+	f "github.com/NethermindEth/juno/core/felt"
+)
+
+type Context struct {
+	Fp uint
+	Ap uint
+	Pc uint
+}
+
+type VirtualMachineConfig struct {
+	Trace bool
+	// Todo(rodro): Update this property to include all builtins
+	Builtins bool
+}
 
 type VirtualMachine struct {
-	Ap, Fp, Pc Relocatable
-	Mem        map[Relocatable]Relocatable
+	Context              Context
+	MemorySegmentManager MemorySegmentManager
+	Config               VirtualMachineConfig
 }
 
-func NewVirtualMachine(bytecode *[]f.Felt) *VirtualMachine {
-	mem := map[Relocatable]Relocatable{}
-
-	for pc, instr := range *bytecode {
-		mem[*NewRelocatable(1, new(f.Felt).SetUint64(uint64(pc)))] = *new(Relocatable).SetFelt(&instr)
-	}
-
+// NewVirtualMachine creates a VM from the program bytecode using a specified config.
+func NewVirtualMachine(programBytecode *[]f.Felt, config VirtualMachineConfig) *VirtualMachine {
 	return &VirtualMachine{
-		Ap:  *NewRelocatable(2, &f.Zero),
-		Fp:  *NewRelocatable(2, &f.Zero),
-		Pc:  *NewRelocatable(1, &f.Zero),
-		Mem: mem,
+		Context{Fp: 0, Ap: 0, Pc: 0},
+		CreateMemorySegmentManager(programBytecode),
+		config,
 	}
 }
 
-func (vm *VirtualMachine) Run() error {
+// RunInstructionFrom executes the program starting at the specified Program Counter.
+func (vm *VirtualMachine) RunStep() error {
+	return nil
+}
+
+func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
+	return nil
+}
+
+func (vm *VirtualMachine) RunHint(instruction *Instruction) error {
 	return nil
 }
