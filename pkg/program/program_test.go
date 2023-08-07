@@ -32,7 +32,7 @@ func TestByteCodeParsing(t *testing.T) {
 	program, err := ProgramFromJSON(testData)
 	require.NoError(t, err)
 	assert.Len(t, program.Bytecode, 4)
-	assert.Equal(t, "0x482680017ffa8000", program.Bytecode[2].String())
+	assert.Equal(t, "482680017ffa8000", program.Bytecode[2].Text(16))
 
 }
 
@@ -89,8 +89,8 @@ func TestEntryPointInfoParsing(t *testing.T) {
 	assert.Len(t, entryPoints.External, 1)
 
 	entryPointInfo := entryPoints.External[0]
-	assert.Equal(t, entryPointInfo.Selector.String(), "0xabcdef0123456789")
-	assert.Equal(t, entryPointInfo.Offset.String(), "0xe")
+	assert.Equal(t, entryPointInfo.Selector.Text(16), "abcdef0123456789")
+	assert.Equal(t, entryPointInfo.Offset.Text(16), "e")
 
 	assert.Len(t, entryPointInfo.Builtins, 9)
 	for i := 0; i < 9; i++ {
