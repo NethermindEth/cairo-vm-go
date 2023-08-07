@@ -8,10 +8,10 @@ import (
 )
 
 func TestAddFelt(t *testing.T) {
-	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
-	r2 := new(Relocatable).SetUint64(2)
-	expected := NewRelocatable(2, new(f.Element).SetUint64(12))
+	r := new(MemoryAddress)
+	r1 := CreateMemoryAddress(2, new(f.Element).SetUint64(10))
+	r2 := new(MemoryAddress).SetUint64(2)
+	expected := CreateMemoryAddress(2, new(f.Element).SetUint64(12))
 
 	res, err := r.Add(r1, r2)
 
@@ -22,9 +22,9 @@ func TestAddFelt(t *testing.T) {
 }
 
 func TestAddRelocatable(t *testing.T) {
-	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
-	r2 := NewRelocatable(2, new(f.Element).SetUint64(2))
+	r := new(MemoryAddress)
+	r1 := CreateMemoryAddress(2, new(f.Element).SetUint64(10))
+	r2 := CreateMemoryAddress(2, new(f.Element).SetUint64(2))
 
 	r, err := r.Add(r1, r2)
 
@@ -33,10 +33,10 @@ func TestAddRelocatable(t *testing.T) {
 }
 
 func TestSubFelt(t *testing.T) {
-	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
-	r2 := new(Relocatable).SetUint64(2)
-	expected := NewRelocatable(2, new(f.Element).SetUint64(8))
+	r := new(MemoryAddress)
+	r1 := CreateMemoryAddress(2, new(f.Element).SetUint64(10))
+	r2 := new(MemoryAddress).SetUint64(2)
+	expected := CreateMemoryAddress(2, new(f.Element).SetUint64(8))
 
 	res, err := r.Sub(r1, r2)
 
@@ -47,10 +47,10 @@ func TestSubFelt(t *testing.T) {
 }
 
 func TestSubSameSegment(t *testing.T) {
-	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
-	r2 := NewRelocatable(2, new(f.Element).SetUint64(2))
-	expected := new(Relocatable).SetUint64(8)
+	r := new(MemoryAddress)
+	r1 := CreateMemoryAddress(2, new(f.Element).SetUint64(10))
+	r2 := CreateMemoryAddress(2, new(f.Element).SetUint64(2))
+	expected := new(MemoryAddress).SetUint64(8)
 
 	res, err := r.Sub(r1, r2)
 
@@ -61,9 +61,9 @@ func TestSubSameSegment(t *testing.T) {
 }
 
 func TestSubDifferentSegment(t *testing.T) {
-	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
-	r2 := NewRelocatable(1, new(f.Element).SetUint64(2))
+	r := new(MemoryAddress)
+	r1 := CreateMemoryAddress(2, new(f.Element).SetUint64(10))
+	r2 := CreateMemoryAddress(1, new(f.Element).SetUint64(2))
 
 	r, err := r.Sub(r1, r2)
 
@@ -72,12 +72,12 @@ func TestSubDifferentSegment(t *testing.T) {
 }
 
 func TestRelocate1(t *testing.T) {
-	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
-	expected := new(Relocatable).SetUint64(52)
+	r := new(MemoryAddress)
+	r1 := CreateMemoryAddress(2, new(f.Element).SetUint64(10))
+	expected := new(MemoryAddress).SetUint64(52)
 
-	res, err := r.Relocate(r1, &map[uint64]*Relocatable{
-		2: new(Relocatable).SetUint64(42),
+	res, err := r.Relocate(r1, &map[uint64]*MemoryAddress{
+		2: new(MemoryAddress).SetUint64(42),
 	})
 
 	assert.NoError(t, err)
@@ -86,12 +86,12 @@ func TestRelocate1(t *testing.T) {
 }
 
 func TestRelocate2(t *testing.T) {
-	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
-	expected := NewRelocatable(10, new(f.Element).SetUint64(11))
+	r := new(MemoryAddress)
+	r1 := CreateMemoryAddress(2, new(f.Element).SetUint64(10))
+	expected := CreateMemoryAddress(10, new(f.Element).SetUint64(11))
 
-	res, err := r.Relocate(r1, &map[uint64]*Relocatable{
-		2: NewRelocatable(10, new(f.Element).SetUint64(1)),
+	res, err := r.Relocate(r1, &map[uint64]*MemoryAddress{
+		2: CreateMemoryAddress(10, new(f.Element).SetUint64(1)),
 	})
 
 	assert.NoError(t, err)
@@ -100,11 +100,11 @@ func TestRelocate2(t *testing.T) {
 }
 
 func TestRelocateMissingRule(t *testing.T) {
-	r := new(Relocatable)
-	r1 := NewRelocatable(2, new(f.Element).SetUint64(10))
+	r := new(MemoryAddress)
+	r1 := CreateMemoryAddress(2, new(f.Element).SetUint64(10))
 
-	res, err := r.Relocate(r1, &map[uint64]*Relocatable{
-		3: NewRelocatable(10, new(f.Element).SetUint64(1)),
+	res, err := r.Relocate(r1, &map[uint64]*MemoryAddress{
+		3: CreateMemoryAddress(10, new(f.Element).SetUint64(1)),
 	})
 
 	assert.Error(t, err)

@@ -9,19 +9,21 @@ import (
 // The default segment that represents ordinary felts.
 const feltSegment = 0
 
-// A virtual memory address of the form SegmentIndex:Offset.
-type Relocatable struct {
+// Represents a Memory Address of the Cairo VM. Because memory is split between different segments
+// during execution, addresses has two locators: the segment they belong to and the location
+// inside that segment
+type MemoryAddress struct {
 	SegmentIndex uint64
 	Offset       f.Element
 }
 
-// Creates a relocatable out of its components.
-func NewRelocatable(segment uint64, offset *f.Element) *Relocatable {
-	return &Relocatable{SegmentIndex: segment, Offset: *offset}
+// Creates a new memory address
+func CreateMemoryAddress(segment uint64, offset *f.Element) *MemoryAddress {
+	return &MemoryAddress{SegmentIndex: segment, Offset: *offset}
 }
 
 // Adds two relocatables if the second one is a Felt (relocatable of the form 0:off).
-func (r *Relocatable) Add(r1 *Relocatable, r2 *Relocatable) (*Relocatable, error) {
+func (r *MemoryAddress) Add(r1 *MemoryAddress, r2 *MemoryAddress) (*MemoryAddress, error) {
 	if r2.SegmentIndex != feltSegment {
 		return nil, fmt.Errorf("cannot add two relocatables")
 	}
@@ -33,7 +35,7 @@ func (r *Relocatable) Add(r1 *Relocatable, r2 *Relocatable) (*Relocatable, error
 }
 
 // Subs two relocatables if they're in the same segment or the rhs is a Felt.
-func (r *Relocatable) Sub(r1 *Relocatable, r2 *Relocatable) (*Relocatable, error) {
+func (r *MemoryAddress) Sub(r1 *MemoryAddress, r2 *MemoryAddress) (*MemoryAddress, error) {
 	if r2.SegmentIndex == feltSegment {
 		r.SegmentIndex = r1.SegmentIndex
 		r.Offset.Sub(&r1.Offset, &r2.Offset)
@@ -51,24 +53,24 @@ func (r *Relocatable) Sub(r1 *Relocatable, r2 *Relocatable) (*Relocatable, error
 }
 
 // String representation of a relocatable.
-func (r Relocatable) String() string {
+func (r MemoryAddress) String() string {
 	return fmt.Sprintf("%d:%d", r.SegmentIndex, r.Offset)
 }
 
-// Given a map of segment relocations relocates the Relocatable.
-func (r *Relocatable) Relocate(r1 *Relocatable, segmentsOffsets *map[uint64]*Relocatable) (*Relocatable, error) {
+// Given a map of segment relocation, update a memory address location
+func (r *MemoryAddress) Relocate(r1 *MemoryAddress, segmentsOffsets *map[uint64]*MemoryAddress) (*MemoryAddress, error) {
 	if (*segmentsOffsets)[r1.SegmentIndex] == nil {
 		return nil, fmt.Errorf("missing segment %d relocation rule", r.SegmentIndex)
 	}
 
-	r, err := r.Add((*segmentsOffsets)[r1.SegmentIndex], &Relocatable{0, r1.Offset})
+	r, err := r.Add((*segmentsOffsets)[r1.SegmentIndex], &MemoryAddress{0, r1.Offset})
 
 	return r, err
 }
 
 // Turns a relocatable of the form 0:offset into offset.Uint64()
 // otherwise fails.
-func (r *Relocatable) Uint64() (uint64, error) {
+func (r *MemoryAddress) Uint64() (uint64, error) {
 	if r.SegmentIndex == feltSegment {
 		return r.Offset.Uint64(), nil
 	}
@@ -76,7 +78,7 @@ func (r *Relocatable) Uint64() (uint64, error) {
 }
 
 // Sets a relocatable into the relocatable of the form 0:r.Offset.SetUint64(v).
-func (r *Relocatable) SetUint64(v uint64) *Relocatable {
+func (r *MemoryAddress) SetUint64(v uint64) *MemoryAddress {
 	r.SegmentIndex = feltSegment
 	r.Offset.SetUint64(v)
 
@@ -84,7 +86,7 @@ func (r *Relocatable) SetUint64(v uint64) *Relocatable {
 }
 
 // Sets a relocatable into the relocatable of the form 0:v.
-func (r *Relocatable) SetFelt(v *f.Element) *Relocatable {
+func (r *MemoryAddress) SetFelt(v *f.Element) *MemoryAddress {
 	r.SegmentIndex = feltSegment
 	r.Offset.Set(v)
 
