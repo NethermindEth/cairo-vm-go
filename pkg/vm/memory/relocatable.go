@@ -88,20 +88,12 @@ func (memVal *MemoryValue) Add(lhs *MemoryValue, rhs *MemoryValue) (*MemoryValue
 		return nil, fmt.Errorf("cannot add two memory addresses")
 	}
 
-	fmt.Println(memVal)
-	fmt.Println("x0")
-	fmt.Println(lhs)
-	fmt.Println("x1")
-	fmt.Println(rhs)
-
 	// todo(rodro): is lhs always a memory address?
 	if lhs.isAddress {
 		memVal.isAddress = true
 		memVal.segmentIndex = lhs.segmentIndex
 	}
-	fmt.Println("x2", lhs.value, rhs.value)
 	memVal.value.Add(lhs.value, rhs.value)
-	fmt.Println("x3")
 
 	return memVal, nil
 }

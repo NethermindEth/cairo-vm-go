@@ -1,7 +1,6 @@
 package memory
 
 import (
-	"fmt"
 	"testing"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -20,19 +19,13 @@ func TestAddFelt(t *testing.T) {
 		SegmentIndex: 2,
 		Offset:       new(f.Element).SetUint64(12),
 	})
-	fmt.Println("a-1")
 
 	res, err := memVal.Add(lhs, rhs)
 
-	fmt.Println("a-2")
 	assert.NoError(t, err)
 
-	fmt.Println("a0")
-
 	assert.Equal(t, memVal, res)
-	fmt.Println("a1")
 	assert.Equal(t, *res, *expected)
-	fmt.Println("a2")
 }
 
 func TestAddRelocatable(t *testing.T) {
