@@ -6,6 +6,12 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+const (
+	programSegment = iota
+	executionSegment
+	userSegment
+)
+
 // Represents a write-once Memory Cell
 type Cell struct {
 	Value    *MemoryValue
@@ -13,16 +19,27 @@ type Cell struct {
 }
 
 type Segment struct {
-	Data map[f.Element]Cell
+	Data []Cell
 }
 
-func EmptySegment() Segment {
-	return Segment{
-		Data: make(map[f.Element]Cell),
+func EmptySegment() *Segment {
+	return &Segment{
+		Data: make([]Cell, 0),
 	}
 }
 
-func (segment *Segment) Write(index f.Element, value *MemoryValue) error {
+func EmptySegmentWithCapacity(capacity int) Segment {
+	return Segment{
+		Data: make([]Cell, 0, capacity),
+	}
+}
+
+func EmptySegmentWithLength(length int) Segment {
+	return Segment{
+		Data: make([]Cell, length),
+	}
+}
+func (segment *Segment) Write(index uint64, value *MemoryValue) error {
 	cell := segment.Data[index]
 	if cell.Accessed {
 		return fmt.Errorf("rewriting cell at %d, old value: %d new value: %d", index, &cell.Value, &value)
@@ -32,7 +49,7 @@ func (segment *Segment) Write(index f.Element, value *MemoryValue) error {
 	return nil
 }
 
-func (segment *Segment) Read(index f.Element) *MemoryValue {
+func (segment *Segment) Read(index uint64) *MemoryValue {
 	cell := segment.Data[index]
 	cell.Accessed = true
 	return cell.Value
@@ -41,15 +58,28 @@ func (segment *Segment) Read(index f.Element) *MemoryValue {
 // todo(rodro): Check out temprary segments
 // Represents the whole VM memory divided into segments
 type Memory struct {
-	Segments []Segment
+	Segments []*Segment
 }
 
 // todo(rodro): can the amount of segments be known before hand?
-func InitializeEmptyMemory() Memory {
-	return Memory{
+func InitializeEmptyMemory() *Memory {
+	return &Memory{
 		// size 4 should be enough for the minimum amount of segments
-		Segments: make([]Segment, 4),
+		Segments: make([]*Segment, 4),
 	}
+}
+
+func (memory *Memory) LoadBytecode(bytecode *[]f.Element) error {
+	bytecodeSegment := EmptySegmentWithLength(len(*bytecode))
+	for i := range *bytecode {
+		memVal := MemoryValueFromFieldElement(&(*bytecode)[i])
+		err := bytecodeSegment.Write(uint64(i), memVal)
+		if err != nil {
+			return fmt.Errorf("cannot load bytecode: %w", err)
+		}
+	}
+	memory.Segments[programSegment] = &bytecodeSegment
+	return nil
 }
 
 // Allocates a new segment and returns its index
@@ -62,13 +92,20 @@ func (memory *Memory) Write(address *MemoryAddress, value *MemoryValue) error {
 	if address.SegmentIndex > uint64(len(memory.Segments)) {
 		return fmt.Errorf("writing to unallocated segment %d", address.SegmentIndex)
 	}
+	if !address.Offset.IsUint64() {
+		return fmt.Errorf("writing index is too big: %s", address.Offset.String())
+	}
 
-	return memory.Segments[address.SegmentIndex].Write(*address.Offset, value)
+	return memory.Segments[address.SegmentIndex].Write(address.Offset.Uint64(), value)
 }
 
 func (memory *Memory) Read(address *MemoryAddress) (*MemoryValue, error) {
 	if address.SegmentIndex > uint64(len(memory.Segments)) {
 		return nil, fmt.Errorf("reading from unallocated segment %d", address.SegmentIndex)
 	}
-	return memory.Segments[address.SegmentIndex].Read(*address.Offset), nil
+	if !address.Offset.IsUint64() {
+		return nil, fmt.Errorf("reading index is too big: %s", address.Offset.String())
+	}
+
+	return memory.Segments[address.SegmentIndex].Read(address.Offset.Uint64()), nil
 }

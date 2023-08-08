@@ -1,6 +1,8 @@
 package vm
 
 import (
+	"fmt"
+
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -19,17 +21,22 @@ type VirtualMachineConfig struct {
 
 type VirtualMachine struct {
 	Context       Context
-	MemoryManager mem.MemoryManager
+	MemoryManager *mem.MemoryManager
 	Config        VirtualMachineConfig
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
-func NewVirtualMachine(programBytecode *[]f.Element, config VirtualMachineConfig) *VirtualMachine {
+func NewVirtualMachine(programBytecode *[]f.Element, config VirtualMachineConfig) (*VirtualMachine, error) {
+	manager, err := mem.CreateMemoryManager(programBytecode)
+	if err != nil {
+		return nil, fmt.Errorf("error creating new virtual machine: %w", err)
+	}
+
 	return &VirtualMachine{
 		Context{Fp: 0, Ap: 0, Pc: 0},
-		mem.CreateMemoryManager(programBytecode),
+		manager,
 		config,
-	}
+	}, nil
 }
 
 // RunInstructionFrom executes the program starting at the specified Program Counter.

@@ -1,11 +1,13 @@
 package memory
 
 import (
+	"fmt"
+
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type MemoryManager struct {
-	Memory Memory
+	Memory *Memory
 	// where the program byte code is stored
 	// ProgramSegment *MemorySegment
 	//// stores the function callstack (fp, ap, local variables)
@@ -16,13 +18,15 @@ type MemoryManager struct {
 	// BuiltinSegments *[]MemorySegment
 }
 
-func CreateMemoryManager(programBytecode *[]f.Element) MemoryManager {
-	// memory := InitializeEmptyMemory()
+func CreateMemoryManager(programBytecode *[]f.Element) (*MemoryManager, error) {
+	memory := InitializeEmptyMemory()
 
-	return MemoryManager{
-		//ProgramSegment:   &MemorySegment{Cells: *programBytecode},
-		//ExecutionSegment: nil,
-		//UserSegment:      nil,
-		//BuiltinSegments:  nil,
+	err := memory.LoadBytecode(programBytecode)
+	if err != nil {
+		return nil, fmt.Errorf("error creating MemoryManager: %w", err)
 	}
+
+	return &MemoryManager{
+		Memory: memory,
+	}, nil
 }
