@@ -8,16 +8,16 @@ import (
 )
 
 func TestAddFelt(t *testing.T) {
-	memVal := EmptyMemoryValue()
+	memVal := EmptyMemoryValueAsAddress()
 	lhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
-		Offset:       new(f.Element).SetUint64(10),
+		Offset:       10,
 	})
 	rhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(2))
 
 	expected := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
-		Offset:       new(f.Element).SetUint64(12),
+		Offset:       12,
 	})
 
 	res, err := memVal.Add(lhs, rhs)
@@ -25,18 +25,18 @@ func TestAddFelt(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, memVal, res)
-	assert.Equal(t, *res, *expected)
+	assert.Equal(t, *(res.address), *(expected.address))
 }
 
 func TestAddRelocatable(t *testing.T) {
-	memVal := EmptyMemoryValue()
+	memVal := EmptyMemoryValueAsAddress()
 	lhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
-		Offset:       new(f.Element).SetUint64(10),
+		Offset:       10,
 	})
 	rhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
-		Offset:       new(f.Element).SetUint64(2),
+		Offset:       2,
 	})
 	memVal, err := memVal.Add(lhs, rhs)
 
@@ -45,16 +45,16 @@ func TestAddRelocatable(t *testing.T) {
 }
 
 func TestSubFelt(t *testing.T) {
-	memVal := EmptyMemoryValue()
+	memVal := EmptyMemoryValueAsAddress()
 	lhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
-		Offset:       new(f.Element).SetUint64(10),
+		Offset:       10,
 	})
 	rhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(2))
 
 	expected := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
-		Offset:       new(f.Element).SetUint64(8),
+		Offset:       8,
 	})
 
 	res, err := memVal.Sub(lhs, rhs)
@@ -65,18 +65,18 @@ func TestSubFelt(t *testing.T) {
 }
 
 func TestSubSameSegment(t *testing.T) {
-	memVal := EmptyMemoryValue()
+	memVal := EmptyMemoryValueAsAddress()
 	lhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
-		Offset:       new(f.Element).SetUint64(10),
+		Offset:       10,
 	})
 	rhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
-		Offset:       new(f.Element).SetUint64(2),
+		Offset:       2,
 	})
 	expected := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
-		Offset:       new(f.Element).SetUint64(8),
+		Offset:       8,
 	})
 
 	res, err := memVal.Sub(lhs, rhs)
@@ -84,18 +84,18 @@ func TestSubSameSegment(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, memVal, res)
-	assert.Equal(t, *res, *expected)
+	assert.Equal(t, *(res.address), *(expected.address))
 }
 
 func TestSubDifferentSegment(t *testing.T) {
-	memVal := EmptyMemoryValue()
+	memVal := EmptyMemoryValueAsAddress()
 	lhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
-		Offset:       new(f.Element).SetUint64(10),
+		Offset:       10,
 	})
 	rhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 5,
-		Offset:       new(f.Element).SetUint64(2),
+		Offset:       2,
 	})
 
 	memVal, err := memVal.Sub(lhs, rhs)

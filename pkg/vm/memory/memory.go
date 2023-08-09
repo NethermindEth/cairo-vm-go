@@ -92,20 +92,14 @@ func (memory *Memory) Write(address *MemoryAddress, value *MemoryValue) error {
 	if address.SegmentIndex > uint64(len(memory.Segments)) {
 		return fmt.Errorf("writing to unallocated segment %d", address.SegmentIndex)
 	}
-	if !address.Offset.IsUint64() {
-		return fmt.Errorf("writing index is too big: %s", address.Offset.String())
-	}
 
-	return memory.Segments[address.SegmentIndex].Write(address.Offset.Uint64(), value)
+	return memory.Segments[address.SegmentIndex].Write(address.Offset, value)
 }
 
 func (memory *Memory) Read(address *MemoryAddress) (*MemoryValue, error) {
 	if address.SegmentIndex > uint64(len(memory.Segments)) {
 		return nil, fmt.Errorf("reading from unallocated segment %d", address.SegmentIndex)
 	}
-	if !address.Offset.IsUint64() {
-		return nil, fmt.Errorf("reading index is too big: %s", address.Offset.String())
-	}
 
-	return memory.Segments[address.SegmentIndex].Read(address.Offset.Uint64()), nil
+	return memory.Segments[address.SegmentIndex].Read(address.Offset), nil
 }
