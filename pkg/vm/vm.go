@@ -39,15 +39,45 @@ func NewVirtualMachine(programBytecode *[]f.Element, config VirtualMachineConfig
 	}, nil
 }
 
-// RunInstructionFrom executes the program starting at the specified Program Counter.
+// todo(rodro): add a cache mechanism for not decoding the same instruction twice
+
+// todo(rodro): how to know when te execute a hint or normal instruction
+
 func (vm *VirtualMachine) RunStep() error {
+	return nil
+}
+func (vm *VirtualMachine) RunStepAt(pc uint) error {
+	bytecodeInstruction, err := vm.MemoryManager.Memory.GetInstructionBytecode(pc)
+	if err != nil {
+		return fmt.Errorf("cannot load step at %d: %w", pc, err)
+	}
+	instruction, err := DecodeInstruction(bytecodeInstruction)
+	if err != nil {
+		return fmt.Errorf("cannot decode step at %d: %w", pc, err)
+	}
+
+	err = vm.RunInstruction(instruction)
+	if err != nil {
+		return fmt.Errorf("cannot run step at %d: %w", pc, err)
+	}
+
 	return nil
 }
 
 func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
+	switch instruction.Opcode {
+	case AssertEq:
+		vm.assertEqual(instruction)
+	default:
+		return fmt.Errorf("unimplemented opcode: %d", instruction.Opcode)
+	}
 	return nil
 }
 
-func (vm *VirtualMachine) RunHint(instruction *Instruction) error {
+func (vm *VirtualMachine) RunHint() error {
 	return nil
+}
+
+func (vm *VirtualMachine) assertEqual(instruction *Instruction) error {
+        instruction.
 }

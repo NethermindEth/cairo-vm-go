@@ -82,6 +82,14 @@ func (memory *Memory) LoadBytecode(bytecode *[]f.Element) error {
 	return nil
 }
 
+func (memory *Memory) GetInstructionBytecode(index uint) (*f.Element, error) {
+	felt, err := memory.Segments[programSegment].Data[index].Value.ToFieldElement()
+	if err != nil {
+		return nil, fmt.Errorf("Cannot get instruction at %d: %w", index, err)
+	}
+	return felt, nil
+}
+
 // Allocates a new segment and returns its index
 func (memory *Memory) AllocateNewSegment() int {
 	memory.Segments = append(memory.Segments, EmptySegment())
