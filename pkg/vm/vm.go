@@ -27,9 +27,14 @@ type VirtualMachine struct {
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
 func NewVirtualMachine(programBytecode *[]f.Element, config VirtualMachineConfig) (*VirtualMachine, error) {
-	manager, err := mem.CreateMemoryManager(programBytecode)
+	manager, err := mem.CreateMemoryManager()
 	if err != nil {
 		return nil, fmt.Errorf("error creating new virtual machine: %w", err)
+	}
+
+	_, err = manager.Memory.AllocateSegment(programBytecode)
+	if err != nil {
+		return nil, fmt.Errorf("error loading bytecode: %w", err)
 	}
 
 	return &VirtualMachine{

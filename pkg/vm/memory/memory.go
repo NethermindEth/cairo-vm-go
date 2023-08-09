@@ -6,12 +6,6 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-const (
-	programSegment = iota
-	executionSegment
-	userSegment
-)
-
 // Represents a write-once Memory Cell
 type Cell struct {
 	Value    *MemoryValue
@@ -64,26 +58,26 @@ type Memory struct {
 // todo(rodro): can the amount of segments be known before hand?
 func InitializeEmptyMemory() *Memory {
 	return &Memory{
-		// size 4 should be enough for the minimum amount of segments
-		Segments: make([]*Segment, 4),
+		// capacity 4 should be enough for the minimum amount of segments
+		Segments: make([]*Segment, 0, 4),
 	}
 }
 
-func (memory *Memory) LoadBytecode(bytecode *[]f.Element) error {
-	bytecodeSegment := EmptySegmentWithLength(len(*bytecode))
-	for i := range *bytecode {
-		memVal := MemoryValueFromFieldElement(&(*bytecode)[i])
-		err := bytecodeSegment.Write(uint64(i), memVal)
+func (memory *Memory) AllocateSegment(data *[]f.Element) (int, error) {
+	newSegment := EmptySegmentWithLength(len(*data))
+	for i := range *data {
+		memVal := MemoryValueFromFieldElement(&(*data)[i])
+		err := newSegment.Write(uint64(i), memVal)
 		if err != nil {
-			return fmt.Errorf("cannot load bytecode: %w", err)
+			return 0, fmt.Errorf("cannot allocate new segment: %w", err)
 		}
 	}
-	memory.Segments[programSegment] = &bytecodeSegment
-	return nil
+	memory.Segments = append(memory.Segments, &newSegment)
+	return len(memory.Segments), nil
 }
 
 // Allocates a new segment and returns its index
-func (memory *Memory) AllocateNewSegment() int {
+func (memory *Memory) AllocateEmptySegment() int {
 	memory.Segments = append(memory.Segments, EmptySegment())
 	return len(memory.Segments) - 1
 }
