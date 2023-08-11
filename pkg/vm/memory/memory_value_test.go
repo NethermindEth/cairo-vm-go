@@ -7,7 +7,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAddFelt(t *testing.T) {
+func TestFeltPlusFelt(t *testing.T) {
+	memVal := EmptyMemoryValueAsFelt()
+	lhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(3))
+	rhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(7))
+
+	expected := MemoryValueFromUint64(10)
+
+	res, err := memVal.Add(lhs, rhs)
+	assert.NoError(t, err)
+
+	assert.Equal(t, memVal, res)
+	assert.Equal(t, *expected, *res)
+}
+
+func TestMemoryAddressPlusFelt(t *testing.T) {
 	memVal := EmptyMemoryValueAsAddress()
 	lhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
@@ -21,14 +35,34 @@ func TestAddFelt(t *testing.T) {
 	})
 
 	res, err := memVal.Add(lhs, rhs)
-
 	assert.NoError(t, err)
 
 	assert.Equal(t, memVal, res)
-	assert.Equal(t, *(res.address), *(expected.address))
+	assert.Equal(t, *expected, *res)
 }
 
-func TestAddRelocatable(t *testing.T) {
+func TestFeltPlusMemoryAddress(t *testing.T) {
+	memVal := EmptyMemoryValueAsAddress()
+	lhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(2))
+	rhs := MemoryValueFromMemoryAddress(&MemoryAddress{
+		SegmentIndex: 2,
+		Offset:       10,
+	})
+
+	expected := MemoryValueFromMemoryAddress(&MemoryAddress{
+		SegmentIndex: 2,
+		Offset:       12,
+	})
+
+	res, err := memVal.Add(lhs, rhs)
+	assert.NoError(t, err)
+
+	assert.Equal(t, memVal, res)
+	assert.Equal(t, *expected, *res)
+
+}
+
+func TestMemoryAddressPlusMemoryAddress(t *testing.T) {
 	memVal := EmptyMemoryValueAsAddress()
 	lhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
@@ -44,7 +78,21 @@ func TestAddRelocatable(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestSubFelt(t *testing.T) {
+func TestFeltSubFelt(t *testing.T) {
+	memVal := EmptyMemoryValueAsFelt()
+	lhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(8))
+	rhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(7))
+
+	expected := MemoryValueFromUint64(1)
+
+	res, err := memVal.Sub(lhs, rhs)
+	assert.NoError(t, err)
+
+	assert.Equal(t, memVal, res)
+	assert.Equal(t, *expected, *res)
+}
+
+func TestMemoryAddressSubFelt(t *testing.T) {
 	memVal := EmptyMemoryValueAsAddress()
 	lhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
@@ -61,10 +109,24 @@ func TestSubFelt(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, memVal, res)
-	assert.Equal(t, *res, *expected)
+	assert.Equal(t, *expected, *res)
 }
 
-func TestSubSameSegment(t *testing.T) {
+func TestFeltSubMemoryAddress(t *testing.T) {
+	memVal := EmptyMemoryValueAsAddress()
+	lhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(15))
+	rhs := MemoryValueFromMemoryAddress(&MemoryAddress{
+		SegmentIndex: 2,
+		Offset:       10,
+	})
+
+	memVal, err := memVal.Sub(lhs, rhs)
+
+	assert.Nil(t, memVal)
+	assert.Error(t, err)
+}
+
+func TestMemoryAddressSubMemoryAddressSameSegment(t *testing.T) {
 	memVal := EmptyMemoryValueAsAddress()
 	lhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
@@ -84,10 +146,10 @@ func TestSubSameSegment(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, memVal, res)
-	assert.Equal(t, *(res.address), *(expected.address))
+	assert.Equal(t, *expected, *res)
 }
 
-func TestSubDifferentSegment(t *testing.T) {
+func TestMemoryAddressSubMemoryAddressDiffSegment(t *testing.T) {
 	memVal := EmptyMemoryValueAsAddress()
 	lhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,

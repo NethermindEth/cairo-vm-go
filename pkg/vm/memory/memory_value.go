@@ -163,30 +163,41 @@ func (mv *MemoryValue) IsFelt() bool {
 
 // Adds two memory values is the second one is a Felt
 func (memVal *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
-	if !lhs.IsAddress() {
-		return nil, fmt.Errorf("memory value addition requires an address in the lhs")
-	}
-	if !rhs.IsFelt() {
-		return nil, fmt.Errorf("memory value addition requires a felt in the rhs")
+	var err error
+	if lhs.IsAddress() {
+		if !rhs.IsFelt() {
+			return nil, fmt.Errorf("memory value addition requires a felt in the rhs")
+		}
+		memVal.address, err = memVal.address.Add(lhs.address, rhs.felt)
+	} else {
+		if rhs.IsAddress() {
+			memVal.address, err = memVal.address.Add(rhs.address, lhs.felt)
+		} else {
+			memVal.felt = memVal.felt.Add(lhs.felt, rhs.felt)
+		}
 	}
 
-	_, err := memVal.address.Add(lhs.address, rhs.felt)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error adding two memory values: %w", err)
 	}
-
 	return memVal, nil
 }
 
 // Subs two memory values if they're in the same segment or the rhs is a Felt.
 func (memVal *MemoryValue) Sub(lhs, rhs *MemoryValue) (*MemoryValue, error) {
-	if !lhs.IsAddress() {
-		return nil, fmt.Errorf("memory value substraction requires an address in the lhs")
+	var err error
+	if lhs.IsAddress() {
+		memVal.address, err = memVal.address.Sub(lhs.address, rhs.ToAny())
+	} else {
+		if rhs.IsAddress() {
+			return nil, fmt.Errorf("cannot substract a an address from a felt")
+		} else {
+			memVal.felt = memVal.felt.Sub(lhs.felt, rhs.felt)
+		}
 	}
 
-	_, err := memVal.address.Sub(lhs.address, rhs.ToAny())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error substracting two memory values: %w", err)
 	}
 
 	return memVal, nil
