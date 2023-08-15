@@ -11,129 +11,215 @@ import (
 // inside that segment
 type MemoryAddress struct {
 	SegmentIndex uint64
-	Offset       *f.Element
+	Offset       uint64
 }
 
 // Creates a new memory address
-func CreateMemoryAddress(segment uint64, offset *f.Element) *MemoryAddress {
+func CreateMemoryAddress(segment uint64, offset uint64) *MemoryAddress {
 	return &MemoryAddress{SegmentIndex: segment, Offset: offset}
 }
 
-func (address MemoryAddress) String() string {
-	return fmt.Sprintf("Memory Address: segment: %d, offset: %s", address.SegmentIndex, address.Offset.Text(10))
+// Adds a memory address and a field element
+func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) (*MemoryAddress, error) {
+	if !rhs.IsUint64() {
+		return nil, fmt.Errorf(
+			"adding to %s a field element %s greater than uint64",
+			lhs.String(),
+			rhs.String(),
+		)
+	}
+
+	address.SegmentIndex = lhs.SegmentIndex
+	address.Offset = lhs.Offset + rhs.Uint64()
+	return address, nil
 }
 
-// Wraps all posible types that can be stored in a Memory cell,
+// Subs from a memory address a felt or another memory address in the same segment
+func (address *MemoryAddress) Sub(lhs *MemoryAddress, rhs any) (*MemoryAddress, error) {
+	// First match segment index
+	address.SegmentIndex = lhs.SegmentIndex
+
+	// Then update offset accordingly
+	switch t := rhs.(type) {
+	case *f.Element:
+		feltRhs := rhs.(*f.Element)
+		if !feltRhs.IsUint64() {
+			return nil, fmt.Errorf(
+				"substracting from %s a field element %s greater than uint64",
+				lhs.String(),
+				feltRhs.String(),
+			)
+		}
+		address.Offset = lhs.Offset - feltRhs.Uint64()
+		return address, nil
+	case *MemoryAddress:
+		addressRhs := rhs.(*MemoryAddress)
+		if lhs.SegmentIndex != addressRhs.SegmentIndex {
+			return nil, fmt.Errorf(
+				"cannot substract %s from %s due to different segment location",
+				addressRhs.String(),
+				lhs.String(),
+			)
+		}
+		address.Offset = lhs.Offset - addressRhs.Offset
+		return address, nil
+	default:
+		return nil,
+			fmt.Errorf(
+				"cannot substract from %s, invalid rhs type: %v. Expected a felt or another memory address",
+				address.String(),
+				t,
+			)
+
+	}
+}
+
+func (address MemoryAddress) String() string {
+	return fmt.Sprintf(
+		"Memory Address: segment: %d, offset: %d", address.SegmentIndex, address.Offset,
+	)
+}
+
+// Stores all posible types that can be stored in a Memory cell,
 //
 //   - either a Felt value (an `f.Element`),
 //   - or a pointer to another Memory Cell (a `MemoryAddress`)
+//
+// Both members cannot be non-nil at the same time
 type MemoryValue struct {
-	// When isAddress is true, this indicates the segment of
-	// the memory address
-	segmentIndex uint64
-	// This represents the offset if it is an address or the
-	// value if it is a field element
-	value     *f.Element
-	isAddress bool
-}
-
-func EmptyMemoryValue() *MemoryValue {
-	return &MemoryValue{
-		value: new(f.Element),
-	}
-}
-
-func (mv *MemoryValue) ToMemoryAddress() (*MemoryAddress, error) {
-	if !mv.isAddress {
-		return nil, fmt.Errorf("error trying to read a memory address as field element")
-	}
-	return &MemoryAddress{
-		SegmentIndex: mv.segmentIndex,
-		Offset:       mv.value,
-	}, nil
-}
-
-func (mv *MemoryValue) ToFieldElement() (*f.Element, error) {
-	if mv.isAddress {
-		return nil, fmt.Errorf("error trying to read a field element as a memory address")
-	}
-	return mv.value, nil
+	felt    *f.Element
+	address *MemoryAddress
 }
 
 func MemoryValueFromMemoryAddress(address *MemoryAddress) *MemoryValue {
 	return &MemoryValue{
-		segmentIndex: address.SegmentIndex,
-		value:        address.Offset,
-		isAddress:    true,
+		address: address,
 	}
 }
 
 func MemoryValueFromFieldElement(felt *f.Element) *MemoryValue {
 	return &MemoryValue{
-		value:     felt,
-		isAddress: false,
+		felt: felt,
 	}
 }
 
 func MemoryValueFromUint64(v uint64) *MemoryValue {
 	newElement := f.NewElement(v)
 	return &MemoryValue{
-		value: &newElement,
+		felt: &newElement,
 	}
 }
 
-// Adds two memory value is the second one is a Felt
-func (memVal *MemoryValue) Add(lhs *MemoryValue, rhs *MemoryValue) (*MemoryValue, error) {
-	if rhs.isAddress {
-		return nil, fmt.Errorf("cannot add two memory addresses")
+func MemoryValueFromAny(anyType any) (*MemoryValue, error) {
+	switch t := anyType.(type) {
+	case *f.Element:
+		return MemoryValueFromFieldElement(anyType.(*f.Element)), nil
+	case *MemoryAddress:
+		return MemoryValueFromMemoryAddress(anyType.(*MemoryAddress)), nil
+	default:
+		return nil, fmt.Errorf("invalid type to convert a memory value: %v", t)
+	}
+}
+
+func EmptyMemoryValueAsFelt() *MemoryValue {
+	return &MemoryValue{
+		felt: new(f.Element),
+	}
+}
+func EmptyMemoryValueAsAddress() *MemoryValue {
+	return &MemoryValue{
+		address: new(MemoryAddress),
+	}
+}
+
+func (mv *MemoryValue) ToMemoryAddress() (*MemoryAddress, error) {
+	if mv.address == nil {
+		return nil, fmt.Errorf("error trying to read a memory value as an address")
+	}
+	return mv.address, nil
+}
+
+func (mv *MemoryValue) ToFieldElement() (*f.Element, error) {
+	if mv.felt == nil {
+		return nil, fmt.Errorf("error trying to read a memory value as a field element")
+	}
+	return mv.felt, nil
+}
+
+func (mv *MemoryValue) ToAny() any {
+	if mv.felt != nil {
+		return mv.felt
+	}
+	return mv.address
+}
+
+func (mv *MemoryValue) IsAddress() bool {
+	return mv.address != nil
+}
+
+func (mv *MemoryValue) IsFelt() bool {
+	return mv.felt != nil
+}
+
+// Adds two memory values is the second one is a Felt
+func (memVal *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
+	var err error
+	if lhs.IsAddress() {
+		if !rhs.IsFelt() {
+			return nil, fmt.Errorf("memory value addition requires a felt in the rhs")
+		}
+		memVal.address, err = memVal.address.Add(lhs.address, rhs.felt)
+	} else {
+		if rhs.IsAddress() {
+			memVal.address, err = memVal.address.Add(rhs.address, lhs.felt)
+		} else {
+			memVal.felt = memVal.felt.Add(lhs.felt, rhs.felt)
+		}
 	}
 
-	// todo(rodro): is lhs always a memory address?
-	if lhs.isAddress {
-		memVal.isAddress = true
-		memVal.segmentIndex = lhs.segmentIndex
+	if err != nil {
+		return nil, fmt.Errorf("error adding two memory values: %w", err)
 	}
-	memVal.value.Add(lhs.value, rhs.value)
-
 	return memVal, nil
 }
 
-// Subs two relocatables if they're in the same segment or the rhs is a Felt.
-func (memVal *MemoryValue) Sub(lhs *MemoryValue, rhs *MemoryValue) (*MemoryValue, error) {
-	if !rhs.isAddress {
-		// todo(rodro): is lhs always a memory address?
-		if lhs.isAddress {
-			memVal.isAddress = true
-			memVal.segmentIndex = lhs.segmentIndex
+// Subs two memory values if they're in the same segment or the rhs is a Felt.
+func (memVal *MemoryValue) Sub(lhs, rhs *MemoryValue) (*MemoryValue, error) {
+	var err error
+	if lhs.IsAddress() {
+		memVal.address, err = memVal.address.Sub(lhs.address, rhs.ToAny())
+	} else {
+		if rhs.IsAddress() {
+			return nil, fmt.Errorf("cannot substract a an address from a felt")
+		} else {
+			memVal.felt = memVal.felt.Sub(lhs.felt, rhs.felt)
 		}
-		memVal.value.Sub(lhs.value, rhs.value)
-		return memVal, nil
 	}
 
-	// todo(rodro): can lhs not be a memory address?
-	if !lhs.isAddress {
-		return nil, fmt.Errorf("sub not implemented for lhs as non address")
+	if err != nil {
+		return nil, fmt.Errorf("error substracting two memory values: %w", err)
 	}
-
-	if lhs.segmentIndex != rhs.segmentIndex {
-		return nil, fmt.Errorf("cannot subtract relocatables from different segments: %d != %d", lhs.segmentIndex, rhs.segmentIndex)
-	}
-
-	memVal.isAddress = true
-	memVal.segmentIndex = lhs.segmentIndex
-	memVal.value.Sub(lhs.value, rhs.value)
 
 	return memVal, nil
 }
 
 func (memVal MemoryValue) String() string {
-	if memVal.isAddress {
-		return MemoryAddress{
-			memVal.segmentIndex,
-			memVal.value,
-		}.String()
+	if memVal.IsAddress() {
+		return memVal.address.String()
 	}
-	return memVal.value.String()
+	return memVal.felt.String()
+}
+
+// Retuns a MemoryValue holding a felt as uint if it fits
+func (memVal *MemoryValue) Uint64() (uint64, error) {
+	if memVal.IsAddress() {
+		return 0, fmt.Errorf("cannot convert a memory address '%s' into uint64", *memVal)
+	}
+	if !memVal.felt.IsUint64() {
+		return 0, fmt.Errorf("cannot convert a field element '%s' into uint64", *memVal)
+	}
+
+	return memVal.felt.Uint64(), nil
 }
 
 // Note: Commenting this function since relocation is possibly going to look
@@ -148,12 +234,3 @@ func (memVal MemoryValue) String() string {
 //
 //	return r, err
 //}
-
-// Turns a relocatable of the form 0:offset into offset.Uint64()
-// otherwise fails.
-func (memVal *MemoryValue) Uint64() (uint64, error) {
-	if memVal.isAddress {
-		return 0, fmt.Errorf("cannot convert a memory address '%s' into uint64", *memVal)
-	}
-	return memVal.value.Uint64(), nil
-}

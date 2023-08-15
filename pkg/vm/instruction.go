@@ -117,7 +117,7 @@ func DecodeInstruction(rawInstruction *f.Element) (*Instruction, error) {
 	}
 	off0Enc, off1Enc, off2Enc, flags := decodeInstructionValues(rawInstruction.Uint64())
 
-	// Create empty struction
+	// Create empty instruction
 	instruction := new(Instruction)
 
 	// Add unsigned offsets as signed ones

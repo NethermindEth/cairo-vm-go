@@ -7,10 +7,14 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+const (
+	programBytecode = iota
+)
+
 type Context struct {
-	Fp uint
-	Ap uint
-	Pc uint
+	Fp uint64
+	Ap uint64
+	Pc uint64
 }
 
 type VirtualMachineConfig struct {
@@ -27,9 +31,14 @@ type VirtualMachine struct {
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
 func NewVirtualMachine(programBytecode *[]f.Element, config VirtualMachineConfig) (*VirtualMachine, error) {
-	manager, err := mem.CreateMemoryManager(programBytecode)
+	manager, err := mem.CreateMemoryManager()
 	if err != nil {
 		return nil, fmt.Errorf("error creating new virtual machine: %w", err)
+	}
+
+	_, err = manager.Memory.AllocateSegment(programBytecode)
+	if err != nil {
+		return nil, fmt.Errorf("error loading bytecode: %w", err)
 	}
 
 	return &VirtualMachine{
@@ -46,11 +55,17 @@ func NewVirtualMachine(programBytecode *[]f.Element, config VirtualMachineConfig
 func (vm *VirtualMachine) RunStep() error {
 	return nil
 }
-func (vm *VirtualMachine) RunStepAt(pc uint) error {
-	bytecodeInstruction, err := vm.MemoryManager.Memory.GetInstructionBytecode(pc)
+func (vm *VirtualMachine) RunStepAt(pc uint64) error {
+	memoryValue, err := vm.MemoryManager.Memory.Read(programBytecode, pc)
 	if err != nil {
 		return fmt.Errorf("cannot load step at %d: %w", pc, err)
 	}
+
+	bytecodeInstruction, err := memoryValue.ToFieldElement()
+	if err != nil {
+		return fmt.Errorf("cannot unwrap step at %d: %w", pc, err)
+	}
+
 	instruction, err := DecodeInstruction(bytecodeInstruction)
 	if err != nil {
 		return fmt.Errorf("cannot decode step at %d: %w", pc, err)
@@ -67,11 +82,10 @@ func (vm *VirtualMachine) RunStepAt(pc uint) error {
 func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 	switch instruction.Opcode {
 	case AssertEq:
-		vm.assertEqual(instruction)
+		return vm.assertEqual(instruction)
 	default:
 		return fmt.Errorf("unimplemented opcode: %d", instruction.Opcode)
 	}
-	return nil
 }
 
 func (vm *VirtualMachine) RunHint() error {
@@ -79,5 +93,6 @@ func (vm *VirtualMachine) RunHint() error {
 }
 
 func (vm *VirtualMachine) assertEqual(instruction *Instruction) error {
-        instruction.
+	// instruction.
+	return nil
 }
