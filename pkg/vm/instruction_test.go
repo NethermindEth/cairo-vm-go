@@ -102,10 +102,9 @@ func TestCall(t *testing.T) {
 
 func TestRet(t *testing.T) {
 	expected := Instruction{
-		OffDest: -2,
-		OffOp0:  -1,
-		OffOp1:  -1,
-		// Imm:         nil,
+		OffDest:     -2,
+		OffOp0:      -1,
+		OffOp1:      -1,
 		DstRegister: Fp,
 		Op0Register: Fp,
 		Op1Source:   FpPlusOffOp1,
