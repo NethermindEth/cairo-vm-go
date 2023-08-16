@@ -32,16 +32,22 @@ type VirtualMachine struct {
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
-func NewVirtualMachine(programBytecode *[]f.Element, config VirtualMachineConfig) (*VirtualMachine, error) {
+func NewVirtualMachine(programBytecode []*f.Element, config VirtualMachineConfig) (*VirtualMachine, error) {
 	manager, err := mem.CreateMemoryManager()
 	if err != nil {
 		return nil, fmt.Errorf("error creating new virtual machine: %w", err)
 	}
 
+	// 0 (programSegment) <- segment where the bytecode is stored
 	_, err = manager.Memory.AllocateSegment(programBytecode)
 	if err != nil {
 		return nil, fmt.Errorf("error loading bytecode: %w", err)
 	}
+
+	// 1 (executionSegment) <- segment where the stack trace will be stored
+	manager.Memory.AllocateEmptySegment()
+	// 2 (dataSegment) <- segment where ap and fp move around
+	manager.Memory.AllocateEmptySegment()
 
 	return &VirtualMachine{
 		Context{Fp: 0, Ap: 0, Pc: 0},
@@ -98,7 +104,14 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 	}
 	dstAddress := vm.computeDstAddress(instruction)
 
-	return vm.executeOpcode(instruction, res, &dstAddress)
+	next_pc, err := vm.updatePc(instruction, res, dstAddress)
+	if err != nil {
+		return err
+	}
+
+	vm.Context.Pc = next_pc
+
+	return nil
 }
 
 func (vm *VirtualMachine) RunHint() error {
@@ -112,6 +125,7 @@ func (vm *VirtualMachine) computeOp0(instruction *Instruction) (*mem.MemoryValue
 	} else {
 		op0Register = vm.Context.Fp
 	}
+	// todo: OffOp0 can be negative, a better system is required, perhaps a substraction
 	op0Address := mem.CreateMemoryAddress(dataSegment, op0Register+uint64(instruction.OffOp0))
 
 	return vm.MemoryManager.Memory.ReadFromAddress(op0Address)
@@ -121,7 +135,7 @@ func (vm *VirtualMachine) computeOp1(instruction *Instruction, op0 *mem.MemoryVa
 	var op1Address *mem.MemoryAddress
 	switch instruction.Op1Source {
 	case Op0:
-		// in this case Op0 is being used as an address, and must be of that type
+		// in this case Op0 is being used as an address, and must be of unwrapped as is
 		op0Address, err := op0.ToMemoryAddress()
 		if err != nil {
 			return nil, fmt.Errorf("expected op0 to be an address: %w", err)
@@ -143,6 +157,13 @@ func (vm *VirtualMachine) computeOp1(instruction *Instruction, op0 *mem.MemoryVa
 func (vm *VirtualMachine) computeRes(
 	instruction *Instruction, op0 *mem.MemoryValue, op1 *mem.MemoryValue,
 ) (*mem.MemoryValue, error) {
+	if instruction.PcUpdate == Jnz {
+		if instruction.Res == Op1 && instruction.Opcode == Nop && instruction.ApUpdate == AddImm {
+			return op1, nil
+		}
+		return nil, fmt.Errorf("invalid flag combination calculating res")
+	}
+
 	switch instruction.Res {
 	case Op1:
 		return op1, nil
@@ -151,10 +172,11 @@ func (vm *VirtualMachine) computeRes(
 	case MulOperands:
 		return mem.EmptyMemoryValueAs(op0.IsAddress()).Mul(op0, op1)
 	}
-	return nil, fmt.Errorf("unknown res")
+
+	return nil, fmt.Errorf("unknown res flag value: %d", instruction.Res)
 }
 
-func (vm *VirtualMachine) computeDstAddress(instruction *Instruction) mem.MemoryAddress {
+func (vm *VirtualMachine) computeDstAddress(instruction *Instruction) *mem.MemoryAddress {
 	var dstRegister uint64
 	if instruction.DstRegister == Ap {
 		dstRegister = vm.Context.Ap
@@ -162,27 +184,51 @@ func (vm *VirtualMachine) computeDstAddress(instruction *Instruction) mem.Memory
 		dstRegister = vm.Context.Fp
 	}
 
-	// todo(rodro): this naive sum should be change, what if offset is neg
-	return *mem.CreateMemoryAddress(dataSegment, dstRegister+uint64(instruction.OffDest))
+	// todo(rodro): this naive sum should be changed because the offset can be negative as well
+	// todo(rodro): there is a need to check for underflow as well
+	return mem.CreateMemoryAddress(dataSegment, dstRegister+uint64(instruction.OffDest))
 }
 
-func (vm *VirtualMachine) executeOpcode(
-	instruction *Instruction, res *mem.MemoryValue, dstAddress *mem.MemoryAddress,
-) error {
-	if instruction.Opcode == Call {
-		// assert op0 == pc + instruction size
-		// asert dst == fp
-		// next_fp = ap + 2
-		// update ap
-	} else {
-		switch instruction.Opcode {
-		case Nop:
-		case Ret:
-			// not implemented
-		case AssertEq:
-			return vm.MemoryManager.Memory.WriteToAddress(dstAddress, res)
+func (vm *VirtualMachine) updatePc(
+	instruction *Instruction,
+	res *mem.MemoryValue,
+	destAddr *mem.MemoryAddress,
+) (uint64, error) {
+	switch instruction.PcUpdate {
+	case NextInstr:
+		return vm.Context.Pc + uint64(instruction.Size()), nil
+	case Jump:
+		return res.Uint64()
+	case JumpRel:
+		relAddr, err := res.Uint64()
+		if err != nil {
+			return 0, err
 		}
-	}
-	return nil
+		return vm.Context.Pc + relAddr, nil
+	case Jnz:
+		destValue, err := vm.MemoryManager.Memory.ReadFromAddress(destAddr)
+		if err != nil {
+			return 0, err
+		}
+		dest, err := destValue.Uint64()
+		if err != nil {
+			return 0, err
+		}
 
+		if dest == 0 {
+			return vm.Context.Pc + uint64(instruction.Size()), nil
+		}
+
+		relAddr, err := res.Uint64()
+		if err != nil {
+			return 0, err
+		}
+		return vm.Context.Pc + relAddr, nil
+
+	}
+	return 0, fmt.Errorf("unkwon pc update value: %d", instruction.PcUpdate)
+}
+
+func (vm *VirtualMachine) updateAp(instruction *Instruction) uint64 {
+	return 0
 }
