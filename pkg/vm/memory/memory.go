@@ -37,8 +37,10 @@ func EmptySegmentWithLength(length int) Segment {
 // Writes a new memory value to a specified offset, errors in case of overwriting an existing cell
 func (segment *Segment) Write(offset uint64, value *MemoryValue) error {
 	cell := segment.Data[offset]
-	if cell.Accessed {
-		return fmt.Errorf("rewriting cell at %d, old value: %d new value: %d", offset, &cell.Value, &value)
+	if cell.Accessed && !cell.Value.Equal(value) {
+		return fmt.Errorf(
+			"rewriting cell at %d, old value: %d new value: %d", offset, &cell.Value, &value,
+		)
 	}
 	cell.Accessed = true
 	cell.Value = value
@@ -88,24 +90,30 @@ func (memory *Memory) AllocateEmptySegment() int {
 
 // Writes to a memory address a new memory value. Errors if writing to an unallocated
 // space or if rewriting a specific cell
-func (memory *Memory) Write(address *MemoryAddress, value *MemoryValue) error {
-	if address.SegmentIndex > uint64(len(memory.Segments)) {
-		return fmt.Errorf("writing to unallocated segment %d", address.SegmentIndex)
+func (memory *Memory) Write(segmentIndex uint64, offset uint64, value *MemoryValue) error {
+	if segmentIndex > uint64(len(memory.Segments)) {
+		return fmt.Errorf("writing to unallocated segment %d", segmentIndex)
 	}
-
-	return memory.Segments[address.SegmentIndex].Write(address.Offset, value)
+	return memory.Segments[segmentIndex].Write(offset, value)
 }
 
-// Reads a memory value from a memory address. Errors if reading from an unallocated
-// space. If reading a cell which hasn't been accesed before, it is initalized with
-// its default zero value
-func (memory *Memory) ReadAddress(address *MemoryAddress) (*MemoryValue, error) {
-	return memory.Read(address.Offset, address.SegmentIndex)
+func (memory *Memory) WriteToAddress(address *MemoryAddress, value *MemoryValue) error {
+	return memory.Write(address.SegmentIndex, address.Offset, value)
 }
 
+// Reads a memory value given the segment index and offset. Errors if reading from
+// an unallocated space. If reading a cell which hasn't been accesed before, it is
+// initalized with its default zero value
 func (memory *Memory) Read(segmentIndex uint64, offset uint64) (*MemoryValue, error) {
 	if segmentIndex > uint64(len(memory.Segments)) {
 		return nil, fmt.Errorf("reading from unallocated segment %d", segmentIndex)
 	}
 	return memory.Segments[segmentIndex].Read(offset), nil
+}
+
+// Reads a memory value from a memory address. Errors if reading from an unallocated
+// space. If reading a cell which hasn't been accesed before, it is initalized with
+// its default zero value
+func (memory *Memory) ReadFromAddress(address *MemoryAddress) (*MemoryValue, error) {
+	return memory.Read(address.Offset, address.SegmentIndex)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"golang.org/x/exp/constraints"
 )
 
 // Represents a Memory Address of the Cairo VM. Because memory is split between different segments
@@ -17,6 +18,10 @@ type MemoryAddress struct {
 // Creates a new memory address
 func CreateMemoryAddress(segment uint64, offset uint64) *MemoryAddress {
 	return &MemoryAddress{SegmentIndex: segment, Offset: offset}
+}
+
+func (address *MemoryAddress) Equal(other *MemoryAddress) bool {
+	return address.SegmentIndex == other.SegmentIndex && address.Offset == other.Offset
 }
 
 // Adds a memory address and a field element
@@ -103,8 +108,8 @@ func MemoryValueFromFieldElement(felt *f.Element) *MemoryValue {
 	}
 }
 
-func MemoryValueFromUint64(v uint64) *MemoryValue {
-	newElement := f.NewElement(v)
+func MemoryValueFromUint[T constraints.Integer](v T) *MemoryValue {
+	newElement := f.NewElement(uint64(v))
 	return &MemoryValue{
 		felt: &newElement,
 	}
@@ -130,6 +135,12 @@ func EmptyMemoryValueAsAddress() *MemoryValue {
 	return &MemoryValue{
 		address: new(MemoryAddress),
 	}
+}
+func EmptyMemoryValueAs(address bool) *MemoryValue {
+	if address {
+		return EmptyMemoryValueAsAddress()
+	}
+	return EmptyMemoryValueAsFelt()
 }
 
 func (mv *MemoryValue) ToMemoryAddress() (*MemoryAddress, error) {
@@ -159,6 +170,16 @@ func (mv *MemoryValue) IsAddress() bool {
 
 func (mv *MemoryValue) IsFelt() bool {
 	return mv.felt != nil
+}
+
+func (memVal *MemoryValue) Equal(other *MemoryValue) bool {
+	if memVal.IsAddress() && other.IsAddress() {
+		return memVal.address.Equal(other.address)
+	}
+	if memVal.IsFelt() && other.IsFelt() {
+		return memVal.felt.Equal(other.felt)
+	}
+	return false
 }
 
 // Adds two memory values is the second one is a Felt
@@ -200,6 +221,14 @@ func (memVal *MemoryValue) Sub(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 		return nil, fmt.Errorf("error substracting two memory values: %w", err)
 	}
 
+	return memVal, nil
+}
+
+func (memVal *MemoryValue) Mul(lhs, rhs *MemoryValue) (*MemoryValue, error) {
+	if lhs.IsAddress() || rhs.IsAddress() {
+		return nil, fmt.Errorf("cannot multiply memory addresses")
+	}
+	memVal.felt.Mul(lhs.felt, rhs.felt)
 	return memVal, nil
 }
 
