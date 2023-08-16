@@ -16,10 +16,10 @@ const (
 type Op1Src uint8
 
 const (
-	Op0 = iota
-	Imm
+	Imm Op1Src = iota
 	FpPlusOffOp1
 	ApPlusOffOp1
+	Op0
 )
 
 type ResLogic uint8
@@ -162,7 +162,7 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 	instruction.DstRegister = Register((flags >> dstRegBit) & 1)
 	instruction.Op0Register = Register((flags >> op0RegBit) & 1)
 
-	op1Addr, err := oneHot((flags>>op1ImmBit)&1, (flags>>op1ApBit)&1, (flags>>op1FpBit)&1)
+	op1Addr, err := oneHot((flags>>op1ImmBit)&1, (flags>>op1FpBit)&1, (flags>>op1ApBit)&1)
 	if err != nil {
 		return fmt.Errorf("error decoding op1_addr of instruction: %w", err)
 	}

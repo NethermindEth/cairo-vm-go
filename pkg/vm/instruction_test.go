@@ -8,11 +8,10 @@ import (
 )
 
 func TestAssertEq(t *testing.T) {
-	instruction := Instruction{
-		OffDest: 0,
-		OffOp0:  -1,
-		OffOp1:  1,
-		// Imm:         (new(f.Element).SetUint64(1)),
+	expected := Instruction{
+		OffDest:     0,
+		OffOp0:      -1,
+		OffOp1:      1,
 		DstRegister: Ap,
 		Op0Register: Fp,
 		Op1Source:   Imm,
@@ -25,19 +24,17 @@ func TestAssertEq(t *testing.T) {
 
 	decoded, err := DecodeInstruction(
 		(new(f.Element).SetBytes([]byte{0x48, 0x06, 0x80, 0x01, 0x7F, 0xFF, 0x80, 00})),
-		// (new(f.Element).SetUint64(1)),
 	)
 
 	assert.NoError(t, err)
-	assert.Equal(t, *decoded, instruction)
+	assert.Equal(t, expected, *decoded)
 }
 
 func TestJmp(t *testing.T) {
-	instruction := Instruction{
-		OffDest: -1,
-		OffOp0:  2,
-		OffOp1:  0,
-		// Imm:         nil,
+	expected := Instruction{
+		OffDest:     -1,
+		OffOp0:      2,
+		OffOp1:      0,
 		DstRegister: Fp,
 		Op0Register: Ap,
 		Op1Source:   FpPlusOffOp1,
@@ -50,20 +47,18 @@ func TestJmp(t *testing.T) {
 
 	decoded, err := DecodeInstruction(
 		(new(f.Element).SetBytes([]byte{0x01, 0x29, 0x80, 0x00, 0x80, 0x02, 0x7F, 0xFF})),
-		// nil,
 	)
 
 	assert.NoError(t, err)
-	assert.Equal(t, *decoded, instruction)
+	assert.Equal(t, expected, *decoded)
 
 }
 
 func TestJnz(t *testing.T) {
-	instruction := Instruction{
-		OffDest: 3,
-		OffOp0:  -1,
-		OffOp1:  -16,
-		// Imm:         nil,
+	expected := Instruction{
+		OffDest:     3,
+		OffOp0:      -1,
+		OffOp1:      -16,
 		DstRegister: Ap,
 		Op0Register: Fp,
 		Op1Source:   FpPlusOffOp1,
@@ -76,19 +71,17 @@ func TestJnz(t *testing.T) {
 
 	decoded, err := DecodeInstruction(
 		(new(f.Element).SetBytes([]byte{0x02, 0x0A, 0x7F, 0xF0, 0x7F, 0xFF, 0x80, 0x03})),
-		// nil,
 	)
 
 	assert.NoError(t, err)
-	assert.Equal(t, *decoded, instruction)
+	assert.Equal(t, expected, *decoded)
 }
 
 func TestCall(t *testing.T) {
-	instruction := Instruction{
-		OffDest: 0,
-		OffOp0:  1,
-		OffOp1:  1,
-		// Imm:         (new(f.Element).SetUint64(1234)),
+	expected := Instruction{
+		OffDest:     0,
+		OffOp0:      1,
+		OffOp1:      1,
 		DstRegister: Ap,
 		Op0Register: Ap,
 		Op1Source:   Imm,
@@ -101,15 +94,14 @@ func TestCall(t *testing.T) {
 
 	decoded, err := DecodeInstruction(
 		(new(f.Element).SetBytes([]byte{0x11, 0x04, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})),
-		// (new(f.Element).SetUint64(1234)),
 	)
 
 	assert.NoError(t, err)
-	assert.Equal(t, *decoded, instruction)
+	assert.Equal(t, expected, *decoded)
 }
 
 func TestRet(t *testing.T) {
-	instruction := Instruction{
+	expected := Instruction{
 		OffDest: -2,
 		OffOp0:  -1,
 		OffOp1:  -1,
@@ -130,15 +122,14 @@ func TestRet(t *testing.T) {
 	)
 
 	assert.NoError(t, err)
-	assert.Equal(t, *decoded, instruction)
+	assert.Equal(t, expected, *decoded)
 }
 
 func TestAddAp(t *testing.T) {
-	instruction := Instruction{
-		OffDest: -1,
-		OffOp0:  -1,
-		OffOp1:  1,
-		// Imm:         (new(f.Element).SetUint64(123)),
+	expected := Instruction{
+		OffDest:     -1,
+		OffOp0:      -1,
+		OffOp1:      1,
 		DstRegister: Fp,
 		Op0Register: Fp,
 		Op1Source:   Imm,
@@ -151,9 +142,8 @@ func TestAddAp(t *testing.T) {
 
 	decoded, err := DecodeInstruction(
 		(new(f.Element).SetBytes([]byte{0x04, 0x07, 0x80, 0x01, 0x7F, 0xFF, 0x7F, 0xFF})),
-		// (new(f.Element).SetUint64(123)),
 	)
 
 	assert.NoError(t, err)
-	assert.Equal(t, *decoded, instruction)
+	assert.Equal(t, expected, *decoded)
 }
