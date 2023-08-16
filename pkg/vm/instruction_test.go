@@ -9,13 +9,13 @@ import (
 
 func TestAssertEq(t *testing.T) {
 	instruction := Instruction{
-		Off0: 0,
-		Off1: -1,
-		Off2: 1,
+		OffDest: 0,
+		OffOp0:  -1,
+		OffOp1:  1,
 		// Imm:         (new(f.Element).SetUint64(1)),
 		DstRegister: Ap,
 		Op0Register: Fp,
-		Op1Addr:     Imm,
+		Op1Source:   Imm,
 		Res:         Op1,
 		PcUpdate:    NextInstr,
 		ApUpdate:    Add1,
@@ -34,13 +34,13 @@ func TestAssertEq(t *testing.T) {
 
 func TestJmp(t *testing.T) {
 	instruction := Instruction{
-		Off0: -1,
-		Off1: 2,
-		Off2: 0,
+		OffDest: -1,
+		OffOp0:  2,
+		OffOp1:  0,
 		// Imm:         nil,
 		DstRegister: Fp,
 		Op0Register: Ap,
-		Op1Addr:     FpPlustOff2,
+		Op1Source:   FpPlusOffOp1,
 		Res:         AddOperands,
 		PcUpdate:    JumpRel,
 		ApUpdate:    SameAp,
@@ -60,13 +60,13 @@ func TestJmp(t *testing.T) {
 
 func TestJnz(t *testing.T) {
 	instruction := Instruction{
-		Off0: 3,
-		Off1: -1,
-		Off2: -16,
+		OffDest: 3,
+		OffOp0:  -1,
+		OffOp1:  -16,
 		// Imm:         nil,
 		DstRegister: Ap,
 		Op0Register: Fp,
-		Op1Addr:     FpPlustOff2,
+		Op1Source:   FpPlusOffOp1,
 		Res:         Unconstrained,
 		PcUpdate:    Jnz,
 		ApUpdate:    SameAp,
@@ -85,13 +85,13 @@ func TestJnz(t *testing.T) {
 
 func TestCall(t *testing.T) {
 	instruction := Instruction{
-		Off0: 0,
-		Off1: 1,
-		Off2: 1,
+		OffDest: 0,
+		OffOp0:  1,
+		OffOp1:  1,
 		// Imm:         (new(f.Element).SetUint64(1234)),
 		DstRegister: Ap,
 		Op0Register: Ap,
-		Op1Addr:     Imm,
+		Op1Source:   Imm,
 		Res:         Op1,
 		PcUpdate:    JumpRel,
 		ApUpdate:    Add2,
@@ -110,13 +110,13 @@ func TestCall(t *testing.T) {
 
 func TestRet(t *testing.T) {
 	instruction := Instruction{
-		Off0: -2,
-		Off1: -1,
-		Off2: -1,
+		OffDest: -2,
+		OffOp0:  -1,
+		OffOp1:  -1,
 		// Imm:         nil,
 		DstRegister: Fp,
 		Op0Register: Fp,
-		Op1Addr:     FpPlustOff2,
+		Op1Source:   FpPlusOffOp1,
 		Res:         Op1,
 		PcUpdate:    Jump,
 		ApUpdate:    SameAp,
@@ -135,13 +135,13 @@ func TestRet(t *testing.T) {
 
 func TestAddAp(t *testing.T) {
 	instruction := Instruction{
-		Off0: -1,
-		Off1: -1,
-		Off2: 1,
+		OffDest: -1,
+		OffOp0:  -1,
+		OffOp1:  1,
 		// Imm:         (new(f.Element).SetUint64(123)),
 		DstRegister: Fp,
 		Op0Register: Fp,
-		Op1Addr:     Imm,
+		Op1Source:   Imm,
 		Res:         Op1,
 		PcUpdate:    NextInstr,
 		ApUpdate:    AddImm,
