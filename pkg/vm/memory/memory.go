@@ -12,6 +12,22 @@ type Cell struct {
 	Accessed bool
 }
 
+func (cell *Cell) Write(value *MemoryValue) error {
+	if cell.Accessed && !cell.Value.Equal(value) {
+		return fmt.Errorf(
+			"rewriting cell old value: %d new value: %d", &cell.Value, &value,
+		)
+	}
+	cell.Accessed = true
+	cell.Value = value
+	return nil
+}
+
+func (cell *Cell) Read() *MemoryValue {
+	cell.Accessed = true
+	return cell.Value
+}
+
 type Segment struct {
 	Data []Cell
 }
@@ -37,21 +53,21 @@ func EmptySegmentWithLength(length int) Segment {
 // Writes a new memory value to a specified offset, errors in case of overwriting an existing cell
 func (segment *Segment) Write(offset uint64, value *MemoryValue) error {
 	cell := segment.Data[offset]
-	if cell.Accessed && !cell.Value.Equal(value) {
-		return fmt.Errorf(
-			"rewriting cell at %d, old value: %d new value: %d", offset, &cell.Value, &value,
-		)
+	err := cell.Write(value)
+	if err != nil {
+		return fmt.Errorf("error at index %d: %w", offset, err)
 	}
-	cell.Accessed = true
-	cell.Value = value
 	return nil
 }
 
 // Reads a memory value from a specified offset at the segment
 func (segment *Segment) Read(offset uint64) *MemoryValue {
 	cell := segment.Data[offset]
-	cell.Accessed = true
-	return cell.Value
+	return cell.Read()
+}
+
+func (Segment *Segment) Peek(offset uint64) *Cell {
+	return &Segment.Data[offset]
 }
 
 // todo(rodro): Check out temprary segments
@@ -116,4 +132,17 @@ func (memory *Memory) Read(segmentIndex uint64, offset uint64) (*MemoryValue, er
 // its default zero value
 func (memory *Memory) ReadFromAddress(address *MemoryAddress) (*MemoryValue, error) {
 	return memory.Read(address.Offset, address.SegmentIndex)
+}
+
+// Given a segment index and offset returns a pointer to the Memory Cell
+func (memory *Memory) Peek(segmentIndex uint64, offset uint64) (*Cell, error) {
+	if segmentIndex > uint64(len(memory.Segments)) {
+		return nil, fmt.Errorf("peeking from unallocated segment %d", segmentIndex)
+	}
+	return memory.Segments[segmentIndex].Peek(offset), nil
+}
+
+// Given a Memory Address returns a pointer to the Memory Cell
+func (memory *Memory) PeekFromAddress(address *MemoryAddress) (*Cell, error) {
+	return memory.Peek(address.Offset, address.SegmentIndex)
 }
