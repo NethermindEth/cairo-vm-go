@@ -49,14 +49,6 @@ const (
 	Add2
 )
 
-type FpUpdate uint8
-
-const (
-	ApPlus2 FpUpdate = iota
-	Dst
-	SameFp
-)
-
 type Opcode uint8
 
 const (
@@ -81,7 +73,6 @@ type Instruction struct {
 	// How to update registries after instruction execution
 	PcUpdate PcUpdate
 	ApUpdate ApUpdate
-	FpUpdate FpUpdate
 
 	// Defines which instruction needs to be executed
 	Opcode Opcode
@@ -220,15 +211,6 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 			return fmt.Errorf("CALL must have ap_update = ADD2")
 		}
 		instruction.ApUpdate = Add2
-	}
-
-	switch instruction.Opcode {
-	case Call:
-		instruction.FpUpdate = ApPlus2
-	case Ret:
-		instruction.FpUpdate = Dst
-	default:
-		instruction.FpUpdate = SameFp
 	}
 
 	return nil

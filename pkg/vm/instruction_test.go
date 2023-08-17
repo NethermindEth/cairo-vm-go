@@ -18,7 +18,6 @@ func TestAssertEq(t *testing.T) {
 		Res:         Op1,
 		PcUpdate:    NextInstr,
 		ApUpdate:    Add1,
-		FpUpdate:    SameFp,
 		Opcode:      AssertEq,
 	}
 
@@ -41,7 +40,6 @@ func TestJmp(t *testing.T) {
 		Res:         AddOperands,
 		PcUpdate:    JumpRel,
 		ApUpdate:    SameAp,
-		FpUpdate:    SameFp,
 		Opcode:      Nop,
 	}
 

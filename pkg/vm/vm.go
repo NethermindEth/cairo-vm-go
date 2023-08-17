@@ -307,8 +307,6 @@ func (vm *VirtualMachine) updateAp(instruction *Instruction, res *mem.MemoryValu
 
 func (vm *VirtualMachine) updateFp(instruction *Instruction, res *mem.MemoryValue) (uint64, error) {
 	switch instruction.Opcode {
-	case Nop:
-		return vm.Context.Fp, nil
 	case Call:
 		return vm.Context.Ap + 2, nil
 	case Ret:
@@ -317,10 +315,7 @@ func (vm *VirtualMachine) updateFp(instruction *Instruction, res *mem.MemoryValu
 			return 0, err
 		}
 		return vm.Context.Fp + res64, nil
-	case AssertEq:
+	default:
 		return vm.Context.Fp, nil
 	}
-
-	// theoritecally this code should never get executed
-	return 0, fmt.Errorf("unknown opcode: %d", instruction.Opcode)
 }
