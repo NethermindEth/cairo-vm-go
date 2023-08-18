@@ -1,9 +1,11 @@
 package vm
 
 import (
+	"testing"
+
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestVMCreation(t *testing.T) {
@@ -14,6 +16,7 @@ func TestVMCreation(t *testing.T) {
 		newElementPtr(5),
 		newElementPtr(7),
 	}
+
 	vm, err := NewVirtualMachine(dummyBytecode[:], VirtualMachineConfig{false, false})
 	assert.Nil(t, err)
 	assert.NotNil(t, vm)
@@ -21,18 +24,253 @@ func TestVMCreation(t *testing.T) {
 	assert.Equal(t, 3, len(vm.MemoryManager.Memory.Segments))
 	assert.Equal(t, bytecodeSize, len(vm.MemoryManager.Memory.Segments[programSegment].Data))
 	assert.Equal(t, 0, len(vm.MemoryManager.Memory.Segments[executionSegment].Data))
-	assert.Equal(t, 0, len(vm.MemoryManager.Memory.Segments[dataSegment].Data))
+	assert.Equal(t, 1, len(vm.MemoryManager.Memory.Segments[dataSegment].Data))
 }
 
-// todo(rodro): test all different ways of updating the ap, fp, pc
-// todo(rodro): test all possible ways of that you can store values
+// todo(rodro): test all possible ways of:
+// - cellDst: with ap and fp (using positive and negative offsets)
+// - cellOp0: with ap and fp (using positive and negative offsets)
+// - cellOp1: all four different outputs (using positive and negative offsets accordingly)
+// - calculate res: verify valid mulitplication and addition. Also verify nil output when correct
+// - update PC: verify all four cases. Besides, when testing relative jump (with or without conditions) that a negative relative address
+// - update AP: verify all posible cases, and when Res is a negative value
+// - update FP: verify all posible cases, and when Res is a negative value
 
 func TestGetCellApDst(t *testing.T) {
+	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
+	assert.Nil(t, err)
+	assert.NotNil(t, vm)
+
+	// Prepare vm with dummy values
+	const offDest = 15
+	const ap = 30
+	vm.Context.Ap = ap
+	increaseDataSegment(vm, ap+offDest+1)
+	writeToDataSegment(vm, ap+offDest, mem.MemoryValueFromUint(200))
+
+	instruction := Instruction{
+		OffDest:     offDest,
+		DstRegister: Ap,
+	}
+
+	cell, err := vm.getCellDst(&instruction)
+	assert.Nil(t, err)
+	assert.NotNil(t, cell)
+
+	assert.Equal(t, true, cell.Accessed)
+	assert.Equal(t, mem.MemoryValueFromUint(200), cell.Read())
 
 }
 
 func TestGetCellFpDst(t *testing.T) {
+	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
+	assert.Nil(t, err)
+	assert.NotNil(t, vm)
 
+	// Prepare vm with dummy values
+	const offDest = 5
+	const ap = 30
+	const fp = 20
+	vm.Context.Ap = ap
+	vm.Context.Fp = fp
+	increaseDataSegment(vm, ap+1)
+	writeToDataSegment(vm, fp+offDest, mem.MemoryValueFromUint(123))
+
+	instruction := Instruction{
+		OffDest:     offDest,
+		DstRegister: Fp,
+	}
+
+	cell, err := vm.getCellDst(&instruction)
+	assert.Nil(t, err)
+	assert.NotNil(t, cell)
+
+	assert.Equal(t, true, cell.Accessed)
+	assert.Equal(t, mem.MemoryValueFromUint(123), cell.Read())
+}
+
+func TestGetApCellOp0(t *testing.T) {
+	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
+	assert.Nil(t, err)
+	assert.NotNil(t, vm)
+
+	// Prepare vm with dummy values
+	const offOp0 = 15
+	const ap = 30
+	vm.Context.Ap = ap
+	increaseDataSegment(vm, ap+offOp0+1)
+	writeToDataSegment(vm, ap+offOp0, mem.MemoryValueFromUint(123))
+
+	instruction := Instruction{
+		OffOp0:      offOp0,
+		Op0Register: Ap,
+	}
+
+	cell, err := vm.getCellOp0(&instruction)
+	assert.Nil(t, err)
+	assert.NotNil(t, cell)
+
+	assert.Equal(t, true, cell.Accessed)
+	assert.Equal(t, mem.MemoryValueFromUint(123), cell.Read())
+}
+
+func TestGetImmCellOp1(t *testing.T) {
+	vm, err := NewVirtualMachine(
+		[]*f.Element{
+			newElementPtr(0),    // dummy
+			newElementPtr(0),    // dummy
+			newElementPtr(1234), // imm
+		},
+		VirtualMachineConfig{false, false},
+	)
+	assert.Nil(t, err)
+	assert.NotNil(t, vm)
+
+	// Prepare vm with dummy values
+	const offOp1 = 1  // target imm
+	vm.Context.Pc = 1 // "current instruction"
+
+	instruction := Instruction{
+		OffOp1:    offOp1,
+		Op1Source: Imm,
+	}
+
+	cell, err := vm.getCellOp1(&instruction, nil)
+	assert.Nil(t, err)
+	assert.NotNil(t, cell)
+
+	assert.Equal(t, true, cell.Accessed)
+	assert.Equal(t, mem.MemoryValueFromUint(1234), cell.Read())
+}
+
+func TestComputeAddRes(t *testing.T) {
+	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
+	assert.Nil(t, err)
+	assert.NotNil(t, vm)
+
+	instruction := Instruction{
+		Res: AddOperands,
+	}
+
+	cellOp0 := &mem.Cell{
+		Accessed: true,
+		Value: mem.MemoryValueFromMemoryAddress(
+			mem.CreateMemoryAddress(2, 10),
+		),
+	}
+
+	cellOp1 := &mem.Cell{
+		Accessed: true,
+		Value:    mem.MemoryValueFromUint(15),
+	}
+
+	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+	assert.Nil(t, err)
+
+	expected := mem.MemoryValueFromMemoryAddress(
+		mem.CreateMemoryAddress(2, 25),
+	)
+
+	assert.Equal(t, expected, res)
+}
+
+func (vm *VirtualMachine) TestOpcodeAssertionAssertEq(t *testing.T) {
+	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
+	assert.Nil(t, err)
+	assert.NotNil(t, vm)
+
+	instruction := Instruction{
+		Opcode: AssertEq,
+	}
+
+	dstCell := mem.Cell{}
+	res := mem.MemoryValueFromMemoryAddress(mem.CreateMemoryAddress(2, 10))
+
+	err = vm.opcodeAssertions(&instruction, &dstCell, nil, res)
+	assert.Nil(t, err)
+	assert.Equal(
+		t,
+		mem.Cell{
+			Accessed: true,
+			Value:    mem.MemoryValueFromMemoryAddress(mem.CreateMemoryAddress(2, 10))},
+		dstCell,
+	)
+
+}
+
+func (vm *VirtualMachine) TestUpdatePcNextInstr(t *testing.T) {
+	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
+	assert.Nil(t, err)
+	assert.NotNil(t, vm)
+
+	vm.Context.Pc = 3
+	instruction := Instruction{
+		PcUpdate: NextInstr,
+	}
+
+	nextPc, err := vm.updatePc(&instruction, nil, nil, nil)
+	assert.Nil(t, err)
+	assert.Equal(t, vm.Context.Pc+1, nextPc)
+
+}
+
+func (vm *VirtualMachine) TestUpdatePcNextInstrImm(t *testing.T) {
+	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
+	assert.Nil(t, err)
+	assert.NotNil(t, vm)
+
+	vm.Context.Pc = 3
+	instruction := Instruction{
+		PcUpdate:  NextInstr,
+		Op1Source: Imm,
+	}
+
+	nextPc, err := vm.updatePc(&instruction, nil, nil, nil)
+	assert.Nil(t, err)
+	assert.Equal(t, vm.Context.Pc+2, nextPc)
+
+}
+
+func (vm *VirtualMachine) TestUpdateApAddOne(t *testing.T) {
+	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
+	assert.Nil(t, err)
+	assert.NotNil(t, vm)
+
+	vm.Context.Ap = 5
+	instruction := Instruction{
+		Opcode:   Nop,
+		ApUpdate: Add1,
+	}
+
+	nextAp, err := vm.updateAp(&instruction, nil)
+	assert.Nil(t, err)
+	assert.Equal(t, vm.Context.Ap+1, nextAp)
+}
+
+func (vm *VirtualMachine) TestUpdateFp(t *testing.T) {
+	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
+	assert.Nil(t, err)
+	assert.NotNil(t, vm)
+
+	vm.Context.Fp = 5
+	instruction := Instruction{
+		Opcode: Nop,
+	}
+
+	nextFp, err := vm.updateFp(&instruction, nil)
+	assert.Nil(t, err)
+	assert.Equal(t, vm.Context.Fp, nextFp)
+}
+
+func increaseDataSegment(vm *VirtualMachine, size uint64) {
+	vm.MemoryManager.Memory.IncreaseSegmentSize(dataSegment, size)
+}
+
+func writeToDataSegment(vm *VirtualMachine, index uint64, value *mem.MemoryValue) {
+	error := vm.MemoryManager.Memory.Write(dataSegment, index, value)
+	if error != nil {
+		panic("error in test util: writeToDataSegment")
+	}
 }
 
 // create a pointer to an Element
