@@ -71,6 +71,10 @@ func (segment *Segment) Cap() uint64 {
 
 // Writes a new memory value to a specified offset, errors in case of overwriting an existing cell
 func (segment *Segment) Write(offset uint64, value *MemoryValue) error {
+	if offset >= uint64(len(segment.Data)) {
+		segment.IncreaseSegmentSize(offset + 1)
+	}
+
 	err := segment.Data[offset].Write(value)
 	if err != nil {
 		return fmt.Errorf("error at index %d: %w", offset, err)
@@ -80,11 +84,38 @@ func (segment *Segment) Write(offset uint64, value *MemoryValue) error {
 
 // Reads a memory value from a specified offset at the segment
 func (segment *Segment) Read(offset uint64) *MemoryValue {
+	if offset >= uint64(len(segment.Data)) {
+		segment.IncreaseSegmentSize(offset + 1)
+	}
+
 	return segment.Data[offset].Read()
 }
 
 func (segment *Segment) Peek(offset uint64) *Cell {
+	if offset >= uint64(len(segment.Data)) {
+		segment.IncreaseSegmentSize(offset + 1)
+	}
+
 	return &segment.Data[offset]
+}
+
+// Increase a segment allocated space. Panics if the new size is smaller
+func (segment *Segment) IncreaseSegmentSize(newSize uint64) {
+	segmentData := segment.Data
+	if len(segmentData) > int(newSize) {
+		panic("cannot increase segment size to s smaller value")
+	}
+
+	var newSegmentData []Cell
+	if cap(segmentData) > int(newSize) {
+		// If there is enough capacity just reslice
+		newSegmentData = segmentData[:newSize]
+	} else {
+		// If not enough capacity then re allocate and copy
+		newSegmentData = make([]Cell, newSize, newSize+100)
+		copy(newSegmentData, segmentData)
+	}
+	segment.Data = newSegmentData
 }
 
 func (segment *Segment) String() string {
@@ -129,25 +160,6 @@ func (memory *Memory) AllocateSegment(data []*f.Element) (int, error) {
 func (memory *Memory) AllocateEmptySegment() int {
 	memory.Segments = append(memory.Segments, EmptySegment())
 	return len(memory.Segments) - 1
-}
-
-// Increase a segment allocated space. If the new size is smaller, nothing happens
-func (memory *Memory) IncreaseSegmentSize(segmentIndex uint64, newSize uint64) {
-	segmentData := memory.Segments[segmentIndex].Data
-	if len(segmentData) > int(newSize) {
-		return
-	}
-
-	var newSegmentData []Cell
-	if cap(segmentData) > int(newSize) {
-		// If there is enough capacity just reslice
-		newSegmentData = segmentData[:newSize]
-	} else {
-		// If not enough capacity then re allocate and copy
-		newSegmentData = make([]Cell, newSize, newSize+100)
-		copy(newSegmentData, segmentData)
-	}
-	memory.Segments[segmentIndex].Data = newSegmentData
 }
 
 // Writes to a memory address a new memory value. Errors if writing to an unallocated

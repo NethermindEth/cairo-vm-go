@@ -45,7 +45,6 @@ func TestGetCellApDst(t *testing.T) {
 	const offDest = 15
 	const ap = 30
 	vm.Context.Ap = ap
-	increaseDataSegment(vm, ap+offDest+1)
 	writeToDataSegment(vm, ap+offDest, mem.MemoryValueFromUint(200))
 
 	instruction := Instruction{
@@ -73,7 +72,6 @@ func TestGetCellFpDst(t *testing.T) {
 	const fp = 20
 	vm.Context.Ap = ap
 	vm.Context.Fp = fp
-	increaseDataSegment(vm, ap+1)
 	writeToDataSegment(vm, fp+offDest, mem.MemoryValueFromUint(123))
 
 	instruction := Instruction{
@@ -98,7 +96,6 @@ func TestGetApCellOp0(t *testing.T) {
 	const offOp0 = 15
 	const ap = 30
 	vm.Context.Ap = ap
-	increaseDataSegment(vm, ap+offOp0+1)
 	writeToDataSegment(vm, ap+offOp0, mem.MemoryValueFromUint(123))
 
 	instruction := Instruction{
@@ -260,10 +257,6 @@ func (vm *VirtualMachine) TestUpdateFp(t *testing.T) {
 	nextFp, err := vm.updateFp(&instruction, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, vm.Context.Fp, nextFp)
-}
-
-func increaseDataSegment(vm *VirtualMachine, size uint64) {
-	vm.MemoryManager.Memory.IncreaseSegmentSize(dataSegment, size)
 }
 
 func writeToDataSegment(vm *VirtualMachine, index uint64, value *mem.MemoryValue) {

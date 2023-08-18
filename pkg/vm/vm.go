@@ -135,10 +135,7 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 	}
 
 	vm.Context.Pc = nextPc
-
-	vm.MemoryManager.Memory.IncreaseSegmentSize(dataSegment, nextAp+1)
 	vm.Context.Ap = nextAp
-
 	vm.Context.Fp = nextFp
 
 	return nil
