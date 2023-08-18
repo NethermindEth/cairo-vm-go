@@ -38,14 +38,14 @@ func EmptySegment() *Segment {
 	}
 }
 
-func EmptySegmentWithCapacity(capacity int) Segment {
-	return Segment{
+func EmptySegmentWithCapacity(capacity int) *Segment {
+	return &Segment{
 		Data: make([]Cell, 0, capacity),
 	}
 }
 
-func EmptySegmentWithLength(length int) Segment {
-	return Segment{
+func EmptySegmentWithLength(length int) *Segment {
+	return &Segment{
 		Data: make([]Cell, length),
 	}
 }
@@ -94,7 +94,7 @@ func (memory *Memory) AllocateSegment(data []*f.Element) (int, error) {
 			return 0, fmt.Errorf("cannot allocate new segment: %w", err)
 		}
 	}
-	memory.Segments = append(memory.Segments, &newSegment)
+	memory.Segments = append(memory.Segments, newSegment)
 	return len(memory.Segments), nil
 }
 

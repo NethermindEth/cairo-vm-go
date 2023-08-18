@@ -63,7 +63,6 @@ func TestJnz(t *testing.T) {
 		Res:         Unconstrained,
 		PcUpdate:    Jnz,
 		ApUpdate:    SameAp,
-		FpUpdate:    SameFp,
 		Opcode:      Nop,
 	}
 
@@ -86,7 +85,6 @@ func TestCall(t *testing.T) {
 		Res:         Op1,
 		PcUpdate:    JumpRel,
 		ApUpdate:    Add2,
-		FpUpdate:    ApPlus2,
 		Opcode:      Call,
 	}
 
@@ -109,7 +107,6 @@ func TestRet(t *testing.T) {
 		Res:         Op1,
 		PcUpdate:    Jump,
 		ApUpdate:    SameAp,
-		FpUpdate:    Dst,
 		Opcode:      Ret,
 	}
 
@@ -133,7 +130,6 @@ func TestAddAp(t *testing.T) {
 		Res:         Op1,
 		PcUpdate:    NextInstr,
 		ApUpdate:    AddImm,
-		FpUpdate:    SameFp,
 		Opcode:      Nop,
 	}
 

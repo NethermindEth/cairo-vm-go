@@ -28,6 +28,7 @@ type VirtualMachineConfig struct {
 type VirtualMachine struct {
 	Context       Context
 	MemoryManager *mem.MemoryManager
+	Step          uint64
 	Config        VirtualMachineConfig
 }
 
@@ -45,14 +46,15 @@ func NewVirtualMachine(programBytecode []*f.Element, config VirtualMachineConfig
 	}
 
 	// 1 (executionSegment) <- segment where the stack trace will be stored
-	manager.Memory.AllocateEmptySegment()
+	manager.Memory.Segments = append(manager.Memory.Segments, mem.EmptySegmentWithCapacity(10))
 	// 2 (dataSegment) <- segment where ap and fp move around
-	manager.Memory.AllocateEmptySegment()
+	manager.Memory.Segments = append(manager.Memory.Segments, mem.EmptySegmentWithLength(1))
 
 	return &VirtualMachine{
-		Context{Fp: 0, Ap: 0, Pc: 0},
-		manager,
-		config,
+		Context:       Context{Fp: 0, Ap: 0, Pc: 0},
+		Step:          0,
+		MemoryManager: manager,
+		Config:        config,
 	}, nil
 }
 
@@ -135,6 +137,7 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 	vm.Context.Ap = next_ap
 	vm.Context.Fp = next_fp
 
+	vm.Step += 1
 	return nil
 }
 
@@ -289,7 +292,7 @@ func (vm *VirtualMachine) updateAp(instruction *Instruction, res *mem.MemoryValu
 		}
 		return 0, fmt.Errorf("cannot update ap, invalid flag combination: Call & Add2")
 	}
-	// assuming that there is no invalid opcode
+
 	switch instruction.ApUpdate {
 	case SameAp:
 		return vm.Context.Ap, nil
