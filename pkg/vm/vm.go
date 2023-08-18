@@ -83,6 +83,7 @@ func (vm *VirtualMachine) RunStep() error {
 		return fmt.Errorf("cannot run step at %d: %w", vm.Context.Pc, err)
 	}
 
+	vm.Step += 1
 	return nil
 }
 func (vm *VirtualMachine) RunStepAt(pc uint64) error {
@@ -118,26 +119,28 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 		return err
 	}
 
-	next_pc, err := vm.updatePc(instruction, dstCell, op1Cell, res)
+	nextPc, err := vm.updatePc(instruction, dstCell, op1Cell, res)
 	if err != nil {
 		return err
 	}
 
-	next_ap, err := vm.updateAp(instruction, res)
+	nextAp, err := vm.updateAp(instruction, res)
 	if err != nil {
 		return err
 	}
 
-	next_fp, err := vm.updateFp(instruction, res)
+	nextFp, err := vm.updateFp(instruction, res)
 	if err != nil {
 		return err
 	}
 
-	vm.Context.Pc = next_pc
-	vm.Context.Ap = next_ap
-	vm.Context.Fp = next_fp
+	vm.Context.Pc = nextPc
 
-	vm.Step += 1
+	vm.MemoryManager.Memory.IncreaseSegmentSize(dataSegment, nextAp+1)
+	vm.Context.Ap = nextAp
+
+	vm.Context.Fp = nextFp
+
 	return nil
 }
 
@@ -166,7 +169,7 @@ func (vm *VirtualMachine) getCellOp0(instruction *Instruction) (*mem.Cell, error
 	}
 	// todo(rodro): fix this math
 	offset := op0Register + uint64(instruction.OffOp0)
-	return vm.MemoryManager.Memory.Peek(dataSegment, op0Register+offset)
+	return vm.MemoryManager.Memory.Peek(dataSegment, offset)
 }
 
 func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell) (*mem.Cell, error) {
@@ -183,9 +186,9 @@ func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell
 		// todo(rodro): would it be sensitive to check instruction.OffOp1 == 1?
 		op1Address = mem.CreateMemoryAddress(programSegment, vm.Context.Pc)
 	case FpPlusOffOp1:
-		op1Address = mem.CreateMemoryAddress(programSegment, vm.Context.Fp)
+		op1Address = mem.CreateMemoryAddress(dataSegment, vm.Context.Fp)
 	case ApPlusOffOp1:
-		op1Address = mem.CreateMemoryAddress(programSegment, vm.Context.Ap)
+		op1Address = mem.CreateMemoryAddress(dataSegment, vm.Context.Ap)
 	}
 	// todo(rodro): fix this math
 	op1Address.Offset += uint64(instruction.OffOp1)
@@ -208,7 +211,12 @@ func (vm *VirtualMachine) computeRes(
 		return op1Cell.Read(), nil
 	case AddOperands:
 		op0 := op0Cell.Read()
-		op1 := op0Cell.Read()
+		op1 := op1Cell.Read()
+		fmt.Println("op0", op0)
+		fmt.Println("op1", op1)
+		result, _ := mem.EmptyMemoryValueAs(op0.IsAddress()).Add(op0, op1)
+		fmt.Printf("result %s", result)
+
 		return mem.EmptyMemoryValueAs(op0.IsAddress()).Add(op0, op1)
 	case MulOperands:
 		op0 := op0Cell.Read()
@@ -217,6 +225,34 @@ func (vm *VirtualMachine) computeRes(
 	}
 
 	return nil, fmt.Errorf("unknown res flag value: %d", instruction.Res)
+}
+
+func (vm *VirtualMachine) opcodeAssertions(
+	instruction *Instruction,
+	dstCell *mem.Cell,
+	op0Cell *mem.Cell,
+	res *mem.MemoryValue,
+) error {
+	switch instruction.Opcode {
+	case Call:
+		err := op0Cell.Write(
+			mem.MemoryValueFromUint(vm.Context.Pc + uint64(instruction.Size())),
+		)
+		if err != nil {
+			return err
+		}
+
+		err = dstCell.Write(mem.MemoryValueFromUint(vm.Context.Fp))
+		if err != nil {
+			return err
+		}
+	case AssertEq:
+		err := dstCell.Write(res)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (vm *VirtualMachine) updatePc(
@@ -255,34 +291,6 @@ func (vm *VirtualMachine) updatePc(
 
 	}
 	return 0, fmt.Errorf("unkwon pc update value: %d", instruction.PcUpdate)
-}
-
-func (vm *VirtualMachine) opcodeAssertions(
-	instruction *Instruction,
-	dstCell *mem.Cell,
-	op0Cell *mem.Cell,
-	res *mem.MemoryValue,
-) error {
-	switch instruction.Opcode {
-	case Call:
-		err := op0Cell.Write(
-			mem.MemoryValueFromUint(vm.Context.Pc + uint64(instruction.Size())),
-		)
-		if err != nil {
-			return err
-		}
-
-		err = dstCell.Write(mem.MemoryValueFromUint(vm.Context.Fp))
-		if err != nil {
-			return err
-		}
-	case AssertEq:
-		err := dstCell.Write(res)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (vm *VirtualMachine) updateAp(instruction *Instruction, res *mem.MemoryValue) (uint64, error) {
