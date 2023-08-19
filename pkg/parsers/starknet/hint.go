@@ -6,6 +6,10 @@ import (
 	"math/big"
 )
 
+// Source of the code:
+// https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-casm/src/hints/mod.rs
+// https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-casm/src/operand.rs
+
 type HintName string
 
 const (
