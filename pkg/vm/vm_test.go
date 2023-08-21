@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -18,7 +19,7 @@ func TestVMCreation(t *testing.T) {
 	}
 
 	vm, err := NewVirtualMachine(dummyBytecode[:], VirtualMachineConfig{false, false})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, vm)
 
 	assert.Equal(t, 2, len(vm.MemoryManager.Memory.Segments))
@@ -37,7 +38,7 @@ func TestVMCreation(t *testing.T) {
 
 func TestGetCellApDst(t *testing.T) {
 	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, vm)
 
 	// Prepare vm with dummy values
@@ -52,17 +53,17 @@ func TestGetCellApDst(t *testing.T) {
 	}
 
 	cell, err := vm.getCellDst(&instruction)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, cell)
 
-	assert.Equal(t, true, cell.Accessed)
+	assert.True(t, cell.Accessed)
 	assert.Equal(t, mem.MemoryValueFromInt(200), cell.Read())
 
 }
 
 func TestGetCellFpDst(t *testing.T) {
 	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, vm)
 
 	// Prepare vm with dummy values
@@ -79,16 +80,16 @@ func TestGetCellFpDst(t *testing.T) {
 	}
 
 	cell, err := vm.getCellDst(&instruction)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, cell)
 
-	assert.Equal(t, true, cell.Accessed)
+	assert.True(t, cell.Accessed)
 	assert.Equal(t, mem.MemoryValueFromInt(123), cell.Read())
 }
 
 func TestGetApCellOp0(t *testing.T) {
 	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, vm)
 
 	// Prepare vm with dummy values
@@ -103,10 +104,10 @@ func TestGetApCellOp0(t *testing.T) {
 	}
 
 	cell, err := vm.getCellOp0(&instruction)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, cell)
 
-	assert.Equal(t, true, cell.Accessed)
+	assert.True(t, cell.Accessed)
 	assert.Equal(t, mem.MemoryValueFromInt(123), cell.Read())
 }
 
@@ -119,7 +120,7 @@ func TestGetImmCellOp1(t *testing.T) {
 		},
 		VirtualMachineConfig{false, false},
 	)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, vm)
 
 	// Prepare vm with dummy values
@@ -132,16 +133,16 @@ func TestGetImmCellOp1(t *testing.T) {
 	}
 
 	cell, err := vm.getCellOp1(&instruction, nil)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, cell)
 
-	assert.Equal(t, true, cell.Accessed)
+	assert.True(t, cell.Accessed)
 	assert.Equal(t, mem.MemoryValueFromInt(1234), cell.Read())
 }
 
 func TestInferOperandSub(t *testing.T) {
 	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, vm)
 
 	instruction := Instruction{
@@ -166,7 +167,7 @@ func TestInferOperandSub(t *testing.T) {
 	}
 
 	inferedRes, err := vm.inferOperand(&instruction, dstCell, op0Cell, op1Cell)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, dstCell.Value, inferedRes)
 	assert.Equal(t, expectedOp0Cell, op0Cell)
@@ -174,7 +175,7 @@ func TestInferOperandSub(t *testing.T) {
 
 func TestComputeAddRes(t *testing.T) {
 	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, vm)
 
 	instruction := Instruction{
@@ -194,7 +195,7 @@ func TestComputeAddRes(t *testing.T) {
 	}
 
 	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	expected := mem.MemoryValueFromMemoryAddress(
 		mem.CreateMemoryAddress(2, 25),
@@ -205,7 +206,7 @@ func TestComputeAddRes(t *testing.T) {
 
 func (vm *VirtualMachine) TestOpcodeAssertionAssertEq(t *testing.T) {
 	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, vm)
 
 	instruction := Instruction{
@@ -216,7 +217,7 @@ func (vm *VirtualMachine) TestOpcodeAssertionAssertEq(t *testing.T) {
 	res := mem.MemoryValueFromMemoryAddress(mem.CreateMemoryAddress(2, 10))
 
 	err = vm.opcodeAssertions(&instruction, &dstCell, nil, res)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(
 		t,
 		mem.Cell{
@@ -224,12 +225,11 @@ func (vm *VirtualMachine) TestOpcodeAssertionAssertEq(t *testing.T) {
 			Value:    mem.MemoryValueFromMemoryAddress(mem.CreateMemoryAddress(2, 10))},
 		dstCell,
 	)
-
 }
 
 func (vm *VirtualMachine) TestUpdatePcNextInstr(t *testing.T) {
 	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, vm)
 
 	vm.Context.Pc = 3
@@ -238,14 +238,13 @@ func (vm *VirtualMachine) TestUpdatePcNextInstr(t *testing.T) {
 	}
 
 	nextPc, err := vm.updatePc(&instruction, nil, nil, nil)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, vm.Context.Pc+1, nextPc)
-
 }
 
 func (vm *VirtualMachine) TestUpdatePcNextInstrImm(t *testing.T) {
 	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, vm)
 
 	vm.Context.Pc = 3
@@ -255,14 +254,13 @@ func (vm *VirtualMachine) TestUpdatePcNextInstrImm(t *testing.T) {
 	}
 
 	nextPc, err := vm.updatePc(&instruction, nil, nil, nil)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, vm.Context.Pc+2, nextPc)
-
 }
 
 func (vm *VirtualMachine) TestUpdateApAddOne(t *testing.T) {
 	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, vm)
 
 	vm.Context.Ap = 5
@@ -272,13 +270,13 @@ func (vm *VirtualMachine) TestUpdateApAddOne(t *testing.T) {
 	}
 
 	nextAp, err := vm.updateAp(&instruction, nil)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, vm.Context.Ap+1, nextAp)
 }
 
 func (vm *VirtualMachine) TestUpdateFp(t *testing.T) {
 	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, vm)
 
 	vm.Context.Fp = 5
@@ -287,13 +285,13 @@ func (vm *VirtualMachine) TestUpdateFp(t *testing.T) {
 	}
 
 	nextFp, err := vm.updateFp(&instruction, nil)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, vm.Context.Fp, nextFp)
 }
 
 func writeToDataSegment(vm *VirtualMachine, index uint64, value *mem.MemoryValue) {
-	error := vm.MemoryManager.Memory.Write(executionSegment, index, value)
-	if error != nil {
+	err := vm.MemoryManager.Memory.Write(executionSegment, index, value)
+	if err != nil {
 		panic("error in test util: writeToDataSegment")
 	}
 }
