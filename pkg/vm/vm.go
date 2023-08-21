@@ -183,7 +183,6 @@ func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell
 		}
 		op1Address = mem.CreateMemoryAddress(op0Address.SegmentIndex, op0Address.Offset)
 	case Imm:
-		// todo(rodro): would it be sensitive to check instruction.OffOp1 == 1?
 		op1Address = mem.CreateMemoryAddress(programSegment, vm.Context.Pc)
 	case FpPlusOffOp1:
 		op1Address = mem.CreateMemoryAddress(executionSegment, vm.Context.Fp)
