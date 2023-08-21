@@ -208,7 +208,7 @@ func (vm *VirtualMachine) inferOperand(
 		return nil, nil
 	}
 	if !dstCell.Accessed {
-		return nil, fmt.Errorf("impossible to define unknown operand, dst cell is unknown too")
+		return nil, fmt.Errorf("impossible to infer unknown operand, dst cell is unknown too")
 	}
 
 	var knownOpCell *mem.Cell
@@ -244,14 +244,9 @@ func (vm *VirtualMachine) inferOperand(
 func (vm *VirtualMachine) computeRes(
 	instruction *Instruction, op0Cell *mem.Cell, op1Cell *mem.Cell,
 ) (*mem.MemoryValue, error) {
-	if instruction.PcUpdate == Jnz {
-		if instruction.Res == Op1 && instruction.Opcode == Nop && instruction.ApUpdate == AddImm {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("invalid flag combination calculating res")
-	}
-
 	switch instruction.Res {
+	case Unconstrained:
+		return nil, nil
 	case Op1:
 		return op1Cell.Read(), nil
 	case AddOperands:
@@ -338,13 +333,6 @@ func (vm *VirtualMachine) updatePc(
 }
 
 func (vm *VirtualMachine) updateAp(instruction *Instruction, res *mem.MemoryValue) (uint64, error) {
-	if instruction.Opcode == Call {
-		if instruction.ApUpdate == Add2 {
-			return vm.Context.Ap + 2, nil
-		}
-		return 0, fmt.Errorf("cannot update ap, invalid flag combination: Call without Add2")
-	}
-
 	switch instruction.ApUpdate {
 	case SameAp:
 		return vm.Context.Ap, nil
@@ -356,6 +344,8 @@ func (vm *VirtualMachine) updateAp(instruction *Instruction, res *mem.MemoryValu
 		return vm.Context.Ap + res64, nil
 	case Add1:
 		return vm.Context.Ap + 1, nil
+	case Add2:
+		return vm.Context.Ap + 2, nil
 	}
 	return 0, fmt.Errorf("cannot update ap, unknown ApUpdate flag: %d", instruction.ApUpdate)
 }

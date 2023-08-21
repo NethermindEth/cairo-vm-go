@@ -186,11 +186,6 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 		instruction.Res = ResLogic(res)
 	}
 
-	// The result must be unconstrained in case of JNZ
-	if instruction.PcUpdate == Jnz && instruction.Res != Unconstrained {
-		return fmt.Errorf("jnz opcode must have Unconstrained res logic")
-	}
-
 	apUpdate, err := oneHot((flags>>apAddBit)&1, (flags>>apAdd1Bit)&1)
 	if err != nil {
 		return fmt.Errorf("error decoding ap_update of instruction: %w", err)
@@ -202,6 +197,16 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 		return fmt.Errorf("error decoding opcode of instruction: %w", err)
 	}
 	instruction.Opcode = Opcode(opcode)
+
+	// for pc udpate Jnz, res should be unconstrainded, no opcode, and ap should update with Imm
+	if instruction.PcUpdate == Jnz &&
+		(instruction.Res != Unconstrained ||
+			instruction.Opcode != Nop ||
+			instruction.ApUpdate != AddImm) {
+		return fmt.Errorf(
+			"jnz opcode must have unconstrained res logic, no opcode, and ap should update using an Imm",
+		)
+	}
 
 	if instruction.Opcode == Call {
 		// (0, 0) bits for ap_update also stand for different

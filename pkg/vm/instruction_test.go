@@ -7,6 +7,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestDecodeInstructionValues(t *testing.T) {
+	offDest, offOp0, offOp1, flags := decodeInstructionValues(
+		new(f.Element).SetBytes([]byte{0x48, 0x06, 0x80, 0x01, 0x7f, 0xff, 0x80, 0x10}).Uint64(),
+	)
+	assert.Equal(t, uint16(0x8010), offDest)
+	assert.Equal(t, uint16(0x7fff), offOp0)
+	assert.Equal(t, uint16(0x8001), offOp1)
+	assert.Equal(t, uint16(0x4806), flags)
+}
+
 func TestAssertEq(t *testing.T) {
 	expected := Instruction{
 		OffDest:     0,
@@ -22,7 +32,7 @@ func TestAssertEq(t *testing.T) {
 	}
 
 	decoded, err := DecodeInstruction(
-		(new(f.Element).SetBytes([]byte{0x48, 0x06, 0x80, 0x01, 0x7F, 0xFF, 0x80, 00})),
+		(new(f.Element).SetBytes([]byte{0x48, 0x06, 0x80, 0x01, 0x7F, 0xFF, 0x80, 0x00})),
 	)
 
 	assert.NoError(t, err)
@@ -62,12 +72,12 @@ func TestJnz(t *testing.T) {
 		Op1Source:   FpPlusOffOp1,
 		Res:         Unconstrained,
 		PcUpdate:    Jnz,
-		ApUpdate:    SameAp,
+		ApUpdate:    AddImm,
 		Opcode:      Nop,
 	}
 
 	decoded, err := DecodeInstruction(
-		(new(f.Element).SetBytes([]byte{0x02, 0x0A, 0x7F, 0xF0, 0x7F, 0xFF, 0x80, 0x03})),
+		(new(f.Element).SetBytes([]byte{0x06, 0x0A, 0x7F, 0xF0, 0x7F, 0xFF, 0x80, 0x03})),
 	)
 
 	assert.NoError(t, err)
