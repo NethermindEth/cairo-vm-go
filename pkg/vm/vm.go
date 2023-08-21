@@ -109,9 +109,15 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 		return err
 	}
 
-	res, err := vm.computeRes(instruction, op0Cell, op1Cell)
+	res, err := vm.inferOperand(instruction, dstCell, op0Cell, op1Cell)
 	if err != nil {
 		return err
+	}
+	if res != nil {
+		res, err = vm.computeRes(instruction, op0Cell, op1Cell)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = vm.opcodeAssertions(instruction, dstCell, op0Cell, res)
@@ -129,7 +135,7 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 		return err
 	}
 
-	nextFp, err := vm.updateFp(instruction, res)
+	nextFp, err := vm.updateFp(instruction, dstCell)
 	if err != nil {
 		return err
 	}
@@ -193,6 +199,52 @@ func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell
 	return vm.MemoryManager.Memory.PeekFromAddress(op1Address)
 }
 
+// when there is an assertion with a substraction or division like : x = y - z
+// the compiler treats it as y = x + z. This means that the VM knows the
+// dstCell value and either op0Cell xor op1Cell. This function infers the
+// unknow operand as well as the `res` auxiliar value
+func (vm *VirtualMachine) inferOperand(
+	instruction *Instruction, dstCell *mem.Cell, op0Cell *mem.Cell, op1Cell *mem.Cell,
+) (*mem.MemoryValue, error) {
+	if instruction.Opcode != AssertEq ||
+		(instruction.Res != AddOperands && instruction.Res != MulOperands) ||
+		(op0Cell.Accessed && op1Cell.Accessed) {
+		return nil, nil
+	}
+	if !dstCell.Accessed {
+		return nil, fmt.Errorf("impossible to define unknown operand, dst cell is unknown as well")
+	}
+
+	var knownOpCell *mem.Cell
+	var unknownOpCell *mem.Cell
+	if op0Cell.Accessed {
+		knownOpCell = op0Cell
+		unknownOpCell = op1Cell
+	} else {
+		knownOpCell = op1Cell
+		unknownOpCell = op0Cell
+	}
+
+	var missingVal *mem.MemoryValue
+	var err error
+	dst := dstCell.Read()
+	if instruction.Res == AddOperands {
+		missingVal, err = mem.EmptyMemoryValueAs(dst.IsAddress()).Sub(dst, knownOpCell.Read())
+	} else {
+		missingVal, err = mem.EmptyMemoryValueAs(dst.IsAddress()).Div(dst, knownOpCell.Read())
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	err = unknownOpCell.Write(missingVal)
+	if err != nil {
+		return nil, err
+	}
+
+	return dst, nil
+}
+
 func (vm *VirtualMachine) computeRes(
 	instruction *Instruction, op0Cell *mem.Cell, op1Cell *mem.Cell,
 ) (*mem.MemoryValue, error) {
@@ -209,15 +261,10 @@ func (vm *VirtualMachine) computeRes(
 	case AddOperands:
 		op0 := op0Cell.Read()
 		op1 := op1Cell.Read()
-		fmt.Println("op0", op0)
-		fmt.Println("op1", op1)
-		result, _ := mem.EmptyMemoryValueAs(op0.IsAddress()).Add(op0, op1)
-		fmt.Printf("result %s", result)
-
 		return mem.EmptyMemoryValueAs(op0.IsAddress()).Add(op0, op1)
 	case MulOperands:
 		op0 := op0Cell.Read()
-		op1 := op0Cell.Read()
+		op1 := op1Cell.Read()
 		return mem.EmptyMemoryValueAsFelt().Mul(op0, op1)
 	}
 
@@ -232,18 +279,22 @@ func (vm *VirtualMachine) opcodeAssertions(
 ) error {
 	switch instruction.Opcode {
 	case Call:
-		err := op0Cell.Write(
+		// Store at [ap] the current fp
+		err := dstCell.Write(mem.MemoryValueFromUint(vm.Context.Fp))
+		if err != nil {
+			return err
+		}
+
+		// Write in [ap + 1] the instruction to execute
+		err = op0Cell.Write(
 			mem.MemoryValueFromUint(vm.Context.Pc + uint64(instruction.Size())),
 		)
 		if err != nil {
 			return err
 		}
 
-		err = dstCell.Write(mem.MemoryValueFromUint(vm.Context.Fp))
-		if err != nil {
-			return err
-		}
 	case AssertEq:
+		// assert that the calculated res is stored in dst
 		err := dstCell.Write(res)
 		if err != nil {
 			return err
@@ -313,16 +364,19 @@ func (vm *VirtualMachine) updateAp(instruction *Instruction, res *mem.MemoryValu
 	return 0, fmt.Errorf("cannot update ap, unknown ApUpdate flag: %d", instruction.ApUpdate)
 }
 
-func (vm *VirtualMachine) updateFp(instruction *Instruction, res *mem.MemoryValue) (uint64, error) {
+func (vm *VirtualMachine) updateFp(instruction *Instruction, dstCell *mem.Cell) (uint64, error) {
 	switch instruction.Opcode {
 	case Call:
+		// [ap] and [ap + 1] are written to memory
 		return vm.Context.Ap + 2, nil
 	case Ret:
-		res64, err := res.Uint64()
+		// sets fp to a value from [dst].
+		// to behave accordingly [dst] == [fp - 2]
+		dst, err := dstCell.Read().Uint64()
 		if err != nil {
 			return 0, err
 		}
-		return vm.Context.Fp + res64, nil
+		return dst, nil
 	default:
 		return vm.Context.Fp, nil
 	}

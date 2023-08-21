@@ -232,6 +232,15 @@ func (memVal *MemoryValue) Mul(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	return memVal, nil
 }
 
+func (memVal *MemoryValue) Div(lhs, rhs *MemoryValue) (*MemoryValue, error) {
+	if lhs.IsAddress() || rhs.IsAddress() {
+		return nil, fmt.Errorf("cannot divide memory addresses")
+	}
+
+	memVal.felt.Div(lhs.felt, rhs.felt)
+	return memVal, nil
+}
+
 func (memVal MemoryValue) String() string {
 	if memVal.IsAddress() {
 		return memVal.address.String()
