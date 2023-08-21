@@ -23,7 +23,7 @@ func TestVMCreation(t *testing.T) {
 
 	assert.Equal(t, 2, len(vm.MemoryManager.Memory.Segments))
 	assert.Equal(t, bytecodeSize, len(vm.MemoryManager.Memory.Segments[programSegment].Data))
-	assert.Equal(t, 1, len(vm.MemoryManager.Memory.Segments[executionSegment].Data))
+	assert.Equal(t, 0, len(vm.MemoryManager.Memory.Segments[executionSegment].Data))
 }
 
 // todo(rodro): test all possible ways of:
@@ -137,6 +137,39 @@ func TestGetImmCellOp1(t *testing.T) {
 
 	assert.Equal(t, true, cell.Accessed)
 	assert.Equal(t, mem.MemoryValueFromInt(1234), cell.Read())
+}
+
+func TestInferOperandSub(t *testing.T) {
+	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
+	assert.Nil(t, err)
+	assert.NotNil(t, vm)
+
+	instruction := Instruction{
+		Opcode: AssertEq,
+		Res:    AddOperands,
+	}
+
+	dstCell := &mem.Cell{
+		Accessed: true,
+		Value:    mem.MemoryValueFromSegmentAndOffset(3, 15),
+	}
+	op1Cell := &mem.Cell{
+		Accessed: true,
+		Value:    mem.MemoryValueFromSegmentAndOffset(3, 7),
+	}
+
+	// unknown cell to infer
+	op0Cell := &mem.Cell{}
+	expectedOp0Cell := &mem.Cell{
+		Accessed: true,
+		Value:    mem.MemoryValueFromSegmentAndOffset(3, 8),
+	}
+
+	inferedRes, err := vm.inferOperand(&instruction, dstCell, op1Cell, op1Cell)
+	assert.Nil(t, err)
+
+	assert.Equal(t, dstCell.Value, inferedRes)
+	assert.Equal(t, expectedOp0Cell, op0Cell)
 }
 
 func TestComputeAddRes(t *testing.T) {
