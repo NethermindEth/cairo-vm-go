@@ -3,6 +3,7 @@ package vm
 import (
 	"testing"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -96,6 +97,56 @@ func TestEntryPointInfoParsing(t *testing.T) {
 	for i := 0; i < 9; i++ {
 		assert.Equal(t, Builtin(i+1), entryPointInfo.Builtins[i])
 	}
+}
+
+func TestHintsParsing(t *testing.T) {
+	v := validator.New()
+
+	testData := []byte(`
+       {
+            "hints": [
+                [
+                    2,
+                    [
+                        {
+                            "TestLessThanOrEqual": {
+                                "lhs": { "Immediate": "0x95ec" },
+                                "rhs": { "Deref": { "register": "FP", "offset": -6 } },
+                                "dst": { "register": "AP", "offset": 2 }
+                            }
+                        }
+                    ]
+                ],
+                [33, [{ "AllocSegment": { "dst": { "register": "AP", "offset": 0 } } }]],
+                [
+                    52,
+                    [
+                        {
+                            "TestLessThanOrEqual": {
+                                "lhs": { "Immediate": "0x1" },
+                                "rhs": { "Deref": { "register": "AP", "offset": -13 } },
+                                "dst": { "register": "AP", "offset": 1 }
+                            }
+                        }
+                    ]
+                ],
+                [75, [{ "AllocSegment": { "dst": { "register": "AP", "offset": 1 } } }]],
+                [111, [{ "AllocSegment": { "dst": { "register": "AP", "offset": 2 } } }]]
+            ]
+        }
+    `)
+	program, err := ProgramFromJSON(testData)
+	require.NoError(t, err)
+
+	hints := program.Hints
+	assert.Len(t, hints, 5)
+
+	hint := hints[0].Hints[0]
+	assert.Equal(t, hint.Name, TestLessThanOrEqualName)
+	_, ok := hint.Args.(*TestLessThanOrEqual)
+	assert.True(t, ok)
+
+	assert.NoError(t, v.Struct(program))
 }
 
 func TestInvalidBuiltin(t *testing.T) {

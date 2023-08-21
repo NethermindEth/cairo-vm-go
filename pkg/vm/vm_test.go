@@ -165,7 +165,7 @@ func TestInferOperandSub(t *testing.T) {
 		Value:    mem.MemoryValueFromSegmentAndOffset(3, 8),
 	}
 
-	inferedRes, err := vm.inferOperand(&instruction, dstCell, op1Cell, op1Cell)
+	inferedRes, err := vm.inferOperand(&instruction, dstCell, op0Cell, op1Cell)
 	assert.Nil(t, err)
 
 	assert.Equal(t, dstCell.Value, inferedRes)

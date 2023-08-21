@@ -91,13 +91,52 @@ type EntryPointByType struct {
 	Constructor []EntryPointInfo `json:"CONSTRUCTOR"`
 }
 
+type Hints struct {
+	Index uint64
+	Hints []Hint
+}
+
+// Hints are serialized as tuples of (index, []hint)
+// https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-starknet/src/casm_contract_class.rs#L90
+func (hints *Hints) UnmarshalJSON(data []byte) error {
+	var rawHints []interface{}
+	if err := json.Unmarshal(data, &rawHints); err != nil {
+		return err
+	}
+
+	index, ok := rawHints[0].(float64)
+	if !ok {
+		return fmt.Errorf("error unmarshaling hints: index should be uint64")
+	}
+	hints.Index = uint64(index)
+
+	rest, err := json.Marshal(rawHints[1])
+	if err != nil {
+		return err
+	}
+
+	var h []Hint
+	if err := json.Unmarshal(rest, &h); err != nil {
+		return err
+	}
+	hints.Hints = h
+	return nil
+}
+
+func (hints *Hints) MarshalJSON() ([]byte, error) {
+	var rawHints []interface{}
+	rawHints = append(rawHints, hints.Index)
+	rawHints = append(rawHints, hints.Hints)
+
+	return json.Marshal(rawHints)
+}
+
 type Program struct {
 	// Prime is fixed to be 0x800000000000011000000000000000000000000000000000000000000000001 and wont fit in a f.Felt
 	Bytecode        []f.Element      `json:"bytecode"`
 	CompilerVersion string           `json:"compiler_version"`
 	EntryPoints     EntryPointByType `json:"entry_points_by_type"`
-	// todo(rodro): Add remaining Json field
-	// Hints
+	Hints           []Hints          `json:"hints" validate:"required"`
 }
 
 func ProgramFromFile(pathToFile string) (*Program, error) {
