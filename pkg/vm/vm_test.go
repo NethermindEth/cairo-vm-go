@@ -22,9 +22,9 @@ func TestVMCreation(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, vm)
 
-	assert.Equal(t, 2, len(vm.MemoryManager.Memory.Segments))
-	assert.Equal(t, bytecodeSize, len(vm.MemoryManager.Memory.Segments[programSegment].Data))
-	assert.Equal(t, 0, len(vm.MemoryManager.Memory.Segments[executionSegment].Data))
+	assert.Len(t, vm.MemoryManager.Memory.Segments, 2)
+	assert.Len(t, vm.MemoryManager.Memory.Segments[programSegment].Data, bytecodeSize)
+	assert.Empty(t, vm.MemoryManager.Memory.Segments[executionSegment].Data)
 }
 
 // todo(rodro): test all possible ways of:
