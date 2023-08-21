@@ -21,10 +21,9 @@ func TestVMCreation(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, vm)
 
-	assert.Equal(t, 3, len(vm.MemoryManager.Memory.Segments))
+	assert.Equal(t, 2, len(vm.MemoryManager.Memory.Segments))
 	assert.Equal(t, bytecodeSize, len(vm.MemoryManager.Memory.Segments[programSegment].Data))
-	assert.Equal(t, 0, len(vm.MemoryManager.Memory.Segments[executionSegment].Data))
-	assert.Equal(t, 1, len(vm.MemoryManager.Memory.Segments[dataSegment].Data))
+	assert.Equal(t, 1, len(vm.MemoryManager.Memory.Segments[executionSegment].Data))
 }
 
 // todo(rodro): test all possible ways of:
@@ -260,7 +259,7 @@ func (vm *VirtualMachine) TestUpdateFp(t *testing.T) {
 }
 
 func writeToDataSegment(vm *VirtualMachine, index uint64, value *mem.MemoryValue) {
-	error := vm.MemoryManager.Memory.Write(dataSegment, index, value)
+	error := vm.MemoryManager.Memory.Write(executionSegment, index, value)
 	if error != nil {
 		panic("error in test util: writeToDataSegment")
 	}

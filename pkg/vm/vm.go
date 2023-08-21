@@ -10,7 +10,6 @@ import (
 const (
 	programSegment = iota
 	executionSegment
-	dataSegment
 )
 
 type Context struct {
@@ -45,10 +44,8 @@ func NewVirtualMachine(programBytecode []*f.Element, config VirtualMachineConfig
 		return nil, fmt.Errorf("error loading bytecode: %w", err)
 	}
 
-	// 1 (executionSegment) <- segment where the stack trace will be stored
+	// 1 (executionSegment) <- segment where ap and fp move around
 	manager.Memory.Segments = append(manager.Memory.Segments, mem.EmptySegmentWithCapacity(10))
-	// 2 (dataSegment) <- segment where ap and fp move around
-	manager.Memory.Segments = append(manager.Memory.Segments, mem.EmptySegmentWithLength(1))
 
 	return &VirtualMachine{
 		Context:       Context{Fp: 0, Ap: 0, Pc: 0},
@@ -160,7 +157,7 @@ func (vm *VirtualMachine) getCellDst(instruction *Instruction) (*mem.Cell, error
 	}
 
 	// todo(rodro): fix this math
-	return vm.MemoryManager.Memory.Peek(dataSegment, dstRegister+uint64(instruction.OffDest))
+	return vm.MemoryManager.Memory.Peek(executionSegment, dstRegister+uint64(instruction.OffDest))
 }
 
 func (vm *VirtualMachine) getCellOp0(instruction *Instruction) (*mem.Cell, error) {
@@ -172,7 +169,7 @@ func (vm *VirtualMachine) getCellOp0(instruction *Instruction) (*mem.Cell, error
 	}
 	// todo(rodro): fix this math
 	offset := op0Register + uint64(instruction.OffOp0)
-	return vm.MemoryManager.Memory.Peek(dataSegment, offset)
+	return vm.MemoryManager.Memory.Peek(executionSegment, offset)
 }
 
 func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell) (*mem.Cell, error) {
@@ -189,9 +186,9 @@ func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell
 		// todo(rodro): would it be sensitive to check instruction.OffOp1 == 1?
 		op1Address = mem.CreateMemoryAddress(programSegment, vm.Context.Pc)
 	case FpPlusOffOp1:
-		op1Address = mem.CreateMemoryAddress(dataSegment, vm.Context.Fp)
+		op1Address = mem.CreateMemoryAddress(executionSegment, vm.Context.Fp)
 	case ApPlusOffOp1:
-		op1Address = mem.CreateMemoryAddress(dataSegment, vm.Context.Ap)
+		op1Address = mem.CreateMemoryAddress(executionSegment, vm.Context.Ap)
 	}
 	// todo(rodro): fix this math
 	op1Address.Offset += uint64(instruction.OffOp1)
@@ -346,7 +343,7 @@ func (vm *VirtualMachine) updateAp(instruction *Instruction, res *mem.MemoryValu
 		if instruction.ApUpdate == Add2 {
 			return vm.Context.Ap + 2, nil
 		}
-		return 0, fmt.Errorf("cannot update ap, invalid flag combination: Call & Add2")
+		return 0, fmt.Errorf("cannot update ap, invalid flag combination: Call without Add2")
 	}
 
 	switch instruction.ApUpdate {
