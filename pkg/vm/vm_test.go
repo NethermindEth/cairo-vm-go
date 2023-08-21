@@ -44,7 +44,7 @@ func TestGetCellApDst(t *testing.T) {
 	const offDest = 15
 	const ap = 30
 	vm.Context.Ap = ap
-	writeToDataSegment(vm, ap+offDest, mem.MemoryValueFromUint(200))
+	writeToDataSegment(vm, ap+offDest, mem.MemoryValueFromInt(200))
 
 	instruction := Instruction{
 		OffDest:     offDest,
@@ -56,7 +56,7 @@ func TestGetCellApDst(t *testing.T) {
 	assert.NotNil(t, cell)
 
 	assert.Equal(t, true, cell.Accessed)
-	assert.Equal(t, mem.MemoryValueFromUint(200), cell.Read())
+	assert.Equal(t, mem.MemoryValueFromInt(200), cell.Read())
 
 }
 
@@ -71,7 +71,7 @@ func TestGetCellFpDst(t *testing.T) {
 	const fp = 20
 	vm.Context.Ap = ap
 	vm.Context.Fp = fp
-	writeToDataSegment(vm, fp+offDest, mem.MemoryValueFromUint(123))
+	writeToDataSegment(vm, fp+offDest, mem.MemoryValueFromInt(123))
 
 	instruction := Instruction{
 		OffDest:     offDest,
@@ -83,7 +83,7 @@ func TestGetCellFpDst(t *testing.T) {
 	assert.NotNil(t, cell)
 
 	assert.Equal(t, true, cell.Accessed)
-	assert.Equal(t, mem.MemoryValueFromUint(123), cell.Read())
+	assert.Equal(t, mem.MemoryValueFromInt(123), cell.Read())
 }
 
 func TestGetApCellOp0(t *testing.T) {
@@ -95,7 +95,7 @@ func TestGetApCellOp0(t *testing.T) {
 	const offOp0 = 15
 	const ap = 30
 	vm.Context.Ap = ap
-	writeToDataSegment(vm, ap+offOp0, mem.MemoryValueFromUint(123))
+	writeToDataSegment(vm, ap+offOp0, mem.MemoryValueFromInt(123))
 
 	instruction := Instruction{
 		OffOp0:      offOp0,
@@ -107,7 +107,7 @@ func TestGetApCellOp0(t *testing.T) {
 	assert.NotNil(t, cell)
 
 	assert.Equal(t, true, cell.Accessed)
-	assert.Equal(t, mem.MemoryValueFromUint(123), cell.Read())
+	assert.Equal(t, mem.MemoryValueFromInt(123), cell.Read())
 }
 
 func TestGetImmCellOp1(t *testing.T) {
@@ -136,7 +136,7 @@ func TestGetImmCellOp1(t *testing.T) {
 	assert.NotNil(t, cell)
 
 	assert.Equal(t, true, cell.Accessed)
-	assert.Equal(t, mem.MemoryValueFromUint(1234), cell.Read())
+	assert.Equal(t, mem.MemoryValueFromInt(1234), cell.Read())
 }
 
 func TestComputeAddRes(t *testing.T) {
@@ -157,7 +157,7 @@ func TestComputeAddRes(t *testing.T) {
 
 	cellOp1 := &mem.Cell{
 		Accessed: true,
-		Value:    mem.MemoryValueFromUint(15),
+		Value:    mem.MemoryValueFromInt(15),
 	}
 
 	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)

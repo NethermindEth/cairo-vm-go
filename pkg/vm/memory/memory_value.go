@@ -108,10 +108,16 @@ func MemoryValueFromFieldElement(felt *f.Element) *MemoryValue {
 	}
 }
 
-func MemoryValueFromUint[T constraints.Integer](v T) *MemoryValue {
+func MemoryValueFromInt[T constraints.Integer](v T) *MemoryValue {
 	newElement := f.NewElement(uint64(v))
 	return &MemoryValue{
 		felt: &newElement,
+	}
+}
+
+func MemoryValueFromSegmentAndOffset[T constraints.Integer](segmentIndex T, offset T) *MemoryValue {
+	return &MemoryValue{
+		address: &MemoryAddress{SegmentIndex: uint64(segmentIndex), Offset: uint64(offset)},
 	}
 }
 

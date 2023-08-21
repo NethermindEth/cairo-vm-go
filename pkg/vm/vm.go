@@ -209,7 +209,7 @@ func (vm *VirtualMachine) inferOperand(
 		return nil, nil
 	}
 	if !dstCell.Accessed {
-		return nil, fmt.Errorf("impossible to define unknown operand, dst cell is unknown as well")
+		return nil, fmt.Errorf("impossible to define unknown operand, dst cell is unknown too")
 	}
 
 	var knownOpCell *mem.Cell
@@ -228,7 +228,7 @@ func (vm *VirtualMachine) inferOperand(
 	if instruction.Res == AddOperands {
 		missingVal, err = mem.EmptyMemoryValueAs(dst.IsAddress()).Sub(dst, knownOpCell.Read())
 	} else {
-		missingVal, err = mem.EmptyMemoryValueAs(dst.IsAddress()).Div(dst, knownOpCell.Read())
+		missingVal, err = mem.EmptyMemoryValueAsFelt().Div(dst, knownOpCell.Read())
 	}
 	if err != nil {
 		return nil, err
@@ -277,14 +277,14 @@ func (vm *VirtualMachine) opcodeAssertions(
 	switch instruction.Opcode {
 	case Call:
 		// Store at [ap] the current fp
-		err := dstCell.Write(mem.MemoryValueFromUint(vm.Context.Fp))
+		err := dstCell.Write(mem.MemoryValueFromSegmentAndOffset(executionSegment, vm.Context.Fp))
 		if err != nil {
 			return err
 		}
 
 		// Write in [ap + 1] the instruction to execute
 		err = op0Cell.Write(
-			mem.MemoryValueFromUint(vm.Context.Pc + uint64(instruction.Size())),
+			mem.MemoryValueFromSegmentAndOffset(programSegment, vm.Context.Pc+uint64(instruction.Size())),
 		)
 		if err != nil {
 			return err
@@ -367,13 +367,12 @@ func (vm *VirtualMachine) updateFp(instruction *Instruction, dstCell *mem.Cell) 
 		// [ap] and [ap + 1] are written to memory
 		return vm.Context.Ap + 2, nil
 	case Ret:
-		// sets fp to a value from [dst].
-		// to behave accordingly [dst] == [fp - 2]
-		dst, err := dstCell.Read().Uint64()
+		// [dst] should be a memory address of the form (executionSegment, fp - 2)
+		dst, err := dstCell.Read().ToMemoryAddress()
 		if err != nil {
 			return 0, err
 		}
-		return dst, nil
+		return dst.Offset, nil
 	default:
 		return vm.Context.Fp, nil
 	}

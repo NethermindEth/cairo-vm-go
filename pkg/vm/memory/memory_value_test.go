@@ -12,7 +12,7 @@ func TestFeltPlusFelt(t *testing.T) {
 	lhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(3))
 	rhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(7))
 
-	expected := MemoryValueFromUint(10)
+	expected := MemoryValueFromInt(10)
 
 	res, err := memVal.Add(lhs, rhs)
 	assert.NoError(t, err)
@@ -83,7 +83,7 @@ func TestFeltSubFelt(t *testing.T) {
 	lhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(8))
 	rhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(7))
 
-	expected := MemoryValueFromUint(1)
+	expected := MemoryValueFromInt(1)
 
 	res, err := memVal.Sub(lhs, rhs)
 	assert.NoError(t, err)
