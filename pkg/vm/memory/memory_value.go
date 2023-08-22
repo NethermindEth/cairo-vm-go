@@ -178,48 +178,48 @@ func (mv *MemoryValue) IsFelt() bool {
 	return mv.felt != nil
 }
 
-func (memVal *MemoryValue) Equal(other *MemoryValue) bool {
-	if memVal.IsAddress() && other.IsAddress() {
-		return memVal.address.Equal(other.address)
+func (mv *MemoryValue) Equal(other *MemoryValue) bool {
+	if mv.IsAddress() && other.IsAddress() {
+		return mv.address.Equal(other.address)
 	}
-	if memVal.IsFelt() && other.IsFelt() {
-		return memVal.felt.Equal(other.felt)
+	if mv.IsFelt() && other.IsFelt() {
+		return mv.felt.Equal(other.felt)
 	}
 	return false
 }
 
 // Adds two memory values is the second one is a Felt
-func (memVal *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
+func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	var err error
 	if lhs.IsAddress() {
 		if !rhs.IsFelt() {
 			return nil, fmt.Errorf("memory value addition requires a felt in the rhs")
 		}
-		memVal.address, err = memVal.address.Add(lhs.address, rhs.felt)
+		mv.address, err = mv.address.Add(lhs.address, rhs.felt)
 	} else {
 		if rhs.IsAddress() {
-			memVal.address, err = memVal.address.Add(rhs.address, lhs.felt)
+			mv.address, err = mv.address.Add(rhs.address, lhs.felt)
 		} else {
-			memVal.felt = memVal.felt.Add(lhs.felt, rhs.felt)
+			mv.felt = mv.felt.Add(lhs.felt, rhs.felt)
 		}
 	}
 
 	if err != nil {
 		return nil, fmt.Errorf("error adding two memory values: %w", err)
 	}
-	return memVal, nil
+	return mv, nil
 }
 
 // Subs two memory values if they're in the same segment or the rhs is a Felt.
-func (memVal *MemoryValue) Sub(lhs, rhs *MemoryValue) (*MemoryValue, error) {
+func (mv *MemoryValue) Sub(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	var err error
 	if lhs.IsAddress() {
-		memVal.address, err = memVal.address.Sub(lhs.address, rhs.ToAny())
+		mv.address, err = mv.address.Sub(lhs.address, rhs.ToAny())
 	} else {
 		if rhs.IsAddress() {
 			return nil, fmt.Errorf("cannot substract a an address from a felt")
 		} else {
-			memVal.felt = memVal.felt.Sub(lhs.felt, rhs.felt)
+			mv.felt = mv.felt.Sub(lhs.felt, rhs.felt)
 		}
 	}
 
@@ -227,43 +227,43 @@ func (memVal *MemoryValue) Sub(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 		return nil, fmt.Errorf("error substracting two memory values: %w", err)
 	}
 
-	return memVal, nil
+	return mv, nil
 }
 
-func (memVal *MemoryValue) Mul(lhs, rhs *MemoryValue) (*MemoryValue, error) {
+func (mv *MemoryValue) Mul(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	if lhs.IsAddress() || rhs.IsAddress() {
 		return nil, fmt.Errorf("cannot multiply memory addresses")
 	}
-	memVal.felt.Mul(lhs.felt, rhs.felt)
-	return memVal, nil
+	mv.felt.Mul(lhs.felt, rhs.felt)
+	return mv, nil
 }
 
-func (memVal *MemoryValue) Div(lhs, rhs *MemoryValue) (*MemoryValue, error) {
+func (mv *MemoryValue) Div(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	if lhs.IsAddress() || rhs.IsAddress() {
 		return nil, fmt.Errorf("cannot divide memory addresses")
 	}
 
-	memVal.felt.Div(lhs.felt, rhs.felt)
-	return memVal, nil
+	mv.felt.Div(lhs.felt, rhs.felt)
+	return mv, nil
 }
 
-func (memVal MemoryValue) String() string {
-	if memVal.IsAddress() {
-		return memVal.address.String()
+func (mv MemoryValue) String() string {
+	if mv.IsAddress() {
+		return mv.address.String()
 	}
-	return memVal.felt.String()
+	return mv.felt.String()
 }
 
 // Retuns a MemoryValue holding a felt as uint if it fits
-func (memVal *MemoryValue) Uint64() (uint64, error) {
-	if memVal.IsAddress() {
-		return 0, fmt.Errorf("cannot convert a memory address '%s' into uint64", *memVal)
+func (mv *MemoryValue) Uint64() (uint64, error) {
+	if mv.IsAddress() {
+		return 0, fmt.Errorf("cannot convert a memory address '%s' into uint64", *mv)
 	}
-	if !memVal.felt.IsUint64() {
-		return 0, fmt.Errorf("cannot convert a field element '%s' into uint64", *memVal)
+	if !mv.felt.IsUint64() {
+		return 0, fmt.Errorf("cannot convert a field element '%s' into uint64", *mv)
 	}
 
-	return memVal.felt.Uint64(), nil
+	return mv.felt.Uint64(), nil
 }
 
 // Note: Commenting this function since relocation is possibly going to look
