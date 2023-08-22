@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -12,10 +13,10 @@ func TestFeltPlusFelt(t *testing.T) {
 	lhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(3))
 	rhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(7))
 
-	expected := MemoryValueFromUint64(10)
+	expected := MemoryValueFromInt(10)
 
 	res, err := memVal.Add(lhs, rhs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, memVal, res)
 	assert.Equal(t, *expected, *res)
@@ -35,7 +36,7 @@ func TestMemoryAddressPlusFelt(t *testing.T) {
 	})
 
 	res, err := memVal.Add(lhs, rhs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, memVal, res)
 	assert.Equal(t, *expected, *res)
@@ -55,7 +56,7 @@ func TestFeltPlusMemoryAddress(t *testing.T) {
 	})
 
 	res, err := memVal.Add(lhs, rhs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, memVal, res)
 	assert.Equal(t, *expected, *res)
@@ -83,10 +84,10 @@ func TestFeltSubFelt(t *testing.T) {
 	lhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(8))
 	rhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(7))
 
-	expected := MemoryValueFromUint64(1)
+	expected := MemoryValueFromInt(1)
 
 	res, err := memVal.Sub(lhs, rhs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, memVal, res)
 	assert.Equal(t, *expected, *res)
@@ -107,7 +108,7 @@ func TestMemoryAddressSubFelt(t *testing.T) {
 
 	res, err := memVal.Sub(lhs, rhs)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, memVal, res)
 	assert.Equal(t, *expected, *res)
 }
@@ -142,8 +143,7 @@ func TestMemoryAddressSubMemoryAddressSameSegment(t *testing.T) {
 	})
 
 	res, err := memVal.Sub(lhs, rhs)
-
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, memVal, res)
 	assert.Equal(t, *expected, *res)
@@ -176,7 +176,7 @@ func TestMemoryAddressSubMemoryAddressDiffSegment(t *testing.T) {
 //		2: new(MemoryAddress).SetUint64(42),
 //	})
 //
-//	assert.NoError(t, err)
+//	require.NoError(t, err)
 //	assert.Equal(t, res, r)
 //	assert.Equal(t, *res, *expected)
 //}
@@ -190,7 +190,7 @@ func TestMemoryAddressSubMemoryAddressDiffSegment(t *testing.T) {
 //		2: CreateMemoryAddress(10, new(f.Element).SetUint64(1)),
 //	})
 //
-//	assert.NoError(t, err)
+//	require.NoError(t, err)
 //	assert.Equal(t, res, r)
 //	assert.Equal(t, *res, *expected)
 //}

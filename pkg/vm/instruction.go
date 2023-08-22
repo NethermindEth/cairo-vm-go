@@ -13,12 +13,12 @@ const (
 	Fp
 )
 
-type Op1Addr uint8
+type Op1Src uint8
 
 const (
-	Imm Op1Addr = iota
-	ApPlusOff2
-	FpPlustOff2
+	Imm Op1Src = iota
+	FpPlusOffOp1
+	ApPlusOffOp1
 	Op0
 )
 
@@ -49,14 +49,6 @@ const (
 	Add2
 )
 
-type FpUpdate uint8
-
-const (
-	ApPlus2 FpUpdate = iota
-	Dst
-	SameFp
-)
-
 type Opcode uint8
 
 const (
@@ -67,26 +59,27 @@ const (
 )
 
 type Instruction struct {
-	Off0 int16
-	Off1 int16
-	Off2 int16
-
-	// Imm *f.Element
+	OffDest int16
+	OffOp0  int16
+	OffOp1  int16
 
 	DstRegister Register
 	Op0Register Register
 
-	Op1Addr Op1Addr
+	Op1Source Op1Src
 
-	Res      ResLogic
+	Res ResLogic
+
+	// How to update registries after instruction execution
 	PcUpdate PcUpdate
 	ApUpdate ApUpdate
-	FpUpdate FpUpdate
-	Opcode   Opcode
+
+	// Defines which instruction needs to be executed
+	Opcode Opcode
 }
 
 func (instr Instruction) Size() uint8 {
-	if instr.Op1Addr == Imm {
+	if instr.Op1Source == Imm {
 		return 2
 	}
 	return 1
@@ -121,9 +114,9 @@ func DecodeInstruction(rawInstruction *f.Element) (*Instruction, error) {
 	instruction := new(Instruction)
 
 	// Add unsigned offsets as signed ones
-	instruction.Off0 = int16(int(off0Enc) - (1 << (offsetBits - 1)))
-	instruction.Off1 = int16(int(off1Enc) - (1 << (offsetBits - 1)))
-	instruction.Off2 = int16(int(off2Enc) - (1 << (offsetBits - 1)))
+	instruction.OffDest = int16(int(off0Enc) - (1 << (offsetBits - 1)))
+	instruction.OffOp0 = int16(int(off1Enc) - (1 << (offsetBits - 1)))
+	instruction.OffOp1 = int16(int(off2Enc) - (1 << (offsetBits - 1)))
 
 	err := decodeInstructionFlags(instruction, flags)
 	if err != nil {
@@ -160,11 +153,11 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 	instruction.DstRegister = Register((flags >> dstRegBit) & 1)
 	instruction.Op0Register = Register((flags >> op0RegBit) & 1)
 
-	op1Addr, err := oneHot((flags>>op1ImmBit)&1, (flags>>op1ApBit)&1, (flags>>op1FpBit)&1)
+	op1Addr, err := oneHot((flags>>op1ImmBit)&1, (flags>>op1FpBit)&1, (flags>>op1ApBit)&1)
 	if err != nil {
 		return fmt.Errorf("error decoding op1_addr of instruction: %w", err)
 	}
-	instruction.Op1Addr = Op1Addr(op1Addr)
+	instruction.Op1Source = Op1Src(op1Addr)
 
 	pcUpdate, err := oneHot((flags>>pcJumpAbsBit)&1, (flags>>pcJumpRelBit)&1, (flags>>pcJnzBit)&1)
 	if err != nil {
@@ -193,11 +186,6 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 		instruction.Res = ResLogic(res)
 	}
 
-	// The result must be unconstrained in case of JNZ
-	if instruction.PcUpdate == Jnz && instruction.Res != Unconstrained {
-		return fmt.Errorf("jnz opcode must have Unconstrained res logic")
-	}
-
 	apUpdate, err := oneHot((flags>>apAddBit)&1, (flags>>apAdd1Bit)&1)
 	if err != nil {
 		return fmt.Errorf("error decoding ap_update of instruction: %w", err)
@@ -210,6 +198,16 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 	}
 	instruction.Opcode = Opcode(opcode)
 
+	// for pc udpate Jnz, res should be unconstrainded, no opcode, and ap should update with Imm
+	if instruction.PcUpdate == Jnz &&
+		(instruction.Res != Unconstrained ||
+			instruction.Opcode != Nop ||
+			instruction.ApUpdate != AddImm) {
+		return fmt.Errorf(
+			"jnz opcode must have unconstrained res logic, no opcode, and ap should update using an Imm",
+		)
+	}
+
 	if instruction.Opcode == Call {
 		// (0, 0) bits for ap_update also stand for different
 		// behaviour in different opcodes.
@@ -218,15 +216,6 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 			return fmt.Errorf("CALL must have ap_update = ADD2")
 		}
 		instruction.ApUpdate = Add2
-	}
-
-	switch instruction.Opcode {
-	case Call:
-		instruction.FpUpdate = ApPlus2
-	case Ret:
-		instruction.FpUpdate = Dst
-	default:
-		instruction.FpUpdate = SameFp
 	}
 
 	return nil
