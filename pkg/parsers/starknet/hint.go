@@ -349,7 +349,7 @@ func (i *InnerDoubleDeref) UnmarshalJSON(data []byte) error {
 
 	offset, ok := s[1].(float64)
 	if !ok {
-		return fmt.Errorf("failed to convert offset %v to float64", s[1])
+		return fmt.Errorf("convert offset %v to float64", s[1])
 	}
 	i.Offset = int(offset)
 
@@ -375,7 +375,7 @@ func (i *Immediate) UnmarshalJSON(data []byte) error {
 
 	immediate, ok := new(big.Int).SetString(str.Immediate, 0)
 	if !ok {
-		return fmt.Errorf("failed to convert immediate value %s to big.Int", str.Immediate)
+		return fmt.Errorf("convert immediate value %s to big.Int", str.Immediate)
 	}
 
 	i.Immediate = immediate
