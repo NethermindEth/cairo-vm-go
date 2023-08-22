@@ -45,13 +45,13 @@ func (b Builtin) MarshalJSON() ([]byte, error) {
 		return []byte("segment_arena"), nil
 
 	}
-	return nil, fmt.Errorf("error marshaling builtin with unknow identifer: %d", uint8(b))
+	return nil, fmt.Errorf("marshal unknown builtin: %d", uint8(b))
 }
 
 func (b *Builtin) UnmarshalJSON(data []byte) error {
 	builtinName, err := strconv.Unquote(string(data))
 	if err != nil {
-		return fmt.Errorf("error unmarsahling builtin: %w", err)
+		return fmt.Errorf("unmarshal builtin: %w", err)
 	}
 
 	switch builtinName {
@@ -74,7 +74,7 @@ func (b *Builtin) UnmarshalJSON(data []byte) error {
 	case "segment_arena":
 		*b = SegmentArena
 	default:
-		return fmt.Errorf("error unmarsahling unknwon builtin name: %s", builtinName)
+		return fmt.Errorf("unmarshal unknown builtin: %s", builtinName)
 	}
 	return nil
 }
@@ -106,7 +106,7 @@ func (hints *Hints) UnmarshalJSON(data []byte) error {
 
 	index, ok := rawHints[0].(float64)
 	if !ok {
-		return fmt.Errorf("error unmarshaling hints: index should be uint64")
+		return fmt.Errorf("unmarshal hints: index should be uint64")
 	}
 	hints.Index = uint64(index)
 
