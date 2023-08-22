@@ -11,7 +11,7 @@ This project aims to implement a Cairo Virtual Machine using Go. This is one of 
 
 ## Intro
 
-The Cairo Virtual Machine (CVM) is a crucial component of the Starknet ecosystem. It serves as the runtime environment for all smart contracts on the platform. 
+The Cairo Virtual Machine is a crucial component of the Starknet ecosystem. It serves as the runtime environment for all smart contracts on the platform. 
 When users write contracts in high-level Cairo, it gets compiled to Sierra, and then to CASM bytecode. The VM receives this bytecode, executes it and generates a proof of execution. This proof is then sent from a sequencer to the verifier to include the transaction in a new block.
 
 ## Install
@@ -24,7 +24,7 @@ Currently, it is only possible to use it by building it from source by following
 3. Execute on the root folder of the repo: `make build`.
 4. Make sure everything is running smoothly by executing: `make test`.
 
-After completing these steps, the compiled VM would be in `bin/cairo-vm`. It is worth noting that this binary, in the current state of the project, is still non-functional.
+After completing these steps, you can find the compiled VM in `bin/cairo-vm`. It is worth noting that this binary, in the current state of the project, is still non-functional.
 
 ### Useful Commands
 
