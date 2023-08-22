@@ -80,7 +80,7 @@ func (vm *VirtualMachine) RunStep() error {
 		return fmt.Errorf("cannot run step at %d: %w", vm.Context.Pc, err)
 	}
 
-	vm.Step += 1
+	vm.Step++
 	return nil
 }
 func (vm *VirtualMachine) RunStepAt(pc uint64) error {
