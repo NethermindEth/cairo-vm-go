@@ -47,10 +47,10 @@ The previous list includes the most helpful documentation for the current state 
 
 ## Related Projects
 
-* [Cairo Zero VM](https://github.com/starkware-libs/cairo-lang) by [Starkware](https://github.com/starkware-libs), not being developed anymore.
+* [Cairo Zero VM](https://github.com/starkware-libs/cairo-lang) by [Starkware](https://github.com/starkware-libs).
 * [VM in Rust](https://github.com/lambdaclass/cairo-vm), [Go](https://github.com/lambdaclass/cairo-vm.go) and [C](https://github.com/lambdaclass/cairo-vm.c) by [LambdaClass](https://github.com/lambdaclass).
 * [oriac](https://github.com/xJonathanLEI/oriac/) a toy VM by [xJonathanLEI](https://github.com/xJonathanLEI)
 
 ## Contributing
 
-If you wish to contribute or learn a little bit more about how our VM works, please visit our [CONTRIBUTING.md](./CONTRIBUTING.md)
+If you wish to contribute please visit our [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines.
