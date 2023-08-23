@@ -151,11 +151,13 @@ func EmptyMemoryValueAsFelt() *MemoryValue {
 		felt: new(f.Element),
 	}
 }
+
 func EmptyMemoryValueAsAddress() *MemoryValue {
 	return &MemoryValue{
 		address: new(MemoryAddress),
 	}
 }
+
 func EmptyMemoryValueAs(address bool) *MemoryValue {
 	if address {
 		return EmptyMemoryValueAsAddress()

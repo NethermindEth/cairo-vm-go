@@ -3,9 +3,10 @@ package vm
 import (
 	"fmt"
 
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+
 	safemath "github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 const (
