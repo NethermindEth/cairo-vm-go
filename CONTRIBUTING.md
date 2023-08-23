@@ -2,9 +2,7 @@
 
 The Nethermind team maintains guidelines for contributing to the Nethermind repos. Check out our [docs page](https://docs.nethermind.io/nethermind/) if you want to learn more about us.
 
-### Code of Conduct
-
-Have you read the [code of conduct](./CODE_OF_CONDUCT.md)?
+Also, give a read to our [code of conduct](./CODE_OF_CONDUCT.md) if you haven't already.
 
 ## Bugs and Feature Request
 
@@ -38,6 +36,3 @@ Please do not:
 ## Branch Naming
 
 Please name your branch using the `kebab-case` pattern and use common sense to name it, so that its purpose remains clear. For example, if introduces a new feature that adds the allocation hint: `feature-alloc-hint`.
-
-
-
