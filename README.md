@@ -47,7 +47,7 @@ The previous list includes the most helpful documentation for the current state 
 
 ## Related Projects
 
-* [Cairo Zero VM](https://github.com/starkware-libs/cairo-lang) by [Starkware](https://github.com/starkware-libs).
+* [Cairo VM in Python](https://github.com/starkware-libs/cairo-lang) by [Starkware](https://github.com/starkware-libs).
 * [VM in Rust](https://github.com/lambdaclass/cairo-vm), [Go](https://github.com/lambdaclass/cairo-vm.go) and [C](https://github.com/lambdaclass/cairo-vm.c) by [LambdaClass](https://github.com/lambdaclass).
 * [oriac](https://github.com/xJonathanLEI/oriac/) a toy VM by [xJonathanLEI](https://github.com/xJonathanLEI)
 
