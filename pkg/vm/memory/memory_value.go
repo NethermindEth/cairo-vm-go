@@ -115,7 +115,7 @@ func MemoryValueFromInt[T constraints.Integer](v T) *MemoryValue {
 	}
 }
 
-func MemoryValueFromSegmentAndOffset[T constraints.Integer](segmentIndex T, offset T) *MemoryValue {
+func MemoryValueFromSegmentAndOffset[T constraints.Integer](segmentIndex, offset T) *MemoryValue {
 	return &MemoryValue{
 		address: &MemoryAddress{SegmentIndex: uint64(segmentIndex), Offset: uint64(offset)},
 	}

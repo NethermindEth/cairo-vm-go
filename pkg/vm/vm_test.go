@@ -21,8 +21,8 @@ func TestVMCreation(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Len(t, vm.MemoryManager.Memory.Segments, 2)
-	assert.Len(t, vm.MemoryManager.Memory.Segments[programSegment].Data, len(dummyBytecode))
-	assert.Empty(t, vm.MemoryManager.Memory.Segments[executionSegment].Data)
+	assert.Len(t, vm.MemoryManager.Memory.Segments[ProgramSegment].Data, len(dummyBytecode))
+	assert.Empty(t, vm.MemoryManager.Memory.Segments[ExecutionSegment].Data)
 }
 
 // todo(rodro): test all possible ways of:
@@ -278,7 +278,7 @@ func (vm *VirtualMachine) TestUpdateFp(t *testing.T) {
 }
 
 func writeToDataSegment(vm *VirtualMachine, index uint64, value *mem.MemoryValue) {
-	err := vm.MemoryManager.Memory.Write(executionSegment, index, value)
+	err := vm.MemoryManager.Memory.Write(ExecutionSegment, index, value)
 	if err != nil {
 		panic("error in test util: writeToDataSegment")
 	}

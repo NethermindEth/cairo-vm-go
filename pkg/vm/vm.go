@@ -8,16 +8,26 @@ import (
 )
 
 const (
-	programSegment = iota
-	executionSegment
+	ProgramSegment = iota
+	ExecutionSegment
 )
 
+// Required by the VM to run hints.
+//
+// HintRunner is defined as an external component of the VM so any user
+// could define its own, allowing the use custom hints
+type HintRunner interface {
+	RunHint(vm *VirtualMachine) error
+}
+
+// Represents the current execution context of the vm
 type Context struct {
 	Fp uint64
 	Ap uint64
 	Pc uint64
 }
 
+// This type represents the current execution context of the vm
 type VirtualMachineConfig struct {
 	Trace bool
 	// Todo(rodro): Update this property to include all builtins
@@ -59,8 +69,15 @@ func NewVirtualMachine(programBytecode []*f.Element, config VirtualMachineConfig
 
 // todo(rodro): how to know when te execute a hint or normal instruction
 
-func (vm *VirtualMachine) RunStep() error {
-	memoryValue, err := vm.MemoryManager.Memory.Read(programSegment, vm.Context.Pc)
+func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
+	// Run hint
+	err := hintRunner.RunHint(vm)
+	if err != nil {
+		return fmt.Errorf("cannot run hint at %d: %w", vm.Context.Pc, err)
+	}
+
+	// Decode and execute instruction
+	memoryValue, err := vm.MemoryManager.Memory.Read(ProgramSegment, vm.Context.Pc)
 	if err != nil {
 		return fmt.Errorf("cannot load step at %d: %w", vm.Context.Pc, err)
 	}
@@ -83,9 +100,9 @@ func (vm *VirtualMachine) RunStep() error {
 	vm.Step++
 	return nil
 }
-func (vm *VirtualMachine) RunStepAt(pc uint64) error {
+func (vm *VirtualMachine) RunStepAt(hinter HintRunner, pc uint64) error {
 	vm.Context.Pc = pc
-	return vm.RunStep()
+	return vm.RunStep(hinter)
 }
 
 func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
@@ -144,10 +161,6 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 	return nil
 }
 
-func (vm *VirtualMachine) RunHint() error {
-	return nil
-}
-
 func (vm *VirtualMachine) getCellDst(instruction *Instruction) (*mem.Cell, error) {
 	var dstRegister uint64
 	if instruction.DstRegister == Ap {
@@ -157,7 +170,7 @@ func (vm *VirtualMachine) getCellDst(instruction *Instruction) (*mem.Cell, error
 	}
 
 	// todo(rodro): fix this math
-	return vm.MemoryManager.Memory.Peek(executionSegment, dstRegister+uint64(instruction.OffDest))
+	return vm.MemoryManager.Memory.Peek(ExecutionSegment, dstRegister+uint64(instruction.OffDest))
 }
 
 func (vm *VirtualMachine) getCellOp0(instruction *Instruction) (*mem.Cell, error) {
@@ -169,7 +182,7 @@ func (vm *VirtualMachine) getCellOp0(instruction *Instruction) (*mem.Cell, error
 	}
 	// todo(rodro): fix this math
 	offset := op0Register + uint64(instruction.OffOp0)
-	return vm.MemoryManager.Memory.Peek(executionSegment, offset)
+	return vm.MemoryManager.Memory.Peek(ExecutionSegment, offset)
 }
 
 func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell) (*mem.Cell, error) {
@@ -183,11 +196,11 @@ func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell
 		}
 		op1Address = mem.CreateMemoryAddress(op0Address.SegmentIndex, op0Address.Offset)
 	case Imm:
-		op1Address = mem.CreateMemoryAddress(programSegment, vm.Context.Pc)
+		op1Address = mem.CreateMemoryAddress(ProgramSegment, vm.Context.Pc)
 	case FpPlusOffOp1:
-		op1Address = mem.CreateMemoryAddress(executionSegment, vm.Context.Fp)
+		op1Address = mem.CreateMemoryAddress(ExecutionSegment, vm.Context.Fp)
 	case ApPlusOffOp1:
-		op1Address = mem.CreateMemoryAddress(executionSegment, vm.Context.Ap)
+		op1Address = mem.CreateMemoryAddress(ExecutionSegment, vm.Context.Ap)
 	}
 	// todo(rodro): fix this math
 	op1Address.Offset += uint64(instruction.OffOp1)
@@ -271,14 +284,14 @@ func (vm *VirtualMachine) opcodeAssertions(
 	switch instruction.Opcode {
 	case Call:
 		// Store at [ap] the current fp
-		err := dstCell.Write(mem.MemoryValueFromSegmentAndOffset(executionSegment, vm.Context.Fp))
+		err := dstCell.Write(mem.MemoryValueFromSegmentAndOffset(ExecutionSegment, vm.Context.Fp))
 		if err != nil {
 			return err
 		}
 
 		// Write in [ap + 1] the instruction to execute
 		err = op0Cell.Write(
-			mem.MemoryValueFromSegmentAndOffset(programSegment, vm.Context.Pc+uint64(instruction.Size())),
+			mem.MemoryValueFromSegmentAndOffset(ProgramSegment, vm.Context.Pc+uint64(instruction.Size())),
 		)
 		if err != nil {
 			return err
