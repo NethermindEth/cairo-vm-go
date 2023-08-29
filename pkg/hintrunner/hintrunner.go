@@ -2,7 +2,6 @@ package hintrunner
 
 import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	"golang.org/x/exp/constraints"
 )
 
 // todo: Can two or more hints be assigned to a specific PC?
@@ -26,12 +25,4 @@ func (hr HintRunner) RunHint(vm *VM.VirtualMachine) *HintRunnerError {
 		return NewHintRunnerError(err)
 	}
 	return nil
-}
-
-// move this function to a possible util packages
-func Abs[T constraints.Signed](num T) T {
-	if num >= 0 {
-		return num
-	}
-	return num * -1
 }
