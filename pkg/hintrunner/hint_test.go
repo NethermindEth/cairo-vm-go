@@ -10,7 +10,6 @@ import (
 
 func TestAllocSegment(t *testing.T) {
 	vm := defaultVirtualMachine()
-
 	vm.Context.Ap = 3
 	vm.Context.Fp = 0
 

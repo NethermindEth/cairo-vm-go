@@ -13,11 +13,11 @@ type AllocSegment struct {
 	dst CellRefer
 }
 
-func (h AllocSegment) Execute(vm *VM.VirtualMachine) *HintError {
+func (hint AllocSegment) Execute(vm *VM.VirtualMachine) *HintError {
 	segmentIndex := vm.MemoryManager.Memory.AllocateEmptySegment()
 	memAddress := memory.MemoryValueFromSegmentAndOffset(segmentIndex, 0)
 
-	cell, err := h.dst.Get(vm)
+	cell, err := hint.dst.Get(vm)
 	if err != nil {
 		return NewHintError("AllocSegment", err)
 	}
