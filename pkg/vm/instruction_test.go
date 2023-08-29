@@ -1,8 +1,9 @@
 package vm
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/assert"
@@ -12,9 +13,9 @@ func TestDecodeInstructionValues(t *testing.T) {
 	offDest, offOp0, offOp1, flags := decodeInstructionValues(
 		new(f.Element).SetBytes([]byte{0x48, 0x06, 0x80, 0x01, 0x7f, 0xff, 0x80, 0x10}).Uint64(),
 	)
-	assert.Equal(t, uint16(0x8010), offDest)
-	assert.Equal(t, uint16(0x7fff), offOp0)
-	assert.Equal(t, uint16(0x8001), offOp1)
+	assert.Equal(t, int16(16), offDest)
+	assert.Equal(t, int16(-1), offOp0)
+	assert.Equal(t, int16(1), offOp1)
 	assert.Equal(t, uint16(0x4806), flags)
 }
 

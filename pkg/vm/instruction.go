@@ -114,9 +114,9 @@ func DecodeInstruction(rawInstruction *f.Element) (*Instruction, error) {
 	instruction := new(Instruction)
 
 	// Add unsigned offsets as signed ones
-	instruction.OffDest = int16(int(off0Enc) - (1 << (offsetBits - 1)))
-	instruction.OffOp0 = int16(int(off1Enc) - (1 << (offsetBits - 1)))
-	instruction.OffOp1 = int16(int(off2Enc) - (1 << (offsetBits - 1)))
+	instruction.OffDest = off0Enc
+	instruction.OffOp0 = off1Enc
+	instruction.OffOp1 = off2Enc
 
 	err := decodeInstructionFlags(instruction, flags)
 	if err != nil {
@@ -132,14 +132,15 @@ func DecodeInstruction(rawInstruction *f.Element) (*Instruction, error) {
 // |         off2            |
 // |         flags           |
 func decodeInstructionValues(encoding uint64) (
-	off0Enc uint16, off1Enc uint16, off2Enc uint16, flags uint16,
+	off0Enc int16, off1Enc int16, off2Enc int16, flags uint16,
 ) {
+	encodingWith2sComplement := encoding ^ 0x0000800080008000
 	// first, second and third 16 bits of the instruction encoding respectively
-	off0Enc = uint16(encoding & (1<<offsetBits - 1))
-	off1Enc = uint16((encoding >> offsetBits) & (1<<offsetBits - 1))
-	off2Enc = uint16((encoding >> (2 * offsetBits)) & (1<<offsetBits - 1))
+	off0Enc = int16(encodingWith2sComplement & (1<<offsetBits - 1))
+	off1Enc = int16((encodingWith2sComplement >> offsetBits) & (1<<offsetBits - 1))
+	off2Enc = int16((encodingWith2sComplement >> (2 * offsetBits)) & (1<<offsetBits - 1))
 	// bits 48..63
-	flags = uint16(encoding >> (3 * offsetBits))
+	flags = uint16(encodingWith2sComplement >> (3 * offsetBits))
 	return
 }
 
