@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 
+	safemath "github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -156,8 +157,11 @@ func (vm *VirtualMachine) getCellDst(instruction *Instruction) (*mem.Cell, error
 		dstRegister = vm.Context.Fp
 	}
 
-	// todo(rodro): fix this math
-	return vm.MemoryManager.Memory.Peek(executionSegment, dstRegister+uint64(instruction.OffDest))
+	addr, isOverflow := safemath.SafeOffset(dstRegister, instruction.OffDest)
+	if isOverflow {
+		return nil, fmt.Errorf("integer overflow while appying offset: 0x%x %d", dstRegister, instruction.OffDest)
+	}
+	return vm.MemoryManager.Memory.Peek(executionSegment, addr)
 }
 
 func (vm *VirtualMachine) getCellOp0(instruction *Instruction) (*mem.Cell, error) {
@@ -167,9 +171,12 @@ func (vm *VirtualMachine) getCellOp0(instruction *Instruction) (*mem.Cell, error
 	} else {
 		op0Register = vm.Context.Fp
 	}
-	// todo(rodro): fix this math
-	offset := op0Register + uint64(instruction.OffOp0)
-	return vm.MemoryManager.Memory.Peek(executionSegment, offset)
+
+	addr, isOverflow := safemath.SafeOffset(op0Register, instruction.OffOp0)
+	if isOverflow {
+		return nil, fmt.Errorf("integer overflow while appying offset: 0x%x %d", op0Register, instruction.OffOp0)
+	}
+	return vm.MemoryManager.Memory.Peek(executionSegment, addr)
 }
 
 func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell) (*mem.Cell, error) {
@@ -189,8 +196,12 @@ func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell
 	case ApPlusOffOp1:
 		op1Address = mem.CreateMemoryAddress(executionSegment, vm.Context.Ap)
 	}
-	// todo(rodro): fix this math
-	op1Address.Offset += uint64(instruction.OffOp1)
+
+	addr, isOverflow := safemath.SafeOffset(op1Address.Offset, instruction.OffOp1)
+	if isOverflow {
+		return nil, fmt.Errorf("integer overflow while appying offset: 0x%x %d", op1Address.Offset, instruction.OffOp1)
+	}
+	op1Address.Offset = addr
 
 	return vm.MemoryManager.Memory.PeekFromAddress(op1Address)
 }
