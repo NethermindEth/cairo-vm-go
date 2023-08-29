@@ -201,13 +201,13 @@ func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell
 		if err != nil {
 			return nil, fmt.Errorf("expected op0 to be an address: %w", err)
 		}
-		op1Address = mem.CreateMemoryAddress(op0Address.SegmentIndex, op0Address.Offset)
+		op1Address = mem.NewMemoryAddress(op0Address.SegmentIndex, op0Address.Offset)
 	case Imm:
-		op1Address = mem.CreateMemoryAddress(ProgramSegment, vm.Context.Pc)
+		op1Address = mem.NewMemoryAddress(ProgramSegment, vm.Context.Pc)
 	case FpPlusOffOp1:
-		op1Address = mem.CreateMemoryAddress(ExecutionSegment, vm.Context.Fp)
+		op1Address = mem.NewMemoryAddress(ExecutionSegment, vm.Context.Fp)
 	case ApPlusOffOp1:
-		op1Address = mem.CreateMemoryAddress(ExecutionSegment, vm.Context.Ap)
+		op1Address = mem.NewMemoryAddress(ExecutionSegment, vm.Context.Ap)
 	}
 
 	addr, isOverflow := safemath.SafeOffset(op1Address.Offset, instruction.OffOp1)

@@ -178,7 +178,7 @@ func TestComputeAddRes(t *testing.T) {
 	cellOp0 := &mem.Cell{
 		Accessed: true,
 		Value: mem.MemoryValueFromMemoryAddress(
-			mem.CreateMemoryAddress(2, 10),
+			mem.NewMemoryAddress(2, 10),
 		),
 	}
 
@@ -191,7 +191,7 @@ func TestComputeAddRes(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := mem.MemoryValueFromMemoryAddress(
-		mem.CreateMemoryAddress(2, 25),
+		mem.NewMemoryAddress(2, 25),
 	)
 
 	assert.Equal(t, expected, res)
@@ -206,7 +206,7 @@ func (vm *VirtualMachine) TestOpcodeAssertionAssertEq(t *testing.T) {
 	}
 
 	dstCell := mem.Cell{}
-	res := mem.MemoryValueFromMemoryAddress(mem.CreateMemoryAddress(2, 10))
+	res := mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))
 
 	err = vm.opcodeAssertions(&instruction, &dstCell, nil, res)
 	require.NoError(t, err)
@@ -214,7 +214,7 @@ func (vm *VirtualMachine) TestOpcodeAssertionAssertEq(t *testing.T) {
 		t,
 		mem.Cell{
 			Accessed: true,
-			Value:    mem.MemoryValueFromMemoryAddress(mem.CreateMemoryAddress(2, 10))},
+			Value:    mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))},
 		dstCell,
 	)
 }
