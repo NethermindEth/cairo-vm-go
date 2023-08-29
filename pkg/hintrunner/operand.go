@@ -44,7 +44,7 @@ type Deref struct {
 }
 
 type DoubleDeref struct {
-	deref  Deref
+	deref  CellRefer
 	offset int16
 }
 
@@ -72,7 +72,7 @@ func (deref Deref) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
 }
 
 func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
-	cell, err := dderef.deref.deref.Get(vm)
+	cell, err := dderef.deref.Get(vm)
 	if err != nil {
 		return nil, err
 	}
