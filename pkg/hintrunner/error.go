@@ -37,6 +37,7 @@ func (e *HintError) Unwrap() error {
 	return e.err
 }
 
+// OperandError is returned when the error is detected during an operand get/resolve execution
 type OperandError struct {
 	operandName string
 	err         error
