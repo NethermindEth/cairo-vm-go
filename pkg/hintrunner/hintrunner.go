@@ -10,8 +10,8 @@ type HintRunner struct {
 	hints map[uint64]Hinter
 }
 
-func CreateHintRunner() *HintRunner {
-	return nil
+func CreateHintRunner(hints map[uint64]Hinter) HintRunner {
+	return HintRunner{hints}
 }
 
 func (hr HintRunner) RunHint(vm *VM.VirtualMachine) *HintRunnerError {
