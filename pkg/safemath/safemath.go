@@ -26,12 +26,12 @@ func SafeOffset(x uint64, y int16) (res uint64, isOverflow bool) {
 	res = x + enlargedY
 	// Why does this work?
 	// Let's proceed by cases on the most significant bit of (MSB(x)).
-	// If MSB(x) == 1 and enlargedY < 0 (MSB(enlargedY) == 1) then overflow doesn't happen.
-	// Let's consider the case enlargedY >= 0 (MSB(enlargedY) == 0).
+	// If MSB(x) == 1 and y < 0 (MSB(y) == 1) then overflow doesn't happen.
+	// Let's consider the case y >= 0 (MSB(y) == 0).
 	// In that case we can only wrap up by going to the begining of uint64 range making the MSB(res) = 0.
 	// This is the second disjunct of the disjunctive formula.
 	//
-	// In the same fashion the case MSB(x) == 0 and MSB(enlargedY) == 1 is reasoned about.
+	// In the same fashion the case MSB(x) == 0 and MSB(y) == 1 is reasoned about.
 	//
 	// Finally, we boil everything down to MSBs by rotating and anding with ...000001.
 	isOverflow = bits.RotateLeft64((^x&enlargedY&res)|(x & ^enlargedY & ^res), 1)&0x1 != 0

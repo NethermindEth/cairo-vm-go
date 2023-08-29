@@ -4,9 +4,19 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+)
+
+const (
+	apCellRefName   = "ApCellRef"
+	fpCellRefName   = "FpCellRef"
+	derefName       = "Deref"
+	doubleDerefName = "DoubleDeref"
+	immediateName   = "Immediate"
+	binOpName       = "BinaryOperator"
 )
 
 //
@@ -21,15 +31,25 @@ type ApCellRef int16
 type FpCellRef int16
 
 func (ap ApCellRef) Get(vm *VM.VirtualMachine) (*memory.Cell, error) {
-	// todo(rodro): fix maths with safemath from ilia
-	offset := vm.Context.Ap + uint64(ap)
-	return vm.MemoryManager.Memory.Peek(VM.ExecutionSegment, offset)
+	res, overflow := safemath.SafeOffset(vm.Context.Ap, int16(ap))
+	if overflow {
+		return nil, NewOperandError(
+			apCellRefName,
+			fmt.Errorf("%d + %d is outside of the [0, 2**64) range", vm.Context.Ap, ap),
+		)
+	}
+	return vm.MemoryManager.Memory.Peek(VM.ExecutionSegment, res)
 }
 
 func (fp FpCellRef) Get(vm *VM.VirtualMachine) (*memory.Cell, error) {
-	// todo(rodro): fix maths with safemath from ilia
-	offset := vm.Context.Fp + uint64(fp)
-	return vm.MemoryManager.Memory.Peek(VM.ExecutionSegment, offset)
+	res, overflow := safemath.SafeOffset(vm.Context.Fp, int16(fp))
+	if overflow {
+		return nil, NewOperandError(
+			fpCellRefName,
+			fmt.Errorf("%d + %d is outside of the [0, 2**64) range", vm.Context.Ap, fp),
+		)
+	}
+	return vm.MemoryManager.Memory.Peek(VM.ExecutionSegment, res)
 }
 
 //
@@ -66,7 +86,7 @@ type BinaryOp struct {
 func (deref Deref) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
 	cell, err := deref.deref.Get(vm)
 	if err != nil {
-		return nil, err
+		return nil, NewOperandError(derefName, err)
 	}
 	return cell.Read(), nil
 }
@@ -74,25 +94,35 @@ func (deref Deref) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
 func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
 	cell, err := dderef.deref.Get(vm)
 	if err != nil {
-		return nil, err
+		return nil, NewOperandError(doubleDerefName, err)
 	}
 	lhs := cell.Read()
 
-	var res *memory.MemoryValue
-	if dderef.offset >= 0 {
-		rhs := memory.MemoryValueFromInt(dderef.offset)
-		res, err = memory.EmptyMemoryValueAs(lhs.IsAddress()).Add(lhs, rhs)
-	} else {
-		rhs := memory.MemoryValueFromInt(Abs(dderef.offset))
-		res, err = memory.EmptyMemoryValueAs(lhs.IsAddress()).Sub(lhs, rhs)
-	}
+	// Double deref implies the first value read must be an address
+	address, err := lhs.ToMemoryAddress()
 	if err != nil {
-		return nil, err
+		return nil, NewOperandError(doubleDerefName, err)
 	}
 
-	return res, nil
+	newOffset, overflow := safemath.SafeOffset(address.Offset, dderef.offset)
+	if overflow {
+		return nil, NewOperandError(
+			doubleDerefName,
+			safemath.NewSafeOffsetError(address.Offset, dderef.offset),
+		)
+	}
+	resAddr := memory.NewMemoryAddress(address.SegmentIndex, newOffset)
+
+	value, err := vm.MemoryManager.Memory.ReadFromAddress(resAddr)
+	if err != nil {
+		return nil, NewOperandError(doubleDerefName, err)
+	}
+
+	return value, nil
 }
 
+// todo(rodro): Specs from Starkware stablish this can be uint256 and not a felt.
+// Should we respect that, or go straight to felt?
 func (imm Immediate) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
 	felt := &f.Element{}
 	bigInt := (big.Int)(imm)
@@ -122,5 +152,8 @@ func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) 
 		return memory.EmptyMemoryValueAsFelt().Mul(lhs, rhs)
 	}
 
-	return nil, fmt.Errorf("Unknown operator: %d", bop.operator)
+	return nil, NewOperandError(
+		"BinaryOp",
+		fmt.Errorf("unknown binary operator id: %d", bop.operator),
+	)
 }

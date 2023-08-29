@@ -37,4 +37,19 @@ func (e *HintError) Unwrap() error {
 	return e.err
 }
 
-// todo(rodro): Should add custom error for operand?
+type OperandError struct {
+	operandName string
+	err         error
+}
+
+func NewOperandError(operandName string, err error) *OperandError {
+	return &OperandError{operandName, err}
+}
+
+func (e *OperandError) Error() string {
+	return fmt.Sprintf("failed to get/resolve operand %s: %s", e.operandName, e.err.Error())
+}
+
+func (e *OperandError) Unwrap() error {
+	return e.err
+}

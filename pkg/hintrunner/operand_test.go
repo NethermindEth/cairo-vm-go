@@ -1,6 +1,7 @@
 package hintrunner
 
 import (
+	"math/big"
 	"testing"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -24,7 +25,17 @@ func TestGetAp(t *testing.T) {
 }
 
 func TestGetFp(t *testing.T) {
-	// todo(rodro): do this with a negative offset, when safemath merged
+	vm := defaultVirtualMachine()
+	vm.Context.Fp = 15
+	writeTo(vm, VM.ExecutionSegment, vm.Context.Fp-7, memory.MemoryValueFromInt(11))
+
+	var fpCell FpCellRef = -7
+	cell, err := fpCell.Get(vm)
+
+	require.NoError(t, err)
+
+	value := cell.Read()
+	require.Equal(t, memory.MemoryValueFromInt(11), value)
 }
 
 func TestResolveDeref(t *testing.T) {
@@ -64,18 +75,110 @@ func TestResolveDoubleDerefPositiveOffset(t *testing.T) {
 }
 
 func TestResolveDoubleDerefNegativeOffset(t *testing.T) {
-	// todo(rodro): do this with a negative offset, when safemath merged
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 5
+	writeTo(
+		vm,
+		VM.ExecutionSegment, vm.Context.Ap+7,
+		memory.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 20),
+	)
+	writeTo(
+		vm,
+		VM.ExecutionSegment, 6,
+		memory.MemoryValueFromInt(13),
+	)
+
+	var apCell ApCellRef = 7
+	dderf := DoubleDeref{apCell, -14}
+
+	value, err := dderf.Resolve(vm)
+	require.NoError(t, err)
+	require.Equal(t, memory.MemoryValueFromInt(13), value)
 }
 
 func TestResolveImmediate(t *testing.T) {
+	// Immediate does not need the vm for resolving itself
+	var vm *VM.VirtualMachine = nil
 
+	imm := Immediate(*big.NewInt(99))
+
+	solved, err := imm.Resolve(vm)
+	require.NoError(t, err)
+	require.Equal(t, memory.MemoryValueFromInt(99), solved)
 }
 
 func TestResolveAddOp(t *testing.T) {
+	vm := defaultVirtualMachine()
+	// Set the information used by the lhs
+	vm.Context.Fp = 0
+	vm.Context.Ap = 5
+	writeTo(
+		vm,
+		VM.ExecutionSegment, vm.Context.Ap+7,
+		memory.MemoryValueFromSegmentAndOffset(4, 29),
+	)
+	// Set the information used by the rhs
+	writeTo(
+		vm,
+		VM.ExecutionSegment, vm.Context.Fp+20,
+		memory.MemoryValueFromInt(30),
+	)
 
+	// lhs
+	var ap ApCellRef = 7
+
+	// Rhs
+	var fp FpCellRef = 20
+	deref := Deref{fp}
+
+	operator := Add
+
+	bop := BinaryOp{
+		operator: operator,
+		lhs:      ap,
+		rhs:      deref,
+	}
+
+	res, err := bop.Resolve(vm)
+	require.NoError(t, err)
+	require.Equal(t, memory.MemoryValueFromSegmentAndOffset(4, 59), res)
 }
 
 func TestResolveMulOp(t *testing.T) {
+	vm := defaultVirtualMachine()
+	// Set the information used by the lhs
+	vm.Context.Fp = 0
+	vm.Context.Ap = 5
+	writeTo(
+		vm,
+		VM.ExecutionSegment, vm.Context.Ap+7,
+		memory.MemoryValueFromInt(100),
+	)
+	// Set the information used by the rhs
+	writeTo(
+		vm,
+		VM.ExecutionSegment, vm.Context.Fp+20,
+		memory.MemoryValueFromInt(5),
+	)
+
+	// lhs
+	var ap ApCellRef = 7
+
+	// Rhs
+	var fp FpCellRef = 20
+	deref := Deref{fp}
+
+	operator := Mul
+
+	bop := BinaryOp{
+		operator: operator,
+		lhs:      ap,
+		rhs:      deref,
+	}
+
+	res, err := bop.Resolve(vm)
+	require.NoError(t, err)
+	require.Equal(t, memory.MemoryValueFromInt(500), res)
 
 }
 
@@ -86,4 +189,9 @@ func defaultVirtualMachine() *VM.VirtualMachine {
 
 func writeTo(vm *VM.VirtualMachine, segment uint64, offset uint64, val *memory.MemoryValue) {
 	_ = vm.MemoryManager.Memory.Write(segment, offset, val)
+}
+
+func readFrom(vm *VM.VirtualMachine, segment uint64, offset uint64) *memory.MemoryValue {
+	val, _ := vm.MemoryManager.Memory.Read(segment, offset)
+	return val
 }
