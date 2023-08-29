@@ -20,7 +20,7 @@ This Virtual Machine is still in development and there is no public release avai
 Currently, it is only possible to use it by building it from source by following these instructions:
 
 1. Clone the repo to your machine: `git clone https://github.com/NethermindEth/cairo-vm-go`.
-2. Install `golang` on your PC, instructions [here](https://go.dev/.doc/install).
+2. Install `Go` on your PC, instructions [here](https://go.dev/.doc/install).
 3. Execute on the root folder of the repo: `make build`.
 4. Make sure everything is running smoothly by executing: `make test`.
 
@@ -35,6 +35,8 @@ make help
 
 ## Documentation
 
+We are planning on writing our documentation soon detailing how we adapt the theory of a non-deterministic machine to a deterministic one. Meanwhile, the next is a list of resources we are currently using to develop the VM.
+
 ### Cairo
 
 * Cairo Zero Docs: [How Cairo Works](https://docs.cairo-lang.org/0.12.0/how_cairo_works/index.html)
@@ -43,14 +45,14 @@ make help
 
 ### Other
 
-The previous list includes the most helpful documentation for the current state of the project but it does not represent all available documentation. If you are interested to go beyond, there is this [list](https://github.com/lambdaclass/cairo-vm#-documentation) made by [LambdaClass](https://github.com/lambdaclass) which has a much broader scope.
+The previous list includes the most helpful documentation for the current state of the project but it does not represent all that is available. If you are interested in going beyond, there is this [list](https://github.com/lambdaclass/cairo-vm#-documentation) made by [LambdaClass](https://github.com/lambdaclass) which has a much broader scope.
 
 ## Related Projects
 
-* [Cairo Zero VM](https://github.com/starkware-libs/cairo-lang) by [Starkware](https://github.com/starkware-libs), not being developed anymore.
+* [Cairo VM in Python](https://github.com/starkware-libs/cairo-lang) by [Starkware](https://github.com/starkware-libs).
 * [VM in Rust](https://github.com/lambdaclass/cairo-vm), [Go](https://github.com/lambdaclass/cairo-vm.go) and [C](https://github.com/lambdaclass/cairo-vm.c) by [LambdaClass](https://github.com/lambdaclass).
 * [oriac](https://github.com/xJonathanLEI/oriac/) a toy VM by [xJonathanLEI](https://github.com/xJonathanLEI)
 
 ## Contributing
 
-If you wish to contribute or learn a little bit more about how our VM works, please visit our [CONTRIBUTING.md](./CONTRIBUTING.md)
+If you wish to contribute please visit our [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines.
