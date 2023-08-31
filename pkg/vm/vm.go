@@ -162,10 +162,15 @@ func (vm *VirtualMachine) Proof() ([]Context, []*f.Element, error) {
 
 	// update pc, fp and ap to be their real value
 	// that is, pc_i + 0, ap + len(programBytecode), fp + len(programBytecode)
+	for i := range vm.Trace {
+		vm.Trace[i].Ap += vm.MemoryManager.Memory.Segments[programSegment].Len()
+		vm.Trace[i].Fp += vm.MemoryManager.Memory.Segments[programSegment].Len()
+	}
 
 	// after that, get the relocated memory
+	relocatedMemory := vm.MemoryManager.RelocateMemory()
 
-	return nil, nil, nil
+	return vm.Trace, relocatedMemory, nil
 }
 
 func (vm *VirtualMachine) getCellDst(instruction *Instruction) (*mem.Cell, error) {
