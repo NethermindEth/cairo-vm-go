@@ -20,45 +20,51 @@ type Context struct {
 }
 
 type VirtualMachineConfig struct {
-	Trace bool
-	// Todo(rodro): Update this property to include all builtins
-	Builtins bool
+	// If true, the vm outputs the trace and the relocated memory at the end of execution
+	ProofMode bool
 }
 
 type VirtualMachine struct {
 	Context       Context
 	MemoryManager *mem.MemoryManager
 	Step          uint64
-	Config        VirtualMachineConfig
+	Trace         []Context
+	config        VirtualMachineConfig
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
 func NewVirtualMachine(programBytecode []*f.Element, config VirtualMachineConfig) (*VirtualMachine, error) {
+	// Initialize memory with to initial segments:
+	// the first one for the program segment and
+	// the second one to keep track of the execution
 	manager, err := mem.CreateMemoryManager()
 	if err != nil {
 		return nil, fmt.Errorf("error creating new virtual machine: %w", err)
 	}
-
 	// 0 (programSegment) <- segment where the bytecode is stored
 	_, err = manager.Memory.AllocateSegment(programBytecode)
 	if err != nil {
 		return nil, fmt.Errorf("error loading bytecode: %w", err)
 	}
-
 	// 1 (executionSegment) <- segment where ap and fp move around
 	manager.Memory.Segments = append(manager.Memory.Segments, mem.EmptySegmentWithCapacity(10))
+
+	// Initialize the trace if necesary
+	var trace []Context
+	if config.ProofMode {
+		trace = make([]Context, 0)
+	}
 
 	return &VirtualMachine{
 		Context:       Context{Fp: 0, Ap: 0, Pc: 0},
 		Step:          0,
 		MemoryManager: manager,
-		Config:        config,
+		Trace:         trace,
+		config:        config,
 	}, nil
 }
 
 // todo(rodro): add a cache mechanism for not decoding the same instruction twice
-
-// todo(rodro): how to know when te execute a hint or normal instruction
 
 func (vm *VirtualMachine) RunStep() error {
 	memoryValue, err := vm.MemoryManager.Memory.Read(programSegment, vm.Context.Pc)
@@ -76,6 +82,11 @@ func (vm *VirtualMachine) RunStep() error {
 		return fmt.Errorf("cannot decode step at %d: %w", vm.Context.Pc, err)
 	}
 
+	// store the trace before state change
+	if vm.config.ProofMode {
+		vm.Trace = append(vm.Trace, vm.Context)
+	}
+
 	err = vm.RunInstruction(instruction)
 	if err != nil {
 		return fmt.Errorf("cannot run step at %d: %w", vm.Context.Pc, err)
@@ -90,8 +101,6 @@ func (vm *VirtualMachine) RunStepAt(pc uint64) error {
 }
 
 func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
-	// todo(rodro): any OffOpX can be negative, a better math system is required due to
-	// substraction. Also it will need to handle overflows and underflows
 	dstCell, err := vm.getCellDst(instruction)
 	if err != nil {
 		return err
@@ -145,8 +154,18 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 	return nil
 }
 
-func (vm *VirtualMachine) RunHint() error {
-	return nil
+// It returns the current trace entry, the public memory, and an error if it ocurred
+func (vm *VirtualMachine) Proof() ([]Context, []*f.Element, error) {
+	if !vm.config.ProofMode {
+		return nil, nil, fmt.Errorf("Cannot get proof if proof mode is off")
+	}
+
+	// update pc, fp and ap to be their real value
+	// that is, pc_i + 0, ap + len(programBytecode), fp + len(programBytecode)
+
+	// after that, get the relocated memory
+
+	return nil, nil, nil
 }
 
 func (vm *VirtualMachine) getCellDst(instruction *Instruction) (*mem.Cell, error) {
