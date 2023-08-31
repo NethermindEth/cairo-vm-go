@@ -79,6 +79,12 @@ func (address *MemoryAddress) Sub(lhs *MemoryAddress, rhs any) (*MemoryAddress, 
 	}
 }
 
+func (address *MemoryAddress) Relocate(segmentsOffset []int) *f.Element {
+	felt := f.Element{}
+	felt.SetUint64(uint64(segmentsOffset[address.SegmentIndex]) + address.Offset)
+	return &felt
+}
+
 func (address MemoryAddress) String() string {
 	return fmt.Sprintf(
 		"Memory Address: segment: %d, offset: %d", address.SegmentIndex, address.Offset,
