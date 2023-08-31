@@ -271,16 +271,3 @@ func (mv *MemoryValue) Uint64() (uint64, error) {
 
 	return mv.felt.Uint64(), nil
 }
-
-// Note: Commenting this function since relocation is possibly going to look
-// different.
-// Given a map of segment relocation, update a memory address location
-//func (r *MemoryAddress) Relocate(r1 *MemoryAddress, segmentsOffsets *map[uint64]*MemoryAddress) (*MemoryAddress, error) {
-//	if (*segmentsOffsets)[r1.SegmentIndex] == nil {
-//		return nil, fmt.Errorf("missing segment %d relocation rule", r.SegmentIndex)
-//	}
-//
-//	r, err := r.Add((*segmentsOffsets)[r1.SegmentIndex], &MemoryAddress{0, r1.Offset})
-//
-//	return r, err
-//}

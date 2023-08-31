@@ -154,10 +154,10 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 	return nil
 }
 
-// It returns the current trace entry, the public memory, and an error if it ocurred
+// It returns the current trace entry, the public memory, and the occurrence of an error
 func (vm *VirtualMachine) Proof() ([]Context, []*f.Element, error) {
 	if !vm.config.ProofMode {
-		return nil, nil, fmt.Errorf("Cannot get proof if proof mode is off")
+		return nil, nil, fmt.Errorf("cannot get proof if proof mode is off")
 	}
 
 	// update pc, fp and ap to be their real value
