@@ -214,7 +214,8 @@ func TestUpdatePcNextInstr(t *testing.T) {
 
 	vm.Context.Pc = 3
 	instruction := Instruction{
-		PcUpdate: NextInstr,
+		PcUpdate:  NextInstr,
+		Op1Source: Op0, // anything but imm
 	}
 
 	nextPc, err := vm.updatePc(&instruction, nil, nil, nil)

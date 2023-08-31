@@ -9,34 +9,35 @@ type MemoryManager struct {
 }
 
 // Creates a new memory manager
-func CreateMemoryManager() (*MemoryManager, error) {
+func CreateMemoryManager() *MemoryManager {
 	memory := InitializeEmptyMemory()
 
 	return &MemoryManager{
 		Memory: memory,
-	}, nil
+	}
 }
 
+// It returns all segments in memory but relocated as a single segment
+// Each element is a pointer to a field element, if the cell was not accessed,
+// nil is stored instead
 func (mm *MemoryManager) RelocateMemory() []*f.Element {
 	maxMemoryUsed := 0
-	// segmentsOffsets[i] =  sum of segmentsOffset[i - 1] + [i - 2] ... [0]
-	segmentsOffsets := make([]int, len(mm.Memory.Segments))
+	// segmentsOffsets[0] =  0
+	// segmentsOffsets[1] = len(segment[0])
+	// segmentsOffsets[N] = len(segment[n - 1]) + sum of segmentsOffsets[n - i] for i in [0, n-1]
+	segmentsOffsets := make([]int, len(mm.Memory.Segments)+1)
 	for i, segment := range mm.Memory.Segments {
 		maxMemoryUsed += len(segment.Data)
-		if i == 0 {
-			segmentsOffsets[i] = 0
-		} else {
-			segmentsOffsets[i] = segmentsOffsets[i-1] + len(segment.Data)
-		}
+		segmentsOffsets[i+1] = segmentsOffsets[i] + len(segment.Data)
 	}
 
 	relocatedMemory := make([]*f.Element, maxMemoryUsed)
 	for i, segment := range mm.Memory.Segments {
 		for j, cell := range segment.Data {
+			var felt *f.Element
 			if !cell.Accessed {
 				continue
 			}
-			var felt *f.Element
 			if cell.Value.IsAddress() {
 				felt = cell.Value.address.Relocate(segmentsOffsets)
 			} else {

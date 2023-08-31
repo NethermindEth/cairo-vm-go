@@ -37,12 +37,9 @@ func NewVirtualMachine(programBytecode []*f.Element, config VirtualMachineConfig
 	// Initialize memory with to initial segments:
 	// the first one for the program segment and
 	// the second one to keep track of the execution
-	manager, err := mem.CreateMemoryManager()
-	if err != nil {
-		return nil, fmt.Errorf("error creating new virtual machine: %w", err)
-	}
+	manager := mem.CreateMemoryManager()
 	// 0 (programSegment) <- segment where the bytecode is stored
-	_, err = manager.Memory.AllocateSegment(programBytecode)
+	_, err := manager.Memory.AllocateSegment(programBytecode)
 	if err != nil {
 		return nil, fmt.Errorf("error loading bytecode: %w", err)
 	}

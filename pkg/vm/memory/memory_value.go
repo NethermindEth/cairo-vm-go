@@ -129,6 +129,8 @@ func MemoryValueFromSegmentAndOffset[T constraints.Integer](segmentIndex T, offs
 
 func MemoryValueFromAny(anyType any) (*MemoryValue, error) {
 	switch t := anyType.(type) {
+	case uint64:
+		return MemoryValueFromInt(anyType.(uint64)), nil
 	case *f.Element:
 		return MemoryValueFromFieldElement(anyType.(*f.Element)), nil
 	case *MemoryAddress:
