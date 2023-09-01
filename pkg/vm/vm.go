@@ -159,9 +159,10 @@ func (vm *VirtualMachine) Proof() ([]Context, []*f.Element, error) {
 
 	// update pc, fp and ap to be their real value
 	// that is, pc_i + 0, ap + len(programBytecode), fp + len(programBytecode)
+	totalBytecode := vm.MemoryManager.Memory.Segments[programSegment].Len()
 	for i := range vm.Trace {
-		vm.Trace[i].Ap += vm.MemoryManager.Memory.Segments[programSegment].Len()
-		vm.Trace[i].Fp += vm.MemoryManager.Memory.Segments[programSegment].Len()
+		vm.Trace[i].Ap += totalBytecode
+		vm.Trace[i].Fp += totalBytecode
 	}
 
 	// after that, get the relocated memory
