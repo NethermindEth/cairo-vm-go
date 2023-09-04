@@ -1,6 +1,8 @@
 package vm
 
 import (
+	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -149,4 +151,96 @@ func TestAddAp(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, *decoded)
+}
+
+func TestBiggerThan64Bits(t *testing.T) {
+	instruction := new(f.Element).SetBigInt(big.NewInt(1).Lsh(big.NewInt(1), 64))
+
+	_, err := DecodeInstruction(instruction)
+
+	require.Error(t, err)
+	expectedError := fmt.Sprintf("error decoding instruction: %d is bigger than 64 bits", *instruction)
+	assert.EqualError(t, err, expectedError)
+}
+
+func TestInvalidOpOneAddress(t *testing.T) {
+	instruction := new(f.Element).SetBytes([]byte{0x04, 0x0f, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+
+	_, err := DecodeInstruction(instruction)
+
+	require.Error(t, err)
+	expectedError := fmt.Sprintf("error decoding op1_addr of instruction: decoding wrong sequence of bits: %v", []uint16{1, 1, 0})
+	assert.EqualError(t, err, expectedError)
+}
+
+func TestInvalidPcUpdate(t *testing.T) {
+	instruction := new(f.Element).SetBytes([]byte{0x05, 0x87, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+
+	_, err := DecodeInstruction(instruction)
+
+	require.Error(t, err)
+	expectedError := fmt.Sprintf("error decoding pc_update of instruction: decoding wrong sequence of bits: %v", []uint16{1, 1, 0})
+	assert.EqualError(t, err, expectedError)
+}
+
+func TestInvalidResLogic(t *testing.T) {
+	instruction := new(f.Element).SetBytes([]byte{0x04, 0x67, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+
+	_, err := DecodeInstruction(instruction)
+
+	require.Error(t, err)
+	expectedError := fmt.Sprintf("error decoding res_logic of instruction: decoding wrong sequence of bits: %v", []uint16{1, 1})
+	assert.EqualError(t, err, expectedError)
+}
+
+func TestInvalidApUpdate(t *testing.T) {
+	instruction := new(f.Element).SetBytes([]byte{0x0C, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+
+	_, err := DecodeInstruction(instruction)
+
+	require.Error(t, err)
+	expectedError := fmt.Sprintf("error decoding ap_update of instruction: decoding wrong sequence of bits: %v", []uint16{1, 1})
+	assert.EqualError(t, err, expectedError)
+}
+
+func TestInvalidOpcode(t *testing.T) {
+	instruction := new(f.Element).SetBytes([]byte{0x34, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+
+	_, err := DecodeInstruction(instruction)
+
+	require.Error(t, err)
+	expectedError := fmt.Sprintf("error decoding opcode of instruction: decoding wrong sequence of bits: %v", []uint16{1, 1, 0})
+	assert.EqualError(t, err, expectedError)
+}
+
+func TestPcUpdateJnzInvalid(t *testing.T) {
+	instructionInvalidRes := new(f.Element).SetBytes([]byte{0x06, 0x27, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+	instructionInvalidOpcode := new(f.Element).SetBytes([]byte{0x16, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+	instructionInvalidApUpdate := new(f.Element).SetBytes([]byte{0x02, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+	expectedError := "jnz opcode must have unconstrained res logic, no opcode, and ap should update using an Imm"
+
+	_, err := DecodeInstruction(instructionInvalidRes)
+
+	require.Error(t, err)
+	assert.EqualError(t, err, expectedError)
+
+	_, err = DecodeInstruction(instructionInvalidOpcode)
+
+	require.Error(t, err)
+	assert.EqualError(t, err, expectedError)
+
+	_, err = DecodeInstruction(instructionInvalidApUpdate)
+
+	require.Error(t, err)
+	assert.EqualError(t, err, expectedError)
+}
+
+func TestCallInvalidApUpdate(t *testing.T) {
+	instruction := new(f.Element).SetBytes([]byte{0x15, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01})
+	expectedError := "CALL must have ap_update = ADD2"
+
+	_, err := DecodeInstruction(instruction)
+
+	require.Error(t, err)
+	assert.EqualError(t, err, expectedError)
 }

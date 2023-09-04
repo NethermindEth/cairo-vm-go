@@ -136,9 +136,10 @@ func decodeInstructionValues(encoding uint64) (
 ) {
 	encodingWith2sComplement := encoding ^ 0x0000800080008000
 	// first, second and third 16 bits of the instruction encoding respectively
-	off0Enc = int16(encodingWith2sComplement & (1<<offsetBits - 1))
-	off1Enc = int16((encodingWith2sComplement >> offsetBits) & (1<<offsetBits - 1))
-	off2Enc = int16((encodingWith2sComplement >> (2 * offsetBits)) & (1<<offsetBits - 1))
+	var mask uint64 = (1<<offsetBits - 1)
+	off0Enc = int16(encodingWith2sComplement & mask)
+	off1Enc = int16((encodingWith2sComplement >> offsetBits) & mask)
+	off2Enc = int16((encodingWith2sComplement >> (2 * offsetBits)) & mask)
 	// bits 48..63
 	flags = uint16(encodingWith2sComplement >> (3 * offsetBits))
 	return
