@@ -10,11 +10,11 @@ type HintRunner struct {
 	hints map[uint64]Hinter
 }
 
-func CreateHintRunner(hints map[uint64]Hinter) HintRunner {
+func NewHintRunner(hints map[uint64]Hinter) HintRunner {
 	return HintRunner{hints}
 }
 
-func (hr HintRunner) RunHint(vm *VM.VirtualMachine) *HintRunnerError {
+func (hr HintRunner) RunHint(vm *VM.VirtualMachine) error {
 	hint := hr.hints[vm.Context.Pc]
 	if hint == nil {
 		return nil

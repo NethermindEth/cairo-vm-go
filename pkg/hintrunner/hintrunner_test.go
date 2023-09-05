@@ -15,7 +15,7 @@ func TestExistingHint(t *testing.T) {
 	var ap ApCellRef = 5
 	allocHint := AllocSegment{ap}
 
-	hr := CreateHintRunner(map[uint64]Hinter{
+	hr := NewHintRunner(map[uint64]Hinter{
 		10: allocHint,
 	})
 
@@ -36,7 +36,7 @@ func TestNoHint(t *testing.T) {
 	var ap ApCellRef = 5
 	allocHint := AllocSegment{ap}
 
-	hr := CreateHintRunner(map[uint64]Hinter{
+	hr := NewHintRunner(map[uint64]Hinter{
 		10: allocHint,
 	})
 
