@@ -1,6 +1,8 @@
 package hintrunner
 
 import (
+	"fmt"
+
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 )
 
@@ -14,7 +16,7 @@ func CreateHintRunner(hints map[uint64]Hinter) HintRunner {
 	return HintRunner{hints}
 }
 
-func (hr HintRunner) RunHint(vm *VM.VirtualMachine) *HintRunnerError {
+func (hr HintRunner) RunHint(vm *VM.VirtualMachine) error {
 	hint := hr.hints[vm.Context.Pc]
 	if hint == nil {
 		return nil
@@ -22,7 +24,7 @@ func (hr HintRunner) RunHint(vm *VM.VirtualMachine) *HintRunnerError {
 
 	err := hint.Execute(vm)
 	if err != nil {
-		return NewHintRunnerError(err)
+		return fmt.Errorf("execute hint %s: %v", hint, err)
 	}
 	return nil
 }
