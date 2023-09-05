@@ -20,8 +20,8 @@ func TestVMCreation(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Len(t, vm.MemoryManager.Memory.Segments, 2)
-	assert.Len(t, vm.MemoryManager.Memory.Segments[programSegment].Data, len(dummyBytecode))
-	assert.Empty(t, vm.MemoryManager.Memory.Segments[executionSegment].Data)
+	assert.Len(t, vm.MemoryManager.Memory.Segments[ProgramSegment].Data, len(dummyBytecode))
+	assert.Empty(t, vm.MemoryManager.Memory.Segments[ExecutionSegment].Data)
 }
 
 // todo(rodro): test all possible ways of:
@@ -169,7 +169,7 @@ func TestComputeAddRes(t *testing.T) {
 	cellOp0 := &mem.Cell{
 		Accessed: true,
 		Value: mem.MemoryValueFromMemoryAddress(
-			mem.CreateMemoryAddress(2, 10),
+			mem.NewMemoryAddress(2, 10),
 		),
 	}
 
@@ -182,7 +182,7 @@ func TestComputeAddRes(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := mem.MemoryValueFromMemoryAddress(
-		mem.CreateMemoryAddress(2, 25),
+		mem.NewMemoryAddress(2, 25),
 	)
 
 	assert.Equal(t, expected, res)
@@ -196,7 +196,7 @@ func TestOpcodeAssertionAssertEq(t *testing.T) {
 	}
 
 	dstCell := mem.Cell{}
-	res := mem.MemoryValueFromMemoryAddress(mem.CreateMemoryAddress(2, 10))
+	res := mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))
 
 	err := vm.opcodeAssertions(&instruction, &dstCell, nil, res)
 	require.NoError(t, err)
@@ -204,7 +204,7 @@ func TestOpcodeAssertionAssertEq(t *testing.T) {
 		t,
 		mem.Cell{
 			Accessed: true,
-			Value:    mem.MemoryValueFromMemoryAddress(mem.CreateMemoryAddress(2, 10))},
+			Value:    mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))},
 		dstCell,
 	)
 }
@@ -265,7 +265,7 @@ func TestUpdateFp(t *testing.T) {
 }
 
 func writeToDataSegment(vm *VirtualMachine, index uint64, value *mem.MemoryValue) {
-	err := vm.MemoryManager.Memory.Write(executionSegment, index, value)
+	err := vm.MemoryManager.Memory.Write(ExecutionSegment, index, value)
 	if err != nil {
 		panic("error in test util: writeToDataSegment")
 	}

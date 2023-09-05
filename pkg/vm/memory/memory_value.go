@@ -16,7 +16,7 @@ type MemoryAddress struct {
 }
 
 // Creates a new memory address
-func CreateMemoryAddress(segment uint64, offset uint64) *MemoryAddress {
+func NewMemoryAddress(segment uint64, offset uint64) *MemoryAddress {
 	return &MemoryAddress{SegmentIndex: segment, Offset: offset}
 }
 
@@ -46,6 +46,13 @@ func (address *MemoryAddress) Sub(lhs *MemoryAddress, rhs any) (*MemoryAddress, 
 
 	// Then update offset accordingly
 	switch t := rhs.(type) {
+	case uint64:
+		rhs64 := rhs.(uint64)
+		if rhs64 > lhs.Offset {
+			return nil, fmt.Errorf("rhs offset greater than lhs offset")
+		}
+		address.Offset = lhs.Offset - rhs64
+		return address, nil
 	case *f.Element:
 		feltRhs := rhs.(*f.Element)
 		if !feltRhs.IsUint64() {
@@ -55,7 +62,11 @@ func (address *MemoryAddress) Sub(lhs *MemoryAddress, rhs any) (*MemoryAddress, 
 				feltRhs.String(),
 			)
 		}
-		address.Offset = lhs.Offset - feltRhs.Uint64()
+		feltRhs64 := feltRhs.Uint64()
+		if feltRhs64 > lhs.Offset {
+			return nil, fmt.Errorf("rhs offset greater than lhs offset")
+		}
+		address.Offset = lhs.Offset - feltRhs64
 		return address, nil
 	case *MemoryAddress:
 		addressRhs := rhs.(*MemoryAddress)
@@ -65,6 +76,9 @@ func (address *MemoryAddress) Sub(lhs *MemoryAddress, rhs any) (*MemoryAddress, 
 				addressRhs.String(),
 				lhs.String(),
 			)
+		}
+		if addressRhs.Offset > lhs.Offset {
+			return nil, fmt.Errorf("rhs offset greater than lhs offset")
 		}
 		address.Offset = lhs.Offset - addressRhs.Offset
 		return address, nil
@@ -121,7 +135,7 @@ func MemoryValueFromInt[T constraints.Integer](v T) *MemoryValue {
 	}
 }
 
-func MemoryValueFromSegmentAndOffset[T constraints.Integer](segmentIndex T, offset T) *MemoryValue {
+func MemoryValueFromSegmentAndOffset[T constraints.Integer](segmentIndex, offset T) *MemoryValue {
 	return &MemoryValue{
 		address: &MemoryAddress{SegmentIndex: uint64(segmentIndex), Offset: uint64(offset)},
 	}
