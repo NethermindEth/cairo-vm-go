@@ -28,8 +28,6 @@ type CellRefer interface {
 
 type ApCellRef int16
 
-type FpCellRef int16
-
 func (ap ApCellRef) Get(vm *VM.VirtualMachine) (*memory.Cell, error) {
 	res, overflow := safemath.SafeOffset(vm.Context.Ap, int16(ap))
 	if overflow {
@@ -40,6 +38,8 @@ func (ap ApCellRef) Get(vm *VM.VirtualMachine) (*memory.Cell, error) {
 	}
 	return vm.MemoryManager.Memory.Peek(VM.ExecutionSegment, res)
 }
+
+type FpCellRef int16
 
 func (fp FpCellRef) Get(vm *VM.VirtualMachine) (*memory.Cell, error) {
 	res, overflow := safemath.SafeOffset(vm.Context.Fp, int16(fp))
@@ -55,32 +55,8 @@ func (fp FpCellRef) Get(vm *VM.VirtualMachine) (*memory.Cell, error) {
 //
 // All ResOperand definitions
 
-type ResOperander interface {
-	Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error)
-}
-
 type Deref struct {
 	deref CellRefer
-}
-
-type DoubleDeref struct {
-	deref  CellRefer
-	offset int16
-}
-
-type Immediate big.Int
-
-type Operator uint8
-
-const (
-	Add Operator = iota
-	Mul
-)
-
-type BinaryOp struct {
-	operator Operator
-	lhs      CellRefer
-	rhs      ResOperander // (except DoubleDeref and BinaryOp)
 }
 
 func (deref Deref) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
@@ -89,6 +65,11 @@ func (deref Deref) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
 		return nil, NewOperandError(derefName, err)
 	}
 	return cell.Read(), nil
+}
+
+type DoubleDeref struct {
+	deref  CellRefer
+	offset int16
 }
 
 func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
@@ -121,6 +102,8 @@ func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, e
 	return value, nil
 }
 
+type Immediate big.Int
+
 // todo(rodro): Specs from Starkware stablish this can be uint256 and not a felt.
 // Should we respect that, or go straight to felt?
 func (imm Immediate) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
@@ -131,6 +114,23 @@ func (imm Immediate) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error)
 	felt.SetBigInt(&bigInt)
 
 	return memory.MemoryValueFromFieldElement(felt), nil
+}
+
+type Operator uint8
+
+const (
+	Add Operator = iota
+	Mul
+)
+
+type ResOperander interface {
+	Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error)
+}
+
+type BinaryOp struct {
+	operator Operator
+	lhs      CellRefer
+	rhs      ResOperander // (except DoubleDeref and BinaryOp)
 }
 
 func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
