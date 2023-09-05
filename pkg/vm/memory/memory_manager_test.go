@@ -125,15 +125,13 @@ type memoryWrite struct {
 
 func updateMemoryWithValues(memory *Memory, valuesToWrite []memoryWrite) {
 	var max_segment uint64 = 0
-	for i, toWrite := range valuesToWrite {
-		fmt.Println("a", i)
+	for _, toWrite := range valuesToWrite {
 		// wrap any inside a memory value
 		val, err := MemoryValueFromAny(toWrite.Value)
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Println("b")
 		// if the destination segment does not exist, create it
 		for toWrite.SegmentIndex >= max_segment {
 			max_segment += 1
