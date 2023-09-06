@@ -1,6 +1,11 @@
 package assembler
 
-// import "github.com/alecthomas/participle/v2"
+import (
+	"fmt"
+	"math"
+)
+
+// Grammar and AST
 
 type CasmProgram struct {
 	Instructions []Instruction
@@ -21,13 +26,13 @@ type CoreInstruction struct {
 }
 
 type AssertEq struct {
-	Lhs Deref      `@@`
+	Lhs *Deref     `@@`
 	Rhs Expression `"=" @@`
 }
 
 type Jump struct {
-	JumpType string     `"jmp" @Ident`
-	Value    Expression `@@`
+	JumpType string      `"jmp" @Ident`
+	Value    *Expression `@@`
 }
 
 type Jnz struct {
@@ -48,9 +53,10 @@ type ApPlus struct {
 }
 
 type Expression struct {
-	Deref       *Deref       `@@ |`
-	DoubleDeref *DoubleDeref `@@ |`
-	Immediate   *int         `@Int`
+	Deref         *Deref         `@@ |`
+	DoubleDeref   *DoubleDeref   `@@ |`
+	MathOperation *MathOperation `@@ |`
+	Immediate     *int           `@Int`
 }
 
 type Deref struct {
@@ -74,4 +80,25 @@ type MathOperation struct {
 type DerefOrImm struct {
 	Deref     *Deref "@@ |"
 	Immediate *int   "@Int"
+}
+
+// AST Functionality
+
+func (deref *Deref) ParseOffset() (uint16, error) {
+	if deref.Offset == nil {
+		return 0, nil
+	}
+	offset := *deref.Offset
+	if deref.Sign == "-" {
+		offset = -offset
+	} else if deref.Sign != "+" {
+		return 0, fmt.Errorf("missing sign in deref offset")
+	}
+
+	if offset > math.MaxInt16 || offset < math.MinInt16 {
+		return 0, fmt.Errorf("offset value outside of (-2**16, 2**16)")
+	}
+
+	biasedOffset := uint16(offset) ^ 0x8000
+	return biasedOffset, nil
 }
