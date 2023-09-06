@@ -51,20 +51,20 @@ const (
 func casmAstToBytecode(casmAst CasmProgram) ([]*f.Element, error) {
 	n := len(casmAst.Instructions)
 	bytecode := make([]*f.Element, 0, n+(n/2)+1)
+	var err error
 	for i := range casmAst.Instructions {
-		err := instructionToBytecode(bytecode, casmAst.Instructions[i])
+		bytecode, err = instructionToBytecode(bytecode, casmAst.Instructions[i])
 		if err != nil {
 			return nil, err
 		}
 	}
-
 	return bytecode, nil
 }
 
-func instructionToBytecode(bytecode []*f.Element, instruction Instruction) error {
-	err := coreInstructionToBytecode(bytecode, instruction.Core)
+func instructionToBytecode(bytecode []*f.Element, instruction Instruction) ([]*f.Element, error) {
+	bytecode, err := coreInstructionToBytecode(bytecode, instruction.Core)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if instruction.ApPlusOne {
@@ -72,12 +72,12 @@ func instructionToBytecode(bytecode []*f.Element, instruction Instruction) error
 		// and put app flag  == 2
 	}
 
-	return nil
+	return bytecode, nil
 }
 
 func coreInstructionToBytecode(
-	bytecode []*f.Element, instruction CoreInstruction,
-) error {
+	bytecode []*f.Element, instruction *CoreInstruction,
+) ([]*f.Element, error) {
 	// If else over the different instructions type
 	if instruction.AssertEq != nil {
 		return assertEqToBytecode(bytecode, instruction.AssertEq)
@@ -99,7 +99,7 @@ func coreInstructionToBytecode(
 	}
 
 	// this should never execute
-	return fmt.Errorf("no core instruction detected")
+	return nil, fmt.Errorf("no core instruction detected")
 }
 
 func assertEqToBytecode(bytecode []*f.Element, assertEq *AssertEq) ([]*f.Element, error) {

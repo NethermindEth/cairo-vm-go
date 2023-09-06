@@ -8,12 +8,12 @@ import (
 // Grammar and AST
 
 type CasmProgram struct {
-	Instructions []Instruction
+	Instructions []Instruction `@@`
 }
 
 type Instruction struct {
-	Core      CoreInstruction "@@"
-	ApPlusOne bool            `(,@"ap++")?;`
+	Core      *CoreInstruction `@@`
+	ApPlusOne bool             `(","@"ap++")?";"`
 }
 
 type CoreInstruction struct {
@@ -26,22 +26,23 @@ type CoreInstruction struct {
 }
 
 type AssertEq struct {
-	Lhs *Deref     `@@`
-	Rhs Expression `"=" @@`
+	Lhs *Deref      `@@`
+	Rhs *Expression `"=" @@`
 }
 
 type Jump struct {
-	JumpType string      `"jmp" @Ident`
+	JumpType string      `"jmp" @("rel" | "abs")`
 	Value    *Expression `@@`
 }
 
 type Jnz struct {
-	Value     Expression `"jmp" "rel" @Ident`
+	Value     Expression `"jmp" "rel" @@`
 	Condition Expression `"if" @@ "!=" "0"`
 }
 
 type Call struct {
-	Address Expression
+	CallType string     `"call" @("rel" | "abs")`
+	Address  Expression `@@`
 }
 
 type Ret struct {
@@ -60,13 +61,13 @@ type Expression struct {
 }
 
 type Deref struct {
-	Name   string `"[" "@Ident"`
+	Name   string `"[" @("ap" | "fp")`
 	Sign   string `@("+" | "-")?`
 	Offset *int   `@Int? "]"`
 }
 
 type DoubleDeref struct {
-	Deref  *Deref `"[" @@"`
+	Deref  *Deref `"[" @@`
 	Sign   string `@("+" | "-")?`
 	Offset *int   `@Int? "]"`
 }
@@ -78,8 +79,8 @@ type MathOperation struct {
 }
 
 type DerefOrImm struct {
-	Deref     *Deref "@@ |"
-	Immediate *int   "@Int"
+	Deref     *Deref `@@ |`
+	Immediate *int   `@Int`
 }
 
 // AST Functionality
