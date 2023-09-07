@@ -22,16 +22,20 @@ func TestAssertEqualWithRegister(t *testing.T) {
 				{
 					Core: &CoreInstruction{
 						AssertEq: &AssertEq{
-							Lhs: &Deref{
-								Name:   "fp",
-								Sign:   "+",
-								Offset: ptrOf(3),
+							Dst: &Deref{
+								Name: "fp",
+								Offset: &Offset{
+									Sign:  "+",
+									Value: ptrOf(3),
+								},
 							},
-							Rhs: &Expression{
+							Value: &Expression{
 								Deref: &Deref{
-									Name:   "ap",
-									Sign:   "+",
-									Offset: ptrOf(4),
+									Name: "ap",
+									Offset: &Offset{
+										Sign:  "+",
+										Value: ptrOf(4),
+									},
 								},
 							},
 						},

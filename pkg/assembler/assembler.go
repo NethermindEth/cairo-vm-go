@@ -1,7 +1,7 @@
 package assembler
 
 import (
-	"fmt"
+	"math"
 
 	"github.com/alecthomas/participle/v2"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -23,7 +23,7 @@ func CasmToBytecode(code string) ([]*f.Element, error) {
 		return nil, err
 	}
 
-	return casmAstToBytecode(*casmAst)
+	return encodeCasmProgram(*casmAst)
 }
 
 //
@@ -31,6 +31,9 @@ func CasmToBytecode(code string) ([]*f.Element, error) {
 //
 
 const (
+	op0Offset = 16
+	op1Offset = 32
+
 	dstRegBit         = 48
 	op0RegBit         = 49
 	op1ImmBit         = 50
@@ -48,12 +51,12 @@ const (
 	opcodeAssertEqBit = 62
 )
 
-func casmAstToBytecode(casmAst CasmProgram) ([]*f.Element, error) {
+func encodeCasmProgram(casmAst CasmProgram) ([]*f.Element, error) {
 	n := len(casmAst.Instructions)
 	bytecode := make([]*f.Element, 0, n+(n/2)+1)
 	var err error
 	for i := range casmAst.Instructions {
-		bytecode, err = instructionToBytecode(bytecode, casmAst.Instructions[i])
+		bytecode, err = encodeInstruction(bytecode, casmAst.Instructions[i])
 		if err != nil {
 			return nil, err
 		}
@@ -61,99 +64,187 @@ func casmAstToBytecode(casmAst CasmProgram) ([]*f.Element, error) {
 	return bytecode, nil
 }
 
-func instructionToBytecode(bytecode []*f.Element, instruction Instruction) ([]*f.Element, error) {
-	bytecode, err := coreInstructionToBytecode(bytecode, instruction.Core)
+func encodeInstruction(bytecode []*f.Element, instruction Instruction) ([]*f.Element, error) {
+	var encode uint64 = 0
+	expression := instruction.Unwrap().Expression()
+
+	encode, err := encodeDstReg(&instruction, encode)
 	if err != nil {
 		return nil, err
 	}
 
-	if instruction.ApPlusOne {
-		// check encoded instruction different than ap plus imm
-		// and put app flag  == 2
+	encode, err = encodeOp0Reg(&instruction, expression, encode)
+	if err != nil {
+		return nil, err
+	}
+
+	encode, imm, err := encodeOp1Source(expression, encode)
+	if err != nil {
+		return nil, err
+	}
+
+	encode = encodeResLogic(expression, encode) |
+		encodePcUpdate(instruction, encode) |
+		encodeApUpdate(instruction, encode) |
+		encodeOpCode(instruction, encode)
+
+	encodeAsFelt := new(f.Element).SetUint64(encode)
+
+	bytecode = append(bytecode, encodeAsFelt)
+	if imm != nil {
+		bytecode = append(bytecode, imm)
 	}
 
 	return bytecode, nil
 }
 
-func coreInstructionToBytecode(
-	bytecode []*f.Element, instruction *CoreInstruction,
-) ([]*f.Element, error) {
-	// If else over the different instructions type
-	if instruction.AssertEq != nil {
-		return assertEqToBytecode(bytecode, instruction.AssertEq)
+func encodeDstReg(instr *Instruction, encode uint64) (uint64, error) {
+	if instr.ApPlus != nil || instr.Core.Jump != nil {
+		// dstOffset is not involved so it is set to fp - 1 as default value
+		encode |= dstRegBit << 1
+		encode |= uint64(math.MaxUint16)
+		return encode, nil
 	}
-	if instruction.Jump != nil {
-
+	if instr.Core.Call != nil {
+		// dstOffset is set to ap + 0 (no change required)
+		return encode, nil
 	}
-	if instruction.Jnz != nil {
-
-	}
-	if instruction.Call != nil {
-
-	}
-	if instruction.Ret != nil {
-
-	}
-	if instruction.ApPlus != nil {
-
+	if instr.Core.Ret != nil {
+		// dstOffset is set as fp - 2
+		encode |= dstRegBit << 1
+		encode |= uint64(math.MaxUint16 - 1)
+		return encode, nil
 	}
 
-	// this should never execute
-	return nil, fmt.Errorf("no core instruction detected")
+	var deref *Deref
+	if instr.Core.AssertEq != nil {
+		deref = instr.Core.AssertEq.Dst
+	} else if instr.Core.Jnz != nil {
+		deref = instr.Core.Jnz.Condition
+	}
+
+	biasedOffset, err := deref.BiasedOffset()
+	if err != nil {
+		return 0, err
+	}
+	encode |= uint64(biasedOffset)
+	if deref.IsFp() {
+		encode |= 1 << op0RegBit
+	}
+
+	return encode, nil
+
 }
 
-func assertEqToBytecode(bytecode []*f.Element, assertEq *AssertEq) ([]*f.Element, error) {
-	var encoded uint64 = 0
-
-	// set opcode
-	encoded = encoded | (1 << opcodeAssertEqBit)
-
-	deref := assertEq.Lhs
-	// set dst registry
-	if deref.Name == "fp" {
-		encoded = encoded | (1 << dstRegBit)
-	} else if deref.Name != "ap" {
-		return nil, fmt.Errorf("Unknown registry %s", deref.Name)
+func encodeOp0Reg(instr *Instruction, expr Expressioner, encode uint64) (uint64, error) {
+	if (instr.Core != nil && (instr.Core.Jnz != nil || instr.Core.Ret != nil)) ||
+		(expr.AsDeref() != nil || expr.AsImmediate() != nil) {
+		// op0 is not involved, it is set as fp - 1 as default value
+		encode |= op0RegBit << 1
+		encode |= uint64(math.MaxUint16) << op0Offset
+		return encode, nil
 	}
 
-	// set dst reg
-	encoded, err := encodeDerefReg(encoded, deref, dstRegBit)
-	if err != nil {
-		return nil, err
-	}
-	// set dst offset
-	dstOffset, err := deref.ParseOffset()
-	if err != nil {
-		return nil, err
-	}
-	encoded = encoded | uint64(dstOffset)
-
-	// set op0 reg
-	if assertEq.Rhs.Deref != nil {
-		rhs := assertEq.Rhs.Deref
-		encoded, err = encodeDerefReg(encoded, rhs, op0RegBit)
-		if err != nil {
-			return nil, err
-		}
-		op0Offset, err := rhs.ParseOffset()
-		if err != nil {
-			return nil, err
-		}
-		encoded = encoded | (uint64(op0Offset) << 16)
+	var deref *Deref
+	if expr.AsDoubleDeref() != nil {
+		deref = expr.AsDoubleDeref().Deref
 	} else {
-		return nil, fmt.Errorf("Unknown expresion")
+		deref = expr.AsMathOperation().Lhs
 	}
 
-	bytecode = append(bytecode, new(f.Element).SetUint64(encoded))
-	return bytecode, nil
+	biasedOffset, err := deref.BiasedOffset()
+	if err != nil {
+		return 0, err
+	}
+	encode |= uint64(biasedOffset)
+	if deref.IsFp() {
+		encode |= 1 << op0RegBit
+	}
+
+	return encode, nil
 }
 
-func encodeDerefReg(encoded uint64, deref *Deref, bit int) (uint64, error) {
-	if deref.Name == "fp" {
-		return encoded | (1 << dstRegBit), nil
-	} else if deref.Name == "ap" {
-		return encoded, nil
+// Given the expression and the current encode returns an updated encode with the corresponding bit
+// and offset of op1, an immeadiate if exists, and a possible error
+func encodeOp1Source(expr Expressioner, encode uint64) (uint64, *f.Element, error) {
+	if expr.AsDeref() != nil {
+		biasedOffset, err := expr.AsDeref().BiasedOffset()
+		if err != nil {
+			return 0, nil, err
+		}
+		encode |= uint64(biasedOffset) << op1Offset
+		if expr.AsDeref().IsFp() {
+			encode |= 1 << op1FpBit
+		} else {
+			encode |= 1 << op1ApBit
+		}
+		return encode, nil, nil
+	} else if expr.AsDoubleDeref() != nil {
+		biasedOffset, err := expr.AsDoubleDeref().BiasedOffset()
+		if err != nil {
+			return 0, nil, err
+		}
+		encode |= uint64(biasedOffset) << op1Offset
+		return encode, nil, nil
+	} else if expr.AsImmediate() != nil {
+		imm, err := new(f.Element).SetString(*expr.AsImmediate())
+		if err != nil {
+			return 0, nil, err
+		}
+		encode |= uint64(1) << op1Offset
+		return encode | 1<<op1ImmBit, imm, nil
+	} else {
+		//  if it is a math operation, the op1 source is set by the right hand side
+		return encodeOp1Source(expr.AsMathOperation().Rhs, encode)
 	}
-	return 0, fmt.Errorf("Unknown registry %s", deref.Name)
+}
 
+func encodeResLogic(expression Expressioner, encode uint64) uint64 {
+	if expression.AsMathOperation() != nil {
+		if expression.AsMathOperation().Operator == "+" {
+			encode |= 1 << resAddBit
+		} else {
+			encode |= 1 << resMulBit
+		}
+	}
+	return encode
+}
+
+func encodePcUpdate(instruction Instruction, encode uint64) uint64 {
+	if instruction.Core.Jump != nil || instruction.Core.Call != nil {
+		var isAbs bool
+		if instruction.Core.Jump != nil {
+			isAbs = instruction.Core.Jump.JumpType == "abs"
+		} else {
+			isAbs = instruction.Core.Call.CallType == "abs"
+		}
+		if isAbs {
+			encode |= 1 << pcJumpAbsBit
+		} else {
+			encode |= 1 << pcJumpRelBit
+		}
+	} else if instruction.Core.Jnz != nil {
+		encode |= 1 << pcJnzBit
+	}
+	return encode
+}
+
+func encodeApUpdate(instruction Instruction, encode uint64) uint64 {
+	if instruction.ApPlus != nil {
+		encode |= 1 << apAddBit
+	} else if instruction.ApPlusOne {
+		encode |= 1 << apAdd1Bit
+	}
+	return encode
+}
+
+func encodeOpCode(instruction Instruction, encode uint64) uint64 {
+	if instruction.Core.Call != nil {
+		encode |= 1 << opcodeCallBit
+	} else if instruction.Core.Ret != nil {
+		encode |= 1 << opcodeRetBit
+	} else if instruction.Core.AssertEq != nil {
+		encode |= 1 << opcodeAssertEqBit
+	}
+	return encode
 }
