@@ -1,28 +1,22 @@
 package assembler
 
 import (
-	"math"
-
 	"github.com/alecthomas/participle/v2"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-var parser *participle.Parser[CasmProgram]
+var parser *participle.Parser[CasmProgram] = participle.MustBuild[CasmProgram](
+	// mandatory lookahead to disambiguate between productions:
+	// expr -> [reg + n] + [reg + m] and
+	// expr -> [reg + n]
+	participle.UseLookahead(5),
+)
 
 func CasmToBytecode(code string) ([]*f.Element, error) {
-	if parser == nil {
-		var err error
-		parser, err = participle.Build[CasmProgram]()
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	casmAst, err := parser.ParseString("", code)
 	if err != nil {
 		return nil, err
 	}
-
 	return encodeCasmProgram(*casmAst)
 }
 
@@ -31,9 +25,11 @@ func CasmToBytecode(code string) ([]*f.Element, error) {
 //
 
 const (
+	// offsets
 	op0Offset = 16
 	op1Offset = 32
 
+	// flag values
 	dstRegBit         = 48
 	op0RegBit         = 49
 	op1ImmBit         = 50
@@ -49,6 +45,12 @@ const (
 	opcodeCallBit     = 60
 	opcodeRetBit      = 61
 	opcodeAssertEqBit = 62
+
+	// default values
+	biasedZero     uint16 = 0x8000
+	biasedPlusOne  uint16 = 0x8001
+	biasedMinusOne uint16 = 0x7FFF
+	biasedMinusTwo uint16 = 0x7FFE
 )
 
 func encodeCasmProgram(casmAst CasmProgram) ([]*f.Element, error) {
@@ -78,7 +80,7 @@ func encodeInstruction(bytecode []*f.Element, instruction Instruction) ([]*f.Ele
 		return nil, err
 	}
 
-	encode, imm, err := encodeOp1Source(expression, encode)
+	encode, imm, err := encodeOp1Source(&instruction, expression, encode)
 	if err != nil {
 		return nil, err
 	}
@@ -101,18 +103,19 @@ func encodeInstruction(bytecode []*f.Element, instruction Instruction) ([]*f.Ele
 func encodeDstReg(instr *Instruction, encode uint64) (uint64, error) {
 	if instr.ApPlus != nil || instr.Core.Jump != nil {
 		// dstOffset is not involved so it is set to fp - 1 as default value
-		encode |= dstRegBit << 1
-		encode |= uint64(math.MaxUint16)
+		encode |= 1 << dstRegBit
+		encode |= uint64(biasedMinusOne)
 		return encode, nil
 	}
 	if instr.Core.Call != nil {
-		// dstOffset is set to ap + 0 (no change required)
+		// dstOffset is set to ap + 0
+		encode |= uint64(biasedZero)
 		return encode, nil
 	}
 	if instr.Core.Ret != nil {
 		// dstOffset is set as fp - 2
-		encode |= dstRegBit << 1
-		encode |= uint64(math.MaxUint16 - 1)
+		encode |= 1 << dstRegBit
+		encode |= uint64(biasedMinusTwo)
 		return encode, nil
 	}
 
@@ -129,7 +132,7 @@ func encodeDstReg(instr *Instruction, encode uint64) (uint64, error) {
 	}
 	encode |= uint64(biasedOffset)
 	if deref.IsFp() {
-		encode |= 1 << op0RegBit
+		encode |= 1 << dstRegBit
 	}
 
 	return encode, nil
@@ -137,11 +140,16 @@ func encodeDstReg(instr *Instruction, encode uint64) (uint64, error) {
 }
 
 func encodeOp0Reg(instr *Instruction, expr Expressioner, encode uint64) (uint64, error) {
+	if instr.Core != nil && instr.Core.Call != nil {
+		// op0 is set as [ap + 1] to store current pc
+		encode |= uint64(biasedPlusOne) << op0Offset
+		return encode, nil
+	}
 	if (instr.Core != nil && (instr.Core.Jnz != nil || instr.Core.Ret != nil)) ||
 		(expr.AsDeref() != nil || expr.AsImmediate() != nil) {
 		// op0 is not involved, it is set as fp - 1 as default value
-		encode |= op0RegBit << 1
-		encode |= uint64(math.MaxUint16) << op0Offset
+		encode |= 1 << op0RegBit
+		encode |= uint64(biasedMinusOne) << op0Offset
 		return encode, nil
 	}
 
@@ -156,7 +164,7 @@ func encodeOp0Reg(instr *Instruction, expr Expressioner, encode uint64) (uint64,
 	if err != nil {
 		return 0, err
 	}
-	encode |= uint64(biasedOffset)
+	encode |= uint64(biasedOffset) << op0Offset
 	if deref.IsFp() {
 		encode |= 1 << op0RegBit
 	}
@@ -166,7 +174,14 @@ func encodeOp0Reg(instr *Instruction, expr Expressioner, encode uint64) (uint64,
 
 // Given the expression and the current encode returns an updated encode with the corresponding bit
 // and offset of op1, an immeadiate if exists, and a possible error
-func encodeOp1Source(expr Expressioner, encode uint64) (uint64, *f.Element, error) {
+func encodeOp1Source(inst *Instruction, expr Expressioner, encode uint64) (uint64, *f.Element, error) {
+	if inst.Core != nil && inst.Core.Ret != nil {
+		// op1 is set as [fp - 1], where we read the previous pc
+		encode |= uint64(biasedMinusOne) << op1Offset
+		encode |= 1 << op1FpBit
+		return encode, nil, nil
+	}
+
 	if expr.AsDeref() != nil {
 		biasedOffset, err := expr.AsDeref().BiasedOffset()
 		if err != nil {
@@ -191,16 +206,16 @@ func encodeOp1Source(expr Expressioner, encode uint64) (uint64, *f.Element, erro
 		if err != nil {
 			return 0, nil, err
 		}
-		encode |= uint64(1) << op1Offset
+		encode |= uint64(biasedPlusOne) << op1Offset
 		return encode | 1<<op1ImmBit, imm, nil
 	} else {
 		//  if it is a math operation, the op1 source is set by the right hand side
-		return encodeOp1Source(expr.AsMathOperation().Rhs, encode)
+		return encodeOp1Source(inst, expr.AsMathOperation().Rhs, encode)
 	}
 }
 
 func encodeResLogic(expression Expressioner, encode uint64) uint64 {
-	if expression.AsMathOperation() != nil {
+	if expression != nil && expression.AsMathOperation() != nil {
 		if expression.AsMathOperation().Operator == "+" {
 			encode |= 1 << resAddBit
 		} else {
@@ -211,6 +226,10 @@ func encodeResLogic(expression Expressioner, encode uint64) uint64 {
 }
 
 func encodePcUpdate(instruction Instruction, encode uint64) uint64 {
+	if instruction.Core == nil {
+		return encode
+	}
+
 	if instruction.Core.Jump != nil || instruction.Core.Call != nil {
 		var isAbs bool
 		if instruction.Core.Jump != nil {
@@ -225,7 +244,10 @@ func encodePcUpdate(instruction Instruction, encode uint64) uint64 {
 		}
 	} else if instruction.Core.Jnz != nil {
 		encode |= 1 << pcJnzBit
+	} else if instruction.Core.Ret != nil {
+		encode |= 1 << pcJumpAbsBit
 	}
+
 	return encode
 }
 
@@ -239,12 +261,14 @@ func encodeApUpdate(instruction Instruction, encode uint64) uint64 {
 }
 
 func encodeOpCode(instruction Instruction, encode uint64) uint64 {
-	if instruction.Core.Call != nil {
-		encode |= 1 << opcodeCallBit
-	} else if instruction.Core.Ret != nil {
-		encode |= 1 << opcodeRetBit
-	} else if instruction.Core.AssertEq != nil {
-		encode |= 1 << opcodeAssertEqBit
+	if instruction.Core != nil {
+		if instruction.Core.Call != nil {
+			encode |= 1 << opcodeCallBit
+		} else if instruction.Core.Ret != nil {
+			encode |= 1 << opcodeRetBit
+		} else if instruction.Core.AssertEq != nil {
+			encode |= 1 << opcodeAssertEqBit
+		}
 	}
 	return encode
 }

@@ -13,14 +13,14 @@ type CasmProgram struct {
 
 type Instruction struct {
 	Core      *CoreInstruction `@@`
-	ApPlusOne bool             `(","@"ap++")?";" |`
+	ApPlusOne bool             `( "," @"ap" "+" "+" )? ";" |`
 	ApPlus    *ApPlus          `@@ ";"`
 }
 
 type CoreInstruction struct {
 	AssertEq *AssertEq `@@ |`
-	Jump     *Jump     `@@ |`
 	Jnz      *Jnz      `@@ |`
+	Jump     *Jump     `@@ |`
 	Call     *Call     `@@ |`
 	Ret      *Ret      `@@ `
 }
@@ -37,7 +37,7 @@ type Jump struct {
 
 type Jnz struct {
 	Value     *DerefOrImm `"jmp" "rel" @@`
-	Condition *Deref      `"if" @@ "!=" "0"`
+	Condition *Deref      `"if" @@ "!" "=" "0"`
 }
 
 type Call struct {
@@ -50,14 +50,14 @@ type Ret struct {
 }
 
 type ApPlus struct {
-	Value *Expression `"ap" "+=" @@`
+	Value *Expression `"ap" "+" "=" @@`
 }
 
 type Expression struct {
-	Deref         *Deref         `@@ |`
 	DoubleDeref   *DoubleDeref   `@@ |`
 	MathOperation *MathOperation `@@ |`
-	Immediate     *string        `@String`
+	Deref         *Deref         `@@ |`
+	Immediate     *string        `@Int`
 }
 
 type Deref struct {
@@ -77,13 +77,13 @@ type Offset struct {
 
 type MathOperation struct {
 	Lhs      *Deref      `@@`
-	Operator string      `("+" | "*")`
+	Operator string      `@("+" | "*")`
 	Rhs      *DerefOrImm `@@`
 }
 
 type DerefOrImm struct {
 	Deref     *Deref  `@@ |`
-	Immediate *string `@String`
+	Immediate *string `@Int`
 }
 
 // AST Functionality
