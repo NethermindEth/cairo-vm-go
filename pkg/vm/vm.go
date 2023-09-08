@@ -54,7 +54,7 @@ func NewVirtualMachine(programBytecode []*f.Element, config VirtualMachineConfig
 		return nil, fmt.Errorf("error loading bytecode: %w", err)
 	}
 	// 1 (executionSegment) <- segment where ap and fp move around
-	manager.Memory.Segments = append(manager.Memory.Segments, mem.EmptySegmentWithCapacity(10))
+	manager.Memory.AllocateEmptySegment()
 
 	// Initialize the trace if necesary
 	var trace []Context

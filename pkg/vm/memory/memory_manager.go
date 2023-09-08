@@ -25,10 +25,10 @@ func (mm *MemoryManager) RelocateMemory() []*f.Element {
 	// segmentsOffsets[0] =  0
 	// segmentsOffsets[1] = len(segment[0])
 	// segmentsOffsets[N] = len(segment[n - 1]) + sum of segmentsOffsets[n - i] for i in [0, n-1]
-	segmentsOffsets := make([]int, len(mm.Memory.Segments)+1)
+	segmentsOffsets := make([]uint64, uint64(len(mm.Memory.Segments))+1)
 	for i, segment := range mm.Memory.Segments {
 		maxMemoryUsed += len(segment.Data)
-		segmentsOffsets[i+1] = segmentsOffsets[i] + len(segment.Data)
+		segmentsOffsets[i+1] = segmentsOffsets[i] + uint64(len(segment.Data))
 	}
 
 	relocatedMemory := make([]*f.Element, maxMemoryUsed)
@@ -44,7 +44,7 @@ func (mm *MemoryManager) RelocateMemory() []*f.Element {
 				felt = cell.Value.felt
 			}
 
-			relocatedMemory[segmentsOffsets[i]+j] = felt
+			relocatedMemory[segmentsOffsets[i]+uint64(j)] = felt
 		}
 	}
 

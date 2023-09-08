@@ -93,10 +93,11 @@ func (address *MemoryAddress) Sub(lhs *MemoryAddress, rhs any) (*MemoryAddress, 
 	}
 }
 
-func (address *MemoryAddress) Relocate(segmentsOffset []int) *f.Element {
-	felt := f.Element{}
-	felt.SetUint64(uint64(segmentsOffset[address.SegmentIndex]) + address.Offset)
-	return &felt
+func (address *MemoryAddress) Relocate(segmentsOffset []uint64) *f.Element {
+	// no risk overflow because this sizes exists in actual Memory
+	// so if by chance the uint64 addition overflowed, then we have
+	// a machine with more than 2**64 bytes of memory (quite a lot!)
+	return new(f.Element).SetUint64(segmentsOffset[address.SegmentIndex] + address.Offset)
 }
 
 func (address MemoryAddress) String() string {
