@@ -28,6 +28,13 @@ type Context struct {
 	Pc uint64
 }
 
+// relocates pc, ap and fp to be their real address value
+// that is, pc + 0, ap + programSegmentOffset, fp + programSegmentOffset
+func (ctx *Context) Relocate(executionSegmentOffset uint64) {
+	ctx.Ap += executionSegmentOffset
+	ctx.Fp += executionSegmentOffset
+}
+
 // This type represents the current execution context of the vm
 type VirtualMachineConfig struct {
 	// If true, the vm outputs the trace and the relocated memory at the end of execution
@@ -174,12 +181,9 @@ func (vm *VirtualMachine) Proof() ([]Context, []*f.Element, error) {
 		return nil, nil, fmt.Errorf("cannot get proof if proof mode is off")
 	}
 
-	// update pc, fp and ap to be their real value
-	// that is, pc_i + 0, ap + len(programBytecode), fp + len(programBytecode)
 	totalBytecode := vm.MemoryManager.Memory.Segments[ProgramSegment].Len()
 	for i := range vm.Trace {
-		vm.Trace[i].Ap += totalBytecode
-		vm.Trace[i].Fp += totalBytecode
+		vm.Trace[i].Relocate(totalBytecode)
 	}
 
 	// after that, get the relocated memory
