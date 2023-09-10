@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"math/bits"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -155,13 +156,13 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 	instruction.DstRegister = Register((flags >> dstRegBit) & 1)
 	instruction.Op0Register = Register((flags >> op0RegBit) & 1)
 
-	op1Addr, err := oneHot((flags>>op1ImmBit)&1, (flags>>op1FpBit)&1, (flags>>op1ApBit)&1)
+	op1Addr, err := oneHot(flags&(1<<op1ImmBit|1<<op1FpBit|1<<op1ApBit), op1ImmBit, 3)
 	if err != nil {
 		return fmt.Errorf("error decoding op1_addr of instruction: %w", err)
 	}
 	instruction.Op1Source = Op1Src(op1Addr)
 
-	pcUpdate, err := oneHot((flags>>pcJumpAbsBit)&1, (flags>>pcJumpRelBit)&1, (flags>>pcJnzBit)&1)
+	pcUpdate, err := oneHot(flags&(1<<pcJumpAbsBit|1<<pcJumpRelBit|1<<pcJnzBit), pcJumpAbsBit, 3)
 	if err != nil {
 		return fmt.Errorf("error decoding pc_update of instruction: %w", err)
 	}
@@ -177,7 +178,7 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 		defaultResLogic = Op1
 	}
 
-	res, err := oneHot((flags>>resAddBit)&1, (flags>>resMulBit)&1)
+	res, err := oneHot(flags&(1<<resAddBit|1<<resMulBit), resAddBit, 2)
 	if err != nil {
 		return fmt.Errorf("error decoding res_logic of instruction: %w", err)
 	}
@@ -188,13 +189,13 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 		instruction.Res = ResLogic(res)
 	}
 
-	apUpdate, err := oneHot((flags>>apAddBit)&1, (flags>>apAdd1Bit)&1)
+	apUpdate, err := oneHot(flags&(1<<apAddBit|1<<apAdd1Bit), apAddBit, 2)
 	if err != nil {
 		return fmt.Errorf("error decoding ap_update of instruction: %w", err)
 	}
 	instruction.ApUpdate = ApUpdate(apUpdate)
 
-	opcode, err := oneHot((flags>>opcodeCallBit)&1, (flags>>opcodeRetBit)&1, (flags>>opcodeAssertEqBit)&1)
+	opcode, err := oneHot(flags&(1<<opcodeCallBit|1<<opcodeRetBit|1<<opcodeAssertEqBit), opcodeCallBit, 3)
 	if err != nil {
 		return fmt.Errorf("error decoding opcode of instruction: %w", err)
 	}
@@ -223,25 +224,28 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 	return nil
 }
 
-// Given []uint16 of 0s or 1s returns the set bit if there's only one such
-// and return len(bits) in case there's no set bits.
+// Given a uint16 returns the set bit offset by offset if there's only one such
+// and return maxLen in case there's no set bits.
 // If there are more than 1 set bits return an error.
-func oneHot(bits ...uint16) (uint16, error) {
-	var checkSum uint16 = 0
-	setBit := len(bits)
+func oneHot(bin, offset, maxLen uint16) (uint16, error) {
+	numberOfBits := bits.OnesCount16(bin)
 
-	// checking
-	for i, bit := range bits {
-		checkSum += bit
+	if numberOfBits > 1 {
+		digits := make([]uint8, 0, maxLen)
+		bin = bin >> offset
 
-		if bit == 1 {
-			setBit = i
+		for i := 0; i < int(maxLen); i++ {
+			digits = append(digits, uint8(bin%2))
+			bin >>= 1
 		}
+		return 0, fmt.Errorf("decoding wrong sequence of bits: %b", digits)
 	}
 
-	if checkSum > 1 {
-		return 0, fmt.Errorf("decoding wrong sequence of bits: %v", bits)
+	len := bits.Len16(bin)
+
+	if len == 0 {
+		return maxLen, nil
 	}
 
-	return uint16(setBit), nil
+	return uint16(len-int(offset)) - 1, nil
 }
