@@ -16,8 +16,7 @@ func TestVMCreation(t *testing.T) {
 		newElementPtr(5),
 		newElementPtr(7),
 	}
-
-	vm, err := NewVirtualMachine(dummyBytecode, VirtualMachineConfig{false, false})
+	vm, err := NewVirtualMachine(dummyBytecode, VirtualMachineConfig{false})
 	require.NoError(t, err)
 
 	assert.Len(t, vm.MemoryManager.Memory.Segments, 2)
@@ -35,8 +34,7 @@ func TestVMCreation(t *testing.T) {
 // - update FP: verify all posible cases, and when Res is a negative value
 
 func TestGetCellApDst(t *testing.T) {
-	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	require.NoError(t, err)
+	vm := defaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	const offDest = 15
@@ -58,8 +56,7 @@ func TestGetCellApDst(t *testing.T) {
 }
 
 func TestGetCellFpDst(t *testing.T) {
-	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	require.NoError(t, err)
+	vm := defaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	const (
@@ -84,8 +81,7 @@ func TestGetCellFpDst(t *testing.T) {
 }
 
 func TestGetApCellOp0(t *testing.T) {
-	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	require.NoError(t, err)
+	vm := defaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	const (
@@ -108,15 +104,13 @@ func TestGetApCellOp0(t *testing.T) {
 }
 
 func TestGetImmCellOp1(t *testing.T) {
-	vm, err := NewVirtualMachine(
+	vm := defaultVirtualMachineWithBytecode(
 		[]*f.Element{
 			newElementPtr(0),    // dummy
 			newElementPtr(0),    // dummy
 			newElementPtr(1234), // imm
 		},
-		VirtualMachineConfig{false, false},
 	)
-	require.NoError(t, err)
 
 	// Prepare vm with dummy values
 	const offOp1 = 1  // target imm
@@ -136,9 +130,7 @@ func TestGetImmCellOp1(t *testing.T) {
 }
 
 func TestInferOperandSub(t *testing.T) {
-	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	require.NoError(t, err)
-
+	vm := defaultVirtualMachine()
 	instruction := Instruction{
 		Opcode: AssertEq,
 		Res:    AddOperands,
@@ -168,8 +160,7 @@ func TestInferOperandSub(t *testing.T) {
 }
 
 func TestComputeAddRes(t *testing.T) {
-	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	require.NoError(t, err)
+	vm := defaultVirtualMachine()
 
 	instruction := Instruction{
 		Res: AddOperands,
@@ -197,9 +188,8 @@ func TestComputeAddRes(t *testing.T) {
 	assert.Equal(t, expected, res)
 }
 
-func (vm *VirtualMachine) TestOpcodeAssertionAssertEq(t *testing.T) {
-	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	require.NoError(t, err)
+func TestOpcodeAssertionAssertEq(t *testing.T) {
+	vm := defaultVirtualMachine()
 
 	instruction := Instruction{
 		Opcode: AssertEq,
@@ -208,7 +198,7 @@ func (vm *VirtualMachine) TestOpcodeAssertionAssertEq(t *testing.T) {
 	dstCell := mem.Cell{}
 	res := mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))
 
-	err = vm.opcodeAssertions(&instruction, &dstCell, nil, res)
+	err := vm.opcodeAssertions(&instruction, &dstCell, nil, res)
 	require.NoError(t, err)
 	assert.Equal(
 		t,
@@ -219,13 +209,13 @@ func (vm *VirtualMachine) TestOpcodeAssertionAssertEq(t *testing.T) {
 	)
 }
 
-func (vm *VirtualMachine) TestUpdatePcNextInstr(t *testing.T) {
-	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	require.NoError(t, err)
+func TestUpdatePcNextInstr(t *testing.T) {
+	vm := defaultVirtualMachine()
 
 	vm.Context.Pc = 3
 	instruction := Instruction{
-		PcUpdate: NextInstr,
+		PcUpdate:  NextInstr,
+		Op1Source: Op0, // anything but imm
 	}
 
 	nextPc, err := vm.updatePc(&instruction, nil, nil, nil)
@@ -233,9 +223,8 @@ func (vm *VirtualMachine) TestUpdatePcNextInstr(t *testing.T) {
 	assert.Equal(t, vm.Context.Pc+1, nextPc)
 }
 
-func (vm *VirtualMachine) TestUpdatePcNextInstrImm(t *testing.T) {
-	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	require.NoError(t, err)
+func TestUpdatePcNextInstrImm(t *testing.T) {
+	vm := defaultVirtualMachine()
 
 	vm.Context.Pc = 3
 	instruction := Instruction{
@@ -248,9 +237,8 @@ func (vm *VirtualMachine) TestUpdatePcNextInstrImm(t *testing.T) {
 	assert.Equal(t, vm.Context.Pc+2, nextPc)
 }
 
-func (vm *VirtualMachine) TestUpdateApAddOne(t *testing.T) {
-	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	require.NoError(t, err)
+func TestUpdateApAddOne(t *testing.T) {
+	vm := defaultVirtualMachine()
 
 	vm.Context.Ap = 5
 	instruction := Instruction{
@@ -263,9 +251,8 @@ func (vm *VirtualMachine) TestUpdateApAddOne(t *testing.T) {
 	assert.Equal(t, vm.Context.Ap+1, nextAp)
 }
 
-func (vm *VirtualMachine) TestUpdateFp(t *testing.T) {
-	vm, err := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false, false})
-	require.NoError(t, err)
+func TestUpdateFp(t *testing.T) {
+	vm := defaultVirtualMachine()
 
 	vm.Context.Fp = 5
 	instruction := Instruction{
@@ -282,6 +269,16 @@ func writeToDataSegment(vm *VirtualMachine, index uint64, value *mem.MemoryValue
 	if err != nil {
 		panic("error in test util: writeToDataSegment")
 	}
+}
+
+func defaultVirtualMachine() *VirtualMachine {
+	vm, _ := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false})
+	return vm
+}
+
+func defaultVirtualMachineWithBytecode(bytecode []*f.Element) *VirtualMachine {
+	vm, _ := NewVirtualMachine(bytecode, VirtualMachineConfig{false})
+	return vm
 }
 
 // create a pointer to an Element

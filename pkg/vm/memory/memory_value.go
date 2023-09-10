@@ -93,6 +93,13 @@ func (address *MemoryAddress) Sub(lhs *MemoryAddress, rhs any) (*MemoryAddress, 
 	}
 }
 
+func (address *MemoryAddress) Relocate(segmentsOffset []uint64) *f.Element {
+	// no risk overflow because this sizes exists in actual Memory
+	// so if by chance the uint64 addition overflowed, then we have
+	// a machine with more than 2**64 bytes of memory (quite a lot!)
+	return new(f.Element).SetUint64(segmentsOffset[address.SegmentIndex] + address.Offset)
+}
+
 func (address MemoryAddress) String() string {
 	return fmt.Sprintf(
 		"Memory Address: segment: %d, offset: %d", address.SegmentIndex, address.Offset,
@@ -137,6 +144,8 @@ func MemoryValueFromSegmentAndOffset[T constraints.Integer](segmentIndex, offset
 
 func MemoryValueFromAny(anyType any) (*MemoryValue, error) {
 	switch t := anyType.(type) {
+	case uint64:
+		return MemoryValueFromInt(anyType.(uint64)), nil
 	case *f.Element:
 		return MemoryValueFromFieldElement(anyType.(*f.Element)), nil
 	case *MemoryAddress:
@@ -279,16 +288,3 @@ func (mv *MemoryValue) Uint64() (uint64, error) {
 
 	return mv.felt.Uint64(), nil
 }
-
-// Note: Commenting this function since relocation is possibly going to look
-// different.
-// Given a map of segment relocation, update a memory address location
-//func (r *MemoryAddress) Relocate(r1 *MemoryAddress, segmentsOffsets *map[uint64]*MemoryAddress) (*MemoryAddress, error) {
-//	if (*segmentsOffsets)[r1.SegmentIndex] == nil {
-//		return nil, fmt.Errorf("missing segment %d relocation rule", r.SegmentIndex)
-//	}
-//
-//	r, err := r.Add((*segmentsOffsets)[r1.SegmentIndex], &MemoryAddress{0, r1.Offset})
-//
-//	return r, err
-//}
