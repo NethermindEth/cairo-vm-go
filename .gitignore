@@ -1,4 +1,6 @@
 bin/
+.idea/
+.python-version
+
 .DS_Store
 vendor/
-.idea/
