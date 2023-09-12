@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	rn "github.com/NethermindEth/cairo-vm-go/pkg/runner"
+	runnerzero "github.com/NethermindEth/cairo-vm-go/pkg/runners/zero"
 	"github.com/urfave/cli/v2"
 	"os"
 )
@@ -11,6 +11,7 @@ func main() {
 	var proofmode bool
 	var entrypoint string
 	var traceLocation string
+	var arguments cli.StringSlice
 
 	app := &cli.App{
 		Name:                 "cairo-vm",
@@ -42,10 +43,15 @@ func main() {
 					&cli.StringFlag{
 						Name:        "output",
 						Aliases:     []string{"o"},
-						Value:       "./trace",
 						Usage:       "path to file to store the trace",
 						Required:    false,
 						Destination: &traceLocation,
+					},
+					&cli.StringSliceFlag{
+						Name:        "args",
+						Usage:       "path to file to store the trace",
+						Required:    false,
+						Destination: &arguments,
 					},
 				},
 				Action: func(ctx *cli.Context) error {
@@ -55,16 +61,32 @@ func main() {
 					}
 
 					fmt.Printf("Loading program at %s\n", pathToFile)
-
 					content, err := os.ReadFile(pathToFile)
 					if err != nil {
 						return err
 					}
-					runner := new(rn.Runner)
-					runner.LoadCairoZeroProgram(content)
 
-					fmt.Printf("Running...")
-					runner.Run(entrypoint)
+					fmt.Printf("Running....")
+					program := runnerzero.LoadCairoZeroProgram(content)
+					runner, err := runnerzero.NewRunner(program, proofmode)
+					if err != nil {
+						return fmt.Errorf("cannot create runner: %w", err)
+					}
+
+					end, err := runner.InitializeMainEntrypoint()
+					if err != nil {
+						return fmt.Errorf("cannot create runner: %w", err)
+					}
+
+					err = runner.RunUntilPc(end)
+					if err != nil {
+						return fmt.Errorf("cannot create runner: %w", err)
+					}
+
+					if proofmode {
+						runner.BuildProof()
+					}
+
 					return nil
 				},
 			},
