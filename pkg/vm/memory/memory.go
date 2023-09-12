@@ -14,9 +14,7 @@ type Cell struct {
 
 func (cell *Cell) Write(value *MemoryValue) error {
 	if cell.Accessed && cell.Value != nil && !cell.Value.Equal(value) {
-		return fmt.Errorf(
-			"rewriting cell old value: %d new value: %d", &cell.Value, &value,
-		)
+		return fmt.Errorf("rewriting cell: old value \"%d\", new value \"%d\"", &cell.Value, &value)
 	}
 
 	cell.Accessed = true
@@ -77,7 +75,7 @@ func (segment *Segment) Write(offset uint64, value *MemoryValue) error {
 
 	err := segment.Data[offset].Write(value)
 	if err != nil {
-		return fmt.Errorf("error at index %d: %w", offset, err)
+		return fmt.Errorf("write cell at segment offset %d: %v", offset, err)
 	}
 	return nil
 }
@@ -149,7 +147,7 @@ func (memory *Memory) AllocateSegment(data []*f.Element) (int, error) {
 		memVal := MemoryValueFromFieldElement(data[i])
 		err := newSegment.Write(uint64(i), memVal)
 		if err != nil {
-			return 0, fmt.Errorf("cannot allocate new segment: %w", err)
+			return 0, err
 		}
 	}
 	memory.Segments = append(memory.Segments, newSegment)
@@ -166,7 +164,7 @@ func (memory *Memory) AllocateEmptySegment() int {
 // space or if rewriting a specific cell
 func (memory *Memory) Write(segmentIndex uint64, offset uint64, value *MemoryValue) error {
 	if segmentIndex > uint64(len(memory.Segments)) {
-		return fmt.Errorf("writing to unallocated segment %d", segmentIndex)
+		return fmt.Errorf("unallocated segment at index %d", segmentIndex)
 	}
 
 	return memory.Segments[segmentIndex].Write(offset, value)
@@ -181,7 +179,7 @@ func (memory *Memory) WriteToAddress(address *MemoryAddress, value *MemoryValue)
 // initalized with its default zero value
 func (memory *Memory) Read(segmentIndex uint64, offset uint64) (*MemoryValue, error) {
 	if segmentIndex > uint64(len(memory.Segments)) {
-		return nil, fmt.Errorf("reading from unallocated segment %d", segmentIndex)
+		return nil, fmt.Errorf("unallocated segment at index %d", segmentIndex)
 	}
 	return memory.Segments[segmentIndex].Read(offset), nil
 }
@@ -196,7 +194,7 @@ func (memory *Memory) ReadFromAddress(address *MemoryAddress) (*MemoryValue, err
 // Given a segment index and offset returns a pointer to the Memory Cell
 func (memory *Memory) Peek(segmentIndex uint64, offset uint64) (*Cell, error) {
 	if segmentIndex > uint64(len(memory.Segments)) {
-		return nil, fmt.Errorf("peeking from unallocated segment %d", segmentIndex)
+		return nil, fmt.Errorf("unallocated segment at index %d", segmentIndex)
 	}
 	return memory.Segments[segmentIndex].Peek(offset), nil
 }
