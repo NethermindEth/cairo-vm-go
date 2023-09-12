@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"errors"
 	"fmt"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -27,11 +28,7 @@ func (address *MemoryAddress) Equal(other *MemoryAddress) bool {
 // Adds a memory address and a field element
 func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) (*MemoryAddress, error) {
 	if !rhs.IsUint64() {
-		return nil, fmt.Errorf(
-			"adding to %s a field element %s greater than uint64",
-			lhs.String(),
-			rhs.String(),
-		)
+		return nil, fmt.Errorf("field element does not fit in uint64: %s", rhs.String())
 	}
 
 	address.SegmentIndex = lhs.SegmentIndex
@@ -45,51 +42,35 @@ func (address *MemoryAddress) Sub(lhs *MemoryAddress, rhs any) (*MemoryAddress, 
 	address.SegmentIndex = lhs.SegmentIndex
 
 	// Then update offset accordingly
-	switch t := rhs.(type) {
+	switch rhs := rhs.(type) {
 	case uint64:
-		rhs64 := rhs.(uint64)
-		if rhs64 > lhs.Offset {
-			return nil, fmt.Errorf("rhs offset greater than lhs offset")
+		if rhs > lhs.Offset {
+			return nil, errors.New("rhs is greater than lhs offset")
 		}
-		address.Offset = lhs.Offset - rhs64
+		address.Offset = lhs.Offset - rhs
 		return address, nil
 	case *f.Element:
-		feltRhs := rhs.(*f.Element)
-		if !feltRhs.IsUint64() {
-			return nil, fmt.Errorf(
-				"substracting from %s a field element %s greater than uint64",
-				lhs.String(),
-				feltRhs.String(),
-			)
+		if !rhs.IsUint64() {
+			return nil, fmt.Errorf("rhs field element does not fit in uint64: %s", rhs)
 		}
-		feltRhs64 := feltRhs.Uint64()
+		feltRhs64 := rhs.Uint64()
 		if feltRhs64 > lhs.Offset {
-			return nil, fmt.Errorf("rhs offset greater than lhs offset")
+			return nil, fmt.Errorf("rhs %d is greater than lhs offset %d", feltRhs64, lhs.Offset)
 		}
 		address.Offset = lhs.Offset - feltRhs64
 		return address, nil
 	case *MemoryAddress:
-		addressRhs := rhs.(*MemoryAddress)
-		if lhs.SegmentIndex != addressRhs.SegmentIndex {
-			return nil, fmt.Errorf(
-				"cannot substract %s from %s due to different segment location",
-				addressRhs.String(),
-				lhs.String(),
-			)
+		if lhs.SegmentIndex != rhs.SegmentIndex {
+			return nil, fmt.Errorf("addresses are in different segments: rhs is in %d, lhs is in %d",
+				rhs.SegmentIndex, lhs.SegmentIndex)
 		}
-		if addressRhs.Offset > lhs.Offset {
-			return nil, fmt.Errorf("rhs offset greater than lhs offset")
+		if rhs.Offset > lhs.Offset {
+			return nil, fmt.Errorf("rhs offset %d is greater than lhs offset %d", rhs.Offset, lhs.Offset)
 		}
-		address.Offset = lhs.Offset - addressRhs.Offset
+		address.Offset = lhs.Offset - rhs.Offset
 		return address, nil
 	default:
-		return nil,
-			fmt.Errorf(
-				"cannot substract from %s, invalid rhs type: %v. Expected a felt or another memory address",
-				address.String(),
-				t,
-			)
-
+		return nil, fmt.Errorf("unknown rhs type: %T", rhs)
 	}
 }
 
@@ -143,15 +124,15 @@ func MemoryValueFromSegmentAndOffset[T constraints.Integer](segmentIndex, offset
 }
 
 func MemoryValueFromAny(anyType any) (*MemoryValue, error) {
-	switch t := anyType.(type) {
+	switch anyType := anyType.(type) {
 	case uint64:
-		return MemoryValueFromInt(anyType.(uint64)), nil
+		return MemoryValueFromInt(anyType), nil
 	case *f.Element:
-		return MemoryValueFromFieldElement(anyType.(*f.Element)), nil
+		return MemoryValueFromFieldElement(anyType), nil
 	case *MemoryAddress:
-		return MemoryValueFromMemoryAddress(anyType.(*MemoryAddress)), nil
+		return MemoryValueFromMemoryAddress(anyType), nil
 	default:
-		return nil, fmt.Errorf("invalid type to convert a memory value: %v", t)
+		return nil, fmt.Errorf("invalid type to convert to a MemoryValue: %T", anyType)
 	}
 }
 
@@ -160,11 +141,13 @@ func EmptyMemoryValueAsFelt() *MemoryValue {
 		felt: new(f.Element),
 	}
 }
+
 func EmptyMemoryValueAsAddress() *MemoryValue {
 	return &MemoryValue{
 		address: new(MemoryAddress),
 	}
 }
+
 func EmptyMemoryValueAs(address bool) *MemoryValue {
 	if address {
 		return EmptyMemoryValueAsAddress()
@@ -174,14 +157,14 @@ func EmptyMemoryValueAs(address bool) *MemoryValue {
 
 func (mv *MemoryValue) ToMemoryAddress() (*MemoryAddress, error) {
 	if mv.address == nil {
-		return nil, fmt.Errorf("error trying to read a memory value as an address")
+		return nil, errors.New("memory value is not an address")
 	}
 	return mv.address, nil
 }
 
 func (mv *MemoryValue) ToFieldElement() (*f.Element, error) {
 	if mv.felt == nil {
-		return nil, fmt.Errorf("error trying to read a memory value as a field element")
+		return nil, fmt.Errorf("memory value is not a field element")
 	}
 	return mv.felt, nil
 }
@@ -216,7 +199,7 @@ func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	var err error
 	if lhs.IsAddress() {
 		if !rhs.IsFelt() {
-			return nil, fmt.Errorf("memory value addition requires a felt in the rhs")
+			return nil, errors.New("rhs is not a felt")
 		}
 		mv.address, err = mv.address.Add(lhs.address, rhs.felt)
 	} else {
@@ -228,7 +211,7 @@ func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("error adding two memory values: %w", err)
+		return nil, err
 	}
 	return mv, nil
 }
@@ -240,14 +223,14 @@ func (mv *MemoryValue) Sub(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 		mv.address, err = mv.address.Sub(lhs.address, rhs.ToAny())
 	} else {
 		if rhs.IsAddress() {
-			return nil, fmt.Errorf("cannot substract a an address from a felt")
+			return nil, errors.New("cannot substract an address from a felt")
 		} else {
 			mv.felt = mv.felt.Sub(lhs.felt, rhs.felt)
 		}
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("error substracting two memory values: %w", err)
+		return nil, err
 	}
 
 	return mv, nil
@@ -255,7 +238,7 @@ func (mv *MemoryValue) Sub(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 
 func (mv *MemoryValue) Mul(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	if lhs.IsAddress() || rhs.IsAddress() {
-		return nil, fmt.Errorf("cannot multiply memory addresses")
+		return nil, errors.New("cannot multiply memory addresses")
 	}
 	mv.felt.Mul(lhs.felt, rhs.felt)
 	return mv, nil
@@ -263,7 +246,7 @@ func (mv *MemoryValue) Mul(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 
 func (mv *MemoryValue) Div(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	if lhs.IsAddress() || rhs.IsAddress() {
-		return nil, fmt.Errorf("cannot divide memory addresses")
+		return nil, errors.New("cannot divide memory addresses")
 	}
 
 	mv.felt.Div(lhs.felt, rhs.felt)
@@ -280,10 +263,10 @@ func (mv MemoryValue) String() string {
 // Retuns a MemoryValue holding a felt as uint if it fits
 func (mv *MemoryValue) Uint64() (uint64, error) {
 	if mv.IsAddress() {
-		return 0, fmt.Errorf("cannot convert a memory address '%s' into uint64", *mv)
+		return 0, fmt.Errorf("cannot convert a memory address into uint64: %s", *mv)
 	}
 	if !mv.felt.IsUint64() {
-		return 0, fmt.Errorf("cannot convert a field element '%s' into uint64", *mv)
+		return 0, fmt.Errorf("field element does not fit in uint64: %s", mv.String())
 	}
 
 	return mv.felt.Uint64(), nil
