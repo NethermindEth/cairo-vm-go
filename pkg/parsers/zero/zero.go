@@ -2,23 +2,45 @@ package zero
 
 import (
 	"encoding/json"
+	starknetParser "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"os"
 )
 
-type ZeroProgram struct {
-	Attributes []string          `json:"attributes"`
-	Builtins   map[string]int64  `json:"builtins"`
-	Code       string            `json:"code"`
-	DebugInfo  DebugInfo         `json:"debug_info"`
-	Prime      string            `json:"prime"`
-	Version    string            `json:"version"`
-	Hints      map[string][]Hint `json:"hints"`
+type FlowTrackingData struct {
+	ApTracking   ApTracking        `json:"ap_tracking"`
+	ReferenceIds map[string]uint64 `json:"reference_ids"`
+}
+
+type ApTracking struct {
+	Group  int `json:"group"`
+	Offset int `json:"offset"`
+}
+
+type Location struct {
+	EndCol    uint64            `json:"end_col"`
+	EndLine   uint64            `json:"end_line"`
+	InputFile map[string]string `json:"input_file"`
+	StartCol  uint64            `json:"start_col"`
+	StartLine uint64            `json:"start_line"`
+}
+
+type HintLocation struct {
+	Location        Location `json:"location"`
+	NPrefixNewlines uint64   `json:"n_prefix_newlines"`
+}
+
+type InstructionLocation struct {
+	AccessibleScopes []string         `json:"accessible_scopes"`
+	FlowTrackingData FlowTrackingData `json:"flow_tracking_data"`
+	Hints            []HintLocation   `json:"hints"`
+	Inst             Location         `json:"inst"`
 }
 
 type DebugInfo struct {
-	InstructionOffsets []int64 `json:"instruction_offsets"`
-	SourceCode         string  `json:"source_code"`
-	SourcePath         string  `json:"source_path"`
+	FileContents         map[string]string              `json:"file_contents"`
+	InstructionLocations map[string]InstructionLocation `json:"instruction_locations"`
+	SourceCode           string                         `json:"source_code"`
+	SourcePath           string                         `json:"source_path"`
 }
 
 type Hint struct {
@@ -27,14 +49,34 @@ type Hint struct {
 	FlowTrackingData FlowTrackingData `json:"flow_tracking_data"`
 }
 
-type FlowTrackingData struct {
-	ApTracking   ApTracking             `json:"ap_tracking"`
-	ReferenceIds map[string]interface{} `json:"reference_ids"`
+type Reference struct {
+	ApTrackingData ApTracking `json:"ap_tracking_data"`
+	Pc             uint64     `json:"pc"`
+	Value          string     `json:"value"`
 }
 
-type ApTracking struct {
-	Group  int `json:"group"`
-	Offset int `json:"offset"`
+type ReferenceManager struct {
+	References []Reference
+}
+
+type AttributeScope struct {
+	StartPc          uint64           `json:"start_pc"`
+	EndPc            uint64           `json:"end_pc"`
+	FlowTrackingData FlowTrackingData `json:"flow_tracking_data"`
+	AccessibleScopes []string         `json:"accessible_scopes"`
+}
+
+type ZeroProgram struct {
+	Prime            string                   `json:"prime"`
+	Data             []string                 `json:"data"`
+	Builtins         []starknetParser.Builtin `json:"builtins"`
+	Hints            map[string][]Hint        `json:"hints"`
+	CompilerVersion  string                   `json:"version"`
+	MainScope        string                   `json:"main_scope"`
+	Identifiers      map[string]any           `json:"identifiers"`
+	ReferenceManager ReferenceManager         `json:"reference_manager"`
+	Attributes       []AttributeScope         `json:"attributes"`
+	DebugInfo        DebugInfo                `json:"debug_info"`
 }
 
 func (z ZeroProgram) MarshalToFile(filepath string) error {
