@@ -17,7 +17,6 @@ require (
 require (
 	github.com/consensys/gnark-crypto v0.11.1
 	github.com/go-playground/validator/v10 v10.4.1
-	github.com/go-test/deep v1.1.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
 )
