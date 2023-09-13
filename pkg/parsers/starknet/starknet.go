@@ -131,7 +131,7 @@ func (hints *Hints) MarshalJSON() ([]byte, error) {
 	return json.Marshal(rawHints)
 }
 
-type Program struct {
+type StarknetProgram struct {
 	// Prime is fixed to be 0x800000000000011000000000000000000000000000000000000000000000001 and wont fit in a f.Felt
 	Bytecode        []f.Element      `json:"bytecode"`
 	CompilerVersion string           `json:"compiler_version"`
@@ -139,15 +139,15 @@ type Program struct {
 	Hints           []Hints          `json:"hints" validate:"required"`
 }
 
-func ProgramFromFile(pathToFile string) (*Program, error) {
+func StarknetProgramFromFile(pathToFile string) (*StarknetProgram, error) {
 	content, error := os.ReadFile(pathToFile)
 	if error != nil {
 		return nil, error
 	}
-	return ProgramFromJSON(content)
+	return StarknetProgramFromJSON(content)
 }
 
-func ProgramFromJSON(content json.RawMessage) (*Program, error) {
-	var program Program
-	return &program, json.Unmarshal(content, &program)
+func StarknetProgramFromJSON(content json.RawMessage) (*StarknetProgram, error) {
+	var starknet StarknetProgram
+	return &starknet, json.Unmarshal(content, &starknet)
 }

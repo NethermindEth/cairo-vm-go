@@ -7,7 +7,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-        fmt.Println("Usage: cairo-vm <path_to_file>")
+		fmt.Println("Usage: cairo-vm <path_to_file>")
 		os.Exit(1)
 	}
 
