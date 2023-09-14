@@ -44,7 +44,7 @@ const (
 	FieldSqrtName                   HintName = "FieldSqrt"
 	DebugPrintName                  HintName = "DebugPrint"
 	AllocConstantSizeName           HintName = "AllocConstantSize"
-	//Name Deprecated hints
+	// Name Deprecated hints
 	AssertCurrentAccessIndicesIsEmptyName HintName = "AssertCurrentAccessIndicesIsEmpty"
 	AssertAllAccessesUsedName             HintName = "AssertAllAccessesUsed"
 	AssertAllKeysUsedName                 HintName = "AssertAllKeysUsed"

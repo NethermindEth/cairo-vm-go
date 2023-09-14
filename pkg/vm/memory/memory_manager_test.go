@@ -1,7 +1,6 @@
 package memory
 
 import (
-	"fmt"
 	"testing"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -138,7 +137,6 @@ func updateMemoryWithValues(memory *Memory, valuesToWrite []memoryWrite) {
 			memory.AllocateEmptySegment()
 		}
 
-		fmt.Println("c")
 		// write the memory val
 		err = memory.Write(toWrite.SegmentIndex, toWrite.Offset, val)
 		if err != nil {

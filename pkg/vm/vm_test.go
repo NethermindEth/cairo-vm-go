@@ -1,12 +1,13 @@
 package vm
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
 
-	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/stretchr/testify/require"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/assert"
+
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
 func TestVMCreation(t *testing.T) {
@@ -52,7 +53,6 @@ func TestGetCellApDst(t *testing.T) {
 
 	assert.True(t, cell.Accessed)
 	assert.Equal(t, mem.MemoryValueFromInt(200), cell.Read())
-
 }
 
 func TestGetCellFpDst(t *testing.T) {

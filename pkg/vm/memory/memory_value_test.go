@@ -1,8 +1,9 @@
 package memory
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/assert"
@@ -60,7 +61,6 @@ func TestFeltPlusMemoryAddress(t *testing.T) {
 
 	assert.Equal(t, memVal, res)
 	assert.Equal(t, *expected, *res)
-
 }
 
 func TestMemoryAddressPlusMemoryAddress(t *testing.T) {

@@ -1,4 +1,4 @@
-.PHONY: build clean test help
+.PHONY: build clean test help format staticcheck pre-commit
 
 BINARY_DIR := bin
 BINARY_NAME := cairo-vm
@@ -30,3 +30,11 @@ clean:
 test:
 	@echo "Running tests..."
 	@go test ./...
+
+format:
+	@gofumpt -l -w .
+
+staticcheck:
+	@staticcheck ./...
+
+pre-commit: format staticcheck build test clean

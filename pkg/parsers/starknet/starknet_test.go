@@ -14,9 +14,9 @@ func TestCompilerVersionParsing(t *testing.T) {
           "compiler_version": "2.1.0"
        }
     `)
-	program, err := ProgramFromJSON(testData)
+	starknet, err := StarknetProgramFromJSON(testData)
 	require.NoError(t, err)
-	assert.Equal(t, "2.1.0", program.CompilerVersion)
+	assert.Equal(t, "2.1.0", starknet.CompilerVersion)
 }
 
 func TestByteCodeParsing(t *testing.T) {
@@ -30,11 +30,10 @@ func TestByteCodeParsing(t *testing.T) {
           ]
        }
     `)
-	program, err := ProgramFromJSON(testData)
+	starknet, err := StarknetProgramFromJSON(testData)
 	require.NoError(t, err)
-	assert.Len(t, program.Bytecode, 4)
-	assert.Equal(t, "482680017ffa8000", program.Bytecode[2].Text(16))
-
+	assert.Len(t, starknet.Bytecode, 4)
+	assert.Equal(t, "482680017ffa8000", starknet.Bytecode[2].Text(16))
 }
 
 func TestEmptyEntryPointTypeParsing(t *testing.T) {
@@ -47,14 +46,13 @@ func TestEmptyEntryPointTypeParsing(t *testing.T) {
           }       
       }
     `)
-	program, err := ProgramFromJSON(testData)
+	starknet, err := StarknetProgramFromJSON(testData)
 	require.NoError(t, err)
 
-	entryPoints := program.EntryPoints
+	entryPoints := starknet.EntryPoints
 	assert.Empty(t, entryPoints.External)
 	assert.Empty(t, entryPoints.L1Handler)
 	assert.Empty(t, entryPoints.Constructor)
-
 }
 
 func TestEntryPointInfoParsing(t *testing.T) {
@@ -83,10 +81,10 @@ func TestEntryPointInfoParsing(t *testing.T) {
           }       
       }
     `)
-	program, err := ProgramFromJSON(testData)
+	starknet, err := StarknetProgramFromJSON(testData)
 	require.NoError(t, err)
 
-	entryPoints := program.EntryPoints
+	entryPoints := starknet.EntryPoints
 	assert.Len(t, entryPoints.External, 1)
 
 	entryPointInfo := entryPoints.External[0]
@@ -135,10 +133,10 @@ func TestHintsParsing(t *testing.T) {
             ]
         }
     `)
-	program, err := ProgramFromJSON(testData)
+	starknet, err := StarknetProgramFromJSON(testData)
 	require.NoError(t, err)
 
-	hints := program.Hints
+	hints := starknet.Hints
 	assert.Len(t, hints, 5)
 
 	hint := hints[0].Hints[0]
@@ -146,7 +144,7 @@ func TestHintsParsing(t *testing.T) {
 	_, ok := hint.Args.(*TestLessThanOrEqual)
 	assert.True(t, ok)
 
-	assert.NoError(t, v.Struct(program))
+	assert.NoError(t, v.Struct(starknet))
 }
 
 func TestInvalidBuiltin(t *testing.T) {
@@ -167,7 +165,6 @@ func TestInvalidBuiltin(t *testing.T) {
           }       
       }
     `)
-	_, err := ProgramFromJSON(testData)
+	_, err := StarknetProgramFromJSON(testData)
 	assert.Error(t, err)
-
 }
