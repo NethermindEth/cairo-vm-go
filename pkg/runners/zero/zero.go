@@ -1,9 +1,11 @@
-package runner
+package zero
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -11,8 +13,7 @@ import (
 
 type Program struct {
 	// the bytecode in string format
-	Bytecode    []*f.Element
-	Identifiers []any
+	Bytecode []*f.Element
 	// given a string it returns the pc for that function call
 	Entrypoints map[string]uint64
 }
@@ -24,25 +25,62 @@ type ZeroRunner struct {
 	proofmode  bool
 }
 
-func LoadCairoZeroProgram(content []byte) *Program {
-	// parse the cairo zero file
-	// return Load with the Program to parse
-	return nil
+func LoadCairoZeroProgram(content []byte) (*Program, error) {
+	cairoZeroJson, err := zero.ZeroProgramFromJSON(content)
+	if err != nil {
+		return nil, err
+	}
+
+	// bytecode
+	bytecode := make([]*f.Element, len(cairoZeroJson.Data))
+	for i := range cairoZeroJson.Data {
+		felt, err := new(f.Element).SetString(cairoZeroJson.Data[i])
+		if err != nil {
+			return nil, fmt.Errorf(
+				"cannot read bytecode %s at position %d: %w",
+				cairoZeroJson.Data[i], i, err,
+			)
+		}
+		bytecode[i] = felt
+	}
+
+	entrypoints, err := extractEntrypoints(*cairoZeroJson)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Program{
+		Bytecode:    bytecode,
+		Entrypoints: entrypoints,
+	}, nil
+}
+
+func extractEntrypoints(json zero.ZeroProgram) (map[string]uint64, error) {
+	result := make(map[string]uint64)
+
+	for key, value := range json.Identifiers {
+		properties := value.(map[string]any)
+
+		entryPointType, ok := properties["type"].(string)
+		if !ok {
+			return nil, errors.New("cannot extract entrypoint, missing type in identifier")
+		}
+
+		if entryPointType == "function" {
+			pc, ok := properties["pc"].(float64)
+			if !ok {
+				return nil, errors.New("cannot extract entrypoint, unknown function pc")
+			}
+			name := key[len(json.MainScope)+1:]
+			result[name] = uint64(pc)
+		}
+	}
+
+	return result, nil
 }
 
 // Creates a new Runner of a Cairo Zero program
 func NewRunner(program *Program, proofmode bool) (*ZeroRunner, error) {
-	//var bytecode []*f.Element
-	//for i := range program.Bytecode {
-	//	felt, err := new(f.Element).SetString(program.Bytecode[i])
-	//	if err != nil {
-	//		return fmt.Errorf(
-	//			"runner error: cannot read bytecode %s at position %d: %w",
-	//			program.Bytecode[i], i, err,
-	//		)
-	//	}
-	//	bytecode[i] = felt
-	//}
 
 	// initialize vm
 	vm, err := VM.NewVirtualMachine(program.Bytecode, VM.VirtualMachineConfig{ProofMode: proofmode})
