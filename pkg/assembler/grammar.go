@@ -12,17 +12,13 @@ type CasmProgram struct {
 }
 
 type Instruction struct {
-	Core      *CoreInstruction `@@`
-	ApPlusOne bool             `( "," @"ap" "+" "+" )? ";" |`
-	ApPlus    *ApPlus          `@@ ";"`
-}
-
-type CoreInstruction struct {
-	AssertEq *AssertEq `@@ |`
-	Jnz      *Jnz      `@@ |`
-	Jump     *Jump     `@@ |`
-	Call     *Call     `@@ |`
-	Ret      *Ret      `@@ `
+	AssertEq  *AssertEq `( @@ |`
+	Jnz       *Jnz      `  @@ |`
+	Jump      *Jump     `  @@ )`
+	ApPlusOne bool      `( "," @"ap" "+" "+" )? ";" |`
+	Call      *Call     `( @@ |`
+	Ret       *Ret      `  @@ |`
+	ApPlus    *ApPlus   `  @@ ) ";"`
 }
 
 type AssertEq struct {
@@ -92,43 +88,22 @@ type CoreInstructioner interface {
 	Expression() Expressioner
 }
 
-func (instruction Instruction) Unwrap() CoreInstructioner {
-	if instruction.ApPlus != nil {
-		return instruction.ApPlus
-	} else if instruction.Core.AssertEq != nil {
-		return instruction.Core.AssertEq
-	} else if instruction.Core.Jump != nil {
-		return instruction.Core.Jump
-	} else if instruction.Core.Jnz != nil {
-		return instruction.Core.Jnz
-	} else if instruction.Core.Call != nil {
-		return instruction.Core.Call
-	} else {
-		return instruction.Core.Ret
+func (instruction Instruction) Expression() Expressioner {
+	switch {
+	case instruction.AssertEq != nil:
+		return instruction.AssertEq.Value
+	case instruction.Jump != nil:
+		return instruction.Jump.Value
+	case instruction.Jnz != nil:
+		return instruction.Jnz.Value
+	case instruction.Call != nil:
+		return instruction.Call.Value
+	case instruction.ApPlus != nil:
+		return instruction.ApPlus.Value
+	default:
+		// when instruction is Ret
+		return nil
 	}
-}
-
-func (assertEq *AssertEq) Expression() Expressioner {
-	return assertEq.Value
-}
-
-func (jump *Jump) Expression() Expressioner {
-	return jump.Value
-}
-
-func (jnz *Jnz) Expression() Expressioner {
-	return jnz.Value
-}
-
-func (call *Call) Expression() Expressioner {
-	return call.Value
-}
-
-func (ret *Ret) Expression() Expressioner {
-	return nil
-}
-func (apPlus *ApPlus) Expression() Expressioner {
-	return apPlus.Value
 }
 
 type Expressioner interface {

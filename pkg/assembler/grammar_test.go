@@ -17,22 +17,20 @@ func TestAssertEqualWithRegisterGrammar(t *testing.T) {
 		&CasmProgram{
 			[]Instruction{
 				{
-					Core: &CoreInstruction{
-						AssertEq: &AssertEq{
-							Dst: &Deref{
-								Name: "fp",
+					AssertEq: &AssertEq{
+						Dst: &Deref{
+							Name: "fp",
+							Offset: &Offset{
+								Sign:  "+",
+								Value: ptrOf(3),
+							},
+						},
+						Value: &Expression{
+							Deref: &Deref{
+								Name: "ap",
 								Offset: &Offset{
 									Sign:  "+",
-									Value: ptrOf(3),
-								},
-							},
-							Value: &Expression{
-								Deref: &Deref{
-									Name: "ap",
-									Offset: &Offset{
-										Sign:  "+",
-										Value: ptrOf(4),
-									},
+									Value: ptrOf(4),
 								},
 							},
 						},
@@ -56,22 +54,20 @@ func TestAssertEqualWithApPlusGrammar(t *testing.T) {
 		&CasmProgram{
 			[]Instruction{
 				{
-					Core: &CoreInstruction{
-						AssertEq: &AssertEq{
-							Dst: &Deref{
-								Name: "fp",
+					AssertEq: &AssertEq{
+						Dst: &Deref{
+							Name: "fp",
+							Offset: &Offset{
+								Sign:  "+",
+								Value: ptrOf(3),
+							},
+						},
+						Value: &Expression{
+							Deref: &Deref{
+								Name: "ap",
 								Offset: &Offset{
 									Sign:  "+",
-									Value: ptrOf(3),
-								},
-							},
-							Value: &Expression{
-								Deref: &Deref{
-									Name: "ap",
-									Offset: &Offset{
-										Sign:  "+",
-										Value: ptrOf(4),
-									},
+									Value: ptrOf(4),
 								},
 							},
 						},
@@ -95,18 +91,16 @@ func TestAssertEqualWithImmediateGrammar(t *testing.T) {
 		&CasmProgram{
 			[]Instruction{
 				{
-					Core: &CoreInstruction{
-						AssertEq: &AssertEq{
-							Dst: &Deref{
-								Name: "fp",
-								Offset: &Offset{
-									Sign:  "+",
-									Value: ptrOf(1),
-								},
+					AssertEq: &AssertEq{
+						Dst: &Deref{
+							Name: "fp",
+							Offset: &Offset{
+								Sign:  "+",
+								Value: ptrOf(1),
 							},
-							Value: &Expression{
-								Immediate: ptrOf("5"),
-							},
+						},
+						Value: &Expression{
+							Immediate: ptrOf("5"),
 						},
 					},
 					ApPlusOne: false,
@@ -128,25 +122,23 @@ func TestAssertEqualWithMathOperationGrammar(t *testing.T) {
 		&CasmProgram{
 			[]Instruction{
 				{
-					Core: &CoreInstruction{
-						AssertEq: &AssertEq{
-							Dst: &Deref{
-								Name:   "ap",
-								Offset: nil,
-							},
-							Value: &Expression{
-								MathOperation: &MathOperation{
-									Lhs: &Deref{
-										Name: "fp",
-										Offset: &Offset{
-											Sign:  "+",
-											Value: ptrOf(7),
-										},
+					AssertEq: &AssertEq{
+						Dst: &Deref{
+							Name:   "ap",
+							Offset: nil,
+						},
+						Value: &Expression{
+							MathOperation: &MathOperation{
+								Lhs: &Deref{
+									Name: "fp",
+									Offset: &Offset{
+										Sign:  "+",
+										Value: ptrOf(7),
 									},
-									Operator: "+",
-									Rhs: &DerefOrImm{
-										Immediate: ptrOf("5"),
-									},
+								},
+								Operator: "+",
+								Rhs: &DerefOrImm{
+									Immediate: ptrOf("5"),
 								},
 							},
 						},
@@ -170,12 +162,10 @@ func TestCallAbsGrammar(t *testing.T) {
 		&CasmProgram{
 			[]Instruction{
 				{
-					Core: &CoreInstruction{
-						Call: &Call{
-							CallType: "abs",
-							Value: &DerefOrImm{
-								Immediate: ptrOf("123"),
-							},
+					Call: &Call{
+						CallType: "abs",
+						Value: &DerefOrImm{
+							Immediate: ptrOf("123"),
 						},
 					},
 					ApPlusOne: false,
@@ -197,10 +187,8 @@ func TestRetGrammar(t *testing.T) {
 		&CasmProgram{
 			[]Instruction{
 				{
-					Core: &CoreInstruction{
-						Ret: &Ret{
-							Ret: "",
-						},
+					Ret: &Ret{
+						Ret: "",
 					},
 					ApPlusOne: false,
 				},
