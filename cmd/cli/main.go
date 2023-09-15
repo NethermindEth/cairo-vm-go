@@ -63,11 +63,14 @@ func main() {
 					fmt.Printf("Loading program at %s\n", pathToFile)
 					content, err := os.ReadFile(pathToFile)
 					if err != nil {
-						return err
+						return fmt.Errorf("cannot load program: %w", err)
+					}
+					program, err := runnerzero.LoadCairoZeroProgram(content)
+					if err != nil {
+						return fmt.Errorf("cannot load program: %w", err)
 					}
 
 					fmt.Printf("Running....")
-					program := runnerzero.LoadCairoZeroProgram(content)
 					runner, err := runnerzero.NewRunner(program, proofmode)
 					if err != nil {
 						return fmt.Errorf("cannot create runner: %w", err)
@@ -84,9 +87,13 @@ func main() {
 					}
 
 					if proofmode {
-						runner.BuildProof()
+						err = runner.BuildProof()
+						if err != nil {
+							return err
+						}
 					}
 
+					fmt.Printf("Success!")
 					return nil
 				},
 			},
