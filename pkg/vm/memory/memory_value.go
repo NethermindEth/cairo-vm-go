@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	mo "github.com/samber/mo"
 	"golang.org/x/exp/constraints"
 )
 
@@ -87,40 +88,32 @@ func (address MemoryAddress) String() string {
 	)
 }
 
+// This is an abreviation for simplicity
+type memoryValue = mo.Either[*f.Element, *MemoryAddress]
+
 // Stores all posible types that can be stored in a Memory cell,
 //
 //   - either a Felt value (an `f.Element`),
 //   - or a pointer to another Memory Cell (a `MemoryAddress`)
-//
-// Both members cannot be non-nil at the same time
-type MemoryValue struct {
-	felt    *f.Element
-	address *MemoryAddress
-}
+type MemoryValue memoryValue
 
 func MemoryValueFromMemoryAddress(address *MemoryAddress) *MemoryValue {
-	return &MemoryValue{
-		address: address,
-	}
+	var mv MemoryValue = MemoryValue(mo.Right[*f.Element, *MemoryAddress](address))
+	return &mv
 }
 
 func MemoryValueFromFieldElement(felt *f.Element) *MemoryValue {
-	return &MemoryValue{
-		felt: felt,
-	}
+	mv := MemoryValue(mo.Left[*f.Element, *MemoryAddress](felt))
+	return &mv
 }
 
 func MemoryValueFromInt[T constraints.Integer](v T) *MemoryValue {
 	newElement := f.NewElement(uint64(v))
-	return &MemoryValue{
-		felt: &newElement,
-	}
+	return MemoryValueFromFieldElement(&newElement)
 }
 
 func MemoryValueFromSegmentAndOffset[T constraints.Integer](segmentIndex, offset T) *MemoryValue {
-	return &MemoryValue{
-		address: &MemoryAddress{SegmentIndex: uint64(segmentIndex), Offset: uint64(offset)},
-	}
+	return MemoryValueFromMemoryAddress(&MemoryAddress{SegmentIndex: uint64(segmentIndex), Offset: uint64(offset)})
 }
 
 func MemoryValueFromAny(anyType any) (*MemoryValue, error) {
@@ -137,15 +130,11 @@ func MemoryValueFromAny(anyType any) (*MemoryValue, error) {
 }
 
 func EmptyMemoryValueAsFelt() *MemoryValue {
-	return &MemoryValue{
-		felt: new(f.Element),
-	}
+	return MemoryValueFromFieldElement(new(f.Element))
 }
 
 func EmptyMemoryValueAsAddress() *MemoryValue {
-	return &MemoryValue{
-		address: new(MemoryAddress),
-	}
+	return MemoryValueFromMemoryAddress(new(MemoryAddress))
 }
 
 func EmptyMemoryValueAs(address bool) *MemoryValue {
@@ -155,92 +144,112 @@ func EmptyMemoryValueAs(address bool) *MemoryValue {
 	return EmptyMemoryValueAsFelt()
 }
 
+func (mv *MemoryValue) toMemoryAddress() *MemoryAddress {
+	return memoryValue(*mv).RightOrEmpty()
+}
+
 func (mv *MemoryValue) ToMemoryAddress() (*MemoryAddress, error) {
-	if mv.address == nil {
+	address, isAddress := memoryValue(*mv).Right()
+	if !isAddress {
 		return nil, errors.New("memory value is not an address")
 	}
-	return mv.address, nil
+	return address, nil
+}
+
+func (mv *MemoryValue) toFieldElement() *f.Element {
+	return memoryValue(*mv).LeftOrEmpty()
 }
 
 func (mv *MemoryValue) ToFieldElement() (*f.Element, error) {
-	if mv.felt == nil {
+	felt, isFelt := memoryValue(*mv).Left()
+	if !isFelt {
 		return nil, fmt.Errorf("memory value is not a field element")
 	}
-	return mv.felt, nil
+	return felt, nil
 }
 
 func (mv *MemoryValue) ToAny() any {
-	if mv.felt != nil {
-		return mv.felt
+	felt, isFelt := memoryValue(*mv).Left()
+
+	if isFelt {
+		return felt
 	}
-	return mv.address
+
+	return memoryValue(*mv).RightOrEmpty()
 }
 
 func (mv *MemoryValue) IsAddress() bool {
-	return mv.address != nil
+	return memoryValue(*mv).IsRight()
 }
 
 func (mv *MemoryValue) IsFelt() bool {
-	return mv.felt != nil
+	return memoryValue(*mv).IsLeft()
 }
 
-func (mv *MemoryValue) Equal(other *MemoryValue) bool {
+func (mv *MemoryValue) Equal(other *MemoryValue) (isEqual bool) {
 	if mv.IsAddress() && other.IsAddress() {
-		return mv.address.Equal(other.address)
-	}
-	if mv.IsFelt() && other.IsFelt() {
-		return mv.felt.Equal(other.felt)
+		return mv.toMemoryAddress().Equal(other.toMemoryAddress())
+	} else if mv.IsFelt() && other.IsFelt() {
+		return mv.toFieldElement().Equal(other.toFieldElement())
 	}
 	return false
 }
 
 // Adds two memory values is the second one is a Felt
-func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
-	var err error
-	if lhs.IsAddress() {
-		if !rhs.IsFelt() {
-			return nil, errors.New("rhs is not a felt")
-		}
-		mv.address, err = mv.address.Add(lhs.address, rhs.felt)
-	} else {
+func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) (res *MemoryValue, err error) {
+	memoryValue(*lhs).MapLeft(func(e *f.Element) mo.Either[*f.Element, *MemoryAddress] {
 		if rhs.IsAddress() {
-			mv.address, err = mv.address.Add(rhs.address, lhs.felt)
+			_, err = mv.toMemoryAddress().Add(rhs.toMemoryAddress(), e)
 		} else {
-			mv.felt = mv.felt.Add(lhs.felt, rhs.felt)
+			mv.toFieldElement().Add(e, rhs.toFieldElement())
 		}
+		return mo.Left[*f.Element, *MemoryAddress](nil)
+	}).MapRight(func(ma *MemoryAddress) mo.Either[*f.Element, *MemoryAddress] {
+		if !rhs.IsFelt() {
+			err = errors.New("rhs is not a felt")
+		} else {
+			_, err = mv.toMemoryAddress().Add(ma, rhs.toFieldElement())
+		}
+
+		return memoryValue(*mv)
+	})
+
+	res = mv
+	if err != nil {
+		res = nil
 	}
 
-	if err != nil {
-		return nil, err
-	}
-	return mv, nil
+	return
 }
 
 // Subs two memory values if they're in the same segment or the rhs is a Felt.
-func (mv *MemoryValue) Sub(lhs, rhs *MemoryValue) (*MemoryValue, error) {
-	var err error
-	if lhs.IsAddress() {
-		mv.address, err = mv.address.Sub(lhs.address, rhs.ToAny())
-	} else {
+func (mv *MemoryValue) Sub(lhs, rhs *MemoryValue) (res *MemoryValue, err error) {
+	memoryValue(*lhs).MapLeft(func(e *f.Element) mo.Either[*f.Element, *MemoryAddress] {
 		if rhs.IsAddress() {
-			return nil, errors.New("cannot substract an address from a felt")
+			err = errors.New("cannot substract an address from a felt")
 		} else {
-			mv.felt = mv.felt.Sub(lhs.felt, rhs.felt)
+			mv.toFieldElement().Sub(e, rhs.toFieldElement())
 		}
-	}
+		return mo.Left[*f.Element, *MemoryAddress](nil)
+	}).MapRight(func(ma *MemoryAddress) mo.Either[*f.Element, *MemoryAddress] {
+		_, err = mv.toMemoryAddress().Sub(ma, rhs.ToAny())
+		return memoryValue(*mv)
+	})
+
+	res = mv
 
 	if err != nil {
-		return nil, err
+		res = nil
 	}
 
-	return mv, nil
+	return
 }
 
 func (mv *MemoryValue) Mul(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	if lhs.IsAddress() || rhs.IsAddress() {
 		return nil, errors.New("cannot multiply memory addresses")
 	}
-	mv.felt.Mul(lhs.felt, rhs.felt)
+	mv.toFieldElement().Mul(lhs.toFieldElement(), rhs.toFieldElement())
 	return mv, nil
 }
 
@@ -249,15 +258,15 @@ func (mv *MemoryValue) Div(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 		return nil, errors.New("cannot divide memory addresses")
 	}
 
-	mv.felt.Div(lhs.felt, rhs.felt)
+	mv.toFieldElement().Div(lhs.toFieldElement(), rhs.toFieldElement())
 	return mv, nil
 }
 
 func (mv MemoryValue) String() string {
 	if mv.IsAddress() {
-		return mv.address.String()
+		return mv.toMemoryAddress().String()
 	}
-	return mv.felt.String()
+	return mv.toFieldElement().String()
 }
 
 // Retuns a MemoryValue holding a felt as uint if it fits
@@ -265,9 +274,12 @@ func (mv *MemoryValue) Uint64() (uint64, error) {
 	if mv.IsAddress() {
 		return 0, fmt.Errorf("cannot convert a memory address into uint64: %s", *mv)
 	}
-	if !mv.felt.IsUint64() {
+
+	felt := mv.toFieldElement()
+
+	if !felt.IsUint64() {
 		return 0, fmt.Errorf("field element does not fit in uint64: %s", mv.String())
 	}
 
-	return mv.felt.Uint64(), nil
+	return felt.Uint64(), nil
 }
