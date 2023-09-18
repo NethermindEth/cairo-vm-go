@@ -8,7 +8,7 @@ import (
 // Grammar and AST
 
 type CasmProgram struct {
-	Instructions []Instruction `@@`
+	Instructions []Instruction `@@*`
 }
 
 type Instruction struct {
@@ -150,14 +150,14 @@ func (deref *Deref) IsFp() bool {
 
 func (deref *Deref) BiasedOffset() (uint16, error) {
 	if deref.Offset == nil {
-		return 0, nil
+		return biasedZero, nil
 	}
 	return biasedOffset(deref.Offset.Sign == "-", *deref.Offset.Value)
 }
 
 func (dderef *DoubleDeref) BiasedOffset() (uint16, error) {
 	if dderef.Offset == nil {
-		return 0, nil
+		return biasedZero, nil
 	}
 	return biasedOffset(dderef.Offset.Sign == "-", *dderef.Offset.Value)
 }
