@@ -1,6 +1,6 @@
 module github.com/NethermindEth/cairo-vm-go
 
-go 1.20
+go 1.21
 
 require (
 	github.com/bits-and-blooms/bitset v1.8.0 // indirect
@@ -15,6 +15,7 @@ require (
 )
 
 require (
+	github.com/alecthomas/participle/v2 v2.0.0
 	github.com/consensys/gnark-crypto v0.11.1
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/stretchr/testify v1.8.4
