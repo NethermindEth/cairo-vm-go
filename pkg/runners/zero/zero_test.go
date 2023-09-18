@@ -79,21 +79,34 @@ func TestSimpleProgram(t *testing.T) {
 	endPc, err := runner.InitializeMainEntrypoint()
 	require.NoError(t, err)
 
-	require.Equal(t, len(program.Bytecode), endPc)
+	require.Equal(t, uint64(len(program.Bytecode)), endPc)
 
 	err = runner.RunUntilPc(endPc)
 	require.NoError(t, err)
 
-	executionSegment := runner.memory().Segments[VM.ExecutionSegment]
+	executionSegment := runner.segments()[VM.ExecutionSegment]
 
 	assert.Equal(
 		t,
-		createSegment(2, 3, 4, 4),
+		createSegment(
+			// return fp
+			memory.NewMemoryAddress(2, 0),
+			// next pc
+			len(program.Bytecode),
+			2,
+			3,
+			4,
+			4,
+		),
 		executionSegment,
 	)
+
+	assert.Equal(t, uint64(5), runner.vm.Context.Ap)
+	assert.Equal(t, uint64(0), runner.vm.Context.Fp)
+	assert.Equal(t, uint64(len(program.Bytecode)), runner.vm.Context.Pc)
 }
 
-func createSegment(values ...any) memory.Segment {
+func createSegment(values ...any) *memory.Segment {
 	data := make([]memory.Cell, len(values))
 	for i := range values {
 		if values[i] == nil {
@@ -106,7 +119,7 @@ func createSegment(values ...any) memory.Segment {
 			data[i] = memory.Cell{Value: memVal, Accessed: true}
 		}
 	}
-	return memory.Segment{
+	return &memory.Segment{
 		Data: data,
 	}
 }

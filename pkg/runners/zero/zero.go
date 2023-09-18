@@ -128,7 +128,7 @@ func (runner *ZeroRunner) InitializeEntrypoint(
 	if err != nil {
 		return 0, err
 	}
-	err = runner.memory().Write(VM.ExecutionSegment, offset+1, memory.MemoryValueFromInt(end))
+	err = runner.memory().Write(VM.ExecutionSegment, offset+1, memory.MemoryValueFromUint(end))
 	if err != nil {
 		return 0, err
 	}
