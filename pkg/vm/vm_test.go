@@ -3,9 +3,9 @@ package vm
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
