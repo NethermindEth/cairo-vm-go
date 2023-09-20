@@ -1,9 +1,11 @@
 package zero
 
 import (
+	"encoding/binary"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -58,6 +60,7 @@ func TestLoadCairoZeroProgram(t *testing.T) {
 			"main": 0,
 			"fib":  4,
 		},
+		Labels: map[string]uint64{},
 	},
 		program,
 	)
@@ -104,6 +107,96 @@ func TestSimpleProgram(t *testing.T) {
 	assert.Equal(t, uint64(5), runner.vm.Context.Ap)
 	assert.Equal(t, uint64(0), runner.vm.Context.Fp)
 	assert.Equal(t, uint64(len(program.Bytecode)), runner.vm.Context.Pc)
+}
+
+func TestTraceEncodingDecoding(t *testing.T) {
+	trace := []vm.Context{
+		{Ap: 1, Fp: 2, Pc: 3},
+		{Ap: 4, Fp: 5, Pc: 6},
+		{Ap: 9, Fp: 8, Pc: 7},
+	}
+
+	encodedTrace := EncodeTrace(trace)
+
+	expected := make([]byte, len(trace)*3*8)
+	// first context
+	binary.LittleEndian.PutUint64(expected[0:8], 1)
+	binary.LittleEndian.PutUint64(expected[8:16], 2)
+	binary.LittleEndian.PutUint64(expected[16:24], 3)
+	// second context
+	binary.LittleEndian.PutUint64(expected[24:32], 4)
+	binary.LittleEndian.PutUint64(expected[32:40], 5)
+	binary.LittleEndian.PutUint64(expected[40:48], 6)
+	// third context
+	binary.LittleEndian.PutUint64(expected[48:56], 9)
+	binary.LittleEndian.PutUint64(expected[56:64], 8)
+	binary.LittleEndian.PutUint64(expected[64:72], 7)
+
+	// test encoding
+	require.Equal(
+		t,
+		expected,
+		encodedTrace,
+	)
+
+	// test decoding
+	decodedTrace := DecodeTrace(encodedTrace)
+	require.Equal(
+		t,
+		trace,
+		decodedTrace,
+	)
+
+}
+
+func TestMemoryEncodingDecoding(t *testing.T) {
+	memory := []*f.Element{
+		new(f.Element).SetUint64(4),
+		new(f.Element).SetUint64(15),
+		nil,
+		nil,
+		new(f.Element).SetUint64(8),
+		nil,
+		new(f.Element).SetUint64(2),
+	}
+
+	encodedMemory := EncodeMemory(memory)
+
+	// the array size depends on the ammount of non nil elements
+	// it stores (addres, felt) encoded in little endian in a consecutive way
+	expected := make([]byte, 4*(8+32))
+
+	//first element
+	binary.LittleEndian.PutUint64(expected[0:8], 0)
+	f.LittleEndian.PutElement((*[32]byte)(expected[8:40]), *new(f.Element).SetUint64(4))
+	//second element
+	binary.LittleEndian.PutUint64(expected[40:48], 1)
+	f.LittleEndian.PutElement((*[32]byte)(expected[48:80]), *new(f.Element).SetUint64(15))
+	//third element
+	binary.LittleEndian.PutUint64(expected[80:88], 4)
+	f.LittleEndian.PutElement((*[32]byte)(expected[88:120]), *new(f.Element).SetUint64(8))
+	//fourth element
+	binary.LittleEndian.PutUint64(expected[120:128], 6)
+	f.LittleEndian.PutElement((*[32]byte)(expected[128:160]), *new(f.Element).SetUint64(2))
+
+	require.Equal(
+		t,
+		len(expected),
+		len(encodedMemory),
+	)
+	require.Equal(
+		t,
+		expected,
+		encodedMemory,
+	)
+
+	// testing decoding
+	decodedMemory := DecodeMemory(encodedMemory)
+	require.Equal(
+		t,
+		memory,
+		decodedMemory,
+	)
 }
 
 func createSegment(values ...any) *memory.Segment {
