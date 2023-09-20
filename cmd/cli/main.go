@@ -2,16 +2,16 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	runnerzero "github.com/NethermindEth/cairo-vm-go/pkg/runners/zero"
 	"github.com/urfave/cli/v2"
-	"os"
 )
 
 func main() {
 	var proofmode bool
-	var entrypoint string
 	var traceLocation string
-	var arguments cli.StringSlice
+	var memoryLocation string
 
 	app := &cli.App{
 		Name:                 "cairo-vm",
@@ -33,25 +33,16 @@ func main() {
 						Destination: &proofmode,
 					},
 					&cli.StringFlag{
-						Name:        "entrypoint",
-						Aliases:     []string{"e"},
-						Value:       "main",
-						Usage:       "name of the function to run",
-						Required:    true,
-						Destination: &entrypoint,
-					},
-					&cli.StringFlag{
-						Name:        "output",
-						Aliases:     []string{"o"},
-						Usage:       "path to file to store the trace",
+						Name:        "tracelocation",
+						Usage:       "location to store the relocated trace",
 						Required:    false,
 						Destination: &traceLocation,
 					},
-					&cli.StringSliceFlag{
-						Name:        "args",
-						Usage:       "path to file to store the trace",
+					&cli.StringFlag{
+						Name:        "memorylocation",
+						Usage:       "location to store the relocated memory",
 						Required:    false,
-						Destination: &arguments,
+						Destination: &memoryLocation,
 					},
 				},
 				Action: func(ctx *cli.Context) error {
@@ -76,20 +67,20 @@ func main() {
 						return fmt.Errorf("cannot create runner: %w", err)
 					}
 
-					end, err := runner.InitializeMainEntrypoint()
-					if err != nil {
-						return fmt.Errorf("cannot create runner: %w", err)
-					}
-
-					err = runner.RunUntilPc(end)
-					if err != nil {
-						return fmt.Errorf("cannot create runner: %w", err)
+					if err := runner.Run(); err != nil {
+						return fmt.Errorf("runtime error: %w", err)
 					}
 
 					if proofmode {
-						err = runner.BuildProof()
+						trace, memory, err := runner.BuildProof()
 						if err != nil {
-							return err
+							return fmt.Errorf("cannot build proof: %w", err)
+						}
+						if err := os.WriteFile(traceLocation, trace, 0644); err != nil {
+							return fmt.Errorf("cannot write relocated trace: %w", err)
+						}
+						if err := os.WriteFile(memoryLocation, memory, 0644); err != nil {
+							return fmt.Errorf("cannot write relocated memory: %w", err)
 						}
 					}
 
