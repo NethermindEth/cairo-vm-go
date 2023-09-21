@@ -174,6 +174,148 @@ func TestGetImmCellOp1(t *testing.T) {
 	assert.Equal(t, mem.MemoryValueFromInt(1234), cell.Read())
 }
 
+func TestGetOp0PosCellOp1(t *testing.T) {
+	vm := defaultVirtualMachineWithBytecode(
+		[]*f.Element{
+			newElementPtr(0),   // dummy
+			newElementPtr(0),   // dummy
+			newElementPtr(0),   // dummy
+			newElementPtr(333), // op0+offset
+		},
+	)
+
+	// Prepare vm with dummy values
+	const offOp1 = 1 // target relative to op0 offset
+	op0Cell := &mem.Cell{
+		Accessed: true,
+		Value:    mem.MemoryValueFromSegmentAndOffset(0, 2),
+	}
+
+	instruction := Instruction{
+		OffOp1:    offOp1,
+		Op1Source: Op0,
+	}
+
+	cell, err := vm.getCellOp1(&instruction, op0Cell)
+	require.NoError(t, err)
+	assert.NotNil(t, cell)
+
+	assert.True(t, cell.Accessed)
+	assert.Equal(t, mem.MemoryValueFromInt(333), cell.Read())
+}
+
+func TestGetOp0NegCellOp1(t *testing.T) {
+	vm := defaultVirtualMachineWithBytecode(
+		[]*f.Element{
+			newElementPtr(0),   // dummy
+			newElementPtr(0),   // dummy
+			newElementPtr(0),   // dummy
+			newElementPtr(444), // op0 - offset
+		},
+	)
+
+	// Prepare vm with dummy values
+	const offOp1 = -1 // target relative to op0 offset
+	op0Cell := &mem.Cell{
+		Accessed: true,
+		Value:    mem.MemoryValueFromSegmentAndOffset(0, 4),
+	}
+
+	instruction := Instruction{
+		OffOp1:    offOp1,
+		Op1Source: Op0,
+	}
+
+	cell, err := vm.getCellOp1(&instruction, op0Cell)
+	require.NoError(t, err)
+	assert.NotNil(t, cell)
+
+	assert.True(t, cell.Accessed)
+	assert.Equal(t, mem.MemoryValueFromInt(444), cell.Read())
+}
+
+func TestGetFpPosCellOp1(t *testing.T) {
+	vm := defaultVirtualMachine()
+
+	// Prepare vm with dummy values
+	const offOp1 = 2  // target relative to Fp
+	vm.Context.Fp = 7 // "frame pointer"
+	instruction := Instruction{
+		OffOp1:    offOp1,
+		Op1Source: FpPlusOffOp1,
+	}
+
+	writeToDataSegment(vm, vm.Context.Fp+2, mem.MemoryValueFromInt(321)) //Write to Execution Segment at Fp+2
+
+	cell, err := vm.getCellOp1(&instruction, nil)
+	require.NoError(t, err)
+	assert.NotNil(t, cell)
+
+	assert.True(t, cell.Accessed)
+	assert.Equal(t, mem.MemoryValueFromInt(321), cell.Read())
+}
+
+func TestGetFpNegCellOp1(t *testing.T) {
+	vm := defaultVirtualMachine()
+
+	// Prepare vm with dummy values
+	const offOp1 = -2 // target relative to Fp
+	vm.Context.Fp = 7 // "frame pointer"
+	instruction := Instruction{
+		OffOp1:    offOp1,
+		Op1Source: FpPlusOffOp1,
+	}
+
+	writeToDataSegment(vm, vm.Context.Fp-2, mem.MemoryValueFromInt(123)) //Write to Execution Segment at Fp-2
+
+	cell, err := vm.getCellOp1(&instruction, nil)
+	require.NoError(t, err)
+	assert.NotNil(t, cell)
+
+	assert.True(t, cell.Accessed)
+	assert.Equal(t, mem.MemoryValueFromInt(123), cell.Read())
+}
+
+func TestGetApPosCellOp1(t *testing.T) {
+	vm := defaultVirtualMachine()
+
+	// Prepare vm with dummy values
+	vm.Context.Ap = 3 // "allocation pointer"
+	const offOp1 = 2  // target relative to Ap
+	instruction := Instruction{
+		OffOp1:    offOp1,
+		Op1Source: ApPlusOffOp1,
+	}
+	writeToDataSegment(vm, vm.Context.Ap+2, mem.MemoryValueFromInt(41)) //Write to Execution Segment at Ap+2
+
+	cell, err := vm.getCellOp1(&instruction, nil)
+	require.NoError(t, err)
+	assert.NotNil(t, cell)
+
+	assert.True(t, cell.Accessed)
+	assert.Equal(t, mem.MemoryValueFromInt(41), cell.Read())
+}
+
+func TestGetApNegCellOp1(t *testing.T) {
+	vm := defaultVirtualMachine()
+
+	// Prepare vm with dummy values
+	vm.Context.Ap = 3 // "allocation pointer"
+	const offOp1 = -2 // target relative to Ap
+	instruction := Instruction{
+		OffOp1:    offOp1,
+		Op1Source: ApPlusOffOp1,
+	}
+	writeToDataSegment(vm, vm.Context.Ap-2, mem.MemoryValueFromInt(57)) //Write to Execution Segment at Ap-2
+
+	cell, err := vm.getCellOp1(&instruction, nil)
+	require.NoError(t, err)
+	assert.NotNil(t, cell)
+
+	assert.True(t, cell.Accessed)
+	assert.Equal(t, mem.MemoryValueFromInt(57), cell.Read())
+}
+
 func TestInferOperandSub(t *testing.T) {
 	vm := defaultVirtualMachine()
 	instruction := Instruction{
