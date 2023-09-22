@@ -167,23 +167,42 @@ func (runner *ZeroRunner) Run() error {
 
 	err = runner.RunUntilPc(end)
 	if err != nil {
-		return fmt.Errorf("cannot create runner: %w", err)
+		return fmt.Errorf("step %d, pc %d:\n%w", runner.vm.Step, runner.vm.Context.Pc, err)
 	}
 	return nil
 }
 
 func (runner *ZeroRunner) InitializeMainEntrypoint() (uint64, error) {
 	if runner.proofmode {
-		startPc, ok := runner.program.Labels["start"]
+		startPc, ok := runner.program.Labels["__start__"]
 		if !ok {
 			return 0, errors.New("start label not found. Try compiling with `--proof_mode`")
 		}
-		endPc, ok := runner.program.Labels["end"]
+		endPc, ok := runner.program.Labels["__end__"]
 		if !ok {
 			return 0, errors.New("end label not found. Try compiling with `--proof_mode`")
 		}
-		runner.vm.Context.Pc = startPc
 
+		offset := runner.segments()[VM.ExecutionSegment].Len()
+
+		// set dummy fp value
+		err := runner.memory().Write(
+			VM.ExecutionSegment,
+			offset,
+			memory.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, offset+2),
+		)
+		if err != nil {
+			return 0, err
+		}
+		// set dummy pc value
+		err = runner.memory().Write(VM.ExecutionSegment, offset+1, memory.MemoryValueFromUint[uint64](0))
+		if err != nil {
+			return 0, err
+		}
+
+		runner.vm.Context.Pc = startPc
+		runner.vm.Context.Ap = offset + 2
+		runner.vm.Context.Fp = runner.vm.Context.Ap
 		return endPc, nil
 	}
 
