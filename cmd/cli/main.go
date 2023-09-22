@@ -26,9 +26,7 @@ func main() {
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
 						Name:        "proofmode",
-						Aliases:     []string{"p"},
-						Value:       false,
-						Usage:       "outputs the proof of execution",
+						Usage:       "runs the cairo vm in proof mode",
 						Required:    false,
 						Destination: &proofmode,
 					},
@@ -61,7 +59,7 @@ func main() {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
 
-					fmt.Printf("Running....")
+					fmt.Println("Running....")
 					runner, err := runnerzero.NewRunner(program, proofmode)
 					if err != nil {
 						return fmt.Errorf("cannot create runner: %w", err)
@@ -84,7 +82,7 @@ func main() {
 						}
 					}
 
-					fmt.Printf("Success!")
+					fmt.Println("Success!")
 					return nil
 				},
 			},
