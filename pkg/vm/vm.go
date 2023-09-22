@@ -377,7 +377,7 @@ func (vm *VirtualMachine) updatePc(
 		}
 
 		// todo(rodro): math check when relAddr is negative
-		relAddr, err := res.Uint64()
+		relAddr, err := op1Cell.Value.Uint64()
 		if err != nil {
 			return 0, err
 		}

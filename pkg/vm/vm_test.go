@@ -424,6 +424,101 @@ func TestUpdatePcNextInstrImm(t *testing.T) {
 	assert.Equal(t, vm.Context.Pc+2, nextPc)
 }
 
+func TestUpdatePcJump(t *testing.T) {
+	vm := defaultVirtualMachine()
+
+	vm.Context.Pc = 3
+	jumpAddr := uint64(10)
+	res := mem.MemoryValueFromInt(jumpAddr)
+
+	instruction := Instruction{
+		PcUpdate: Jump,
+	}
+	nextPc, err := vm.updatePc(&instruction, nil, nil, res)
+
+	require.NoError(t, err)
+	assert.Equal(t, jumpAddr, nextPc)
+}
+
+func TestUpdatePcJumpRel(t *testing.T) {
+	vm := defaultVirtualMachine()
+
+	vm.Context.Pc = 3
+	relAddr := uint64(10)
+	res := mem.MemoryValueFromInt(relAddr)
+
+	instruction := Instruction{
+		PcUpdate: JumpRel,
+	}
+	nextPc, err := vm.updatePc(&instruction, nil, nil, res)
+
+	require.NoError(t, err)
+	assert.Equal(t, vm.Context.Pc+relAddr, nextPc)
+}
+
+func TestUpdatePcJnz(t *testing.T) {
+	vm := defaultVirtualMachine()
+
+	vm.Context.Pc = 11
+	relAddr := uint64(10)
+
+	res := mem.MemoryValueFromInt(10)
+	dstCell := &mem.Cell{
+		Accessed: true,
+		Value:    mem.MemoryValueFromInt(10),
+	}
+	op1Cell := &mem.Cell{
+		Accessed: true,
+		Value:    mem.MemoryValueFromInt(relAddr),
+	}
+	instruction := Instruction{
+		PcUpdate:  Jnz,
+		Op1Source: Op0,
+	}
+	nextPc, err := vm.updatePc(&instruction, dstCell, op1Cell, res)
+
+	require.NoError(t, err)
+	assert.Equal(t, vm.Context.Pc+relAddr, nextPc)
+}
+
+func TestUpdatePcJnzDstZero(t *testing.T) {
+	vm := defaultVirtualMachine()
+
+	vm.Context.Pc = 11
+
+	dstCell := &mem.Cell{
+		Accessed: true,
+		Value:    mem.MemoryValueFromInt(0),
+	}
+	instruction := Instruction{
+		PcUpdate:  Jnz,
+		Op1Source: Op0,
+	}
+	nextPc, err := vm.updatePc(&instruction, dstCell, nil, nil)
+
+	require.NoError(t, err)
+	assert.Equal(t, vm.Context.Pc+1, nextPc)
+}
+
+func TestUpdatePcJnzDstZeroImm(t *testing.T) {
+	vm := defaultVirtualMachine()
+
+	vm.Context.Pc = 9
+
+	dstCell := &mem.Cell{
+		Accessed: true,
+		Value:    mem.MemoryValueFromInt(0),
+	}
+	instruction := Instruction{
+		PcUpdate:  Jnz,
+		Op1Source: Imm,
+	}
+	nextPc, err := vm.updatePc(&instruction, dstCell, nil, nil)
+
+	require.NoError(t, err)
+	assert.Equal(t, vm.Context.Pc+2, nextPc)
+}
+
 func TestUpdateApAddOne(t *testing.T) {
 	vm := defaultVirtualMachine()
 
