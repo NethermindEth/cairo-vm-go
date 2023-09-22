@@ -301,6 +301,18 @@ func TestInferOperandSub(t *testing.T) {
 	assert.Equal(t, expectedOp0Cell, op0Cell)
 }
 
+/*
+CaseA: Adding a MemoryAddress to an integer (already provided).
+CaseB: Adding an integer to a MemoryAddress.
+CaseC: Adding two MemoryAddress values from the same segment.
+CaseD: Adding two MemoryAddress values from different segments (this should result in an error).
+CaseE: Adding a MemoryAddress to a FieldElement (if supported).
+CaseF: Adding a FieldElement to a MemoryAddress (if supported).
+CaseG: Adding two FieldElement values.
+CaseH: Adding a MemoryAddress to a value that exceeds the uint64 limit (should result in an error).
+CaseI: Adding a FieldElement to a value that exceeds the uint64 limit (should result in an error).
+CaseJ: Adding two values where one of them is neither a MemoryAddress nor a FieldElement (should result in an error).
+*/
 func TestComputeAddRes(t *testing.T) {
 	vm := defaultVirtualMachine()
 
@@ -328,6 +340,76 @@ func TestComputeAddRes(t *testing.T) {
 	)
 
 	assert.Equal(t, expected, res)
+}
+
+func TestComputeAddRes_Jake(t *testing.T) {
+	// Test cases
+	testCases := []struct {
+		name       string
+		op0        *mem.MemoryValue
+		op1        *mem.MemoryValue
+		expected   *mem.MemoryValue
+		shouldFail bool
+	}{
+		{
+			name:     "Type A : MemoryAddressPlusInteger",
+			op0:      mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10)),
+			op1:      mem.MemoryValueFromInt(15),
+			expected: mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 25)),
+		},
+		{
+			name:     "Type B : MemoryAddressPlusMemoryAddress_SameSegment",
+			op0:      mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10)),
+			op1:      mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15)),
+			expected: mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 25)),
+		},
+		{
+			name:       "Type C : MemoryAddressPlusMemoryAddress_DifferentSegment",
+			op0:        mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10)),
+			op1:        mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(3, 15)),
+			shouldFail: true,
+		},
+		{
+			name:     "Type D : IntegerPlusInteger",
+			op0:      mem.MemoryValueFromInt(10),
+			op1:      mem.MemoryValueFromInt(15),
+			expected: mem.MemoryValueFromInt(25),
+		},
+		{
+			name:       "Type E : IntegerPlusMemoryAddress",
+			op0:        mem.MemoryValueFromInt(15),
+			op1:        mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10)),
+			shouldFail: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			vm := defaultVirtualMachine()
+
+			instruction := Instruction{
+				Res: AddOperands,
+			}
+
+			cellOp0 := &mem.Cell{
+				Accessed: true,
+				Value:    tc.op0,
+			}
+
+			cellOp1 := &mem.Cell{
+				Accessed: true,
+				Value:    tc.op1,
+			}
+
+			res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+			if tc.shouldFail {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.expected, res)
+		})
+	}
 }
 
 func TestOpcodeAssertionAssertEq(t *testing.T) {

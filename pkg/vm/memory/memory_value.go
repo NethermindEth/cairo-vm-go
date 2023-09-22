@@ -25,17 +25,6 @@ func (address *MemoryAddress) Equal(other *MemoryAddress) bool {
 	return address.SegmentIndex == other.SegmentIndex && address.Offset == other.Offset
 }
 
-// Adds a memory address and a field element
-func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) (*MemoryAddress, error) {
-	if !rhs.IsUint64() {
-		return nil, fmt.Errorf("field element does not fit in uint64: %s", rhs.String())
-	}
-
-	address.SegmentIndex = lhs.SegmentIndex
-	address.Offset = lhs.Offset + rhs.Uint64()
-	return address, nil
-}
-
 // Subs from a memory address a felt or another memory address in the same segment
 func (address *MemoryAddress) Sub(lhs *MemoryAddress, rhs any) (*MemoryAddress, error) {
 	// First match segment index
@@ -194,19 +183,65 @@ func (mv *MemoryValue) Equal(other *MemoryValue) bool {
 	return false
 }
 
-// Adds two memory values is the second one is a Felt
+// // Adds two memory values is the second one is a Felt
+// func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
+// 	var err error
+// 	if lhs.IsAddress() {
+// 		if !rhs.IsFelt() {
+// 			return nil, errors.New("rhs is not a felt")
+// 		}
+// 		// lhs : Address, rhs : Address
+// 		mv.address, err = mv.address.Add(lhs.address, rhs.felt)
+// 	} else {
+// 		if rhs.IsAddress() {
+// 			mv.address, err = mv.address.Add(rhs.address, lhs.felt)
+// 		} else {
+// 			mv.felt = mv.felt.Add(lhs.felt, rhs.felt)
+// 		}
+// 	}
+
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return mv, nil
+// }
+
+// Adds a memory address and a field element
+func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) (*MemoryAddress, error) {
+	if !rhs.IsUint64() {
+		return nil, fmt.Errorf("field element does not fit in uint64: %s", rhs.String())
+	}
+
+	address.SegmentIndex = lhs.SegmentIndex
+	address.Offset = lhs.Offset + rhs.Uint64()
+	return address, nil
+}
+
 func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	var err error
 	if lhs.IsAddress() {
-		if !rhs.IsFelt() {
-			return nil, errors.New("rhs is not a felt")
+		if rhs.IsAddress() {
+			// lhs : Address, rhs : Address
+			if lhs.address.SegmentIndex != rhs.address.SegmentIndex {
+				return nil, errors.New("cannot add addresses from different segments")
+			}
+			mv.address.SegmentIndex = lhs.address.SegmentIndex
+			mv.address.Offset = lhs.address.Offset + rhs.address.Offset
+		} else if rhs.IsFelt() {
+			// lhs : Address, rhs : felt
+			mv.address, err = mv.address.Add(lhs.address, rhs.felt)
+		} else {
+			return nil, errors.New("invalid rhs type")
 		}
-		mv.address, err = mv.address.Add(lhs.address, rhs.felt)
 	} else {
 		if rhs.IsAddress() {
-			mv.address, err = mv.address.Add(rhs.address, lhs.felt)
-		} else {
+			// lhs : felt, rhs : Address
+			return nil, errors.New("invalid operation: cannot add integer to memory address")
+		} else if rhs.IsFelt() {
+			// lhs : felt, rhs : felt
 			mv.felt = mv.felt.Add(lhs.felt, rhs.felt)
+		} else {
+			return nil, errors.New("invalid rhs type")
 		}
 	}
 
