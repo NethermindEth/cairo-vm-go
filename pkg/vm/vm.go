@@ -29,6 +29,16 @@ type Context struct {
 	Ap uint64
 }
 
+func (ctx *Context) String() string {
+	return fmt.Sprintf(
+		"Context {pc: %d:%d, fp: %d, ap: %d}",
+		ctx.Pc.SegmentIndex,
+		ctx.Pc.Offset,
+		ctx.Fp,
+		ctx.Ap,
+	)
+}
+
 func (ctx *Context) AddressAp() *mem.MemoryAddress {
 	return &mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: ctx.Ap}
 }
@@ -38,7 +48,7 @@ func (ctx *Context) AddressFp() *mem.MemoryAddress {
 }
 
 func (ctx *Context) AddressPc() *mem.MemoryAddress {
-	return ctx.Pc
+	return &mem.MemoryAddress{SegmentIndex: ctx.Pc.SegmentIndex, Offset: ctx.Pc.Offset}
 }
 
 // relocates pc, ap and fp to be their real address value
@@ -148,6 +158,10 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 }
 
 func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
+	fmt.Println(vm.Context.String())
+	fmt.Println(instruction)
+	fmt.Println(vm.Context.Pc)
+
 	dstCell, err := vm.getCellDst(instruction)
 	if err != nil {
 		return fmt.Errorf("dst cell: %w", err)
@@ -193,6 +207,9 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 	if err != nil {
 		return fmt.Errorf("fp update: %w", err)
 	}
+
+	fmt.Println(vm.Context.Pc)
+	fmt.Println(nextPc)
 
 	vm.Context.Pc = nextPc
 	vm.Context.Ap = nextAp
@@ -381,7 +398,10 @@ func (vm *VirtualMachine) updatePc(
 ) (*mem.MemoryAddress, error) {
 	switch instruction.PcUpdate {
 	case NextInstr:
-		return mem.NewMemoryAddress(vm.Context.Pc.SegmentIndex, vm.Context.Pc.Offset+uint64(instruction.Size())), nil
+		return mem.NewMemoryAddress(
+			vm.Context.Pc.SegmentIndex,
+			vm.Context.Pc.Offset+uint64(instruction.Size()),
+		), nil
 	case Jump:
 		addr, err := res.ToMemoryAddress()
 		if err != nil {

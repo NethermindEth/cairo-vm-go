@@ -13,6 +13,8 @@ type Cell struct {
 }
 
 func (cell *Cell) Write(value *MemoryValue) error {
+	fmt.Println("writing value", value.String())
+
 	if cell.Accessed && cell.Value != nil && !cell.Value.Equal(value) {
 		return fmt.Errorf("rewriting cell: old value \"%d\", new value \"%d\"", &cell.Value, &value)
 	}

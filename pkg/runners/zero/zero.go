@@ -204,7 +204,7 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (*memory.MemoryAddress, err
 		err := runner.memory().Write(
 			VM.ExecutionSegment,
 			offset,
-			memory.MemoryValueFromUint(runner.segments()[VM.ProgramSegment].Len()+offset+2),
+			memory.MemoryValueFromSegmentAndOffset(VM.ProgramSegment, runner.segments()[VM.ProgramSegment].Len()+offset+2),
 		)
 		if err != nil {
 			return nil, err
