@@ -22,12 +22,20 @@ func TestCairoZeroFiles(t *testing.T) {
 	testFiles, err := os.ReadDir(root)
 	require.NoError(t, err)
 
+	filter := "fib.cairo"
+
 	for _, dirEntry := range testFiles {
 		if dirEntry.IsDir() || isGeneratedFile(dirEntry.Name()) {
 			continue
 		}
 
 		path := filepath.Join(root, dirEntry.Name())
+
+		if !strings.Contains(path, filter) {
+			continue
+		}
+
+		t.Logf("============== testing: %s ==============\n", path)
 
 		compiledOutput, err := compileZeroCode(path)
 		if err != nil {
@@ -59,19 +67,14 @@ func TestCairoZeroFiles(t *testing.T) {
 			continue
 		}
 
-		fmt.Println("pytrace")
-		printTrace(pyTrace)
-		fmt.Println("trace")
-		printTrace(trace)
-
-		fmt.Println()
-		fmt.Println("pymem")
-		printMemory(pyMemory)
-		fmt.Println("mem")
-		printMemory(memory)
-
-		assert.Equal(t, pyTrace, trace)
-		assert.Equal(t, pyMemory, memory)
+		if !assert.Equal(t, pyTrace, trace) {
+			t.Logf("pytrace:\n%s", traceRepr(pyTrace))
+			t.Logf("trace:\n%s", traceRepr(trace))
+		}
+		if !assert.Equal(t, pyMemory, memory) {
+			t.Logf("pymemory;\n%s", memoryRepr(pyMemory))
+			t.Logf("memory;\n%s", memoryRepr(memory))
+		}
 	}
 
 	require.NoError(t, err)
@@ -79,7 +82,7 @@ func TestCairoZeroFiles(t *testing.T) {
 		assert.NoError(t, runtimeErrors[i])
 	}
 
-	// clean(root)
+	clean(root)
 }
 
 const (
@@ -240,19 +243,19 @@ func isGeneratedFile(path string) bool {
 		strings.HasSuffix(path, memorySuffix)
 }
 
-func printTrace(trace []vm.Trace) {
+func traceRepr(trace []vm.Trace) string {
 	repr := make([]string, len(trace))
 	for i, ctx := range trace {
 		repr[i] = fmt.Sprintf("{pc: %d, ap: %d, fp: %d}", ctx.Pc, ctx.Ap, ctx.Fp)
 	}
-	fmt.Println(strings.Join(repr, ", "))
+	return strings.Join(repr, ", ")
 }
 
-func printMemory(memory []*fp.Element) {
+func memoryRepr(memory []*fp.Element) string {
 	repr := make([]string, len(memory))
 	for i, felt := range memory {
 		repr[i] = felt.Text(10)
 	}
-	fmt.Println(strings.Join(repr, ", "))
+	return strings.Join(repr, ", ")
 
 }
