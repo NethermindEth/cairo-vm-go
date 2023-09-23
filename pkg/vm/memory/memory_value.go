@@ -27,12 +27,15 @@ func (address *MemoryAddress) Equal(other *MemoryAddress) bool {
 
 // Adds a memory address and a field element
 func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) (*MemoryAddress, error) {
-	if !rhs.IsUint64() {
-		return nil, fmt.Errorf("field element does not fit in uint64: %s", rhs.String())
+	lhsOffset := new(f.Element).SetUint64(lhs.Offset)
+	newOffset := new(f.Element).Add(lhsOffset, rhs)
+
+	if !newOffset.IsUint64() {
+		return nil, fmt.Errorf("new offset bigger than uint64: %s", rhs.Text(10))
 	}
 
 	address.SegmentIndex = lhs.SegmentIndex
-	address.Offset = lhs.Offset + rhs.Uint64()
+	address.Offset = newOffset.Uint64()
 	return address, nil
 }
 

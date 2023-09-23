@@ -405,15 +405,15 @@ func (vm *VirtualMachine) updatePc(
 	case Jump:
 		addr, err := res.ToMemoryAddress()
 		if err != nil {
-			return nil, fmt.Errorf("expected address for absolute jump")
+			return nil, fmt.Errorf("absolute jump: %w", err)
 		}
 		return addr, nil
 	case JumpRel:
-		val, err := res.Uint64()
+		val, err := res.ToFieldElement()
 		if err != nil {
-			return nil, fmt.Errorf("invalid relative address offset: %w", err)
+			return nil, fmt.Errorf("relative jump: %w", err)
 		}
-		return mem.NewMemoryAddress(vm.Context.Pc.SegmentIndex, vm.Context.Pc.Offset+val), nil
+		return new(mem.MemoryAddress).Add(vm.Context.Pc, val)
 	case Jnz:
 		dest, err := dstCell.Read().ToFieldElement()
 		if err != nil {
