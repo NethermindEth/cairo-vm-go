@@ -79,9 +79,109 @@ func TestSegmentPeek(t *testing.T) {
 }
 
 func TestSegmentWrite(t *testing.T) {
+	segment := Segment{Data: []Cell{
+		{Accessed: false, Value: nil},
+		{Accessed: false, Value: nil},
+	}}
 
+	err := segment.Write(0, MemoryValueFromInt(100))
+	assert.NoError(t, err)
+	assert.Equal(t, segment.Data[0].Value, MemoryValueFromInt(100))
+	assert.True(t, segment.Data[0].Accessed)
+	assert.False(t, segment.Data[1].Accessed) //Check that the other cell wasn't marked as accessed
+
+	err = segment.Write(1, MemoryValueFromInt(15))
+	assert.NoError(t, err)
+	assert.Equal(t, segment.Data[1].Value, MemoryValueFromInt(15))
+	assert.True(t, segment.Data[1].Accessed)
+
+	//Atempt to write twice
+	err = segment.Write(0, MemoryValueFromInt(590))
+	assert.Error(t, err)
+
+	//Check that memory wasn't modified
+	assert.Equal(t, segment.Read(0), MemoryValueFromInt(100))
+	assert.True(t, segment.Peek(0).Accessed)
 }
 
 func TestSegmentReadAndWrite(t *testing.T) {
+	segment := Segment{Data: []Cell{
+		{Accessed: false, Value: nil},
+	}}
+	err := segment.Write(0, MemoryValueFromInt(48))
+	assert.NoError(t, err)
+	assert.Equal(t, segment.Read(0), MemoryValueFromInt(48))
+	assert.True(t, segment.Peek(0).Accessed)
+}
 
+func TestIncreaseSegmentSize(t *testing.T) {
+	segment := Segment{Data: []Cell{
+		{Accessed: true, Value: MemoryValueFromInt(1)},
+		{Accessed: true, Value: MemoryValueFromInt(2)},
+		{Accessed: true, Value: MemoryValueFromInt(3)},
+	}}
+
+	assert.Panics(t, func() { segment.IncreaseSegmentSize(1) }) //Panic if we decrase the size
+	segment.IncreaseSegmentSize(1000)
+	assert.True(t, cap(segment.Data) > 1000)
+
+	//Make sure no data was lost after incrase
+	assert.Equal(t, segment.Read(0), MemoryValueFromInt(1))
+	assert.Equal(t, segment.Read(1), MemoryValueFromInt(2))
+	assert.Equal(t, segment.Read(2), MemoryValueFromInt(3))
+}
+
+func TestMemoryWriteAndRead(t *testing.T) {
+	memory := InitializeEmptyMemory()
+	memory.AllocateEmptySegment()
+
+	err := memory.Write(0, 0, MemoryValueFromInt(123))
+	assert.NoError(t, err)
+	val, err := memory.Read(0, 0)
+	assert.NoError(t, err)
+	assert.Equal(t, val, MemoryValueFromInt(123))
+
+	//Attempt to write twice segment and offset
+	err = memory.Write(0, 0, MemoryValueFromInt(321))
+	assert.Error(t, err)
+
+	//Attempt to write twice using address
+	err = memory.WriteToAddress(&MemoryAddress{0, 0}, MemoryValueFromInt(542))
+	assert.Error(t, err)
+
+	//Verify data wasn't modified
+	val, err = memory.Read(0, 0)
+	assert.NoError(t, err)
+	assert.Equal(t, val, MemoryValueFromInt(123))
+
+	addr := MemoryAddress{0, 6}
+	err = memory.WriteToAddress(&addr, MemoryValueFromInt(31))
+	assert.NoError(t, err)
+	val, err = memory.Read(0, 6)
+	assert.NoError(t, err)
+	assert.Equal(t, val, MemoryValueFromInt(31))
+	val, err = memory.ReadFromAddress(&addr)
+	assert.NoError(t, err)
+	assert.Equal(t, val, MemoryValueFromInt(31))
+}
+
+func TestMemoryReadOutOfRange(t *testing.T) {
+	memory := InitializeEmptyMemory()
+	memory.AllocateEmptySegment()
+	_, err := memory.Read(2, 2)
+	assert.Error(t, err)
+}
+
+func TestMemoryPeek(t *testing.T) {
+	memory := InitializeEmptyMemory()
+	memory.AllocateEmptySegment()
+	memory.Write(0, 1, MemoryValueFromInt(412))
+
+	cell, err := memory.Peek(0, 1)
+	assert.NoError(t, err)
+	assert.Equal(t, cell.Value, MemoryValueFromInt(412))
+
+	cell, err = memory.PeekFromAddress(&MemoryAddress{0, 1})
+	assert.NoError(t, err)
+	assert.Equal(t, cell.Value, MemoryValueFromInt(412))
 }
