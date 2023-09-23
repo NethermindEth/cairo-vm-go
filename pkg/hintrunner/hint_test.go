@@ -197,7 +197,6 @@ func TestWideMul128(t *testing.T) {
 
 	low := &f.Element{}
 	low.SetBigInt(big.NewInt(1).Lsh(big.NewInt(1), 127))
-	require.Nil(t, err)
 
 	require.Equal(
 		t,

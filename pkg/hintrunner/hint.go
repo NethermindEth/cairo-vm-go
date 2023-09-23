@@ -152,12 +152,9 @@ func (hint WideMul128) String() string {
 }
 
 func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
-	u128Max := big.NewInt(1).Lsh(big.NewInt(1), 128)
-	u128Max = big.NewInt(1).Sub(u128Max, big.NewInt(1))
-	u128MaxFelt := &f.Element{}
-	u128MaxFelt.SetBigInt(u128Max)
+	u128MaxFelt := MaxU128Felt()
 
-	lsh, err := hint.lhs.Resolve(vm)
+	lhs, err := hint.lhs.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve lhs operand %s: %v", hint.lhs, err)
 	}
@@ -167,7 +164,7 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 		return fmt.Errorf("resolve rhs operand %s: %v", hint.rhs, err)
 	}
 
-	lhsFelt, err := lsh.ToFieldElement()
+	lhsFelt, err := lhs.ToFieldElement()
 	if err != nil {
 		return err
 	}
@@ -180,14 +177,15 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 		return err
 	}
 	if rhsFelt.Cmp(u128MaxFelt) > 0 {
-		return fmt.Errorf("lhs operand %s should be u128", rhsFelt)
+		return fmt.Errorf("rhs operand %s should be u128", rhsFelt)
 	}
 
 	mul := big.NewInt(1).Mul(lhsFelt.BigInt(big.NewInt(1)), rhsFelt.BigInt(big.NewInt(1)))
+	mask := MaxU128()
 
 	low := big.NewInt(1)
 	high := big.NewInt(1)
-	low.And(mul, u128Max)
+	low.And(mul, mask)
 	high.Rsh(mul, 128)
 
 	lowFelt := &f.Element{}
