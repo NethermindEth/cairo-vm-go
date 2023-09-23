@@ -56,7 +56,7 @@ func (res ResLogic) String() string {
 	case MulOperands:
 		return "Mul"
 	case Unconstrained:
-		return "Unused"
+		return "Unconstrained"
 	case Op1:
 		return "Op1"
 	default:
@@ -104,7 +104,7 @@ func (ap ApUpdate) String() string {
 	case Add1:
 		return "Add 1"
 	case SameAp:
-		return "No Change"
+		return "Same Ap"
 	case Add2:
 		return "Add 2"
 	default:
@@ -314,9 +314,10 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 	if instruction.PcUpdate == Jnz &&
 		(instruction.Res != Unconstrained ||
 			instruction.Opcode != Nop ||
-			instruction.ApUpdate != AddImm) {
+			instruction.ApUpdate != SameAp) {
+		fmt.Println(instruction)
 		return fmt.Errorf(
-			"jnz opcode must have unconstrained res logic, no opcode, and ap should update using an Imm",
+			"jnz opcode must have unconstrained res logic, no opcode, and no ap change",
 		)
 	}
 

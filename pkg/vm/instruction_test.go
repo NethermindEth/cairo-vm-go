@@ -75,16 +75,16 @@ func TestJnz(t *testing.T) {
 		Op1Source:   FpPlusOffOp1,
 		Res:         Unconstrained,
 		PcUpdate:    Jnz,
-		ApUpdate:    AddImm,
+		ApUpdate:    SameAp,
 		Opcode:      Nop,
 	}
 
 	decoded, err := DecodeInstruction(
-		new(f.Element).SetBytes([]byte{0x06, 0x0A, 0x7F, 0xF0, 0x7F, 0xFF, 0x80, 0x03}),
+		new(f.Element).SetBytes([]byte{0x02, 0x0A, 0x7F, 0xF0, 0x7F, 0xFF, 0x80, 0x03}),
 	)
 
 	require.NoError(t, err)
-	assert.Equal(t, expected, *decoded)
+	require.Equal(t, expected, *decoded)
 }
 
 func TestCall(t *testing.T) {
@@ -216,8 +216,8 @@ func TestInvalidOpcode(t *testing.T) {
 func TestPcUpdateJnzInvalid(t *testing.T) {
 	instructionInvalidRes := new(f.Element).SetBytes([]byte{0x06, 0x27, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
 	instructionInvalidOpcode := new(f.Element).SetBytes([]byte{0x16, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
-	instructionInvalidApUpdate := new(f.Element).SetBytes([]byte{0x02, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
-	expectedError := "jnz opcode must have unconstrained res logic, no opcode, and ap should update using an Imm"
+	instructionInvalidApUpdate := new(f.Element).SetBytes([]byte{0x06, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+	expectedError := "jnz opcode must have unconstrained res logic, no opcode, and no ap change"
 
 	_, err := DecodeInstruction(instructionInvalidRes)
 
