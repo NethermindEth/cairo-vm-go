@@ -113,8 +113,8 @@ func TestGetImmCellOp1(t *testing.T) {
 	)
 
 	// Prepare vm with dummy values
-	const offOp1 = 1  // target imm
-	vm.Context.Pc = 1 // "current instruction"
+	const offOp1 = 1                           // target imm
+	vm.Context.Pc = mem.NewMemoryAddress(0, 1) // "current instruction"
 
 	instruction := Instruction{
 		OffOp1:    offOp1,
@@ -212,7 +212,7 @@ func TestOpcodeAssertionAssertEq(t *testing.T) {
 func TestUpdatePcNextInstr(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	vm.Context.Pc = 3
+	vm.Context.Pc = mem.NewMemoryAddress(0, 3)
 	instruction := Instruction{
 		PcUpdate:  NextInstr,
 		Op1Source: Op0, // anything but imm
@@ -220,13 +220,13 @@ func TestUpdatePcNextInstr(t *testing.T) {
 
 	nextPc, err := vm.updatePc(&instruction, nil, nil, nil)
 	require.NoError(t, err)
-	assert.Equal(t, vm.Context.Pc+1, nextPc)
+	assert.Equal(t, mem.NewMemoryAddress(0, 4), nextPc)
 }
 
 func TestUpdatePcNextInstrImm(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	vm.Context.Pc = 3
+	vm.Context.Pc = mem.NewMemoryAddress(0, 3)
 	instruction := Instruction{
 		PcUpdate:  NextInstr,
 		Op1Source: Imm,
@@ -234,7 +234,7 @@ func TestUpdatePcNextInstrImm(t *testing.T) {
 
 	nextPc, err := vm.updatePc(&instruction, nil, nil, nil)
 	require.NoError(t, err)
-	assert.Equal(t, vm.Context.Pc+2, nextPc)
+	assert.Equal(t, mem.NewMemoryAddress(0, 5), nextPc)
 }
 
 func TestUpdateApAddOne(t *testing.T) {

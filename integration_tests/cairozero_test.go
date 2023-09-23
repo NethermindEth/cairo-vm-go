@@ -59,6 +59,17 @@ func TestCairoZeroFiles(t *testing.T) {
 			continue
 		}
 
+		fmt.Println("pytrace")
+		printTrace(pyTrace)
+		fmt.Println("trace")
+		printTrace(trace)
+
+		fmt.Println()
+		fmt.Println("pymem")
+		printMemory(pyMemory)
+		fmt.Println("mem")
+		printMemory(memory)
+
 		assert.Equal(t, pyTrace, trace)
 		assert.Equal(t, pyMemory, memory)
 	}
@@ -123,8 +134,18 @@ func runPythonVm(path string) (string, string, error) {
 		"--memory_file",
 		memoryOutput,
 	)
+	cmd = exec.Command(
+		"/Users/rodro/Documents/Nethermind/cairo-vms/cairo-vm-rs/target/debug/cairo-vm-cli",
+		path,
+		"--proof_mode",
+		"--trace_file",
+		traceOutput,
+		"--memory_file",
+		memoryOutput,
+	)
 
 	res, err := cmd.CombinedOutput()
+	fmt.Println(string(res))
 	if err != nil {
 		return "", "", fmt.Errorf(
 			"cairo-run %s: %w\n%s", path, err, string(res),
@@ -165,7 +186,7 @@ func runVm(path string) (string, string, error) {
 
 }
 
-func decodeProof(traceLocation string, memoryLocation string) ([]vm.Context, []*fp.Element, error) {
+func decodeProof(traceLocation string, memoryLocation string) ([]vm.Trace, []*fp.Element, error) {
 	trace, err := os.ReadFile(traceLocation)
 	if err != nil {
 		return nil, nil, err
@@ -217,4 +238,21 @@ func isGeneratedFile(path string) bool {
 		strings.HasSuffix(path, pyMemorySuffix) ||
 		strings.HasSuffix(path, traceSuffix) ||
 		strings.HasSuffix(path, memorySuffix)
+}
+
+func printTrace(trace []vm.Trace) {
+	repr := make([]string, len(trace))
+	for i, ctx := range trace {
+		repr[i] = fmt.Sprintf("{pc: %d, ap: %d, fp: %d}", ctx.Pc, ctx.Ap, ctx.Fp)
+	}
+	fmt.Println(strings.Join(repr, ", "))
+}
+
+func printMemory(memory []*fp.Element) {
+	repr := make([]string, len(memory))
+	for i, felt := range memory {
+		repr[i] = felt.Text(10)
+	}
+	fmt.Println(strings.Join(repr, ", "))
+
 }

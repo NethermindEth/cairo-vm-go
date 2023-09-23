@@ -82,7 +82,9 @@ func TestSimpleProgram(t *testing.T) {
 	endPc, err := runner.InitializeMainEntrypoint()
 	require.NoError(t, err)
 
-	require.Equal(t, uint64(len(program.Bytecode)), endPc)
+	expectedPc := memory.NewMemoryAddress(3, 0)
+
+	require.Equal(t, expectedPc, endPc)
 
 	err = runner.RunUntilPc(endPc)
 	require.NoError(t, err)
@@ -95,7 +97,7 @@ func TestSimpleProgram(t *testing.T) {
 			// return fp
 			memory.NewMemoryAddress(2, 0),
 			// next pc
-			len(program.Bytecode),
+			expectedPc,
 			2,
 			3,
 			4,
@@ -106,11 +108,11 @@ func TestSimpleProgram(t *testing.T) {
 
 	assert.Equal(t, uint64(5), runner.vm.Context.Ap)
 	assert.Equal(t, uint64(0), runner.vm.Context.Fp)
-	assert.Equal(t, uint64(len(program.Bytecode)), runner.vm.Context.Pc)
+	assert.Equal(t, expectedPc, runner.vm.Context.Pc)
 }
 
 func TestTraceEncodingDecoding(t *testing.T) {
-	trace := []vm.Context{
+	trace := []vm.Trace{
 		{Ap: 1, Fp: 2, Pc: 3},
 		{Ap: 4, Fp: 5, Pc: 6},
 		{Ap: 9, Fp: 8, Pc: 7},

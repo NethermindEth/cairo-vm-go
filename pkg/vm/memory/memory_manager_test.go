@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"fmt"
 	"testing"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -10,7 +11,7 @@ import (
 func TestMemoryRelocationWithFelt(t *testing.T) {
 	// segment 0: [2, -, -, 3]
 	// segment 3: [5, -, 7, -, 11, 13]
-	// relocated: [2, -, -, 3, 5, -, 7, -, 11, 13]
+	// relocated: [-, 2, -, -, 3, 5, -, 7, -, 11, 13]
 
 	manager := CreateMemoryManager()
 	updateMemoryWithValues(
@@ -29,7 +30,12 @@ func TestMemoryRelocationWithFelt(t *testing.T) {
 
 	res := manager.RelocateMemory()
 
+	for i, _ := range res {
+		fmt.Println(res[i].Text(10))
+	}
+
 	expected := []*f.Element{
+		nil,
 		// segment zero
 		new(f.Element).SetUint64(2),
 		nil,
@@ -55,11 +61,12 @@ func TestMemoryRelocationWithAddress(t *testing.T) {
 	// segment 3: [2:0] (12)
 	// segment 4: [0:0, 1:1, 1:5, 15] (16)
 	// relocated: [
-	//      zero:   -,  1, -,  9,
-	//      one:    1, 15, 7,  -, -, 13,
-	//      two:    1,
-	//      three: 10,
-	//      four:   0,  5, 9, 15,
+	//      dummy:  -,
+	//      zero:   -,  1, -, 10,
+	//      one:    1, 16, 7,  -, -, 13,
+	//      two:    2,
+	//      three: 11,
+	//      four:   1,  6, 10, 15,
 	// ]
 
 	manager := CreateMemoryManager()
@@ -89,26 +96,27 @@ func TestMemoryRelocationWithAddress(t *testing.T) {
 	res := manager.RelocateMemory()
 
 	expected := []*f.Element{
+		nil,
 		// segment zero
 		nil,
 		new(f.Element).SetUint64(1),
 		nil,
-		new(f.Element).SetUint64(9),
+		new(f.Element).SetUint64(10),
 		// segment one
 		new(f.Element).SetUint64(1),
-		new(f.Element).SetUint64(15),
+		new(f.Element).SetUint64(16),
 		new(f.Element).SetUint64(7),
 		nil,
 		nil,
 		new(f.Element).SetUint64(13),
 		// segment two
-		new(f.Element).SetUint64(1),
+		new(f.Element).SetUint64(2),
 		// segment three
-		new(f.Element).SetUint64(10),
+		new(f.Element).SetUint64(11),
 		// segment 4
-		new(f.Element).SetUint64(0),
-		new(f.Element).SetUint64(5),
-		new(f.Element).SetUint64(9),
+		new(f.Element).SetUint64(1),
+		new(f.Element).SetUint64(6),
+		new(f.Element).SetUint64(10),
 		new(f.Element).SetUint64(15),
 	}
 

@@ -19,7 +19,7 @@ func TestExistingHint(t *testing.T) {
 		10: allocHint,
 	})
 
-	vm.Context.Pc = 10
+	vm.Context.Pc = memory.NewMemoryAddress(0, 10)
 	err := hr.RunHint(vm)
 	require.Nil(t, err)
 	require.Equal(
@@ -40,7 +40,7 @@ func TestNoHint(t *testing.T) {
 		10: allocHint,
 	})
 
-	vm.Context.Pc = 100
+	vm.Context.Pc = memory.NewMemoryAddress(0, 100)
 	err := hr.RunHint(vm)
 	require.Nil(t, err)
 	require.Equal(t, 2, len(vm.MemoryManager.Memory.Segments))

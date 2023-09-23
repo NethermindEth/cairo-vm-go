@@ -17,7 +17,7 @@ func NewHintRunner(hints map[uint64]Hinter) HintRunner {
 }
 
 func (hr HintRunner) RunHint(vm *VM.VirtualMachine) error {
-	hint := hr.hints[vm.Context.Pc]
+	hint := hr.hints[vm.Context.Pc.Offset]
 	if hint == nil {
 		return nil
 	}
