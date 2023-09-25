@@ -175,7 +175,8 @@ func TestMemoryReadOutOfRange(t *testing.T) {
 func TestMemoryPeek(t *testing.T) {
 	memory := InitializeEmptyMemory()
 	memory.AllocateEmptySegment()
-	memory.Write(0, 1, MemoryValueFromInt(412))
+	err := memory.Write(0, 1, MemoryValueFromInt(412))
+	assert.NoError(t, err)
 
 	cell, err := memory.Peek(0, 1)
 	assert.NoError(t, err)
