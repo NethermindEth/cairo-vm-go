@@ -34,6 +34,7 @@ func TestCairoZeroFiles(t *testing.T) {
 		if !strings.Contains(path, filter) {
 			continue
 		}
+		t.Logf("testing: %s\n", path)
 
 		compiledOutput, err := compileZeroCode(path)
 		if err != nil {
