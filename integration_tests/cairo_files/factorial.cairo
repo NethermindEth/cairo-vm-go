@@ -7,6 +7,6 @@ func factorial(n) -> (result: felt) {
 }
 
 func main() {
-    factorial(1);
+    factorial(2000);
     return ();
 }
