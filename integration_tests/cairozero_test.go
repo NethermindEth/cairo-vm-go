@@ -35,8 +35,6 @@ func TestCairoZeroFiles(t *testing.T) {
 			continue
 		}
 
-		t.Logf("============== testing: %s ==============\n", path)
-
 		compiledOutput, err := compileZeroCode(path)
 		if err != nil {
 			runtimeErrors = append(runtimeErrors, err)
@@ -157,9 +155,9 @@ func runVm(path string) (string, string, error) {
 		"../bin/cairo-vm",
 		"run",
 		"--proofmode",
-		"--tracelocation",
+		"--tracefile",
 		traceOutput,
-		"--memorylocation",
+		"--memoryfile",
 		memoryOutput,
 		path,
 	)

@@ -22,7 +22,7 @@ func main() {
 		Commands: []*cli.Command{
 			{
 				Name:  "run",
-				Usage: "runs a cairo file",
+				Usage: "runs a cairo zero compiled file",
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
 						Name:        "proofmode",
@@ -31,13 +31,13 @@ func main() {
 						Destination: &proofmode,
 					},
 					&cli.StringFlag{
-						Name:        "tracelocation",
+						Name:        "tracefile",
 						Usage:       "location to store the relocated trace",
 						Required:    false,
 						Destination: &traceLocation,
 					},
 					&cli.StringFlag{
-						Name:        "memorylocation",
+						Name:        "memoryfile",
 						Usage:       "location to store the relocated memory",
 						Required:    false,
 						Destination: &memoryLocation,
