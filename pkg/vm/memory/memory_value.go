@@ -86,7 +86,7 @@ func (address *MemoryAddress) Relocate(segmentsOffset []uint64) *f.Element {
 
 func (address MemoryAddress) String() string {
 	return fmt.Sprintf(
-		"Memory Address: segment: %d, offset: %d", address.SegmentIndex, address.Offset,
+		"%d:%d", address.SegmentIndex, address.Offset,
 	)
 }
 

@@ -22,7 +22,7 @@ func TestCairoZeroFiles(t *testing.T) {
 	testFiles, err := os.ReadDir(root)
 	require.NoError(t, err)
 
-	filter := "fib.cairo"
+	filter := ""
 
 	for _, dirEntry := range testFiles {
 		if dirEntry.IsDir() || isGeneratedFile(dirEntry.Name()) {
@@ -108,7 +108,6 @@ func compileZeroCode(path string) (string, error) {
 		"--no_debug_info",
 		"--output",
 		compiledOutput,
-		// fmt.Sprintf("--output \"%s\"", compiledOutput),
 	)
 
 	res, err := cmd.CombinedOutput()
@@ -137,18 +136,8 @@ func runPythonVm(path string) (string, string, error) {
 		"--memory_file",
 		memoryOutput,
 	)
-	cmd = exec.Command(
-		"/Users/rodro/Documents/Nethermind/cairo-vms/cairo-vm-rs/target/debug/cairo-vm-cli",
-		path,
-		"--proof_mode",
-		"--trace_file",
-		traceOutput,
-		"--memory_file",
-		memoryOutput,
-	)
 
 	res, err := cmd.CombinedOutput()
-	fmt.Println(string(res))
 	if err != nil {
 		return "", "", fmt.Errorf(
 			"cairo-run %s: %w\n%s", path, err, string(res),
@@ -175,10 +164,7 @@ func runVm(path string) (string, string, error) {
 		path,
 	)
 
-	fmt.Println("here")
-
 	res, err := cmd.CombinedOutput()
-	fmt.Println(string(res))
 	if err != nil {
 		return "", "", fmt.Errorf(
 			"cairo-vm run %s: %w\n%s", path, err, string(res),

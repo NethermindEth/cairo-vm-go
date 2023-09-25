@@ -2,6 +2,7 @@ package memory
 
 import (
 	"fmt"
+	// "strings"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -13,10 +14,12 @@ type Cell struct {
 }
 
 func (cell *Cell) Write(value *MemoryValue) error {
-	fmt.Println("writing value", value.String())
-
 	if cell.Accessed && cell.Value != nil && !cell.Value.Equal(value) {
-		return fmt.Errorf("rewriting cell: old value \"%d\", new value \"%d\"", &cell.Value, &value)
+		return fmt.Errorf(
+			"rewriting cell: old value: %s, new value: %s",
+			cell.Value.String(),
+			value.String(),
+		)
 	}
 
 	cell.Accessed = true
@@ -40,24 +43,24 @@ func (cell *Cell) String() string {
 }
 
 type Segment struct {
-	Data []Cell
+	Data []*Cell
 }
 
 func EmptySegment() *Segment {
 	return &Segment{
-		Data: make([]Cell, 0),
+		Data: make([]*Cell, 0),
 	}
 }
 
 func EmptySegmentWithCapacity(capacity int) *Segment {
 	return &Segment{
-		Data: make([]Cell, 0, capacity),
+		Data: make([]*Cell, 0, capacity),
 	}
 }
 
 func EmptySegmentWithLength(length int) *Segment {
 	return &Segment{
-		Data: make([]Cell, length),
+		Data: make([]*Cell, length),
 	}
 }
 
@@ -74,6 +77,9 @@ func (segment *Segment) Write(offset uint64, value *MemoryValue) error {
 	if offset >= uint64(len(segment.Data)) {
 		segment.IncreaseSegmentSize(offset + 1)
 	}
+	if segment.Data[offset] == nil {
+		segment.Data[offset] = &Cell{}
+	}
 
 	err := segment.Data[offset].Write(value)
 	if err != nil {
@@ -87,6 +93,9 @@ func (segment *Segment) Read(offset uint64) *MemoryValue {
 	if offset >= uint64(len(segment.Data)) {
 		segment.IncreaseSegmentSize(offset + 1)
 	}
+	if segment.Data[offset] == nil {
+		segment.Data[offset] = &Cell{}
+	}
 
 	return segment.Data[offset].Read()
 }
@@ -95,32 +104,52 @@ func (segment *Segment) Peek(offset uint64) *Cell {
 	if offset >= uint64(len(segment.Data)) {
 		segment.IncreaseSegmentSize(offset + 1)
 	}
+	if segment.Data[offset] == nil {
+		segment.Data[offset] = &Cell{}
+	}
 
-	return &segment.Data[offset]
+	return segment.Data[offset]
 }
 
 // Increase a segment allocated space. Panics if the new size is smaller
 func (segment *Segment) IncreaseSegmentSize(newSize uint64) {
 	segmentData := segment.Data
 	if len(segmentData) > int(newSize) {
-		panic("cannot increase segment size to s smaller value")
+		panic("cannot increase segment size to a smaller value")
 	}
 
-	var newSegmentData []Cell
+	var newSegmentData []*Cell
 	if cap(segmentData) > int(newSize) {
-		// If there is enough capacity just reslice
 		newSegmentData = segmentData[:newSize]
 	} else {
-		// If not enough capacity then re allocate and copy
-		newSegmentData = make([]Cell, newSize, newSize+100)
+		newSegmentData = make([]*Cell, newSize, newSize+100)
 		copy(newSegmentData, segmentData)
 	}
 	segment.Data = newSegmentData
 }
 
+//func (segment *Segment) String() string {
+//	repr := make([]string, len(segment.Data))
+//	for i, cell := range segment.Data {
+//		if i < len(segment.Data)-5 {
+//			continue
+//		}
+//		if cell.Accessed {
+//			repr[i] = cell.Value.String()
+//		} else {
+//			repr[i] = "-"
+//		}
+//	}
+//	return strings.Join(repr, ", ")
+//}
+
 func (segment *Segment) String() string {
 	header := fmt.Sprintf("len: %d cap: %d\n", len(segment.Data), cap(segment.Data))
 	for i := range segment.Data {
+		if i < len(segment.Data)-5 {
+			continue
+		}
+
 		if segment.Data[i].Accessed {
 			header += fmt.Sprintf("[%d]-> %s\n", i, segment.Data[i].String())
 		}

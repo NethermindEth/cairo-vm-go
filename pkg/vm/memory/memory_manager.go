@@ -1,8 +1,6 @@
 package memory
 
 import (
-	"fmt"
-
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -43,15 +41,13 @@ func (mm *MemoryManager) RelocateMemory() []*f.Element {
 	for i, segment := range mm.Memory.Segments {
 		for j, cell := range segment.Data {
 			var felt *f.Element
-			if !cell.Accessed {
+			if cell == nil || !cell.Accessed {
 				continue
 			}
 			if cell.Value.IsAddress() {
 				felt = cell.Value.address.Relocate(segmentsOffsets)
-				fmt.Printf("%s -> %s\n", cell.Value, felt.Text(10))
 			} else {
 				felt = cell.Value.felt
-				fmt.Println(felt.Text(10))
 			}
 
 			relocatedMemory[segmentsOffsets[i]+uint64(j)] = felt

@@ -80,6 +80,8 @@ type VirtualMachine struct {
 	Step          uint64
 	Trace         []Context
 	config        VirtualMachineConfig
+	// instructions cache
+	instructions map[uint64]*Instruction
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
@@ -115,6 +117,7 @@ func NewVirtualMachine(programBytecode []*f.Element, config VirtualMachineConfig
 		MemoryManager: manager,
 		Trace:         trace,
 		config:        config,
+		instructions:  make(map[uint64]*Instruction, len(programBytecode)),
 	}, nil
 }
 
@@ -127,20 +130,24 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 		return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
 	}
 
-	// Decode and execute instruction
-	memoryValue, err := vm.MemoryManager.Memory.ReadFromAddress(vm.Context.Pc)
-	if err != nil {
-		return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
-	}
+	instruction, ok := vm.instructions[vm.Context.Pc.Offset]
+	if !ok {
+		// ddecode instruction
+		memoryValue, err := vm.MemoryManager.Memory.ReadFromAddress(vm.Context.Pc)
+		if err != nil {
+			return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
+		}
 
-	bytecodeInstruction, err := memoryValue.ToFieldElement()
-	if err != nil {
-		return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
-	}
+		bytecodeInstruction, err := memoryValue.ToFieldElement()
+		if err != nil {
+			return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
+		}
 
-	instruction, err := DecodeInstruction(bytecodeInstruction)
-	if err != nil {
-		return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
+		instruction, err = DecodeInstruction(bytecodeInstruction)
+		if err != nil {
+			return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
+		}
+		vm.instructions[vm.Context.Pc.Offset] = instruction
 	}
 
 	// store the trace before state change
@@ -158,10 +165,6 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 }
 
 func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
-	fmt.Println(vm.Context.String())
-	fmt.Println(instruction)
-	fmt.Println(vm.Context.Pc)
-
 	dstCell, err := vm.getCellDst(instruction)
 	if err != nil {
 		return fmt.Errorf("dst cell: %w", err)
@@ -207,9 +210,6 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 	if err != nil {
 		return fmt.Errorf("fp update: %w", err)
 	}
-
-	fmt.Println(vm.Context.Pc)
-	fmt.Println(nextPc)
 
 	vm.Context.Pc = nextPc
 	vm.Context.Ap = nextAp
@@ -368,8 +368,12 @@ func (vm *VirtualMachine) opcodeAssertions(
 		if err != nil {
 			return err
 		}
+		err = dstCell.Write(mem.MemoryValueFromMemoryAddress(vm.Context.AddressFp()))
+		if err != nil {
+			return err
+		}
 
-		// Write in [ap + 1] the instruction to execute
+		// Write in [ap + 1] the next instruction to execute
 		err = op0Cell.Write(
 			mem.MemoryValueFromSegmentAndOffset(
 				vm.Context.Pc.SegmentIndex,
@@ -379,7 +383,10 @@ func (vm *VirtualMachine) opcodeAssertions(
 		if err != nil {
 			return err
 		}
-
+		err = dstCell.Write(mem.MemoryValueFromMemoryAddress(vm.Context.AddressFp()))
+		if err != nil {
+			return err
+		}
 	case AssertEq:
 		// assert that the calculated res is stored in dst
 		err := dstCell.Write(res)
@@ -423,13 +430,11 @@ func (vm *VirtualMachine) updatePc(
 		if dest.IsZero() {
 			return mem.NewMemoryAddress(vm.Context.Pc.SegmentIndex, vm.Context.Pc.Offset+uint64(instruction.Size())), nil
 		}
-
-		// todo(rodro): math check when relAddr is negative
-		val, err := res.Uint64()
+		val, err := op1Cell.Read().ToFieldElement()
 		if err != nil {
 			return nil, err
 		}
-		return mem.NewMemoryAddress(vm.Context.Pc.SegmentIndex, vm.Context.Pc.Offset+val), nil
+		return new(mem.MemoryAddress).Add(vm.Context.Pc, val)
 
 	}
 	return nil, fmt.Errorf("unkwon pc update value: %d", instruction.PcUpdate)
@@ -462,7 +467,7 @@ func (vm *VirtualMachine) updateFp(instruction *Instruction, dstCell *mem.Cell) 
 		// [dst] should be a memory address of the form (executionSegment, fp - 2)
 		dst, err := dstCell.Read().ToMemoryAddress()
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("ret: %w", err)
 		}
 		return dst.Offset, nil
 	default:

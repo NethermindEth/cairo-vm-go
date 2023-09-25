@@ -315,7 +315,6 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 		(instruction.Res != Unconstrained ||
 			instruction.Opcode != Nop ||
 			instruction.ApUpdate != SameAp) {
-		fmt.Println(instruction)
 		return fmt.Errorf(
 			"jnz opcode must have unconstrained res logic, no opcode, and no ap change",
 		)

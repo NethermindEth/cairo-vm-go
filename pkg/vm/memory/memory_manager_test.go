@@ -1,7 +1,6 @@
 package memory
 
 import (
-	"fmt"
 	"testing"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -29,10 +28,6 @@ func TestMemoryRelocationWithFelt(t *testing.T) {
 	)
 
 	res := manager.RelocateMemory()
-
-	for i, _ := range res {
-		fmt.Println(res[i].Text(10))
-	}
 
 	expected := []*f.Element{
 		nil,

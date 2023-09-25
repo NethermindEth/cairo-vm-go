@@ -202,16 +202,14 @@ func TestMemoryEncodingDecoding(t *testing.T) {
 }
 
 func createSegment(values ...any) *memory.Segment {
-	data := make([]memory.Cell, len(values))
+	data := make([]*memory.Cell, len(values))
 	for i := range values {
-		if values[i] == nil {
-			values[i] = memory.Cell{Value: nil, Accessed: false}
-		} else {
+		if values[i] != nil {
 			memVal, err := memory.MemoryValueFromAny(values[i])
 			if err != nil {
 				panic(err)
 			}
-			data[i] = memory.Cell{Value: memVal, Accessed: true}
+			data[i] = &memory.Cell{Value: memVal, Accessed: true}
 		}
 	}
 	return &memory.Segment{
