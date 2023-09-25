@@ -27,8 +27,16 @@ clean:
 	@echo "Cleaning up..."
 	@rm -rf $(BINARY_DIR)
 
-test:
-	@echo "Running tests..."
+unit:
+	@echo "Running unit tests..."
+	@go test ./pkg/...
+
+integration:
+	@echo "Running integration tests..."
+	@go test ./integration_tests/...
+
+testall:
+	@echo "Running all tests..."
 	@go test ./...
 
 format:
