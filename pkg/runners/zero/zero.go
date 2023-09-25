@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
@@ -16,7 +17,7 @@ import (
 
 type Program struct {
 	// the bytecode in string format
-	Bytecode []*f.Element
+	Bytecode []*safemath.LazyFelt
 	// given a string it returns the pc for that function call
 	Entrypoints map[string]uint64
 	// it stores the start and end label pcs
@@ -30,16 +31,22 @@ func LoadCairoZeroProgram(content []byte) (*Program, error) {
 	}
 
 	// bytecode
-	bytecode := make([]*f.Element, len(cairoZeroJson.Data))
+	bytecode := make([]*safemath.LazyFelt, len(cairoZeroJson.Data))
 	for i := range cairoZeroJson.Data {
-		felt, err := new(f.Element).SetString(cairoZeroJson.Data[i])
-		if err != nil {
+		dataElement, isOk := big.NewInt(0).SetString(cairoZeroJson.Data[i], 0)
+
+		if !isOk {
 			return nil, fmt.Errorf(
-				"cannot read bytecode %s at position %d: %w",
-				cairoZeroJson.Data[i], i, err,
+				"cannot read bytecode %s at position %d",
+				cairoZeroJson.Data[i], i,
 			)
 		}
-		bytecode[i] = felt
+		if dataElement.IsUint64() {
+			bytecode[i] = new(safemath.LazyFelt).SetUval(dataElement.Uint64())
+		} else {
+			bytecode[i] = new(safemath.LazyFelt).SetFelt(new(f.Element).SetBigInt(dataElement))
+		}
+
 	}
 
 	entrypoints, err := extractEntrypoints(cairoZeroJson)

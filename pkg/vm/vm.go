@@ -85,7 +85,7 @@ type VirtualMachine struct {
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
-func NewVirtualMachine(programBytecode []*f.Element, config VirtualMachineConfig) (*VirtualMachine, error) {
+func NewVirtualMachine(programBytecode []*safemath.LazyFelt, config VirtualMachineConfig) (*VirtualMachine, error) {
 	// Initialize memory with to initial segments:
 	// the first one for the program segment and
 	// the second one to keep track of the execution
@@ -138,7 +138,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 			return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
 		}
 
-		bytecodeInstruction, err := memoryValue.ToFieldElement()
+		bytecodeInstruction, err := memoryValue.ToLazyFelt()
 		if err != nil {
 			return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
 		}
@@ -416,7 +416,7 @@ func (vm *VirtualMachine) updatePc(
 		}
 		return addr, nil
 	case JumpRel:
-		val, err := res.ToFieldElement()
+		val, err := res.ToLazyFelt()
 		if err != nil {
 			return nil, fmt.Errorf("relative jump: %w", err)
 		}
@@ -430,7 +430,7 @@ func (vm *VirtualMachine) updatePc(
 		if dest.IsZero() {
 			return mem.NewMemoryAddress(vm.Context.Pc.SegmentIndex, vm.Context.Pc.Offset+uint64(instruction.Size())), nil
 		}
-		val, err := op1Cell.Read().ToFieldElement()
+		val, err := op1Cell.Read().ToLazyFelt()
 		if err != nil {
 			return nil, err
 		}

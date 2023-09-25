@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	"github.com/stretchr/testify/require"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -13,7 +14,7 @@ import (
 
 func TestDecodeInstructionValues(t *testing.T) {
 	offDest, offOp0, offOp1, flags := decodeInstructionValues(
-		new(f.Element).SetBytes([]byte{0x48, 0x06, 0x80, 0x01, 0x7f, 0xff, 0x80, 0x10}).Uint64(),
+		new(safemath.LazyFelt).SetUval(0x480680017fff8010).Uint64(),
 	)
 	assert.Equal(t, int16(16), offDest)
 	assert.Equal(t, int16(-1), offOp0)
@@ -36,7 +37,7 @@ func TestAssertEq(t *testing.T) {
 	}
 
 	decoded, err := DecodeInstruction(
-		new(f.Element).SetBytes([]byte{0x48, 0x06, 0x80, 0x01, 0x7F, 0xFF, 0x80, 0x00}),
+		new(safemath.LazyFelt).SetUval(0x480680017FFF8000),
 	)
 
 	require.NoError(t, err)
@@ -58,7 +59,7 @@ func TestJmp(t *testing.T) {
 	}
 
 	decoded, err := DecodeInstruction(
-		new(f.Element).SetBytes([]byte{0x01, 0x29, 0x80, 0x00, 0x80, 0x02, 0x7F, 0xFF}),
+		new(safemath.LazyFelt).SetUval(0x0129800080027FFF),
 	)
 
 	require.NoError(t, err)
@@ -80,7 +81,7 @@ func TestJnz(t *testing.T) {
 	}
 
 	decoded, err := DecodeInstruction(
-		new(f.Element).SetBytes([]byte{0x02, 0x0A, 0x7F, 0xF0, 0x7F, 0xFF, 0x80, 0x03}),
+		new(safemath.LazyFelt).SetUval(0x020A7FF07FFF8003),
 	)
 
 	require.NoError(t, err)
@@ -102,7 +103,7 @@ func TestCall(t *testing.T) {
 	}
 
 	decoded, err := DecodeInstruction(
-		new(f.Element).SetBytes([]byte{0x11, 0x04, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00}),
+		new(safemath.LazyFelt).SetUval(0x1104800180018000),
 	)
 
 	require.NoError(t, err)
@@ -124,7 +125,7 @@ func TestRet(t *testing.T) {
 	}
 
 	decoded, err := DecodeInstruction(
-		new(f.Element).SetBytes([]byte{0x20, 0x8B, 0x7F, 0xFF, 0x7F, 0xFF, 0x7F, 0xFE}),
+		new(safemath.LazyFelt).SetUval(0x208B7FFF7FFF7FFE),
 	)
 
 	require.NoError(t, err)
@@ -146,7 +147,7 @@ func TestAddAp(t *testing.T) {
 	}
 
 	decoded, err := DecodeInstruction(
-		new(f.Element).SetBytes([]byte{0x04, 0x07, 0x80, 0x01, 0x7F, 0xFF, 0x7F, 0xFF}),
+		new(safemath.LazyFelt).SetUval(0x040780017FFF7FFF),
 	)
 
 	require.NoError(t, err)
@@ -154,17 +155,17 @@ func TestAddAp(t *testing.T) {
 }
 
 func TestBiggerThan64Bits(t *testing.T) {
-	instruction := new(f.Element).SetBigInt(big.NewInt(1).Lsh(big.NewInt(1), 64))
+	instruction := new(safemath.LazyFelt).SetFelt(new(f.Element).SetBigInt(big.NewInt(1).Lsh(big.NewInt(1), 64)))
 
 	_, err := DecodeInstruction(instruction)
 
 	require.Error(t, err)
-	expectedError := fmt.Sprintf("error decoding instruction: %d is bigger than 64 bits", *instruction)
+	expectedError := fmt.Sprintf("error decoding instruction: %s is bigger than 64 bits", instruction.String())
 	assert.EqualError(t, err, expectedError)
 }
 
 func TestInvalidOpOneAddress(t *testing.T) {
-	instruction := new(f.Element).SetBytes([]byte{0x04, 0x0f, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+	instruction := new(safemath.LazyFelt).SetUval(0x040f800180018000)
 
 	_, err := DecodeInstruction(instruction)
 
@@ -174,7 +175,7 @@ func TestInvalidOpOneAddress(t *testing.T) {
 }
 
 func TestInvalidPcUpdate(t *testing.T) {
-	instruction := new(f.Element).SetBytes([]byte{0x05, 0x87, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+	instruction := new(safemath.LazyFelt).SetUval(0x0587800180018000)
 
 	_, err := DecodeInstruction(instruction)
 
@@ -184,7 +185,7 @@ func TestInvalidPcUpdate(t *testing.T) {
 }
 
 func TestInvalidResLogic(t *testing.T) {
-	instruction := new(f.Element).SetBytes([]byte{0x04, 0x67, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+	instruction := new(safemath.LazyFelt).SetUval(0x0467800180018000)
 
 	_, err := DecodeInstruction(instruction)
 
@@ -194,7 +195,7 @@ func TestInvalidResLogic(t *testing.T) {
 }
 
 func TestInvalidApUpdate(t *testing.T) {
-	instruction := new(f.Element).SetBytes([]byte{0x0C, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+	instruction := new(safemath.LazyFelt).SetUval(0x0C07800180018000)
 
 	_, err := DecodeInstruction(instruction)
 
@@ -204,7 +205,7 @@ func TestInvalidApUpdate(t *testing.T) {
 }
 
 func TestInvalidOpcode(t *testing.T) {
-	instruction := new(f.Element).SetBytes([]byte{0x34, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+	instruction := new(safemath.LazyFelt).SetUval(0x3407800180018000)
 
 	_, err := DecodeInstruction(instruction)
 
@@ -214,9 +215,9 @@ func TestInvalidOpcode(t *testing.T) {
 }
 
 func TestPcUpdateJnzInvalid(t *testing.T) {
-	instructionInvalidRes := new(f.Element).SetBytes([]byte{0x06, 0x27, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
-	instructionInvalidOpcode := new(f.Element).SetBytes([]byte{0x16, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
-	instructionInvalidApUpdate := new(f.Element).SetBytes([]byte{0x06, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+	instructionInvalidRes := new(safemath.LazyFelt).SetUval(0x0627800180018000)
+	instructionInvalidOpcode := new(safemath.LazyFelt).SetUval(0x1607800180018000)
+	instructionInvalidApUpdate := new(safemath.LazyFelt).SetUval(0x0607800180018000)
 	expectedError := "jnz opcode must have unconstrained res logic, no opcode, and no ap change"
 
 	_, err := DecodeInstruction(instructionInvalidRes)
@@ -236,7 +237,7 @@ func TestPcUpdateJnzInvalid(t *testing.T) {
 }
 
 func TestCallInvalidApUpdate(t *testing.T) {
-	instruction := new(f.Element).SetBytes([]byte{0x15, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01})
+	instruction := new(safemath.LazyFelt).SetUval(0x1507800180018001)
 	expectedError := "CALL must have ap_update = ADD2"
 
 	_, err := DecodeInstruction(instruction)

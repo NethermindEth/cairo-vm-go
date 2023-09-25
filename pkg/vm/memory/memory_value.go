@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"golang.org/x/exp/constraints"
 )
@@ -26,12 +27,12 @@ func (address *MemoryAddress) Equal(other *MemoryAddress) bool {
 }
 
 // Adds a memory address and a field element
-func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) (*MemoryAddress, error) {
-	lhsOffset := new(f.Element).SetUint64(lhs.Offset)
-	newOffset := new(f.Element).Add(lhsOffset, rhs)
+func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *safemath.LazyFelt) (*MemoryAddress, error) {
+	lhsOffset := new(safemath.LazyFelt).SetUval(lhs.Offset)
+	newOffset := new(safemath.LazyFelt).Add(lhsOffset, rhs)
 
 	if !newOffset.IsUint64() {
-		return nil, fmt.Errorf("new offset bigger than uint64: %s", rhs.Text(10))
+		return nil, fmt.Errorf("new offset bigger than uint64: %s", rhs.String())
 	}
 
 	address.SegmentIndex = lhs.SegmentIndex
@@ -53,6 +54,16 @@ func (address *MemoryAddress) Sub(lhs *MemoryAddress, rhs any) (*MemoryAddress, 
 		address.Offset = lhs.Offset - rhs
 		return address, nil
 	case *f.Element:
+		if !rhs.IsUint64() {
+			return nil, fmt.Errorf("rhs field element does not fit in uint64: %s", rhs)
+		}
+		feltRhs64 := rhs.Uint64()
+		if feltRhs64 > lhs.Offset {
+			return nil, fmt.Errorf("rhs %d is greater than lhs offset %d", feltRhs64, lhs.Offset)
+		}
+		address.Offset = lhs.Offset - feltRhs64
+		return address, nil
+	case *safemath.LazyFelt:
 		if !rhs.IsUint64() {
 			return nil, fmt.Errorf("rhs field element does not fit in uint64: %s", rhs)
 		}
@@ -97,7 +108,7 @@ func (address MemoryAddress) String() string {
 //
 // Both members cannot be non-nil at the same time
 type MemoryValue struct {
-	felt    *f.Element
+	felt    *safemath.LazyFelt
 	address *MemoryAddress
 }
 
@@ -109,6 +120,12 @@ func MemoryValueFromMemoryAddress(address *MemoryAddress) *MemoryValue {
 
 func MemoryValueFromFieldElement(felt *f.Element) *MemoryValue {
 	return &MemoryValue{
+		felt: new(safemath.LazyFelt).SetFelt(felt),
+	}
+}
+
+func MemoryValueFromLazyFelt(felt *safemath.LazyFelt) *MemoryValue {
+	return &MemoryValue{
 		felt: felt,
 	}
 }
@@ -117,17 +134,15 @@ func MemoryValueFromInt[T constraints.Integer](v T) *MemoryValue {
 	if v >= 0 {
 		return MemoryValueFromUint(uint64(v))
 	}
-	lhs := &f.Element{}
-	rhs := new(f.Element).SetUint64(uint64(-v))
+	val := new(f.Element).SetInt64(int64(v))
 	return &MemoryValue{
-		felt: new(f.Element).Sub(lhs, rhs),
+		felt: new(safemath.LazyFelt).SetFelt(val),
 	}
 }
 
 func MemoryValueFromUint[T constraints.Unsigned](v T) *MemoryValue {
-	newElement := f.NewElement(uint64(v))
 	return &MemoryValue{
-		felt: &newElement,
+		felt: new(safemath.LazyFelt).SetUval(uint64(v)),
 	}
 }
 
@@ -145,6 +160,8 @@ func MemoryValueFromAny(anyType any) (*MemoryValue, error) {
 		return MemoryValueFromUint(anyType), nil
 	case *f.Element:
 		return MemoryValueFromFieldElement(anyType), nil
+	case *safemath.LazyFelt:
+		return MemoryValueFromLazyFelt(anyType), nil
 	case *MemoryAddress:
 		return MemoryValueFromMemoryAddress(anyType), nil
 	default:
@@ -154,7 +171,7 @@ func MemoryValueFromAny(anyType any) (*MemoryValue, error) {
 
 func EmptyMemoryValueAsFelt() *MemoryValue {
 	return &MemoryValue{
-		felt: new(f.Element),
+		felt: new(safemath.LazyFelt),
 	}
 }
 
@@ -179,6 +196,13 @@ func (mv *MemoryValue) ToMemoryAddress() (*MemoryAddress, error) {
 }
 
 func (mv *MemoryValue) ToFieldElement() (*f.Element, error) {
+	if mv.felt == nil {
+		return nil, fmt.Errorf("memory value is not a field element")
+	}
+	return mv.felt.ToFieldElement(), nil
+}
+
+func (mv *MemoryValue) ToLazyFelt() (*safemath.LazyFelt, error) {
 	if mv.felt == nil {
 		return nil, fmt.Errorf("memory value is not a field element")
 	}

@@ -1,6 +1,10 @@
 package assembler
 
 import (
+	"fmt"
+	"math/big"
+
+	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	"github.com/alecthomas/participle/v2"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -12,7 +16,7 @@ var parser *participle.Parser[CasmProgram] = participle.MustBuild[CasmProgram](
 	participle.UseLookahead(5),
 )
 
-func CasmToBytecode(code string) ([]*f.Element, error) {
+func CasmToBytecode(code string) ([]*safemath.LazyFelt, error) {
 	casmAst, err := parser.ParseString("", code)
 	if err != nil {
 		return nil, err
@@ -53,9 +57,9 @@ const (
 	biasedMinusTwo uint16 = 0x7FFE
 )
 
-func encodeCasmProgram(casmAst CasmProgram) ([]*f.Element, error) {
+func encodeCasmProgram(casmAst CasmProgram) ([]*safemath.LazyFelt, error) {
 	n := len(casmAst.Instructions)
-	bytecode := make([]*f.Element, 0, n+(n/2)+1)
+	bytecode := make([]*safemath.LazyFelt, 0, n+(n/2)+1)
 	var err error
 	for i := range casmAst.Instructions {
 		bytecode, err = encodeInstruction(bytecode, casmAst.Instructions[i])
@@ -66,7 +70,7 @@ func encodeCasmProgram(casmAst CasmProgram) ([]*f.Element, error) {
 	return bytecode, nil
 }
 
-func encodeInstruction(bytecode []*f.Element, instruction Instruction) ([]*f.Element, error) {
+func encodeInstruction(bytecode []*safemath.LazyFelt, instruction Instruction) ([]*safemath.LazyFelt, error) {
 	var encode uint64 = 0
 	expression := instruction.Expression()
 
@@ -90,7 +94,7 @@ func encodeInstruction(bytecode []*f.Element, instruction Instruction) ([]*f.Ele
 		encodeApUpdate(instruction, encode) |
 		encodeOpCode(instruction, encode)
 
-	encodeAsFelt := new(f.Element).SetUint64(encode)
+	encodeAsFelt := new(safemath.LazyFelt).SetUval(encode)
 
 	bytecode = append(bytecode, encodeAsFelt)
 	if imm != nil {
@@ -174,7 +178,7 @@ func encodeOp0Reg(instr *Instruction, expr Expressioner, encode uint64) (uint64,
 
 // Given the expression and the current encode returns an updated encode with the corresponding bit
 // and offset of op1, an immeadiate if exists, and a possible error
-func encodeOp1Source(inst *Instruction, expr Expressioner, encode uint64) (uint64, *f.Element, error) {
+func encodeOp1Source(inst *Instruction, expr Expressioner, encode uint64) (uint64, *safemath.LazyFelt, error) {
 	if inst != nil && inst.Ret != nil {
 		// op1 is set as [fp - 1], where we read the previous pc
 		encode |= uint64(biasedMinusOne) << op1Offset
@@ -202,10 +206,19 @@ func encodeOp1Source(inst *Instruction, expr Expressioner, encode uint64) (uint6
 		encode |= uint64(biasedOffset) << op1Offset
 		return encode, nil, nil
 	} else if expr.AsImmediate() != nil {
-		imm, err := new(f.Element).SetString(*expr.AsImmediate())
-		if err != nil {
-			return 0, nil, err
+		immInt, isOk := big.NewInt(0).SetString(*expr.AsImmediate(), 0)
+		if !isOk {
+			return 0, nil, fmt.Errorf("can't parse imm")
 		}
+
+		imm := new(safemath.LazyFelt)
+
+		if immInt.IsUint64() {
+			imm.SetUval(immInt.Uint64())
+		} else {
+			imm.SetFelt(new(f.Element).SetBigInt(immInt))
+		}
+
 		encode |= uint64(biasedPlusOne) << op1Offset
 		return encode | 1<<op1ImmBit, imm, nil
 	} else {

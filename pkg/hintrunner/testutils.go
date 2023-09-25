@@ -1,13 +1,13 @@
 package hintrunner
 
 import (
+	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func defaultVirtualMachine() *VM.VirtualMachine {
-	vm, _ := VM.NewVirtualMachine(make([]*f.Element, 0), VM.VirtualMachineConfig{})
+	vm, _ := VM.NewVirtualMachine(make([]*safemath.LazyFelt, 0), VM.VirtualMachineConfig{})
 	return vm
 }
 

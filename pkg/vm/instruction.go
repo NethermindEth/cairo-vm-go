@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/bits"
 
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 )
 
 type Register uint8
@@ -215,9 +215,9 @@ const (
 	offsetBits        = 16
 )
 
-func DecodeInstruction(rawInstruction *f.Element) (*Instruction, error) {
+func DecodeInstruction(rawInstruction *safemath.LazyFelt) (*Instruction, error) {
 	if !rawInstruction.IsUint64() {
-		return nil, fmt.Errorf("error decoding instruction: %d is bigger than 64 bits", *rawInstruction)
+		return nil, fmt.Errorf("error decoding instruction: %s is bigger than 64 bits", rawInstruction.String())
 	}
 	off0Enc, off1Enc, off2Enc, flags := decodeInstructionValues(rawInstruction.Uint64())
 

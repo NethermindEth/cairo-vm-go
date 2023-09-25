@@ -5,14 +5,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFeltPlusFelt(t *testing.T) {
 	memVal := EmptyMemoryValueAsFelt()
-	lhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(3))
-	rhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(7))
+	lhs := MemoryValueFromInt(3)
+	rhs := MemoryValueFromInt(7)
 
 	expected := MemoryValueFromInt(10)
 
@@ -29,7 +28,7 @@ func TestMemoryAddressPlusFelt(t *testing.T) {
 		SegmentIndex: 2,
 		Offset:       10,
 	})
-	rhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(2))
+	rhs := MemoryValueFromInt(2)
 
 	expected := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
@@ -45,7 +44,7 @@ func TestMemoryAddressPlusFelt(t *testing.T) {
 
 func TestFeltPlusMemoryAddress(t *testing.T) {
 	memVal := EmptyMemoryValueAsAddress()
-	lhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(2))
+	lhs := MemoryValueFromInt(2)
 	rhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
 		Offset:       10,
@@ -81,8 +80,8 @@ func TestMemoryAddressPlusMemoryAddress(t *testing.T) {
 
 func TestFeltSubFelt(t *testing.T) {
 	memVal := EmptyMemoryValueAsFelt()
-	lhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(8))
-	rhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(7))
+	lhs := MemoryValueFromInt(8)
+	rhs := MemoryValueFromInt(7)
 
 	expected := MemoryValueFromInt(1)
 
@@ -99,7 +98,7 @@ func TestMemoryAddressSubFelt(t *testing.T) {
 		SegmentIndex: 2,
 		Offset:       10,
 	})
-	rhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(2))
+	rhs := MemoryValueFromInt(2)
 
 	expected := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
@@ -115,7 +114,7 @@ func TestMemoryAddressSubFelt(t *testing.T) {
 
 func TestFeltSubMemoryAddress(t *testing.T) {
 	memVal := EmptyMemoryValueAsAddress()
-	lhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(15))
+	lhs := MemoryValueFromInt(15)
 	rhs := MemoryValueFromMemoryAddress(&MemoryAddress{
 		SegmentIndex: 2,
 		Offset:       10,

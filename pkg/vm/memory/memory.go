@@ -4,7 +4,7 @@ import (
 	"fmt"
 	// "strings"
 
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 )
 
 // Represents a write-once Memory Cell
@@ -172,10 +172,10 @@ func InitializeEmptyMemory() *Memory {
 }
 
 // Allocates a new segment providing its initial data and returns its index
-func (memory *Memory) AllocateSegment(data []*f.Element) (int, error) {
+func (memory *Memory) AllocateSegment(data []*safemath.LazyFelt) (int, error) {
 	newSegment := EmptySegmentWithLength(len(data))
 	for i := range data {
-		memVal := MemoryValueFromFieldElement(data[i])
+		memVal := MemoryValueFromLazyFelt(data[i])
 		err := newSegment.Write(uint64(i), memVal)
 		if err != nil {
 			return 0, err

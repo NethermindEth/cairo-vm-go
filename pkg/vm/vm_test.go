@@ -3,15 +3,15 @@ package vm
 import (
 	"testing"
 
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
 func TestVMCreation(t *testing.T) {
-	dummyBytecode := []*f.Element{
+	dummyBytecode := []*safemath.LazyFelt{
 		newElementPtr(2),
 		newElementPtr(3),
 		newElementPtr(5),
@@ -145,12 +145,12 @@ func TestGetApCellOp0(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.True(t, cell.Accessed)
-	assert.Equal(t, mem.MemoryValueFromInt(123), cell.Read())
+	assert.True(t, mem.MemoryValueFromInt(123).Equal(cell.Read()))
 }
 
 func TestGetImmCellOp1(t *testing.T) {
 	vm := defaultVirtualMachineWithBytecode(
-		[]*f.Element{
+		[]*safemath.LazyFelt{
 			newElementPtr(0),    // dummy
 			newElementPtr(0),    // dummy
 			newElementPtr(1234), // imm
@@ -171,12 +171,12 @@ func TestGetImmCellOp1(t *testing.T) {
 	assert.NotNil(t, cell)
 
 	assert.True(t, cell.Accessed)
-	assert.Equal(t, mem.MemoryValueFromInt(1234), cell.Read())
+	assert.True(t, mem.MemoryValueFromInt(1234).Equal(cell.Read()))
 }
 
 func TestGetOp0PosCellOp1(t *testing.T) {
 	vm := defaultVirtualMachineWithBytecode(
-		[]*f.Element{
+		[]*safemath.LazyFelt{
 			newElementPtr(0),   // dummy
 			newElementPtr(0),   // dummy
 			newElementPtr(0),   // dummy
@@ -201,12 +201,12 @@ func TestGetOp0PosCellOp1(t *testing.T) {
 	assert.NotNil(t, cell)
 
 	assert.True(t, cell.Accessed)
-	assert.Equal(t, mem.MemoryValueFromInt(333), cell.Read())
+	assert.True(t, mem.MemoryValueFromInt(333).Equal(cell.Read()))
 }
 
 func TestGetOp0NegCellOp1(t *testing.T) {
 	vm := defaultVirtualMachineWithBytecode(
-		[]*f.Element{
+		[]*safemath.LazyFelt{
 			newElementPtr(0),   // dummy
 			newElementPtr(0),   // dummy
 			newElementPtr(0),   // dummy
@@ -372,7 +372,7 @@ func TestComputeAddRes(t *testing.T) {
 		mem.NewMemoryAddress(2, 25),
 	)
 
-	assert.Equal(t, expected, res)
+	assert.True(t, expected.Equal(res))
 }
 
 func TestOpcodeAssertionAssertEq(t *testing.T) {
@@ -387,13 +387,8 @@ func TestOpcodeAssertionAssertEq(t *testing.T) {
 
 	err := vm.opcodeAssertions(&instruction, &dstCell, nil, res)
 	require.NoError(t, err)
-	assert.Equal(
-		t,
-		mem.Cell{
-			Accessed: true,
-			Value:    mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))},
-		dstCell,
-	)
+	assert.True(t, dstCell.Accessed)
+	assert.True(t, mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10)).Equal(dstCell.Read()))
 }
 
 func TestUpdatePcNextInstr(t *testing.T) {
@@ -459,17 +454,16 @@ func writeToDataSegment(vm *VirtualMachine, index uint64, value *mem.MemoryValue
 }
 
 func defaultVirtualMachine() *VirtualMachine {
-	vm, _ := NewVirtualMachine(make([]*f.Element, 0), VirtualMachineConfig{false})
+	vm, _ := NewVirtualMachine(make([]*safemath.LazyFelt, 0), VirtualMachineConfig{false})
 	return vm
 }
 
-func defaultVirtualMachineWithBytecode(bytecode []*f.Element) *VirtualMachine {
+func defaultVirtualMachineWithBytecode(bytecode []*safemath.LazyFelt) *VirtualMachine {
 	vm, _ := NewVirtualMachine(bytecode, VirtualMachineConfig{false})
 	return vm
 }
 
 // create a pointer to an Element
-func newElementPtr(val uint64) *f.Element {
-	element := f.NewElement(val)
-	return &element
+func newElementPtr(val uint64) *safemath.LazyFelt {
+	return new(safemath.LazyFelt).SetUval(val)
 }

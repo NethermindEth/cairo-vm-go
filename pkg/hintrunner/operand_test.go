@@ -20,7 +20,7 @@ func TestGetAp(t *testing.T) {
 	require.NoError(t, err)
 
 	value := cell.Read()
-	require.Equal(t, memory.MemoryValueFromInt(11), value)
+	require.True(t, memory.MemoryValueFromInt(11).Equal(value))
 }
 
 func TestGetFp(t *testing.T) {
@@ -34,7 +34,7 @@ func TestGetFp(t *testing.T) {
 	require.NoError(t, err)
 
 	value := cell.Read()
-	require.Equal(t, memory.MemoryValueFromInt(11), value)
+	require.True(t, memory.MemoryValueFromInt(11).Equal(value))
 }
 
 func TestResolveDeref(t *testing.T) {
@@ -48,7 +48,7 @@ func TestResolveDeref(t *testing.T) {
 	value, err := deref.Resolve(vm)
 
 	require.NoError(t, err)
-	require.Equal(t, memory.MemoryValueFromInt(11), value)
+	require.True(t, memory.MemoryValueFromInt(11).Equal(value))
 }
 
 func TestResolveDoubleDerefPositiveOffset(t *testing.T) {
@@ -70,7 +70,7 @@ func TestResolveDoubleDerefPositiveOffset(t *testing.T) {
 
 	value, err := dderf.Resolve(vm)
 	require.NoError(t, err)
-	require.Equal(t, memory.MemoryValueFromInt(13), value)
+	require.True(t, memory.MemoryValueFromInt(13).Equal(value))
 }
 
 func TestResolveDoubleDerefNegativeOffset(t *testing.T) {
@@ -92,7 +92,7 @@ func TestResolveDoubleDerefNegativeOffset(t *testing.T) {
 
 	value, err := dderf.Resolve(vm)
 	require.NoError(t, err)
-	require.Equal(t, memory.MemoryValueFromInt(13), value)
+	require.True(t, memory.MemoryValueFromInt(13).Equal(value))
 }
 
 func TestResolveImmediate(t *testing.T) {
@@ -103,7 +103,7 @@ func TestResolveImmediate(t *testing.T) {
 
 	solved, err := imm.Resolve(vm)
 	require.NoError(t, err)
-	require.Equal(t, memory.MemoryValueFromInt(99), solved)
+	require.True(t, memory.MemoryValueFromInt(99).Equal(solved))
 }
 
 func TestResolveAddOp(t *testing.T) {
@@ -177,6 +177,6 @@ func TestResolveMulOp(t *testing.T) {
 
 	res, err := bop.Resolve(vm)
 	require.NoError(t, err)
-	require.Equal(t, memory.MemoryValueFromInt(500), res)
+	require.True(t, memory.MemoryValueFromInt(500).Equal(res))
 
 }

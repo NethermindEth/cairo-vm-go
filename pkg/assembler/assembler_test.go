@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -439,7 +439,7 @@ func TestAddApImm(t *testing.T) {
 
 }
 
-func parseImmediateInstruction(casmCode string) (uint64, *f.Element) {
+func parseImmediateInstruction(casmCode string) (uint64, *safemath.LazyFelt) {
 	instructions, err := CasmToBytecode(casmCode)
 	if err != nil {
 		panic(err)

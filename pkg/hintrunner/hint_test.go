@@ -33,10 +33,10 @@ func TestAllocSegment(t *testing.T) {
 	err = alloc2.Execute(vm)
 	require.Nil(t, err)
 	require.Equal(t, 4, len(vm.MemoryManager.Memory.Segments))
-	require.Equal(
+	require.True(
 		t,
-		memory.MemoryValueFromSegmentAndOffset(3, 0),
-		readFrom(vm, VM.ExecutionSegment, vm.Context.Fp+9),
+		memory.MemoryValueFromSegmentAndOffset(3, 0).Equal(
+			readFrom(vm, VM.ExecutionSegment, vm.Context.Fp+9)),
 	)
 
 }
@@ -62,10 +62,9 @@ func TestTestLessThanFalse(t *testing.T) {
 
 	err := hint.Execute(vm)
 	require.Nil(t, err)
-	require.Equal(
+	require.True(
 		t,
-		memory.EmptyMemoryValueAsFelt(),
-		readFrom(vm, VM.ExecutionSegment, 1),
+		memory.EmptyMemoryValueAsFelt().Equal(readFrom(vm, VM.ExecutionSegment, 1)),
 	)
 }
 
@@ -90,9 +89,9 @@ func TestTestLessThanTrue(t *testing.T) {
 
 	err := hint.Execute(vm)
 	require.Nil(t, err)
-	require.Equal(
+	require.True(
 		t,
-		memory.MemoryValueFromInt(1),
-		readFrom(vm, VM.ExecutionSegment, 1),
+		memory.MemoryValueFromInt(1).Equal(
+			readFrom(vm, VM.ExecutionSegment, 1)),
 	)
 }

@@ -2,9 +2,11 @@ package zero
 
 import (
 	"encoding/binary"
+	"math/big"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
+	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -38,19 +40,24 @@ func TestLoadCairoZeroProgram(t *testing.T) {
         }
     `)
 
-	stringToFelt := func(bytecode string) *f.Element {
-		felt, err := new(f.Element).SetString(bytecode)
-		if err != nil {
-			panic(err)
+	stringToFelt := func(bytecode string) *safemath.LazyFelt {
+		feltInt, isOk := big.NewInt(0).SetString(bytecode, 0)
+		if !isOk {
+			panic("can't convert a string into a felt")
 		}
-		return felt
+
+		if feltInt.IsUint64() {
+			return new(safemath.LazyFelt).SetUval(feltInt.Uint64())
+		} else {
+			return new(safemath.LazyFelt).SetFelt(new(f.Element).SetBigInt(feltInt))
+		}
 	}
 
 	program, err := LoadCairoZeroProgram(content)
 	require.NoError(t, err)
 
 	require.Equal(t, &Program{
-		Bytecode: []*f.Element{
+		Bytecode: []*safemath.LazyFelt{
 			stringToFelt("0x01"),
 			stringToFelt("0x02"),
 			stringToFelt("0x03"),

@@ -50,3 +50,21 @@ func NextPowerOfTwo(n uint64) uint64 {
 	higherBit := 64 - bits.LeadingZeros64(n)
 	return 1 << higherBit
 }
+
+func AddAndCheckOverflow(x uint64, y uint64) (res uint64, isOverflow bool) {
+	res, carry := bits.Add64(x, y, 0)
+	isOverflow = carry != 0
+	return
+}
+
+func MulAndCheckOverflow(x uint64, y uint64) (res uint64, isOverflow bool) {
+	hi, res := bits.Mul64(x, y)
+	isOverflow = hi != 0
+	return
+}
+
+func SubAndCheckUnderflow(x uint64, y uint64) (res uint64, isOverflow bool) {
+	res, borrow := bits.Sub64(x, y, 0)
+	isOverflow = borrow != 0
+	return
+}
