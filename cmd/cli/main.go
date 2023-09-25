@@ -74,11 +74,15 @@ func main() {
 						if err != nil {
 							return fmt.Errorf("cannot build proof: %w", err)
 						}
-						if err := os.WriteFile(traceLocation, trace, 0644); err != nil {
-							return fmt.Errorf("cannot write relocated trace: %w", err)
+						if traceLocation != "" {
+							if err := os.WriteFile(traceLocation, trace, 0644); err != nil {
+								return fmt.Errorf("cannot write relocated trace: %w", err)
+							}
 						}
-						if err := os.WriteFile(memoryLocation, memory, 0644); err != nil {
-							return fmt.Errorf("cannot write relocated memory: %w", err)
+						if memoryLocation != "" {
+							if err := os.WriteFile(memoryLocation, memory, 0644); err != nil {
+								return fmt.Errorf("cannot write relocated memory: %w", err)
+							}
 						}
 					}
 
