@@ -17,23 +17,55 @@ const (
 // Required by the VM to run hints.
 //
 // HintRunner is defined as an external component of the VM so any user
-// could define its own, allowing the use custom hints
+// could define its own, allowing the use of custom hints
 type HintRunner interface {
 	RunHint(vm *VirtualMachine) error
 }
 
 // Represents the current execution context of the vm
 type Context struct {
+	Pc *mem.MemoryAddress
 	Fp uint64
 	Ap uint64
-	Pc uint64
+}
+
+func (ctx *Context) String() string {
+	return fmt.Sprintf(
+		"Context {pc: %d:%d, fp: %d, ap: %d}",
+		ctx.Pc.SegmentIndex,
+		ctx.Pc.Offset,
+		ctx.Fp,
+		ctx.Ap,
+	)
+}
+
+func (ctx *Context) AddressAp() *mem.MemoryAddress {
+	return &mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: ctx.Ap}
+}
+
+func (ctx *Context) AddressFp() *mem.MemoryAddress {
+	return &mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: ctx.Fp}
+}
+
+func (ctx *Context) AddressPc() *mem.MemoryAddress {
+	return &mem.MemoryAddress{SegmentIndex: ctx.Pc.SegmentIndex, Offset: ctx.Pc.Offset}
 }
 
 // relocates pc, ap and fp to be their real address value
-// that is, pc + 0, ap + programSegmentOffset, fp + programSegmentOffset
-func (ctx *Context) Relocate(executionSegmentOffset uint64) {
-	ctx.Ap += executionSegmentOffset
-	ctx.Fp += executionSegmentOffset
+// that is, pc + 1, ap + programSegmentOffset, fp + programSegmentOffset
+func (ctx *Context) Relocate(executionSegmentOffset uint64) Trace {
+	return Trace{
+		// todo(rodro): this should be improved upon
+		Pc: ctx.Pc.Offset + 1,
+		Ap: ctx.Ap + executionSegmentOffset,
+		Fp: ctx.Fp + executionSegmentOffset,
+	}
+}
+
+type Trace struct {
+	Pc uint64
+	Fp uint64
+	Ap uint64
 }
 
 // This type represents the current execution context of the vm
@@ -48,6 +80,8 @@ type VirtualMachine struct {
 	Step          uint64
 	Trace         []Context
 	config        VirtualMachineConfig
+	// instructions cache
+	instructions map[uint64]*Instruction
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
@@ -71,11 +105,19 @@ func NewVirtualMachine(programBytecode []*f.Element, config VirtualMachineConfig
 	}
 
 	return &VirtualMachine{
-		Context:       Context{Fp: 0, Ap: 0, Pc: 0},
+		Context: Context{
+			Fp: 0,
+			Ap: 0,
+			Pc: &mem.MemoryAddress{
+				SegmentIndex: ProgramSegment,
+				Offset:       0,
+			},
+		},
 		Step:          0,
 		MemoryManager: manager,
 		Trace:         trace,
 		config:        config,
+		instructions:  make(map[uint64]*Instruction, len(programBytecode)),
 	}, nil
 }
 
@@ -85,23 +127,27 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 	// Run hint
 	err := hintRunner.RunHint(vm)
 	if err != nil {
-		return fmt.Errorf("cannot run hint at %d: %w", vm.Context.Pc, err)
+		return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
 	}
 
-	// Decode and execute instruction
-	memoryValue, err := vm.MemoryManager.Memory.Read(ProgramSegment, vm.Context.Pc)
-	if err != nil {
-		return fmt.Errorf("cannot load step at %d: %w", vm.Context.Pc, err)
-	}
+	instruction, ok := vm.instructions[vm.Context.Pc.Offset]
+	if !ok {
+		// ddecode instruction
+		memoryValue, err := vm.MemoryManager.Memory.ReadFromAddress(vm.Context.Pc)
+		if err != nil {
+			return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
+		}
 
-	bytecodeInstruction, err := memoryValue.ToFieldElement()
-	if err != nil {
-		return fmt.Errorf("cannot unwrap step at %d: %w", vm.Context.Pc, err)
-	}
+		bytecodeInstruction, err := memoryValue.ToFieldElement()
+		if err != nil {
+			return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
+		}
 
-	instruction, err := DecodeInstruction(bytecodeInstruction)
-	if err != nil {
-		return fmt.Errorf("cannot decode step at %d: %w", vm.Context.Pc, err)
+		instruction, err = DecodeInstruction(bytecodeInstruction)
+		if err != nil {
+			return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
+		}
+		vm.instructions[vm.Context.Pc.Offset] = instruction
 	}
 
 	// store the trace before state change
@@ -111,62 +157,58 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 
 	err = vm.RunInstruction(instruction)
 	if err != nil {
-		return fmt.Errorf("cannot run step at %d: %w", vm.Context.Pc, err)
+		return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
 	}
 
 	vm.Step++
 	return nil
 }
-func (vm *VirtualMachine) RunStepAt(hinter HintRunner, pc uint64) error {
-	vm.Context.Pc = pc
-	return vm.RunStep(hinter)
-}
 
 func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 	dstCell, err := vm.getCellDst(instruction)
 	if err != nil {
-		return err
+		return fmt.Errorf("dst cell: %w", err)
 	}
 
 	op0Cell, err := vm.getCellOp0(instruction)
 	if err != nil {
-		return err
+		return fmt.Errorf("op0 cell: %w", err)
 	}
 
 	op1Cell, err := vm.getCellOp1(instruction, op0Cell)
 	if err != nil {
-		return err
+		return fmt.Errorf("op1 cell: %w", err)
 	}
 
 	res, err := vm.inferOperand(instruction, dstCell, op0Cell, op1Cell)
 	if err != nil {
-		return err
+		return fmt.Errorf("res infer: %w", err)
 	}
-	if res != nil {
+	if res == nil {
 		res, err = vm.computeRes(instruction, op0Cell, op1Cell)
 		if err != nil {
-			return err
+			return fmt.Errorf("compute res: %w", err)
 		}
 	}
 
 	err = vm.opcodeAssertions(instruction, dstCell, op0Cell, res)
 	if err != nil {
-		return err
+		return fmt.Errorf("opcode assertions: %w", err)
 	}
 
 	nextPc, err := vm.updatePc(instruction, dstCell, op1Cell, res)
 	if err != nil {
-		return err
+		return fmt.Errorf("pc update: %w", err)
 	}
 
 	nextAp, err := vm.updateAp(instruction, res)
 	if err != nil {
-		return err
+		return fmt.Errorf("ap update: %w", err)
 	}
 
 	nextFp, err := vm.updateFp(instruction, dstCell)
 	if err != nil {
-		return err
+		return fmt.Errorf("fp update: %w", err)
 	}
 
 	vm.Context.Pc = nextPc
@@ -177,20 +219,16 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 }
 
 // It returns the current trace entry, the public memory, and the occurrence of an error
-func (vm *VirtualMachine) Proof() ([]Context, []*f.Element, error) {
+func (vm *VirtualMachine) Proof() ([]Trace, []*f.Element, error) {
 	if !vm.config.ProofMode {
-		return nil, nil, fmt.Errorf("cannot get proof if proof mode is off")
+		return nil, nil, fmt.Errorf("proof mode is off")
 	}
 
-	totalBytecode := vm.MemoryManager.Memory.Segments[ProgramSegment].Len()
-	for i := range vm.Trace {
-		vm.Trace[i].Relocate(totalBytecode)
-	}
+	relocatedTrace := vm.relocateTrace()
 
-	// after that, get the relocated memory
 	relocatedMemory := vm.MemoryManager.RelocateMemory()
 
-	return vm.Trace, relocatedMemory, nil
+	return relocatedTrace, relocatedMemory, nil
 }
 
 func (vm *VirtualMachine) getCellDst(instruction *Instruction) (*mem.Cell, error) {
@@ -203,7 +241,7 @@ func (vm *VirtualMachine) getCellDst(instruction *Instruction) (*mem.Cell, error
 
 	addr, isOverflow := safemath.SafeOffset(dstRegister, instruction.OffDest)
 	if isOverflow {
-		return nil, fmt.Errorf("integer overflow while appying offset: 0x%x %d", dstRegister, instruction.OffDest)
+		return nil, fmt.Errorf("offset overflow: %d + %d", dstRegister, instruction.OffDest)
 	}
 	return vm.MemoryManager.Memory.Peek(ExecutionSegment, addr)
 }
@@ -218,7 +256,7 @@ func (vm *VirtualMachine) getCellOp0(instruction *Instruction) (*mem.Cell, error
 
 	addr, isOverflow := safemath.SafeOffset(op0Register, instruction.OffOp0)
 	if isOverflow {
-		return nil, fmt.Errorf("integer overflow while appying offset: 0x%x %d", op0Register, instruction.OffOp0)
+		return nil, fmt.Errorf("offset overflow: %d + %d", op0Register, instruction.OffOp0)
 	}
 	return vm.MemoryManager.Memory.Peek(ExecutionSegment, addr)
 }
@@ -227,23 +265,23 @@ func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell
 	var op1Address *mem.MemoryAddress
 	switch instruction.Op1Source {
 	case Op0:
-		// in this case Op0 is being used as an address, and must be of unwrapped as is
+		// in this case Op0 is being used as an address, and must be of unwrapped as it
 		op0Address, err := op0Cell.Read().ToMemoryAddress()
 		if err != nil {
-			return nil, fmt.Errorf("expected op0 to be an address: %w", err)
+			return nil, fmt.Errorf("op0 is not an address: %w", err)
 		}
 		op1Address = mem.NewMemoryAddress(op0Address.SegmentIndex, op0Address.Offset)
 	case Imm:
-		op1Address = mem.NewMemoryAddress(ProgramSegment, vm.Context.Pc)
+		op1Address = vm.Context.AddressPc()
 	case FpPlusOffOp1:
-		op1Address = mem.NewMemoryAddress(ExecutionSegment, vm.Context.Fp)
+		op1Address = vm.Context.AddressFp()
 	case ApPlusOffOp1:
-		op1Address = mem.NewMemoryAddress(ExecutionSegment, vm.Context.Ap)
+		op1Address = vm.Context.AddressAp()
 	}
 
 	addr, isOverflow := safemath.SafeOffset(op1Address.Offset, instruction.OffOp1)
 	if isOverflow {
-		return nil, fmt.Errorf("integer overflow while appying offset: 0x%x %d", op1Address.Offset, instruction.OffOp1)
+		return nil, fmt.Errorf("offset overflow: %d + %d", op1Address.Offset, instruction.OffOp1)
 	}
 	op1Address.Offset = addr
 
@@ -263,7 +301,7 @@ func (vm *VirtualMachine) inferOperand(
 		return nil, nil
 	}
 	if !dstCell.Accessed {
-		return nil, fmt.Errorf("impossible to infer unknown operand, dst cell is unknown too")
+		return nil, fmt.Errorf("dst cell is unknown")
 	}
 
 	var knownOpCell *mem.Cell
@@ -314,7 +352,7 @@ func (vm *VirtualMachine) computeRes(
 		return mem.EmptyMemoryValueAsFelt().Mul(op0, op1)
 	}
 
-	return nil, fmt.Errorf("unknown res flag value: %d", instruction.Res)
+	return nil, fmt.Errorf("invalid res flag value: %d", instruction.Res)
 }
 
 func (vm *VirtualMachine) opcodeAssertions(
@@ -326,19 +364,29 @@ func (vm *VirtualMachine) opcodeAssertions(
 	switch instruction.Opcode {
 	case Call:
 		// Store at [ap] the current fp
-		err := dstCell.Write(mem.MemoryValueFromSegmentAndOffset(ExecutionSegment, vm.Context.Fp))
+		err := dstCell.Write(mem.MemoryValueFromMemoryAddress(vm.Context.AddressFp()))
+		if err != nil {
+			return err
+		}
+		err = dstCell.Write(mem.MemoryValueFromMemoryAddress(vm.Context.AddressFp()))
 		if err != nil {
 			return err
 		}
 
-		// Write in [ap + 1] the instruction to execute
+		// Write in [ap + 1] the next instruction to execute
 		err = op0Cell.Write(
-			mem.MemoryValueFromSegmentAndOffset(ProgramSegment, vm.Context.Pc+uint64(instruction.Size())),
+			mem.MemoryValueFromSegmentAndOffset(
+				vm.Context.Pc.SegmentIndex,
+				vm.Context.Pc.Offset+uint64(instruction.Size()),
+			),
 		)
 		if err != nil {
 			return err
 		}
-
+		err = dstCell.Write(mem.MemoryValueFromMemoryAddress(vm.Context.AddressFp()))
+		if err != nil {
+			return err
+		}
 	case AssertEq:
 		// assert that the calculated res is stored in dst
 		err := dstCell.Write(res)
@@ -354,37 +402,42 @@ func (vm *VirtualMachine) updatePc(
 	dstCell *mem.Cell,
 	op1Cell *mem.Cell,
 	res *mem.MemoryValue,
-) (uint64, error) {
+) (*mem.MemoryAddress, error) {
 	switch instruction.PcUpdate {
 	case NextInstr:
-		return vm.Context.Pc + uint64(instruction.Size()), nil
+		return mem.NewMemoryAddress(
+			vm.Context.Pc.SegmentIndex,
+			vm.Context.Pc.Offset+uint64(instruction.Size()),
+		), nil
 	case Jump:
-		return res.Uint64()
-	case JumpRel:
-		relAddr, err := res.Uint64()
+		addr, err := res.ToMemoryAddress()
 		if err != nil {
-			return 0, err
+			return nil, fmt.Errorf("absolute jump: %w", err)
 		}
-		return vm.Context.Pc + relAddr, nil
+		return addr, nil
+	case JumpRel:
+		val, err := res.ToFieldElement()
+		if err != nil {
+			return nil, fmt.Errorf("relative jump: %w", err)
+		}
+		return new(mem.MemoryAddress).Add(vm.Context.Pc, val)
 	case Jnz:
 		dest, err := dstCell.Read().ToFieldElement()
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 
 		if dest.IsZero() {
-			return vm.Context.Pc + uint64(instruction.Size()), nil
+			return mem.NewMemoryAddress(vm.Context.Pc.SegmentIndex, vm.Context.Pc.Offset+uint64(instruction.Size())), nil
 		}
-
-		// todo(rodro): math check when relAddr is negative
-		relAddr, err := res.Uint64()
+		val, err := op1Cell.Read().ToFieldElement()
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
-		return vm.Context.Pc + relAddr, nil
+		return new(mem.MemoryAddress).Add(vm.Context.Pc, val)
 
 	}
-	return 0, fmt.Errorf("unkwon pc update value: %d", instruction.PcUpdate)
+	return nil, fmt.Errorf("unkwon pc update value: %d", instruction.PcUpdate)
 }
 
 func (vm *VirtualMachine) updateAp(instruction *Instruction, res *mem.MemoryValue) (uint64, error) {
@@ -414,10 +467,21 @@ func (vm *VirtualMachine) updateFp(instruction *Instruction, dstCell *mem.Cell) 
 		// [dst] should be a memory address of the form (executionSegment, fp - 2)
 		dst, err := dstCell.Read().ToMemoryAddress()
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("ret: %w", err)
 		}
 		return dst.Offset, nil
 	default:
 		return vm.Context.Fp, nil
 	}
+}
+
+func (vm *VirtualMachine) relocateTrace() []Trace {
+	// one is added, because prover expect that the first element to be on
+	// indexed on 1 instead of 0
+	relocatedTrace := make([]Trace, len(vm.Trace))
+	totalBytecode := vm.MemoryManager.Memory.Segments[ProgramSegment].Len() + 1
+	for i := range vm.Trace {
+		relocatedTrace[i] = vm.Trace[i].Relocate(totalBytecode)
+	}
+	return relocatedTrace
 }

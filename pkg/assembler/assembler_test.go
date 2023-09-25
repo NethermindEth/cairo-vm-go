@@ -9,7 +9,7 @@ import (
 )
 
 func TestAssertEqRegister(t *testing.T) {
-	encode := parseSingleInstruction("[ap + 0] = [fp + 0], ap++;")
+	encode := parseSingleInstruction("[ap] = [fp + 0], ap++;")
 
 	// verify offsets
 	dstOffset := uint16(encode)

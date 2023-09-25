@@ -43,7 +43,7 @@ func TestCellWriteAndRead(t *testing.T) {
 }
 
 func TestSegmentRead(t *testing.T) {
-	segment := Segment{Data: []Cell{
+	segment := Segment{Data: []*Cell{
 		{Accessed: false, Value: MemoryValueFromInt(3)},
 		{Accessed: false, Value: MemoryValueFromInt(5)},
 		{Accessed: true, Value: MemoryValueFromInt(9)},
@@ -63,7 +63,7 @@ func TestSegmentRead(t *testing.T) {
 }
 
 func TestSegmentPeek(t *testing.T) {
-	segment := Segment{Data: []Cell{
+	segment := Segment{Data: []*Cell{
 		{Accessed: false, Value: MemoryValueFromInt(2)},
 		{Accessed: true, Value: MemoryValueFromInt(4)},
 	}}
@@ -79,7 +79,7 @@ func TestSegmentPeek(t *testing.T) {
 }
 
 func TestSegmentWrite(t *testing.T) {
-	segment := Segment{Data: []Cell{
+	segment := Segment{Data: []*Cell{
 		{Accessed: false, Value: nil},
 		{Accessed: false, Value: nil},
 	}}
@@ -105,7 +105,7 @@ func TestSegmentWrite(t *testing.T) {
 }
 
 func TestSegmentReadAndWrite(t *testing.T) {
-	segment := Segment{Data: []Cell{
+	segment := Segment{Data: []*Cell{
 		{Accessed: false, Value: nil},
 	}}
 	err := segment.Write(0, MemoryValueFromInt(48))
@@ -115,7 +115,7 @@ func TestSegmentReadAndWrite(t *testing.T) {
 }
 
 func TestIncreaseSegmentSize(t *testing.T) {
-	segment := Segment{Data: []Cell{
+	segment := Segment{Data: []*Cell{
 		{Accessed: true, Value: MemoryValueFromInt(1)},
 		{Accessed: true, Value: MemoryValueFromInt(2)},
 		{Accessed: true, Value: MemoryValueFromInt(3)},
