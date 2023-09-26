@@ -96,3 +96,30 @@ func TestTestLessThanTrue(t *testing.T) {
 		readFrom(vm, VM.ExecutionSegment, 1),
 	)
 }
+
+func TestDivMod(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(23))
+
+	lhs := Immediate(*big.NewInt(13))
+
+	var rhsRef FpCellRef = 0
+	rhs := Deref{rhsRef}
+
+	hint := DivMod{
+		lhs: lhs,
+		rhs: rhs,
+		// quotient:  quo,
+		// remainder: rem,
+	}
+
+	err := hint.Execute(vm)
+	require.Nil(t, err)
+	require.Equal(
+		t,
+		memory.MemoryValueFromInt(1),
+		readFrom(vm, VM.ExecutionSegment, 1),
+	)
+}
