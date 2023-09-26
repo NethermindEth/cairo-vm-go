@@ -176,6 +176,11 @@ func TestIdentifiers(t *testing.T) {
 	content := []byte(`
         {
             "identifiers": {
+                "__main__.fib": {
+                    "decorators": [],
+                    "pc": 9,
+                    "type": "function"
+                },
                 "__main__.BitwiseBuiltin": {
                     "destination": "starkware.cairo.common.cairo_builtins.BitwiseBuiltin",
                     "type": "alias"
@@ -216,6 +221,11 @@ func TestIdentifiers(t *testing.T) {
 		t,
 		&ZeroProgram{
 			Identifiers: map[string]any{
+				"__main__.fib": map[string]any{
+					"decorators": make([]any, 0),
+					"pc":         float64(9),
+					"type":       "function",
+				},
 				"__main__.BitwiseBuiltin": map[string]any{
 					"destination": "starkware.cairo.common.cairo_builtins.BitwiseBuiltin",
 					"type":        "alias",

@@ -7,10 +7,12 @@ default: help
 
 help:
 	@echo "This makefile allos the following commands"
-	@echo "  make build       - compile the source code"
-	@echo "  make clean       - remove binary files"
-	@echo "  make test        - run tests"
-	@echo "  make help        - show this help message"
+	@echo "  make build           - compile the source code"
+	@echo "  make clean           - remove binary files"
+	@echo "  make unit            - run unit tests"
+	@echo "  make integration     - run integration tests"
+	@echo "  make testall         - run all tests"
+	@echo "  make help            - show this help message"
 
 build:
 	@echo "Building..."
@@ -27,8 +29,22 @@ clean:
 	@echo "Cleaning up..."
 	@rm -rf $(BINARY_DIR)
 
-test:
-	@echo "Running tests..."
+unit:
+	@echo "Running unit tests..."
+	@go test ./pkg/...
+
+integration:
+	@echo "Running integration tests..."
+	@$(MAKE) build
+	@if [ $$? -eq 0 ]; then \
+		go test ./integration_tests/... -v; \
+	else \
+		echo "Integration tests were not run"; \
+		exit 1; \
+	fi
+
+testall:
+	@echo "Running all tests..."
 	@go test ./...
 
 format:

@@ -27,12 +27,15 @@ func (address *MemoryAddress) Equal(other *MemoryAddress) bool {
 
 // Adds a memory address and a field element
 func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) (*MemoryAddress, error) {
-	if !rhs.IsUint64() {
-		return nil, fmt.Errorf("field element does not fit in uint64: %s", rhs.String())
+	lhsOffset := new(f.Element).SetUint64(lhs.Offset)
+	newOffset := new(f.Element).Add(lhsOffset, rhs)
+
+	if !newOffset.IsUint64() {
+		return nil, fmt.Errorf("new offset bigger than uint64: %s", rhs.Text(10))
 	}
 
 	address.SegmentIndex = lhs.SegmentIndex
-	address.Offset = lhs.Offset + rhs.Uint64()
+	address.Offset = newOffset.Uint64()
 	return address, nil
 }
 
@@ -83,7 +86,7 @@ func (address *MemoryAddress) Relocate(segmentsOffset []uint64) *f.Element {
 
 func (address MemoryAddress) String() string {
 	return fmt.Sprintf(
-		"Memory Address: segment: %d, offset: %d", address.SegmentIndex, address.Offset,
+		"%d:%d", address.SegmentIndex, address.Offset,
 	)
 }
 
@@ -111,6 +114,17 @@ func MemoryValueFromFieldElement(felt *f.Element) *MemoryValue {
 }
 
 func MemoryValueFromInt[T constraints.Integer](v T) *MemoryValue {
+	if v >= 0 {
+		return MemoryValueFromUint(uint64(v))
+	}
+	lhs := &f.Element{}
+	rhs := new(f.Element).SetUint64(uint64(-v))
+	return &MemoryValue{
+		felt: new(f.Element).Sub(lhs, rhs),
+	}
+}
+
+func MemoryValueFromUint[T constraints.Unsigned](v T) *MemoryValue {
 	newElement := f.NewElement(uint64(v))
 	return &MemoryValue{
 		felt: &newElement,
@@ -125,8 +139,10 @@ func MemoryValueFromSegmentAndOffset[T constraints.Integer](segmentIndex, offset
 
 func MemoryValueFromAny(anyType any) (*MemoryValue, error) {
 	switch anyType := anyType.(type) {
-	case uint64:
+	case int:
 		return MemoryValueFromInt(anyType), nil
+	case uint64:
+		return MemoryValueFromUint(anyType), nil
 	case *f.Element:
 		return MemoryValueFromFieldElement(anyType), nil
 	case *MemoryAddress:
