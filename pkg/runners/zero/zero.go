@@ -332,14 +332,6 @@ func (runner *ZeroRunner) pc() *memory.MemoryAddress {
 	return runner.vm.Context.Pc
 }
 
-func (runner *ZeroRunner) ap() uint64 {
-	return runner.vm.Context.Ap
-}
-
-func (runner *ZeroRunner) fp() uint64 {
-	return runner.vm.Context.Fp
-}
-
 func (runner *ZeroRunner) steps() uint64 {
 	return runner.vm.Step
 }
