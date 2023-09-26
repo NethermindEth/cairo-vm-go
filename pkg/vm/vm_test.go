@@ -383,7 +383,7 @@ func TestComputeAddRes(t *testing.T) {
 	expected = mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 30))
 	assert.Equal(t, expected, res)
 
-	// Test with both operands being memory addresses
+	// Test with both operands being memory addresses - should fail
 	cellOp0.Value = mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))
 	cellOp1.Value = mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15))
 	_, err = vm.computeRes(&instruction, cellOp0, cellOp1)
