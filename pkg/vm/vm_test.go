@@ -348,59 +348,54 @@ func TestInferOperandSub(t *testing.T) {
 	assert.Equal(t, expectedOp0Cell, op0Cell)
 }
 
-func TestComputeAddRes(t *testing.T) {
+func TestComputeAddRes_AddrToFelt(t *testing.T) {
 	vm := defaultVirtualMachine()
+	instruction := Instruction{Res: AddOperands}
 
-	instruction := Instruction{
-		Res: AddOperands,
-	}
+	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))}
+	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(15)}
 
-	// Helper function to create a memory cell with a given value.
-	newCell := func(value *mem.MemoryValue) *mem.Cell {
-		return &mem.Cell{
-			Accessed: true,
-			Value:    value,
-		}
-	}
+	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.NoError(t, err)
+	expected := mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 25))
+	assert.Equal(t, expected, res)
+}
 
-	// Helper function to run the computeRes operation and compare the result.
-	testCompute := func(cellOp0, cellOp1 *mem.Cell, expected *mem.MemoryValue) {
-		res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
-		require.NoError(t, err)
-		assert.Equal(t, expected, res)
-	}
+func TestComputeAddRes_FeltToAddr(t *testing.T) {
+	vm := defaultVirtualMachine()
+	instruction := Instruction{Res: AddOperands}
 
-	t.Run("Memory Address to Felt", func(t *testing.T) {
-		testCompute(
-			newCell(mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))),
-			newCell(mem.MemoryValueFromInt(15)),
-			mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 25)),
-		)
-	})
+	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(15)}
+	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15))}
 
-	t.Run("Felt to Memory Address", func(t *testing.T) {
-		testCompute(
-			newCell(mem.MemoryValueFromInt(15)),
-			newCell(mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15))),
-			mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 30)),
-		)
-	})
+	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.NoError(t, err)
+	expected := mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 30))
+	assert.Equal(t, expected, res)
+}
 
-	t.Run("Both Operands Memory Addresses", func(t *testing.T) {
-		_, err := vm.computeRes(&instruction,
-			newCell(mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))),
-			newCell(mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15))),
-		)
-		require.Error(t, err) // Expecting an error since adding two addresses is not allowed
-	})
+func TestComputeAddRes_BothAddrs(t *testing.T) {
+	vm := defaultVirtualMachine()
+	instruction := Instruction{Res: AddOperands}
 
-	t.Run("Both Operands Felts", func(t *testing.T) {
-		testCompute(
-			newCell(mem.MemoryValueFromInt(10)),
-			newCell(mem.MemoryValueFromInt(15)),
-			mem.MemoryValueFromInt(25),
-		)
-	})
+	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))}
+	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15))}
+
+	_, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.Error(t, err) // Expecting an error since adding two addresses is not allowed
+}
+
+func TestComputeAddRes_BothFelts(t *testing.T) {
+	vm := defaultVirtualMachine()
+	instruction := Instruction{Res: AddOperands}
+
+	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(10)}
+	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(15)}
+
+	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.NoError(t, err)
+	expected := mem.MemoryValueFromInt(25)
+	assert.Equal(t, expected, res)
 }
 
 func TestOpcodeAssertionAssertEq(t *testing.T) {
