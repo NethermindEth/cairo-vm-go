@@ -354,48 +354,53 @@ func TestComputeAddRes(t *testing.T) {
 	instruction := Instruction{
 		Res: AddOperands,
 	}
-	// Test Memory Address to Felt
-	cellOp0 := &mem.Cell{
-		Accessed: true,
-		Value: mem.MemoryValueFromMemoryAddress(
-			mem.NewMemoryAddress(2, 10),
-		),
+
+	// Helper function to create a memory cell with a given value.
+	newCell := func(value *mem.MemoryValue) *mem.Cell {
+		return &mem.Cell{
+			Accessed: true,
+			Value:    value,
+		}
 	}
 
-	cellOp1 := &mem.Cell{
-		Accessed: true,
-		Value:    mem.MemoryValueFromInt(15),
+	// Helper function to run the computeRes operation and compare the result.
+	testCompute := func(cellOp0, cellOp1 *mem.Cell, expected *mem.MemoryValue) {
+		res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+		require.NoError(t, err)
+		assert.Equal(t, expected, res)
 	}
 
-	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
-	require.NoError(t, err)
+	t.Run("Memory Address to Felt", func(t *testing.T) {
+		testCompute(
+			newCell(mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))),
+			newCell(mem.MemoryValueFromInt(15)),
+			mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 25)),
+		)
+	})
 
-	expected := mem.MemoryValueFromMemoryAddress(
-		mem.NewMemoryAddress(2, 25),
-	)
+	t.Run("Felt to Memory Address", func(t *testing.T) {
+		testCompute(
+			newCell(mem.MemoryValueFromInt(15)),
+			newCell(mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15))),
+			mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 30)),
+		)
+	})
 
-	assert.Equal(t, expected, res)
-	// Test Felt to memory address (vice-versa of the previous case)
-	cellOp0.Value = mem.MemoryValueFromInt(15)
-	cellOp1.Value = mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15))
-	res, err = vm.computeRes(&instruction, cellOp0, cellOp1)
-	require.NoError(t, err)
-	expected = mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 30))
-	assert.Equal(t, expected, res)
+	t.Run("Both Operands Memory Addresses", func(t *testing.T) {
+		_, err := vm.computeRes(&instruction,
+			newCell(mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))),
+			newCell(mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15))),
+		)
+		require.Error(t, err) // Expecting an error since adding two addresses is not allowed
+	})
 
-	// Test with both operands being memory addresses - should fail
-	cellOp0.Value = mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))
-	cellOp1.Value = mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15))
-	_, err = vm.computeRes(&instruction, cellOp0, cellOp1)
-	require.Error(t, err) // Expecting an error since adding two addresses is not allowed
-
-	// Test with both operands being field elements (Felts)
-	cellOp0.Value = mem.MemoryValueFromInt(10)
-	cellOp1.Value = mem.MemoryValueFromInt(15)
-	res, err = vm.computeRes(&instruction, cellOp0, cellOp1)
-	require.NoError(t, err)
-	expected = mem.MemoryValueFromInt(25)
-	assert.Equal(t, expected, res)
+	t.Run("Both Operands Felts", func(t *testing.T) {
+		testCompute(
+			newCell(mem.MemoryValueFromInt(10)),
+			newCell(mem.MemoryValueFromInt(15)),
+			mem.MemoryValueFromInt(25),
+		)
+	})
 }
 
 func TestOpcodeAssertionAssertEq(t *testing.T) {
