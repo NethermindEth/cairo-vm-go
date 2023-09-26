@@ -348,6 +348,31 @@ func TestInferOperandSub(t *testing.T) {
 	assert.Equal(t, expectedOp0Cell, op0Cell)
 }
 
+func TestComputeRes_Unconstrained(t *testing.T) {
+	vm := defaultVirtualMachine()
+	instruction := Instruction{Res: Unconstrained}
+
+	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(10)}
+	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(15)}
+
+	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.NoError(t, err)
+	assert.Nil(t, res)
+}
+
+func TestComputeRes_Op1(t *testing.T) {
+	vm := defaultVirtualMachine()
+	instruction := Instruction{Res: Op1}
+
+	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(10)}
+	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(15)}
+
+	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.NoError(t, err)
+	expected := mem.MemoryValueFromInt(15)
+	assert.Equal(t, expected, res)
+}
+
 func TestComputeAddRes_AddrToFelt(t *testing.T) {
 	vm := defaultVirtualMachine()
 	instruction := Instruction{Res: AddOperands}
@@ -396,6 +421,94 @@ func TestComputeAddRes_BothFelts(t *testing.T) {
 	require.NoError(t, err)
 	expected := mem.MemoryValueFromInt(25)
 	assert.Equal(t, expected, res)
+}
+
+// Felt should be Positive or Negative. Thus four test cases
+func TestComputeMulRes_PToPFelt(t *testing.T) {
+	//Positive Felt to Positive Felt compute
+	vm := defaultVirtualMachine()
+	instruction := Instruction{Res: MulOperands}
+
+	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(10)}
+	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(15)}
+
+	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.NoError(t, err)
+	expected := mem.MemoryValueFromInt(150)
+	assert.Equal(t, expected, res)
+}
+func TestComputeMulRes_NToPFelts(t *testing.T) {
+	vm := defaultVirtualMachine()
+	instruction := Instruction{Res: MulOperands}
+	//Negative to Positive
+	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(-10)}
+	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(15)}
+
+	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.NoError(t, err)
+	expected := mem.MemoryValueFromInt(-150)
+	assert.Equal(t, expected, res)
+}
+
+func TestComputeMulRes_PToNFelt(t *testing.T) {
+	vm := defaultVirtualMachine()
+	instruction := Instruction{Res: MulOperands}
+	//Positive to Negative
+	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(10)}
+	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(-15)}
+
+	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.NoError(t, err)
+	expected := mem.MemoryValueFromInt(-150)
+	assert.Equal(t, expected, res)
+}
+
+func TestComputeMulRes_NToNFelt(t *testing.T) {
+	vm := defaultVirtualMachine()
+	instruction := Instruction{Res: MulOperands}
+	//Netagive to Negative
+	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(-10)}
+	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(-15)}
+
+	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.NoError(t, err)
+	expected := mem.MemoryValueFromInt(150)
+	assert.Equal(t, expected, res)
+}
+
+// Multiplication does not involve addresses
+// three failing cases
+func TestComputeMulRes_AddrToFelt(t *testing.T) {
+	vm := defaultVirtualMachine()
+	instruction := Instruction{Res: MulOperands}
+
+	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))}
+	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(15)}
+
+	_, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.Error(t, err) // Expecting an error since multiplying an address with a felt is not allowed
+}
+
+func TestComputeMulRes_FeltToAddr(t *testing.T) {
+	vm := defaultVirtualMachine()
+	instruction := Instruction{Res: MulOperands}
+
+	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(15)}
+	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))}
+
+	_, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.Error(t, err)
+}
+
+func TestComputeMulRes_BothAddrs(t *testing.T) {
+	vm := defaultVirtualMachine()
+	instruction := Instruction{Res: MulOperands}
+
+	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))}
+	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15))}
+
+	_, err := vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.Error(t, err) // Expecting an error since multiplying two addresses is not allowed
 }
 
 func TestOpcodeAssertionAssertEq(t *testing.T) {
