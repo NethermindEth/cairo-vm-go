@@ -429,7 +429,7 @@ func TestUpdatePcJump(t *testing.T) {
 
 	vm.Context.Pc = mem.NewMemoryAddress(0, 3)
 	jumpAddr := uint64(10)
-	res := mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(0, jumpAddr))
+	res := mem.MemoryValueFromSegmentAndOffset(0, jumpAddr)
 
 	instruction := Instruction{
 		PcUpdate: Jump,
