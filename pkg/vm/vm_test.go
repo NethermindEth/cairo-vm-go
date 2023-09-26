@@ -30,6 +30,8 @@ func TestVMCreation(t *testing.T) {
 // - cellOp0: with ap and fp (using positive and negative offsets)
 // - cellOp1: all four different outputs (using positive and negative offsets accordingly)
 // - calculate res: verify valid mulitplication and addition. Also verify nil output when correct
+// - (Jake) [V] Verify addition
+// - (WIP)  [ ] Verify Multiplication / Nil Output
 // - update PC: verify all four cases. Besides, when testing relative jump (with or without conditions) that a negative relative address
 // - update AP: verify all posible cases, and when Res is a negative value
 // - update FP: verify all posible cases, and when Res is a negative value
