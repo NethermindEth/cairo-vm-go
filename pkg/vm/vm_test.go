@@ -427,9 +427,9 @@ func TestUpdatePcNextInstrImm(t *testing.T) {
 func TestUpdatePcJump(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	vm.Context.Pc = 3
+	vm.Context.Pc = mem.NewMemoryAddress(0, 3)
 	jumpAddr := uint64(10)
-	res := mem.MemoryValueFromInt(jumpAddr)
+	res := mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(0, jumpAddr))
 
 	instruction := Instruction{
 		PcUpdate: Jump,
@@ -437,13 +437,13 @@ func TestUpdatePcJump(t *testing.T) {
 	nextPc, err := vm.updatePc(&instruction, nil, nil, res)
 
 	require.NoError(t, err)
-	assert.Equal(t, jumpAddr, nextPc)
+	assert.Equal(t, mem.NewMemoryAddress(0, jumpAddr), nextPc)
 }
 
 func TestUpdatePcJumpRel(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	vm.Context.Pc = 3
+	vm.Context.Pc = mem.NewMemoryAddress(0, 3)
 	relAddr := uint64(10)
 	res := mem.MemoryValueFromInt(relAddr)
 
@@ -453,13 +453,13 @@ func TestUpdatePcJumpRel(t *testing.T) {
 	nextPc, err := vm.updatePc(&instruction, nil, nil, res)
 
 	require.NoError(t, err)
-	assert.Equal(t, vm.Context.Pc+relAddr, nextPc)
+	assert.Equal(t, mem.NewMemoryAddress(0, 3+relAddr), nextPc)
 }
 
 func TestUpdatePcJnz(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	vm.Context.Pc = 11
+	vm.Context.Pc = mem.NewMemoryAddress(0, 11)
 	relAddr := uint64(10)
 
 	res := mem.MemoryValueFromInt(10)
@@ -478,13 +478,13 @@ func TestUpdatePcJnz(t *testing.T) {
 	nextPc, err := vm.updatePc(&instruction, dstCell, op1Cell, res)
 
 	require.NoError(t, err)
-	assert.Equal(t, vm.Context.Pc+relAddr, nextPc)
+	assert.Equal(t, mem.NewMemoryAddress(0, 11+relAddr), nextPc)
 }
 
 func TestUpdatePcJnzDstZero(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	vm.Context.Pc = 11
+	vm.Context.Pc = mem.NewMemoryAddress(0, 11)
 
 	dstCell := &mem.Cell{
 		Accessed: true,
@@ -497,13 +497,13 @@ func TestUpdatePcJnzDstZero(t *testing.T) {
 	nextPc, err := vm.updatePc(&instruction, dstCell, nil, nil)
 
 	require.NoError(t, err)
-	assert.Equal(t, vm.Context.Pc+1, nextPc)
+	assert.Equal(t, mem.NewMemoryAddress(0, 11+1), nextPc)
 }
 
 func TestUpdatePcJnzDstZeroImm(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	vm.Context.Pc = 9
+	vm.Context.Pc = mem.NewMemoryAddress(0, 9)
 
 	dstCell := &mem.Cell{
 		Accessed: true,
@@ -516,7 +516,7 @@ func TestUpdatePcJnzDstZeroImm(t *testing.T) {
 	nextPc, err := vm.updatePc(&instruction, dstCell, nil, nil)
 
 	require.NoError(t, err)
-	assert.Equal(t, vm.Context.Pc+2, nextPc)
+	assert.Equal(t, mem.NewMemoryAddress(0, 9+2), nextPc)
 }
 
 func TestUpdateApAddOne(t *testing.T) {
