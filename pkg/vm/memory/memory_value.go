@@ -220,9 +220,11 @@ func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 			return nil, errors.New("rhs is not a felt")
 		}
 		mv.address, err = mv.address.Add(lhs.address, rhs.felt)
+		mv.felt = nil // Felt field is set to nil
 	} else {
 		if rhs.IsAddress() {
-			mv.address, err = mv.address.Add(rhs.address, lhs.felt)
+			mv.address, err = rhs.address.Add(rhs.address, lhs.felt)
+			mv.felt = nil
 		} else {
 			mv.felt = mv.felt.Add(lhs.felt, rhs.felt)
 		}

@@ -354,7 +354,7 @@ func TestComputeAddRes(t *testing.T) {
 	instruction := Instruction{
 		Res: AddOperands,
 	}
-
+	// Test Memory Address to Felt
 	cellOp0 := &mem.Cell{
 		Accessed: true,
 		Value: mem.MemoryValueFromMemoryAddress(
@@ -374,6 +374,27 @@ func TestComputeAddRes(t *testing.T) {
 		mem.NewMemoryAddress(2, 25),
 	)
 
+	assert.Equal(t, expected, res)
+	// Test Felt to memory address (vice-versa of the previous case)
+	cellOp0.Value = mem.MemoryValueFromInt(15)
+	cellOp1.Value = mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15))
+	res, err = vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.NoError(t, err)
+	expected = mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 30))
+	assert.Equal(t, expected, res)
+
+	// Test with both operands being memory addresses
+	cellOp0.Value = mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))
+	cellOp1.Value = mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15))
+	_, err = vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.Error(t, err) // Expecting an error since adding two addresses is not allowed
+
+	// Test with both operands being field elements (Felts)
+	cellOp0.Value = mem.MemoryValueFromInt(10)
+	cellOp1.Value = mem.MemoryValueFromInt(15)
+	res, err = vm.computeRes(&instruction, cellOp0, cellOp1)
+	require.NoError(t, err)
+	expected = mem.MemoryValueFromInt(25)
 	assert.Equal(t, expected, res)
 }
 
