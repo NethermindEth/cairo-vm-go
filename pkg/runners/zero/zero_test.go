@@ -2,6 +2,7 @@ package zero
 
 import (
 	"encoding/binary"
+	"math"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
@@ -76,7 +77,7 @@ func TestSimpleProgram(t *testing.T) {
         ret;
     `)
 
-	runner, err := NewRunner(program, false)
+	runner, err := NewRunner(program, false, math.MaxUint64)
 	require.NoError(t, err)
 
 	endPc, err := runner.InitializeMainEntrypoint()
@@ -109,6 +110,114 @@ func TestSimpleProgram(t *testing.T) {
 	assert.Equal(t, uint64(5), runner.vm.Context.Ap)
 	assert.Equal(t, uint64(0), runner.vm.Context.Fp)
 	assert.Equal(t, expectedPc, runner.vm.Context.Pc)
+}
+
+func TestStepLimitExceeded(t *testing.T) {
+	program := createDefaultProgram(`
+        [ap] = 2;
+        [ap + 1] = 3;
+        [ap + 2] = 5;
+        [ap + 3] = 7;
+        [ap + 4] = 11;
+        [ap + 5] = 13;
+        ret;
+    `)
+
+	runner, err := NewRunner(program, false, 3)
+	require.NoError(t, err)
+
+	endPc, err := runner.InitializeMainEntrypoint()
+	require.NoError(t, err)
+
+	expectedPc := memory.NewMemoryAddress(3, 0)
+	require.Equal(t, expectedPc, endPc)
+
+	err = runner.RunUntilPc(endPc)
+	require.ErrorContains(t, err, "step limit exceeded")
+
+	executionSegment := runner.segments()[VM.ExecutionSegment]
+
+	assert.Equal(
+		t,
+		createSegment(
+			// return fp
+			memory.NewMemoryAddress(2, 0),
+			// next pc
+			expectedPc,
+			2,
+			3,
+			5,
+		),
+		executionSegment,
+	)
+
+	// when running on non proof mode, the first to elements
+	// are dummy values. So ap and fp starts at 2
+	assert.Equal(t, uint64(2), runner.vm.Context.Ap)
+	assert.Equal(t, uint64(2), runner.vm.Context.Fp)
+	// the fourth instruction starts at 0:6 because all previous one have size 2
+	assert.Equal(t, memory.NewMemoryAddress(0, 6), runner.vm.Context.Pc)
+	// step limit exceeded
+	assert.Equal(t, uint64(3), runner.steps())
+}
+
+func TestStepLimitExceededProofMode(t *testing.T) {
+	program := createDefaultProgram(`
+        [ap] = 2;
+        [ap + 1] = 3;
+        [ap + 2] = 5;
+        [ap + 3] = 7;
+        [ap + 4] = 11;
+        [ap + 5] = 13;
+        jmp rel 0;
+    `)
+	// properties required by proofmode
+	program.Labels = map[string]uint64{
+		"__start__": 0,
+		"__end__":   uint64(len(program.Bytecode)),
+	}
+
+	for _, maxstep := range []uint64{6, 7} {
+		t.Logf("Using maxstep: %d\n", maxstep)
+		// when maxstep = 6, it fails executing the extra step required by proof mode
+		// when maxstep = 7, it fails trying to get the trace to be a power of 2
+		runner, err := NewRunner(program, true, uint64(maxstep))
+		require.NoError(t, err)
+
+		err = runner.Run()
+		require.ErrorContains(t, err, "step limit exceeded")
+
+		executionSegment := runner.segments()[VM.ExecutionSegment]
+
+		assert.Equal(
+			t,
+			createSegment(
+				// return fp
+				memory.NewMemoryAddress(
+					0,
+					uint64(len(program.Bytecode)+2),
+				),
+				// next pc
+				0,
+				2,
+				3,
+				5,
+				7,
+				11,
+				13,
+			),
+			executionSegment,
+		)
+
+		// when running on non proof mode, the first to elements
+		// are dummy values. So ap and fp starts at 2
+		assert.Equal(t, uint64(2), runner.vm.Context.Ap)
+		assert.Equal(t, uint64(2), runner.vm.Context.Fp)
+		// it repeats the last instruction at 0:12
+		assert.Equal(t, memory.NewMemoryAddress(0, 12), runner.vm.Context.Pc)
+		// step limit exceeded
+		assert.Equal(t, uint64(maxstep), runner.steps())
+	}
 }
 
 func TestTraceEncodingDecoding(t *testing.T) {
