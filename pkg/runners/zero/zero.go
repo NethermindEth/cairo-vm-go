@@ -270,7 +270,7 @@ func (runner *ZeroRunner) RunUntilPc(pc *memory.MemoryAddress) error {
 		if runner.steps() >= runner.maxsteps {
 			return fmt.Errorf(
 				"pc %s step %d: max step limit exceeded (%d)",
-				runner.pc().String(),
+				runner.pc(),
 				runner.steps(),
 				runner.maxsteps,
 			)
@@ -278,7 +278,7 @@ func (runner *ZeroRunner) RunUntilPc(pc *memory.MemoryAddress) error {
 
 		err := runner.vm.RunStep(runner.hintrunner)
 		if err != nil {
-			return fmt.Errorf("pc %d step %d: %w", runner.pc(), runner.steps(), err)
+			return fmt.Errorf("pc %s step %d: %w", runner.pc(), runner.steps(), err)
 		}
 	}
 	return nil
@@ -289,7 +289,7 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 		if runner.steps() >= runner.maxsteps {
 			return fmt.Errorf(
 				"pc %s step %d: max step limit exceeded (%d)",
-				runner.pc().String(),
+				runner.pc(),
 				runner.steps(),
 				runner.maxsteps,
 			)
