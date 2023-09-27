@@ -2,8 +2,8 @@ package memory
 
 import (
 	"fmt"
-	// "strings"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -44,38 +44,50 @@ func (cell *Cell) String() string {
 
 type Segment struct {
 	Data []*Cell
+	// the max index where a value was written
+	LastIndex int
 }
 
 func EmptySegment() *Segment {
+	// empty segments have capacity 100 as a default
 	return &Segment{
-		Data: make([]*Cell, 0),
+		Data:      make([]*Cell, 0, 100),
+		LastIndex: -1,
 	}
 }
 
 func EmptySegmentWithCapacity(capacity int) *Segment {
 	return &Segment{
-		Data: make([]*Cell, 0, capacity),
+		Data:      make([]*Cell, 0, capacity),
+		LastIndex: -1,
 	}
 }
 
 func EmptySegmentWithLength(length int) *Segment {
 	return &Segment{
-		Data: make([]*Cell, length),
+		Data:      make([]*Cell, length),
+		LastIndex: length - 1,
 	}
 }
 
+// returns the effective size of a segment length
+// i.e the rightmost element index + 1
 func (segment *Segment) Len() uint64 {
-	return uint64(len(segment.Data))
+	return uint64(segment.LastIndex + 1)
 }
 
-func (segment *Segment) Cap() uint64 {
-	return uint64(cap(segment.Data))
+// returns the real length that a segmen has
+func (segment *Segment) RealLen() uint64 {
+	return uint64(len(segment.Data))
 }
 
 // Writes a new memory value to a specified offset, errors in case of overwriting an existing cell
 func (segment *Segment) Write(offset uint64, value *MemoryValue) error {
-	if offset >= uint64(len(segment.Data)) {
+	if offset >= segment.RealLen() {
 		segment.IncreaseSegmentSize(offset + 1)
+	}
+	if offset >= segment.Len() {
+		segment.LastIndex = int(offset)
 	}
 	if segment.Data[offset] == nil {
 		segment.Data[offset] = &Cell{}
@@ -90,8 +102,11 @@ func (segment *Segment) Write(offset uint64, value *MemoryValue) error {
 
 // Reads a memory value from a specified offset at the segment
 func (segment *Segment) Read(offset uint64) *MemoryValue {
-	if offset >= uint64(len(segment.Data)) {
+	if offset >= segment.RealLen() {
 		segment.IncreaseSegmentSize(offset + 1)
+	}
+	if offset > segment.Len() {
+		segment.LastIndex = int(offset)
 	}
 	if segment.Data[offset] == nil {
 		segment.Data[offset] = &Cell{}
@@ -101,13 +116,16 @@ func (segment *Segment) Read(offset uint64) *MemoryValue {
 }
 
 func (segment *Segment) Peek(offset uint64) *Cell {
-	if offset >= uint64(len(segment.Data)) {
+	if offset >= segment.RealLen() {
 		segment.IncreaseSegmentSize(offset + 1)
 	}
+	if offset >= segment.Len() {
+		segment.LastIndex = int(offset)
+	}
+
 	if segment.Data[offset] == nil {
 		segment.Data[offset] = &Cell{}
 	}
-
 	return segment.Data[offset]
 }
 
@@ -115,14 +133,18 @@ func (segment *Segment) Peek(offset uint64) *Cell {
 func (segment *Segment) IncreaseSegmentSize(newSize uint64) {
 	segmentData := segment.Data
 	if len(segmentData) > int(newSize) {
-		panic("cannot increase segment size to a smaller value")
+		panic(fmt.Sprintf(
+			"cannot decrease segment size: %d -> %d",
+			len(segmentData),
+			newSize,
+		))
 	}
 
 	var newSegmentData []*Cell
 	if cap(segmentData) > int(newSize) {
-		newSegmentData = segmentData[:newSize]
+		newSegmentData = segmentData[:cap(segmentData)]
 	} else {
-		newSegmentData = make([]*Cell, newSize, newSize+100)
+		newSegmentData = make([]*Cell, safemath.Max(newSize, uint64(len(segmentData)*2)))
 		copy(newSegmentData, segmentData)
 	}
 	segment.Data = newSegmentData
@@ -144,12 +166,16 @@ func (segment *Segment) IncreaseSegmentSize(newSize uint64) {
 //}
 
 func (segment *Segment) String() string {
-	header := fmt.Sprintf("len: %d cap: %d\n", len(segment.Data), cap(segment.Data))
+	header := fmt.Sprintf(
+		"real len: %d real cap: %d len: %d\n",
+		len(segment.Data),
+		cap(segment.Data),
+		segment.Len(),
+	)
 	for i := range segment.Data {
-		if i < len(segment.Data)-5 {
+		if i < int(segment.Len())-5 {
 			continue
 		}
-
 		if segment.Data[i].Accessed {
 			header += fmt.Sprintf("[%d]-> %s\n", i, segment.Data[i].String())
 		}
@@ -182,7 +208,7 @@ func (memory *Memory) AllocateSegment(data []*f.Element) (int, error) {
 		}
 	}
 	memory.Segments = append(memory.Segments, newSegment)
-	return len(memory.Segments), nil
+	return len(memory.Segments) - 1, nil
 }
 
 // Allocates an empty segment and returns its index
@@ -197,7 +223,6 @@ func (memory *Memory) Write(segmentIndex uint64, offset uint64, value *MemoryVal
 	if segmentIndex > uint64(len(memory.Segments)) {
 		return fmt.Errorf("unallocated segment at index %d", segmentIndex)
 	}
-
 	return memory.Segments[segmentIndex].Write(offset, value)
 }
 
