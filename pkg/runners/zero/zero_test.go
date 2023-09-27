@@ -95,7 +95,7 @@ func TestStepLimitExceeded(t *testing.T) {
 			3,
 			5,
 		),
-		executionSegment,
+		trimmedSegment(executionSegment),
 	)
 
 	// when running on non proof mode, the first to elements
@@ -153,7 +153,7 @@ func TestStepLimitExceededProofMode(t *testing.T) {
 				11,
 				13,
 			),
-			executionSegment,
+			trimmedSegment(executionSegment),
 		)
 
 		// when running on non proof mode, the first to elements
