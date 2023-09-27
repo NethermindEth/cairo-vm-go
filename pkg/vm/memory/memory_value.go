@@ -26,17 +26,19 @@ func (address *MemoryAddress) Equal(other *MemoryAddress) bool {
 }
 
 // Adds a memory address and a field element
-func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) (*MemoryAddress, error) {
-	lhsOffset := new(f.Element).SetUint64(lhs.Offset)
-	newOffset := new(f.Element).Add(lhsOffset, rhs)
+func (ma *MemoryAddress) Add(address *MemoryAddress, offset *f.Element) (*MemoryAddress, error) {
+	addressOffset := new(f.Element).SetUint64(address.Offset)
+	resOffset := new(f.Element).Add(addressOffset, offset)
 
-	if !newOffset.IsUint64() {
-		return nil, fmt.Errorf("new offset bigger than uint64: %s", rhs.Text(10))
+	if !resOffset.IsUint64() {
+		return nil, fmt.Errorf("new offset bigger than uint64: %s", resOffset.Text(10))
 	}
 
-	address.SegmentIndex = lhs.SegmentIndex
-	address.Offset = newOffset.Uint64()
-	return address, nil
+	resAddress := &MemoryAddress{
+		SegmentIndex: address.SegmentIndex,
+		Offset:       resOffset.Uint64(),
+	}
+	return resAddress, nil
 }
 
 // Subs from a memory address a felt or another memory address in the same segment
@@ -220,11 +222,9 @@ func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 			return nil, errors.New("rhs is not a felt")
 		}
 		mv.address, err = mv.address.Add(lhs.address, rhs.felt)
-		mv.felt = nil // Felt field is set to nil
 	} else {
 		if rhs.IsAddress() {
-			mv.address, err = rhs.address.Add(rhs.address, lhs.felt)
-			mv.felt = nil
+			mv.address, err = mv.address.Add(rhs.address, lhs.felt)
 		} else {
 			mv.felt = mv.felt.Add(lhs.felt, rhs.felt)
 		}
