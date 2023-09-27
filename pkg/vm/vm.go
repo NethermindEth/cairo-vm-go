@@ -127,25 +127,25 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 	// Run hint
 	err := hintRunner.RunHint(vm)
 	if err != nil {
-		return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
+		return fmt.Errorf("hint runner: %w", err)
 	}
 
+	// if instruction is not in cache, redecode and store it
 	instruction, ok := vm.instructions[vm.Context.Pc.Offset]
 	if !ok {
-		// ddecode instruction
 		memoryValue, err := vm.MemoryManager.Memory.ReadFromAddress(vm.Context.Pc)
 		if err != nil {
-			return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
+			return fmt.Errorf("reading instruction: %w", err)
 		}
 
 		bytecodeInstruction, err := memoryValue.ToFieldElement()
 		if err != nil {
-			return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
+			return fmt.Errorf("reading instruction: %w", err)
 		}
 
 		instruction, err = DecodeInstruction(bytecodeInstruction)
 		if err != nil {
-			return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
+			return fmt.Errorf("decoding instruction: %w", err)
 		}
 		vm.instructions[vm.Context.Pc.Offset] = instruction
 	}
@@ -157,7 +157,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 
 	err = vm.RunInstruction(instruction)
 	if err != nil {
-		return fmt.Errorf("pc %d: %w", vm.Context.Pc, err)
+		return fmt.Errorf("running instruction: %w", err)
 	}
 
 	vm.Step++

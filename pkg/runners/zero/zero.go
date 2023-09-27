@@ -20,13 +20,13 @@ type ZeroRunner struct {
 	hintrunner hintrunner.HintRunner
 	// config
 	proofmode bool
+	maxsteps  uint64
 	// auxiliar
 	runFinished bool
 }
 
 // Creates a new Runner of a Cairo Zero program
-func NewRunner(program *Program, proofmode bool) (*ZeroRunner, error) {
-
+func NewRunner(program *Program, proofmode bool, maxsteps uint64) (*ZeroRunner, error) {
 	// initialize vm
 	vm, err := VM.NewVirtualMachine(program.Bytecode, VM.VirtualMachineConfig{ProofMode: proofmode})
 	if err != nil {
@@ -42,6 +42,7 @@ func NewRunner(program *Program, proofmode bool) (*ZeroRunner, error) {
 		vm:         vm,
 		hintrunner: hintrunner,
 		proofmode:  proofmode,
+		maxsteps:   maxsteps,
 	}, nil
 }
 
@@ -58,20 +59,19 @@ func (runner *ZeroRunner) Run() error {
 
 	err = runner.RunUntilPc(end)
 	if err != nil {
-		return fmt.Errorf("step %d, pc %d:\n%w", runner.vm.Step, runner.vm.Context.Pc, err)
+		return err
 	}
 
 	if runner.proofmode {
 		// proof mode require an extra instruction run
-		if err := runner.vm.RunStep(runner.hintrunner); err != nil {
-			return fmt.Errorf("step %d, pc %d:\n%w", runner.vm.Step, runner.vm.Context.Pc, err)
+		if err := runner.RunFor(1); err != nil {
+			return err
 		}
+
 		// proof mode also requires that the trace is a power of two
-		maxSteps := safemath.NextPowerOfTwo(runner.vm.Step)
-		for runner.vm.Step < maxSteps {
-			if err := runner.vm.RunStep(runner.hintrunner); err != nil {
-				return fmt.Errorf("step %d, pc %d:\n%w", runner.vm.Step, runner.vm.Context.Pc, err)
-			}
+		pow2Steps := safemath.NextPowerOfTwo(runner.vm.Step)
+		if err := runner.RunFor(pow2Steps); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -94,7 +94,10 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (*memory.MemoryAddress, err
 		err := runner.memory().Write(
 			VM.ExecutionSegment,
 			offset,
-			memory.MemoryValueFromSegmentAndOffset(VM.ProgramSegment, runner.segments()[VM.ProgramSegment].Len()+offset+2),
+			memory.MemoryValueFromSegmentAndOffset(
+				VM.ProgramSegment,
+				runner.segments()[VM.ProgramSegment].Len()+offset+2,
+			),
 		)
 		if err != nil {
 			return nil, err
@@ -154,19 +157,47 @@ func (runner *ZeroRunner) InitializeEntrypoint(
 
 func (runner *ZeroRunner) RunUntilPc(pc *memory.MemoryAddress) error {
 	for !runner.vm.Context.Pc.Equal(pc) {
+		if runner.steps() >= runner.maxsteps {
+			return fmt.Errorf(
+				"pc %s step %d: max step limit exceeded (%d)",
+				runner.pc(),
+				runner.steps(),
+				runner.maxsteps,
+			)
+		}
+
 		err := runner.vm.RunStep(runner.hintrunner)
 		if err != nil {
-			return err
+			return fmt.Errorf("pc %s step %d: %w", runner.pc(), runner.steps(), err)
 		}
 	}
 	return nil
 }
 
-// todo(rodro):
-// 3. Prepare the runner to run in proof mode
-// 5. Use fibonacci test
-// 6. Debug accordingly
-// 7. Compare trace with py-vm and the rust-vm trace
+func (runner *ZeroRunner) RunFor(steps uint64) error {
+	for runner.steps() < steps {
+		if runner.steps() >= runner.maxsteps {
+			return fmt.Errorf(
+				"pc %s step %d: max step limit exceeded (%d)",
+				runner.pc(),
+				runner.steps(),
+				runner.maxsteps,
+			)
+		}
+
+		err := runner.vm.RunStep(runner.hintrunner)
+		if err != nil {
+			return fmt.Errorf(
+				"pc %s step %d: %w",
+				runner.pc().String(),
+				runner.steps(),
+				err,
+			)
+		}
+	}
+	return nil
+}
+
 func (runner *ZeroRunner) BuildProof() ([]byte, []byte, error) {
 	relocatedTrace, relocatedMem, err := runner.vm.Proof()
 	if err != nil {
@@ -185,6 +216,14 @@ func (runner *ZeroRunner) memory() *memory.Memory {
 
 func (runner *ZeroRunner) segments() []*memory.Segment {
 	return runner.vm.MemoryManager.Memory.Segments
+}
+
+func (runner *ZeroRunner) pc() *memory.MemoryAddress {
+	return runner.vm.Context.Pc
+}
+
+func (runner *ZeroRunner) steps() uint64 {
+	return runner.vm.Step
 }
 
 const ctxSize = 3 * 8
