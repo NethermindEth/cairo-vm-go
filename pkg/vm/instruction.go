@@ -148,10 +148,17 @@ type Instruction struct {
 	OffOp0  int16
 	OffOp1  int16
 
+	UOffDest uint16
+	UOffOp0  uint16
+	UOffOp1  uint16
+	UFlags   uint16
+
 	DstRegister Register
 	Op0Register Register
 
 	Op1Source Op1Src
+
+	Imm string
 
 	Res ResLogic
 

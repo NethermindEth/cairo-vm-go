@@ -39,6 +39,8 @@ func TestAssertEqRegister(t *testing.T) {
 			(encode>>pcJumpRelBit)&1 == 0 &&
 			(encode>>pcJnzBit)&1 == 0,
 	)
+	fmt.Println("encode", encode>>apAddBit&1)
+	fmt.Println("encode", encode>>apAdd1Bit&1)
 	assert.True(
 		t, (encode>>apAddBit)&1 == 0 && (encode>>apAdd1Bit)&1 == 1,
 	)
