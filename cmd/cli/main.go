@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 
 	runnerzero "github.com/NethermindEth/cairo-vm-go/pkg/runners/zero"
@@ -10,6 +11,7 @@ import (
 
 func main() {
 	var proofmode bool
+	var maxsteps uint64
 	var traceLocation string
 	var memoryLocation string
 
@@ -29,6 +31,14 @@ func main() {
 						Usage:       "runs the cairo vm in proof mode",
 						Required:    false,
 						Destination: &proofmode,
+					},
+					&cli.Uint64Flag{
+						Name:        "maxsteps",
+						Usage:       "limits the execution steps to 'maxsteps'",
+						DefaultText: "2**64 - 1",
+						Value:       math.MaxUint64,
+						Required:    false,
+						Destination: &maxsteps,
 					},
 					&cli.StringFlag{
 						Name:        "tracefile",
@@ -60,7 +70,7 @@ func main() {
 					}
 
 					fmt.Println("Running....")
-					runner, err := runnerzero.NewRunner(program, proofmode)
+					runner, err := runnerzero.NewRunner(program, proofmode, maxsteps)
 					if err != nil {
 						return fmt.Errorf("cannot create runner: %w", err)
 					}

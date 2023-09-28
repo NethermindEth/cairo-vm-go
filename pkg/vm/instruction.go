@@ -224,7 +224,7 @@ const (
 
 func DecodeInstruction(rawInstruction *f.Element) (*Instruction, error) {
 	if !rawInstruction.IsUint64() {
-		return nil, fmt.Errorf("error decoding instruction: %d is bigger than 64 bits", *rawInstruction)
+		return nil, fmt.Errorf("%s is bigger than 64 bits", rawInstruction.Text(10))
 	}
 	off0Enc, off1Enc, off2Enc, flags := decodeInstructionValues(rawInstruction.Uint64())
 
@@ -238,7 +238,7 @@ func DecodeInstruction(rawInstruction *f.Element) (*Instruction, error) {
 
 	err := decodeInstructionFlags(instruction, flags)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("flags: %w", err)
 	}
 
 	return instruction, nil
@@ -274,13 +274,13 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 
 	op1Addr, err := oneHot(flags&(1<<op1ImmBit|1<<op1FpBit|1<<op1ApBit), op1ImmBit, 3)
 	if err != nil {
-		return fmt.Errorf("error decoding op1_addr of instruction: %w", err)
+		return fmt.Errorf("op1 source: %w", err)
 	}
 	instruction.Op1Source = Op1Src(op1Addr)
 
 	pcUpdate, err := oneHot(flags&(1<<pcJumpAbsBit|1<<pcJumpRelBit|1<<pcJnzBit), pcJumpAbsBit, 3)
 	if err != nil {
-		return fmt.Errorf("error decoding pc_update of instruction: %w", err)
+		return fmt.Errorf("pc update: %w", err)
 	}
 	instruction.PcUpdate = PcUpdate(pcUpdate)
 
@@ -296,7 +296,7 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 
 	res, err := oneHot(flags&(1<<resAddBit|1<<resMulBit), resAddBit, 2)
 	if err != nil {
-		return fmt.Errorf("error decoding res_logic of instruction: %w", err)
+		return fmt.Errorf("res logic: %w", err)
 	}
 
 	if res == 2 {
@@ -307,13 +307,13 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 
 	apUpdate, err := oneHot(flags&(1<<apAddBit|1<<apAdd1Bit), apAddBit, 2)
 	if err != nil {
-		return fmt.Errorf("error decoding ap_update of instruction: %w", err)
+		return fmt.Errorf("ap update: %w", err)
 	}
 	instruction.ApUpdate = ApUpdate(apUpdate)
 
 	opcode, err := oneHot(flags&(1<<opcodeCallBit|1<<opcodeRetBit|1<<opcodeAssertEqBit), opcodeCallBit, 3)
 	if err != nil {
-		return fmt.Errorf("error decoding opcode of instruction: %w", err)
+		return fmt.Errorf("opcode: %w", err)
 	}
 	instruction.Opcode = Opcode(opcode)
 

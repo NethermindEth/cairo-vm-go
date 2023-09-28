@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCellWrite(t *testing.T) {
@@ -114,21 +115,73 @@ func TestSegmentReadAndWrite(t *testing.T) {
 	assert.True(t, segment.Peek(0).Accessed)
 }
 
-func TestIncreaseSegmentSize(t *testing.T) {
+func TestIncreaseSegmentSizeSmallerSize(t *testing.T) {
+	segment := Segment{Data: []*Cell{
+		{Accessed: true, Value: MemoryValueFromInt(1)},
+		{Accessed: true, Value: MemoryValueFromInt(2)},
+	}}
+	// Panic if we decrase the size
+	require.Panics(t, func() { segment.IncreaseSegmentSize(0) })
+	// Panic if the size remains the same
+	require.Panics(t, func() { segment.IncreaseSegmentSize(1) })
+}
+
+func TestIncreaseSegmentSizeMaxNewSize(t *testing.T) {
 	segment := Segment{Data: []*Cell{
 		{Accessed: true, Value: MemoryValueFromInt(1)},
 		{Accessed: true, Value: MemoryValueFromInt(2)},
 		{Accessed: true, Value: MemoryValueFromInt(3)},
 	}}
 
-	assert.Panics(t, func() { segment.IncreaseSegmentSize(1) }) //Panic if we decrase the size
 	segment.IncreaseSegmentSize(1000)
-	assert.True(t, cap(segment.Data) > 1000)
+	assert.True(t, len(segment.Data) == 1000)
+	assert.True(t, cap(segment.Data) == 1000)
 
 	//Make sure no data was lost after incrase
 	assert.Equal(t, segment.Read(0), MemoryValueFromInt(1))
 	assert.Equal(t, segment.Read(1), MemoryValueFromInt(2))
 	assert.Equal(t, segment.Read(2), MemoryValueFromInt(3))
+}
+
+func TestIncreaseSegmentSizeDouble(t *testing.T) {
+	segment := Segment{Data: []*Cell{
+		{Accessed: true, Value: MemoryValueFromInt(1)},
+		{Accessed: true, Value: MemoryValueFromInt(2)},
+	}}
+
+	segment.IncreaseSegmentSize(3)
+	assert.True(t, len(segment.Data) == 4)
+	assert.True(t, cap(segment.Data) == 4)
+
+	//Make sure no data was lost after incrase
+	assert.Equal(t, segment.Read(0), MemoryValueFromInt(1))
+	assert.Equal(t, segment.Read(1), MemoryValueFromInt(2))
+}
+
+func TestIncreaseSegmentKeepReference(t *testing.T) {
+	segment := Segment{Data: []*Cell{
+		{Accessed: true, Value: MemoryValueFromInt(1)},
+		{Accessed: true, Value: MemoryValueFromInt(2)},
+		{Accessed: true, Value: MemoryValueFromInt(3)},
+	}}
+	segment.IncreaseSegmentSize(4)
+	require.Equal(t, len(segment.Data), 6)
+	require.Equal(t, cap(segment.Data), 6)
+
+	fourthCell := segment.Peek(5)
+
+	segment.IncreaseSegmentSize(8)
+	require.Equal(t, len(segment.Data), 12)
+	require.Equal(t, cap(segment.Data), 12)
+
+	err := fourthCell.Write(MemoryValueFromInt(5))
+	require.NoError(t, err)
+
+	//Make sure no data was lost after incrase
+	assert.Equal(t, MemoryValueFromInt(1), segment.Read(0))
+	assert.Equal(t, MemoryValueFromInt(2), segment.Read(1))
+	assert.Equal(t, MemoryValueFromInt(3), segment.Read(2))
+	assert.Equal(t, MemoryValueFromInt(5), segment.Read(5))
 }
 
 func TestMemoryWriteAndRead(t *testing.T) {
