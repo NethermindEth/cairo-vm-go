@@ -217,23 +217,37 @@ func (mv *MemoryValue) Equal(other *MemoryValue) bool {
 // Adds two memory values is the second one is a Felt
 func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	var err error
-	if lhs.IsAddress() {
-		if !rhs.IsFelt() {
-			return nil, errors.New("rhs is not a felt")
-		}
-		mv.address, err = mv.address.Add(lhs.address, rhs.felt)
-	} else {
-		if rhs.IsAddress() {
-			mv.address, err = mv.address.Add(rhs.address, lhs.felt)
-		} else {
-			mv.felt = mv.felt.Add(lhs.felt, rhs.felt)
-		}
+
+	// If both lhs and rhs are felts, perform a simple addition
+	if !lhs.IsAddress() && !rhs.IsAddress() {
+		lhsUint := lhs.felt.Uint64()
+		rhsUint := rhs.felt.Uint64()
+		sumRes := lhsUint + rhsUint
+		sumMemoryValue := MemoryValueFromUint(sumRes)
+		mv.felt = sumMemoryValue.felt
+		return mv, nil
 	}
 
-	if err != nil {
-		return nil, err
+	// If lhs is an address and rhs is a felt
+	if lhs.IsAddress() && !rhs.IsAddress() {
+		mv.address, err = mv.address.Add(lhs.address, rhs.felt)
+		if err != nil {
+			return nil, err
+		}
+		return mv, nil
 	}
-	return mv, nil
+
+	// If rhs is an address and lhs is a felt
+	if !lhs.IsAddress() && rhs.IsAddress() {
+		mv.address, err = mv.address.Add(rhs.address, lhs.felt)
+		if err != nil {
+			return nil, err
+		}
+		return mv, nil
+	}
+
+	// If both lhs and rhs are addresses, this is an unsupported operation
+	return nil, errors.New("addition of two addresses is not supported")
 }
 
 // Subs two memory values if they're in the same segment or the rhs is a Felt.

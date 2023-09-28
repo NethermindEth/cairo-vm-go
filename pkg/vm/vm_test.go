@@ -391,7 +391,7 @@ func TestComputeAddResFeltToAddr(t *testing.T) {
 
 	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
 	require.NoError(t, err)
-	expected := mem.MemoryValueFromSegmentAndOffset(2, 15)
+	expected := mem.MemoryValueFromSegmentAndOffset(2, 30)
 	assert.Equal(t, expected, res)
 }
 
