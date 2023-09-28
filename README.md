@@ -22,7 +22,7 @@ Currently, it is only possible to use it by building it from source by following
 1. Clone the repo to your machine: `git clone https://github.com/NethermindEth/cairo-vm-go`.
 2. Install `Go` on your PC, instructions [here](https://go.dev/.doc/install).
 3. Execute on the root folder of the repo: `make build`.
-4. Make sure everything is running smoothly by executing: `make test`.
+4. Make sure everything is running smoothly by executing: `make testall`.
 
 After completing these steps, you can find the compiled VM in `bin/cairo-vm`.
 
