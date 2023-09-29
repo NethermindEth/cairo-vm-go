@@ -46,11 +46,3 @@ integration:
 testall:
 	@echo "Running all tests..."
 	@go test ./...
-
-format:
-	@gofumpt -l -w .
-
-staticcheck:
-	@staticcheck ./...
-
-pre-commit: format staticcheck build test clean

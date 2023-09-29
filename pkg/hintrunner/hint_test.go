@@ -21,7 +21,6 @@ func TestAllocSegment(t *testing.T) {
 	alloc2 := AllocSegment{fp}
 
 	err := alloc1.Execute(vm)
-	t.Log(err)
 	require.Nil(t, err)
 	require.Equal(t, 3, len(vm.MemoryManager.Memory.Segments))
 	require.Equal(

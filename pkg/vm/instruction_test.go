@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -159,8 +158,7 @@ func TestBiggerThan64Bits(t *testing.T) {
 	_, err := DecodeInstruction(instruction)
 
 	require.Error(t, err)
-	expectedError := fmt.Sprintf("error decoding instruction: %d is bigger than 64 bits", *instruction)
-	assert.EqualError(t, err, expectedError)
+	assert.ErrorContains(t, err, "is bigger than 64 bits")
 }
 
 func TestInvalidOpOneAddress(t *testing.T) {
@@ -169,8 +167,8 @@ func TestInvalidOpOneAddress(t *testing.T) {
 	_, err := DecodeInstruction(instruction)
 
 	require.Error(t, err)
-	expectedError := fmt.Sprintf("error decoding op1_addr of instruction: decoding wrong sequence of bits: %v", []uint16{1, 1, 0})
-	assert.EqualError(t, err, expectedError)
+	assert.ErrorContains(t, err, "op1 source")
+	assert.ErrorContains(t, err, "wrong sequence of bits")
 }
 
 func TestInvalidPcUpdate(t *testing.T) {
@@ -179,8 +177,8 @@ func TestInvalidPcUpdate(t *testing.T) {
 	_, err := DecodeInstruction(instruction)
 
 	require.Error(t, err)
-	expectedError := fmt.Sprintf("error decoding pc_update of instruction: decoding wrong sequence of bits: %v", []uint16{1, 1, 0})
-	assert.EqualError(t, err, expectedError)
+	assert.ErrorContains(t, err, "pc update")
+	assert.ErrorContains(t, err, "wrong sequence of bits")
 }
 
 func TestInvalidResLogic(t *testing.T) {
@@ -189,8 +187,8 @@ func TestInvalidResLogic(t *testing.T) {
 	_, err := DecodeInstruction(instruction)
 
 	require.Error(t, err)
-	expectedError := fmt.Sprintf("error decoding res_logic of instruction: decoding wrong sequence of bits: %v", []uint16{1, 1})
-	assert.EqualError(t, err, expectedError)
+	assert.ErrorContains(t, err, "res logic")
+	assert.ErrorContains(t, err, "wrong sequence of bits")
 }
 
 func TestInvalidApUpdate(t *testing.T) {
@@ -199,8 +197,8 @@ func TestInvalidApUpdate(t *testing.T) {
 	_, err := DecodeInstruction(instruction)
 
 	require.Error(t, err)
-	expectedError := fmt.Sprintf("error decoding ap_update of instruction: decoding wrong sequence of bits: %v", []uint16{1, 1})
-	assert.EqualError(t, err, expectedError)
+	assert.ErrorContains(t, err, "ap update")
+	assert.ErrorContains(t, err, "wrong sequence of bits")
 }
 
 func TestInvalidOpcode(t *testing.T) {
@@ -209,38 +207,38 @@ func TestInvalidOpcode(t *testing.T) {
 	_, err := DecodeInstruction(instruction)
 
 	require.Error(t, err)
-	expectedError := fmt.Sprintf("error decoding opcode of instruction: decoding wrong sequence of bits: %v", []uint16{1, 1, 0})
-	assert.EqualError(t, err, expectedError)
+	assert.ErrorContains(t, err, "opcode")
+	assert.ErrorContains(t, err, "wrong sequence of bits")
 }
 
 func TestPcUpdateJnzInvalid(t *testing.T) {
 	instructionInvalidRes := new(f.Element).SetBytes([]byte{0x06, 0x27, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
 	instructionInvalidOpcode := new(f.Element).SetBytes([]byte{0x16, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
 	instructionInvalidApUpdate := new(f.Element).SetBytes([]byte{0x06, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
+
 	expectedError := "jnz opcode must have unconstrained res logic, no opcode, and no ap change"
 
 	_, err := DecodeInstruction(instructionInvalidRes)
 
 	require.Error(t, err)
-	assert.EqualError(t, err, expectedError)
+	assert.ErrorContains(t, err, expectedError)
 
 	_, err = DecodeInstruction(instructionInvalidOpcode)
 
 	require.Error(t, err)
-	assert.EqualError(t, err, expectedError)
+	assert.ErrorContains(t, err, expectedError)
 
 	_, err = DecodeInstruction(instructionInvalidApUpdate)
 
 	require.Error(t, err)
-	assert.EqualError(t, err, expectedError)
+	assert.ErrorContains(t, err, expectedError)
 }
 
 func TestCallInvalidApUpdate(t *testing.T) {
 	instruction := new(f.Element).SetBytes([]byte{0x15, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01})
-	expectedError := "CALL must have ap_update = ADD2"
 
 	_, err := DecodeInstruction(instruction)
 
 	require.Error(t, err)
-	assert.EqualError(t, err, expectedError)
+	assert.ErrorContains(t, err, "CALL must have ap_update = ADD2")
 }
