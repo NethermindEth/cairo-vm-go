@@ -235,7 +235,7 @@ func (vm *VirtualMachine) getDstAddr(instruction *Instruction) (mem.MemoryAddres
 
 	addr, isOverflow := safemath.SafeOffset(dstRegister, instruction.OffDest)
 	if isOverflow {
-		return mem.MemoryAddress{}, fmt.Errorf("offset overflow: %d + %d", dstRegister, instruction.OffDest)
+		return mem.UnknownValue, fmt.Errorf("offset overflow: %d + %d", dstRegister, instruction.OffDest)
 	}
 	return mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: addr}, nil
 }
@@ -250,7 +250,7 @@ func (vm *VirtualMachine) getOp0Addr(instruction *Instruction) (mem.MemoryAddres
 
 	addr, isOverflow := safemath.SafeOffset(op0Register, instruction.OffOp0)
 	if isOverflow {
-		return mem.MemoryAddress{}, fmt.Errorf("offset overflow: %d + %d", op0Register, instruction.OffOp0)
+		return mem.UnknownValue, fmt.Errorf("offset overflow: %d + %d", op0Register, instruction.OffOp0)
 	}
 	return mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: addr}, nil
 }
@@ -262,12 +262,12 @@ func (vm *VirtualMachine) getOp1Addr(instruction *Instruction, op0Addr *mem.Memo
 		// in this case Op0 is being used as an address, and must be of unwrapped as it
 		op0Value, err := vm.MemoryManager.Memory.ReadFromAddress(op0Addr)
 		if err != nil {
-			return mem.MemoryAddress{}, fmt.Errorf("cannot read op0: %w", err)
+			return mem.UnknownValue, fmt.Errorf("cannot read op0: %w", err)
 		}
 
 		op0Address, err := op0Value.ToMemoryAddress()
 		if err != nil {
-			return mem.MemoryAddress{}, fmt.Errorf("op0 is not an address: %w", err)
+			return mem.UnknownValue, fmt.Errorf("op0 is not an address: %w", err)
 		}
 		op1Address = mem.MemoryAddress{SegmentIndex: op0Address.SegmentIndex, Offset: op0Address.Offset}
 	case Imm:
@@ -280,7 +280,7 @@ func (vm *VirtualMachine) getOp1Addr(instruction *Instruction, op0Addr *mem.Memo
 
 	addr, isOverflow := safemath.SafeOffset(op1Address.Offset, instruction.OffOp1)
 	if isOverflow {
-		return mem.MemoryAddress{}, fmt.Errorf("offset overflow: %d + %d", op1Address.Offset, instruction.OffOp1)
+		return mem.UnknownValue, fmt.Errorf("offset overflow: %d + %d", op1Address.Offset, instruction.OffOp1)
 	}
 	op1Address.Offset = addr
 	return op1Address, nil
@@ -425,13 +425,13 @@ func (vm *VirtualMachine) updatePc(
 	case Jump:
 		addr, err := res.ToMemoryAddress()
 		if err != nil {
-			return mem.MemoryAddress{}, fmt.Errorf("absolute jump: %w", err)
+			return mem.UnknownValue, fmt.Errorf("absolute jump: %w", err)
 		}
 		return *addr, nil
 	case JumpRel:
 		val, err := res.ToFieldElement()
 		if err != nil {
-			return mem.MemoryAddress{}, fmt.Errorf("relative jump: %w", err)
+			return mem.UnknownValue, fmt.Errorf("relative jump: %w", err)
 		}
 		newPc := vm.Context.Pc
 		err = newPc.Add(&newPc, val)
@@ -439,12 +439,12 @@ func (vm *VirtualMachine) updatePc(
 	case Jnz:
 		destMv, err := vm.MemoryManager.Memory.ReadFromAddress(dstAddr)
 		if err != nil {
-			return mem.MemoryAddress{}, err
+			return mem.UnknownValue, err
 		}
 
 		dest, err := destMv.ToFieldElement()
 		if err != nil {
-			return mem.MemoryAddress{}, err
+			return mem.UnknownValue, err
 		}
 
 		if dest.IsZero() {
@@ -456,12 +456,12 @@ func (vm *VirtualMachine) updatePc(
 
 		op1Mv, err := vm.MemoryManager.Memory.ReadFromAddress(op1Addr)
 		if err != nil {
-			return mem.MemoryAddress{}, err
+			return mem.UnknownValue, err
 		}
 
 		val, err := op1Mv.ToFieldElement()
 		if err != nil {
-			return mem.MemoryAddress{}, err
+			return mem.UnknownValue, err
 		}
 
 		newPc := vm.Context.Pc
@@ -469,7 +469,7 @@ func (vm *VirtualMachine) updatePc(
 		return newPc, err
 
 	}
-	return mem.MemoryAddress{}, fmt.Errorf("unkwon pc update value: %d", instruction.PcUpdate)
+	return mem.UnknownValue, fmt.Errorf("unkwon pc update value: %d", instruction.PcUpdate)
 }
 
 func (vm *VirtualMachine) updateAp(instruction *Instruction, res *mem.MemoryValue) (uint64, error) {

@@ -74,11 +74,11 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (memory.MemoryAddress, erro
 	if runner.proofmode {
 		startPc, ok := runner.program.Labels["__start__"]
 		if !ok {
-			return memory.MemoryAddress{}, errors.New("start label not found. Try compiling with `--proof_mode`")
+			return memory.UnknownValue, errors.New("start label not found. Try compiling with `--proof_mode`")
 		}
 		endPc, ok := runner.program.Labels["__end__"]
 		if !ok {
-			return memory.MemoryAddress{}, errors.New("end label not found. Try compiling with `--proof_mode`")
+			return memory.UnknownValue, errors.New("end label not found. Try compiling with `--proof_mode`")
 		}
 
 		offset := runner.segments()[VM.ExecutionSegment].Len()
@@ -94,14 +94,14 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (memory.MemoryAddress, erro
 			&dummyFPValue,
 		)
 		if err != nil {
-			return memory.MemoryAddress{}, err
+			return memory.UnknownValue, err
 		}
 
 		dummyPCValue := memory.MemoryValueFromUint[uint64](0)
 		// set dummy pc value
 		err = runner.memory().Write(VM.ExecutionSegment, offset+1, &dummyPCValue)
 		if err != nil {
-			return memory.MemoryAddress{}, err
+			return memory.UnknownValue, err
 		}
 
 		runner.vm.Context.Pc = memory.MemoryAddress{SegmentIndex: VM.ProgramSegment, Offset: startPc}
@@ -127,23 +127,23 @@ func (runner *ZeroRunner) InitializeEntrypoint(
 		v := memory.MemoryValueFromFieldElement(arguments[i])
 		err := runner.memory().Write(VM.ExecutionSegment, uint64(i), &v)
 		if err != nil {
-			return memory.MemoryAddress{}, err
+			return memory.UnknownValue, err
 		}
 	}
 	offset := runner.segments()[VM.ExecutionSegment].Len()
 	err := runner.memory().Write(VM.ExecutionSegment, offset, returnFp)
 	if err != nil {
-		return memory.MemoryAddress{}, err
+		return memory.UnknownValue, err
 	}
 	endMV := memory.MemoryValueFromMemoryAddress(&end)
 	err = runner.memory().Write(VM.ExecutionSegment, offset+1, &endMV)
 	if err != nil {
-		return memory.MemoryAddress{}, err
+		return memory.UnknownValue, err
 	}
 
 	pc, ok := runner.program.Entrypoints[funcName]
 	if !ok {
-		return memory.MemoryAddress{}, fmt.Errorf("unknwon entrypoint: %s", funcName)
+		return memory.UnknownValue, fmt.Errorf("unknwon entrypoint: %s", funcName)
 	}
 
 	runner.vm.Context.Pc = memory.MemoryAddress{SegmentIndex: VM.ProgramSegment, Offset: pc}

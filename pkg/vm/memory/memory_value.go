@@ -16,6 +16,8 @@ type MemoryAddress struct {
 	Offset       uint64
 }
 
+var UnknownValue = MemoryAddress{}
+
 func (address *MemoryAddress) Equal(other *MemoryAddress) bool {
 	return address.SegmentIndex == other.SegmentIndex && address.Offset == other.Offset
 }
