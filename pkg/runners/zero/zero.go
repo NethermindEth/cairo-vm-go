@@ -6,122 +6,12 @@ import (
 	"fmt"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
-	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
-
-type Program struct {
-	// the bytecode in string format
-	Bytecode []*f.Element
-	// given a string it returns the pc for that function call
-	Entrypoints map[string]uint64
-	// it stores the start and end label pcs
-	Labels map[string]uint64
-}
-
-func LoadCairoZeroProgram(content []byte) (*Program, error) {
-	cairoZeroJson, err := zero.ZeroProgramFromJSON(content)
-	if err != nil {
-		return nil, err
-	}
-
-	// bytecode
-	bytecode := make([]*f.Element, len(cairoZeroJson.Data))
-	for i := range cairoZeroJson.Data {
-		felt, err := new(f.Element).SetString(cairoZeroJson.Data[i])
-		if err != nil {
-			return nil, fmt.Errorf(
-				"cannot read bytecode %s at position %d: %w",
-				cairoZeroJson.Data[i], i, err,
-			)
-		}
-		bytecode[i] = felt
-	}
-
-	entrypoints, err := extractEntrypoints(cairoZeroJson)
-	if err != nil {
-		return nil, err
-	}
-
-	labels, err := extractLabels(cairoZeroJson)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Program{
-		Bytecode:    bytecode,
-		Entrypoints: entrypoints,
-		Labels:      labels,
-	}, nil
-}
-
-func extractEntrypoints(json *zero.ZeroProgram) (map[string]uint64, error) {
-	result := make(map[string]uint64)
-	err := scanIdentifiers(
-		json,
-		func(key string, typex string, value map[string]any) error {
-			if typex == "function" {
-				pc, ok := value["pc"].(float64)
-				if !ok {
-					return fmt.Errorf("%s: unknown entrypoint pc", key)
-				}
-				name := key[len(json.MainScope)+1:]
-				result[name] = uint64(pc)
-			}
-			return nil
-		},
-	)
-
-	if err != nil {
-		return nil, fmt.Errorf("extracting entrypoints: %w", err)
-	}
-	return result, nil
-}
-
-func extractLabels(json *zero.ZeroProgram) (map[string]uint64, error) {
-	labels := make(map[string]uint64, 2)
-	err := scanIdentifiers(
-		json,
-		func(key string, typex string, value map[string]any) error {
-			if typex == "label" {
-				pc, ok := value["pc"].(float64)
-				if !ok {
-					return fmt.Errorf("%s: unknown entrypoint pc", key)
-				}
-				name := key[len(json.MainScope)+1:]
-				labels[name] = uint64(pc)
-			}
-			return nil
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("extracting labels: %w", err)
-	}
-
-	return labels, nil
-}
-
-func scanIdentifiers(
-	json *zero.ZeroProgram,
-	f func(key string, typex string, value map[string]any) error,
-) error {
-	for key, value := range json.Identifiers {
-		properties := value.(map[string]any)
-
-		typex, ok := properties["type"].(string)
-		if !ok {
-			return errors.New("unnespecified identifier type")
-		}
-		if err := f(key, typex, properties); err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 type ZeroRunner struct {
 	// core components
@@ -130,13 +20,13 @@ type ZeroRunner struct {
 	hintrunner hintrunner.HintRunner
 	// config
 	proofmode bool
+	maxsteps  uint64
 	// auxiliar
 	runFinished bool
 }
 
 // Creates a new Runner of a Cairo Zero program
-func NewRunner(program *Program, proofmode bool) (*ZeroRunner, error) {
-
+func NewRunner(program *Program, proofmode bool, maxsteps uint64) (*ZeroRunner, error) {
 	// initialize vm
 	vm, err := VM.NewVirtualMachine(program.Bytecode, VM.VirtualMachineConfig{ProofMode: proofmode})
 	if err != nil {
@@ -152,6 +42,7 @@ func NewRunner(program *Program, proofmode bool) (*ZeroRunner, error) {
 		vm:         vm,
 		hintrunner: hintrunner,
 		proofmode:  proofmode,
+		maxsteps:   maxsteps,
 	}, nil
 }
 
@@ -168,20 +59,19 @@ func (runner *ZeroRunner) Run() error {
 
 	err = runner.RunUntilPc(end)
 	if err != nil {
-		return fmt.Errorf("step %d, pc %d:\n%w", runner.vm.Step, runner.vm.Context.Pc, err)
+		return err
 	}
 
 	if runner.proofmode {
 		// proof mode require an extra instruction run
-		if err := runner.vm.RunStep(runner.hintrunner); err != nil {
-			return fmt.Errorf("step %d, pc %d:\n%w", runner.vm.Step, runner.vm.Context.Pc, err)
+		if err := runner.RunFor(1); err != nil {
+			return err
 		}
+
 		// proof mode also requires that the trace is a power of two
-		maxSteps := safemath.NextPowerOfTwo(runner.vm.Step)
-		for runner.vm.Step < maxSteps {
-			if err := runner.vm.RunStep(runner.hintrunner); err != nil {
-				return fmt.Errorf("step %d, pc %d:\n%w", runner.vm.Step, runner.vm.Context.Pc, err)
-			}
+		pow2Steps := safemath.NextPowerOfTwo(runner.vm.Step)
+		if err := runner.RunFor(pow2Steps); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -204,7 +94,10 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (*memory.MemoryAddress, err
 		err := runner.memory().Write(
 			VM.ExecutionSegment,
 			offset,
-			memory.MemoryValueFromSegmentAndOffset(VM.ProgramSegment, runner.segments()[VM.ProgramSegment].Len()+offset+2),
+			memory.MemoryValueFromSegmentAndOffset(
+				VM.ProgramSegment,
+				runner.segments()[VM.ProgramSegment].Len()+offset+2,
+			),
 		)
 		if err != nil {
 			return nil, err
@@ -264,19 +157,47 @@ func (runner *ZeroRunner) InitializeEntrypoint(
 
 func (runner *ZeroRunner) RunUntilPc(pc *memory.MemoryAddress) error {
 	for !runner.vm.Context.Pc.Equal(pc) {
+		if runner.steps() >= runner.maxsteps {
+			return fmt.Errorf(
+				"pc %s step %d: max step limit exceeded (%d)",
+				runner.pc(),
+				runner.steps(),
+				runner.maxsteps,
+			)
+		}
+
 		err := runner.vm.RunStep(runner.hintrunner)
 		if err != nil {
-			return err
+			return fmt.Errorf("pc %s step %d: %w", runner.pc(), runner.steps(), err)
 		}
 	}
 	return nil
 }
 
-// todo(rodro):
-// 3. Prepare the runner to run in proof mode
-// 5. Use fibonacci test
-// 6. Debug accordingly
-// 7. Compare trace with py-vm and the rust-vm trace
+func (runner *ZeroRunner) RunFor(steps uint64) error {
+	for runner.steps() < steps {
+		if runner.steps() >= runner.maxsteps {
+			return fmt.Errorf(
+				"pc %s step %d: max step limit exceeded (%d)",
+				runner.pc(),
+				runner.steps(),
+				runner.maxsteps,
+			)
+		}
+
+		err := runner.vm.RunStep(runner.hintrunner)
+		if err != nil {
+			return fmt.Errorf(
+				"pc %s step %d: %w",
+				runner.pc().String(),
+				runner.steps(),
+				err,
+			)
+		}
+	}
+	return nil
+}
+
 func (runner *ZeroRunner) BuildProof() ([]byte, []byte, error) {
 	relocatedTrace, relocatedMem, err := runner.vm.Proof()
 	if err != nil {
@@ -295,6 +216,14 @@ func (runner *ZeroRunner) memory() *memory.Memory {
 
 func (runner *ZeroRunner) segments() []*memory.Segment {
 	return runner.vm.MemoryManager.Memory.Segments
+}
+
+func (runner *ZeroRunner) pc() *memory.MemoryAddress {
+	return runner.vm.Context.Pc
+}
+
+func (runner *ZeroRunner) steps() uint64 {
+	return runner.vm.Step
 }
 
 const ctxSize = 3 * 8

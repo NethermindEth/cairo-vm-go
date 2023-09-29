@@ -2,6 +2,8 @@ package safemath
 
 import (
 	"math/bits"
+
+	"golang.org/x/exp/constraints"
 )
 
 // Takes a uint64 and an int16 and outputs their addition as well
@@ -49,4 +51,11 @@ func NextPowerOfTwo(n uint64) uint64 {
 
 	higherBit := 64 - bits.LeadingZeros64(n)
 	return 1 << higherBit
+}
+
+func Max[T constraints.Integer](a, b T) T {
+	if a > b {
+		return a
+	}
+	return b
 }
