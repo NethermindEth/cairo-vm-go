@@ -124,12 +124,6 @@ func NewVirtualMachine(programBytecode []*f.Element, config VirtualMachineConfig
 // todo(rodro): add a cache mechanism for not decoding the same instruction twice
 
 func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
-	// Run hint
-	err := hintRunner.RunHint(vm)
-	if err != nil {
-		return fmt.Errorf("hint runner: %w", err)
-	}
-
 	// if instruction is not in cache, redecode and store it
 	instruction, ok := vm.instructions[vm.Context.Pc.Offset]
 	if !ok {
@@ -155,7 +149,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 		vm.Trace = append(vm.Trace, vm.Context)
 	}
 
-	err = vm.RunInstruction(instruction)
+	err := vm.RunInstruction(instruction)
 	if err != nil {
 		return fmt.Errorf("running instruction: %w", err)
 	}

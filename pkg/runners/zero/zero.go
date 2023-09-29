@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -15,9 +14,8 @@ import (
 
 type ZeroRunner struct {
 	// core components
-	program    *Program
-	vm         *VM.VirtualMachine
-	hintrunner hintrunner.HintRunner
+	program *Program
+	vm      *VM.VirtualMachine
 	// config
 	proofmode bool
 	maxsteps  uint64
@@ -33,16 +31,11 @@ func NewRunner(program *Program, proofmode bool, maxsteps uint64) (*ZeroRunner, 
 		return nil, fmt.Errorf("runner error: %w", err)
 	}
 
-	// intialize hintrunner
-	// todo(rodro): given the program get the appropiate hints
-	hintrunner := hintrunner.NewHintRunner(make(map[uint64]hintrunner.Hinter))
-
 	return &ZeroRunner{
-		program:    program,
-		vm:         vm,
-		hintrunner: hintrunner,
-		proofmode:  proofmode,
-		maxsteps:   maxsteps,
+		program:   program,
+		vm:        vm,
+		proofmode: proofmode,
+		maxsteps:  maxsteps,
 	}, nil
 }
 
@@ -90,45 +83,49 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (*memory.MemoryAddress, err
 
 		offset := runner.segments()[VM.ExecutionSegment].Len()
 
+		dummyFPValue := memory.MemoryValueFromSegmentAndOffset(
+			VM.ProgramSegment,
+			runner.segments()[VM.ProgramSegment].Len()+offset+2,
+		)
 		// set dummy fp value
 		err := runner.memory().Write(
 			VM.ExecutionSegment,
 			offset,
-			memory.MemoryValueFromSegmentAndOffset(
-				VM.ProgramSegment,
-				runner.segments()[VM.ProgramSegment].Len()+offset+2,
-			),
+			&dummyFPValue,
 		)
 		if err != nil {
 			return nil, err
 		}
+
+		dummyPCValue := memory.MemoryValueFromUint[uint64](0)
 		// set dummy pc value
-		err = runner.memory().Write(VM.ExecutionSegment, offset+1, memory.MemoryValueFromUint[uint64](0))
+		err = runner.memory().Write(VM.ExecutionSegment, offset+1, &dummyPCValue)
 		if err != nil {
 			return nil, err
 		}
 
-		runner.vm.Context.Pc = memory.NewMemoryAddress(VM.ProgramSegment, startPc)
+		runner.vm.Context.Pc = &memory.MemoryAddress{SegmentIndex: VM.ProgramSegment, Offset: startPc}
 		runner.vm.Context.Ap = offset + 2
 		runner.vm.Context.Fp = runner.vm.Context.Ap
-		return memory.NewMemoryAddress(VM.ProgramSegment, endPc), nil
+		return &memory.MemoryAddress{SegmentIndex: VM.ProgramSegment, Offset: endPc}, nil
 	}
 
 	returnFp := memory.MemoryValueFromSegmentAndOffset(
 		runner.memory().AllocateEmptySegment(),
 		0,
 	)
-	return runner.InitializeEntrypoint("main", nil, returnFp)
+	return runner.InitializeEntrypoint("main", nil, &returnFp)
 }
 
 func (runner *ZeroRunner) InitializeEntrypoint(
 	funcName string, arguments []*f.Element, returnFp *memory.MemoryValue,
 ) (*memory.MemoryAddress, error) {
 	segmentIndex := runner.memory().AllocateEmptySegment()
-	end := memory.NewMemoryAddress(uint64(segmentIndex), 0)
+	end := &memory.MemoryAddress{SegmentIndex: uint64(segmentIndex), Offset: 0}
 	// write arguments
 	for i := range arguments {
-		err := runner.memory().Write(VM.ExecutionSegment, uint64(i), memory.MemoryValueFromFieldElement(arguments[i]))
+		v := memory.MemoryValueFromFieldElement(arguments[i])
+		err := runner.memory().Write(VM.ExecutionSegment, uint64(i), &v)
 		if err != nil {
 			return nil, err
 		}
@@ -138,7 +135,8 @@ func (runner *ZeroRunner) InitializeEntrypoint(
 	if err != nil {
 		return nil, err
 	}
-	err = runner.memory().Write(VM.ExecutionSegment, offset+1, memory.MemoryValueFromMemoryAddress(end))
+	endMV := memory.MemoryValueFromMemoryAddress(end)
+	err = runner.memory().Write(VM.ExecutionSegment, offset+1, &endMV)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +146,7 @@ func (runner *ZeroRunner) InitializeEntrypoint(
 		return nil, fmt.Errorf("unknwon entrypoint: %s", funcName)
 	}
 
-	runner.vm.Context.Pc = memory.NewMemoryAddress(VM.ProgramSegment, pc)
+	runner.vm.Context.Pc = &memory.MemoryAddress{SegmentIndex: VM.ProgramSegment, Offset: pc}
 	runner.vm.Context.Ap = offset + 2
 	runner.vm.Context.Fp = runner.vm.Context.Ap
 
@@ -166,7 +164,7 @@ func (runner *ZeroRunner) RunUntilPc(pc *memory.MemoryAddress) error {
 			)
 		}
 
-		err := runner.vm.RunStep(runner.hintrunner)
+		err := runner.vm.RunStep(nil)
 		if err != nil {
 			return fmt.Errorf("pc %s step %d: %w", runner.pc(), runner.steps(), err)
 		}
@@ -185,7 +183,7 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 			)
 		}
 
-		err := runner.vm.RunStep(runner.hintrunner)
+		err := runner.vm.RunStep(nil)
 		if err != nil {
 			return fmt.Errorf(
 				"pc %s step %d: %w",
