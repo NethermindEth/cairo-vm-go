@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/holiman/uint256"
+
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -180,18 +182,18 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 		return fmt.Errorf("rhs operand %s should be u128", rhsFelt)
 	}
 
-	mul := big.NewInt(1).Mul(lhsFelt.BigInt(big.NewInt(1)), rhsFelt.BigInt(big.NewInt(1)))
+	mul := uint256.NewInt(1).Mul(uint256.MustFromBig(lhsFelt.BigInt(big.NewInt(1))), uint256.MustFromBig(rhsFelt.BigInt(big.NewInt(1)))) 
 	mask := MaxU128()
 
-	low := big.NewInt(1)
-	high := big.NewInt(1)
+	low := uint256.NewInt(1)
+	high := uint256.NewInt(1)
 	low.And(mul, mask)
 	high.Rsh(mul, 128)
 
 	lowFelt := &f.Element{}
-	lowFelt.SetBigInt(low)
+	lowFelt.SetBigInt(low.ToBig())
 	highFelt := &f.Element{}
-	highFelt.SetBigInt(high)
+	highFelt.SetBigInt(high.ToBig())
 
 	lowCell, err := hint.low.Get(vm)
 	if err != nil {

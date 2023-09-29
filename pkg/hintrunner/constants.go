@@ -1,13 +1,13 @@
 package hintrunner
 
 import (
-	"math/big"
+	"github.com/holiman/uint256"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func MaxU128() *big.Int {
-	return big.NewInt(0).SetBits([]big.Word{18446744073709551615, 18446744073709551615})
+func MaxU128() *uint256.Int {
+	return uint256.NewInt(0).SetBytes([]byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255})
 }
 
 func MaxU128Felt() *f.Element {
