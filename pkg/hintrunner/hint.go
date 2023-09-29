@@ -128,7 +128,7 @@ func (hint DivMod) Execute(vm *VM.VirtualMachine) error {
 	resFelt := f.Element{}
 	resFelt.Div(lhsFelt, rhsFelt)
 
-	// Todo: how to get remainder??
+	// todo: how to get remainder??
 
 	quoCell, err := hint.quotient.Get(vm)
 	if err != nil {
