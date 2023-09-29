@@ -6,6 +6,7 @@ import (
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -101,25 +102,33 @@ func TestDivMod(t *testing.T) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
-	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(23))
+	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(2))
 
-	lhs := Immediate(*big.NewInt(13))
+	var quo ApCellRef = 1
+
+	lhs := Immediate(*big.NewInt(14))
 
 	var rhsRef FpCellRef = 0
 	rhs := Deref{rhsRef}
 
 	hint := DivMod{
-		lhs: lhs,
-		rhs: rhs,
-		// quotient:  quo,
+		lhs:      lhs,
+		rhs:      rhs,
+		quotient: quo,
 		// remainder: rem,
 	}
 
 	err := hint.Execute(vm)
 	require.Nil(t, err)
+
+	quoCell, err := quo.Get(vm)
+	require.Nil(t, err)
+	quoFelt, err := quoCell.Read().ToFieldElement()
+	require.Nil(t, err)
+
 	require.Equal(
 		t,
-		memory.MemoryValueFromInt(1),
-		readFrom(vm, VM.ExecutionSegment, 1),
+		new(f.Element).SetUint64(7).String(),
+		quoFelt.String(),
 	)
 }
