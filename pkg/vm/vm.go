@@ -24,7 +24,7 @@ type HintRunner interface {
 
 // Represents the current execution context of the vm
 type Context struct {
-	Pc *mem.MemoryAddress
+	Pc mem.MemoryAddress
 	Fp uint64
 	Ap uint64
 }
@@ -108,7 +108,7 @@ func NewVirtualMachine(programBytecode []*f.Element, config VirtualMachineConfig
 		Context: Context{
 			Fp: 0,
 			Ap: 0,
-			Pc: &mem.MemoryAddress{
+			Pc: mem.MemoryAddress{
 				SegmentIndex: ProgramSegment,
 				Offset:       0,
 			},
@@ -127,7 +127,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 	// if instruction is not in cache, redecode and store it
 	instruction, ok := vm.instructions[vm.Context.Pc.Offset]
 	if !ok {
-		memoryValue, err := vm.MemoryManager.Memory.ReadFromAddress(vm.Context.Pc)
+		memoryValue, err := vm.MemoryManager.Memory.ReadFromAddress(&vm.Context.Pc)
 		if err != nil {
 			return fmt.Errorf("reading instruction: %w", err)
 		}
@@ -205,7 +205,7 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 		return fmt.Errorf("fp update: %w", err)
 	}
 
-	vm.Context.Pc = &nextPc
+	vm.Context.Pc = nextPc
 	vm.Context.Ap = nextAp
 	vm.Context.Fp = nextFp
 
@@ -433,7 +433,7 @@ func (vm *VirtualMachine) updatePc(
 		if err != nil {
 			return mem.MemoryAddress{}, fmt.Errorf("relative jump: %w", err)
 		}
-		newPc := *vm.Context.Pc
+		newPc := vm.Context.Pc
 		err = newPc.Add(&newPc, val)
 		return newPc, err
 	case Jnz:
@@ -464,7 +464,7 @@ func (vm *VirtualMachine) updatePc(
 			return mem.MemoryAddress{}, err
 		}
 
-		newPc := *vm.Context.Pc
+		newPc := vm.Context.Pc
 		err = newPc.Add(&newPc, val)
 		return newPc, err
 

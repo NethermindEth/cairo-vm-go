@@ -30,11 +30,11 @@ func TestSimpleProgram(t *testing.T) {
 	endPc, err := runner.InitializeMainEntrypoint()
 	require.NoError(t, err)
 
-	expectedPc := &memory.MemoryAddress{SegmentIndex: 3, Offset: 0}
+	expectedPc := memory.MemoryAddress{SegmentIndex: 3, Offset: 0}
 
 	require.Equal(t, expectedPc, endPc)
 
-	err = runner.RunUntilPc(endPc)
+	err = runner.RunUntilPc(&endPc)
 	require.NoError(t, err)
 
 	executionSegment := runner.segments()[VM.ExecutionSegment]
@@ -45,7 +45,7 @@ func TestSimpleProgram(t *testing.T) {
 			// return fp
 			&memory.MemoryAddress{SegmentIndex: 2, Offset: 0},
 			// next pc
-			expectedPc,
+			&expectedPc,
 			2,
 			3,
 			4,
@@ -76,10 +76,10 @@ func TestStepLimitExceeded(t *testing.T) {
 	endPc, err := runner.InitializeMainEntrypoint()
 	require.NoError(t, err)
 
-	expectedPc := &memory.MemoryAddress{SegmentIndex: 3, Offset: 0}
+	expectedPc := memory.MemoryAddress{SegmentIndex: 3, Offset: 0}
 	require.Equal(t, expectedPc, endPc)
 
-	err = runner.RunUntilPc(endPc)
+	err = runner.RunUntilPc(&endPc)
 	require.ErrorContains(t, err, "step limit exceeded")
 
 	executionSegment := runner.segments()[VM.ExecutionSegment]
@@ -90,7 +90,7 @@ func TestStepLimitExceeded(t *testing.T) {
 			// return fp
 			&memory.MemoryAddress{SegmentIndex: 2, Offset: 0},
 			// next pc
-			expectedPc,
+			&expectedPc,
 			2,
 			3,
 			5,
@@ -103,7 +103,7 @@ func TestStepLimitExceeded(t *testing.T) {
 	assert.Equal(t, uint64(2), runner.vm.Context.Ap)
 	assert.Equal(t, uint64(2), runner.vm.Context.Fp)
 	// the fourth instruction starts at 0:6 because all previous one have size 2
-	assert.Equal(t, &memory.MemoryAddress{SegmentIndex: 0, Offset: 6}, runner.vm.Context.Pc)
+	assert.Equal(t, memory.MemoryAddress{SegmentIndex: 0, Offset: 6}, runner.vm.Context.Pc)
 	// step limit exceeded
 	assert.Equal(t, uint64(3), runner.steps())
 }
@@ -158,7 +158,7 @@ func TestStepLimitExceededProofMode(t *testing.T) {
 		assert.Equal(t, uint64(2), runner.vm.Context.Ap)
 		assert.Equal(t, uint64(2), runner.vm.Context.Fp)
 		// it repeats the last instruction at 0:12
-		assert.Equal(t, &memory.MemoryAddress{SegmentIndex: 0, Offset: 12}, runner.vm.Context.Pc)
+		assert.Equal(t, memory.MemoryAddress{SegmentIndex: 0, Offset: 12}, runner.vm.Context.Pc)
 		// step limit exceeded
 		assert.Equal(t, uint64(maxstep), runner.steps())
 	}

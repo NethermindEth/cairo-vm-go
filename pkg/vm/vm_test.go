@@ -169,8 +169,8 @@ func TestGetImmCellOp1(t *testing.T) {
 	)
 
 	// Prepare vm with dummy values
-	const offOp1 = 1                                               // target imm
-	vm.Context.Pc = &mem.MemoryAddress{SegmentIndex: 0, Offset: 1} // "current instruction"
+	const offOp1 = 1                                              // target imm
+	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 1} // "current instruction"
 
 	instruction := Instruction{
 		OffOp1:    offOp1,
@@ -388,7 +388,7 @@ func TestOpcodeAssertionAssertEq(t *testing.T) {
 func TestUpdatePcNextInstr(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	vm.Context.Pc = &mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
+	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
 	instruction := Instruction{
 		PcUpdate:  NextInstr,
 		Op1Source: Op0, // anything but imm
@@ -402,7 +402,7 @@ func TestUpdatePcNextInstr(t *testing.T) {
 func TestUpdatePcNextInstrImm(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	vm.Context.Pc = &mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
+	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
 	instruction := Instruction{
 		PcUpdate:  NextInstr,
 		Op1Source: Imm,
@@ -416,7 +416,7 @@ func TestUpdatePcNextInstrImm(t *testing.T) {
 func TestUpdatePcJump(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	vm.Context.Pc = &mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
+	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
 	jumpAddr := uint64(10)
 	res := mem.MemoryValueFromSegmentAndOffset(0, jumpAddr)
 
@@ -432,7 +432,7 @@ func TestUpdatePcJump(t *testing.T) {
 func TestUpdatePcJumpRel(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	vm.Context.Pc = &mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
+	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
 	relAddr := uint64(10)
 	res := mem.MemoryValueFromInt(relAddr)
 
@@ -453,7 +453,7 @@ func TestUpdatePcJnz(t *testing.T) {
 	dstAddr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
 	op1Addr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 1}
 
-	vm.Context.Pc = &mem.MemoryAddress{SegmentIndex: 0, Offset: 11}
+	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 11}
 	res := mem.MemoryValueFromInt(10)
 	instruction := Instruction{
 		PcUpdate:  Jnz,
@@ -470,7 +470,7 @@ func TestUpdatePcJnzDstZero(t *testing.T) {
 	writeToDataSegment(vm, 0, mem.MemoryValueFromInt(0)) //dstCell
 	dstAddr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
 
-	vm.Context.Pc = &mem.MemoryAddress{SegmentIndex: 0, Offset: 11}
+	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 11}
 
 	instruction := Instruction{
 		PcUpdate:  Jnz,
@@ -487,7 +487,7 @@ func TestUpdatePcJnzDstZeroImm(t *testing.T) {
 	writeToDataSegment(vm, 0, mem.MemoryValueFromInt(0)) //dstCell
 	dstAddr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
 
-	vm.Context.Pc = &mem.MemoryAddress{SegmentIndex: 0, Offset: 9}
+	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 9}
 
 	instruction := Instruction{
 		PcUpdate:  Jnz,
