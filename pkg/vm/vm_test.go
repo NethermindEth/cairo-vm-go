@@ -29,9 +29,6 @@ func TestVMCreation(t *testing.T) {
 // - cellDst: with ap and fp (using positive and negative offsets)
 // - cellOp0: with ap and fp (using positive and negative offsets)
 // - cellOp1: all four different outputs (using positive and negative offsets accordingly)
-// - calculate res: verify valid mulitplication and addition. Also verify nil output when correct
-// - (Jake) [V] Verify addition
-// - (WIP)  [ ] Verify Multiplication / Nil Output
 // - update PC: verify all four cases. Besides, when testing relative jump (with or without conditions) that a negative relative address
 // - update AP: verify all posible cases, and when Res is a negative value
 // - update FP: verify all posible cases, and when Res is a negative value
@@ -348,7 +345,6 @@ func TestInferOperandSub(t *testing.T) {
 	assert.Equal(t, expectedOp0Cell, op0Cell)
 }
 
-<<<<<<< HEAD
 func TestComputeResUnconstrained(t *testing.T) {
 	vm := defaultVirtualMachine()
 	instruction := Instruction{Res: Unconstrained}
@@ -402,50 +398,12 @@ func TestComputeAddResBothAddrs(t *testing.T) {
 
 	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromSegmentAndOffset(2, 10)}
 	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromSegmentAndOffset(2, 15)}
-=======
-func TestComputeAddRes_AddrToFelt(t *testing.T) {
-	vm := defaultVirtualMachine()
-	instruction := Instruction{Res: AddOperands}
-
-	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))}
-	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(15)}
-
-	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
-	require.NoError(t, err)
-	expected := mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 25))
-	assert.Equal(t, expected, res)
-}
-
-func TestComputeAddRes_FeltToAddr(t *testing.T) {
-	vm := defaultVirtualMachine()
-	instruction := Instruction{Res: AddOperands}
-
-	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromInt(15)}
-	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15))}
-
-	res, err := vm.computeRes(&instruction, cellOp0, cellOp1)
-	require.NoError(t, err)
-	expected := mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 30))
-	assert.Equal(t, expected, res)
-}
-
-func TestComputeAddRes_BothAddrs(t *testing.T) {
-	vm := defaultVirtualMachine()
-	instruction := Instruction{Res: AddOperands}
-
-	cellOp0 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 10))}
-	cellOp1 := &mem.Cell{Accessed: true, Value: mem.MemoryValueFromMemoryAddress(mem.NewMemoryAddress(2, 15))}
->>>>>>> af18294 (separate each cases to have own functions)
 
 	_, err := vm.computeRes(&instruction, cellOp0, cellOp1)
 	require.Error(t, err) // Expecting an error since adding two addresses is not allowed
 }
 
-<<<<<<< HEAD
 func TestComputeAddResBothFelts(t *testing.T) {
-=======
-func TestComputeAddRes_BothFelts(t *testing.T) {
->>>>>>> af18294 (separate each cases to have own functions)
 	vm := defaultVirtualMachine()
 	instruction := Instruction{Res: AddOperands}
 
@@ -456,7 +414,6 @@ func TestComputeAddRes_BothFelts(t *testing.T) {
 	require.NoError(t, err)
 	expected := mem.MemoryValueFromInt(25)
 	assert.Equal(t, expected, res)
-<<<<<<< HEAD
 }
 
 // Felt should be Positive or Negative. Thus four test cases
@@ -546,8 +503,6 @@ func TestComputeMulResBothAddrs(t *testing.T) {
 
 	_, err := vm.computeRes(&instruction, cellOp0, cellOp1)
 	require.Error(t, err) // Expecting an error since multiplying two addresses is not allowed
-=======
->>>>>>> af18294 (separate each cases to have own functions)
 }
 
 func TestOpcodeAssertionAssertEq(t *testing.T) {

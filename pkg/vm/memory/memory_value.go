@@ -218,7 +218,7 @@ func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	if lhs.IsFelt() {
 		if rhs.IsFelt() { // Felt + Felt
 			mv.felt = MemoryValueFromUint(lhs.felt.Uint64() + rhs.felt.Uint64()).felt
-		} else { // Felt + Address
+		} else { // Felt + Address, swap lhs and rhs
 			mv.address, err = mv.address.Add(rhs.address, lhs.felt)
 		}
 	} else if rhs.IsFelt() { // Address + Felt
