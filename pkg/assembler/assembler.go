@@ -1,8 +1,6 @@
 package assembler
 
 import (
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
-
 	"github.com/alecthomas/participle/v2"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -21,45 +19,46 @@ func CasmToBytecode(code string) ([]*f.Element, error) {
 	}
 	// Ast To Instruction List
 	instructionList, err := astToInstruction(*casmAst)
+	if err != nil {
+		return nil, err
+	}
 	// Instrciton to bytecode
 	return encodeInstructionListToBytecode(instructionList)
 }
-
-type Instruction vm.Instruction
 
 //
 // Functions that visit the AST in order to encode the instructions
 //
 
-const (
-	// offsets
-	op0Offset   = 16
-	op1Offset   = 32
-	flagsOffset = 48
+// const (
+// 	// offsets
+// 	op0Offset   = 16
+// 	op1Offset   = 32
+// 	flagsOffset = 48
 
-	// flag values
-	dstRegBit         = 48
-	op0RegBit         = 49
-	op1ImmBit         = 50
-	op1FpBit          = 51
-	op1ApBit          = 52
-	resAddBit         = 53
-	resMulBit         = 54
-	pcJumpAbsBit      = 55
-	pcJumpRelBit      = 56
-	pcJnzBit          = 57
-	apAddBit          = 58
-	apAdd1Bit         = 59
-	opcodeCallBit     = 60
-	opcodeRetBit      = 61
-	opcodeAssertEqBit = 62
+// 	// flag values
+// 	dstRegBit         = 48
+// 	op0RegBit         = 49
+// 	op1ImmBit         = 50
+// 	op1FpBit          = 51
+// 	op1ApBit          = 52
+// 	resAddBit         = 53
+// 	resMulBit         = 54
+// 	pcJumpAbsBit      = 55
+// 	pcJumpRelBit      = 56
+// 	pcJnzBit          = 57
+// 	apAddBit          = 58
+// 	apAdd1Bit         = 59
+// 	opcodeCallBit     = 60
+// 	opcodeRetBit      = 61
+// 	opcodeAssertEqBit = 62
 
-	// default values
-	biasedZero     uint16 = 0x8000
-	biasedPlusOne  uint16 = 0x8001
-	biasedMinusOne uint16 = 0x7FFF
-	biasedMinusTwo uint16 = 0x7FFE
-)
+// 	// default values
+// 	biasedZero     uint16 = 0x8000
+// 	biasedPlusOne  uint16 = 0x8001
+// 	biasedMinusOne uint16 = 0x7FFF
+// 	biasedMinusTwo uint16 = 0x7FFE
+// )
 
 // ================================ AST to InstrList ================================================
 func astToInstruction(ast CasmProgram) ([]Instruction, error) {
@@ -298,12 +297,17 @@ func encodeOffsets(instr *Instruction) uint64 {
 }
 
 func encodeInstructionFlags(instr *Instruction, encoding uint64) (uint64, error) {
-	encoding |= uint64(instr.DstRegister) << dstRegBit
-	encoding |= uint64(instr.Op0Register) << op0RegBit
-	encoding |= uint64(instr.Op1Source) << op1ImmBit
-	encoding |= uint64(instr.Res) << resAddBit
-	encoding |= uint64(instr.PcUpdate) << pcJumpAbsBit
-	encoding |= uint64(instr.ApUpdate) << apAddBit
-	encoding |= uint64(instr.Opcode) << opcodeCallBit
+	// Use flag register to encode the flags
+	var flagsReg uint16
+	// Encode the flag bits
+	flagsReg = uint16(instr.DstRegister) << dstRegBit
+	flagsReg |= uint16(instr.Op0Register) << op0RegBit
+	flagsReg |= uint16(instr.Op1Source) << op1ImmBit
+	flagsReg |= uint16(instr.Res) << resAddBit
+	flagsReg |= uint16(instr.PcUpdate) << pcJumpAbsBit
+	flagsReg |= uint16(instr.ApUpdate) << apAddBit
+	flagsReg |= uint16(instr.Opcode) << opcodeCallBit
+	// Finally OR them with the 64 bit encoding with the flagsOffset
+	encoding |= uint64(flagsReg) << flagsOffset
 	return encoding, nil
 }

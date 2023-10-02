@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	assembler "github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
@@ -43,9 +44,9 @@ func TestGetCellApDst(t *testing.T) {
 	vm.Context.Ap = ap
 	writeToDataSegment(vm, ap+offDest, mem.MemoryValueFromInt(200))
 
-	instruction := Instruction{
+	instruction := assembler.Instruction{
 		OffDest:     offDest,
-		DstRegister: Ap,
+		DstRegister: assembler.Ap,
 	}
 
 	cell, err := vm.getCellDst(&instruction)
@@ -68,9 +69,9 @@ func TestGetCellFpDst(t *testing.T) {
 	vm.Context.Fp = fp
 	writeToDataSegment(vm, fp+offDest, mem.MemoryValueFromInt(123))
 
-	instruction := Instruction{
+	instruction := assembler.Instruction{
 		OffDest:     offDest,
-		DstRegister: Fp,
+		DstRegister: assembler.Fp,
 	}
 
 	cell, err := vm.getCellDst(&instruction)
@@ -91,9 +92,9 @@ func TestGetCellDstApNegativeOffset(t *testing.T) {
 
 	writeToDataSegment(vm, ap+offDest, mem.MemoryValueFromInt(100))
 
-	instruction := Instruction{
+	instruction := assembler.Instruction{
 		OffDest:     offDest,
-		DstRegister: Ap,
+		DstRegister: assembler.Ap,
 	}
 
 	cell, err := vm.getCellDst(&instruction)
@@ -114,9 +115,9 @@ func TestGetCellDstFpNegativeOffset(t *testing.T) {
 
 	writeToDataSegment(vm, fp+offDest, mem.MemoryValueFromInt(100))
 
-	instruction := Instruction{
+	instruction := assembler.Instruction{
 		OffDest:     offDest,
-		DstRegister: Fp,
+		DstRegister: assembler.Fp,
 	}
 
 	cell, err := vm.getCellDst(&instruction)
@@ -136,9 +137,9 @@ func TestGetApCellOp0(t *testing.T) {
 	vm.Context.Ap = ap
 	writeToDataSegment(vm, ap+offOp0, mem.MemoryValueFromInt(123))
 
-	instruction := Instruction{
+	instruction := assembler.Instruction{
 		OffOp0:      offOp0,
-		Op0Register: Ap,
+		Op0Register: assembler.Ap,
 	}
 
 	cell, err := vm.getCellOp0(&instruction)
@@ -161,9 +162,9 @@ func TestGetImmCellOp1(t *testing.T) {
 	const offOp1 = 1                           // target imm
 	vm.Context.Pc = mem.NewMemoryAddress(0, 1) // "current instruction"
 
-	instruction := Instruction{
+	instruction := assembler.Instruction{
 		OffOp1:    offOp1,
-		Op1Source: Imm,
+		Op1Source: assembler.Imm,
 	}
 
 	cell, err := vm.getCellOp1(&instruction, nil)
@@ -191,9 +192,9 @@ func TestGetOp0PosCellOp1(t *testing.T) {
 		Value:    mem.MemoryValueFromSegmentAndOffset(0, 2),
 	}
 
-	instruction := Instruction{
+	instruction := assembler.Instruction{
 		OffOp1:    offOp1,
-		Op1Source: Op0,
+		Op1Source: assembler.Op0,
 	}
 
 	cell, err := vm.getCellOp1(&instruction, op0Cell)
@@ -221,9 +222,9 @@ func TestGetOp0NegCellOp1(t *testing.T) {
 		Value:    mem.MemoryValueFromSegmentAndOffset(0, 4),
 	}
 
-	instruction := Instruction{
+	instruction := assembler.Instruction{
 		OffOp1:    offOp1,
-		Op1Source: Op0,
+		Op1Source: assembler.Op0,
 	}
 
 	cell, err := vm.getCellOp1(&instruction, op0Cell)
@@ -240,9 +241,9 @@ func TestGetFpPosCellOp1(t *testing.T) {
 	// Prepare vm with dummy values
 	const offOp1 = 2  // target relative to Fp
 	vm.Context.Fp = 7 // "frame pointer"
-	instruction := Instruction{
+	instruction := assembler.Instruction{
 		OffOp1:    offOp1,
-		Op1Source: FpPlusOffOp1,
+		Op1Source: assembler.FpPlusOffOp1,
 	}
 
 	writeToDataSegment(vm, vm.Context.Fp+2, mem.MemoryValueFromInt(321)) //Write to Execution Segment at Fp+2
@@ -261,9 +262,9 @@ func TestGetFpNegCellOp1(t *testing.T) {
 	// Prepare vm with dummy values
 	const offOp1 = -2 // target relative to Fp
 	vm.Context.Fp = 7 // "frame pointer"
-	instruction := Instruction{
+	instruction := assembler.Instruction{
 		OffOp1:    offOp1,
-		Op1Source: FpPlusOffOp1,
+		Op1Source: assembler.FpPlusOffOp1,
 	}
 
 	writeToDataSegment(vm, vm.Context.Fp-2, mem.MemoryValueFromInt(123)) //Write to Execution Segment at Fp-2
@@ -282,9 +283,9 @@ func TestGetApPosCellOp1(t *testing.T) {
 	// Prepare vm with dummy values
 	vm.Context.Ap = 3 // "allocation pointer"
 	const offOp1 = 2  // target relative to Ap
-	instruction := Instruction{
+	instruction := assembler.Instruction{
 		OffOp1:    offOp1,
-		Op1Source: ApPlusOffOp1,
+		Op1Source: assembler.ApPlusOffOp1,
 	}
 	writeToDataSegment(vm, vm.Context.Ap+2, mem.MemoryValueFromInt(41)) //Write to Execution Segment at Ap+2
 
@@ -302,9 +303,9 @@ func TestGetApNegCellOp1(t *testing.T) {
 	// Prepare vm with dummy values
 	vm.Context.Ap = 3 // "allocation pointer"
 	const offOp1 = -2 // target relative to Ap
-	instruction := Instruction{
+	instruction := assembler.Instruction{
 		OffOp1:    offOp1,
-		Op1Source: ApPlusOffOp1,
+		Op1Source: assembler.ApPlusOffOp1,
 	}
 	writeToDataSegment(vm, vm.Context.Ap-2, mem.MemoryValueFromInt(57)) //Write to Execution Segment at Ap-2
 
@@ -318,9 +319,9 @@ func TestGetApNegCellOp1(t *testing.T) {
 
 func TestInferOperandSub(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := Instruction{
-		Opcode: AssertEq,
-		Res:    AddOperands,
+	instruction := assembler.Instruction{
+		Opcode: assembler.OpCodeAssertEq,
+		Res:    assembler.AddOperands,
 	}
 
 	dstCell := &mem.Cell{
@@ -349,8 +350,8 @@ func TestInferOperandSub(t *testing.T) {
 func TestComputeAddRes(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	instruction := Instruction{
-		Res: AddOperands,
+	instruction := assembler.Instruction{
+		Res: assembler.AddOperands,
 	}
 
 	cellOp0 := &mem.Cell{
@@ -378,8 +379,8 @@ func TestComputeAddRes(t *testing.T) {
 func TestOpcodeAssertionAssertEq(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	instruction := Instruction{
-		Opcode: AssertEq,
+	instruction := assembler.Instruction{
+		Opcode: assembler.OpCodeAssertEq,
 	}
 
 	dstCell := mem.Cell{}
@@ -400,9 +401,9 @@ func TestUpdatePcNextInstr(t *testing.T) {
 	vm := defaultVirtualMachine()
 
 	vm.Context.Pc = mem.NewMemoryAddress(0, 3)
-	instruction := Instruction{
-		PcUpdate:  NextInstr,
-		Op1Source: Op0, // anything but imm
+	instruction := assembler.Instruction{
+		PcUpdate:  assembler.PcUpdateNextInstr,
+		Op1Source: assembler.Op0, // anything but imm
 	}
 
 	nextPc, err := vm.updatePc(&instruction, nil, nil, nil)
@@ -414,9 +415,9 @@ func TestUpdatePcNextInstrImm(t *testing.T) {
 	vm := defaultVirtualMachine()
 
 	vm.Context.Pc = mem.NewMemoryAddress(0, 3)
-	instruction := Instruction{
-		PcUpdate:  NextInstr,
-		Op1Source: Imm,
+	instruction := assembler.Instruction{
+		PcUpdate:  assembler.PcUpdateNextInstr,
+		Op1Source: assembler.Imm,
 	}
 
 	nextPc, err := vm.updatePc(&instruction, nil, nil, nil)
@@ -431,8 +432,8 @@ func TestUpdatePcJump(t *testing.T) {
 	jumpAddr := uint64(10)
 	res := mem.MemoryValueFromSegmentAndOffset(0, jumpAddr)
 
-	instruction := Instruction{
-		PcUpdate: Jump,
+	instruction := assembler.Instruction{
+		PcUpdate: assembler.PcUpdateJump,
 	}
 	nextPc, err := vm.updatePc(&instruction, nil, nil, res)
 
@@ -447,8 +448,8 @@ func TestUpdatePcJumpRel(t *testing.T) {
 	relAddr := uint64(10)
 	res := mem.MemoryValueFromInt(relAddr)
 
-	instruction := Instruction{
-		PcUpdate: JumpRel,
+	instruction := assembler.Instruction{
+		PcUpdate: assembler.PcUpdateJumpRel,
 	}
 	nextPc, err := vm.updatePc(&instruction, nil, nil, res)
 
@@ -471,9 +472,9 @@ func TestUpdatePcJnz(t *testing.T) {
 		Accessed: true,
 		Value:    mem.MemoryValueFromInt(relAddr),
 	}
-	instruction := Instruction{
-		PcUpdate:  Jnz,
-		Op1Source: Op0,
+	instruction := assembler.Instruction{
+		PcUpdate:  assembler.PcUpdateJnz,
+		Op1Source: assembler.Op0,
 	}
 	nextPc, err := vm.updatePc(&instruction, dstCell, op1Cell, res)
 
@@ -490,9 +491,9 @@ func TestUpdatePcJnzDstZero(t *testing.T) {
 		Accessed: true,
 		Value:    mem.MemoryValueFromInt(0),
 	}
-	instruction := Instruction{
-		PcUpdate:  Jnz,
-		Op1Source: Op0,
+	instruction := assembler.Instruction{
+		PcUpdate:  assembler.PcUpdateJnz,
+		Op1Source: assembler.Op0,
 	}
 	nextPc, err := vm.updatePc(&instruction, dstCell, nil, nil)
 
@@ -509,9 +510,9 @@ func TestUpdatePcJnzDstZeroImm(t *testing.T) {
 		Accessed: true,
 		Value:    mem.MemoryValueFromInt(0),
 	}
-	instruction := Instruction{
-		PcUpdate:  Jnz,
-		Op1Source: Imm,
+	instruction := assembler.Instruction{
+		PcUpdate:  assembler.PcUpdateJnz,
+		Op1Source: assembler.Imm,
 	}
 	nextPc, err := vm.updatePc(&instruction, dstCell, nil, nil)
 
@@ -523,9 +524,9 @@ func TestUpdateApAddOne(t *testing.T) {
 	vm := defaultVirtualMachine()
 
 	vm.Context.Ap = 5
-	instruction := Instruction{
-		Opcode:   Nop,
-		ApUpdate: Add1,
+	instruction := assembler.Instruction{
+		Opcode:   assembler.OpCodeNop,
+		ApUpdate: assembler.Add1,
 	}
 
 	nextAp, err := vm.updateAp(&instruction, nil)
@@ -537,8 +538,8 @@ func TestUpdateFp(t *testing.T) {
 	vm := defaultVirtualMachine()
 
 	vm.Context.Fp = 5
-	instruction := Instruction{
-		Opcode: Nop,
+	instruction := assembler.Instruction{
+		Opcode: assembler.OpCodeNop,
 	}
 
 	nextFp, err := vm.updateFp(&instruction, nil)

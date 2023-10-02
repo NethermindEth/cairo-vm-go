@@ -1,4 +1,4 @@
-package vm
+package assembler
 
 import (
 	"math/big"
@@ -29,9 +29,9 @@ func TestAssertEq(t *testing.T) {
 		Op0Register: Fp,
 		Op1Source:   Imm,
 		Res:         Op1,
-		PcUpdate:    NextInstr,
+		PcUpdate:    PcUpdateNextInstr,
 		ApUpdate:    Add1,
-		Opcode:      AssertEq,
+		Opcode:      OpCodeAssertEq,
 	}
 
 	decoded, err := DecodeInstruction(
@@ -51,9 +51,9 @@ func TestJmp(t *testing.T) {
 		Op0Register: Ap,
 		Op1Source:   FpPlusOffOp1,
 		Res:         AddOperands,
-		PcUpdate:    JumpRel,
+		PcUpdate:    PcUpdateJumpRel,
 		ApUpdate:    SameAp,
-		Opcode:      Nop,
+		Opcode:      OpCodeNop,
 	}
 
 	decoded, err := DecodeInstruction(
@@ -64,7 +64,7 @@ func TestJmp(t *testing.T) {
 	assert.Equal(t, expected, *decoded)
 }
 
-func TestJnz(t *testing.T) {
+func TestJnzInstr(t *testing.T) {
 	expected := Instruction{
 		OffDest:     3,
 		OffOp0:      -1,
@@ -73,9 +73,9 @@ func TestJnz(t *testing.T) {
 		Op0Register: Fp,
 		Op1Source:   FpPlusOffOp1,
 		Res:         Unconstrained,
-		PcUpdate:    Jnz,
+		PcUpdate:    PcUpdateJnz,
 		ApUpdate:    SameAp,
-		Opcode:      Nop,
+		Opcode:      OpCodeNop,
 	}
 
 	decoded, err := DecodeInstruction(
@@ -95,9 +95,9 @@ func TestCall(t *testing.T) {
 		Op0Register: Ap,
 		Op1Source:   Imm,
 		Res:         Op1,
-		PcUpdate:    JumpRel,
+		PcUpdate:    PcUpdateJumpRel,
 		ApUpdate:    Add2,
-		Opcode:      Call,
+		Opcode:      OpCodeCall,
 	}
 
 	decoded, err := DecodeInstruction(
@@ -108,7 +108,7 @@ func TestCall(t *testing.T) {
 	assert.Equal(t, expected, *decoded)
 }
 
-func TestRet(t *testing.T) {
+func TestRetInstr(t *testing.T) {
 	expected := Instruction{
 		OffDest:     -2,
 		OffOp0:      -1,
@@ -117,9 +117,9 @@ func TestRet(t *testing.T) {
 		Op0Register: Fp,
 		Op1Source:   FpPlusOffOp1,
 		Res:         Op1,
-		PcUpdate:    Jump,
+		PcUpdate:    PcUpdateJump,
 		ApUpdate:    SameAp,
-		Opcode:      Ret,
+		Opcode:      OpCodeRet,
 	}
 
 	decoded, err := DecodeInstruction(
@@ -139,9 +139,9 @@ func TestAddAp(t *testing.T) {
 		Op0Register: Fp,
 		Op1Source:   Imm,
 		Res:         Op1,
-		PcUpdate:    NextInstr,
+		PcUpdate:    PcUpdateNextInstr,
 		ApUpdate:    AddImm,
-		Opcode:      Nop,
+		Opcode:      OpCodeNop,
 	}
 
 	decoded, err := DecodeInstruction(

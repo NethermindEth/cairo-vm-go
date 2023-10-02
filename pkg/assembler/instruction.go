@@ -1,4 +1,4 @@
-package vm
+package assembler
 
 import (
 	"fmt"
@@ -75,13 +75,13 @@ type PcUpdate uint8
 
 func (res PcUpdate) String() string {
 	switch res {
-	case Jump:
+	case PcUpdateJump:
 		return "Jump Abs"
-	case JumpRel:
+	case PcUpdateJumpRel:
 		return "Jump Rel"
-	case Jnz:
+	case PcUpdateJnz:
 		return "Jnz"
-	case NextInstr:
+	case PcUpdateNextInstr:
 		return "Next instr"
 	default:
 		return string(res)
@@ -89,10 +89,10 @@ func (res PcUpdate) String() string {
 }
 
 const (
-	Jump PcUpdate = iota
-	JumpRel
-	Jnz
-	NextInstr
+	PcUpdateJump PcUpdate = iota
+	PcUpdateJumpRel
+	PcUpdateJnz
+	PcUpdateNextInstr
 )
 
 type ApUpdate uint8
@@ -123,13 +123,13 @@ type Opcode uint8
 
 func (op Opcode) String() string {
 	switch op {
-	case Call:
+	case OpCodeCall:
 		return "Call"
-	case Ret:
+	case OpCodeRet:
 		return "Ret"
-	case AssertEq:
+	case OpCodeAssertEq:
 		return "Assert"
-	case Nop:
+	case OpCodeNop:
 		return "Nop"
 	default:
 		return string(op)
@@ -137,10 +137,10 @@ func (op Opcode) String() string {
 }
 
 const (
-	Call Opcode = iota
-	Ret
-	AssertEq
-	Nop
+	OpCodeCall Opcode = iota
+	OpCodeRet
+	OpCodeAssertEq
+	OpCodeNop
 )
 
 type Instruction struct {
@@ -204,6 +204,12 @@ func (i Instruction) String() string {
 }
 
 const (
+	// Offsets
+	op0Offset   = 16
+	op1Offset   = 32
+	flagsOffset = 48
+
+	// Relative to flagsOffset
 	dstRegBit         = 0
 	op0RegBit         = 1
 	op1ImmBit         = 2
@@ -219,7 +225,12 @@ const (
 	opcodeCallBit     = 12
 	opcodeRetBit      = 13
 	opcodeAssertEqBit = 14
-	offsetBits        = 16
+
+	// Default values
+	biasedZero     uint16 = 0x8000
+	biasedPlusOne  uint16 = 0x8001
+	biasedMinusOne uint16 = 0x7FFF
+	biasedMinusTwo uint16 = 0x7FFE
 )
 
 func DecodeInstruction(rawInstruction *f.Element) (*Instruction, error) {
@@ -255,10 +266,10 @@ func decodeInstructionValues(encoding uint64) (
 	encodingWith2sComplement := encoding ^ 0x0000800080008000
 	// first, second and third 16 bits of the instruction encoding respectively
 	off0Enc = int16(encodingWith2sComplement)
-	off1Enc = int16(encodingWith2sComplement >> offsetBits)
-	off2Enc = int16(encodingWith2sComplement >> (2 * offsetBits))
+	off1Enc = int16(encodingWith2sComplement >> op0Offset)
+	off2Enc = int16(encodingWith2sComplement >> op1Offset)
 	// bits 48..63
-	flags = uint16(encodingWith2sComplement >> (3 * offsetBits))
+	flags = uint16(encodingWith2sComplement >> flagsOffset)
 	return
 }
 
@@ -288,7 +299,7 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 	// (0, 0) bits at pc_update corespond to different
 	// scenarios depending on the instruction.
 	// For JNZ the result is not constrained
-	if instruction.PcUpdate == Jnz {
+	if instruction.PcUpdate == PcUpdateJnz {
 		defaultResLogic = Unconstrained
 	} else {
 		defaultResLogic = Op1
@@ -318,16 +329,16 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 	instruction.Opcode = Opcode(opcode)
 
 	// for pc udpate Jnz, res should be unconstrainded, no opcode, and ap should update with Imm
-	if instruction.PcUpdate == Jnz &&
+	if instruction.PcUpdate == PcUpdateJnz &&
 		(instruction.Res != Unconstrained ||
-			instruction.Opcode != Nop ||
+			instruction.Opcode != OpCodeNop ||
 			instruction.ApUpdate != SameAp) {
 		return fmt.Errorf(
 			"jnz opcode must have unconstrained res logic, no opcode, and no ap change",
 		)
 	}
 
-	if instruction.Opcode == Call {
+	if instruction.Opcode == OpCodeCall {
 		// (0, 0) bits for ap_update also stand for different
 		// behaviour in different opcodes.
 		// Call treats (0, 0) as ADD2 logic

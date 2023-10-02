@@ -22,31 +22,32 @@ func TestAssertEqRegister(t *testing.T) {
 	assert.Equal(t, biased(0), op1Offset)
 
 	// verify flags
-	assert.True(t, (encode>>dstRegBit)&1 == 0)
-	assert.True(t, (encode>>op0RegBit)&1 == 1)
+	flagsReg := uint16(encode >> flagsOffset)
+	assert.True(t, (flagsReg>>dstRegBit)&1 == 0)
+	assert.True(t, (flagsReg>>op0RegBit)&1 == 1)
 	assert.True(
 		t,
-		(encode>>op1ImmBit)&1 == 0 &&
-			(encode>>op1FpBit)&1 == 1 &&
-			(encode>>op1ApBit)&1 == 0,
+		(flagsReg>>op1ImmBit)&1 == 0 &&
+			(flagsReg>>op1FpBit)&1 == 1 &&
+			(flagsReg>>op1ApBit)&1 == 0,
 	)
 	assert.True(
-		t, (encode>>resAddBit)&1 == 0 && (encode>>resMulBit)&1 == 0,
-	)
-	assert.True(
-		t,
-		(encode>>pcJumpAbsBit)&1 == 0 &&
-			(encode>>pcJumpRelBit)&1 == 0 &&
-			(encode>>pcJnzBit)&1 == 0,
-	)
-	assert.True(
-		t, (encode>>apAddBit)&1 == 0 && (encode>>apAdd1Bit)&1 == 1,
+		t, (flagsReg>>resAddBit)&1 == 0 && (flagsReg>>resMulBit)&1 == 0,
 	)
 	assert.True(
 		t,
-		(encode>>opcodeRetBit)&1 == 0 &&
-			(encode>>opcodeCallBit)&1 == 0 &&
-			(encode>>opcodeAssertEqBit)&1 == 1,
+		(flagsReg>>pcJumpAbsBit)&1 == 0 &&
+			(flagsReg>>pcJumpRelBit)&1 == 0 &&
+			(flagsReg>>pcJnzBit)&1 == 0,
+	)
+	assert.True(
+		t, (flagsReg>>apAddBit)&1 == 0 && (flagsReg>>apAdd1Bit)&1 == 1,
+	)
+	assert.True(
+		t,
+		(flagsReg>>opcodeRetBit)&1 == 0 &&
+			(flagsReg>>opcodeCallBit)&1 == 0 &&
+			(flagsReg>>opcodeAssertEqBit)&1 == 1,
 	)
 }
 
@@ -67,31 +68,32 @@ func TestAssertEqImm(t *testing.T) {
 	assert.Equal(t, biased(1), op1Offset)
 
 	// verify flags
-	assert.True(t, (encode>>dstRegBit)&1 == 1)
-	assert.True(t, (encode>>op0RegBit)&1 == 1)
+	flagsReg := uint16(encode >> flagsOffset)
+	assert.True(t, (flagsReg>>dstRegBit)&1 == 1)
+	assert.True(t, (flagsReg>>op0RegBit)&1 == 1)
 	assert.True(
 		t,
-		(encode>>op1ImmBit)&1 == 1 &&
-			(encode>>op1FpBit)&1 == 0 &&
-			(encode>>op1ApBit)&1 == 0,
+		(flagsReg>>op1ImmBit)&1 == 1 &&
+			(flagsReg>>op1FpBit)&1 == 0 &&
+			(flagsReg>>op1ApBit)&1 == 0,
 	)
 	assert.True(
-		t, (encode>>resAddBit)&1 == 0 && (encode>>resMulBit)&1 == 0,
-	)
-	assert.True(
-		t,
-		(encode>>pcJumpAbsBit)&1 == 0 &&
-			(encode>>pcJumpRelBit)&1 == 0 &&
-			(encode>>pcJnzBit)&1 == 0,
-	)
-	assert.True(
-		t, (encode>>apAddBit)&1 == 0 && (encode>>apAdd1Bit)&1 == 0,
+		t, (flagsReg>>resAddBit)&1 == 0 && (flagsReg>>resMulBit)&1 == 0,
 	)
 	assert.True(
 		t,
-		(encode>>opcodeRetBit)&1 == 0 &&
-			(encode>>opcodeCallBit)&1 == 0 &&
-			(encode>>opcodeAssertEqBit)&1 == 1,
+		(flagsReg>>pcJumpAbsBit)&1 == 0 &&
+			(flagsReg>>pcJumpRelBit)&1 == 0 &&
+			(flagsReg>>pcJnzBit)&1 == 0,
+	)
+	assert.True(
+		t, (flagsReg>>apAddBit)&1 == 0 && (flagsReg>>apAdd1Bit)&1 == 0,
+	)
+	assert.True(
+		t,
+		(flagsReg>>opcodeRetBit)&1 == 0 &&
+			(flagsReg>>opcodeCallBit)&1 == 0 &&
+			(flagsReg>>opcodeAssertEqBit)&1 == 1,
 	)
 
 }
@@ -110,31 +112,32 @@ func TestAssertEqDoubleDeref(t *testing.T) {
 	assert.Equal(t, biased(-3), op1Offset)
 
 	// verify flags
-	assert.True(t, (encode>>dstRegBit)&1 == 0)
-	assert.True(t, (encode>>op0RegBit)&1 == 0)
+	flagsReg := uint16(encode >> flagsOffset)
+	assert.True(t, (flagsReg>>dstRegBit)&1 == 0)
+	assert.True(t, (flagsReg>>op0RegBit)&1 == 0)
 	assert.True(
 		t,
-		(encode>>op1ImmBit)&1 == 0 &&
-			(encode>>op1FpBit)&1 == 0 &&
-			(encode>>op1ApBit)&1 == 0,
+		(flagsReg>>op1ImmBit)&1 == 0 &&
+			(flagsReg>>op1FpBit)&1 == 0 &&
+			(flagsReg>>op1ApBit)&1 == 0,
 	)
 	assert.True(
-		t, (encode>>resAddBit)&1 == 0 && (encode>>resMulBit)&1 == 0,
-	)
-	assert.True(
-		t,
-		(encode>>pcJumpAbsBit)&1 == 0 &&
-			(encode>>pcJumpRelBit)&1 == 0 &&
-			(encode>>pcJnzBit)&1 == 0,
-	)
-	assert.True(
-		t, (encode>>apAddBit)&1 == 0 && (encode>>apAdd1Bit)&1 == 0,
+		t, (flagsReg>>resAddBit)&1 == 0 && (flagsReg>>resMulBit)&1 == 0,
 	)
 	assert.True(
 		t,
-		(encode>>opcodeRetBit)&1 == 0 &&
-			(encode>>opcodeCallBit)&1 == 0 &&
-			(encode>>opcodeAssertEqBit)&1 == 1,
+		(flagsReg>>pcJumpAbsBit)&1 == 0 &&
+			(flagsReg>>pcJumpRelBit)&1 == 0 &&
+			(flagsReg>>pcJnzBit)&1 == 0,
+	)
+	assert.True(
+		t, (flagsReg>>apAddBit)&1 == 0 && (flagsReg>>apAdd1Bit)&1 == 0,
+	)
+	assert.True(
+		t,
+		(flagsReg>>opcodeRetBit)&1 == 0 &&
+			(flagsReg>>opcodeCallBit)&1 == 0 &&
+			(flagsReg>>opcodeAssertEqBit)&1 == 1,
 	)
 }
 
@@ -152,31 +155,32 @@ func TestAssertEqMathOperation(t *testing.T) {
 	assert.Equal(t, biased(-3), op1Offset)
 
 	// verify flags
-	assert.True(t, (encode>>dstRegBit)&1 == 1)
-	assert.True(t, (encode>>op0RegBit)&1 == 0)
+	flagsReg := uint16(encode >> flagsOffset)
+	assert.True(t, (flagsReg>>dstRegBit)&1 == 1)
+	assert.True(t, (flagsReg>>op0RegBit)&1 == 0)
 	assert.True(
 		t,
-		(encode>>op1ImmBit)&1 == 0 &&
-			(encode>>op1FpBit)&1 == 0 &&
-			(encode>>op1ApBit)&1 == 1,
+		(flagsReg>>op1ImmBit)&1 == 0 &&
+			(flagsReg>>op1FpBit)&1 == 0 &&
+			(flagsReg>>op1ApBit)&1 == 1,
 	)
 	assert.True(
-		t, (encode>>resAddBit)&1 == 0 && (encode>>resMulBit)&1 == 1,
-	)
-	assert.True(
-		t,
-		(encode>>pcJumpAbsBit)&1 == 0 &&
-			(encode>>pcJumpRelBit)&1 == 0 &&
-			(encode>>pcJnzBit)&1 == 0,
-	)
-	assert.True(
-		t, (encode>>apAddBit)&1 == 0 && (encode>>apAdd1Bit)&1 == 0,
+		t, (flagsReg>>resAddBit)&1 == 0 && (flagsReg>>resMulBit)&1 == 1,
 	)
 	assert.True(
 		t,
-		(encode>>opcodeRetBit)&1 == 0 &&
-			(encode>>opcodeCallBit)&1 == 0 &&
-			(encode>>opcodeAssertEqBit)&1 == 1,
+		(flagsReg>>pcJumpAbsBit)&1 == 0 &&
+			(flagsReg>>pcJumpRelBit)&1 == 0 &&
+			(flagsReg>>pcJnzBit)&1 == 0,
+	)
+	assert.True(
+		t, (flagsReg>>apAddBit)&1 == 0 && (flagsReg>>apAdd1Bit)&1 == 0,
+	)
+	assert.True(
+		t,
+		(flagsReg>>opcodeRetBit)&1 == 0 &&
+			(flagsReg>>opcodeCallBit)&1 == 0 &&
+			(flagsReg>>opcodeAssertEqBit)&1 == 1,
 	)
 }
 
@@ -197,31 +201,32 @@ func TestCallAbs(t *testing.T) {
 	assert.Equal(t, biased(1), op1Offset)
 
 	// verify flags
-	assert.True(t, (encode>>dstRegBit)&1 == 0)
-	assert.True(t, (encode>>op0RegBit)&1 == 0)
+	flagsReg := uint16(encode >> flagsOffset)
+	assert.True(t, (flagsReg>>dstRegBit)&1 == 0)
+	assert.True(t, (flagsReg>>op0RegBit)&1 == 0)
 	assert.True(
 		t,
-		(encode>>op1ImmBit)&1 == 1 &&
-			(encode>>op1FpBit)&1 == 0 &&
-			(encode>>op1ApBit)&1 == 0,
+		(flagsReg>>op1ImmBit)&1 == 1 &&
+			(flagsReg>>op1FpBit)&1 == 0 &&
+			(flagsReg>>op1ApBit)&1 == 0,
 	)
 	assert.True(
-		t, (encode>>resAddBit)&1 == 0 && (encode>>resMulBit)&1 == 0,
-	)
-	assert.True(
-		t,
-		(encode>>pcJumpAbsBit)&1 == 1 &&
-			(encode>>pcJumpRelBit)&1 == 0 &&
-			(encode>>pcJnzBit)&1 == 0,
-	)
-	assert.True(
-		t, (encode>>apAddBit)&1 == 0 && (encode>>apAdd1Bit)&1 == 0,
+		t, (flagsReg>>resAddBit)&1 == 0 && (flagsReg>>resMulBit)&1 == 0,
 	)
 	assert.True(
 		t,
-		(encode>>opcodeRetBit)&1 == 0 &&
-			(encode>>opcodeCallBit)&1 == 1 &&
-			(encode>>opcodeAssertEqBit)&1 == 0,
+		(flagsReg>>pcJumpAbsBit)&1 == 1 &&
+			(flagsReg>>pcJumpRelBit)&1 == 0 &&
+			(flagsReg>>pcJnzBit)&1 == 0,
+	)
+	assert.True(
+		t, (flagsReg>>apAddBit)&1 == 0 && (flagsReg>>apAdd1Bit)&1 == 0,
+	)
+	assert.True(
+		t,
+		(flagsReg>>opcodeRetBit)&1 == 0 &&
+			(flagsReg>>opcodeCallBit)&1 == 1 &&
+			(flagsReg>>opcodeAssertEqBit)&1 == 0,
 	)
 }
 
@@ -239,31 +244,32 @@ func TestCallRel(t *testing.T) {
 	assert.Equal(t, biased(-3), op1Offset)
 
 	// verify flags
-	assert.True(t, (encode>>dstRegBit)&1 == 0)
-	assert.True(t, (encode>>op0RegBit)&1 == 0)
+	flagsReg := uint16(encode >> flagsOffset)
+	assert.True(t, (flagsReg>>dstRegBit)&1 == 0)
+	assert.True(t, (flagsReg>>op0RegBit)&1 == 0)
 	assert.True(
 		t,
-		(encode>>op1ImmBit)&1 == 0 &&
-			(encode>>op1FpBit)&1 == 0 &&
-			(encode>>op1ApBit)&1 == 1,
+		(flagsReg>>op1ImmBit)&1 == 0 &&
+			(flagsReg>>op1FpBit)&1 == 0 &&
+			(flagsReg>>op1ApBit)&1 == 1,
 	)
 	assert.True(
-		t, (encode>>resAddBit)&1 == 0 && (encode>>resMulBit)&1 == 0,
-	)
-	assert.True(
-		t,
-		(encode>>pcJumpAbsBit)&1 == 0 &&
-			(encode>>pcJumpRelBit)&1 == 1 &&
-			(encode>>pcJnzBit)&1 == 0,
-	)
-	assert.True(
-		t, (encode>>apAddBit)&1 == 0 && (encode>>apAdd1Bit)&1 == 0,
+		t, (flagsReg>>resAddBit)&1 == 0 && (flagsReg>>resMulBit)&1 == 0,
 	)
 	assert.True(
 		t,
-		(encode>>opcodeRetBit)&1 == 0 &&
-			(encode>>opcodeCallBit)&1 == 1 &&
-			(encode>>opcodeAssertEqBit)&1 == 0,
+		(flagsReg>>pcJumpAbsBit)&1 == 0 &&
+			(flagsReg>>pcJumpRelBit)&1 == 1 &&
+			(flagsReg>>pcJnzBit)&1 == 0,
+	)
+	assert.True(
+		t, (flagsReg>>apAddBit)&1 == 0 && (flagsReg>>apAdd1Bit)&1 == 0,
+	)
+	assert.True(
+		t,
+		(flagsReg>>opcodeRetBit)&1 == 0 &&
+			(flagsReg>>opcodeCallBit)&1 == 1 &&
+			(flagsReg>>opcodeAssertEqBit)&1 == 0,
 	)
 }
 
@@ -281,31 +287,32 @@ func TestRet(t *testing.T) {
 	assert.Equal(t, biased(-1), op1Offset)
 
 	// verify flags
-	assert.True(t, (encode>>dstRegBit)&1 == 1)
-	assert.True(t, (encode>>op0RegBit)&1 == 1)
+	flagsReg := uint16(encode >> flagsOffset)
+	assert.True(t, (flagsReg>>dstRegBit)&1 == 1)
+	assert.True(t, (flagsReg>>op0RegBit)&1 == 1)
 	assert.True(
 		t,
-		(encode>>op1ImmBit)&1 == 0 &&
-			(encode>>op1FpBit)&1 == 1 &&
-			(encode>>op1ApBit)&1 == 0,
+		(flagsReg>>op1ImmBit)&1 == 0 &&
+			(flagsReg>>op1FpBit)&1 == 1 &&
+			(flagsReg>>op1ApBit)&1 == 0,
 	)
 	assert.True(
-		t, (encode>>resAddBit)&1 == 0 && (encode>>resMulBit)&1 == 0,
-	)
-	assert.True(
-		t,
-		(encode>>pcJumpAbsBit)&1 == 1 &&
-			(encode>>pcJumpRelBit)&1 == 0 &&
-			(encode>>pcJnzBit)&1 == 0,
-	)
-	assert.True(
-		t, (encode>>apAddBit)&1 == 0 && (encode>>apAdd1Bit)&1 == 0,
+		t, (flagsReg>>resAddBit)&1 == 0 && (flagsReg>>resMulBit)&1 == 0,
 	)
 	assert.True(
 		t,
-		(encode>>opcodeRetBit)&1 == 1 &&
-			(encode>>opcodeCallBit)&1 == 0 &&
-			(encode>>opcodeAssertEqBit)&1 == 0,
+		(flagsReg>>pcJumpAbsBit)&1 == 1 &&
+			(flagsReg>>pcJumpRelBit)&1 == 0 &&
+			(flagsReg>>pcJnzBit)&1 == 0,
+	)
+	assert.True(
+		t, (flagsReg>>apAddBit)&1 == 0 && (flagsReg>>apAdd1Bit)&1 == 0,
+	)
+	assert.True(
+		t,
+		(flagsReg>>opcodeRetBit)&1 == 1 &&
+			(flagsReg>>opcodeCallBit)&1 == 0 &&
+			(flagsReg>>opcodeAssertEqBit)&1 == 0,
 	)
 }
 
@@ -323,31 +330,32 @@ func TestJumpAbs(t *testing.T) {
 	assert.Equal(t, biased(3), op1Offset)
 
 	// verify flags
-	assert.True(t, (encode>>dstRegBit)&1 == 1)
-	assert.True(t, (encode>>op0RegBit)&1 == 1)
+	flagsReg := uint16(encode >> flagsOffset)
+	assert.True(t, (flagsReg>>dstRegBit)&1 == 1)
+	assert.True(t, (flagsReg>>op0RegBit)&1 == 1)
 	assert.True(
 		t,
-		(encode>>op1ImmBit)&1 == 0 &&
-			(encode>>op1FpBit)&1 == 1 &&
-			(encode>>op1ApBit)&1 == 0,
+		(flagsReg>>op1ImmBit)&1 == 0 &&
+			(flagsReg>>op1FpBit)&1 == 1 &&
+			(flagsReg>>op1ApBit)&1 == 0,
 	)
 	assert.True(
-		t, (encode>>resAddBit)&1 == 1 && (encode>>resMulBit)&1 == 0,
-	)
-	assert.True(
-		t,
-		(encode>>pcJumpAbsBit)&1 == 1 &&
-			(encode>>pcJumpRelBit)&1 == 0 &&
-			(encode>>pcJnzBit)&1 == 0,
-	)
-	assert.True(
-		t, (encode>>apAddBit)&1 == 0 && (encode>>apAdd1Bit)&1 == 0,
+		t, (flagsReg>>resAddBit)&1 == 1 && (flagsReg>>resMulBit)&1 == 0,
 	)
 	assert.True(
 		t,
-		(encode>>opcodeRetBit)&1 == 0 &&
-			(encode>>opcodeCallBit)&1 == 0 &&
-			(encode>>opcodeAssertEqBit)&1 == 0,
+		(flagsReg>>pcJumpAbsBit)&1 == 1 &&
+			(flagsReg>>pcJumpRelBit)&1 == 0 &&
+			(flagsReg>>pcJnzBit)&1 == 0,
+	)
+	assert.True(
+		t, (flagsReg>>apAddBit)&1 == 0 && (flagsReg>>apAdd1Bit)&1 == 0,
+	)
+	assert.True(
+		t,
+		(flagsReg>>opcodeRetBit)&1 == 0 &&
+			(flagsReg>>opcodeCallBit)&1 == 0 &&
+			(flagsReg>>opcodeAssertEqBit)&1 == 0,
 	)
 }
 
@@ -365,31 +373,32 @@ func TestJnz(t *testing.T) {
 	assert.Equal(t, biased(-2), op1Offset)
 
 	// verify flags
-	assert.True(t, (encode>>dstRegBit)&1 == 1)
-	assert.True(t, (encode>>op0RegBit)&1 == 1)
+	flagsReg := uint16(encode >> flagsOffset)
+	assert.True(t, (flagsReg>>dstRegBit)&1 == 1)
+	assert.True(t, (flagsReg>>op0RegBit)&1 == 1)
 	assert.True(
 		t,
-		(encode>>op1ImmBit)&1 == 0 &&
-			(encode>>op1FpBit)&1 == 0 &&
-			(encode>>op1ApBit)&1 == 1,
+		(flagsReg>>op1ImmBit)&1 == 0 &&
+			(flagsReg>>op1FpBit)&1 == 0 &&
+			(flagsReg>>op1ApBit)&1 == 1,
 	)
 	assert.True(
-		t, (encode>>resAddBit)&1 == 0 && (encode>>resMulBit)&1 == 0,
-	)
-	assert.True(
-		t,
-		(encode>>pcJumpAbsBit)&1 == 0 &&
-			(encode>>pcJumpRelBit)&1 == 0 &&
-			(encode>>pcJnzBit)&1 == 1,
-	)
-	assert.True(
-		t, (encode>>apAddBit)&1 == 0 && (encode>>apAdd1Bit)&1 == 0,
+		t, (flagsReg>>resAddBit)&1 == 0 && (flagsReg>>resMulBit)&1 == 0,
 	)
 	assert.True(
 		t,
-		(encode>>opcodeRetBit)&1 == 0 &&
-			(encode>>opcodeCallBit)&1 == 0 &&
-			(encode>>opcodeAssertEqBit)&1 == 0,
+		(flagsReg>>pcJumpAbsBit)&1 == 0 &&
+			(flagsReg>>pcJumpRelBit)&1 == 0 &&
+			(flagsReg>>pcJnzBit)&1 == 1,
+	)
+	assert.True(
+		t, (flagsReg>>apAddBit)&1 == 0 && (flagsReg>>apAdd1Bit)&1 == 0,
+	)
+	assert.True(
+		t,
+		(flagsReg>>opcodeRetBit)&1 == 0 &&
+			(flagsReg>>opcodeCallBit)&1 == 0 &&
+			(flagsReg>>opcodeAssertEqBit)&1 == 0,
 	)
 }
 
@@ -410,31 +419,32 @@ func TestAddApImm(t *testing.T) {
 	assert.Equal(t, biased(1), op1Offset)
 
 	// verify flags
-	assert.True(t, (encode>>dstRegBit)&1 == 1)
-	assert.True(t, (encode>>op0RegBit)&1 == 1)
+	flagsReg := uint16(encode >> flagsOffset)
+	assert.True(t, (flagsReg>>dstRegBit)&1 == 1)
+	assert.True(t, (flagsReg>>op0RegBit)&1 == 1)
 	assert.True(
 		t,
-		(encode>>op1ImmBit)&1 == 1 &&
-			(encode>>op1FpBit)&1 == 0 &&
-			(encode>>op1ApBit)&1 == 0,
+		(flagsReg>>op1ImmBit)&1 == 1 &&
+			(flagsReg>>op1FpBit)&1 == 0 &&
+			(flagsReg>>op1ApBit)&1 == 0,
 	)
 	assert.True(
-		t, (encode>>resAddBit)&1 == 0 && (encode>>resMulBit)&1 == 0,
-	)
-	assert.True(
-		t,
-		(encode>>pcJumpAbsBit)&1 == 0 &&
-			(encode>>pcJumpRelBit)&1 == 0 &&
-			(encode>>pcJnzBit)&1 == 0,
-	)
-	assert.True(
-		t, (encode>>apAddBit)&1 == 1 && (encode>>apAdd1Bit)&1 == 0,
+		t, (flagsReg>>resAddBit)&1 == 0 && (flagsReg>>resMulBit)&1 == 0,
 	)
 	assert.True(
 		t,
-		(encode>>opcodeRetBit)&1 == 0 &&
-			(encode>>opcodeCallBit)&1 == 0 &&
-			(encode>>opcodeAssertEqBit)&1 == 0,
+		(flagsReg>>pcJumpAbsBit)&1 == 0 &&
+			(flagsReg>>pcJumpRelBit)&1 == 0 &&
+			(flagsReg>>pcJnzBit)&1 == 0,
+	)
+	assert.True(
+		t, (flagsReg>>apAddBit)&1 == 1 && (flagsReg>>apAdd1Bit)&1 == 0,
+	)
+	assert.True(
+		t,
+		(flagsReg>>opcodeRetBit)&1 == 0 &&
+			(flagsReg>>opcodeCallBit)&1 == 0 &&
+			(flagsReg>>opcodeAssertEqBit)&1 == 0,
 	)
 
 }
