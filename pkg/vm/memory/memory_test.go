@@ -11,7 +11,7 @@ func TestSegmentRead(t *testing.T) {
 	segment := Segment{Data: []MemoryValue{
 		MemoryValueFromInt(3),
 		MemoryValueFromInt(5),
-		MemoryValue{},
+		{},
 	}}
 
 	assert.Equal(t, segment.Read(0), MemoryValueFromInt(3))
@@ -31,7 +31,7 @@ func TestSegmentRead(t *testing.T) {
 func TestSegmentPeek(t *testing.T) {
 	segment := Segment{Data: []MemoryValue{
 		MemoryValueFromInt(2),
-		MemoryValue{},
+		{},
 	}}
 	assert.Equal(t, segment.Peek(0), MemoryValueFromInt(2))
 	assert.Equal(t, segment.Peek(1), MemoryValue{})
