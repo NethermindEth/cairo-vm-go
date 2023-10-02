@@ -345,7 +345,7 @@ func (vm *VirtualMachine) computeRes(
 	case AddOperands:
 		op0 := op0Cell.Read()
 		op1 := op1Cell.Read()
-		return mem.EmptyMemoryValueAsAddress().Add(op0, op1)
+		return mem.EmptyMemoryValueAs(op0.IsAddress() || op1.IsAddress()).Add(op0, op1)
 	case MulOperands:
 		op0 := op0Cell.Read()
 		op1 := op1Cell.Read()

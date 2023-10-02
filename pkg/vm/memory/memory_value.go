@@ -26,19 +26,16 @@ func (address *MemoryAddress) Equal(other *MemoryAddress) bool {
 }
 
 // Adds a memory address and a field element
-func (ma *MemoryAddress) Add(address *MemoryAddress, offset *f.Element) (*MemoryAddress, error) {
-	addressOffset := new(f.Element).SetUint64(address.Offset)
-	resOffset := new(f.Element).Add(addressOffset, offset)
 
-	if !resOffset.IsUint64() {
-		return nil, fmt.Errorf("new offset bigger than uint64: %s", resOffset.Text(10))
+func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) (*MemoryAddress, error) {
+	lhsOffset := new(f.Element).SetUint64(lhs.Offset)
+	newOffset := new(f.Element).Add(lhsOffset, rhs)
+	if !newOffset.IsUint64() {
+		return nil, fmt.Errorf("new offset bigger than uint64: %s", rhs.Text(10))
 	}
-
-	resAddress := &MemoryAddress{
-		SegmentIndex: address.SegmentIndex,
-		Offset:       resOffset.Uint64(),
-	}
-	return resAddress, nil
+	address.SegmentIndex = lhs.SegmentIndex
+	address.Offset = newOffset.Uint64()
+	return address, nil
 }
 
 // Subs from a memory address a felt or another memory address in the same segment
@@ -214,40 +211,27 @@ func (mv *MemoryValue) Equal(other *MemoryValue) bool {
 	return false
 }
 
-// Adds two memory values is the second one is a Felt
 func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	var err error
 
 	// If both lhs and rhs are felts, perform a simple addition
-	if !lhs.IsAddress() && !rhs.IsAddress() {
-		lhsUint := lhs.felt.Uint64()
-		rhsUint := rhs.felt.Uint64()
-		sumRes := lhsUint + rhsUint
-		sumMemoryValue := MemoryValueFromUint(sumRes)
-		mv.felt = sumMemoryValue.felt
-		return mv, nil
-	}
-
-	// If lhs is an address and rhs is a felt
-	if lhs.IsAddress() && !rhs.IsAddress() {
+	if lhs.IsFelt() {
+		if rhs.IsFelt() { // Felt + Felt
+			mv.felt = MemoryValueFromUint(lhs.felt.Uint64() + rhs.felt.Uint64()).felt
+		} else { // Felt + Address
+			mv.address, err = mv.address.Add(rhs.address, lhs.felt)
+		}
+	} else if rhs.IsFelt() { // Address + Felt
 		mv.address, err = mv.address.Add(lhs.address, rhs.felt)
-		if err != nil {
-			return nil, err
-		}
-		return mv, nil
+	} else { // Address + Address
+		return nil, errors.New("addition of two addresses is not supported")
 	}
 
-	// If rhs is an address and lhs is a felt
-	if !lhs.IsAddress() && rhs.IsAddress() {
-		mv.address, err = mv.address.Add(rhs.address, lhs.felt)
-		if err != nil {
-			return nil, err
-		}
-		return mv, nil
+	if err != nil {
+		return nil, err
 	}
 
-	// If both lhs and rhs are addresses, this is an unsupported operation
-	return nil, errors.New("addition of two addresses is not supported")
+	return mv, nil
 }
 
 // Subs two memory values if they're in the same segment or the rhs is a Felt.
