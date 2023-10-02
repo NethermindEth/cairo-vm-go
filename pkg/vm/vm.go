@@ -5,6 +5,7 @@ import (
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/builtinrunner"
 	safemath "github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
@@ -39,10 +40,12 @@ func (ctx *Context) String() string {
 	)
 }
 
+// WRONG
 func (ctx *Context) AddressAp() *mem.MemoryAddress {
 	return &mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: ctx.Ap}
 }
 
+// WRONG
 func (ctx *Context) AddressFp() *mem.MemoryAddress {
 	return &mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: ctx.Fp}
 }
@@ -79,9 +82,12 @@ type VirtualMachine struct {
 	MemoryManager *mem.MemoryManager
 	Step          uint64
 	Trace         []Context
+	BuiltinRunner builtinrunner.BuiltinRunner
 	config        VirtualMachineConfig
 	// instructions cache
 	instructions map[uint64]*Instruction
+
+	// builtins
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
@@ -165,6 +171,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 }
 
 func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
+	//fmt.Println("Instuction is:", instruction)
 	dstCell, err := vm.getCellDst(instruction)
 	if err != nil {
 		return fmt.Errorf("dst cell: %w", err)
@@ -179,17 +186,33 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 	if err != nil {
 		return fmt.Errorf("op1 cell: %w", err)
 	}
+	//fmt.Println("OPAddr", op0Cell, op1Cell)
+
+	//Here do stuff
+	if op0Cell.Read().IsAddress() {
+		v, _ := op0Cell.Read().ToMemoryAddress()
+		for _, i := range vm.BuiltinRunner.Builtins() {
+			if v.SegmentIndex == i.Segment() {
+				i.Run()
+			}
+		}
+	}
 
 	res, err := vm.inferOperand(instruction, dstCell, op0Cell, op1Cell)
 	if err != nil {
 		return fmt.Errorf("res infer: %w", err)
 	}
+
 	if res == nil {
 		res, err = vm.computeRes(instruction, op0Cell, op1Cell)
 		if err != nil {
 			return fmt.Errorf("compute res: %w", err)
 		}
 	}
+	//fmt.Println("Cells", dstCell, op1Cell, res)
+	//addr, err := op0Cell.Value.ToMemoryAddress()
+	//fmt.Println("Segment:", addr.SegmentIndex, addr.Offset)
+	//fmt.Println(vm.MemoryManager.Memory.Segments)
 
 	err = vm.opcodeAssertions(instruction, dstCell, op0Cell, res)
 	if err != nil {
@@ -232,33 +255,33 @@ func (vm *VirtualMachine) Proof() ([]Trace, []*f.Element, error) {
 }
 
 func (vm *VirtualMachine) getCellDst(instruction *Instruction) (*mem.Cell, error) {
-	var dstRegister uint64
+	var dstRegister *mem.MemoryAddress
 	if instruction.DstRegister == Ap {
-		dstRegister = vm.Context.Ap
+		dstRegister = vm.Context.AddressAp()
 	} else {
-		dstRegister = vm.Context.Fp
+		dstRegister = vm.Context.AddressAp()
 	}
 
-	addr, isOverflow := safemath.SafeOffset(dstRegister, instruction.OffDest)
+	addr, isOverflow := safemath.SafeOffset(dstRegister.Offset, instruction.OffDest)
 	if isOverflow {
 		return nil, fmt.Errorf("offset overflow: %d + %d", dstRegister, instruction.OffDest)
 	}
-	return vm.MemoryManager.Memory.Peek(ExecutionSegment, addr)
+	return vm.MemoryManager.Memory.Peek(dstRegister.SegmentIndex, addr)
 }
 
 func (vm *VirtualMachine) getCellOp0(instruction *Instruction) (*mem.Cell, error) {
-	var op0Register uint64
+	var op0Register *mem.MemoryAddress
 	if instruction.Op0Register == Ap {
-		op0Register = vm.Context.Ap
+		op0Register = vm.Context.AddressAp()
 	} else {
-		op0Register = vm.Context.Fp
+		op0Register = vm.Context.AddressFp()
 	}
 
-	addr, isOverflow := safemath.SafeOffset(op0Register, instruction.OffOp0)
+	addr, isOverflow := safemath.SafeOffset(op0Register.Offset, instruction.OffOp0)
 	if isOverflow {
 		return nil, fmt.Errorf("offset overflow: %d + %d", op0Register, instruction.OffOp0)
 	}
-	return vm.MemoryManager.Memory.Peek(ExecutionSegment, addr)
+	return vm.MemoryManager.Memory.Peek(op0Register.SegmentIndex, addr)
 }
 
 func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell) (*mem.Cell, error) {
@@ -267,6 +290,8 @@ func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell
 	case Op0:
 		// in this case Op0 is being used as an address, and must be of unwrapped as it
 		op0Address, err := op0Cell.Read().ToMemoryAddress()
+		//fmt.Println("Cell is", op0Cell)
+		//fmt.Println("op0Address is", op0Address)
 		if err != nil {
 			return nil, fmt.Errorf("op0 is not an address: %w", err)
 		}
@@ -279,6 +304,9 @@ func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell
 		op1Address = vm.Context.AddressAp()
 	}
 
+	//	fmt.Println("FP", vm.Context.AddressFp())
+	//	fmt.Println("if", instruction.OffOp1)
+	//	fmt.Println("op", op1Address.Offset)
 	addr, isOverflow := safemath.SafeOffset(op1Address.Offset, instruction.OffOp1)
 	if isOverflow {
 		return nil, fmt.Errorf("offset overflow: %d + %d", op1Address.Offset, instruction.OffOp1)
@@ -369,6 +397,7 @@ func (vm *VirtualMachine) opcodeAssertions(
 			return err
 		}
 		err = dstCell.Write(mem.MemoryValueFromMemoryAddress(vm.Context.AddressFp()))
+		fmt.Println("ERR HERE")
 		if err != nil {
 			return err
 		}
@@ -389,6 +418,7 @@ func (vm *VirtualMachine) opcodeAssertions(
 		}
 	case AssertEq:
 		// assert that the calculated res is stored in dst
+		//fmt.Println("Before write", instruction)
 		err := dstCell.Write(res)
 		if err != nil {
 			return err

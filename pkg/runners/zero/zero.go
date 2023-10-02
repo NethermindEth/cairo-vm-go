@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
+	starknetParser "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -21,6 +22,8 @@ type Program struct {
 	Entrypoints map[string]uint64
 	// it stores the start and end label pcs
 	Labels map[string]uint64
+	// builtins
+	Builtins []starknetParser.Builtin
 }
 
 func LoadCairoZeroProgram(content []byte) (*Program, error) {
@@ -56,6 +59,7 @@ func LoadCairoZeroProgram(content []byte) (*Program, error) {
 		Bytecode:    bytecode,
 		Entrypoints: entrypoints,
 		Labels:      labels,
+		Builtins:    cairoZeroJson.Builtins,
 	}, nil
 }
 
@@ -161,6 +165,8 @@ func (runner *ZeroRunner) Run() error {
 		return errors.New("cannot re-run using the same runner")
 	}
 
+	runner.InitializeBuiltins()
+
 	end, err := runner.InitializeMainEntrypoint()
 	if err != nil {
 		return fmt.Errorf("initializing main entry point: %w", err)
@@ -185,6 +191,22 @@ func (runner *ZeroRunner) Run() error {
 		}
 	}
 	return nil
+}
+
+func (runner *ZeroRunner) InitializeBuiltins() {
+	segment_count := len(runner.vm.MemoryManager.Memory.Segments)
+	runner.segments()[VM.ExecutionSegment].IncreaseSegmentSize(uint64(len(runner.program.Builtins)))
+	for i, b := range runner.program.Builtins {
+		runner.memory().AllocateSegment(nil)
+		v := memory.MemoryValueFromMemoryAddress(&memory.MemoryAddress{SegmentIndex: uint64(segment_count), Offset: 0})
+		err := runner.segments()[VM.ExecutionSegment].Write(uint64(i), v)
+		if err != nil {
+			panic(err)
+		}
+
+		runner.vm.BuiltinRunner.AddBuiltin(b, uint64(segment_count))
+		segment_count++
+	}
 }
 
 func (runner *ZeroRunner) InitializeMainEntrypoint() (*memory.MemoryAddress, error) {
