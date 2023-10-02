@@ -81,7 +81,9 @@ func (address *MemoryAddress) Relocate(segmentsOffset []uint64) *f.Element {
 	// no risk overflow because this sizes exists in actual Memory
 	// so if by chance the uint64 addition overflowed, then we have
 	// a machine with more than 2**64 bytes of memory (quite a lot!)
-	return new(f.Element).SetUint64(segmentsOffset[address.SegmentIndex] + address.Offset)
+	return new(f.Element).SetUint64(
+		segmentsOffset[address.SegmentIndex] + address.Offset,
+	)
 }
 
 func (address MemoryAddress) String() string {
