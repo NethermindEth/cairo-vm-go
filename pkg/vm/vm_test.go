@@ -80,6 +80,29 @@ func TestGetCellFpDst(t *testing.T) {
 	assert.Equal(t, mem.MemoryValueFromInt(123), cell.Read())
 }
 
+func TestGetCellApDstWithDifferentOffsets(t *testing.T) {
+	vm := defaultVirtualMachine()
+	offsets := []int{-10, -5, 0, 5, 10}
+
+	for _, offset := range offsets {
+		const ap = 30
+		vm.Context.Ap = ap
+
+		writeToDataSegment(vm, uint64(ap+offset), mem.MemoryValueFromInt(200))
+
+		instruction := Instruction{
+			OffDest:     int16(offset),
+			DstRegister: Ap,
+		}
+
+		cell, err := vm.getCellDst(&instruction)
+		require.NoError(t, err)
+
+		assert.True(t, cell.Accessed)
+		assert.Equal(t, mem.MemoryValueFromInt(200), cell.Read())
+	}
+}
+
 func TestGetCellDstApNegativeOffset(t *testing.T) {
 	vm := defaultVirtualMachine()
 
