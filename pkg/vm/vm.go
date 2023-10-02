@@ -259,7 +259,7 @@ func (vm *VirtualMachine) getCellDst(instruction *Instruction) (*mem.Cell, error
 	if instruction.DstRegister == Ap {
 		dstRegister = vm.Context.AddressAp()
 	} else {
-		dstRegister = vm.Context.AddressAp()
+		dstRegister = vm.Context.AddressFp()
 	}
 
 	addr, isOverflow := safemath.SafeOffset(dstRegister.Offset, instruction.OffDest)
@@ -397,7 +397,6 @@ func (vm *VirtualMachine) opcodeAssertions(
 			return err
 		}
 		err = dstCell.Write(mem.MemoryValueFromMemoryAddress(vm.Context.AddressFp()))
-		fmt.Println("ERR HERE")
 		if err != nil {
 			return err
 		}
