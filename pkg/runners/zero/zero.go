@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -14,8 +15,9 @@ import (
 
 type ZeroRunner struct {
 	// core components
-	program *Program
-	vm      *VM.VirtualMachine
+	program    *Program
+	vm         *VM.VirtualMachine
+	hintrunner hintrunner.HintRunner
 	// config
 	proofmode bool
 	maxsteps  uint64
@@ -31,11 +33,15 @@ func NewRunner(program *Program, proofmode bool, maxsteps uint64) (*ZeroRunner, 
 		return nil, fmt.Errorf("runner error: %w", err)
 	}
 
+	// todo(rodro): given the program get the appropiate hints
+	hintrunner := hintrunner.NewHintRunner(make(map[uint64]hintrunner.Hinter))
+
 	return &ZeroRunner{
-		program:   program,
-		vm:        vm,
-		proofmode: proofmode,
-		maxsteps:  maxsteps,
+		program:    program,
+		vm:         vm,
+		hintrunner: hintrunner,
+		proofmode:  proofmode,
+		maxsteps:   maxsteps,
 	}, nil
 }
 
