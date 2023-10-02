@@ -214,24 +214,20 @@ func (mv *MemoryValue) Equal(other *MemoryValue) bool {
 func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) (*MemoryValue, error) {
 	var err error
 
-	// If both lhs and rhs are felts, perform a simple addition
-	if lhs.IsFelt() {
-		if rhs.IsFelt() { // Felt + Felt
-			mv.felt = MemoryValueFromUint(lhs.felt.Uint64() + rhs.felt.Uint64()).felt
-		} else { // Felt + Address, swap lhs and rhs
-			mv.address, err = mv.address.Add(rhs.address, lhs.felt)
+	if lhs.IsAddress() {
+		if !rhs.IsFelt() {
+			return nil, errors.New("cannot add to memory addresses")
 		}
-	} else if rhs.IsFelt() { // Address + Felt
 		mv.address, err = mv.address.Add(lhs.address, rhs.felt)
-	} else { // Address + Address
-		return nil, errors.New("addition of two addresses is not supported")
+	} else {
+		if rhs.IsAddress() {
+			mv.address, err = mv.address.Add(rhs.address, lhs.felt)
+		} else {
+			mv.felt = mv.felt.Add(lhs.felt, rhs.felt)
+		}
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
-	return mv, nil
+	return mv, err
 }
 
 // Subs two memory values if they're in the same segment or the rhs is a Felt.
