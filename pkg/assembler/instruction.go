@@ -151,7 +151,7 @@ type Instruction struct {
 	UOffDest uint16
 	UOffOp0  uint16
 	UOffOp1  uint16
-	UFlags   uint16
+	// UFlags   uint16
 
 	DstRegister Register
 	Op0Register Register
@@ -375,4 +375,69 @@ func oneHot(bin, offset, maxLen uint16) (uint16, error) {
 	}
 
 	return uint16(len-int(offset)) - 1, nil
+}
+
+// ================================ InstrList to Bytecode ================================================
+func encodeInstructionListToBytecode(instruction []Instruction) ([]*f.Element, error) {
+	n := len(instruction)
+	bytecodes := make([]*f.Element, 0, n+(n/2)+1)
+
+	for i := range instruction {
+		bytecode, err := encodeOneInstruction(&instruction[i])
+		if err != nil {
+			return nil, err
+		}
+		bytecodes = append(bytecodes, bytecode)
+		if instruction[i].Imm != "" {
+			imm, err := new(f.Element).SetString(instruction[i].Imm)
+			if err != nil {
+				return nil, err
+			}
+			bytecodes = append(bytecodes, imm)
+		}
+	}
+	return bytecodes, nil
+}
+
+func encodeOneInstruction(instruction *Instruction) (*f.Element, error) {
+	// Get the offsets
+	// Combine the offsets and flags into a single uint64
+	rawInstruction := encodeOffsets(instruction)
+
+	// Encode the flags
+	rawInstruction, err := encodeInstructionFlags(instruction, rawInstruction)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new f.Element from the raw instruction
+	element := new(f.Element).SetUint64(rawInstruction)
+
+	return element, nil
+}
+
+func encodeOffsets(instr *Instruction) uint64 {
+	// Combine the offsets and flags into a single uint64
+	var encoding uint64 = 0
+	encoding |= uint64(instr.UOffDest)
+	encoding |= uint64(instr.UOffOp0) << op0Offset
+	encoding |= uint64(instr.UOffOp1) << op1Offset
+
+	return encoding
+}
+
+func encodeInstructionFlags(instr *Instruction, encoding uint64) (uint64, error) {
+	// Use flag register to encode the flags
+	var flagsReg uint16
+	// Encode the flag bits
+	flagsReg = uint16(instr.DstRegister) << dstRegBit
+	flagsReg |= uint16(instr.Op0Register) << op0RegBit
+	flagsReg |= uint16(instr.Op1Source) << op1ImmBit
+	flagsReg |= uint16(instr.Res) << resAddBit
+	flagsReg |= uint16(instr.PcUpdate) << pcJumpAbsBit
+	flagsReg |= uint16(instr.ApUpdate) << apAddBit
+	flagsReg |= uint16(instr.Opcode) << opcodeCallBit
+	// Finally OR them with the 64 bit encoding with the flagsOffset
+	encoding |= uint64(flagsReg) << flagsOffset
+	return encoding, nil
 }

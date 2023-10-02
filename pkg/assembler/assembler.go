@@ -18,50 +18,19 @@ func CasmToBytecode(code string) ([]*f.Element, error) {
 		return nil, err
 	}
 	// Ast To Instruction List
-	instructionList, err := astToInstruction(*casmAst)
+	instructionList, err := astToInstruction(casmAst)
 	if err != nil {
 		return nil, err
 	}
-	// Instrciton to bytecode
+	// Instruction to bytecode
 	return encodeInstructionListToBytecode(instructionList)
 }
 
 //
-// Functions that visit the AST in order to encode the instructions
+// Functions that visit the AST in order to encode Instruction list.
 //
 
-// const (
-// 	// offsets
-// 	op0Offset   = 16
-// 	op1Offset   = 32
-// 	flagsOffset = 48
-
-// 	// flag values
-// 	dstRegBit         = 48
-// 	op0RegBit         = 49
-// 	op1ImmBit         = 50
-// 	op1FpBit          = 51
-// 	op1ApBit          = 52
-// 	resAddBit         = 53
-// 	resMulBit         = 54
-// 	pcJumpAbsBit      = 55
-// 	pcJumpRelBit      = 56
-// 	pcJnzBit          = 57
-// 	apAddBit          = 58
-// 	apAdd1Bit         = 59
-// 	opcodeCallBit     = 60
-// 	opcodeRetBit      = 61
-// 	opcodeAssertEqBit = 62
-
-// 	// default values
-// 	biasedZero     uint16 = 0x8000
-// 	biasedPlusOne  uint16 = 0x8001
-// 	biasedMinusOne uint16 = 0x7FFF
-// 	biasedMinusTwo uint16 = 0x7FFE
-// )
-
-// ================================ AST to InstrList ================================================
-func astToInstruction(ast CasmProgram) ([]Instruction, error) {
+func astToInstruction(ast *CasmProgram) ([]Instruction, error) {
 	// Vist ast
 	n := len(ast.Ast)
 	// Slice with length 0 and capacity n
@@ -81,7 +50,6 @@ func astToInstruction(ast CasmProgram) ([]Instruction, error) {
 func encodeNodeToInstr(node AstNode) (Instruction, error) {
 	var instr Instruction
 	expr := node.Expression()
-	// todo: Find a way to first find operation type, then encode regs?
 	encodeDst(&node, &instr)
 	encodeOp0(&node, &instr, expr)
 	encodeOp1(&node, &instr, expr)
@@ -245,69 +213,4 @@ func encodeFlags(node *AstNode, instr *Instruction, expression Expressioner) {
 	} else if node.AssertEq != nil {
 		instr.Opcode = 0x04
 	}
-}
-
-// ================================ InstrList to Bytecode ================================================
-func encodeInstructionListToBytecode(instruction []Instruction) ([]*f.Element, error) {
-	n := len(instruction)
-	bytecodes := make([]*f.Element, 0, n+(n/2)+1)
-
-	for i := range instruction {
-		bytecode, err := encodeOneInstruction(&instruction[i])
-		if err != nil {
-			return nil, err
-		}
-		bytecodes = append(bytecodes, bytecode)
-		if instruction[i].Imm != "" {
-			imm, err := new(f.Element).SetString(instruction[i].Imm)
-			if err != nil {
-				return nil, err
-			}
-			bytecodes = append(bytecodes, imm)
-		}
-	}
-	return bytecodes, nil
-}
-
-func encodeOneInstruction(instruction *Instruction) (*f.Element, error) {
-	// Get the offsets
-	// Combine the offsets and flags into a single uint64
-	rawInstruction := encodeOffsets(instruction)
-
-	// Encode the flags
-	rawInstruction, err := encodeInstructionFlags(instruction, rawInstruction)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new f.Element from the raw instruction
-	element := new(f.Element).SetUint64(rawInstruction)
-
-	return element, nil
-}
-
-func encodeOffsets(instr *Instruction) uint64 {
-	// Combine the offsets and flags into a single uint64
-	var encoding uint64 = 0
-	encoding |= uint64(instr.UOffDest)
-	encoding |= uint64(instr.UOffOp0) << op0Offset
-	encoding |= uint64(instr.UOffOp1) << op1Offset
-
-	return encoding
-}
-
-func encodeInstructionFlags(instr *Instruction, encoding uint64) (uint64, error) {
-	// Use flag register to encode the flags
-	var flagsReg uint16
-	// Encode the flag bits
-	flagsReg = uint16(instr.DstRegister) << dstRegBit
-	flagsReg |= uint16(instr.Op0Register) << op0RegBit
-	flagsReg |= uint16(instr.Op1Source) << op1ImmBit
-	flagsReg |= uint16(instr.Res) << resAddBit
-	flagsReg |= uint16(instr.PcUpdate) << pcJumpAbsBit
-	flagsReg |= uint16(instr.ApUpdate) << apAddBit
-	flagsReg |= uint16(instr.Opcode) << opcodeCallBit
-	// Finally OR them with the 64 bit encoding with the flagsOffset
-	encoding |= uint64(flagsReg) << flagsOffset
-	return encoding, nil
 }
