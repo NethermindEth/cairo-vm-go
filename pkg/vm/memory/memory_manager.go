@@ -43,15 +43,15 @@ func (mm *MemoryManager) RelocateMemory() []*f.Element {
 		// fmt.Printf("s: %s", segment)
 		for j := uint64(0); j < segment.Len(); j++ {
 			cell := segment.Data[j]
-			if cell == nil || !cell.Accessed {
+			if !cell.Known() {
 				continue
 			}
 
 			var felt *f.Element
-			if cell.Value.IsAddress() {
-				felt = cell.Value.address.Relocate(segmentsOffsets)
+			if cell.IsAddress() {
+				felt = cell.address.Relocate(segmentsOffsets)
 			} else {
-				felt = cell.Value.felt
+				felt = &cell.felt
 			}
 
 			relocatedMemory[segmentsOffsets[i]+j] = felt
