@@ -367,14 +367,15 @@ func (vm *VirtualMachine) computeRes(
 			return mem.MemoryValue{}, fmt.Errorf("cannot read op1: %w", err)
 		}
 
+		res := mem.EmptyMemoryValueAs(op0.IsAddress() || op1.IsAddress())
 		if instruction.Res == AddOperands {
-			err = op0.Add(&op0, &op1)
+			err = res.Add(&op0, &op1)
 		} else if instruction.Res == MulOperands {
-			err = op0.Mul(&op0, &op1)
+			err = res.Mul(&op0, &op1)
 		} else {
 			return mem.MemoryValue{}, fmt.Errorf("invalid res flag value: %d", instruction.Res)
 		}
-		return op0, err
+		return res, err
 	}
 }
 

@@ -26,11 +26,9 @@ func (address *MemoryAddress) Equal(other *MemoryAddress) bool {
 func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) error {
 	lhsOffset := new(f.Element).SetUint64(lhs.Offset)
 	newOffset := new(f.Element).Add(lhsOffset, rhs)
-
 	if !newOffset.IsUint64() {
 		return fmt.Errorf("new offset bigger than uint64: %s", rhs.Text(10))
 	}
-
 	address.SegmentIndex = lhs.SegmentIndex
 	address.Offset = newOffset.Uint64()
 	return nil
@@ -224,10 +222,10 @@ func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) error {
 		}
 		return mv.address.Add(&lhs.address, &rhs.felt)
 	}
-
 	if rhs.IsAddress() {
 		return mv.address.Add(&rhs.address, &lhs.felt)
 	}
+
 	mv.felt.Add(&lhs.felt, &rhs.felt)
 	return nil
 }
