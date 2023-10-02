@@ -11,11 +11,11 @@ func defaultVirtualMachine() *VM.VirtualMachine {
 	return vm
 }
 
-func writeTo(vm *VM.VirtualMachine, segment uint64, offset uint64, val *memory.MemoryValue) {
-	_ = vm.MemoryManager.Memory.Write(segment, offset, val)
+func writeTo(vm *VM.VirtualMachine, segment uint64, offset uint64, val memory.MemoryValue) {
+	_ = vm.MemoryManager.Memory.Write(segment, offset, &val)
 }
 
-func readFrom(vm *VM.VirtualMachine, segment uint64, offset uint64) *memory.MemoryValue {
+func readFrom(vm *VM.VirtualMachine, segment uint64, offset uint64) memory.MemoryValue {
 	val, _ := vm.MemoryManager.Memory.Read(segment, offset)
 	return val
 }
