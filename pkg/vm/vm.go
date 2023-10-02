@@ -40,12 +40,10 @@ func (ctx *Context) String() string {
 	)
 }
 
-// WRONG
 func (ctx *Context) AddressAp() *mem.MemoryAddress {
 	return &mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: ctx.Ap}
 }
 
-// WRONG
 func (ctx *Context) AddressFp() *mem.MemoryAddress {
 	return &mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: ctx.Fp}
 }
@@ -171,7 +169,6 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 }
 
 func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
-	//fmt.Println("Instuction is:", instruction)
 	dstCell, err := vm.getCellDst(instruction)
 	if err != nil {
 		return fmt.Errorf("dst cell: %w", err)
@@ -186,7 +183,6 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 	if err != nil {
 		return fmt.Errorf("op1 cell: %w", err)
 	}
-	//fmt.Println("OPAddr", op0Cell, op1Cell)
 
 	//Here do stuff
 	if op0Cell.Read().IsAddress() {
@@ -209,10 +205,6 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 			return fmt.Errorf("compute res: %w", err)
 		}
 	}
-	//fmt.Println("Cells", dstCell, op1Cell, res)
-	//addr, err := op0Cell.Value.ToMemoryAddress()
-	//fmt.Println("Segment:", addr.SegmentIndex, addr.Offset)
-	//fmt.Println(vm.MemoryManager.Memory.Segments)
 
 	err = vm.opcodeAssertions(instruction, dstCell, op0Cell, res)
 	if err != nil {
@@ -290,8 +282,6 @@ func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell
 	case Op0:
 		// in this case Op0 is being used as an address, and must be of unwrapped as it
 		op0Address, err := op0Cell.Read().ToMemoryAddress()
-		//fmt.Println("Cell is", op0Cell)
-		//fmt.Println("op0Address is", op0Address)
 		if err != nil {
 			return nil, fmt.Errorf("op0 is not an address: %w", err)
 		}
@@ -304,9 +294,6 @@ func (vm *VirtualMachine) getCellOp1(instruction *Instruction, op0Cell *mem.Cell
 		op1Address = vm.Context.AddressAp()
 	}
 
-	//	fmt.Println("FP", vm.Context.AddressFp())
-	//	fmt.Println("if", instruction.OffOp1)
-	//	fmt.Println("op", op1Address.Offset)
 	addr, isOverflow := safemath.SafeOffset(op1Address.Offset, instruction.OffOp1)
 	if isOverflow {
 		return nil, fmt.Errorf("offset overflow: %d + %d", op1Address.Offset, instruction.OffOp1)
@@ -417,7 +404,6 @@ func (vm *VirtualMachine) opcodeAssertions(
 		}
 	case AssertEq:
 		// assert that the calculated res is stored in dst
-		//fmt.Println("Before write", instruction)
 		err := dstCell.Write(res)
 		if err != nil {
 			return err
