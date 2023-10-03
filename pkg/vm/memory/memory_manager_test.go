@@ -70,20 +70,20 @@ func TestMemoryRelocationWithAddress(t *testing.T) {
 		[]memoryWrite{
 			// segment zero
 			{0, 1, uint64(1)},
-			{0, 3, NewMemoryAddress(1, 5)},
+			{0, 3, &MemoryAddress{1, 5}},
 			// segment one
 			{1, 0, uint64(1)},
-			{1, 1, NewMemoryAddress(4, 3)},
+			{1, 1, &MemoryAddress{4, 3}},
 			{1, 2, uint64(7)},
 			{1, 5, uint64(13)},
 			// segment two
-			{2, 0, NewMemoryAddress(0, 1)},
+			{2, 0, &MemoryAddress{0, 1}},
 			// segment three
-			{3, 0, NewMemoryAddress(2, 0)},
+			{3, 0, &MemoryAddress{2, 0}},
 			// segment four
-			{4, 0, NewMemoryAddress(0, 0)},
-			{4, 1, NewMemoryAddress(1, 1)},
-			{4, 2, NewMemoryAddress(1, 5)},
+			{4, 0, &MemoryAddress{0, 0}},
+			{4, 1, &MemoryAddress{1, 1}},
+			{4, 2, &MemoryAddress{1, 5}},
 			{4, 3, uint64(15)},
 		},
 	)
@@ -141,7 +141,7 @@ func updateMemoryWithValues(memory *Memory, valuesToWrite []memoryWrite) {
 		}
 
 		// write the memory val
-		err = memory.Write(toWrite.SegmentIndex, toWrite.Offset, val)
+		err = memory.Write(toWrite.SegmentIndex, toWrite.Offset, &val)
 		if err != nil {
 			panic(err)
 		}

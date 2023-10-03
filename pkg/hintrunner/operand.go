@@ -16,35 +16,35 @@ import (
 type CellRefer interface {
 	fmt.Stringer
 
-	Get(vm *VM.VirtualMachine) (*memory.Cell, error)
+	Get(vm *VM.VirtualMachine) (memory.MemoryAddress, error)
 }
 
 type ApCellRef int16
 
 func (ap ApCellRef) String() string {
-	return "ApCellRef"
+	return fmt.Sprintf("ApCellRef(%d)", ap)
 }
 
-func (ap ApCellRef) Get(vm *VM.VirtualMachine) (*memory.Cell, error) {
+func (ap ApCellRef) Get(vm *VM.VirtualMachine) (memory.MemoryAddress, error) {
 	res, overflow := safemath.SafeOffset(vm.Context.Ap, int16(ap))
 	if overflow {
-		return nil, safemath.NewSafeOffsetError(vm.Context.Ap, int16(ap))
+		return memory.MemoryAddress{}, safemath.NewSafeOffsetError(vm.Context.Ap, int16(ap))
 	}
-	return vm.MemoryManager.Memory.Peek(VM.ExecutionSegment, res)
+	return memory.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
 }
 
 type FpCellRef int16
 
 func (fp FpCellRef) String() string {
-	return "FpCellRef"
+	return fmt.Sprintf("FpCellRef(%d)", fp)
 }
 
-func (fp FpCellRef) Get(vm *VM.VirtualMachine) (*memory.Cell, error) {
+func (fp FpCellRef) Get(vm *VM.VirtualMachine) (memory.MemoryAddress, error) {
 	res, overflow := safemath.SafeOffset(vm.Context.Fp, int16(fp))
 	if overflow {
-		return nil, safemath.NewSafeOffsetError(vm.Context.Ap, int16(fp))
+		return memory.MemoryAddress{}, safemath.NewSafeOffsetError(vm.Context.Ap, int16(fp))
 	}
-	return vm.MemoryManager.Memory.Peek(VM.ExecutionSegment, res)
+	return memory.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
 }
 
 //
@@ -53,7 +53,7 @@ func (fp FpCellRef) Get(vm *VM.VirtualMachine) (*memory.Cell, error) {
 type ResOperander interface {
 	fmt.Stringer
 
-	Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error)
+	Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, error)
 }
 
 type Deref struct {
@@ -64,12 +64,12 @@ func (deref Deref) String() string {
 	return "Deref"
 }
 
-func (deref Deref) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
-	cell, err := deref.deref.Get(vm)
+func (deref Deref) Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, error) {
+	address, err := deref.deref.Get(vm)
 	if err != nil {
-		return nil, fmt.Errorf("get cell: %v", err)
+		return memory.MemoryValue{}, fmt.Errorf("get cell: %w", err)
 	}
-	return cell.Read(), nil
+	return vm.Memory.ReadFromAddress(&address)
 }
 
 type DoubleDeref struct {
@@ -77,28 +77,34 @@ type DoubleDeref struct {
 	offset int16
 }
 
-func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
-	cell, err := dderef.deref.Get(vm)
+func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, error) {
+	lhsAddr, err := dderef.deref.Get(vm)
 	if err != nil {
-		return nil, fmt.Errorf("get cell: %v", err)
+		return memory.MemoryValue{}, fmt.Errorf("get lhs address %s: %w", lhsAddr, err)
 	}
-	lhs := cell.Read()
+	lhs, err := vm.Memory.ReadFromAddress(&lhsAddr)
+	if err != nil {
+		return memory.MemoryValue{}, fmt.Errorf("read lhs address %s: %w", lhsAddr, err)
+	}
 
-	// Double deref implies the first value read must be an address
+	// Double deref implies the left hand side read must be an address
 	address, err := lhs.ToMemoryAddress()
 	if err != nil {
-		return nil, err
+		return memory.MemoryValue{}, err
 	}
 
 	newOffset, overflow := safemath.SafeOffset(address.Offset, dderef.offset)
 	if overflow {
-		return nil, safemath.NewSafeOffsetError(address.Offset, dderef.offset)
+		return memory.MemoryValue{}, safemath.NewSafeOffsetError(address.Offset, dderef.offset)
 	}
-	resAddr := memory.NewMemoryAddress(address.SegmentIndex, newOffset)
+	resAddr := memory.MemoryAddress{
+		SegmentIndex: address.SegmentIndex,
+		Offset:       newOffset,
+	}
 
-	value, err := vm.MemoryManager.Memory.ReadFromAddress(resAddr)
+	value, err := vm.Memory.ReadFromAddress(&resAddr)
 	if err != nil {
-		return nil, fmt.Errorf("read cell: %v", err)
+		return memory.MemoryValue{}, fmt.Errorf("read result at %s: %w", resAddr, err)
 	}
 
 	return value, nil
@@ -112,7 +118,7 @@ func (imm Immediate) String() string {
 
 // todo(rodro): Specs from Starkware stablish this can be uint256 and not a felt.
 // Should we respect that, or go straight to felt?
-func (imm Immediate) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
+func (imm Immediate) Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, error) {
 	felt := &f.Element{}
 	bigInt := (big.Int)(imm)
 	// todo(rodro): do we require to check that big int is lesser than P, or do we
@@ -139,24 +145,31 @@ func (bop BinaryOp) String() string {
 	return "BinaryOperator"
 }
 
-func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (*memory.MemoryValue, error) {
-	cell, err := bop.lhs.Get(vm)
+func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, error) {
+	lhsAddr, err := bop.lhs.Get(vm)
 	if err != nil {
-		return nil, fmt.Errorf("get lhs operand %s: %v", bop.lhs, err)
+		return memory.MemoryValue{}, fmt.Errorf("get lhs address %s: %w", bop.lhs, err)
 	}
-	lhs := cell.Read()
+	lhs, err := vm.Memory.ReadFromAddress(&lhsAddr)
+	if err != nil {
+		return memory.MemoryValue{}, fmt.Errorf("read lhs address %s: %v", lhsAddr, err)
+	}
 
 	rhs, err := bop.rhs.Resolve(vm)
 	if err != nil {
-		return nil, fmt.Errorf("resolve rhs operand %s: %v", rhs, err)
+		return memory.MemoryValue{}, fmt.Errorf("resolve rhs operand %s: %v", rhs, err)
 	}
 
 	switch bop.operator {
 	case Add:
-		return memory.EmptyMemoryValueAs(lhs.IsAddress()).Add(lhs, rhs)
+		mv := memory.EmptyMemoryValueAs(lhs.IsAddress() || rhs.IsAddress())
+		err := mv.Add(&lhs, &rhs)
+		return mv, err
 	case Mul:
-		return memory.EmptyMemoryValueAsFelt().Mul(lhs, rhs)
+		mv := memory.EmptyMemoryValueAsFelt()
+		err := mv.Mul(&lhs, &rhs)
+		return mv, err
 	default:
-		return nil, fmt.Errorf("unknown binary operator: %d", bop.operator)
+		return memory.MemoryValue{}, fmt.Errorf("unknown binary operator: %d", bop.operator)
 	}
 }

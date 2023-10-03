@@ -1,125 +1,99 @@
 package memory
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestCellWrite(t *testing.T) {
-	cell := Cell{}
-
-	err := cell.Write(MemoryValueFromInt(1)) // Write 1 to a new cell
-
-	assert.NoError(t, err)
-	assert.True(t, cell.Accessed)
-	assert.Equal(t, cell.Value, MemoryValueFromInt(1))
-
-	//Attemp to write again to the same cell
-	err = cell.Write(MemoryValueFromInt(51))
-	assert.Error(t, err)
-	assert.True(t, cell.Accessed)
-	assert.Equal(t, cell.Value, MemoryValueFromInt(1)) //check that the value didn't change
-}
-
-func TestCellRead(t *testing.T) {
-	cell := Cell{Accessed: false, Value: nil}
-	assert.Equal(t, cell.Read(), EmptyMemoryValueAsFelt()) //Read from empty cell
-	assert.True(t, cell.Accessed)
-
-	cell = Cell{Accessed: false, Value: MemoryValueFromInt(51)}
-	assert.Equal(t, cell.Read(), MemoryValueFromInt(51))
-	assert.True(t, cell.Accessed)
-}
-
-func TestCellWriteAndRead(t *testing.T) {
-	cell := Cell{}
-
-	err := cell.Write(MemoryValueFromInt(82))
-
-	assert.NoError(t, err)
-	assert.True(t, cell.Accessed)
-	assert.Equal(t, cell.Read(), MemoryValueFromInt(82))
+func assertNoErrorAndEqual(t *testing.T, s *Segment, offset uint64, expected MemoryValue) {
+	v, err := s.Read(offset)
+	require.NoError(t, err)
+	assert.Equal(t, expected, v)
 }
 
 func TestSegmentRead(t *testing.T) {
-	segment := Segment{Data: []*Cell{
-		{Accessed: false, Value: MemoryValueFromInt(3)},
-		{Accessed: false, Value: MemoryValueFromInt(5)},
-		{Accessed: true, Value: MemoryValueFromInt(9)},
-	}}
+	segment := Segment{Data: []MemoryValue{
+		MemoryValueFromInt(3),
+		MemoryValueFromInt(5),
+		{},
+	}, BuiltinRunner: &NoBuiltin{}}
 
-	assert.Equal(t, segment.Read(0), MemoryValueFromInt(3))
-	assert.Equal(t, segment.Read(1), MemoryValueFromInt(5))
-	assert.Equal(t, segment.Read(2), MemoryValueFromInt(9))
-	assert.True(t, segment.Data[0].Accessed) //Segment read should mark cell as accessed
-	assert.True(t, segment.Data[1].Accessed)
-	assert.True(t, segment.Data[2].Accessed)
+	assertNoErrorAndEqual(t, &segment, 0, MemoryValueFromInt(3))
+	assertNoErrorAndEqual(t, &segment, 1, MemoryValueFromInt(5))
+	assert.False(t, segment.Data[2].Known())
+	assertNoErrorAndEqual(t, &segment, 2, EmptyMemoryValueAsFelt())
+	assert.True(t, segment.Data[0].Known()) //Segment read should mark cell as accessed
+	assert.True(t, segment.Data[1].Known())
+	assert.True(t, segment.Data[2].Known())
 
 	assert.Equal(t, len(segment.Data), 3)
 	//Check if we can read offsets higher than segment len
-	assert.Equal(t, segment.Read(100), EmptyMemoryValueAsFelt())
+	assertNoErrorAndEqual(t, &segment, 100, EmptyMemoryValueAsFelt())
 	assert.Equal(t, len(segment.Data), 101) //Verify that segment len was increased
 }
 
 func TestSegmentPeek(t *testing.T) {
-	segment := Segment{Data: []*Cell{
-		{Accessed: false, Value: MemoryValueFromInt(2)},
-		{Accessed: true, Value: MemoryValueFromInt(4)},
-	}}
-	assert.Equal(t, segment.Peek(0).Value, MemoryValueFromInt(2))
-	assert.Equal(t, segment.Peek(1).Value, MemoryValueFromInt(4))
-	assert.False(t, segment.Data[0].Accessed) //Peek should not mark the cell as accessed
-	assert.True(t, segment.Data[1].Accessed)  //Cell that was already accessed should stay accessed
+	segment := Segment{Data: []MemoryValue{
+		MemoryValueFromInt(2),
+		{},
+	}, BuiltinRunner: &NoBuiltin{}}
+	assert.Equal(t, segment.Peek(0), MemoryValueFromInt(2))
+	assert.Equal(t, segment.Peek(1), MemoryValue{})
+	assert.True(t, segment.Data[0].Known())  //Cell that was already accessed should stay accessed
+	assert.False(t, segment.Data[1].Known()) //Peek should not mark the cell as accessed
 
 	assert.Equal(t, len(segment.Data), 2)
 	//Check if we can peek offsets higher than segment len
-	assert.Equal(t, segment.Peek(30).Read(), EmptyMemoryValueAsFelt())
+	assert.Equal(t, segment.Peek(30), MemoryValue{})
 	assert.Equal(t, len(segment.Data), 31) //Verify that segment len was increased
 }
 
 func TestSegmentWrite(t *testing.T) {
-	segment := Segment{Data: []*Cell{
-		{Accessed: false, Value: nil},
-		{Accessed: false, Value: nil},
-	}}
+	segment := Segment{
+		Data:          make([]MemoryValue, 2),
+		BuiltinRunner: &NoBuiltin{},
+	}
 
-	err := segment.Write(0, MemoryValueFromInt(100))
+	err := segment.Write(0, UseInTestOnlyMemoryValuePointerFromInt(100))
 	assert.NoError(t, err)
-	assert.Equal(t, segment.Data[0].Value, MemoryValueFromInt(100))
-	assert.True(t, segment.Data[0].Accessed)
-	assert.False(t, segment.Data[1].Accessed) //Check that the other cell wasn't marked as accessed
+	assert.Equal(t, segment.Data[0], MemoryValueFromInt(100))
+	assert.True(t, segment.Data[0].Known())
+	assert.False(t, segment.Data[1].Known()) //Check that the other cell wasn't marked as accessed
 
-	err = segment.Write(1, MemoryValueFromInt(15))
+	err = segment.Write(1, UseInTestOnlyMemoryValuePointerFromInt(15))
 	assert.NoError(t, err)
-	assert.Equal(t, segment.Data[1].Value, MemoryValueFromInt(15))
-	assert.True(t, segment.Data[1].Accessed)
+	assert.Equal(t, segment.Data[1], MemoryValueFromInt(15))
+	assert.True(t, segment.Data[1].Known())
 
 	//Atempt to write twice
-	err = segment.Write(0, MemoryValueFromInt(590))
+	err = segment.Write(0, UseInTestOnlyMemoryValuePointerFromInt(590))
 	assert.Error(t, err)
 
 	//Check that memory wasn't modified
-	assert.Equal(t, segment.Read(0), MemoryValueFromInt(100))
-	assert.True(t, segment.Peek(0).Accessed)
+	assertNoErrorAndEqual(t, &segment, 0, MemoryValueFromInt(100))
+	assert.True(t, segment.Data[0].Known())
 }
 
 func TestSegmentReadAndWrite(t *testing.T) {
-	segment := Segment{Data: []*Cell{
-		{Accessed: false, Value: nil},
-	}}
-	err := segment.Write(0, MemoryValueFromInt(48))
+	segment := Segment{
+		Data:          make([]MemoryValue, 1),
+		BuiltinRunner: &NoBuiltin{},
+	}
+	err := segment.Write(0, UseInTestOnlyMemoryValuePointerFromInt(48))
 	assert.NoError(t, err)
-	assert.Equal(t, segment.Read(0), MemoryValueFromInt(48))
-	assert.True(t, segment.Peek(0).Accessed)
+	assertNoErrorAndEqual(t, &segment, 0, MemoryValueFromInt(48))
+	assert.True(t, segment.Data[0].Known())
 }
 
 func TestIncreaseSegmentSizeSmallerSize(t *testing.T) {
-	segment := Segment{Data: []*Cell{
-		{Accessed: true, Value: MemoryValueFromInt(1)},
-		{Accessed: true, Value: MemoryValueFromInt(2)},
-	}}
+	segment := Segment{Data: []MemoryValue{
+		MemoryValueFromInt(1),
+		MemoryValueFromInt(2)},
+		BuiltinRunner: &NoBuiltin{},
+	}
 	// Panic if we decrase the size
 	require.Panics(t, func() { segment.IncreaseSegmentSize(0) })
 	// Panic if the size remains the same
@@ -127,79 +101,54 @@ func TestIncreaseSegmentSizeSmallerSize(t *testing.T) {
 }
 
 func TestIncreaseSegmentSizeMaxNewSize(t *testing.T) {
-	segment := Segment{Data: []*Cell{
-		{Accessed: true, Value: MemoryValueFromInt(1)},
-		{Accessed: true, Value: MemoryValueFromInt(2)},
-		{Accessed: true, Value: MemoryValueFromInt(3)},
-	}}
+	segment := Segment{Data: []MemoryValue{
+		MemoryValueFromInt(1),
+		MemoryValueFromInt(2),
+		MemoryValueFromInt(3)},
+		BuiltinRunner: &NoBuiltin{},
+	}
 
 	segment.IncreaseSegmentSize(1000)
 	assert.True(t, len(segment.Data) == 1000)
 	assert.True(t, cap(segment.Data) == 1000)
 
 	//Make sure no data was lost after incrase
-	assert.Equal(t, segment.Read(0), MemoryValueFromInt(1))
-	assert.Equal(t, segment.Read(1), MemoryValueFromInt(2))
-	assert.Equal(t, segment.Read(2), MemoryValueFromInt(3))
+	assertNoErrorAndEqual(t, &segment, 0, MemoryValueFromInt(1))
+	assertNoErrorAndEqual(t, &segment, 1, MemoryValueFromInt(2))
+	assertNoErrorAndEqual(t, &segment, 2, MemoryValueFromInt(3))
 }
 
 func TestIncreaseSegmentSizeDouble(t *testing.T) {
-	segment := Segment{Data: []*Cell{
-		{Accessed: true, Value: MemoryValueFromInt(1)},
-		{Accessed: true, Value: MemoryValueFromInt(2)},
-	}}
+	segment := Segment{Data: []MemoryValue{
+		MemoryValueFromInt(1),
+		MemoryValueFromInt(2)},
+		BuiltinRunner: &NoBuiltin{},
+	}
 
 	segment.IncreaseSegmentSize(3)
 	assert.True(t, len(segment.Data) == 4)
 	assert.True(t, cap(segment.Data) == 4)
 
 	//Make sure no data was lost after incrase
-	assert.Equal(t, segment.Read(0), MemoryValueFromInt(1))
-	assert.Equal(t, segment.Read(1), MemoryValueFromInt(2))
+	assertNoErrorAndEqual(t, &segment, 0, MemoryValueFromInt(1))
+	assertNoErrorAndEqual(t, &segment, 1, MemoryValueFromInt(2))
 }
-
-func TestIncreaseSegmentKeepReference(t *testing.T) {
-	segment := Segment{Data: []*Cell{
-		{Accessed: true, Value: MemoryValueFromInt(1)},
-		{Accessed: true, Value: MemoryValueFromInt(2)},
-		{Accessed: true, Value: MemoryValueFromInt(3)},
-	}}
-	segment.IncreaseSegmentSize(4)
-	require.Equal(t, len(segment.Data), 6)
-	require.Equal(t, cap(segment.Data), 6)
-
-	fourthCell := segment.Peek(5)
-
-	segment.IncreaseSegmentSize(8)
-	require.Equal(t, len(segment.Data), 12)
-	require.Equal(t, cap(segment.Data), 12)
-
-	err := fourthCell.Write(MemoryValueFromInt(5))
-	require.NoError(t, err)
-
-	//Make sure no data was lost after incrase
-	assert.Equal(t, MemoryValueFromInt(1), segment.Read(0))
-	assert.Equal(t, MemoryValueFromInt(2), segment.Read(1))
-	assert.Equal(t, MemoryValueFromInt(3), segment.Read(2))
-	assert.Equal(t, MemoryValueFromInt(5), segment.Read(5))
-}
-
 func TestMemoryWriteAndRead(t *testing.T) {
 	memory := InitializeEmptyMemory()
 	memory.AllocateEmptySegment()
 
-	err := memory.Write(0, 0, MemoryValueFromInt(123))
+	err := memory.Write(0, 0, UseInTestOnlyMemoryValuePointerFromInt(123))
 	assert.NoError(t, err)
 	val, err := memory.Read(0, 0)
 	assert.NoError(t, err)
 	assert.Equal(t, val, MemoryValueFromInt(123))
 
 	//Attempt to write twice segment and offset
-	err = memory.Write(0, 0, MemoryValueFromInt(321))
+	err = memory.Write(0, 0, UseInTestOnlyMemoryValuePointerFromInt(321))
 	assert.Error(t, err)
 
 	//Attempt to write twice using address
-	err = memory.WriteToAddress(&MemoryAddress{0, 0}, MemoryValueFromInt(542))
+	err = memory.WriteToAddress(&MemoryAddress{0, 0}, UseInTestOnlyMemoryValuePointerFromInt(542))
 	assert.Error(t, err)
 
 	//Verify data wasn't modified
@@ -208,7 +157,7 @@ func TestMemoryWriteAndRead(t *testing.T) {
 	assert.Equal(t, val, MemoryValueFromInt(123))
 
 	addr := MemoryAddress{0, 6}
-	err = memory.WriteToAddress(&addr, MemoryValueFromInt(31))
+	err = memory.WriteToAddress(&addr, UseInTestOnlyMemoryValuePointerFromInt(31))
 	assert.NoError(t, err)
 	val, err = memory.Read(0, 6)
 	assert.NoError(t, err)
@@ -228,14 +177,61 @@ func TestMemoryReadOutOfRange(t *testing.T) {
 func TestMemoryPeek(t *testing.T) {
 	memory := InitializeEmptyMemory()
 	memory.AllocateEmptySegment()
-	err := memory.Write(0, 1, MemoryValueFromInt(412))
+	err := memory.Write(0, 1, UseInTestOnlyMemoryValuePointerFromInt(412))
 	assert.NoError(t, err)
 
 	cell, err := memory.Peek(0, 1)
 	assert.NoError(t, err)
-	assert.Equal(t, cell.Value, MemoryValueFromInt(412))
+	assert.Equal(t, cell, MemoryValueFromInt(412))
 
 	cell, err = memory.PeekFromAddress(&MemoryAddress{0, 1})
 	assert.NoError(t, err)
-	assert.Equal(t, cell.Value, MemoryValueFromInt(412))
+	assert.Equal(t, cell, MemoryValueFromInt(412))
+}
+
+type testBuiltin struct{}
+
+func (b *testBuiltin) CheckWrite(segment *Segment, offset uint64, value *MemoryValue) error {
+	if offset%2 == 1 {
+		return fmt.Errorf("write error")
+	}
+	return nil
+}
+
+func (b *testBuiltin) InferValue(segment *Segment, offset uint64) error {
+	if offset%2 == 1 {
+		return fmt.Errorf("deduce error")
+	}
+	segment.Data[offset] = MemoryValueFromInt(offset)
+	return nil
+}
+
+func TestSegmentBuiltin(t *testing.T) {
+	segment := EmptySegment().WithBuiltinRunner(&testBuiltin{})
+
+	t.Run("deduction fails", func(t *testing.T) {
+		_, err := segment.Read(1)
+		require.EqualError(t, err, "deduce error")
+	})
+	t.Run("deduction succeeds", func(t *testing.T) {
+		read, err := segment.Read(2)
+		require.NoError(t, err)
+		assert.Equal(t, MemoryValueFromInt(2), read)
+	})
+
+	empty := EmptyMemoryValueAsFelt()
+	t.Run("write check fails", func(t *testing.T) {
+		err := segment.Write(3, &empty)
+		require.EqualError(t, err, "write error")
+	})
+	t.Run("write check succeeds", func(t *testing.T) {
+		err := segment.Write(4, &empty)
+		require.NoError(t, err)
+	})
+
+	t.Run("no deduction on known cells", func(t *testing.T) {
+		v, err := segment.Read(4)
+		require.NoError(t, err)
+		assert.Equal(t, empty, v)
+	})
 }

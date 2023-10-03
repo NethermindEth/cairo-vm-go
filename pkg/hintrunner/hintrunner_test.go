@@ -9,7 +9,7 @@ import (
 )
 
 func TestExistingHint(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 3
 
 	var ap ApCellRef = 5
@@ -19,7 +19,10 @@ func TestExistingHint(t *testing.T) {
 		10: allocHint,
 	})
 
-	vm.Context.Pc = memory.NewMemoryAddress(0, 10)
+	vm.Context.Pc = memory.MemoryAddress{
+		SegmentIndex: 0,
+		Offset:       10,
+	}
 	err := hr.RunHint(vm)
 	require.Nil(t, err)
 	require.Equal(
@@ -30,7 +33,7 @@ func TestExistingHint(t *testing.T) {
 }
 
 func TestNoHint(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 3
 
 	var ap ApCellRef = 5
@@ -40,8 +43,11 @@ func TestNoHint(t *testing.T) {
 		10: allocHint,
 	})
 
-	vm.Context.Pc = memory.NewMemoryAddress(0, 100)
+	vm.Context.Pc = memory.MemoryAddress{
+		SegmentIndex: 0,
+		Offset:       100,
+	}
 	err := hr.RunHint(vm)
 	require.Nil(t, err)
-	require.Equal(t, 2, len(vm.MemoryManager.Memory.Segments))
+	require.Equal(t, 2, len(vm.Memory.Segments))
 }

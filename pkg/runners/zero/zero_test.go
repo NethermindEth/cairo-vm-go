@@ -30,11 +30,11 @@ func TestSimpleProgram(t *testing.T) {
 	endPc, err := runner.InitializeMainEntrypoint()
 	require.NoError(t, err)
 
-	expectedPc := memory.NewMemoryAddress(3, 0)
+	expectedPc := memory.MemoryAddress{SegmentIndex: 3, Offset: 0}
 
 	require.Equal(t, expectedPc, endPc)
 
-	err = runner.RunUntilPc(endPc)
+	err = runner.RunUntilPc(&endPc)
 	require.NoError(t, err)
 
 	executionSegment := runner.segments()[VM.ExecutionSegment]
@@ -43,9 +43,9 @@ func TestSimpleProgram(t *testing.T) {
 		t,
 		createSegment(
 			// return fp
-			memory.NewMemoryAddress(2, 0),
+			&memory.MemoryAddress{SegmentIndex: 2, Offset: 0},
 			// next pc
-			expectedPc,
+			&expectedPc,
 			2,
 			3,
 			4,
@@ -76,10 +76,10 @@ func TestStepLimitExceeded(t *testing.T) {
 	endPc, err := runner.InitializeMainEntrypoint()
 	require.NoError(t, err)
 
-	expectedPc := memory.NewMemoryAddress(3, 0)
+	expectedPc := memory.MemoryAddress{SegmentIndex: 3, Offset: 0}
 	require.Equal(t, expectedPc, endPc)
 
-	err = runner.RunUntilPc(endPc)
+	err = runner.RunUntilPc(&endPc)
 	require.ErrorContains(t, err, "step limit exceeded")
 
 	executionSegment := runner.segments()[VM.ExecutionSegment]
@@ -88,9 +88,9 @@ func TestStepLimitExceeded(t *testing.T) {
 		t,
 		createSegment(
 			// return fp
-			memory.NewMemoryAddress(2, 0),
+			&memory.MemoryAddress{SegmentIndex: 2, Offset: 0},
 			// next pc
-			expectedPc,
+			&expectedPc,
 			2,
 			3,
 			5,
@@ -103,7 +103,7 @@ func TestStepLimitExceeded(t *testing.T) {
 	assert.Equal(t, uint64(2), runner.vm.Context.Ap)
 	assert.Equal(t, uint64(2), runner.vm.Context.Fp)
 	// the fourth instruction starts at 0:6 because all previous one have size 2
-	assert.Equal(t, memory.NewMemoryAddress(0, 6), runner.vm.Context.Pc)
+	assert.Equal(t, memory.MemoryAddress{SegmentIndex: 0, Offset: 6}, runner.vm.Context.Pc)
 	// step limit exceeded
 	assert.Equal(t, uint64(3), runner.steps())
 }
@@ -140,10 +140,7 @@ func TestStepLimitExceededProofMode(t *testing.T) {
 			t,
 			createSegment(
 				// return fp
-				memory.NewMemoryAddress(
-					0,
-					uint64(len(program.Bytecode)+2),
-				),
+				&memory.MemoryAddress{SegmentIndex: 0, Offset: uint64(len(program.Bytecode) + 2)},
 				// next pc
 				0,
 				2,
@@ -161,7 +158,7 @@ func TestStepLimitExceededProofMode(t *testing.T) {
 		assert.Equal(t, uint64(2), runner.vm.Context.Ap)
 		assert.Equal(t, uint64(2), runner.vm.Context.Fp)
 		// it repeats the last instruction at 0:12
-		assert.Equal(t, memory.NewMemoryAddress(0, 12), runner.vm.Context.Pc)
+		assert.Equal(t, memory.MemoryAddress{SegmentIndex: 0, Offset: 12}, runner.vm.Context.Pc)
 		// step limit exceeded
 		assert.Equal(t, uint64(maxstep), runner.steps())
 	}
@@ -482,20 +479,22 @@ func BenchmarkRunnerWithFibonacci(b *testing.B) {
 }
 
 func createSegment(values ...any) *memory.Segment {
-	data := make([]*memory.Cell, len(values))
+	data := make([]memory.MemoryValue, len(values))
 	for i := range values {
 		if values[i] != nil {
-			memVal, err := memory.MemoryValueFromAny(values[i])
+			var err error
+			data[i], err = memory.MemoryValueFromAny(values[i])
 			if err != nil {
 				panic(err)
 			}
-			data[i] = &memory.Cell{Value: memVal, Accessed: true}
 		}
 	}
-	return &memory.Segment{
+	s := &memory.Segment{
 		Data:      data,
 		LastIndex: len(data) - 1,
 	}
+	s.WithBuiltinRunner(&memory.NoBuiltin{})
+	return s
 }
 
 // modifies a segment in place to reduce its real length to

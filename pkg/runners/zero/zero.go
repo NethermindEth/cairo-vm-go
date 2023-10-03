@@ -14,6 +14,7 @@ import (
 )
 
 type ZeroRunner struct {
+	memoryManager *memory.MemoryManager
 	// core components
 	program    *Program
 	vm         *VM.VirtualMachine
@@ -27,22 +28,29 @@ type ZeroRunner struct {
 
 // Creates a new Runner of a Cairo Zero program
 func NewRunner(program *Program, proofmode bool, maxsteps uint64) (*ZeroRunner, error) {
+	memoryManager := memory.CreateMemoryManager()
+	_, err := memoryManager.Memory.AllocateSegment(program.Bytecode) // ProgramSegment
+	if err != nil {
+		return nil, err
+	}
+	memoryManager.Memory.AllocateEmptySegment() // ExecutionSegment
+
 	// initialize vm
-	vm, err := VM.NewVirtualMachine(program.Bytecode, VM.VirtualMachineConfig{ProofMode: proofmode})
+	vm, err := VM.NewVirtualMachine(vm.Context{}, memoryManager.Memory, vm.VirtualMachineConfig{ProofMode: proofmode})
 	if err != nil {
 		return nil, fmt.Errorf("runner error: %w", err)
 	}
 
-	// intialize hintrunner
 	// todo(rodro): given the program get the appropiate hints
 	hintrunner := hintrunner.NewHintRunner(make(map[uint64]hintrunner.Hinter))
 
 	return &ZeroRunner{
-		program:    program,
-		vm:         vm,
-		hintrunner: hintrunner,
-		proofmode:  proofmode,
-		maxsteps:   maxsteps,
+		memoryManager: memoryManager,
+		program:       program,
+		vm:            vm,
+		hintrunner:    hintrunner,
+		proofmode:     proofmode,
+		maxsteps:      maxsteps,
 	}, nil
 }
 
@@ -57,7 +65,7 @@ func (runner *ZeroRunner) Run() error {
 		return fmt.Errorf("initializing main entry point: %w", err)
 	}
 
-	err = runner.RunUntilPc(end)
+	err = runner.RunUntilPc(&end)
 	if err != nil {
 		return err
 	}
@@ -77,78 +85,83 @@ func (runner *ZeroRunner) Run() error {
 	return nil
 }
 
-func (runner *ZeroRunner) InitializeMainEntrypoint() (*memory.MemoryAddress, error) {
+func (runner *ZeroRunner) InitializeMainEntrypoint() (memory.MemoryAddress, error) {
 	if runner.proofmode {
 		startPc, ok := runner.program.Labels["__start__"]
 		if !ok {
-			return nil, errors.New("start label not found. Try compiling with `--proof_mode`")
+			return memory.UnknownValue, errors.New("start label not found. Try compiling with `--proof_mode`")
 		}
 		endPc, ok := runner.program.Labels["__end__"]
 		if !ok {
-			return nil, errors.New("end label not found. Try compiling with `--proof_mode`")
+			return memory.UnknownValue, errors.New("end label not found. Try compiling with `--proof_mode`")
 		}
 
 		offset := runner.segments()[VM.ExecutionSegment].Len()
 
+		dummyFPValue := memory.MemoryValueFromSegmentAndOffset(
+			VM.ProgramSegment,
+			runner.segments()[VM.ProgramSegment].Len()+offset+2,
+		)
 		// set dummy fp value
 		err := runner.memory().Write(
 			VM.ExecutionSegment,
 			offset,
-			memory.MemoryValueFromSegmentAndOffset(
-				VM.ProgramSegment,
-				runner.segments()[VM.ProgramSegment].Len()+offset+2,
-			),
+			&dummyFPValue,
 		)
 		if err != nil {
-			return nil, err
-		}
-		// set dummy pc value
-		err = runner.memory().Write(VM.ExecutionSegment, offset+1, memory.MemoryValueFromUint[uint64](0))
-		if err != nil {
-			return nil, err
+			return memory.UnknownValue, err
 		}
 
-		runner.vm.Context.Pc = memory.NewMemoryAddress(VM.ProgramSegment, startPc)
+		dummyPCValue := memory.MemoryValueFromUint[uint64](0)
+		// set dummy pc value
+		err = runner.memory().Write(VM.ExecutionSegment, offset+1, &dummyPCValue)
+		if err != nil {
+			return memory.UnknownValue, err
+		}
+
+		runner.vm.Context.Pc = memory.MemoryAddress{SegmentIndex: VM.ProgramSegment, Offset: startPc}
 		runner.vm.Context.Ap = offset + 2
 		runner.vm.Context.Fp = runner.vm.Context.Ap
-		return memory.NewMemoryAddress(VM.ProgramSegment, endPc), nil
+		return memory.MemoryAddress{SegmentIndex: VM.ProgramSegment, Offset: endPc}, nil
 	}
 
 	returnFp := memory.MemoryValueFromSegmentAndOffset(
 		runner.memory().AllocateEmptySegment(),
 		0,
 	)
-	return runner.InitializeEntrypoint("main", nil, returnFp)
+	return runner.InitializeEntrypoint("main", nil, &returnFp)
 }
 
 func (runner *ZeroRunner) InitializeEntrypoint(
 	funcName string, arguments []*f.Element, returnFp *memory.MemoryValue,
-) (*memory.MemoryAddress, error) {
+) (memory.MemoryAddress, error) {
 	segmentIndex := runner.memory().AllocateEmptySegment()
-	end := memory.NewMemoryAddress(uint64(segmentIndex), 0)
+	end := memory.MemoryAddress{SegmentIndex: uint64(segmentIndex), Offset: 0}
 	// write arguments
 	for i := range arguments {
-		err := runner.memory().Write(VM.ExecutionSegment, uint64(i), memory.MemoryValueFromFieldElement(arguments[i]))
+		v := memory.MemoryValueFromFieldElement(arguments[i])
+		err := runner.memory().Write(VM.ExecutionSegment, uint64(i), &v)
 		if err != nil {
-			return nil, err
+			return memory.UnknownValue, err
 		}
 	}
 	offset := runner.segments()[VM.ExecutionSegment].Len()
 	err := runner.memory().Write(VM.ExecutionSegment, offset, returnFp)
 	if err != nil {
-		return nil, err
+		return memory.UnknownValue, err
 	}
-	err = runner.memory().Write(VM.ExecutionSegment, offset+1, memory.MemoryValueFromMemoryAddress(end))
+	endMV := memory.MemoryValueFromMemoryAddress(&end)
+	err = runner.memory().Write(VM.ExecutionSegment, offset+1, &endMV)
 	if err != nil {
-		return nil, err
+		return memory.UnknownValue, err
 	}
 
 	pc, ok := runner.program.Entrypoints[funcName]
 	if !ok {
-		return nil, fmt.Errorf("unknwon entrypoint: %s", funcName)
+		return memory.UnknownValue, fmt.Errorf("unknwon entrypoint: %s", funcName)
 	}
 
-	runner.vm.Context.Pc = memory.NewMemoryAddress(VM.ProgramSegment, pc)
+	runner.vm.Context.Pc = memory.MemoryAddress{SegmentIndex: VM.ProgramSegment, Offset: pc}
 	runner.vm.Context.Ap = offset + 2
 	runner.vm.Context.Fp = runner.vm.Context.Ap
 
@@ -166,7 +179,7 @@ func (runner *ZeroRunner) RunUntilPc(pc *memory.MemoryAddress) error {
 			)
 		}
 
-		err := runner.vm.RunStep(runner.hintrunner)
+		err := runner.vm.RunStep(nil)
 		if err != nil {
 			return fmt.Errorf("pc %s step %d: %w", runner.pc(), runner.steps(), err)
 		}
@@ -185,7 +198,7 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 			)
 		}
 
-		err := runner.vm.RunStep(runner.hintrunner)
+		err := runner.vm.RunStep(nil)
 		if err != nil {
 			return fmt.Errorf(
 				"pc %s step %d: %w",
@@ -199,26 +212,23 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 }
 
 func (runner *ZeroRunner) BuildProof() ([]byte, []byte, error) {
-	relocatedTrace, relocatedMem, err := runner.vm.Proof()
+	relocatedTrace, err := runner.vm.ExecutionTrace()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	trace := EncodeTrace(relocatedTrace)
-	memory := EncodeMemory(relocatedMem)
-
-	return trace, memory, nil
+	return EncodeTrace(relocatedTrace), EncodeMemory(runner.memoryManager.RelocateMemory()), nil
 }
 
 func (runner *ZeroRunner) memory() *memory.Memory {
-	return runner.vm.MemoryManager.Memory
+	return runner.memoryManager.Memory
 }
 
 func (runner *ZeroRunner) segments() []*memory.Segment {
-	return runner.vm.MemoryManager.Memory.Segments
+	return runner.memoryManager.Memory.Segments
 }
 
-func (runner *ZeroRunner) pc() *memory.MemoryAddress {
+func (runner *ZeroRunner) pc() memory.MemoryAddress {
 	return runner.vm.Context.Pc
 }
 
