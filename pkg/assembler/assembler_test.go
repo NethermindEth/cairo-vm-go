@@ -8,6 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestAssertEqRegisterToInstrList(t *testing.T) {
+	// _ := parseSingleInstructionToInstrList("[ap] = [fp + 0], ap++;")
+	// fmt.Println("instrList: ", instrList)
+}
+
 func TestAssertEqRegister(t *testing.T) {
 	encode := parseSingleInstruction("[ap] = [fp + 0], ap++;")
 
@@ -472,6 +477,22 @@ func parseSingleInstruction(casmCode string) uint64 {
 		panic(fmt.Errorf("Expected 1 instruction, got %d", len(instructions)))
 	}
 	return instructions[0].Uint64()
+}
+
+func parseSingleInstructionToInstrList(casmCode string) []Instruction {
+	casmAst, err := parser.ParseString("", casmCode)
+	if err != nil {
+		panic(err)
+	}
+	instructions, err := astToInstruction(casmAst)
+	if err != nil {
+		panic(err)
+	}
+
+	// if len(instructions) != 1 {
+	// 	panic(fmt.Errorf("Expected 1 instruction, got %d", len(instructions)))
+	// }
+	return instructions
 }
 
 func biased(num int16) uint16 {

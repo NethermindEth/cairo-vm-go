@@ -12,6 +12,10 @@ var parser *participle.Parser[CasmProgram] = participle.MustBuild[CasmProgram](
 	participle.UseLookahead(5),
 )
 
+/*
+* Casm to instruction list in assembler.go
+* Instruction list to bytecode in instruction.go
+ */
 func CasmToBytecode(code string) ([]*f.Element, error) {
 	casmAst, err := parser.ParseString("", code)
 	if err != nil {
@@ -60,18 +64,18 @@ func encodeNodeToInstr(node AstNode) (Instruction, error) {
 func encodeDst(node *AstNode, instr *Instruction) {
 	if node.ApPlus != nil || node.Jump != nil {
 		// dstOffset is not involved so it is set to fp - 1 as default value
-		instr.UOffDest = biasedMinusOne
+		instr.OffDest = -1
 		instr.DstRegister = 0x01
 		return
 	}
 	if node.Call != nil {
 		// dstOffset is set to ap + 0
-		instr.UOffDest = biasedZero
+		instr.OffDest = 0
 		return
 	}
 	if node.Ret != nil {
 		// dstOffset is set as fp - 2
-		instr.UOffDest = biasedMinusTwo
+		instr.OffDest = -2
 		instr.DstRegister = 0x01
 		return
 	}
@@ -83,12 +87,11 @@ func encodeDst(node *AstNode, instr *Instruction) {
 		deref = node.Jnz.Condition
 	}
 
-	biasedOffset, err := deref.BiasedOffset()
+	offset, err := deref.SignedOffset()
 	if err != nil {
 		return
 	}
-	//encode |= uint64(biasedOffset)
-	instr.UOffDest = biasedOffset
+	instr.OffDest = offset
 	if deref.IsFp() {
 		instr.DstRegister = 0x01
 	}
@@ -97,13 +100,14 @@ func encodeDst(node *AstNode, instr *Instruction) {
 func encodeOp0(node *AstNode, instr *Instruction, expr Expressioner) {
 	if node != nil && node.Call != nil {
 		// op0 is set as [ap + 1] to store current pc
-		instr.UOffOp0 = biasedPlusOne
+		instr.OffOp0 = 1
 		return
 	}
 	if (node != nil && (node.Jnz != nil || node.Ret != nil)) ||
 		(expr.AsDeref() != nil || expr.AsImmediate() != nil) {
 		// op0 is not involved, it is set as fp - 1 as default value
-		instr.UOffOp0 = biasedMinusOne
+		// instr.UOffOp0 = biasedMinusOne
+		instr.OffOp0 = -1
 		instr.Op0Register = 0x01
 		return
 	}
@@ -115,12 +119,13 @@ func encodeOp0(node *AstNode, instr *Instruction, expr Expressioner) {
 		deref = expr.AsMathOperation().Lhs
 	}
 
-	biasedOffset, err := deref.BiasedOffset()
+	// biasedOffset, err := deref.BiasedOffset()
+	offset, err := deref.SignedOffset()
 	if err != nil {
 		return
 	}
 	//encode |= uint64(biasedOffset) << op0Offset
-	instr.UOffOp0 = biasedOffset
+	instr.OffOp0 = offset
 	if deref.IsFp() {
 		//encode |= 1 << op0RegBit
 		instr.Op0Register = 1
@@ -132,17 +137,19 @@ func encodeOp0(node *AstNode, instr *Instruction, expr Expressioner) {
 func encodeOp1(node *AstNode, instr *Instruction, expr Expressioner) {
 	if node != nil && node.Ret != nil {
 		// op1 is set as [fp - 1], where we read the previous pc
-		instr.UOffOp1 = biasedMinusOne
+		// instr.UOffOp1 = biasedMinusOne
+		instr.OffOp1 = -1
 		instr.Op1Source = 0x02
 		return
 	}
 
 	if expr.AsDeref() != nil {
-		biasedOffset, err := expr.AsDeref().BiasedOffset()
+		offset, err := expr.AsDeref().SignedOffset()
 		if err != nil {
 			return
 		}
-		instr.UOffOp1 = biasedOffset
+		// instr.UOffOp1 = biasedOffset
+		instr.OffOp1 = offset
 		if expr.AsDeref().IsFp() {
 			instr.Op1Source = 0x02
 		} else {
@@ -150,16 +157,17 @@ func encodeOp1(node *AstNode, instr *Instruction, expr Expressioner) {
 		}
 		return
 	} else if expr.AsDoubleDeref() != nil {
-		biasedOffset, err := expr.AsDoubleDeref().BiasedOffset()
+		// biasedOffset, err := expr.AsDoubleDeref().BiasedOffset()
+		offset, err := expr.AsDoubleDeref().SignedOffset()
 		if err != nil {
 			return
 		}
-		instr.UOffOp1 = biasedOffset
+		instr.OffOp1 = offset
 		return
 	} else if expr.AsImmediate() != nil {
 		// immediate is converted to Felt during bytecode conversion
 		imm := expr.AsImmediate()
-		instr.UOffOp1 = biasedPlusOne
+		instr.OffOp1 = 1
 		instr.Op1Source = 0x01
 		instr.Imm = *imm
 		return

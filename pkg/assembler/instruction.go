@@ -148,9 +148,9 @@ type Instruction struct {
 	OffOp0  int16
 	OffOp1  int16
 
-	UOffDest uint16
-	UOffOp0  uint16
-	UOffOp1  uint16
+	// UOffDest uint16
+	// UOffOp0  uint16
+	// UOffOp1  uint16
 	// UFlags   uint16
 
 	DstRegister Register
@@ -419,10 +419,13 @@ func encodeOneInstruction(instruction *Instruction) (*f.Element, error) {
 func encodeOffsets(instr *Instruction) uint64 {
 	// Combine the offsets and flags into a single uint64
 	var encoding uint64 = 0
-	encoding |= uint64(instr.UOffDest)
-	encoding |= uint64(instr.UOffOp0) << op0Offset
-	encoding |= uint64(instr.UOffOp1) << op1Offset
-
+	var biasedValue uint16
+	biasedValue, _ = findBiasedOffset(instr.OffDest)
+	encoding |= uint64(biasedValue)
+	biasedValue, _ = findBiasedOffset(instr.OffOp0)
+	encoding |= uint64(biasedValue) << op0Offset
+	biasedValue, _ = findBiasedOffset(instr.OffOp1)
+	encoding |= uint64(biasedValue) << op1Offset
 	return encoding
 }
 
@@ -440,4 +443,12 @@ func encodeInstructionFlags(instr *Instruction, encoding uint64) (uint64, error)
 	// Finally OR them with the 64 bit encoding with the flagsOffset
 	encoding |= uint64(flagsReg) << flagsOffset
 	return encoding, nil
+}
+
+func findBiasedOffset(value int16) (uint16, error) {
+	// if value > math.MaxInt16 || value < math.MinInt16 {
+	// 	return 0, fmt.Errorf("offset value outside of (-2**16, 2**16)")
+	// }
+	biasedOffset := uint16(value) ^ 0x8000
+	return biasedOffset, nil
 }
