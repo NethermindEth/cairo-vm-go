@@ -1,30 +1,37 @@
 package memory
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+func assertNoErrorAndEqual(t *testing.T, s *Segment, offset uint64, expected MemoryValue) {
+	v, err := s.Read(offset)
+	require.NoError(t, err)
+	assert.Equal(t, expected, v)
+}
+
 func TestSegmentRead(t *testing.T) {
 	segment := Segment{Data: []MemoryValue{
 		MemoryValueFromInt(3),
 		MemoryValueFromInt(5),
 		{},
-	}}
+	}, BuiltinRunner: &NoBuiltin{}}
 
-	assert.Equal(t, segment.Read(0), MemoryValueFromInt(3))
-	assert.Equal(t, segment.Read(1), MemoryValueFromInt(5))
+	assertNoErrorAndEqual(t, &segment, 0, MemoryValueFromInt(3))
+	assertNoErrorAndEqual(t, &segment, 1, MemoryValueFromInt(5))
 	assert.False(t, segment.Data[2].Known())
-	assert.Equal(t, segment.Read(2), EmptyMemoryValueAsFelt())
+	assertNoErrorAndEqual(t, &segment, 2, EmptyMemoryValueAsFelt())
 	assert.True(t, segment.Data[0].Known()) //Segment read should mark cell as accessed
 	assert.True(t, segment.Data[1].Known())
 	assert.True(t, segment.Data[2].Known())
 
 	assert.Equal(t, len(segment.Data), 3)
 	//Check if we can read offsets higher than segment len
-	assert.Equal(t, segment.Read(100), EmptyMemoryValueAsFelt())
+	assertNoErrorAndEqual(t, &segment, 100, EmptyMemoryValueAsFelt())
 	assert.Equal(t, len(segment.Data), 101) //Verify that segment len was increased
 }
 
@@ -32,7 +39,7 @@ func TestSegmentPeek(t *testing.T) {
 	segment := Segment{Data: []MemoryValue{
 		MemoryValueFromInt(2),
 		{},
-	}}
+	}, BuiltinRunner: &NoBuiltin{}}
 	assert.Equal(t, segment.Peek(0), MemoryValueFromInt(2))
 	assert.Equal(t, segment.Peek(1), MemoryValue{})
 	assert.True(t, segment.Data[0].Known())  //Cell that was already accessed should stay accessed
@@ -45,7 +52,10 @@ func TestSegmentPeek(t *testing.T) {
 }
 
 func TestSegmentWrite(t *testing.T) {
-	segment := Segment{Data: make([]MemoryValue, 2)}
+	segment := Segment{
+		Data:          make([]MemoryValue, 2),
+		BuiltinRunner: &NoBuiltin{},
+	}
 
 	err := segment.Write(0, UseInTestOnlyMemoryValuePointerFromInt(100))
 	assert.NoError(t, err)
@@ -63,23 +73,27 @@ func TestSegmentWrite(t *testing.T) {
 	assert.Error(t, err)
 
 	//Check that memory wasn't modified
-	assert.Equal(t, segment.Read(0), MemoryValueFromInt(100))
+	assertNoErrorAndEqual(t, &segment, 0, MemoryValueFromInt(100))
 	assert.True(t, segment.Data[0].Known())
 }
 
 func TestSegmentReadAndWrite(t *testing.T) {
-	segment := Segment{Data: make([]MemoryValue, 1)}
+	segment := Segment{
+		Data:          make([]MemoryValue, 1),
+		BuiltinRunner: &NoBuiltin{},
+	}
 	err := segment.Write(0, UseInTestOnlyMemoryValuePointerFromInt(48))
 	assert.NoError(t, err)
-	assert.Equal(t, segment.Read(0), MemoryValueFromInt(48))
+	assertNoErrorAndEqual(t, &segment, 0, MemoryValueFromInt(48))
 	assert.True(t, segment.Data[0].Known())
 }
 
 func TestIncreaseSegmentSizeSmallerSize(t *testing.T) {
 	segment := Segment{Data: []MemoryValue{
 		MemoryValueFromInt(1),
-		MemoryValueFromInt(2),
-	}}
+		MemoryValueFromInt(2)},
+		BuiltinRunner: &NoBuiltin{},
+	}
 	// Panic if we decrase the size
 	require.Panics(t, func() { segment.IncreaseSegmentSize(0) })
 	// Panic if the size remains the same
@@ -90,32 +104,34 @@ func TestIncreaseSegmentSizeMaxNewSize(t *testing.T) {
 	segment := Segment{Data: []MemoryValue{
 		MemoryValueFromInt(1),
 		MemoryValueFromInt(2),
-		MemoryValueFromInt(3),
-	}}
+		MemoryValueFromInt(3)},
+		BuiltinRunner: &NoBuiltin{},
+	}
 
 	segment.IncreaseSegmentSize(1000)
 	assert.True(t, len(segment.Data) == 1000)
 	assert.True(t, cap(segment.Data) == 1000)
 
 	//Make sure no data was lost after incrase
-	assert.Equal(t, segment.Read(0), MemoryValueFromInt(1))
-	assert.Equal(t, segment.Read(1), MemoryValueFromInt(2))
-	assert.Equal(t, segment.Read(2), MemoryValueFromInt(3))
+	assertNoErrorAndEqual(t, &segment, 0, MemoryValueFromInt(1))
+	assertNoErrorAndEqual(t, &segment, 1, MemoryValueFromInt(2))
+	assertNoErrorAndEqual(t, &segment, 2, MemoryValueFromInt(3))
 }
 
 func TestIncreaseSegmentSizeDouble(t *testing.T) {
 	segment := Segment{Data: []MemoryValue{
 		MemoryValueFromInt(1),
-		MemoryValueFromInt(2),
-	}}
+		MemoryValueFromInt(2)},
+		BuiltinRunner: &NoBuiltin{},
+	}
 
 	segment.IncreaseSegmentSize(3)
 	assert.True(t, len(segment.Data) == 4)
 	assert.True(t, cap(segment.Data) == 4)
 
 	//Make sure no data was lost after incrase
-	assert.Equal(t, segment.Read(0), MemoryValueFromInt(1))
-	assert.Equal(t, segment.Read(1), MemoryValueFromInt(2))
+	assertNoErrorAndEqual(t, &segment, 0, MemoryValueFromInt(1))
+	assertNoErrorAndEqual(t, &segment, 1, MemoryValueFromInt(2))
 }
 func TestMemoryWriteAndRead(t *testing.T) {
 	memory := InitializeEmptyMemory()
@@ -171,4 +187,51 @@ func TestMemoryPeek(t *testing.T) {
 	cell, err = memory.PeekFromAddress(&MemoryAddress{0, 1})
 	assert.NoError(t, err)
 	assert.Equal(t, cell, MemoryValueFromInt(412))
+}
+
+type testBuiltin struct{}
+
+func (b *testBuiltin) CheckWrite(segment *Segment, offset uint64, value *MemoryValue) error {
+	if offset%2 == 1 {
+		return fmt.Errorf("write error")
+	}
+	return nil
+}
+
+func (b *testBuiltin) DeduceValue(segment *Segment, offset uint64) error {
+	if offset%2 == 1 {
+		return fmt.Errorf("deduce error")
+	}
+	segment.Data[offset] = MemoryValueFromInt(offset)
+	return nil
+}
+
+func TestSegmentBuiltin(t *testing.T) {
+	segment := EmptySegment().WithBuiltinRunner(&testBuiltin{})
+
+	t.Run("deduction fails", func(t *testing.T) {
+		_, err := segment.Read(1)
+		require.EqualError(t, err, "deduce error")
+	})
+	t.Run("deduction succeeds", func(t *testing.T) {
+		read, err := segment.Read(2)
+		require.NoError(t, err)
+		assert.Equal(t, MemoryValueFromInt(2), read)
+	})
+
+	empty := EmptyMemoryValueAsFelt()
+	t.Run("write check fails", func(t *testing.T) {
+		err := segment.Write(3, &empty)
+		require.EqualError(t, err, "write error")
+	})
+	t.Run("write check succeeds", func(t *testing.T) {
+		err := segment.Write(4, &empty)
+		require.NoError(t, err)
+	})
+
+	t.Run("no deduction on known cells", func(t *testing.T) {
+		v, err := segment.Read(4)
+		require.NoError(t, err)
+		assert.Equal(t, empty, v)
+	})
 }

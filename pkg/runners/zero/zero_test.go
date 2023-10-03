@@ -489,10 +489,12 @@ func createSegment(values ...any) *memory.Segment {
 			}
 		}
 	}
-	return &memory.Segment{
+	s := &memory.Segment{
 		Data:      data,
 		LastIndex: len(data) - 1,
 	}
+	s.WithBuiltinRunner(&memory.NoBuiltin{})
+	return s
 }
 
 // modifies a segment in place to reduce its real length to

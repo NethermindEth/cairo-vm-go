@@ -7,31 +7,56 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+type BuiltinRunner interface {
+	CheckWrite(segment *Segment, offset uint64, value *MemoryValue) error
+	DeduceValue(segment *Segment, offset uint64) error
+}
+
+type NoBuiltin struct{}
+
+func (b *NoBuiltin) CheckWrite(segment *Segment, offset uint64, value *MemoryValue) error {
+	return nil
+}
+
+func (b *NoBuiltin) DeduceValue(segment *Segment, offset uint64) error {
+	segment.Data[offset] = EmptyMemoryValueAsFelt()
+	return nil
+}
+
 type Segment struct {
 	Data []MemoryValue
 	// the max index where a value was written
-	LastIndex int
+	LastIndex     int
+	BuiltinRunner BuiltinRunner
+}
+
+func (segment *Segment) WithBuiltinRunner(builtinRunner BuiltinRunner) *Segment {
+	segment.BuiltinRunner = builtinRunner
+	return segment
 }
 
 func EmptySegment() *Segment {
 	// empty segments have capacity 100 as a default
 	return &Segment{
-		Data:      make([]MemoryValue, 0, 100),
-		LastIndex: -1,
+		Data:          make([]MemoryValue, 0, 100),
+		LastIndex:     -1,
+		BuiltinRunner: &NoBuiltin{},
 	}
 }
 
 func EmptySegmentWithCapacity(capacity int) *Segment {
 	return &Segment{
-		Data:      make([]MemoryValue, 0, capacity),
-		LastIndex: -1,
+		Data:          make([]MemoryValue, 0, capacity),
+		LastIndex:     -1,
+		BuiltinRunner: &NoBuiltin{},
 	}
 }
 
 func EmptySegmentWithLength(length int) *Segment {
 	return &Segment{
-		Data:      make([]MemoryValue, length),
-		LastIndex: length - 1,
+		Data:          make([]MemoryValue, length),
+		LastIndex:     length - 1,
+		BuiltinRunner: &NoBuiltin{},
 	}
 }
 
@@ -64,11 +89,11 @@ func (segment *Segment) Write(offset uint64, value *MemoryValue) error {
 		)
 	}
 	segment.Data[offset] = *value
-	return nil
+	return segment.BuiltinRunner.CheckWrite(segment, offset, value)
 }
 
 // Reads a memory value from a specified offset at the segment
-func (segment *Segment) Read(offset uint64) MemoryValue {
+func (segment *Segment) Read(offset uint64) (MemoryValue, error) {
 	if offset >= segment.RealLen() {
 		segment.IncreaseSegmentSize(offset + 1)
 	}
@@ -78,9 +103,11 @@ func (segment *Segment) Read(offset uint64) MemoryValue {
 
 	cell := &segment.Data[offset]
 	if !cell.Known() {
-		*cell = EmptyMemoryValueAsFelt()
+		if err := segment.BuiltinRunner.DeduceValue(segment, offset); err != nil {
+			return MemoryValue{}, err
+		}
 	}
-	return *cell
+	return *cell, nil
 }
 
 func (segment *Segment) Peek(offset uint64) MemoryValue {
@@ -201,7 +228,7 @@ func (memory *Memory) Read(segmentIndex uint64, offset uint64) (MemoryValue, err
 	if segmentIndex >= uint64(len(memory.Segments)) {
 		return MemoryValue{}, fmt.Errorf("unallocated segment at index %d", segmentIndex)
 	}
-	return memory.Segments[segmentIndex].Read(offset), nil
+	return memory.Segments[segmentIndex].Read(offset)
 }
 
 // Reads a memory value from a memory address. Errors if reading from an unallocated
