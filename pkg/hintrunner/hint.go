@@ -23,7 +23,7 @@ func (hint AllocSegment) String() string {
 }
 
 func (hint AllocSegment) Execute(vm *VM.VirtualMachine) error {
-	segmentIndex := vm.MemoryManager.Memory.AllocateEmptySegment()
+	segmentIndex := vm.Memory.AllocateEmptySegment()
 	memAddress := memory.MemoryValueFromSegmentAndOffset(segmentIndex, 0)
 
 	regAddr, err := hint.dst.Get(vm)
@@ -31,7 +31,7 @@ func (hint AllocSegment) Execute(vm *VM.VirtualMachine) error {
 		return fmt.Errorf("get register %s: %w", hint.dst, err)
 	}
 
-	err = vm.MemoryManager.Memory.WriteToAddress(&regAddr, &memAddress)
+	err = vm.Memory.WriteToAddress(&regAddr, &memAddress)
 	if err != nil {
 		return fmt.Errorf("write to address %s: %v", regAddr, err)
 	}
@@ -81,7 +81,7 @@ func (hint TestLessThan) Execute(vm *VM.VirtualMachine) error {
 	}
 
 	mv := memory.MemoryValueFromFieldElement(&resFelt)
-	err = vm.MemoryManager.Memory.WriteToAddress(&dstAddr, &mv)
+	err = vm.Memory.WriteToAddress(&dstAddr, &mv)
 	if err != nil {
 		return fmt.Errorf("write to dst address %s: %w", dstAddr, err)
 	}

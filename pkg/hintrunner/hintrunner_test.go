@@ -9,7 +9,7 @@ import (
 )
 
 func TestExistingHint(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 3
 
 	var ap ApCellRef = 5
@@ -33,7 +33,7 @@ func TestExistingHint(t *testing.T) {
 }
 
 func TestNoHint(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 3
 
 	var ap ApCellRef = 5
@@ -49,5 +49,5 @@ func TestNoHint(t *testing.T) {
 	}
 	err := hr.RunHint(vm)
 	require.Nil(t, err)
-	require.Equal(t, 2, len(vm.MemoryManager.Memory.Segments))
+	require.Equal(t, 2, len(vm.Memory.Segments))
 }

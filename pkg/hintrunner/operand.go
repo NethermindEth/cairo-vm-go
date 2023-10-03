@@ -69,7 +69,7 @@ func (deref Deref) Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, error) {
 	if err != nil {
 		return memory.MemoryValue{}, fmt.Errorf("get cell: %w", err)
 	}
-	return vm.MemoryManager.Memory.ReadFromAddress(&address)
+	return vm.Memory.ReadFromAddress(&address)
 }
 
 type DoubleDeref struct {
@@ -82,7 +82,7 @@ func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, er
 	if err != nil {
 		return memory.MemoryValue{}, fmt.Errorf("get lhs address %s: %w", lhsAddr, err)
 	}
-	lhs, err := vm.MemoryManager.Memory.ReadFromAddress(&lhsAddr)
+	lhs, err := vm.Memory.ReadFromAddress(&lhsAddr)
 	if err != nil {
 		return memory.MemoryValue{}, fmt.Errorf("read lhs address %s: %w", lhsAddr, err)
 	}
@@ -102,7 +102,7 @@ func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, er
 		Offset:       newOffset,
 	}
 
-	value, err := vm.MemoryManager.Memory.ReadFromAddress(&resAddr)
+	value, err := vm.Memory.ReadFromAddress(&resAddr)
 	if err != nil {
 		return memory.MemoryValue{}, fmt.Errorf("read result at %s: %w", resAddr, err)
 	}
@@ -150,7 +150,7 @@ func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, error) {
 	if err != nil {
 		return memory.MemoryValue{}, fmt.Errorf("get lhs address %s: %w", bop.lhs, err)
 	}
-	lhs, err := vm.MemoryManager.Memory.ReadFromAddress(&lhsAddr)
+	lhs, err := vm.Memory.ReadFromAddress(&lhsAddr)
 	if err != nil {
 		return memory.MemoryValue{}, fmt.Errorf("read lhs address %s: %v", lhsAddr, err)
 	}
