@@ -106,7 +106,6 @@ func encodeOp0(node *AstNode, instr *Instruction, expr Expressioner) {
 	if (node != nil && (node.Jnz != nil || node.Ret != nil)) ||
 		(expr.AsDeref() != nil || expr.AsImmediate() != nil) {
 		// op0 is not involved, it is set as fp - 1 as default value
-		// instr.UOffOp0 = biasedMinusOne
 		instr.OffOp0 = -1
 		instr.Op0Register = 0x01
 		return
@@ -119,15 +118,12 @@ func encodeOp0(node *AstNode, instr *Instruction, expr Expressioner) {
 		deref = expr.AsMathOperation().Lhs
 	}
 
-	// biasedOffset, err := deref.BiasedOffset()
 	offset, err := deref.SignedOffset()
 	if err != nil {
 		return
 	}
-	//encode |= uint64(biasedOffset) << op0Offset
 	instr.OffOp0 = offset
 	if deref.IsFp() {
-		//encode |= 1 << op0RegBit
 		instr.Op0Register = 1
 	}
 }
@@ -137,7 +133,6 @@ func encodeOp0(node *AstNode, instr *Instruction, expr Expressioner) {
 func encodeOp1(node *AstNode, instr *Instruction, expr Expressioner) {
 	if node != nil && node.Ret != nil {
 		// op1 is set as [fp - 1], where we read the previous pc
-		// instr.UOffOp1 = biasedMinusOne
 		instr.OffOp1 = -1
 		instr.Op1Source = 0x02
 		return
@@ -148,7 +143,6 @@ func encodeOp1(node *AstNode, instr *Instruction, expr Expressioner) {
 		if err != nil {
 			return
 		}
-		// instr.UOffOp1 = biasedOffset
 		instr.OffOp1 = offset
 		if expr.AsDeref().IsFp() {
 			instr.Op1Source = 0x02
@@ -157,7 +151,6 @@ func encodeOp1(node *AstNode, instr *Instruction, expr Expressioner) {
 		}
 		return
 	} else if expr.AsDoubleDeref() != nil {
-		// biasedOffset, err := expr.AsDoubleDeref().BiasedOffset()
 		offset, err := expr.AsDoubleDeref().SignedOffset()
 		if err != nil {
 			return

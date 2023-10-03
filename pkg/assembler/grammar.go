@@ -148,31 +148,6 @@ func (deref *Deref) IsFp() bool {
 	return deref.Name == "fp"
 }
 
-func (deref *Deref) BiasedOffset() (uint16, error) {
-	if deref.Offset == nil {
-		return biasedZero, nil
-	}
-	return biasedOffset(deref.Offset.Sign == "-", *deref.Offset.Value)
-}
-
-func (dderef *DoubleDeref) BiasedOffset() (uint16, error) {
-	if dderef.Offset == nil {
-		return biasedZero, nil
-	}
-	return biasedOffset(dderef.Offset.Sign == "-", *dderef.Offset.Value)
-}
-
-func biasedOffset(neg bool, value int) (uint16, error) {
-	if neg {
-		value = -value
-	}
-	if value > math.MaxInt16 || value < math.MinInt16 {
-		return 0, fmt.Errorf("offset value outside of (-2**16, 2**16)")
-	}
-	biasedOffset := uint16(value) ^ 0x8000
-	return biasedOffset, nil
-}
-
 func (deref *Deref) SignedOffset() (int16, error) {
 	if deref.Offset == nil {
 		return 0, nil

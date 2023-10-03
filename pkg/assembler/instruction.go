@@ -227,10 +227,10 @@ const (
 	opcodeAssertEqBit = 14
 
 	// Default values
-	biasedZero     uint16 = 0x8000
-	biasedPlusOne  uint16 = 0x8001
-	biasedMinusOne uint16 = 0x7FFF
-	biasedMinusTwo uint16 = 0x7FFE
+	// biasedZero     uint16 = 0x8000
+	// biasedPlusOne  uint16 = 0x8001
+	// biasedMinusOne uint16 = 0x7FFF
+	// biasedMinusTwo uint16 = 0x7FFE
 )
 
 func DecodeInstruction(rawInstruction *f.Element) (*Instruction, error) {
@@ -417,23 +417,21 @@ func encodeOneInstruction(instruction *Instruction) (*f.Element, error) {
 }
 
 func encodeOffsets(instr *Instruction) uint64 {
-	// Combine the offsets and flags into a single uint64
-	var encoding uint64 = 0
-	var biasedValue uint16
-	biasedValue, _ = findBiasedOffset(instr.OffDest)
-	encoding |= uint64(biasedValue)
-	biasedValue, _ = findBiasedOffset(instr.OffOp0)
-	encoding |= uint64(biasedValue) << op0Offset
-	biasedValue, _ = findBiasedOffset(instr.OffOp1)
-	encoding |= uint64(biasedValue) << op1Offset
+	// Find biased version of the offsets
+	// then encode them as bytecode
+	biasedOffset := findBiasedOffset(instr.OffDest)
+	encoding := uint64(biasedOffset)
+	biasedOffset = findBiasedOffset(instr.OffOp0)
+	encoding |= uint64(biasedOffset) << op0Offset
+	biasedOffset = findBiasedOffset(instr.OffOp1)
+	encoding |= uint64(biasedOffset) << op1Offset
 	return encoding
 }
 
 func encodeInstructionFlags(instr *Instruction, encoding uint64) (uint64, error) {
-	// Use flag register to encode the flags
-	var flagsReg uint16
-	// Encode the flag bits
-	flagsReg = uint16(instr.DstRegister) << dstRegBit
+	// Use a seperate flag register to encode the flags
+	// To help with relative bit offsets
+	flagsReg := uint16(instr.DstRegister) << dstRegBit
 	flagsReg |= uint16(instr.Op0Register) << op0RegBit
 	flagsReg |= uint16(instr.Op1Source) << op1ImmBit
 	flagsReg |= uint16(instr.Res) << resAddBit
@@ -445,10 +443,7 @@ func encodeInstructionFlags(instr *Instruction, encoding uint64) (uint64, error)
 	return encoding, nil
 }
 
-func findBiasedOffset(value int16) (uint16, error) {
-	// if value > math.MaxInt16 || value < math.MinInt16 {
-	// 	return 0, fmt.Errorf("offset value outside of (-2**16, 2**16)")
-	// }
+func findBiasedOffset(value int16) uint16 {
 	biasedOffset := uint16(value) ^ 0x8000
-	return biasedOffset, nil
+	return biasedOffset
 }
