@@ -14,11 +14,11 @@ import (
 )
 
 type ZeroRunner struct {
-	memoryManager *memory.MemoryManager
 	// core components
-	program    *Program
-	vm         *VM.VirtualMachine
-	hintrunner hintrunner.HintRunner
+	program       *Program
+	vm            *VM.VirtualMachine
+	hintrunner    hintrunner.HintRunner
+	memoryManager *memory.MemoryManager
 	// config
 	proofmode bool
 	maxsteps  uint64
@@ -45,10 +45,10 @@ func NewRunner(program *Program, proofmode bool, maxsteps uint64) (*ZeroRunner, 
 	hintrunner := hintrunner.NewHintRunner(make(map[uint64]hintrunner.Hinter))
 
 	return &ZeroRunner{
-		memoryManager: memoryManager,
 		program:       program,
 		vm:            vm,
 		hintrunner:    hintrunner,
+		memoryManager: memoryManager,
 		proofmode:     proofmode,
 		maxsteps:      maxsteps,
 	}, nil
@@ -71,13 +71,9 @@ func (runner *ZeroRunner) Run() error {
 	}
 
 	if runner.proofmode {
-		// proof mode require an extra instruction run
-		if err := runner.RunFor(1); err != nil {
-			return err
-		}
-
-		// proof mode also requires that the trace is a power of two
-		pow2Steps := safemath.NextPowerOfTwo(runner.vm.Step)
+		// +1 because proof mode require an extra instruction run
+		// pow2 because proof mode also requires that the trace is a power of two
+		pow2Steps := safemath.NextPowerOfTwo(runner.vm.Step + 1)
 		if err := runner.RunFor(pow2Steps); err != nil {
 			return err
 		}
@@ -168,6 +164,7 @@ func (runner *ZeroRunner) InitializeEntrypoint(
 	return end, nil
 }
 
+// run until the program counter equals the `pc` parameter
 func (runner *ZeroRunner) RunUntilPc(pc *memory.MemoryAddress) error {
 	for !runner.vm.Context.Pc.Equal(pc) {
 		if runner.steps() >= runner.maxsteps {
@@ -178,15 +175,14 @@ func (runner *ZeroRunner) RunUntilPc(pc *memory.MemoryAddress) error {
 				runner.maxsteps,
 			)
 		}
-
-		err := runner.vm.RunStep(nil)
-		if err != nil {
+		if err := runner.vm.RunStep(runner.hintrunner); err != nil {
 			return fmt.Errorf("pc %s step %d: %w", runner.pc(), runner.steps(), err)
 		}
 	}
 	return nil
 }
 
+// run until the vm step count reaches the `steps` parameter
 func (runner *ZeroRunner) RunFor(steps uint64) error {
 	for runner.steps() < steps {
 		if runner.steps() >= runner.maxsteps {
@@ -197,9 +193,7 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 				runner.maxsteps,
 			)
 		}
-
-		err := runner.vm.RunStep(nil)
-		if err != nil {
+		if err := runner.vm.RunStep(runner.hintrunner); err != nil {
 			return fmt.Errorf(
 				"pc %s step %d: %w",
 				runner.pc().String(),
