@@ -14,6 +14,7 @@ import (
 )
 
 type ZeroRunner struct {
+	memoryManager *memory.MemoryManager
 	// core components
 	program    *Program
 	vm         *VM.VirtualMachine
@@ -27,8 +28,15 @@ type ZeroRunner struct {
 
 // Creates a new Runner of a Cairo Zero program
 func NewRunner(program *Program, proofmode bool, maxsteps uint64) (*ZeroRunner, error) {
+	memoryManager := memory.CreateMemoryManager()
+	_, err := memoryManager.Memory.AllocateSegment(program.Bytecode) // ProgramSegment
+	if err != nil {
+		return nil, err
+	}
+	memoryManager.Memory.AllocateEmptySegment() // ExecutionSegment
+
 	// initialize vm
-	vm, err := VM.NewVirtualMachine(program.Bytecode, VM.VirtualMachineConfig{ProofMode: proofmode})
+	vm, err := VM.NewVirtualMachine(vm.Context{}, memoryManager.Memory, vm.VirtualMachineConfig{ProofMode: proofmode})
 	if err != nil {
 		return nil, fmt.Errorf("runner error: %w", err)
 	}
@@ -37,11 +45,12 @@ func NewRunner(program *Program, proofmode bool, maxsteps uint64) (*ZeroRunner, 
 	hintrunner := hintrunner.NewHintRunner(make(map[uint64]hintrunner.Hinter))
 
 	return &ZeroRunner{
-		program:    program,
-		vm:         vm,
-		hintrunner: hintrunner,
-		proofmode:  proofmode,
-		maxsteps:   maxsteps,
+		memoryManager: memoryManager,
+		program:       program,
+		vm:            vm,
+		hintrunner:    hintrunner,
+		proofmode:     proofmode,
+		maxsteps:      maxsteps,
 	}, nil
 }
 
@@ -203,23 +212,20 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 }
 
 func (runner *ZeroRunner) BuildProof() ([]byte, []byte, error) {
-	relocatedTrace, relocatedMem, err := runner.vm.Proof()
+	relocatedTrace, err := runner.vm.ExecutionTrace()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	trace := EncodeTrace(relocatedTrace)
-	memory := EncodeMemory(relocatedMem)
-
-	return trace, memory, nil
+	return EncodeTrace(relocatedTrace), EncodeMemory(runner.memoryManager.RelocateMemory()), nil
 }
 
 func (runner *ZeroRunner) memory() *memory.Memory {
-	return runner.vm.MemoryManager.Memory
+	return runner.memoryManager.Memory
 }
 
 func (runner *ZeroRunner) segments() []*memory.Segment {
-	return runner.vm.MemoryManager.Memory.Segments
+	return runner.memoryManager.Memory.Segments
 }
 
 func (runner *ZeroRunner) pc() memory.MemoryAddress {
