@@ -9,7 +9,7 @@ import (
 
 type BuiltinRunner interface {
 	CheckWrite(segment *Segment, offset uint64, value *MemoryValue) error
-	DeduceValue(segment *Segment, offset uint64) error
+	InferValue(segment *Segment, offset uint64) error
 }
 
 type NoBuiltin struct{}
@@ -18,7 +18,7 @@ func (b *NoBuiltin) CheckWrite(segment *Segment, offset uint64, value *MemoryVal
 	return nil
 }
 
-func (b *NoBuiltin) DeduceValue(segment *Segment, offset uint64) error {
+func (b *NoBuiltin) InferValue(segment *Segment, offset uint64) error {
 	segment.Data[offset] = EmptyMemoryValueAsFelt()
 	return nil
 }
@@ -103,7 +103,7 @@ func (segment *Segment) Read(offset uint64) (MemoryValue, error) {
 
 	cell := &segment.Data[offset]
 	if !cell.Known() {
-		if err := segment.BuiltinRunner.DeduceValue(segment, offset); err != nil {
+		if err := segment.BuiltinRunner.InferValue(segment, offset); err != nil {
 			return MemoryValue{}, err
 		}
 	}

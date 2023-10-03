@@ -33,7 +33,7 @@ func TestRangeCheck(t *testing.T) {
 
 	t.Run("deduce", func(t *testing.T) {
 		segment := memory.EmptySegmentWithLength(3)
-		assert.NoError(t, builtin.DeduceValue(segment, 0))
+		assert.NoError(t, builtin.InferValue(segment, 0))
 		require.Equal(t, memory.EmptyMemoryValueAsFelt(), segment.Data[0])
 	})
 }

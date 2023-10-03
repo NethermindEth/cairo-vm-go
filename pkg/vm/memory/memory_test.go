@@ -198,7 +198,7 @@ func (b *testBuiltin) CheckWrite(segment *Segment, offset uint64, value *MemoryV
 	return nil
 }
 
-func (b *testBuiltin) DeduceValue(segment *Segment, offset uint64) error {
+func (b *testBuiltin) InferValue(segment *Segment, offset uint64) error {
 	if offset%2 == 1 {
 		return fmt.Errorf("deduce error")
 	}
