@@ -132,8 +132,15 @@ func MemoryValueFromUint[T constraints.Unsigned](v T) MemoryValue {
 	}
 }
 
+// creates a memory value from an index and an offset. If either is negative the result is
+// undefined
 func MemoryValueFromSegmentAndOffset[T constraints.Integer](segmentIndex, offset T) MemoryValue {
-	return MemoryValueFromMemoryAddress(&MemoryAddress{SegmentIndex: uint64(segmentIndex), Offset: uint64(offset)})
+	return MemoryValueFromMemoryAddress(
+		&MemoryAddress{
+			SegmentIndex: uint64(segmentIndex),
+			Offset:       uint64(offset),
+		},
+	)
 }
 
 func MemoryValueFromAny(anyType any) (MemoryValue, error) {
@@ -170,25 +177,21 @@ func EmptyMemoryValueAs(address bool) MemoryValue {
 	}
 }
 
-func (mv *MemoryValue) ToMemoryAddress() (*MemoryAddress, error) {
+func (mv *MemoryValue) MemoryAddress() (*MemoryAddress, error) {
 	if !mv.isAddress {
 		return nil, errors.New("memory value is not an address")
 	}
 	return mv.addrUnsafe(), nil
 }
 
-func (mv *MemoryValue) addrUnsafe() *MemoryAddress {
-	return (*MemoryAddress)(unsafe.Pointer(&mv.felt))
-}
-
-func (mv *MemoryValue) ToFieldElement() (*f.Element, error) {
+func (mv *MemoryValue) FieldElement() (*f.Element, error) {
 	if !mv.isFelt {
 		return nil, fmt.Errorf("memory value is not a field element")
 	}
 	return &mv.felt, nil
 }
 
-func (mv *MemoryValue) ToAny() any {
+func (mv *MemoryValue) Any() any {
 	if mv.isAddress {
 		return mv.addrUnsafe()
 	}
@@ -236,7 +239,7 @@ func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) error {
 // Subs two memory values if they're in the same segment or the rhs is a Felt.
 func (mv *MemoryValue) Sub(lhs, rhs *MemoryValue) error {
 	if lhs.IsAddress() {
-		return mv.addrUnsafe().Sub(lhs.addrUnsafe(), rhs.ToAny())
+		return mv.addrUnsafe().Sub(lhs.addrUnsafe(), rhs.Any())
 	}
 
 	if rhs.IsAddress() {
@@ -280,4 +283,8 @@ func (mv *MemoryValue) Uint64() (uint64, error) {
 	}
 
 	return mv.felt.Uint64(), nil
+}
+
+func (mv *MemoryValue) addrUnsafe() *MemoryAddress {
+	return (*MemoryAddress)(unsafe.Pointer(&mv.felt))
 }
