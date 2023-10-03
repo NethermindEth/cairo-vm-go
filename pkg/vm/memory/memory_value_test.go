@@ -4,10 +4,16 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/constraints"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/assert"
 )
+
+func UseInTestOnlyMemoryValuePointerFromInt[T constraints.Integer](v T) *MemoryValue {
+	mv := MemoryValueFromInt(v)
+	return &mv
+}
 
 func TestFeltPlusFelt(t *testing.T) {
 	memVal := EmptyMemoryValueAsFelt()
@@ -16,11 +22,9 @@ func TestFeltPlusFelt(t *testing.T) {
 
 	expected := MemoryValueFromInt(10)
 
-	res, err := memVal.Add(lhs, rhs)
+	err := memVal.Add(&lhs, &rhs)
 	require.NoError(t, err)
-
-	assert.Equal(t, memVal, res)
-	assert.Equal(t, *expected, *res)
+	assert.Equal(t, expected, memVal)
 }
 
 func TestMemoryAddressPlusFelt(t *testing.T) {
@@ -36,11 +40,9 @@ func TestMemoryAddressPlusFelt(t *testing.T) {
 		Offset:       12,
 	})
 
-	res, err := memVal.Add(lhs, rhs)
+	err := memVal.Add(&lhs, &rhs)
 	require.NoError(t, err)
-
-	assert.Equal(t, memVal, res)
-	assert.Equal(t, *expected, *res)
+	assert.Equal(t, expected, memVal)
 }
 
 func TestFeltPlusMemoryAddress(t *testing.T) {
@@ -56,11 +58,9 @@ func TestFeltPlusMemoryAddress(t *testing.T) {
 		Offset:       12,
 	})
 
-	res, err := memVal.Add(lhs, rhs)
+	err := memVal.Add(&lhs, &rhs)
 	require.NoError(t, err)
-
-	assert.Equal(t, memVal, res)
-	assert.Equal(t, *expected, *res)
+	assert.Equal(t, expected, memVal)
 }
 
 func TestMemoryAddressPlusMemoryAddress(t *testing.T) {
@@ -73,9 +73,7 @@ func TestMemoryAddressPlusMemoryAddress(t *testing.T) {
 		SegmentIndex: 2,
 		Offset:       2,
 	})
-	memVal, err := memVal.Add(lhs, rhs)
-
-	assert.Nil(t, memVal)
+	err := memVal.Add(&lhs, &rhs)
 	assert.Error(t, err)
 }
 
@@ -86,11 +84,9 @@ func TestFeltSubFelt(t *testing.T) {
 
 	expected := MemoryValueFromInt(1)
 
-	res, err := memVal.Sub(lhs, rhs)
+	err := memVal.Sub(&lhs, &rhs)
 	require.NoError(t, err)
-
-	assert.Equal(t, memVal, res)
-	assert.Equal(t, *expected, *res)
+	assert.Equal(t, expected, memVal)
 }
 
 func TestMemoryAddressSubFelt(t *testing.T) {
@@ -106,11 +102,9 @@ func TestMemoryAddressSubFelt(t *testing.T) {
 		Offset:       8,
 	})
 
-	res, err := memVal.Sub(lhs, rhs)
-
+	err := memVal.Sub(&lhs, &rhs)
 	require.NoError(t, err)
-	assert.Equal(t, memVal, res)
-	assert.Equal(t, *expected, *res)
+	assert.Equal(t, expected, memVal)
 }
 
 func TestFeltSubMemoryAddress(t *testing.T) {
@@ -121,9 +115,7 @@ func TestFeltSubMemoryAddress(t *testing.T) {
 		Offset:       10,
 	})
 
-	memVal, err := memVal.Sub(lhs, rhs)
-
-	assert.Nil(t, memVal)
+	err := memVal.Sub(&lhs, &rhs)
 	assert.Error(t, err)
 }
 
@@ -142,11 +134,9 @@ func TestMemoryAddressSubMemoryAddressSameSegment(t *testing.T) {
 		Offset:       8,
 	})
 
-	res, err := memVal.Sub(lhs, rhs)
+	err := memVal.Sub(&lhs, &rhs)
 	require.NoError(t, err)
-
-	assert.Equal(t, memVal, res)
-	assert.Equal(t, *expected, *res)
+	assert.Equal(t, expected, memVal)
 }
 
 func TestMemoryAddressSubMemoryAddressDiffSegment(t *testing.T) {
@@ -160,9 +150,7 @@ func TestMemoryAddressSubMemoryAddressDiffSegment(t *testing.T) {
 		Offset:       2,
 	})
 
-	memVal, err := memVal.Sub(lhs, rhs)
-
-	assert.Nil(t, memVal)
+	err := memVal.Sub(&lhs, &rhs)
 	assert.Error(t, err)
 }
 

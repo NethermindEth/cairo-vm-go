@@ -16,12 +16,11 @@ import (
 )
 
 func TestCairoZeroFiles(t *testing.T) {
-	runtimeErrors := make([]error, 0)
-
 	root := "./cairo_files/"
 	testFiles, err := os.ReadDir(root)
 	require.NoError(t, err)
 
+	// filter is for debugging purposes
 	filter := ""
 
 	for _, dirEntry := range testFiles {
@@ -38,47 +37,42 @@ func TestCairoZeroFiles(t *testing.T) {
 
 		compiledOutput, err := compileZeroCode(path)
 		if err != nil {
-			runtimeErrors = append(runtimeErrors, err)
+			t.Error(err)
 			continue
 		}
 
 		pyTraceFile, pyMemoryFile, err := runPythonVm(compiledOutput)
 		if err != nil {
-			runtimeErrors = append(runtimeErrors, err)
+			t.Error(err)
 			continue
 		}
 
 		traceFile, memoryFile, err := runVm(compiledOutput)
 		if err != nil {
-			runtimeErrors = append(runtimeErrors, err)
+			t.Error(err)
 			continue
 		}
 
 		pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
 		if err != nil {
-			runtimeErrors = append(runtimeErrors, err)
+			t.Error(err)
 			continue
 		}
 
 		trace, memory, err := decodeProof(traceFile, memoryFile)
 		if err != nil {
-			runtimeErrors = append(runtimeErrors, err)
+			t.Error(err)
 			continue
 		}
 
 		if !assert.Equal(t, pyTrace, trace) {
-			t.Logf("pytrace:\n%s", traceRepr(pyTrace))
-			t.Logf("trace:\n%s", traceRepr(trace))
+			t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
+			t.Logf("trace:\n%s\n", traceRepr(trace))
 		}
 		if !assert.Equal(t, pyMemory, memory) {
-			t.Logf("pymemory;\n%s", memoryRepr(pyMemory))
-			t.Logf("memory;\n%s", memoryRepr(memory))
+			t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
+			t.Logf("memory;\n%s\n", memoryRepr(memory))
 		}
-	}
-
-	require.NoError(t, err)
-	for i := range runtimeErrors {
-		assert.NoError(t, runtimeErrors[i])
 	}
 
 	clean(root)

@@ -22,40 +22,67 @@ Currently, it is only possible to use it by building it from source by following
 1. Clone the repo to your machine: `git clone https://github.com/NethermindEth/cairo-vm-go`.
 2. Install `Go` on your PC, instructions [here](https://go.dev/.doc/install).
 3. Execute on the root folder of the repo: `make build`.
-4. Make sure everything is running smoothly by executing: `make test`.
+4. Make sure everything is running smoothly by executing: `make testall`.
 
 After completing these steps, you can find the compiled VM in `bin/cairo-vm`.
 
 ### Run The VM
 
-To run the VM you need first compile the cairo file using [cairo-lang](https://github.com/starkware-libs/cairo-lang).
+To run the VM you need first to have a compiled Cario file using the Cairo compiler at [cairo-lang](https://github.com/starkware-libs/cairo-lang).
 Install it with the following command:
 
 ```bash
 pip install cairo-lang==0.11
 ```
 
-The next step is to compile a cairo file, an example would be:
+When the installation is completed, you can run the `cairo-compile` command:
 
 ```bash
 cairo-compile ./integration_tests/cairo_files/factorial.cairo --proof_mode --output ./factorial_compiled.json
 ```
 
-This will compile `factorial.cairo` and store the compilation result in `factorial_compiled.json`. The `--proof_mode` flag makes the compilation output special identifiers that allow to get proof of execution later on. Finally, let's execute `factorial_compiled.json` with the next command:
+This will compile `factorial.cairo` and store the compilation result in `factorial_compiled.json`. The `--proof_mode` flag makes the compilation output contain special identifiers that allow the generation of a proof of execution from the VM later on. 
+
+Finally, let's use our VM to execute `factorial_compiled.json` with the next command:
 
 ```bash
-./bin/cairo-vm run factorial_compiled.json --proofmode --tracefile factorial_trace --memoryfile factorial_memory
+./bin/cairo-vm run  --proofmode --tracefile factorial_trace --memoryfile factorial_memory factorial_compiled.json
 ```
 
-When this command finishes, `factorial.cairo` has run correctly starting from the `main` function. The `--proofmode` flag indicates that a proof of execution should be generated. The location where this proof is stored is determined by both `--tracefile` and `memoryfile` flags accordingly.
+When this command finishes, `factorial.cairo` has run correctly starting from the `main` function. The `--proofmode` flag indicates that a proof of execution should be generated. The location where this proof is stored is determined by both `--tracefile` and `--memoryfile` flags accordingly.
 
-To test the correct output of the VM compared to the result of the Python VM, you just have to run:
+#### Other VM Options
+
+To learn about all the possible options the VM can be run with, execute the `run` command with the `--help` flag:
+
+```bash
+./bin/cairo-vm run --help
+```
+
+### Testing
+
+We currently have defined two sets of tests:
+
+* unit tests where we check the correct work of each component individually.
+* integration tests where we compare that the proof of execution of our VM is the same as the proof of execution of the Python VM.
+
+Unit tests can be automatically run with:
+
+```bash
+make unit
+```
+
+Integration tests are run with:
 
 ```bash
 make integration
 ```
 
-This will take all Cairo files inside _./integration_tests/cairo_files/_ and run both VMs comparing that both proofs of executions are equal.
+If you want to execute all tests of the project:
+
+```bash
+make testall
+```
 
 
 ### Useful Commands

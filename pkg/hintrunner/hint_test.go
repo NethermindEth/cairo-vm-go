@@ -10,7 +10,7 @@ import (
 )
 
 func TestAllocSegment(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 3
 	vm.Context.Fp = 0
 
@@ -21,9 +21,8 @@ func TestAllocSegment(t *testing.T) {
 	alloc2 := AllocSegment{fp}
 
 	err := alloc1.Execute(vm)
-	t.Log(err)
 	require.Nil(t, err)
-	require.Equal(t, 3, len(vm.MemoryManager.Memory.Segments))
+	require.Equal(t, 3, len(vm.Memory.Segments))
 	require.Equal(
 		t,
 		memory.MemoryValueFromSegmentAndOffset(2, 0),
@@ -32,7 +31,7 @@ func TestAllocSegment(t *testing.T) {
 
 	err = alloc2.Execute(vm)
 	require.Nil(t, err)
-	require.Equal(t, 4, len(vm.MemoryManager.Memory.Segments))
+	require.Equal(t, 4, len(vm.Memory.Segments))
 	require.Equal(
 		t,
 		memory.MemoryValueFromSegmentAndOffset(3, 0),
@@ -42,7 +41,7 @@ func TestAllocSegment(t *testing.T) {
 }
 
 func TestTestLessThanFalse(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(17))
@@ -70,7 +69,7 @@ func TestTestLessThanFalse(t *testing.T) {
 }
 
 func TestTestLessThanTrue(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(23))

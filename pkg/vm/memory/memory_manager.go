@@ -21,17 +21,18 @@ func CreateMemoryManager() *MemoryManager {
 // Each element is a pointer to a field element, if the cell was not accessed,
 // nil is stored instead
 func (mm *MemoryManager) RelocateMemory() []*f.Element {
-	// this beggins at one, because the prover expects for max memory used to
-	maxMemoryUsed := 1
+	// this begins at one, because the prover expects for max memory used to
+	var maxMemoryUsed uint64 = 1
 
-	// segmentsOffsets[0] =  0
-	// segmentsOffsets[1] = len(segment[0])
-	// segmentsOffsets[N] = len(segment[n - 1]) + sum of segmentsOffsets[n - i] for i in [0, n-1]
+	// segmentsOffsets[0] = 1
+	// segmentsOffsets[1] = 1 + len(segment[0])
+	// segmentsOffsets[N] = 1 + len(segment[n-1]) + sum of segements[n-1-i] for i in [1, n-1]
 	segmentsOffsets := make([]uint64, uint64(len(mm.Memory.Segments))+1)
 	segmentsOffsets[0] = 1
 	for i, segment := range mm.Memory.Segments {
-		maxMemoryUsed += len(segment.Data)
-		segmentsOffsets[i+1] = segmentsOffsets[i] + uint64(len(segment.Data))
+		segmentLength := segment.Len()
+		maxMemoryUsed += segmentLength
+		segmentsOffsets[i+1] = segmentsOffsets[i] + segmentLength
 	}
 
 	// the prover expect first element of the relocated memory to start at index 1,
@@ -39,20 +40,22 @@ func (mm *MemoryManager) RelocateMemory() []*f.Element {
 	// returned has nil as its first element.
 	relocatedMemory := make([]*f.Element, maxMemoryUsed)
 	for i, segment := range mm.Memory.Segments {
-		for j, cell := range segment.Data {
-			var felt *f.Element
-			if cell == nil || !cell.Accessed {
+		// fmt.Printf("s: %s", segment)
+		for j := uint64(0); j < segment.Len(); j++ {
+			cell := segment.Data[j]
+			if !cell.Known() {
 				continue
 			}
-			if cell.Value.IsAddress() {
-				felt = cell.Value.address.Relocate(segmentsOffsets)
+
+			var felt *f.Element
+			if cell.IsAddress() {
+				felt = cell.addrUnsafe().Relocate(segmentsOffsets)
 			} else {
-				felt = cell.Value.felt
+				felt = &cell.felt
 			}
 
-			relocatedMemory[segmentsOffsets[i]+uint64(j)] = felt
+			relocatedMemory[segmentsOffsets[i]+j] = felt
 		}
 	}
-
 	return relocatedMemory
 }
