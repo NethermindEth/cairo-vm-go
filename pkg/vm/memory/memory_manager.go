@@ -49,7 +49,7 @@ func (mm *MemoryManager) RelocateMemory() []*f.Element {
 
 			var felt *f.Element
 			if cell.IsAddress() {
-				felt = cell.address.Relocate(segmentsOffsets)
+				felt = cell.addrUnsafe().Relocate(segmentsOffsets)
 			} else {
 				felt = &cell.felt
 			}
