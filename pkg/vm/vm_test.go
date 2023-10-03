@@ -33,7 +33,7 @@ func TestVMCreation(t *testing.T) {
 // - update AP: verify all posible cases, and when Res is a negative value
 // - update FP: verify all posible cases, and when Res is a negative value
 
-func TestGetCellApDst(t *testing.T) {
+func TestGetCellApDst(t *testing.T) { // DST & Ap & Positive
 	vm := defaultVirtualMachine()
 
 	// Prepare vm with dummy values
@@ -56,7 +56,7 @@ func TestGetCellApDst(t *testing.T) {
 	assert.Equal(t, mem.MemoryValueFromInt(200), mv)
 }
 
-func TestGetCellFpDst(t *testing.T) {
+func TestGetCellFpDst(t *testing.T) { // DST & Fp & Positive
 	vm := defaultVirtualMachine()
 
 	// Prepare vm with dummy values
@@ -83,7 +83,7 @@ func TestGetCellFpDst(t *testing.T) {
 	assert.Equal(t, mem.MemoryValueFromInt(123), mv)
 }
 
-func TestGetCellDstApNegativeOffset(t *testing.T) {
+func TestGetCellDstApNegativeOffset(t *testing.T) { // DST & Ap & Negative
 	vm := defaultVirtualMachine()
 
 	const (
@@ -108,7 +108,7 @@ func TestGetCellDstApNegativeOffset(t *testing.T) {
 	assert.Equal(t, mem.MemoryValueFromInt(100), mv)
 }
 
-func TestGetCellDstFpNegativeOffset(t *testing.T) {
+func TestGetCellDstFpNegativeOffset(t *testing.T) { // DST & Fp & Negative
 	vm := defaultVirtualMachine()
 
 	const (
@@ -133,7 +133,7 @@ func TestGetCellDstFpNegativeOffset(t *testing.T) {
 	assert.Equal(t, mem.MemoryValueFromInt(100), mv)
 }
 
-func TestGetApCellOp0(t *testing.T) {
+func TestGetApCellOp0(t *testing.T) { // Op0 & Ap & Positive
 	vm := defaultVirtualMachine()
 
 	// Prepare vm with dummy values
@@ -158,6 +158,80 @@ func TestGetApCellOp0(t *testing.T) {
 	assert.Equal(t, mem.MemoryValueFromInt(123), mv)
 }
 
+func TestGetApCellOp0NegOff(t *testing.T) { // Op0 & Ap & Negative
+	vm := defaultVirtualMachine()
+
+	// Prepare vm with dummy values
+	const (
+		offOp0 = -12
+		ap     = 20
+	)
+	vm.Context.Ap = ap
+	writeToDataSegment(vm, ap+offOp0, mem.MemoryValueFromInt(155))
+
+	instruction := Instruction{
+		OffOp0:      offOp0,
+		Op0Register: Ap,
+	}
+
+	addr, err := vm.getOp0Addr(&instruction)
+	require.NoError(t, err)
+
+	mv, err := vm.MemoryManager.Memory.ReadFromAddress(&addr)
+	require.NoError(t, err)
+	assert.True(t, mv.Known())
+	assert.Equal(t, mem.MemoryValueFromInt(155), mv)
+}
+
+func TestGetFpCellOp0(t *testing.T) { // Op0 & Fp & Positive
+	vm := defaultVirtualMachine()
+
+	// Prepare vm with dummy values
+	const (
+		offOp0 = 26
+		fp     = 74
+	)
+	vm.Context.Fp = fp
+	writeToDataSegment(vm, fp+offOp0, mem.MemoryValueFromInt(365))
+
+	instruction := Instruction{
+		OffOp0:      offOp0,
+		Op0Register: Fp,
+	}
+
+	addr, err := vm.getOp0Addr(&instruction)
+	require.NoError(t, err)
+
+	mv, err := vm.MemoryManager.Memory.ReadFromAddress(&addr)
+	require.NoError(t, err)
+	assert.True(t, mv.Known())
+	assert.Equal(t, mem.MemoryValueFromInt(365), mv)
+}
+
+func TestGetFpCellOp0NegOff(t *testing.T) { // Op0 & Fp & Negative
+	vm := defaultVirtualMachine()
+
+	// Prepare vm with dummy values
+	const (
+		offOp0 = -15
+		fp     = 67
+	)
+	vm.Context.Fp = fp
+	writeToDataSegment(vm, fp+offOp0, mem.MemoryValueFromInt(286))
+
+	instruction := Instruction{
+		OffOp0:      offOp0,
+		Op0Register: Fp,
+	}
+
+	addr, err := vm.getOp0Addr(&instruction)
+	require.NoError(t, err)
+
+	mv, err := vm.MemoryManager.Memory.ReadFromAddress(&addr)
+	require.NoError(t, err)
+	assert.True(t, mv.Known())
+	assert.Equal(t, mem.MemoryValueFromInt(286), mv)
+}
 func TestGetImmCellOp1(t *testing.T) {
 	vm := defaultVirtualMachineWithBytecode(
 		[]*f.Element{
