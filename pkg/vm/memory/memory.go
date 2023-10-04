@@ -111,9 +111,6 @@ func (segment *Segment) Peek(offset uint64) MemoryValue {
 	if offset >= segment.RealLen() {
 		segment.IncreaseSegmentSize(offset + 1)
 	}
-	if offset >= segment.Len() {
-		segment.LastIndex = int(offset)
-	}
 	return segment.Data[offset]
 }
 

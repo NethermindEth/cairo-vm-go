@@ -8,7 +8,6 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -16,7 +15,7 @@ import (
 type ZeroRunner struct {
 	// core components
 	program       *Program
-	vm            *VM.VirtualMachine
+	vm            *vm.VirtualMachine
 	hintrunner    hintrunner.HintRunner
 	memoryManager *memory.MemoryManager
 	// config
@@ -35,18 +34,11 @@ func NewRunner(program *Program, proofmode bool, maxsteps uint64) (*ZeroRunner, 
 	}
 	memoryManager.Memory.AllocateEmptySegment() // ExecutionSegment
 
-	// initialize vm
-	vm, err := VM.NewVirtualMachine(vm.Context{}, memoryManager.Memory, vm.VirtualMachineConfig{ProofMode: proofmode})
-	if err != nil {
-		return nil, fmt.Errorf("runner error: %w", err)
-	}
-
 	// todo(rodro): given the program get the appropiate hints
 	hintrunner := hintrunner.NewHintRunner(make(map[uint64]hintrunner.Hinter))
 
 	return &ZeroRunner{
 		program:       program,
-		vm:            vm,
 		hintrunner:    hintrunner,
 		memoryManager: memoryManager,
 		proofmode:     proofmode,
@@ -83,42 +75,24 @@ func (runner *ZeroRunner) Run() error {
 
 func (runner *ZeroRunner) InitializeMainEntrypoint() (memory.MemoryAddress, error) {
 	if runner.proofmode {
-		startPc, ok := runner.program.Labels["__start__"]
+		initialPCOffset, ok := runner.program.Labels["__start__"]
 		if !ok {
 			return memory.UnknownValue, errors.New("start label not found. Try compiling with `--proof_mode`")
 		}
-		endPc, ok := runner.program.Labels["__end__"]
+		endPcOffset, ok := runner.program.Labels["__end__"]
 		if !ok {
 			return memory.UnknownValue, errors.New("end label not found. Try compiling with `--proof_mode`")
 		}
 
-		offset := runner.segments()[VM.ExecutionSegment].Len()
-
-		dummyFPValue := memory.MemoryValueFromSegmentAndOffset(
-			VM.ProgramSegment,
-			runner.segments()[VM.ProgramSegment].Len()+offset+2,
-		)
-		// set dummy fp value
-		err := runner.memory().Write(
-			VM.ExecutionSegment,
-			offset,
-			&dummyFPValue,
-		)
-		if err != nil {
-			return memory.UnknownValue, err
-		}
-
-		dummyPCValue := memory.MemoryValueFromUint[uint64](0)
-		// set dummy pc value
-		err = runner.memory().Write(VM.ExecutionSegment, offset+1, &dummyPCValue)
-		if err != nil {
-			return memory.UnknownValue, err
-		}
-
-		runner.vm.Context.Pc = memory.MemoryAddress{SegmentIndex: VM.ProgramSegment, Offset: startPc}
-		runner.vm.Context.Ap = offset + 2
-		runner.vm.Context.Fp = runner.vm.Context.Ap
-		return memory.MemoryAddress{SegmentIndex: VM.ProgramSegment, Offset: endPc}, nil
+		// Add the dummy last fp and pc to the public memory, so that the verifier can enforce [fp - 2] = fp.
+		stack := []memory.MemoryValue{memory.MemoryValueFromSegmentAndOffset(
+			vm.ProgramSegment,
+			len(runner.program.Bytecode)+2,
+		), memory.EmptyMemoryValueAsFelt()}
+		return memory.MemoryAddress{SegmentIndex: vm.ProgramSegment, Offset: endPcOffset}, runner.initializeVm(&memory.MemoryAddress{
+			SegmentIndex: vm.ProgramSegment,
+			Offset:       initialPCOffset,
+		}, stack)
 	}
 
 	returnFp := memory.MemoryValueFromSegmentAndOffset(
@@ -131,37 +105,43 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (memory.MemoryAddress, erro
 func (runner *ZeroRunner) InitializeEntrypoint(
 	funcName string, arguments []*f.Element, returnFp *memory.MemoryValue,
 ) (memory.MemoryAddress, error) {
-	segmentIndex := runner.memory().AllocateEmptySegment()
-	end := memory.MemoryAddress{SegmentIndex: uint64(segmentIndex), Offset: 0}
-	// write arguments
+	initialPCOffset, ok := runner.program.Entrypoints[funcName]
+	if !ok {
+		return memory.UnknownValue, fmt.Errorf("unknown entrypoint: %s", funcName)
+	}
+
+	stack := make([]memory.MemoryValue, 0, len(arguments)+2) // end + fp
 	for i := range arguments {
-		v := memory.MemoryValueFromFieldElement(arguments[i])
-		err := runner.memory().Write(VM.ExecutionSegment, uint64(i), &v)
-		if err != nil {
-			return memory.UnknownValue, err
+		stack = append(stack, memory.MemoryValueFromFieldElement(arguments[i]))
+	}
+	end := memory.MemoryAddress{
+		SegmentIndex: uint64(runner.memory().AllocateEmptySegment()),
+		Offset:       0,
+	}
+	stack = append(stack, *returnFp, memory.MemoryValueFromMemoryAddress(&end))
+	return end, runner.initializeVm(&memory.MemoryAddress{
+		SegmentIndex: vm.ProgramSegment,
+		Offset:       initialPCOffset,
+	}, stack)
+}
+
+func (runner *ZeroRunner) initializeVm(initialPC *memory.MemoryAddress, stack []memory.MemoryValue) error {
+	executionSegment := runner.segments()[vm.ExecutionSegment]
+	offset := executionSegment.Len()
+	for idx := range stack {
+		if err := executionSegment.Write(offset+uint64(idx), &stack[idx]); err != nil {
+			return err
 		}
 	}
-	offset := runner.segments()[VM.ExecutionSegment].Len()
-	err := runner.memory().Write(VM.ExecutionSegment, offset, returnFp)
-	if err != nil {
-		return memory.UnknownValue, err
-	}
-	endMV := memory.MemoryValueFromMemoryAddress(&end)
-	err = runner.memory().Write(VM.ExecutionSegment, offset+1, &endMV)
-	if err != nil {
-		return memory.UnknownValue, err
-	}
 
-	pc, ok := runner.program.Entrypoints[funcName]
-	if !ok {
-		return memory.UnknownValue, fmt.Errorf("unknwon entrypoint: %s", funcName)
-	}
-
-	runner.vm.Context.Pc = memory.MemoryAddress{SegmentIndex: VM.ProgramSegment, Offset: pc}
-	runner.vm.Context.Ap = offset + 2
-	runner.vm.Context.Fp = runner.vm.Context.Ap
-
-	return end, nil
+	var err error
+	// initialize vm
+	runner.vm, err = vm.NewVirtualMachine(vm.Context{
+		Pc: *initialPC,
+		Ap: offset + uint64(len(stack)),
+		Fp: offset + uint64(len(stack)),
+	}, runner.memoryManager.Memory, vm.VirtualMachineConfig{ProofMode: runner.proofmode})
+	return err
 }
 
 // run until the program counter equals the `pc` parameter
@@ -247,7 +227,7 @@ func DecodeTrace(content []byte) []vm.Trace {
 	for i := 0; i < len(content); i += ctxSize {
 		trace = append(
 			trace,
-			VM.Trace{
+			vm.Trace{
 				Ap: binary.LittleEndian.Uint64(content[i : i+8]),
 				Fp: binary.LittleEndian.Uint64(content[i+8 : i+16]),
 				Pc: binary.LittleEndian.Uint64(content[i+16 : i+24]),
