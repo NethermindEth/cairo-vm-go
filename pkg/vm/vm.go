@@ -291,7 +291,7 @@ func (vm *VirtualMachine) inferOperand(
 	}
 
 	if !dstValue.Known() {
-		return mem.MemoryValue{}, fmt.Errorf("dst cell is unknown")
+		return mem.MemoryValue{}, fmt.Errorf("value at dst is unknown")
 	}
 
 	var knownOpValue mem.MemoryValue

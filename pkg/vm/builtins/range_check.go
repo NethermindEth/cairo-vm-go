@@ -20,7 +20,7 @@ func (r *RangeCheck) CheckWrite(segment *memory.Segment, offset uint64, value *m
 
 	// felt >= (2^128)
 	if felt.Cmp(&max128) != -1 {
-		return fmt.Errorf("range check builtin failed for offset: %d value %s", offset, value)
+		return fmt.Errorf("range check builtin failed for value %s", value)
 	}
 	return nil
 }
