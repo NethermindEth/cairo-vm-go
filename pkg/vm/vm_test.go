@@ -69,7 +69,7 @@ func TestGetCellFpDst(t *testing.T) {
 }
 
 func TestGetCellApDstWithDifferentOffsets(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	offsets := []int{-10, -5, 0, 5, 10}
 
 	for _, offset := range offsets {
@@ -83,11 +83,13 @@ func TestGetCellApDstWithDifferentOffsets(t *testing.T) {
 			DstRegister: Ap,
 		}
 
-		cell, err := vm.getCellDst(&instruction)
+		addr, err := vm.getDstAddr(&instruction)
 		require.NoError(t, err)
 
-		assert.True(t, cell.Accessed)
-		assert.Equal(t, mem.MemoryValueFromInt(200), cell.Read())
+		mv, err := vm.Memory.ReadFromAddress(&addr)
+		require.NoError(t, err)
+		assert.True(t, mv.Known())
+		assert.Equal(t, mem.MemoryValueFromInt(100), mv)
 	}
 }
 
