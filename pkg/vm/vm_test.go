@@ -15,7 +15,6 @@ import (
 // - cellOp0: with ap and fp (using positive and negative offsets)
 // - cellOp1: all four different outputs (using positive and negative offsets accordingly)
 // - update PC: verify all four cases. Besides, when testing relative jump (with or without conditions) that a negative relative address
-// - update AP: verify all posible cases, and when Res is a negative value
 // - update FP: verify all posible cases, and when Res is a negative value
 
 func TestGetCellApDst(t *testing.T) {
