@@ -66,12 +66,13 @@ func (segment *Segment) Len() uint64 {
 	return uint64(segment.LastIndex + 1)
 }
 
-// returns the real length that a segmen has
+// returns the real length that a segment has
 func (segment *Segment) RealLen() uint64 {
 	return uint64(len(segment.Data))
 }
 
-// Writes a new memory value to a specified offset, errors in case of overwriting an existing cell
+// Writes a new memory value to a specified offset, errors in case of overwriting a
+// different memory value
 func (segment *Segment) Write(offset uint64, value *MemoryValue) error {
 	if offset >= segment.RealLen() {
 		segment.IncreaseSegmentSize(offset + 1)
@@ -80,13 +81,9 @@ func (segment *Segment) Write(offset uint64, value *MemoryValue) error {
 		segment.LastIndex = int(offset)
 	}
 
-	cell := &segment.Data[offset]
-	if cell.Known() && !cell.Equal(value) {
-		return fmt.Errorf(
-			"rewriting cell: old value: %s, new value: %s",
-			cell.String(),
-			value.String(),
-		)
+	mv := &segment.Data[offset]
+	if mv.Known() && !mv.Equal(value) {
+		return fmt.Errorf("rewriting value: old value: %s, new value: %s", mv, value)
 	}
 	segment.Data[offset] = *value
 	return segment.BuiltinRunner.CheckWrite(segment, offset, value)
@@ -97,17 +94,17 @@ func (segment *Segment) Read(offset uint64) (MemoryValue, error) {
 	if offset >= segment.RealLen() {
 		segment.IncreaseSegmentSize(offset + 1)
 	}
-	if offset > segment.Len() {
+	if offset >= segment.Len() {
 		segment.LastIndex = int(offset)
 	}
 
-	cell := &segment.Data[offset]
-	if !cell.Known() {
+	mv := &segment.Data[offset]
+	if !mv.Known() {
 		if err := segment.BuiltinRunner.InferValue(segment, offset); err != nil {
 			return MemoryValue{}, err
 		}
 	}
-	return *cell, nil
+	return *mv, nil
 }
 
 func (segment *Segment) Peek(offset uint64) MemoryValue {
@@ -212,9 +209,12 @@ func (memory *Memory) AllocateEmptySegment() int {
 // space or if rewriting a specific cell
 func (memory *Memory) Write(segmentIndex uint64, offset uint64, value *MemoryValue) error {
 	if segmentIndex >= uint64(len(memory.Segments)) {
-		return fmt.Errorf("unallocated segment at index %d", segmentIndex)
+		return fmt.Errorf("segment %d: unallocated", segmentIndex)
 	}
-	return memory.Segments[segmentIndex].Write(offset, value)
+	if err := memory.Segments[segmentIndex].Write(offset, value); err != nil {
+		return fmt.Errorf("segment %d, offset %d: %w", segmentIndex, offset, err)
+	}
+	return nil
 }
 
 func (memory *Memory) WriteToAddress(address *MemoryAddress, value *MemoryValue) error {
@@ -226,9 +226,13 @@ func (memory *Memory) WriteToAddress(address *MemoryAddress, value *MemoryValue)
 // initalized with its default zero value
 func (memory *Memory) Read(segmentIndex uint64, offset uint64) (MemoryValue, error) {
 	if segmentIndex >= uint64(len(memory.Segments)) {
-		return MemoryValue{}, fmt.Errorf("unallocated segment at index %d", segmentIndex)
+		return MemoryValue{}, fmt.Errorf("segment %d: unallocated", segmentIndex)
 	}
-	return memory.Segments[segmentIndex].Read(offset)
+	mv, err := memory.Segments[segmentIndex].Read(offset)
+	if err != nil {
+		return MemoryValue{}, fmt.Errorf("segment %d, offset %d: %w", segmentIndex, offset, err)
+	}
+	return mv, nil
 }
 
 // Reads a memory value from a memory address. Errors if reading from an unallocated
@@ -238,10 +242,11 @@ func (memory *Memory) ReadFromAddress(address *MemoryAddress) (MemoryValue, erro
 	return memory.Read(address.SegmentIndex, address.Offset)
 }
 
-// Given a segment index and offset returns a pointer to the Memory Cell
+// Given a segment index and offset, returns the memory value at that position, without
+// modifying it in any way. Errors if reading from an unallocated space
 func (memory *Memory) Peek(segmentIndex uint64, offset uint64) (MemoryValue, error) {
 	if segmentIndex >= uint64(len(memory.Segments)) {
-		return MemoryValue{}, fmt.Errorf("unallocated segment at index %d", segmentIndex)
+		return MemoryValue{}, fmt.Errorf("segment %d: unallocated", segmentIndex)
 	}
 	return memory.Segments[segmentIndex].Peek(offset), nil
 }

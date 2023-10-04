@@ -19,10 +19,16 @@ func defaultVirtualMachine() (*vm.VirtualMachine, *memory.MemoryManager) {
 }
 
 func writeTo(vm *VM.VirtualMachine, segment uint64, offset uint64, val memory.MemoryValue) {
-	_ = vm.Memory.Write(segment, offset, &val)
+	err := vm.Memory.Write(segment, offset, &val)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func readFrom(vm *VM.VirtualMachine, segment uint64, offset uint64) memory.MemoryValue {
-	val, _ := vm.Memory.Read(segment, offset)
+	val, err := vm.Memory.Read(segment, offset)
+	if err != nil {
+		panic(err)
+	}
 	return val
 }
