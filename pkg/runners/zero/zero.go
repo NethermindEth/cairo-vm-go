@@ -55,14 +55,21 @@ func NewRunner(program *Program, proofmode bool, maxsteps uint64) (*ZeroRunner, 
 	}, nil
 }
 
-func (runner *ZeroRunner) InitializeBuiltins() {
+func (runner *ZeroRunner) InitializeBuiltins() error {
 	runner.segments()[VM.ExecutionSegment].IncreaseSegmentSize(uint64(len(runner.program.Builtins)))
 	for i, b := range runner.program.Builtins {
-		segLen, _ := runner.memory().AllocateSegment(nil)
+		segLen, err := runner.memory().AllocateSegment(nil)
+		if err != nil {
+			return err
+		}
 		builtins.AddBuiltin(b, runner.memory().Segments[segLen])
 		v := memory.MemoryValueFromSegmentAndOffset(segLen, 0)
-		runner.segments()[VM.ExecutionSegment].Write(uint64(i), &v)
+		err = runner.segments()[VM.ExecutionSegment].Write(uint64(i), &v)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // todo(rodro): should we add support for running any function?
@@ -71,7 +78,10 @@ func (runner *ZeroRunner) Run() error {
 		return errors.New("cannot re-run using the same runner")
 	}
 
-	runner.InitializeBuiltins()
+	err := runner.InitializeBuiltins()
+	if err != nil {
+		return fmt.Errorf("initializing builtins: %w", err)
+	}
 
 	end, err := runner.InitializeMainEntrypoint()
 	if err != nil {
