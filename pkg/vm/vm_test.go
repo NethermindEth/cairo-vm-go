@@ -10,6 +10,7 @@ import (
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
+
 // todo(rodro): test all possible ways of:
 // - cellDst: with ap and fp (using positive and negative offsets)
 // - cellOp0: with ap and fp (using positive and negative offsets)
