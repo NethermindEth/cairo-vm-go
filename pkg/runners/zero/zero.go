@@ -9,6 +9,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -54,11 +55,23 @@ func NewRunner(program *Program, proofmode bool, maxsteps uint64) (*ZeroRunner, 
 	}, nil
 }
 
+func (runner *ZeroRunner) InitializeBuiltins() {
+	runner.segments()[VM.ExecutionSegment].IncreaseSegmentSize(uint64(len(runner.program.Builtins)))
+	for i, b := range runner.program.Builtins {
+		segLen, _ := runner.memory().AllocateSegment(nil)
+		builtins.AddBuiltin(b, runner.memory().Segments[segLen])
+		v := memory.MemoryValueFromSegmentAndOffset(segLen, 0)
+		runner.segments()[VM.ExecutionSegment].Write(uint64(i), &v)
+	}
+}
+
 // todo(rodro): should we add support for running any function?
 func (runner *ZeroRunner) Run() error {
 	if runner.runFinished {
 		return errors.New("cannot re-run using the same runner")
 	}
+
+	runner.InitializeBuiltins()
 
 	end, err := runner.InitializeMainEntrypoint()
 	if err != nil {

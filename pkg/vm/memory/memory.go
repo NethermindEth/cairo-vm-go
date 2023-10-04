@@ -106,6 +106,8 @@ func (segment *Segment) Read(offset uint64) (MemoryValue, error) {
 		if err := segment.BuiltinRunner.InferValue(segment, offset); err != nil {
 			return MemoryValue{}, err
 		}
+		//Needed to keep the cell as unkown when returned
+		return MemoryValue{isFelt: false, isAddress: false, felt: cell.felt}, nil
 	}
 	return *cell, nil
 }

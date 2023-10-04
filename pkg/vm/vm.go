@@ -156,10 +156,17 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 	if err != nil {
 		return fmt.Errorf("res infer: %w", err)
 	}
+
 	if !res.Known() {
 		res, err = vm.computeRes(instruction, &op0Addr, &op1Addr)
 		if err != nil {
 			return fmt.Errorf("compute res: %w", err)
+		}
+		if !res.Known() {
+			res, err = vm.Memory.PeekFromAddress(&dstAddr)
+			if err != nil {
+				return fmt.Errorf("compute res: %w", err)
+			}
 		}
 	}
 
