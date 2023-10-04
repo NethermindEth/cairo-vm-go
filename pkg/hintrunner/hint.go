@@ -60,12 +60,12 @@ func (hint TestLessThan) Execute(vm *VM.VirtualMachine) error {
 		return fmt.Errorf("resolve rhs operand %s: %w", hint.rhs, err)
 	}
 
-	lhsFelt, err := lhsVal.ToFieldElement()
+	lhsFelt, err := lhsVal.FieldElement()
 	if err != nil {
 		return err
 	}
 
-	rhsFelt, err := rhsVal.ToFieldElement()
+	rhsFelt, err := rhsVal.FieldElement()
 	if err != nil {
 		return err
 	}

@@ -88,7 +88,7 @@ func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, er
 	}
 
 	// Double deref implies the left hand side read must be an address
-	address, err := lhs.ToMemoryAddress()
+	address, err := lhs.MemoryAddress()
 	if err != nil {
 		return memory.MemoryValue{}, err
 	}

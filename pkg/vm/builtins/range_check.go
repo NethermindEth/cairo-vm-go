@@ -13,7 +13,7 @@ type RangeCheck struct{}
 var max128 = fp.Element{18446744073700081665, 17407, 18446744073709551584, 576460752142434320}
 
 func (r *RangeCheck) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
-	felt, err := value.ToFieldElement()
+	felt, err := value.FieldElement()
 	if err != nil {
 		return err
 	}

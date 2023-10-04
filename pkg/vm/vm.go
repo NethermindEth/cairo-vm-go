@@ -110,7 +110,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 			return fmt.Errorf("reading instruction: %w", err)
 		}
 
-		bytecodeInstruction, err := memoryValue.ToFieldElement()
+		bytecodeInstruction, err := memoryValue.FieldElement()
 		if err != nil {
 			return fmt.Errorf("reading instruction: %w", err)
 		}
@@ -239,7 +239,7 @@ func (vm *VirtualMachine) getOp1Addr(instruction *Instruction, op0Addr *mem.Memo
 			return mem.UnknownValue, fmt.Errorf("cannot read op0: %w", err)
 		}
 
-		op0Address, err := op0Value.ToMemoryAddress()
+		op0Address, err := op0Value.MemoryAddress()
 		if err != nil {
 			return mem.UnknownValue, fmt.Errorf("op0 is not an address: %w", err)
 		}
@@ -398,13 +398,13 @@ func (vm *VirtualMachine) updatePc(
 			Offset:       vm.Context.Pc.Offset + uint64(instruction.Size()),
 		}, nil
 	case Jump:
-		addr, err := res.ToMemoryAddress()
+		addr, err := res.MemoryAddress()
 		if err != nil {
 			return mem.UnknownValue, fmt.Errorf("absolute jump: %w", err)
 		}
 		return *addr, nil
 	case JumpRel:
-		val, err := res.ToFieldElement()
+		val, err := res.FieldElement()
 		if err != nil {
 			return mem.UnknownValue, fmt.Errorf("relative jump: %w", err)
 		}
@@ -417,7 +417,7 @@ func (vm *VirtualMachine) updatePc(
 			return mem.UnknownValue, err
 		}
 
-		dest, err := destMv.ToFieldElement()
+		dest, err := destMv.FieldElement()
 		if err != nil {
 			return mem.UnknownValue, err
 		}
@@ -434,7 +434,7 @@ func (vm *VirtualMachine) updatePc(
 			return mem.UnknownValue, err
 		}
 
-		val, err := op1Mv.ToFieldElement()
+		val, err := op1Mv.FieldElement()
 		if err != nil {
 			return mem.UnknownValue, err
 		}
@@ -477,7 +477,7 @@ func (vm *VirtualMachine) updateFp(instruction *Instruction, dstAddr *mem.Memory
 			return 0, err
 		}
 
-		dst, err := destMv.ToMemoryAddress()
+		dst, err := destMv.MemoryAddress()
 		if err != nil {
 			return 0, fmt.Errorf("ret: %w", err)
 		}
