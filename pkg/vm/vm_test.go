@@ -89,7 +89,7 @@ func TestGetCellApDstWithDifferentOffsets(t *testing.T) {
 		mv, err := vm.Memory.ReadFromAddress(&addr)
 		require.NoError(t, err)
 		assert.True(t, mv.Known())
-		assert.Equal(t, mem.MemoryValueFromInt(100), mv)
+		assert.Equal(t, mem.MemoryValueFromInt(200), mv)
 	}
 }
 
