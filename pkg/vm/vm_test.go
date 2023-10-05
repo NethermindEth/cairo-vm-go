@@ -326,6 +326,27 @@ func TestInferOperandSub(t *testing.T) {
 	assert.Equal(t, expectedOp0Vaue, op0Value)
 }
 
+func TestInferResOp1(t *testing.T) {
+	vm, _ := defaultVirtualMachine()
+	instruction := Instruction{
+		Opcode: AssertEq,
+		Res:    Op1,
+	}
+	writeToDataSegment(vm, 0, mem.MemoryValueFromInt(1337)) //destCell
+	dstAddr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
+	op1Addr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 1}
+	op0Addr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 2}
+
+	expectedOp1Vaue := mem.MemoryValueFromInt(1337)
+	inferedRes, err := vm.inferOperand(&instruction, &dstAddr, &op0Addr, &op1Addr)
+	require.NoError(t, err)
+	assert.Equal(t, mem.MemoryValueFromInt(1337), inferedRes)
+
+	op0Value, err := vm.Memory.PeekFromAddress(&op1Addr)
+	require.NoError(t, err)
+	assert.Equal(t, expectedOp1Vaue, op0Value)
+}
+
 func TestComputeResUnconstrained(t *testing.T) {
 	vm, _ := defaultVirtualMachine()
 	instruction := Instruction{Res: Unconstrained}

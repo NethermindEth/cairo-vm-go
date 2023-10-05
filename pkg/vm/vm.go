@@ -268,7 +268,7 @@ func (vm *VirtualMachine) inferOperand(
 	instruction *Instruction, dstAddr *mem.MemoryAddress, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
 ) (mem.MemoryValue, error) {
 	if instruction.Opcode != AssertEq ||
-		(instruction.Res != AddOperands && instruction.Res != MulOperands) {
+		(instruction.Res == Unconstrained) {
 		return mem.MemoryValue{}, nil
 	}
 
@@ -292,6 +292,13 @@ func (vm *VirtualMachine) inferOperand(
 
 	if !dstValue.Known() {
 		return mem.MemoryValue{}, fmt.Errorf("value at dst is unknown")
+	}
+
+	if instruction.Res == Op1 && !op1Value.Known() {
+		if err = vm.Memory.WriteToAddress(op1Addr, &dstValue); err != nil {
+			return mem.MemoryValue{}, err
+		}
+		return dstValue, nil
 	}
 
 	var knownOpValue mem.MemoryValue
