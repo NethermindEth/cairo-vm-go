@@ -453,16 +453,18 @@ func (vm *VirtualMachine) updateAp(instruction *Instruction, res *mem.MemoryValu
 	case SameAp:
 		return vm.Context.Ap, nil
 	case AddImm:
-		apFelt := new(f.Element).SetUint64(vm.Context.Ap)
-		resFelt, err := res.ToFieldElement() // Extract the f.Element from MemoryValue
+		apFelt := new(f.Element).SetUint64(vm.Context.Ap) // Convert ap value to felt
+
+		resFelt, err := res.FieldElement() // Extract the f.Element from MemoryValue
 		if err != nil {
 			return 0, err
-		} //ap value to felt
-		newAp := new(f.Element).Add(apFelt, resFelt) // newAp is the addition res
+		}
+
+		newAp := new(f.Element).Add(apFelt, resFelt) // Calculate newAp as the addition of apFelt and resFelt
 		if !newAp.IsUint64() {
 			return 0, fmt.Errorf("resulting AP value is too large to fit in uint64")
 		}
-		return newAp.Uint64(), nil // return the addition as uint64
+		return newAp.Uint64(), nil // Return the addition as uint64
 	case Add1:
 		return vm.Context.Ap + 1, nil
 	case Add2:
