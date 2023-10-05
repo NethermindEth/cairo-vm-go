@@ -5,6 +5,7 @@ import (
 
 	safemath "github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 const (
@@ -459,11 +460,18 @@ func (vm *VirtualMachine) updateAp(instruction *Instruction, res *mem.MemoryValu
 	case SameAp:
 		return vm.Context.Ap, nil
 	case AddImm:
-		res64, err := res.Uint64()
+		apFelt := new(f.Element).SetUint64(vm.Context.Ap) // Convert ap value to felt
+
+		resFelt, err := res.FieldElement() // Extract the f.Element from MemoryValue
 		if err != nil {
 			return 0, err
 		}
-		return vm.Context.Ap + res64, nil
+
+		newAp := new(f.Element).Add(apFelt, resFelt) // Calculate newAp as the addition of apFelt and resFelt
+		if !newAp.IsUint64() {
+			return 0, fmt.Errorf("resulting AP value is too large to fit in uint64")
+		}
+		return newAp.Uint64(), nil // Return the addition as uint64
 	case Add1:
 		return vm.Context.Ap + 1, nil
 	case Add2:

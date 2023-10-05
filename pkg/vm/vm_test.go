@@ -641,6 +641,52 @@ func TestUpdatePcJnzDstZeroImm(t *testing.T) {
 	assert.Equal(t, mem.MemoryAddress{SegmentIndex: 0, Offset: 9 + 2}, nextPc)
 }
 
+func TestUpdateApSameAp(t *testing.T) {
+	vm, _ := defaultVirtualMachine()
+
+	vm.Context.Ap = 5
+	instruction := Instruction{
+		Opcode:   Nop,
+		ApUpdate: SameAp,
+	}
+
+	nextAp, err := vm.updateAp(&instruction, nil)
+	require.NoError(t, err)
+	assert.Equal(t, vm.Context.Ap, nextAp)
+}
+
+func TestUpdateApAddImmPos(t *testing.T) {
+	vm, _ := defaultVirtualMachine()
+
+	vm.Context.Ap = 5
+	instruction := Instruction{
+		Opcode:   Nop,
+		ApUpdate: AddImm,
+	}
+
+	res := mem.MemoryValueFromInt(7)
+
+	nextAp, err := vm.updateAp(&instruction, &res)
+	require.NoError(t, err)
+	assert.Equal(t, uint64(12), nextAp)
+}
+
+func TestUpdateApAddImmNeg(t *testing.T) {
+	vm, _ := defaultVirtualMachine()
+
+	vm.Context.Ap = 10
+	instruction := Instruction{
+		Opcode:   Nop,
+		ApUpdate: AddImm,
+	}
+
+	res := mem.MemoryValueFromInt(-3)
+
+	nextAp, err := vm.updateAp(&instruction, &res)
+	require.NoError(t, err)
+	assert.Equal(t, uint64(7), nextAp)
+}
+
 func TestUpdateApAddOne(t *testing.T) {
 	vm, _ := defaultVirtualMachine()
 
@@ -653,6 +699,20 @@ func TestUpdateApAddOne(t *testing.T) {
 	nextAp, err := vm.updateAp(&instruction, nil)
 	require.NoError(t, err)
 	assert.Equal(t, vm.Context.Ap+1, nextAp)
+}
+
+func TestUpdateApAddTwo(t *testing.T) {
+	vm, _ := defaultVirtualMachine()
+
+	vm.Context.Ap = 5
+	instruction := Instruction{
+		Opcode:   Nop,
+		ApUpdate: Add2,
+	}
+
+	nextAp, err := vm.updateAp(&instruction, nil)
+	require.NoError(t, err)
+	assert.Equal(t, vm.Context.Ap+2, nextAp)
 }
 
 func TestUpdateFp(t *testing.T) {
