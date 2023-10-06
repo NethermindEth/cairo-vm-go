@@ -10,7 +10,7 @@ import (
 )
 
 func TestGetAp(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 5
 	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap+7, memory.MemoryValueFromInt(11))
 
@@ -19,14 +19,14 @@ func TestGetAp(t *testing.T) {
 
 	require.NoError(t, err)
 
-	value, err := vm.MemoryManager.Memory.ReadFromAddress(&apAddr)
+	value, err := vm.Memory.ReadFromAddress(&apAddr)
 	require.NoError(t, err)
 
 	require.Equal(t, memory.MemoryValueFromInt(11), value)
 }
 
 func TestGetFp(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	vm.Context.Fp = 15
 	writeTo(vm, VM.ExecutionSegment, vm.Context.Fp-7, memory.MemoryValueFromInt(11))
 
@@ -34,14 +34,14 @@ func TestGetFp(t *testing.T) {
 	fpAddr, err := fpReg.Get(vm)
 	require.NoError(t, err)
 
-	value, err := vm.MemoryManager.Memory.ReadFromAddress(&fpAddr)
+	value, err := vm.Memory.ReadFromAddress(&fpAddr)
 	require.NoError(t, err)
 
 	require.Equal(t, memory.MemoryValueFromInt(11), value)
 }
 
 func TestResolveDeref(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 5
 	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap+7, memory.MemoryValueFromInt(11))
 
@@ -55,7 +55,7 @@ func TestResolveDeref(t *testing.T) {
 }
 
 func TestResolveDoubleDerefPositiveOffset(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 5
 	writeTo(
 		vm,
@@ -77,7 +77,7 @@ func TestResolveDoubleDerefPositiveOffset(t *testing.T) {
 }
 
 func TestResolveDoubleDerefNegativeOffset(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 5
 	writeTo(
 		vm,
@@ -110,7 +110,7 @@ func TestResolveImmediate(t *testing.T) {
 }
 
 func TestResolveAddOp(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	// Set the information used by the lhs
 	vm.Context.Fp = 0
 	vm.Context.Ap = 5
@@ -147,7 +147,7 @@ func TestResolveAddOp(t *testing.T) {
 }
 
 func TestResolveMulOp(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 	// Set the information used by the lhs
 	vm.Context.Fp = 0
 	vm.Context.Ap = 5

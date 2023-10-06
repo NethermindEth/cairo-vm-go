@@ -7,7 +7,6 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/assert"
@@ -37,7 +36,7 @@ func TestSimpleProgram(t *testing.T) {
 	err = runner.RunUntilPc(&endPc)
 	require.NoError(t, err)
 
-	executionSegment := runner.segments()[VM.ExecutionSegment]
+	executionSegment := runner.segments()[vm.ExecutionSegment]
 
 	assert.Equal(
 		t,
@@ -82,7 +81,7 @@ func TestStepLimitExceeded(t *testing.T) {
 	err = runner.RunUntilPc(&endPc)
 	require.ErrorContains(t, err, "step limit exceeded")
 
-	executionSegment := runner.segments()[VM.ExecutionSegment]
+	executionSegment := runner.segments()[vm.ExecutionSegment]
 
 	assert.Equal(
 		t,
@@ -134,7 +133,7 @@ func TestStepLimitExceededProofMode(t *testing.T) {
 		err = runner.Run()
 		require.ErrorContains(t, err, "step limit exceeded")
 
-		executionSegment := runner.segments()[VM.ExecutionSegment]
+		executionSegment := runner.segments()[vm.ExecutionSegment]
 
 		assert.Equal(
 			t,
@@ -489,10 +488,12 @@ func createSegment(values ...any) *memory.Segment {
 			}
 		}
 	}
-	return &memory.Segment{
+	s := &memory.Segment{
 		Data:      data,
 		LastIndex: len(data) - 1,
 	}
+	s.WithBuiltinRunner(&memory.NoBuiltin{})
+	return s
 }
 
 // modifies a segment in place to reduce its real length to

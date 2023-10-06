@@ -3,10 +3,9 @@ package vm
 import (
 	"fmt"
 
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-
 	safemath "github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 const (
@@ -75,29 +74,17 @@ type VirtualMachineConfig struct {
 }
 
 type VirtualMachine struct {
-	Context       Context
-	MemoryManager *mem.MemoryManager
-	Step          uint64
-	Trace         []Context
-	config        VirtualMachineConfig
+	Context Context
+	Memory  *mem.Memory
+	Step    uint64
+	Trace   []Context
+	config  VirtualMachineConfig
 	// instructions cache
 	instructions map[uint64]*Instruction
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
-func NewVirtualMachine(programBytecode []*f.Element, config VirtualMachineConfig) (*VirtualMachine, error) {
-	// Initialize memory with to initial segments:
-	// the first one for the program segment and
-	// the second one to keep track of the execution
-	manager := mem.CreateMemoryManager()
-	// 0 (programSegment) <- segment where the bytecode is stored
-	_, err := manager.Memory.AllocateSegment(programBytecode)
-	if err != nil {
-		return nil, fmt.Errorf("error loading bytecode: %w", err)
-	}
-	// 1 (executionSegment) <- segment where ap and fp move around
-	manager.Memory.AllocateEmptySegment()
-
+func NewVirtualMachine(initialContext Context, memory *mem.Memory, config VirtualMachineConfig) (*VirtualMachine, error) {
 	// Initialize the trace if necesary
 	var trace []Context
 	if config.ProofMode {
@@ -105,19 +92,11 @@ func NewVirtualMachine(programBytecode []*f.Element, config VirtualMachineConfig
 	}
 
 	return &VirtualMachine{
-		Context: Context{
-			Fp: 0,
-			Ap: 0,
-			Pc: mem.MemoryAddress{
-				SegmentIndex: ProgramSegment,
-				Offset:       0,
-			},
-		},
-		Step:          0,
-		MemoryManager: manager,
-		Trace:         trace,
-		config:        config,
-		instructions:  make(map[uint64]*Instruction, len(programBytecode)),
+		Context:      initialContext,
+		Memory:       memory,
+		Trace:        trace,
+		config:       config,
+		instructions: make(map[uint64]*Instruction),
 	}, nil
 }
 
@@ -127,12 +106,12 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 	// if instruction is not in cache, redecode and store it
 	instruction, ok := vm.instructions[vm.Context.Pc.Offset]
 	if !ok {
-		memoryValue, err := vm.MemoryManager.Memory.ReadFromAddress(&vm.Context.Pc)
+		memoryValue, err := vm.Memory.ReadFromAddress(&vm.Context.Pc)
 		if err != nil {
 			return fmt.Errorf("reading instruction: %w", err)
 		}
 
-		bytecodeInstruction, err := memoryValue.ToFieldElement()
+		bytecodeInstruction, err := memoryValue.FieldElement()
 		if err != nil {
 			return fmt.Errorf("reading instruction: %w", err)
 		}
@@ -213,16 +192,12 @@ func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
 }
 
 // It returns the current trace entry, the public memory, and the occurrence of an error
-func (vm *VirtualMachine) Proof() ([]Trace, []*f.Element, error) {
+func (vm *VirtualMachine) ExecutionTrace() ([]Trace, error) {
 	if !vm.config.ProofMode {
-		return nil, nil, fmt.Errorf("proof mode is off")
+		return nil, fmt.Errorf("proof mode is off")
 	}
 
-	relocatedTrace := vm.relocateTrace()
-
-	relocatedMemory := vm.MemoryManager.RelocateMemory()
-
-	return relocatedTrace, relocatedMemory, nil
+	return vm.relocateTrace(), nil
 }
 
 func (vm *VirtualMachine) getDstAddr(instruction *Instruction) (mem.MemoryAddress, error) {
@@ -260,12 +235,12 @@ func (vm *VirtualMachine) getOp1Addr(instruction *Instruction, op0Addr *mem.Memo
 	switch instruction.Op1Source {
 	case Op0:
 		// in this case Op0 is being used as an address, and must be of unwrapped as it
-		op0Value, err := vm.MemoryManager.Memory.ReadFromAddress(op0Addr)
+		op0Value, err := vm.Memory.ReadFromAddress(op0Addr)
 		if err != nil {
 			return mem.UnknownValue, fmt.Errorf("cannot read op0: %w", err)
 		}
 
-		op0Address, err := op0Value.ToMemoryAddress()
+		op0Address, err := op0Value.MemoryAddress()
 		if err != nil {
 			return mem.UnknownValue, fmt.Errorf("op0 is not an address: %w", err)
 		}
@@ -294,15 +269,15 @@ func (vm *VirtualMachine) inferOperand(
 	instruction *Instruction, dstAddr *mem.MemoryAddress, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
 ) (mem.MemoryValue, error) {
 	if instruction.Opcode != AssertEq ||
-		(instruction.Res != AddOperands && instruction.Res != MulOperands) {
+		(instruction.Res == Unconstrained) {
 		return mem.MemoryValue{}, nil
 	}
 
-	op0Value, err := vm.MemoryManager.Memory.PeekFromAddress(op0Addr)
+	op0Value, err := vm.Memory.PeekFromAddress(op0Addr)
 	if err != nil {
 		return mem.MemoryValue{}, fmt.Errorf("cannot read op0: %w", err)
 	}
-	op1Value, err := vm.MemoryManager.Memory.PeekFromAddress(op1Addr)
+	op1Value, err := vm.Memory.PeekFromAddress(op1Addr)
 	if err != nil {
 		return mem.MemoryValue{}, fmt.Errorf("cannot read op1: %w", err)
 	}
@@ -311,13 +286,20 @@ func (vm *VirtualMachine) inferOperand(
 		return mem.MemoryValue{}, nil
 	}
 
-	dstValue, err := vm.MemoryManager.Memory.PeekFromAddress(dstAddr)
+	dstValue, err := vm.Memory.PeekFromAddress(dstAddr)
 	if err != nil {
 		return mem.MemoryValue{}, fmt.Errorf("cannot read dst: %w", err)
 	}
 
 	if !dstValue.Known() {
-		return mem.MemoryValue{}, fmt.Errorf("dst cell is unknown")
+		return mem.MemoryValue{}, fmt.Errorf("value at dst is unknown")
+	}
+
+	if instruction.Res == Op1 && !op1Value.Known() {
+		if err = vm.Memory.WriteToAddress(op1Addr, &dstValue); err != nil {
+			return mem.MemoryValue{}, err
+		}
+		return dstValue, nil
 	}
 
 	var knownOpValue mem.MemoryValue
@@ -342,7 +324,7 @@ func (vm *VirtualMachine) inferOperand(
 		return mem.MemoryValue{}, err
 	}
 
-	if err = vm.MemoryManager.Memory.WriteToAddress(unknownOpAddr, &missingVal); err != nil {
+	if err = vm.Memory.WriteToAddress(unknownOpAddr, &missingVal); err != nil {
 		return mem.MemoryValue{}, err
 	}
 	return dstValue, nil
@@ -355,14 +337,14 @@ func (vm *VirtualMachine) computeRes(
 	case Unconstrained:
 		return mem.MemoryValue{}, nil
 	case Op1:
-		return vm.MemoryManager.Memory.ReadFromAddress(op1Addr)
+		return vm.Memory.ReadFromAddress(op1Addr)
 	default:
-		op0, err := vm.MemoryManager.Memory.ReadFromAddress(op0Addr)
+		op0, err := vm.Memory.ReadFromAddress(op0Addr)
 		if err != nil {
 			return mem.MemoryValue{}, fmt.Errorf("cannot read op0: %w", err)
 		}
 
-		op1, err := vm.MemoryManager.Memory.ReadFromAddress(op1Addr)
+		op1, err := vm.Memory.ReadFromAddress(op1Addr)
 		if err != nil {
 			return mem.MemoryValue{}, fmt.Errorf("cannot read op1: %w", err)
 		}
@@ -390,7 +372,7 @@ func (vm *VirtualMachine) opcodeAssertions(
 		fpAddr := vm.Context.AddressFp()
 		fpMv := mem.MemoryValueFromMemoryAddress(&fpAddr)
 		// Store at [ap] the current fp
-		if err := vm.MemoryManager.Memory.WriteToAddress(dstAddr, &fpMv); err != nil {
+		if err := vm.Memory.WriteToAddress(dstAddr, &fpMv); err != nil {
 			return err
 		}
 
@@ -399,12 +381,12 @@ func (vm *VirtualMachine) opcodeAssertions(
 			vm.Context.Pc.Offset+uint64(instruction.Size()),
 		)
 		// Write in [ap + 1] the next instruction to execute
-		if err := vm.MemoryManager.Memory.WriteToAddress(op0Addr, &apMv); err != nil {
+		if err := vm.Memory.WriteToAddress(op0Addr, &apMv); err != nil {
 			return err
 		}
 	case AssertEq:
 		// assert that the calculated res is stored in dst
-		if err := vm.MemoryManager.Memory.WriteToAddress(dstAddr, res); err != nil {
+		if err := vm.Memory.WriteToAddress(dstAddr, res); err != nil {
 			return err
 		}
 	}
@@ -424,13 +406,13 @@ func (vm *VirtualMachine) updatePc(
 			Offset:       vm.Context.Pc.Offset + uint64(instruction.Size()),
 		}, nil
 	case Jump:
-		addr, err := res.ToMemoryAddress()
+		addr, err := res.MemoryAddress()
 		if err != nil {
 			return mem.UnknownValue, fmt.Errorf("absolute jump: %w", err)
 		}
 		return *addr, nil
 	case JumpRel:
-		val, err := res.ToFieldElement()
+		val, err := res.FieldElement()
 		if err != nil {
 			return mem.UnknownValue, fmt.Errorf("relative jump: %w", err)
 		}
@@ -438,12 +420,12 @@ func (vm *VirtualMachine) updatePc(
 		err = newPc.Add(&newPc, val)
 		return newPc, err
 	case Jnz:
-		destMv, err := vm.MemoryManager.Memory.ReadFromAddress(dstAddr)
+		destMv, err := vm.Memory.ReadFromAddress(dstAddr)
 		if err != nil {
 			return mem.UnknownValue, err
 		}
 
-		dest, err := destMv.ToFieldElement()
+		dest, err := destMv.FieldElement()
 		if err != nil {
 			return mem.UnknownValue, err
 		}
@@ -455,12 +437,12 @@ func (vm *VirtualMachine) updatePc(
 			}, nil
 		}
 
-		op1Mv, err := vm.MemoryManager.Memory.ReadFromAddress(op1Addr)
+		op1Mv, err := vm.Memory.ReadFromAddress(op1Addr)
 		if err != nil {
 			return mem.UnknownValue, err
 		}
 
-		val, err := op1Mv.ToFieldElement()
+		val, err := op1Mv.FieldElement()
 		if err != nil {
 			return mem.UnknownValue, err
 		}
@@ -478,11 +460,18 @@ func (vm *VirtualMachine) updateAp(instruction *Instruction, res *mem.MemoryValu
 	case SameAp:
 		return vm.Context.Ap, nil
 	case AddImm:
-		res64, err := res.Uint64()
+		apFelt := new(f.Element).SetUint64(vm.Context.Ap) // Convert ap value to felt
+
+		resFelt, err := res.FieldElement() // Extract the f.Element from MemoryValue
 		if err != nil {
 			return 0, err
 		}
-		return vm.Context.Ap + res64, nil
+
+		newAp := new(f.Element).Add(apFelt, resFelt) // Calculate newAp as the addition of apFelt and resFelt
+		if !newAp.IsUint64() {
+			return 0, fmt.Errorf("resulting AP value is too large to fit in uint64")
+		}
+		return newAp.Uint64(), nil // Return the addition as uint64
 	case Add1:
 		return vm.Context.Ap + 1, nil
 	case Add2:
@@ -498,12 +487,12 @@ func (vm *VirtualMachine) updateFp(instruction *Instruction, dstAddr *mem.Memory
 		return vm.Context.Ap + 2, nil
 	case Ret:
 		// [dst] should be a memory address of the form (executionSegment, fp - 2)
-		destMv, err := vm.MemoryManager.Memory.ReadFromAddress(dstAddr)
+		destMv, err := vm.Memory.ReadFromAddress(dstAddr)
 		if err != nil {
 			return 0, err
 		}
 
-		dst, err := destMv.ToMemoryAddress()
+		dst, err := destMv.MemoryAddress()
 		if err != nil {
 			return 0, fmt.Errorf("ret: %w", err)
 		}
@@ -517,7 +506,7 @@ func (vm *VirtualMachine) relocateTrace() []Trace {
 	// one is added, because prover expect that the first element to be on
 	// indexed on 1 instead of 0
 	relocatedTrace := make([]Trace, len(vm.Trace))
-	totalBytecode := vm.MemoryManager.Memory.Segments[ProgramSegment].Len() + 1
+	totalBytecode := vm.Memory.Segments[ProgramSegment].Len() + 1
 	for i := range vm.Trace {
 		relocatedTrace[i] = vm.Trace[i].Relocate(totalBytecode)
 	}

@@ -10,11 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func UseInTestOnlyMemoryValuePointerFromInt[T constraints.Integer](v T) *MemoryValue {
-	mv := MemoryValueFromInt(v)
-	return &mv
-}
-
 func TestFeltPlusFelt(t *testing.T) {
 	memVal := EmptyMemoryValueAsFelt()
 	lhs := MemoryValueFromFieldElement(new(f.Element).SetUint64(3))
@@ -154,43 +149,7 @@ func TestMemoryAddressSubMemoryAddressDiffSegment(t *testing.T) {
 	assert.Error(t, err)
 }
 
-// Note: Leaving relocation logic for later
-//func TestRelocate1(t *testing.T) {
-//	r := new(MemoryAddress)
-//	r1 := CreateMemoryAddress(2, new(f.Element).SetUint64(10))
-//	expected := new(MemoryAddress).SetUint64(52)
-//
-//	res, err := r.Relocate(r1, &map[uint64]*MemoryAddress{
-//		2: new(MemoryAddress).SetUint64(42),
-//	})
-//
-//	require.NoError(t, err)
-//	assert.Equal(t, res, r)
-//	assert.Equal(t, *res, *expected)
-//}
-//
-//func TestRelocate2(t *testing.T) {
-//	r := new(MemoryAddress)
-//	r1 := CreateMemoryAddress(2, new(f.Element).SetUint64(10))
-//	expected := CreateMemoryAddress(10, new(f.Element).SetUint64(11))
-//
-//	res, err := r.Relocate(r1, &map[uint64]*MemoryAddress{
-//		2: CreateMemoryAddress(10, new(f.Element).SetUint64(1)),
-//	})
-//
-//	require.NoError(t, err)
-//	assert.Equal(t, res, r)
-//	assert.Equal(t, *res, *expected)
-//}
-//
-//func TestRelocateMissingRule(t *testing.T) {
-//	r := new(MemoryAddress)
-//	r1 := CreateMemoryAddress(2, new(f.Element).SetUint64(10))
-//
-//	res, err := r.Relocate(r1, &map[uint64]*MemoryAddress{
-//		3: CreateMemoryAddress(10, new(f.Element).SetUint64(1)),
-//	})
-//
-//	assert.Error(t, err)
-//	assert.Nil(t, res)
-//}
+func memoryValuePointerFromInt[T constraints.Integer](v T) *MemoryValue {
+	mv := MemoryValueFromInt(v)
+	return &mv
+}
