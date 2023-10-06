@@ -2,7 +2,6 @@ package hintrunner
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/holiman/uint256"
 
@@ -154,7 +153,7 @@ func (hint WideMul128) String() string {
 }
 
 func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
-	u128MaxFelt := MaxU128Felt()
+	mask := MaxU128Felt()
 
 	lhs, err := hint.lhs.Resolve(vm)
 	if err != nil {
@@ -170,7 +169,7 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 	if err != nil {
 		return err
 	}
-	if lhsFelt.Cmp(u128MaxFelt) > 0 {
+	if lhsFelt.Cmp(mask) > 0 {
 		return fmt.Errorf("lhs operand %s should be u128", lhsFelt)
 	}
 
@@ -178,28 +177,27 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 	if err != nil {
 		return err
 	}
-	if rhsFelt.Cmp(u128MaxFelt) > 0 {
+	if rhsFelt.Cmp(mask) > 0 {
 		return fmt.Errorf("rhs operand %s should be u128", rhsFelt)
 	}
 
-	mul := uint256.NewInt(1).Mul(uint256.MustFromBig(lhsFelt.BigInt(big.NewInt(1))), uint256.MustFromBig(rhsFelt.BigInt(big.NewInt(1))))
-	mask := MaxU128()
+	lhsU256 := uint256.Int(lhsFelt.Bits())
+	rhsU256 := uint256.Int(rhsFelt.Bits())
+	mul := lhsU256.Mul(&lhsU256, &rhsU256)
 
-	low := uint256.NewInt(1)
-	high := uint256.NewInt(1)
-	low.And(mul, mask)
-	high.Rsh(mul, 128)
+	bytes := mul.Bytes32()
 
-	lowFelt := &f.Element{}
-	lowFelt.SetBigInt(low.ToBig())
-	highFelt := &f.Element{}
-	highFelt.SetBigInt(high.ToBig())
+	low := f.One()
+	low.SetBytes(bytes[16:])
+
+	high := f.One()
+	high.SetBytes(bytes[:16])
 
 	lowCell, err := hint.low.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
-	mvLow := memory.MemoryValueFromFieldElement(lowFelt)
+	mvLow := memory.MemoryValueFromFieldElement(&low)
 	err = vm.Memory.WriteToAddress(&lowCell, &mvLow)
 	if err != nil {
 		return fmt.Errorf("write cell: %v", err)
@@ -209,7 +207,7 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
-	mvHigh := memory.MemoryValueFromFieldElement(highFelt)
+	mvHigh := memory.MemoryValueFromFieldElement(&high)
 	err = vm.Memory.WriteToAddress(&highCell, &mvHigh)
 	if err != nil {
 		return fmt.Errorf("write cell: %v", err)
