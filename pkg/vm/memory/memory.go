@@ -206,6 +206,13 @@ func (memory *Memory) AllocateEmptySegment() int {
 	return len(memory.Segments) - 1
 }
 
+// Allocate a Builtin segment
+func (memory *Memory) AllocateBuiltinSegment(builtinRunner BuiltinRunner) int {
+	builtinSegment := EmptySegment().WithBuiltinRunner(builtinRunner)
+	memory.Segments = append(memory.Segments, builtinSegment)
+	return len(memory.Segments) - 1
+}
+
 // Writes to a given segment index and offset a new memory value. Errors if writing
 // to an unallocated segment or if overwriting a different memory value
 func (memory *Memory) Write(segmentIndex uint64, offset uint64, value *MemoryValue) error {

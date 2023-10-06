@@ -8,6 +8,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -84,15 +85,24 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (memory.MemoryAddress, erro
 			return memory.UnknownAddress, errors.New("end label not found. Try compiling with `--proof_mode`")
 		}
 
+		stack := runner.initializeBuiltins()
 		// Add the dummy last fp and pc to the public memory, so that the verifier can enforce [fp - 2] = fp.
-		stack := []memory.MemoryValue{memory.MemoryValueFromSegmentAndOffset(
+		stack = append([]memory.MemoryValue{memory.MemoryValueFromSegmentAndOffset(
 			vm.ProgramSegment,
 			len(runner.program.Bytecode)+2,
-		), memory.EmptyMemoryValueAsFelt()}
-		return memory.MemoryAddress{SegmentIndex: vm.ProgramSegment, Offset: endPcOffset}, runner.initializeVm(&memory.MemoryAddress{
+		), memory.EmptyMemoryValueAsFelt()}, stack...)
+
+		if err := runner.initializeVm(&memory.MemoryAddress{
 			SegmentIndex: vm.ProgramSegment,
 			Offset:       initialPCOffset,
-		}, stack)
+		}, stack); err != nil {
+			return memory.UnknownAddress, err
+		}
+
+		// __start__ will advance Ap and Fp
+		runner.vm.Context.Ap = 2
+		runner.vm.Context.Fp = 2
+		return memory.MemoryAddress{SegmentIndex: vm.ProgramSegment, Offset: endPcOffset}, nil
 	}
 
 	returnFp := memory.MemoryValueFromSegmentAndOffset(
@@ -110,7 +120,7 @@ func (runner *ZeroRunner) InitializeEntrypoint(
 		return memory.UnknownAddress, fmt.Errorf("unknown entrypoint: %s", funcName)
 	}
 
-	stack := make([]memory.MemoryValue, 0, len(arguments)+2) // end + fp
+	stack := runner.initializeBuiltins()
 	for i := range arguments {
 		stack = append(stack, memory.MemoryValueFromFieldElement(arguments[i]))
 	}
@@ -123,6 +133,16 @@ func (runner *ZeroRunner) InitializeEntrypoint(
 		SegmentIndex: vm.ProgramSegment,
 		Offset:       initialPCOffset,
 	}, stack)
+}
+
+func (runner *ZeroRunner) initializeBuiltins() []memory.MemoryValue {
+	stack := []memory.MemoryValue{}
+	for _, builtin := range runner.program.Builtins {
+		bRunner := builtins.Runner(builtin)
+		builtinSegment := runner.memoryManager.Memory.AllocateBuiltinSegment(bRunner)
+		stack = append(stack, memory.MemoryValueFromSegmentAndOffset(builtinSegment, 0))
+	}
+	return stack
 }
 
 func (runner *ZeroRunner) initializeVm(initialPC *memory.MemoryAddress, stack []memory.MemoryValue) error {

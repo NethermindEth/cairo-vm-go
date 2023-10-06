@@ -1,0 +1,31 @@
+package builtins
+
+import (
+	starknetParser "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+)
+
+func Runner(name starknetParser.Builtin) memory.BuiltinRunner {
+	switch name {
+	case starknetParser.Output:
+		panic("Not implemented")
+	case starknetParser.RangeCheck:
+		return &RangeCheck{}
+	case starknetParser.Pedersen:
+		panic("Not implemented")
+	case starknetParser.ECDSA:
+		panic("Not implemented")
+	case starknetParser.Keccak:
+		panic("Not implemented")
+	case starknetParser.Bitwise:
+		panic("Not implemented")
+	case starknetParser.ECOP:
+		panic("Not implemented")
+	case starknetParser.Poseidon:
+		panic("Not implemented")
+	case starknetParser.SegmentArena:
+		panic("Not implemented")
+	default:
+		panic("Unknown builtin")
+	}
+}

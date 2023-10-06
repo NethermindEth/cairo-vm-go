@@ -238,3 +238,13 @@ func memoryRepr(memory []*fp.Element) string {
 	return strings.Join(repr, ", ")
 
 }
+
+func TestFailingRangeCheck(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/range_check.cairo")
+	require.NoError(t, err)
+
+	_, _, err = runVm(compiledOutput)
+	require.ErrorContains(t, err, "check write: 2**128 <")
+
+	clean("./builtin_tests/")
+}
