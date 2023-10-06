@@ -136,7 +136,7 @@ func TestGetApCellOp0(t *testing.T) {
 }
 
 func TestGetApCellOp0NegOff(t *testing.T) { // Op0 & Ap & Negative
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	const (
@@ -161,7 +161,7 @@ func TestGetApCellOp0NegOff(t *testing.T) { // Op0 & Ap & Negative
 }
 
 func TestGetFpCellOp0(t *testing.T) { // Op0 & Fp & Positive
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	const (
@@ -186,7 +186,7 @@ func TestGetFpCellOp0(t *testing.T) { // Op0 & Fp & Positive
 }
 
 func TestGetFpCellOp0NegOff(t *testing.T) { // Op0 & Fp & Negative
-	vm := defaultVirtualMachine()
+	vm, _ := defaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	const (
