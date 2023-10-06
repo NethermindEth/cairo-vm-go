@@ -169,7 +169,7 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 	if err != nil {
 		return err
 	}
-	if lhsFelt.Cmp(mask) > 0 {
+	if lhsFelt.Cmp(&mask) > 0 {
 		return fmt.Errorf("lhs operand %s should be u128", lhsFelt)
 	}
 
@@ -177,7 +177,7 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 	if err != nil {
 		return err
 	}
-	if rhsFelt.Cmp(mask) > 0 {
+	if rhsFelt.Cmp(&mask) > 0 {
 		return fmt.Errorf("rhs operand %s should be u128", rhsFelt)
 	}
 
