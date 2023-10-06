@@ -166,7 +166,7 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 		return fmt.Errorf("resolve rhs operand %s: %v", hint.rhs, err)
 	}
 
-	lhsFelt, err := lhs.ToFieldElement()
+	lhsFelt, err := lhs.FieldElement()
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 		return fmt.Errorf("lhs operand %s should be u128", lhsFelt)
 	}
 
-	rhsFelt, err := rhs.ToFieldElement()
+	rhsFelt, err := rhs.FieldElement()
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 		return fmt.Errorf("rhs operand %s should be u128", rhsFelt)
 	}
 
-	mul := uint256.NewInt(1).Mul(uint256.MustFromBig(lhsFelt.BigInt(big.NewInt(1))), uint256.MustFromBig(rhsFelt.BigInt(big.NewInt(1)))) 
+	mul := uint256.NewInt(1).Mul(uint256.MustFromBig(lhsFelt.BigInt(big.NewInt(1))), uint256.MustFromBig(rhsFelt.BigInt(big.NewInt(1))))
 	mask := MaxU128()
 
 	low := uint256.NewInt(1)
@@ -199,7 +199,8 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
-	err = lowCell.Write(memory.MemoryValueFromFieldElement(lowFelt))
+	mvLow := memory.MemoryValueFromFieldElement(lowFelt)
+	err = vm.Memory.WriteToAddress(&lowCell, &mvLow)
 	if err != nil {
 		return fmt.Errorf("write cell: %v", err)
 	}
@@ -208,7 +209,8 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
-	err = highCell.Write(memory.MemoryValueFromFieldElement(highFelt))
+	mvHigh := memory.MemoryValueFromFieldElement(highFelt)
+	err = vm.Memory.WriteToAddress(&highCell, &mvHigh)
 	if err != nil {
 		return fmt.Errorf("write cell: %v", err)
 	}
