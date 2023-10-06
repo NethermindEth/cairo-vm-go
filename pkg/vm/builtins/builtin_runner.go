@@ -18,7 +18,7 @@ func Runner(name starknetParser.Builtin) memory.BuiltinRunner {
 	case starknetParser.Keccak:
 		panic("Not implemented")
 	case starknetParser.Bitwise:
-		panic("Not implemented")
+		return &Bitwise{}
 	case starknetParser.ECOP:
 		panic("Not implemented")
 	case starknetParser.Poseidon:

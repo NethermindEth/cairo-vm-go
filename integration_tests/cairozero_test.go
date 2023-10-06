@@ -248,3 +248,13 @@ func TestFailingRangeCheck(t *testing.T) {
 
 	clean("./builtin_tests/")
 }
+
+func TestBitwise(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/bitwise_builtin_test.cairo")
+	require.NoError(t, err)
+
+	_, _, err = runVm(compiledOutput)
+	require.NoError(t, err)
+
+	clean("./builtin_tests/")
+}
