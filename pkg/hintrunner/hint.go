@@ -153,13 +153,12 @@ func (hint WideMul128) String() string {
 }
 
 func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
-	mask := MaxU128Felt()
+	mask := MaxU128()
 
 	lhs, err := hint.lhs.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve lhs operand %s: %v", hint.lhs, err)
 	}
-
 	rhs, err := hint.rhs.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve rhs operand %s: %v", hint.rhs, err)
@@ -169,20 +168,21 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 	if err != nil {
 		return err
 	}
-	if lhsFelt.Cmp(&mask) > 0 {
-		return fmt.Errorf("lhs operand %s should be u128", lhsFelt)
-	}
-
 	rhsFelt, err := rhs.FieldElement()
 	if err != nil {
 		return err
 	}
-	if rhsFelt.Cmp(&mask) > 0 {
-		return fmt.Errorf("rhs operand %s should be u128", rhsFelt)
-	}
 
 	lhsU256 := uint256.Int(lhsFelt.Bits())
 	rhsU256 := uint256.Int(rhsFelt.Bits())
+
+	if lhsU256.Gt(&mask) {
+		return fmt.Errorf("lhs operand %s should be u128", lhsFelt)
+	}
+	if rhsU256.Gt(&mask) {
+		return fmt.Errorf("rhs operand %s should be u128", rhsFelt)
+	}
+
 	mul := lhsU256.Mul(&lhsU256, &rhsU256)
 
 	bytes := mul.Bytes32()
@@ -193,22 +193,22 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 	high := f.One()
 	high.SetBytes(bytes[:16])
 
-	lowCell, err := hint.low.Get(vm)
+	lowAddr, err := hint.low.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
 	mvLow := memory.MemoryValueFromFieldElement(&low)
-	err = vm.Memory.WriteToAddress(&lowCell, &mvLow)
+	err = vm.Memory.WriteToAddress(&lowAddr, &mvLow)
 	if err != nil {
 		return fmt.Errorf("write cell: %v", err)
 	}
 
-	highCell, err := hint.high.Get(vm)
+	highAddr, err := hint.high.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
 	mvHigh := memory.MemoryValueFromFieldElement(&high)
-	err = vm.Memory.WriteToAddress(&highCell, &mvHigh)
+	err = vm.Memory.WriteToAddress(&highAddr, &mvHigh)
 	if err != nil {
 		return fmt.Errorf("write cell: %v", err)
 	}

@@ -1,14 +1,7 @@
 package hintrunner
 
-import (
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-)
+import "github.com/holiman/uint256"
 
-func MaxU128Felt() f.Element {
-	return f.Element{
-		18446744073700081697,
-		17407,
-		18446744073709551584,
-		576460752142434864,
-	}
+func MaxU128() uint256.Int {
+	return uint256.Int{18446744073709551615, 18446744073709551615, 0, 0}
 }
