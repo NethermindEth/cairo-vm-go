@@ -9,8 +9,108 @@ import (
 )
 
 func TestAssertEqRegisterToInstrList(t *testing.T) {
-	// _ := parseSingleInstructionToInstrList("[ap] = [fp + 0], ap++;")
-	// fmt.Println("instrList: ", instrList)
+	instrList := parseSingleInstructionToInstrList("[ap] = [fp], ap++;")
+
+	expected := Instruction{
+		OffDest:     0,
+		OffOp0:      -1,
+		OffOp1:      0,
+		DstRegister: 0,
+		Op0Register: 1,
+		Op1Source:   2,
+		Res:         0,
+		PcUpdate:    0,
+		ApUpdate:    2,
+		Opcode:      4,
+	}
+	assert.Equal(t, expected, instrList[0])
+}
+
+func TestCallRelToInstrList(t *testing.T) {
+	instrList := parseSingleInstructionToInstrList("call rel 123;")
+
+	expected := Instruction{
+		OffDest:     0,
+		OffOp0:      1,
+		OffOp1:      1,
+		DstRegister: 0,
+		Op0Register: 0,
+		Op1Source:   1,
+		Res:         0,
+		PcUpdate:    2,
+		ApUpdate:    0,
+		Opcode:      1,
+		Imm:         "123",
+	}
+	assert.Equal(t, expected, instrList[0])
+}
+
+func TestCallAbsToInstrList(t *testing.T) {
+	instrList := parseSingleInstructionToInstrList("call abs [fp + 4];")
+
+	expected := Instruction{
+		OffDest:     0,
+		OffOp0:      1,
+		OffOp1:      4,
+		DstRegister: 0,
+		Op0Register: 0,
+		Op1Source:   2,
+		Res:         0,
+		PcUpdate:    1,
+		ApUpdate:    0,
+		Opcode:      1,
+	}
+	assert.Equal(t, expected, instrList[0])
+}
+
+func TestRetToInstrList(t *testing.T) {
+	instrList := parseSingleInstructionToInstrList("ret;")
+
+	expected := Instruction{
+		OffDest:     -2,
+		OffOp0:      -1,
+		OffOp1:      -1,
+		DstRegister: 1,
+		Op0Register: 1,
+		Op1Source:   2,
+		Res:         0,
+		PcUpdate:    1,
+		ApUpdate:    0,
+		Opcode:      2,
+	}
+	assert.Equal(t, expected, instrList[0])
+}
+
+func TestJmpAbsToInstrList(t *testing.T) {
+	instrList := parseSingleInstructionToInstrList("jmp abs 123, ap++;")
+	// Raw code below gives parsing error! (code taken from whitepaper)
+	// instrList := parseSingleInstructionToInstrList("jmp rel [ap + 1] + [fp - 7];")
+	// expected := Instruction{
+	// 	OffDest:     -1,
+	// 	OffOp0:      1,
+	// 	OffOp1:      -7,
+	// 	DstRegister: 1,
+	// 	Op0Register: 0,
+	// 	Op1Source:   2,
+	// 	Res:         1,
+	// 	PcUpdate:    2,
+	// 	ApUpdate:    0,
+	// 	Opcode:      0,
+	// }
+	expected := Instruction{
+		OffDest:     -1,
+		OffOp0:      -1,
+		OffOp1:      1,
+		Imm:         "123",
+		DstRegister: 1,
+		Op0Register: 1,
+		Op1Source:   1,
+		Res:         0,
+		PcUpdate:    1,
+		ApUpdate:    2,
+		Opcode:      0,
+	}
+	assert.Equal(t, expected, instrList[0])
 }
 
 func TestAssertEqRegister(t *testing.T) {
