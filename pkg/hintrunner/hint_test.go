@@ -40,7 +40,7 @@ func TestAllocSegment(t *testing.T) {
 
 }
 
-func TestTestLessThanFalse(t *testing.T) {
+func TestRunTestLessThanFailsWithGap(t *testing.T) {
 	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
@@ -68,7 +68,35 @@ func TestTestLessThanFalse(t *testing.T) {
 	)
 }
 
-func TestTestLessThanTrue(t *testing.T) {
+func TestRunTestLessThanFailsWithEqual(t *testing.T) {
+	vm, _ := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(17))
+
+	var dst ApCellRef = 1
+
+	lhs := Immediate(*big.NewInt(17))
+
+	var rhsRef FpCellRef = 0
+	rhs := Deref{rhsRef}
+
+	hint := TestLessThan{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err := hint.Execute(vm)
+	require.Nil(t, err)
+	require.Equal(
+		t,
+		memory.EmptyMemoryValueAsFelt(),
+		readFrom(vm, VM.ExecutionSegment, 1),
+	)
+}
+
+func TestRunTestLessThanPass(t *testing.T) {
 	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
@@ -82,6 +110,90 @@ func TestTestLessThanTrue(t *testing.T) {
 	rhs := Deref{rhsRef}
 
 	hint := TestLessThan{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err := hint.Execute(vm)
+	require.Nil(t, err)
+	require.Equal(
+		t,
+		memory.MemoryValueFromInt(1),
+		readFrom(vm, VM.ExecutionSegment, 1),
+	)
+}
+
+func TestRunTestLessThanOrEqFailsWithDiff(t *testing.T) {
+	vm, _ := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(17))
+
+	var dst ApCellRef = 1
+
+	lhs := Immediate(*big.NewInt(32))
+
+	var rhsRef FpCellRef = 0
+	rhs := Deref{rhsRef}
+
+	hint := TestLessThanOrEqual{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err := hint.Execute(vm)
+	require.Nil(t, err)
+	require.Equal(
+		t,
+		memory.EmptyMemoryValueAsFelt(),
+		readFrom(vm, VM.ExecutionSegment, 1),
+	)
+}
+
+func TestRunTestLessThanOrEqPassWithEqual(t *testing.T) {
+	vm, _ := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(17))
+
+	var dst ApCellRef = 1
+
+	lhs := Immediate(*big.NewInt(17))
+
+	var rhsRef FpCellRef = 0
+	rhs := Deref{rhsRef}
+
+	hint := TestLessThanOrEqual{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err := hint.Execute(vm)
+	require.Nil(t, err)
+	require.Equal(
+		t,
+		memory.EmptyMemoryValueAsFelt(),
+		readFrom(vm, VM.ExecutionSegment, 1),
+	)
+}
+
+func TestRunTestLessThanOrEqPass(t *testing.T) {
+	vm, _ := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(23))
+
+	var dst ApCellRef = 1
+
+	lhs := Immediate(*big.NewInt(13))
+
+	var rhsRef FpCellRef = 0
+	rhs := Deref{rhsRef}
+
+	hint := TestLessThanOrEqual{
 		dst: dst,
 		lhs: lhs,
 		rhs: rhs,
