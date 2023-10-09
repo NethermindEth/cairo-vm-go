@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
@@ -8,6 +9,7 @@ import (
 )
 
 type BuiltinRunner interface {
+	fmt.Stringer
 	CheckWrite(segment *Segment, offset uint64, value *MemoryValue) error
 	InferValue(segment *Segment, offset uint64) error
 }
@@ -19,8 +21,11 @@ func (b *NoBuiltin) CheckWrite(segment *Segment, offset uint64, value *MemoryVal
 }
 
 func (b *NoBuiltin) InferValue(segment *Segment, offset uint64) error {
-	segment.Data[offset] = EmptyMemoryValueAsFelt()
-	return nil
+	return errors.New("reading unknown value")
+}
+
+func (b *NoBuiltin) String() string {
+	return ""
 }
 
 type Segment struct {
@@ -94,15 +99,14 @@ func (segment *Segment) Read(offset uint64) (MemoryValue, error) {
 	if offset >= segment.RealLen() {
 		segment.IncreaseSegmentSize(offset + 1)
 	}
-	if offset >= segment.Len() {
-		segment.LastIndex = int(offset)
-	}
 
 	mv := &segment.Data[offset]
 	if !mv.Known() {
 		if err := segment.BuiltinRunner.InferValue(segment, offset); err != nil {
-			return MemoryValue{}, err
+			return UnknownValue, fmt.Errorf("%s: %w", segment.BuiltinRunner, err)
 		}
+		// set the last index to the offset only if the value was inferred
+		segment.LastIndex = int(offset)
 	}
 	return *mv, nil
 }

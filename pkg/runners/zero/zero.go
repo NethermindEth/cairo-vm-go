@@ -77,11 +77,11 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (memory.MemoryAddress, erro
 	if runner.proofmode {
 		initialPCOffset, ok := runner.program.Labels["__start__"]
 		if !ok {
-			return memory.UnknownValue, errors.New("start label not found. Try compiling with `--proof_mode`")
+			return memory.UnknownAddress, errors.New("start label not found. Try compiling with `--proof_mode`")
 		}
 		endPcOffset, ok := runner.program.Labels["__end__"]
 		if !ok {
-			return memory.UnknownValue, errors.New("end label not found. Try compiling with `--proof_mode`")
+			return memory.UnknownAddress, errors.New("end label not found. Try compiling with `--proof_mode`")
 		}
 
 		// Add the dummy last fp and pc to the public memory, so that the verifier can enforce [fp - 2] = fp.
@@ -107,7 +107,7 @@ func (runner *ZeroRunner) InitializeEntrypoint(
 ) (memory.MemoryAddress, error) {
 	initialPCOffset, ok := runner.program.Entrypoints[funcName]
 	if !ok {
-		return memory.UnknownValue, fmt.Errorf("unknown entrypoint: %s", funcName)
+		return memory.UnknownAddress, fmt.Errorf("unknown entrypoint: %s", funcName)
 	}
 
 	stack := make([]memory.MemoryValue, 0, len(arguments)+2) // end + fp
