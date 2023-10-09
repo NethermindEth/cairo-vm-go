@@ -40,11 +40,18 @@ func (opSrc Op1Src) String() string {
 	}
 }
 
+// const (
+// 	Imm Op1Src = iota
+// 	FpPlusOffOp1
+// 	ApPlusOffOp1
+// 	Op0
+// )
+
 const (
-	Imm Op1Src = iota
-	FpPlusOffOp1
-	ApPlusOffOp1
-	Op0
+	Op0          Op1Src = iota
+	Imm          Op1Src = 1
+	FpPlusOffOp1 Op1Src = 2
+	ApPlusOffOp1 Op1Src = 4
 )
 
 type ResLogic uint8
@@ -55,8 +62,8 @@ func (res ResLogic) String() string {
 		return "Add"
 	case MulOperands:
 		return "Mul"
-	case Unconstrained:
-		return "Unconstrained"
+	// case Unconstrained:
+	// 	return "Unconstrained"
 	case Op1:
 		return "Op1"
 	default:
@@ -64,11 +71,18 @@ func (res ResLogic) String() string {
 	}
 }
 
+// const (
+// 	AddOperands ResLogic = iota
+// 	MulOperands
+// 	Unconstrained
+// 	Op1
+// )
+
 const (
-	AddOperands ResLogic = iota
-	MulOperands
-	Unconstrained
-	Op1
+	Op1           ResLogic = iota
+	AddOperands   ResLogic = 1
+	MulOperands   ResLogic = 2
+	Unconstrained ResLogic = 4
 )
 
 type PcUpdate uint8
@@ -88,18 +102,25 @@ func (res PcUpdate) String() string {
 	}
 }
 
+// const (
+// 	PcUpdateJump PcUpdate = iota
+// 	PcUpdateJumpRel
+// 	PcUpdateJnz
+// 	PcUpdateNextInstr
+// )
+
 const (
-	PcUpdateJump PcUpdate = iota
-	PcUpdateJumpRel
-	PcUpdateJnz
-	PcUpdateNextInstr
+	PcUpdateNextInstr PcUpdate = iota
+	PcUpdateJump      PcUpdate = 1
+	PcUpdateJumpRel   PcUpdate = 2
+	PcUpdateJnz       PcUpdate = 4
 )
 
 type ApUpdate uint8
 
 func (ap ApUpdate) String() string {
 	switch ap {
-	case AddImm:
+	case AddRes:
 		return "Add Imm"
 	case Add1:
 		return "Add 1"
@@ -112,11 +133,20 @@ func (ap ApUpdate) String() string {
 	}
 }
 
+// const (
+// 	AddImm ApUpdate = iota
+// 	Add1
+// 	SameAp
+// 	Add2
+// )
+
 const (
-	AddImm ApUpdate = iota
-	Add1
-	SameAp
-	Add2
+	SameAp ApUpdate = iota
+	AddRes ApUpdate = 1
+	Add1   ApUpdate = 2
+	// This doesn't actually exist in the spec
+	// but it is used in the assembler when opcode == 1
+	Add2 ApUpdate = 4
 )
 
 type Opcode uint8
@@ -136,22 +166,24 @@ func (op Opcode) String() string {
 	}
 }
 
+// const (
+// 	OpCodeCall Opcode = iota
+// 	OpCodeRet
+// 	OpCodeAssertEq
+// 	OpCodeNop
+// )
+
 const (
-	OpCodeCall Opcode = iota
-	OpCodeRet
-	OpCodeAssertEq
-	OpCodeNop
+	OpCodeNop      Opcode = iota
+	OpCodeCall     Opcode = 1
+	OpCodeRet      Opcode = 2
+	OpCodeAssertEq Opcode = 4
 )
 
 type Instruction struct {
 	OffDest int16
 	OffOp0  int16
 	OffOp1  int16
-
-	// UOffDest uint16
-	// UOffOp0  uint16
-	// UOffOp1  uint16
-	// UFlags   uint16
 
 	DstRegister Register
 	Op0Register Register
@@ -237,15 +269,15 @@ func DecodeInstruction(rawInstruction *f.Element) (*Instruction, error) {
 	if !rawInstruction.IsUint64() {
 		return nil, fmt.Errorf("%s is bigger than 64 bits", rawInstruction.Text(10))
 	}
-	off0Enc, off1Enc, off2Enc, flags := decodeInstructionValues(rawInstruction.Uint64())
+	offDstEnc, offOp0Enc, offOp1Enc, flags := decodeInstructionValues(rawInstruction.Uint64())
 
 	// Create empty instruction
 	instruction := new(Instruction)
 
 	// Add unsigned offsets as signed ones
-	instruction.OffDest = off0Enc
-	instruction.OffOp0 = off1Enc
-	instruction.OffOp1 = off2Enc
+	instruction.OffDest = offDstEnc
+	instruction.OffOp0 = offOp0Enc
+	instruction.OffOp1 = offOp1Enc
 
 	err := decodeInstructionFlags(instruction, flags)
 	if err != nil {
@@ -261,13 +293,13 @@ func DecodeInstruction(rawInstruction *f.Element) (*Instruction, error) {
 // |         off2            |
 // |         flags           |
 func decodeInstructionValues(encoding uint64) (
-	off0Enc int16, off1Enc int16, off2Enc int16, flags uint16,
+	offDstEnc int16, offOp0Enc int16, offOp1Enc int16, flags uint16,
 ) {
 	encodingWith2sComplement := encoding ^ 0x0000800080008000
 	// first, second and third 16 bits of the instruction encoding respectively
-	off0Enc = int16(encodingWith2sComplement)
-	off1Enc = int16(encodingWith2sComplement >> op0Offset)
-	off2Enc = int16(encodingWith2sComplement >> op1Offset)
+	offDstEnc = int16(encodingWith2sComplement)
+	offOp0Enc = int16(encodingWith2sComplement >> op0Offset)
+	offOp1Enc = int16(encodingWith2sComplement >> op1Offset)
 	// bits 48..63
 	flags = uint16(encodingWith2sComplement >> flagsOffset)
 	return
@@ -399,6 +431,8 @@ func encodeInstructionListToBytecode(instruction []Instruction) ([]*f.Element, e
 	return bytecodes, nil
 }
 
+// break the instruction into 4 segments of 16 bits
+// | 	   Flags            | 	   offOp1            | 	   offOp0            | 	   offDst           |
 func encodeOneInstruction(instruction *Instruction) (*f.Element, error) {
 	// Get the offsets
 	// Combine the offsets and flags into a single uint64

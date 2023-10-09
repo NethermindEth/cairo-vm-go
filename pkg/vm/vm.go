@@ -445,7 +445,7 @@ func (vm *VirtualMachine) updateAp(instruction *assembler.Instruction, res *mem.
 	switch instruction.ApUpdate {
 	case assembler.SameAp:
 		return vm.Context.Ap, nil
-	case assembler.AddImm:
+	case assembler.AddRes:
 		res64, err := res.Uint64()
 		if err != nil {
 			return 0, err
