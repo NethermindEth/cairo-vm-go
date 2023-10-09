@@ -34,6 +34,5 @@ func TestRangeCheckWrite(t *testing.T) {
 func TestRangeCheckInfer(t *testing.T) {
 	builtin := RangeCheck{}
 	segment := memory.EmptySegmentWithLength(3)
-	assert.NoError(t, builtin.InferValue(segment, 0))
-	require.Equal(t, memory.EmptyMemoryValueAsFelt(), segment.Data[0])
+	assert.ErrorContains(t, builtin.InferValue(segment, 0), "cannot infer value")
 }
