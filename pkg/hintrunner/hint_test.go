@@ -40,7 +40,7 @@ func TestAllocSegment(t *testing.T) {
 
 }
 
-func TestRunTestLessThanFailsWithGap(t *testing.T) {
+func TestTestLessThanFailsWhenDiff(t *testing.T) { // 32 < 17 fails
 	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
@@ -68,7 +68,7 @@ func TestRunTestLessThanFailsWithGap(t *testing.T) {
 	)
 }
 
-func TestRunTestLessThanFailsWithEqual(t *testing.T) {
+func TestTestLessThanFailsWhenEq(t *testing.T) { // 17 < 17 fails
 	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
@@ -96,7 +96,7 @@ func TestRunTestLessThanFailsWithEqual(t *testing.T) {
 	)
 }
 
-func TestRunTestLessThanPass(t *testing.T) {
+func TestTestLessThan(t *testing.T) { // 13 < 23 pass
 	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
@@ -124,7 +124,7 @@ func TestRunTestLessThanPass(t *testing.T) {
 	)
 }
 
-func TestRunTestLessThanOrEqFailsWithDiff(t *testing.T) {
+func TestTestLessThanOrEqFailsWithDiff(t *testing.T) { // 32 <= 17
 	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
@@ -152,7 +152,7 @@ func TestRunTestLessThanOrEqFailsWithDiff(t *testing.T) {
 	)
 }
 
-func TestRunTestLessThanOrEqPassWithEqual(t *testing.T) {
+func TestTestLessThanOrEqPassWhenEq(t *testing.T) { // 17 <= 17
 	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
@@ -180,7 +180,7 @@ func TestRunTestLessThanOrEqPassWithEqual(t *testing.T) {
 	)
 }
 
-func TestRunTestLessThanOrEqPass(t *testing.T) {
+func TestTestLessThanOrEq(t *testing.T) { // 13 <= 23 pass
 	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
