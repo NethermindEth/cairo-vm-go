@@ -2,7 +2,6 @@ package assembler
 
 import (
 	"fmt"
-	"math/bits"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -82,7 +81,7 @@ const (
 	Op1           ResLogic = iota
 	AddOperands   ResLogic = 1
 	MulOperands   ResLogic = 2
-	Unconstrained ResLogic = 4
+	Unconstrained ResLogic = 3
 )
 
 type PcUpdate uint8
@@ -315,16 +314,11 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 	instruction.DstRegister = Register((flags >> dstRegBit) & 1)
 	instruction.Op0Register = Register((flags >> op0RegBit) & 1)
 
-	op1Addr, err := oneHot(flags&(1<<op1ImmBit|1<<op1FpBit|1<<op1ApBit), op1ImmBit, 3)
-	if err != nil {
-		return fmt.Errorf("op1 source: %w", err)
-	}
+	// op1Addr := flags & (1<<op1ImmBit | 1<<op1FpBit | 1<<op1ApBit)
+	op1Addr := flags & (1<<op1ImmBit | 1<<op1FpBit | 1<<op1ApBit) >> op1ImmBit
 	instruction.Op1Source = Op1Src(op1Addr)
 
-	pcUpdate, err := oneHot(flags&(1<<pcJumpAbsBit|1<<pcJumpRelBit|1<<pcJnzBit), pcJumpAbsBit, 3)
-	if err != nil {
-		return fmt.Errorf("pc update: %w", err)
-	}
+	pcUpdate := flags & (1<<pcJumpAbsBit | 1<<pcJumpRelBit | 1<<pcJnzBit) >> pcJumpAbsBit
 	instruction.PcUpdate = PcUpdate(pcUpdate)
 
 	var defaultResLogic ResLogic
@@ -337,27 +331,17 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 		defaultResLogic = Op1
 	}
 
-	res, err := oneHot(flags&(1<<resAddBit|1<<resMulBit), resAddBit, 2)
-	if err != nil {
-		return fmt.Errorf("res logic: %w", err)
-	}
-
+	res := flags & (1<<resAddBit | 1<<resMulBit) >> resAddBit
 	if res == 2 {
 		instruction.Res = defaultResLogic
 	} else {
 		instruction.Res = ResLogic(res)
 	}
 
-	apUpdate, err := oneHot(flags&(1<<apAddBit|1<<apAdd1Bit), apAddBit, 2)
-	if err != nil {
-		return fmt.Errorf("ap update: %w", err)
-	}
+	apUpdate := flags & (1<<apAddBit | 1<<apAdd1Bit) >> apAddBit
 	instruction.ApUpdate = ApUpdate(apUpdate)
 
-	opcode, err := oneHot(flags&(1<<opcodeCallBit|1<<opcodeRetBit|1<<opcodeAssertEqBit), opcodeCallBit, 3)
-	if err != nil {
-		return fmt.Errorf("opcode: %w", err)
-	}
+	opcode := flags & (1<<opcodeCallBit | 1<<opcodeRetBit | 1<<opcodeAssertEqBit) >> opcodeCallBit
 	instruction.Opcode = Opcode(opcode)
 
 	// for pc udpate Jnz, res should be unconstrainded, no opcode, and ap should update with Imm
@@ -379,35 +363,34 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 		}
 		instruction.ApUpdate = Add2
 	}
-
 	return nil
 }
 
 // Given a uint16 returns the set bit offset by offset if there's only one such
 // and return maxLen in case there's no set bits.
 // If there are more than 1 set bits return an error.
-func oneHot(bin, offset, maxLen uint16) (uint16, error) {
-	numberOfBits := bits.OnesCount16(bin)
+// func oneHot(bin, offset, maxLen uint16) (uint16, error) {
+// 	numberOfBits := bits.OnesCount16(bin)
 
-	if numberOfBits > 1 {
-		digits := make([]uint8, 0, maxLen)
-		bin = bin >> offset
+// 	if numberOfBits > 1 {
+// 		digits := make([]uint8, 0, maxLen)
+// 		bin = bin >> offset
 
-		for i := 0; i < int(maxLen); i++ {
-			digits = append(digits, uint8(bin%2))
-			bin >>= 1
-		}
-		return 0, fmt.Errorf("decoding wrong sequence of bits: %b", digits)
-	}
+// 		for i := 0; i < int(maxLen); i++ {
+// 			digits = append(digits, uint8(bin%2))
+// 			bin >>= 1
+// 		}
+// 		return 0, fmt.Errorf("decoding wrong sequence of bits: %b", digits)
+// 	}
 
-	len := bits.Len16(bin)
+// 	len := bits.Len16(bin)
 
-	if len == 0 {
-		return maxLen, nil
-	}
+// 	if len == 0 {
+// 		return maxLen, nil
+// 	}
 
-	return uint16(len-int(offset)) - 1, nil
-}
+// 	return uint16(len-int(offset)) - 1, nil
+// }
 
 // ================================ InstrList to Bytecode ================================================
 func encodeInstructionListToBytecode(instruction []Instruction) ([]*f.Element, error) {
