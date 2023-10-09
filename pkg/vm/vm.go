@@ -97,7 +97,7 @@ func NewVirtualMachine(initialContext Context, memory *mem.Memory, config Virtua
 		Memory:       memory,
 		Trace:        trace,
 		config:       config,
-		instructions: make(map[uint64]*Instruction),
+		instructions: make(map[uint64]*assembler.Instruction),
 	}, nil
 }
 
@@ -138,8 +138,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 	return nil
 }
 
-
-func (vm *VirtualMachine) RunInstruction(instruction *Instruction) error {
+func (vm *VirtualMachine) RunInstruction(instruction *assembler.Instruction) error {
 	dstAddr, err := vm.getDstAddr(instruction)
 	if err != nil {
 		return fmt.Errorf("dst cell: %w", err)
@@ -202,7 +201,7 @@ func (vm *VirtualMachine) ExecutionTrace() ([]Trace, error) {
 	return vm.relocateTrace(), nil
 }
 
-func (vm *VirtualMachine) getDstAddr(instruction *Instruction) (mem.MemoryAddress, error) {
+func (vm *VirtualMachine) getDstAddr(instruction *assembler.Instruction) (mem.MemoryAddress, error) {
 	var dstRegister uint64
 	if instruction.DstRegister == assembler.Ap {
 		dstRegister = vm.Context.Ap
@@ -217,7 +216,7 @@ func (vm *VirtualMachine) getDstAddr(instruction *Instruction) (mem.MemoryAddres
 	return mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: addr}, nil
 }
 
-func (vm *VirtualMachine) getOp0Addr(instruction *Instruction) (mem.MemoryAddress, error) {
+func (vm *VirtualMachine) getOp0Addr(instruction *assembler.Instruction) (mem.MemoryAddress, error) {
 	var op0Register uint64
 	if instruction.Op0Register == assembler.Ap {
 		op0Register = vm.Context.Ap
@@ -232,8 +231,7 @@ func (vm *VirtualMachine) getOp0Addr(instruction *Instruction) (mem.MemoryAddres
 	return mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: addr}, nil
 }
 
-
-func (vm *VirtualMachine) getOp1Addr(instruction *Instruction, op0Addr *mem.MemoryAddress) (mem.MemoryAddress, error) {
+func (vm *VirtualMachine) getOp1Addr(instruction *assembler.Instruction, op0Addr *mem.MemoryAddress) (mem.MemoryAddress, error) {
 	var op1Address mem.MemoryAddress
 	switch instruction.Op1Source {
 	case assembler.Op0:
@@ -269,10 +267,10 @@ func (vm *VirtualMachine) getOp1Addr(instruction *Instruction, op0Addr *mem.Memo
 // dstCell value and either op0Cell xor op1Cell. This function infers the
 // unknow operand as well as the `res` auxiliar value
 func (vm *VirtualMachine) inferOperand(
-	instruction *Instruction, dstAddr *mem.MemoryAddress, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
+	instruction *assembler.Instruction, dstAddr *mem.MemoryAddress, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
 ) (mem.MemoryValue, error) {
-	if instruction.Opcode != AssertEq ||
-		(instruction.Res == Unconstrained) {
+	if instruction.Opcode != assembler.OpCodeAssertEq ||
+		(instruction.Res == assembler.Unconstrained) {
 		return mem.MemoryValue{}, nil
 	}
 
@@ -298,7 +296,7 @@ func (vm *VirtualMachine) inferOperand(
 		return mem.MemoryValue{}, fmt.Errorf("value at dst is unknown")
 	}
 
-	if instruction.Res == Op1 && !op1Value.Known() {
+	if instruction.Res == assembler.Op1 && !op1Value.Known() {
 		if err = vm.Memory.WriteToAddress(op1Addr, &dstValue); err != nil {
 			return mem.MemoryValue{}, err
 		}
@@ -315,8 +313,8 @@ func (vm *VirtualMachine) inferOperand(
 		unknownOpAddr = op0Addr
 	}
 
-  var missingVal mem.MemoryValue
-  if instruction.Res == assembler.AddOperands {
+	var missingVal mem.MemoryValue
+	if instruction.Res == assembler.AddOperands {
 		missingVal = mem.EmptyMemoryValueAs(dstValue.IsAddress())
 		err = missingVal.Sub(&dstValue, &knownOpValue)
 	} else {
@@ -334,12 +332,12 @@ func (vm *VirtualMachine) inferOperand(
 }
 
 func (vm *VirtualMachine) computeRes(
-	instruction *Instruction, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
+	instruction *assembler.Instruction, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
 ) (mem.MemoryValue, error) {
 	switch instruction.Res {
-	case Unconstrained:
+	case assembler.Unconstrained:
 		return mem.MemoryValue{}, nil
-	case Op1:
+	case assembler.Op1:
 		return vm.Memory.ReadFromAddress(op1Addr)
 	default:
 		op0, err := vm.Memory.ReadFromAddress(op0Addr)
@@ -353,9 +351,9 @@ func (vm *VirtualMachine) computeRes(
 		}
 
 		res := mem.EmptyMemoryValueAs(op0.IsAddress() || op1.IsAddress())
-		if instruction.Res == AddOperands {
+		if instruction.Res == assembler.AddOperands {
 			err = res.Add(&op0, &op1)
-		} else if instruction.Res == MulOperands {
+		} else if instruction.Res == assembler.MulOperands {
 			err = res.Mul(&op0, &op1)
 		} else {
 			return mem.MemoryValue{}, fmt.Errorf("invalid res flag value: %d", instruction.Res)
@@ -365,13 +363,13 @@ func (vm *VirtualMachine) computeRes(
 }
 
 func (vm *VirtualMachine) opcodeAssertions(
-	instruction *Instruction,
+	instruction *assembler.Instruction,
 	dstAddr *mem.MemoryAddress,
 	op0Addr *mem.MemoryAddress,
 	res *mem.MemoryValue,
 ) error {
 	switch instruction.Opcode {
-	case Call:
+	case assembler.OpCodeCall:
 		fpAddr := vm.Context.AddressFp()
 		fpMv := mem.MemoryValueFromMemoryAddress(&fpAddr)
 		// Store at [ap] the current fp
@@ -482,7 +480,7 @@ func (vm *VirtualMachine) updateAp(instruction *assembler.Instruction, res *mem.
 	return 0, fmt.Errorf("cannot update ap, unknown ApUpdate flag: %d", instruction.ApUpdate)
 }
 
-func (vm *VirtualMachine) updateFp(instruction *Instruction, dstAddr *mem.MemoryAddress) (uint64, error) {
+func (vm *VirtualMachine) updateFp(instruction *assembler.Instruction, dstAddr *mem.MemoryAddress) (uint64, error) {
 	switch instruction.Opcode {
 	case assembler.OpCodeCall:
 		// [ap] and [ap + 1] are written to memory
