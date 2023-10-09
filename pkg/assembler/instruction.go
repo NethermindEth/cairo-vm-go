@@ -39,13 +39,6 @@ func (opSrc Op1Src) String() string {
 	}
 }
 
-// const (
-// 	Imm Op1Src = iota
-// 	FpPlusOffOp1
-// 	ApPlusOffOp1
-// 	Op0
-// )
-
 const (
 	Op0          Op1Src = iota
 	Imm          Op1Src = 1
@@ -61,21 +54,14 @@ func (res ResLogic) String() string {
 		return "Add"
 	case MulOperands:
 		return "Mul"
-	// case Unconstrained:
-	// 	return "Unconstrained"
+	case Unconstrained:
+		return "Unconstrained"
 	case Op1:
 		return "Op1"
 	default:
 		return string(res)
 	}
 }
-
-// const (
-// 	AddOperands ResLogic = iota
-// 	MulOperands
-// 	Unconstrained
-// 	Op1
-// )
 
 const (
 	Op1           ResLogic = iota
@@ -101,13 +87,6 @@ func (res PcUpdate) String() string {
 	}
 }
 
-// const (
-// 	PcUpdateJump PcUpdate = iota
-// 	PcUpdateJumpRel
-// 	PcUpdateJnz
-// 	PcUpdateNextInstr
-// )
-
 const (
 	PcUpdateNextInstr PcUpdate = iota
 	PcUpdateJump      PcUpdate = 1
@@ -132,20 +111,11 @@ func (ap ApUpdate) String() string {
 	}
 }
 
-// const (
-// 	AddImm ApUpdate = iota
-// 	Add1
-// 	SameAp
-// 	Add2
-// )
-
 const (
 	SameAp ApUpdate = iota
 	AddRes ApUpdate = 1
 	Add1   ApUpdate = 2
-	// This doesn't actually exist in the spec
-	// but it is used in the assembler when opcode == 1
-	Add2 ApUpdate = 4
+	Add2   ApUpdate = 4
 )
 
 type Opcode uint8
@@ -165,13 +135,6 @@ func (op Opcode) String() string {
 	}
 }
 
-// const (
-// 	OpCodeCall Opcode = iota
-// 	OpCodeRet
-// 	OpCodeAssertEq
-// 	OpCodeNop
-// )
-
 const (
 	OpCodeNop      Opcode = iota
 	OpCodeCall     Opcode = 1
@@ -189,8 +152,6 @@ type Instruction struct {
 
 	Op1Source Op1Src
 
-	Imm string
-
 	Res ResLogic
 
 	// How to update registries after instruction execution
@@ -199,6 +160,9 @@ type Instruction struct {
 
 	// Defines which instruction needs to be executed
 	Opcode Opcode
+
+	// Immediate value for 2 word instructions
+	Imm string
 }
 
 func (instr Instruction) Size() uint8 {
@@ -264,6 +228,9 @@ const (
 	// biasedMinusTwo uint16 = 0x7FFE
 )
 
+/*
+*    Decode the bytecode into an instruction
+ */
 func DecodeInstruction(rawInstruction *f.Element) (*Instruction, error) {
 	if !rawInstruction.IsUint64() {
 		return nil, fmt.Errorf("%s is bigger than 64 bits", rawInstruction.Text(10))
@@ -316,9 +283,15 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 
 	// op1Addr := flags & (1<<op1ImmBit | 1<<op1FpBit | 1<<op1ApBit)
 	op1Addr := flags & (1<<op1ImmBit | 1<<op1FpBit | 1<<op1ApBit) >> op1ImmBit
+	if op1Addr == 3 {
+		return fmt.Errorf("op1 source: wrong sequence of bits")
+	}
 	instruction.Op1Source = Op1Src(op1Addr)
 
 	pcUpdate := flags & (1<<pcJumpAbsBit | 1<<pcJumpRelBit | 1<<pcJnzBit) >> pcJumpAbsBit
+	if pcUpdate == 3 {
+		return fmt.Errorf("pc update: wrong sequence of bits")
+	}
 	instruction.PcUpdate = PcUpdate(pcUpdate)
 
 	var defaultResLogic ResLogic
@@ -332,16 +305,26 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 	}
 
 	res := flags & (1<<resAddBit | 1<<resMulBit) >> resAddBit
-	if res == 2 {
+	if res == 3 {
+		return fmt.Errorf("res logic: wrong sequence of bits")
+	}
+
+	if res == 0 {
 		instruction.Res = defaultResLogic
 	} else {
 		instruction.Res = ResLogic(res)
 	}
 
 	apUpdate := flags & (1<<apAddBit | 1<<apAdd1Bit) >> apAddBit
+	if apUpdate == 3 {
+		return fmt.Errorf("ap update: wrong sequence of bits")
+	}
 	instruction.ApUpdate = ApUpdate(apUpdate)
 
 	opcode := flags & (1<<opcodeCallBit | 1<<opcodeRetBit | 1<<opcodeAssertEqBit) >> opcodeCallBit
+	if opcode == 3 {
+		return fmt.Errorf("opcode: wrong sequence of bits")
+	}
 	instruction.Opcode = Opcode(opcode)
 
 	// for pc udpate Jnz, res should be unconstrainded, no opcode, and ap should update with Imm
@@ -366,33 +349,9 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 	return nil
 }
 
-// Given a uint16 returns the set bit offset by offset if there's only one such
-// and return maxLen in case there's no set bits.
-// If there are more than 1 set bits return an error.
-// func oneHot(bin, offset, maxLen uint16) (uint16, error) {
-// 	numberOfBits := bits.OnesCount16(bin)
-
-// 	if numberOfBits > 1 {
-// 		digits := make([]uint8, 0, maxLen)
-// 		bin = bin >> offset
-
-// 		for i := 0; i < int(maxLen); i++ {
-// 			digits = append(digits, uint8(bin%2))
-// 			bin >>= 1
-// 		}
-// 		return 0, fmt.Errorf("decoding wrong sequence of bits: %b", digits)
-// 	}
-
-// 	len := bits.Len16(bin)
-
-// 	if len == 0 {
-// 		return maxLen, nil
-// 	}
-
-// 	return uint16(len-int(offset)) - 1, nil
-// }
-
-// ================================ InstrList to Bytecode ================================================
+/*
+*    Instruction list into bytecode functions
+ */
 func encodeInstructionListToBytecode(instruction []Instruction) ([]*f.Element, error) {
 	n := len(instruction)
 	bytecodes := make([]*f.Element, 0, n+(n/2)+1)
@@ -415,7 +374,7 @@ func encodeInstructionListToBytecode(instruction []Instruction) ([]*f.Element, e
 }
 
 // break the instruction into 4 segments of 16 bits
-// | 	   Flags            | 	   offOp1            | 	   offOp0            | 	   offDst           |
+// | 	   flags       | 	   offOp1      | 	   offOp0      | 	   offDst     |
 func encodeOneInstruction(instruction *Instruction) (*f.Element, error) {
 	// Get the offsets
 	// Combine the offsets and flags into a single uint64

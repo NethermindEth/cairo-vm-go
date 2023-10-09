@@ -30,10 +30,9 @@ func CasmToBytecode(code string) ([]*f.Element, error) {
 	return encodeInstructionListToBytecode(instructionList)
 }
 
-//
-// Functions that visit the AST in order to encode Instruction list.
-//
-
+/*
+*    Casm to instruction list functions
+ */
 func astToInstruction(ast *CasmProgram) ([]Instruction, error) {
 	// Vist ast
 	n := len(ast.Ast)
@@ -65,7 +64,7 @@ func encodeDst(node *AstNode, instr *Instruction) {
 	if node.ApPlus != nil || node.Jump != nil {
 		// dstOffset is not involved so it is set to fp - 1 as default value
 		instr.OffDest = -1
-		instr.DstRegister = 0x01
+		instr.DstRegister = Fp
 		return
 	}
 	if node.Call != nil {
@@ -76,7 +75,7 @@ func encodeDst(node *AstNode, instr *Instruction) {
 	if node.Ret != nil {
 		// dstOffset is set as fp - 2
 		instr.OffDest = -2
-		instr.DstRegister = 0x01
+		instr.DstRegister = Fp
 		return
 	}
 
@@ -93,7 +92,9 @@ func encodeDst(node *AstNode, instr *Instruction) {
 	}
 	instr.OffDest = offset
 	if deref.IsFp() {
-		instr.DstRegister = 0x01
+		instr.DstRegister = Fp
+	} else {
+		instr.DstRegister = Ap
 	}
 }
 
@@ -107,7 +108,7 @@ func encodeOp0(node *AstNode, instr *Instruction, expr Expressioner) {
 		(expr.AsDeref() != nil || expr.AsImmediate() != nil) {
 		// op0 is not involved, it is set as fp - 1 as default value
 		instr.OffOp0 = -1
-		instr.Op0Register = 0x01
+		instr.Op0Register = Fp
 		return
 	}
 
@@ -124,7 +125,9 @@ func encodeOp0(node *AstNode, instr *Instruction, expr Expressioner) {
 	}
 	instr.OffOp0 = offset
 	if deref.IsFp() {
-		instr.Op0Register = 1
+		instr.Op0Register = Fp
+	} else {
+		instr.Op0Register = Ap
 	}
 }
 
@@ -134,7 +137,7 @@ func encodeOp1(node *AstNode, instr *Instruction, expr Expressioner) {
 	if node != nil && node.Ret != nil {
 		// op1 is set as [fp - 1], where we read the previous pc
 		instr.OffOp1 = -1
-		instr.Op1Source = 0x02
+		instr.Op1Source = FpPlusOffOp1
 		return
 	}
 
@@ -145,9 +148,9 @@ func encodeOp1(node *AstNode, instr *Instruction, expr Expressioner) {
 		}
 		instr.OffOp1 = offset
 		if expr.AsDeref().IsFp() {
-			instr.Op1Source = 0x02
+			instr.Op1Source = FpPlusOffOp1
 		} else {
-			instr.Op1Source = 0x04
+			instr.Op1Source = ApPlusOffOp1
 		}
 		return
 	} else if expr.AsDoubleDeref() != nil {
@@ -161,7 +164,7 @@ func encodeOp1(node *AstNode, instr *Instruction, expr Expressioner) {
 		// immediate is converted to Felt during bytecode conversion
 		imm := expr.AsImmediate()
 		instr.OffOp1 = 1
-		instr.Op1Source = 0x01
+		instr.Op1Source = Imm
 		instr.Imm = *imm
 		return
 	} else {
@@ -174,9 +177,9 @@ func encodeFlags(node *AstNode, instr *Instruction, expression Expressioner) {
 	// Encode ResLogic
 	if expression != nil && expression.AsMathOperation() != nil {
 		if expression.AsMathOperation().Operator == "+" {
-			instr.Res = 0x01
+			instr.Res = AddOperands
 		} else {
-			instr.Res = 0x02
+			instr.Res = MulOperands
 		}
 	}
 
@@ -189,29 +192,29 @@ func encodeFlags(node *AstNode, instr *Instruction, expression Expressioner) {
 			isAbs = node.Call.CallType == "abs"
 		}
 		if isAbs {
-			instr.PcUpdate = 0x01
+			instr.PcUpdate = PcUpdateJump
 		} else {
-			instr.PcUpdate = 0x02
+			instr.PcUpdate = PcUpdateJumpRel
 		}
 	} else if node.Jnz != nil {
-		instr.PcUpdate = 0x04
+		instr.PcUpdate = PcUpdateJnz
 	} else if node.Ret != nil {
-		instr.PcUpdate = 0x01
+		instr.PcUpdate = PcUpdateJump
 	}
 
 	// Encode ApUpdate
 	if node.ApPlus != nil {
-		instr.ApUpdate = 0x01
+		instr.ApUpdate = AddRes
 	} else if node.ApPlusOne {
-		instr.ApUpdate = 0x02
+		instr.ApUpdate = Add1
 	}
 
 	// Encode Opcode
 	if node.Call != nil {
-		instr.Opcode = 0x01
+		instr.Opcode = OpCodeCall
 	} else if node.Ret != nil {
-		instr.Opcode = 0x02
+		instr.Opcode = OpCodeRet
 	} else if node.AssertEq != nil {
-		instr.Opcode = 0x04
+		instr.Opcode = OpCodeAssertEq
 	}
 }
