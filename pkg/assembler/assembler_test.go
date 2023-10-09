@@ -83,20 +83,6 @@ func TestRetToInstrList(t *testing.T) {
 
 func TestJmpAbsToInstrList(t *testing.T) {
 	instrList := parseSingleInstructionToInstrList("jmp abs 123, ap++;")
-	// Raw code below gives parsing error! (code taken from whitepaper)
-	// instrList := parseSingleInstructionToInstrList("jmp rel [ap + 1] + [fp - 7];")
-	// expected := Instruction{
-	// 	OffDest:     -1,
-	// 	OffOp0:      1,
-	// 	OffOp1:      -7,
-	// 	DstRegister: 1,
-	// 	Op0Register: 0,
-	// 	Op1Source:   2,
-	// 	Res:         1,
-	// 	PcUpdate:    2,
-	// 	ApUpdate:    0,
-	// 	Opcode:      0,
-	// }
 	expected := Instruction{
 		OffDest:     -1,
 		OffOp0:      -1,
