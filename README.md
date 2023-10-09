@@ -46,7 +46,7 @@ This will compile `factorial.cairo` and store the compilation result in `factori
 Finally, let's use our VM to execute `factorial_compiled.json` with the next command:
 
 ```bash
-./bin/cairo-vm run factorial_compiled.json --proofmode --tracefile factorial_trace --memoryfile factorial_memory
+./bin/cairo-vm run  --proofmode --tracefile factorial_trace --memoryfile factorial_memory factorial_compiled.json
 ```
 
 When this command finishes, `factorial.cairo` has run correctly starting from the `main` function. The `--proofmode` flag indicates that a proof of execution should be generated. The location where this proof is stored is determined by both `--tracefile` and `--memoryfile` flags accordingly.
