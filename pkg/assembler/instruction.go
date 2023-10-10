@@ -146,6 +146,10 @@ const (
 	OpCodeAssertEq
 )
 
+type Word interface{}
+
+type Immediate = string
+
 type Instruction struct {
 	OffDest int16
 	OffOp0  int16
@@ -164,9 +168,6 @@ type Instruction struct {
 
 	// Defines which instruction needs to be executed
 	Opcode Opcode
-
-	// Immediate value for 2 word instructions
-	Imm string
 }
 
 func (instr Instruction) Size() uint8 {
@@ -356,22 +357,28 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 /*
 *    Instruction list into bytecode functions
  */
-func encodeInstructionListToBytecode(instruction []Instruction) ([]*f.Element, error) {
-	n := len(instruction)
+func encodeInstructionListToBytecode(wordList []Word) ([]*f.Element, error) {
+	n := len(wordList)
 	bytecodes := make([]*f.Element, 0, n+(n/2)+1)
 
-	for i := range instruction {
-		bytecode, err := encodeOneInstruction(&instruction[i])
-		if err != nil {
-			return nil, err
-		}
-		bytecodes = append(bytecodes, bytecode)
-		if instruction[i].Imm != "" {
-			imm, err := new(f.Element).SetString(instruction[i].Imm)
+	for i, word := range wordList {
+		switch w := word.(type) {
+		case Instruction:
+			bytecode, err := encodeOneInstruction(&w)
+			if err != nil {
+				return nil, err
+			}
+			bytecodes = append(bytecodes, bytecode)
+
+		case Immediate:
+			imm, err := new(f.Element).SetString(w)
 			if err != nil {
 				return nil, err
 			}
 			bytecodes = append(bytecodes, imm)
+
+		default:
+			return nil, fmt.Errorf("word %d is not an instruction or immediate", i)
 		}
 	}
 	return bytecodes, nil

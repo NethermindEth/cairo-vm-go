@@ -18,42 +18,48 @@ func CasmToBytecode(code string) ([]*f.Element, error) {
 		return nil, err
 	}
 	// Ast To Instruction List
-	instructionList, err := astToInstruction(casmAst)
+	wordList, err := astToInstruction(casmAst)
 	if err != nil {
 		return nil, err
 	}
 	// Instruction to bytecode
-	return encodeInstructionListToBytecode(instructionList)
+	return encodeInstructionListToBytecode(wordList)
 }
 
 /*
 *    Casm to instruction list functions
  */
-func astToInstruction(ast *CasmProgram) ([]Instruction, error) {
+func astToInstruction(ast *CasmProgram) ([]Word, error) {
 	// Vist ast
 	n := len(ast.InstructionList)
 	// Slice with length 0 and capacity n
-	instructionList := make([]Instruction, 0, n)
+	wordList := make([]Word, 0, n)
 	// iterate over the AST
 	for i := range ast.InstructionList {
-		instruction, err := nodeToInstruction(ast.InstructionList[i])
+		instruction, imm, err := nodeToInstruction(ast.InstructionList[i])
 		if err != nil {
 			return nil, err
 		}
 		// Append instruction to list
-		instructionList = append(instructionList, instruction)
+		wordList = append(wordList, instruction)
+		if imm != "" {
+			wordList = append(wordList, imm)
+		}
 	}
-	return instructionList, nil
+	return wordList, nil
 }
 
-func nodeToInstruction(node InstructionNode) (Instruction, error) {
+func nodeToInstruction(node InstructionNode) (Word, Immediate, error) {
 	var instr Instruction
 	expr := node.Expression()
 	setInstructionDst(&node, &instr)
 	setInstructionOp0(&node, &instr, expr)
-	setInstructionOp1(&node, &instr, expr)
+	imm, err := setInstructionOp1(&node, &instr, expr)
+	if err != nil {
+		return nil, "", err
+	}
 	setInstructionFlags(&node, &instr, expr)
-	return instr, nil
+	return instr, imm, nil
 }
 
 func setInstructionDst(node *InstructionNode, instr *Instruction) {
@@ -129,18 +135,18 @@ func setInstructionOp0(node *InstructionNode, instr *Instruction, expr Expressio
 
 // Given the expression and the current encode returns an updated encode with the corresponding bit
 // and offset of op1, an immediate if exists, and a possible error
-func setInstructionOp1(node *InstructionNode, instr *Instruction, expr Expressioner) {
+func setInstructionOp1(node *InstructionNode, instr *Instruction, expr Expressioner) (Immediate, error) {
 	if node != nil && node.Ret != nil {
 		// op1 is set as [fp - 1], where we read the previous pc
 		instr.OffOp1 = -1
 		instr.Op1Source = FpPlusOffOp1
-		return
+		return "", nil
 	}
 
 	if expr.AsDeref() != nil {
 		offset, err := expr.AsDeref().SignedOffset()
 		if err != nil {
-			return
+			return "", err
 		}
 		instr.OffOp1 = offset
 		if expr.AsDeref().IsFp() {
@@ -148,25 +154,26 @@ func setInstructionOp1(node *InstructionNode, instr *Instruction, expr Expressio
 		} else {
 			instr.Op1Source = ApPlusOffOp1
 		}
-		return
+		return "", nil
 	} else if expr.AsDoubleDeref() != nil {
 		offset, err := expr.AsDoubleDeref().SignedOffset()
 		if err != nil {
-			return
+			return "", err
 		}
 		instr.OffOp1 = offset
-		return
+		return "", nil
 	} else if expr.AsImmediate() != nil {
 		// immediate is converted to Felt during bytecode conversion
 		imm := expr.AsImmediate()
 		instr.OffOp1 = 1
 		instr.Op1Source = Imm
-		instr.Imm = *imm
-		return
+		// instr.Imm = *imm
+		return *imm, nil
 	} else {
 		//  if it is a math operation, the op1 source is set by the right hand side
 		setInstructionOp1(node, instr, expr.AsMathOperation().Rhs)
 	}
+	return "", nil
 }
 
 func setInstructionFlags(node *InstructionNode, instr *Instruction, expression Expressioner) {

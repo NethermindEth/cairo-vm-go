@@ -40,7 +40,6 @@ func TestCallRelToInstrList(t *testing.T) {
 		PcUpdate:    PcUpdateJumpRel,
 		ApUpdate:    SameAp,
 		Opcode:      OpCodeCall,
-		Imm:         "123",
 	}
 	assert.Equal(t, expected, instrList[0])
 }
@@ -87,7 +86,6 @@ func TestJmpAbsToInstrList(t *testing.T) {
 		OffDest:     -1,
 		OffOp0:      -1,
 		OffOp1:      1,
-		Imm:         "123",
 		DstRegister: Fp,
 		Op0Register: Fp,
 		Op1Source:   Imm,
@@ -565,7 +563,7 @@ func parseSingleInstruction(casmCode string) uint64 {
 	return instructions[0].Uint64()
 }
 
-func parseSingleInstructionToInstrList(casmCode string) []Instruction {
+func parseSingleInstructionToInstrList(casmCode string) []Word {
 	casmAst, err := parser.ParseString("", casmCode)
 	if err != nil {
 		panic(err)
@@ -575,9 +573,6 @@ func parseSingleInstructionToInstrList(casmCode string) []Instruction {
 		panic(err)
 	}
 
-	// if len(instructions) != 1 {
-	// 	panic(fmt.Errorf("Expected 1 instruction, got %d", len(instructions)))
-	// }
 	return instructions
 }
 
