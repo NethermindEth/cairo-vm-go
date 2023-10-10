@@ -8,11 +8,11 @@ import (
 func Runner(name starknetParser.Builtin) memory.BuiltinRunner {
 	switch name {
 	case starknetParser.Output:
-		panic("Not implemented")
+		return &Output{}
 	case starknetParser.RangeCheck:
 		return &RangeCheck{}
 	case starknetParser.Pedersen:
-		panic("Not implemented")
+		return &Pedersen{}
 	case starknetParser.ECDSA:
 		panic("Not implemented")
 	case starknetParser.Keccak:
