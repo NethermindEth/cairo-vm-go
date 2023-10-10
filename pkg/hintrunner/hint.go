@@ -48,6 +48,10 @@ func (hint AllocConstantSize) String() string {
 	return "AllocConstantSize"
 }
 
+// TODO(Jake): Review segment growth behavior.
+// We allocate with a fixed inputSize. Investigate if segments frequently exceed this size,
+// which could impact performance due to reallocations. Revisit initial sizing strategy if needed.
+
 func (hint AllocConstantSize) Execute(vm *VM.VirtualMachine) error {
 
 	// allocate a segment of specific size
