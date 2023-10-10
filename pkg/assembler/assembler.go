@@ -36,7 +36,7 @@ func astToInstruction(ast *CasmProgram) ([]Instruction, error) {
 	instructionList := make([]Instruction, 0, n)
 	// iterate over the AST
 	for i := range ast.InstructionList {
-		instruction, err := encodeNodeToInstr(ast.InstructionList[i])
+		instruction, err := nodeToInstruction(ast.InstructionList[i])
 		if err != nil {
 			return nil, err
 		}
@@ -46,17 +46,17 @@ func astToInstruction(ast *CasmProgram) ([]Instruction, error) {
 	return instructionList, nil
 }
 
-func encodeNodeToInstr(node InstructionNode) (Instruction, error) {
+func nodeToInstruction(node InstructionNode) (Instruction, error) {
 	var instr Instruction
 	expr := node.Expression()
-	encodeDst(&node, &instr)
-	encodeOp0(&node, &instr, expr)
-	encodeOp1(&node, &instr, expr)
-	encodeFlags(&node, &instr, expr)
+	setInstructionDst(&node, &instr)
+	setInstructionOp0(&node, &instr, expr)
+	setInstructionOp1(&node, &instr, expr)
+	setInstructionFlags(&node, &instr, expr)
 	return instr, nil
 }
 
-func encodeDst(node *InstructionNode, instr *Instruction) {
+func setInstructionDst(node *InstructionNode, instr *Instruction) {
 	if node.ApPlus != nil || node.Jump != nil {
 		// dstOffset is not involved so it is set to fp - 1 as default value
 		instr.OffDest = -1
@@ -94,7 +94,7 @@ func encodeDst(node *InstructionNode, instr *Instruction) {
 	}
 }
 
-func encodeOp0(node *InstructionNode, instr *Instruction, expr Expressioner) {
+func setInstructionOp0(node *InstructionNode, instr *Instruction, expr Expressioner) {
 	if node != nil && node.Call != nil {
 		// op0 is set as [ap + 1] to store current pc
 		instr.OffOp0 = 1
@@ -129,7 +129,7 @@ func encodeOp0(node *InstructionNode, instr *Instruction, expr Expressioner) {
 
 // Given the expression and the current encode returns an updated encode with the corresponding bit
 // and offset of op1, an immediate if exists, and a possible error
-func encodeOp1(node *InstructionNode, instr *Instruction, expr Expressioner) {
+func setInstructionOp1(node *InstructionNode, instr *Instruction, expr Expressioner) {
 	if node != nil && node.Ret != nil {
 		// op1 is set as [fp - 1], where we read the previous pc
 		instr.OffOp1 = -1
@@ -165,11 +165,11 @@ func encodeOp1(node *InstructionNode, instr *Instruction, expr Expressioner) {
 		return
 	} else {
 		//  if it is a math operation, the op1 source is set by the right hand side
-		encodeOp1(node, instr, expr.AsMathOperation().Rhs)
+		setInstructionOp1(node, instr, expr.AsMathOperation().Rhs)
 	}
 }
 
-func encodeFlags(node *InstructionNode, instr *Instruction, expression Expressioner) {
+func setInstructionFlags(node *InstructionNode, instr *Instruction, expression Expressioner) {
 	// Encode ResLogic
 	if expression != nil && expression.AsMathOperation() != nil {
 		if expression.AsMathOperation().Operator == "+" {
