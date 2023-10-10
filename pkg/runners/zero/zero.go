@@ -10,6 +10,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -228,6 +229,21 @@ func (runner *ZeroRunner) pc() memory.MemoryAddress {
 
 func (runner *ZeroRunner) steps() uint64 {
 	return runner.vm.Step
+}
+
+func (runner *ZeroRunner) Output() []*fp.Element {
+	output := []*fp.Element{}
+	for _, segment := range runner.segments() {
+		if segment.BuiltinRunner.String() == "output" {
+			for offset := uint64(0); offset < segment.Len(); offset++ {
+				value := segment.Peek(offset)
+				valueFelt, _ := value.FieldElement()
+				output = append(output, valueFelt)
+			}
+			break
+		}
+	}
+	return output
 }
 
 const ctxSize = 3 * 8

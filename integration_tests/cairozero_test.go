@@ -47,7 +47,7 @@ func TestCairoZeroFiles(t *testing.T) {
 			continue
 		}
 
-		traceFile, memoryFile, err := runVm(compiledOutput)
+		traceFile, memoryFile, _, err := runVm(compiledOutput)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -142,7 +142,7 @@ func runPythonVm(path string) (string, string, error) {
 
 // given a path to a compiled cairo zero file, execute
 // it using our vm
-func runVm(path string) (string, string, error) {
+func runVm(path string) (string, string, string, error) {
 	traceOutput := swapExtenstion(path, traceSuffix)
 	memoryOutput := swapExtenstion(path, memorySuffix)
 
@@ -159,12 +159,12 @@ func runVm(path string) (string, string, error) {
 
 	res, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", "", fmt.Errorf(
+		return "", "", string(res), fmt.Errorf(
 			"cairo-vm run %s: %w\n%s", path, err, string(res),
 		)
 	}
 
-	return traceOutput, memoryOutput, nil
+	return traceOutput, memoryOutput, string(res), nil
 
 }
 
@@ -243,7 +243,7 @@ func TestFailingRangeCheck(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/range_check.cairo")
 	require.NoError(t, err)
 
-	_, _, err = runVm(compiledOutput)
+	_, _, _, err = runVm(compiledOutput)
 	require.ErrorContains(t, err, "check write: 2**128 <")
 
 	clean("./builtin_tests/")
@@ -253,8 +253,19 @@ func TestBitwise(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/bitwise_builtin_test.cairo")
 	require.NoError(t, err)
 
-	_, _, err = runVm(compiledOutput)
+	_, _, _, err = runVm(compiledOutput)
 	require.NoError(t, err)
+
+	clean("./builtin_tests/")
+}
+
+func TestPedersen(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/pedersen_test.cairo")
+	require.NoError(t, err)
+
+	_, _, output, err := runVm(compiledOutput)
+	require.NoError(t, err)
+	require.Contains(t, output, "Program output:\n\t2089986280348253421170679821480865132823066470938446095505822317253594081284")
 
 	clean("./builtin_tests/")
 }

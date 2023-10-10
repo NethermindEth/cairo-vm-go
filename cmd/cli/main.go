@@ -97,6 +97,13 @@ func main() {
 					}
 
 					fmt.Println("Success!")
+					output := runner.Output()
+					if len(output) > 0 {
+						fmt.Println("Program output:")
+						for _, val := range output {
+							fmt.Printf("\t%s\n", val)
+						}
+					}
 					return nil
 				},
 			},
