@@ -3,7 +3,7 @@ package vm
 import (
 	"fmt"
 
-	assembler "github.com/NethermindEth/cairo-vm-go/pkg/assembler"
+	a "github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	safemath "github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -81,7 +81,7 @@ type VirtualMachine struct {
 	Trace   []Context
 	config  VirtualMachineConfig
 	// instructions cache
-	instructions map[uint64]*assembler.Instruction
+	instructions map[uint64]*a.Instruction
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
@@ -97,7 +97,7 @@ func NewVirtualMachine(initialContext Context, memory *mem.Memory, config Virtua
 		Memory:       memory,
 		Trace:        trace,
 		config:       config,
-		instructions: make(map[uint64]*assembler.Instruction),
+		instructions: make(map[uint64]*a.Instruction),
 	}, nil
 }
 
@@ -117,7 +117,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 			return fmt.Errorf("reading instruction: %w", err)
 		}
 
-		instruction, err = assembler.DecodeInstruction(bytecodeInstruction)
+		instruction, err = a.DecodeInstruction(bytecodeInstruction)
 		if err != nil {
 			return fmt.Errorf("decoding instruction: %w", err)
 		}
@@ -138,7 +138,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 	return nil
 }
 
-func (vm *VirtualMachine) RunInstruction(instruction *assembler.Instruction) error {
+func (vm *VirtualMachine) RunInstruction(instruction *a.Instruction) error {
 	dstAddr, err := vm.getDstAddr(instruction)
 	if err != nil {
 		return fmt.Errorf("dst cell: %w", err)
@@ -201,9 +201,9 @@ func (vm *VirtualMachine) ExecutionTrace() ([]Trace, error) {
 	return vm.relocateTrace(), nil
 }
 
-func (vm *VirtualMachine) getDstAddr(instruction *assembler.Instruction) (mem.MemoryAddress, error) {
+func (vm *VirtualMachine) getDstAddr(instruction *a.Instruction) (mem.MemoryAddress, error) {
 	var dstRegister uint64
-	if instruction.DstRegister == assembler.Ap {
+	if instruction.DstRegister == a.Ap {
 		dstRegister = vm.Context.Ap
 	} else {
 		dstRegister = vm.Context.Fp
@@ -216,9 +216,9 @@ func (vm *VirtualMachine) getDstAddr(instruction *assembler.Instruction) (mem.Me
 	return mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: addr}, nil
 }
 
-func (vm *VirtualMachine) getOp0Addr(instruction *assembler.Instruction) (mem.MemoryAddress, error) {
+func (vm *VirtualMachine) getOp0Addr(instruction *a.Instruction) (mem.MemoryAddress, error) {
 	var op0Register uint64
-	if instruction.Op0Register == assembler.Ap {
+	if instruction.Op0Register == a.Ap {
 		op0Register = vm.Context.Ap
 	} else {
 		op0Register = vm.Context.Fp
@@ -231,10 +231,10 @@ func (vm *VirtualMachine) getOp0Addr(instruction *assembler.Instruction) (mem.Me
 	return mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: addr}, nil
 }
 
-func (vm *VirtualMachine) getOp1Addr(instruction *assembler.Instruction, op0Addr *mem.MemoryAddress) (mem.MemoryAddress, error) {
+func (vm *VirtualMachine) getOp1Addr(instruction *a.Instruction, op0Addr *mem.MemoryAddress) (mem.MemoryAddress, error) {
 	var op1Address mem.MemoryAddress
 	switch instruction.Op1Source {
-	case assembler.Op0:
+	case a.Op0:
 		// in this case Op0 is being used as an address, and must be of unwrapped as it
 		op0Value, err := vm.Memory.ReadFromAddress(op0Addr)
 		if err != nil {
@@ -246,11 +246,11 @@ func (vm *VirtualMachine) getOp1Addr(instruction *assembler.Instruction, op0Addr
 			return mem.UnknownAddress, fmt.Errorf("op0 is not an address: %w", err)
 		}
 		op1Address = mem.MemoryAddress{SegmentIndex: op0Address.SegmentIndex, Offset: op0Address.Offset}
-	case assembler.Imm:
+	case a.Imm:
 		op1Address = vm.Context.AddressPc()
-	case assembler.FpPlusOffOp1:
+	case a.FpPlusOffOp1:
 		op1Address = vm.Context.AddressFp()
-	case assembler.ApPlusOffOp1:
+	case a.ApPlusOffOp1:
 		op1Address = vm.Context.AddressAp()
 	}
 
@@ -267,10 +267,10 @@ func (vm *VirtualMachine) getOp1Addr(instruction *assembler.Instruction, op0Addr
 // dstCell value and either op0Cell xor op1Cell. This function infers the
 // unknow operand as well as the `res` auxiliar value
 func (vm *VirtualMachine) inferOperand(
-	instruction *assembler.Instruction, dstAddr *mem.MemoryAddress, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
+	instruction *a.Instruction, dstAddr *mem.MemoryAddress, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
 ) (mem.MemoryValue, error) {
-	if instruction.Opcode != assembler.OpCodeAssertEq ||
-		(instruction.Res == assembler.Unconstrained) {
+	if instruction.Opcode != a.OpCodeAssertEq ||
+		(instruction.Res == a.Unconstrained) {
 		return mem.MemoryValue{}, nil
 	}
 
@@ -296,7 +296,7 @@ func (vm *VirtualMachine) inferOperand(
 		return mem.MemoryValue{}, fmt.Errorf("value at dst is unknown")
 	}
 
-	if instruction.Res == assembler.Op1 && !op1Value.Known() {
+	if instruction.Res == a.Op1 && !op1Value.Known() {
 		if err = vm.Memory.WriteToAddress(op1Addr, &dstValue); err != nil {
 			return mem.MemoryValue{}, err
 		}
@@ -314,7 +314,7 @@ func (vm *VirtualMachine) inferOperand(
 	}
 
 	var missingVal mem.MemoryValue
-	if instruction.Res == assembler.AddOperands {
+	if instruction.Res == a.AddOperands {
 		missingVal = mem.EmptyMemoryValueAs(dstValue.IsAddress())
 		err = missingVal.Sub(&dstValue, &knownOpValue)
 	} else {
@@ -332,12 +332,12 @@ func (vm *VirtualMachine) inferOperand(
 }
 
 func (vm *VirtualMachine) computeRes(
-	instruction *assembler.Instruction, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
+	instruction *a.Instruction, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
 ) (mem.MemoryValue, error) {
 	switch instruction.Res {
-	case assembler.Unconstrained:
+	case a.Unconstrained:
 		return mem.MemoryValue{}, nil
-	case assembler.Op1:
+	case a.Op1:
 		return vm.Memory.ReadFromAddress(op1Addr)
 	default:
 		op0, err := vm.Memory.ReadFromAddress(op0Addr)
@@ -351,9 +351,9 @@ func (vm *VirtualMachine) computeRes(
 		}
 
 		res := mem.EmptyMemoryValueAs(op0.IsAddress() || op1.IsAddress())
-		if instruction.Res == assembler.AddOperands {
+		if instruction.Res == a.AddOperands {
 			err = res.Add(&op0, &op1)
-		} else if instruction.Res == assembler.MulOperands {
+		} else if instruction.Res == a.MulOperands {
 			err = res.Mul(&op0, &op1)
 		} else {
 			return mem.MemoryValue{}, fmt.Errorf("invalid res flag value: %d", instruction.Res)
@@ -363,13 +363,13 @@ func (vm *VirtualMachine) computeRes(
 }
 
 func (vm *VirtualMachine) opcodeAssertions(
-	instruction *assembler.Instruction,
+	instruction *a.Instruction,
 	dstAddr *mem.MemoryAddress,
 	op0Addr *mem.MemoryAddress,
 	res *mem.MemoryValue,
 ) error {
 	switch instruction.Opcode {
-	case assembler.OpCodeCall:
+	case a.OpCodeCall:
 		fpAddr := vm.Context.AddressFp()
 		fpMv := mem.MemoryValueFromMemoryAddress(&fpAddr)
 		// Store at [ap] the current fp
@@ -385,7 +385,7 @@ func (vm *VirtualMachine) opcodeAssertions(
 		if err := vm.Memory.WriteToAddress(op0Addr, &apMv); err != nil {
 			return err
 		}
-	case assembler.OpCodeAssertEq:
+	case a.OpCodeAssertEq:
 		// assert that the calculated res is stored in dst
 		if err := vm.Memory.WriteToAddress(dstAddr, res); err != nil {
 			return err
@@ -395,24 +395,24 @@ func (vm *VirtualMachine) opcodeAssertions(
 }
 
 func (vm *VirtualMachine) updatePc(
-	instruction *assembler.Instruction,
+	instruction *a.Instruction,
 	dstAddr *mem.MemoryAddress,
 	op1Addr *mem.MemoryAddress,
 	res *mem.MemoryValue,
 ) (mem.MemoryAddress, error) {
 	switch instruction.PcUpdate {
-	case assembler.PcUpdateNextInstr:
+	case a.PcUpdateNextInstr:
 		return mem.MemoryAddress{
 			SegmentIndex: vm.Context.Pc.SegmentIndex,
 			Offset:       vm.Context.Pc.Offset + uint64(instruction.Size()),
 		}, nil
-	case assembler.PcUpdateJump:
+	case a.PcUpdateJump:
 		addr, err := res.MemoryAddress()
 		if err != nil {
 			return mem.UnknownAddress, fmt.Errorf("absolute jump: %w", err)
 		}
 		return *addr, nil
-	case assembler.PcUpdateJumpRel:
+	case a.PcUpdateJumpRel:
 		val, err := res.FieldElement()
 		if err != nil {
 			return mem.UnknownAddress, fmt.Errorf("relative jump: %w", err)
@@ -420,7 +420,7 @@ func (vm *VirtualMachine) updatePc(
 		newPc := vm.Context.Pc
 		err = newPc.Add(&newPc, val)
 		return newPc, err
-	case assembler.PcUpdateJnz:
+	case a.PcUpdateJnz:
 		destMv, err := vm.Memory.ReadFromAddress(dstAddr)
 		if err != nil {
 			return mem.UnknownAddress, err
@@ -455,11 +455,11 @@ func (vm *VirtualMachine) updatePc(
 	return mem.UnknownAddress, fmt.Errorf("unkwon pc update value: %d", instruction.PcUpdate)
 }
 
-func (vm *VirtualMachine) updateAp(instruction *assembler.Instruction, res *mem.MemoryValue) (uint64, error) {
+func (vm *VirtualMachine) updateAp(instruction *a.Instruction, res *mem.MemoryValue) (uint64, error) {
 	switch instruction.ApUpdate {
-	case assembler.SameAp:
+	case a.SameAp:
 		return vm.Context.Ap, nil
-	case assembler.AddRes:
+	case a.AddRes:
 		apFelt := new(f.Element).SetUint64(vm.Context.Ap) // Convert ap value to felt
 
 		resFelt, err := res.FieldElement() // Extract the f.Element from MemoryValue
@@ -472,20 +472,20 @@ func (vm *VirtualMachine) updateAp(instruction *assembler.Instruction, res *mem.
 			return 0, fmt.Errorf("resulting AP value is too large to fit in uint64")
 		}
 		return newAp.Uint64(), nil // Return the addition as uint64
-	case assembler.Add1:
+	case a.Add1:
 		return vm.Context.Ap + 1, nil
-	case assembler.Add2:
+	case a.Add2:
 		return vm.Context.Ap + 2, nil
 	}
 	return 0, fmt.Errorf("cannot update ap, unknown ApUpdate flag: %d", instruction.ApUpdate)
 }
 
-func (vm *VirtualMachine) updateFp(instruction *assembler.Instruction, dstAddr *mem.MemoryAddress) (uint64, error) {
+func (vm *VirtualMachine) updateFp(instruction *a.Instruction, dstAddr *mem.MemoryAddress) (uint64, error) {
 	switch instruction.Opcode {
-	case assembler.OpCodeCall:
+	case a.OpCodeCall:
 		// [ap] and [ap + 1] are written to memory
 		return vm.Context.Ap + 2, nil
-	case assembler.OpCodeRet:
+	case a.OpCodeRet:
 		// [dst] should be a memory address of the form (executionSegment, fp - 2)
 		destMv, err := vm.Memory.ReadFromAddress(dstAddr)
 		if err != nil {

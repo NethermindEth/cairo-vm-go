@@ -8,10 +8,10 @@ import (
 // Grammar and AST
 
 type CasmProgram struct {
-	Ast []AstNode `@@*`
+	InstructionList []InstructionNode `@@*`
 }
 
-type AstNode struct {
+type InstructionNode struct {
 	AssertEq  *AssertEq `( @@ |`
 	Jnz       *Jnz      `  @@ |`
 	Jump      *Jump     `  @@ )`
@@ -88,7 +88,7 @@ type CoreInstructioner interface {
 	Expression() Expressioner
 }
 
-func (instruction AstNode) Expression() Expressioner {
+func (instruction InstructionNode) Expression() Expressioner {
 	switch {
 	case instruction.AssertEq != nil:
 		return instruction.AssertEq.Value

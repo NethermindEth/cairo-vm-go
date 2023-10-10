@@ -22,20 +22,20 @@ func TestDecodeInstructionValues(t *testing.T) {
 
 func TestAssertEq(t *testing.T) {
 	expected := Instruction{
-		OffDest:     1,
+		OffDest:     0,
 		OffOp0:      -1,
 		OffOp1:      1,
-		DstRegister: 1,
-		Op0Register: 1,
-		Op1Source:   1,
-		Res:         0,
-		PcUpdate:    0,
-		ApUpdate:    0,
-		Opcode:      4,
+		DstRegister: Ap,
+		Op0Register: Fp,
+		Op1Source:   Imm,
+		Res:         Op1,
+		PcUpdate:    PcUpdateNextInstr,
+		ApUpdate:    Add1,
+		Opcode:      OpCodeAssertEq,
 	}
 
 	decoded, err := DecodeInstruction(
-		new(f.Element).SetBytes([]byte{0x40, 0x07, 0x80, 0x01, 0x7F, 0xFF, 0x80, 0x01}),
+		new(f.Element).SetBytes([]byte{0x48, 0x06, 0x80, 0x01, 0x7F, 0xFF, 0x80, 0x00}),
 	)
 
 	require.NoError(t, err)

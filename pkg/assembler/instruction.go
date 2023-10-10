@@ -26,62 +26,63 @@ type Op1Src uint8
 
 func (opSrc Op1Src) String() string {
 	switch opSrc {
+	case Op0:
+		return "Op0"
 	case Imm:
 		return "Imm"
 	case FpPlusOffOp1:
 		return "Fp"
 	case ApPlusOffOp1:
 		return "Ap"
-	case Op0:
-		return "Op0"
 	default:
 		return string(opSrc)
 	}
 }
 
 const (
-	Op0          Op1Src = iota
-	Imm          Op1Src = 1
-	FpPlusOffOp1 Op1Src = 2
-	ApPlusOffOp1 Op1Src = 4
+	Op0 Op1Src = iota
+	Imm
+	FpPlusOffOp1
+	_
+	ApPlusOffOp1
 )
 
 type ResLogic uint8
 
 func (res ResLogic) String() string {
 	switch res {
+	case Op1:
+		return "Op1"
 	case AddOperands:
 		return "Add"
 	case MulOperands:
 		return "Mul"
 	case Unconstrained:
 		return "Unconstrained"
-	case Op1:
-		return "Op1"
 	default:
 		return string(res)
 	}
 }
 
 const (
-	Op1           ResLogic = iota
-	AddOperands   ResLogic = 1
-	MulOperands   ResLogic = 2
-	Unconstrained ResLogic = 3
+	Op1 ResLogic = iota
+	AddOperands
+	MulOperands
+	Unconstrained
 )
 
 type PcUpdate uint8
 
 func (res PcUpdate) String() string {
 	switch res {
+	case PcUpdateNextInstr:
+		return "Next instr"
 	case PcUpdateJump:
 		return "Jump Abs"
 	case PcUpdateJumpRel:
 		return "Jump Rel"
 	case PcUpdateJnz:
 		return "Jnz"
-	case PcUpdateNextInstr:
-		return "Next instr"
 	default:
 		return string(res)
 	}
@@ -89,21 +90,22 @@ func (res PcUpdate) String() string {
 
 const (
 	PcUpdateNextInstr PcUpdate = iota
-	PcUpdateJump      PcUpdate = 1
-	PcUpdateJumpRel   PcUpdate = 2
-	PcUpdateJnz       PcUpdate = 4
+	PcUpdateJump
+	PcUpdateJumpRel
+	_
+	PcUpdateJnz
 )
 
 type ApUpdate uint8
 
 func (ap ApUpdate) String() string {
 	switch ap {
-	case AddRes:
-		return "Add Imm"
-	case Add1:
-		return "Add 1"
 	case SameAp:
 		return "Same Ap"
+	case AddRes:
+		return "Add Res"
+	case Add1:
+		return "Add 1"
 	case Add2:
 		return "Add 2"
 	default:
@@ -113,33 +115,35 @@ func (ap ApUpdate) String() string {
 
 const (
 	SameAp ApUpdate = iota
-	AddRes ApUpdate = 1
-	Add1   ApUpdate = 2
-	Add2   ApUpdate = 4
+	AddRes
+	Add1
+	_
+	Add2
 )
 
 type Opcode uint8
 
 func (op Opcode) String() string {
 	switch op {
+	case OpCodeNop:
+		return "Nop"
 	case OpCodeCall:
 		return "Call"
 	case OpCodeRet:
 		return "Ret"
 	case OpCodeAssertEq:
 		return "Assert"
-	case OpCodeNop:
-		return "Nop"
 	default:
 		return string(op)
 	}
 }
 
 const (
-	OpCodeNop      Opcode = iota
-	OpCodeCall     Opcode = 1
-	OpCodeRet      Opcode = 2
-	OpCodeAssertEq Opcode = 4
+	OpCodeNop Opcode = iota
+	OpCodeCall
+	OpCodeRet
+	_
+	OpCodeAssertEq
 )
 
 type Instruction struct {

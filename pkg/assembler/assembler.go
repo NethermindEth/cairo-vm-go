@@ -12,10 +12,6 @@ var parser *participle.Parser[CasmProgram] = participle.MustBuild[CasmProgram](
 	participle.UseLookahead(5),
 )
 
-/*
-* Casm to instruction list in assembler.go
-* Instruction list to bytecode in instruction.go
- */
 func CasmToBytecode(code string) ([]*f.Element, error) {
 	casmAst, err := parser.ParseString("", code)
 	if err != nil {
@@ -35,12 +31,12 @@ func CasmToBytecode(code string) ([]*f.Element, error) {
  */
 func astToInstruction(ast *CasmProgram) ([]Instruction, error) {
 	// Vist ast
-	n := len(ast.Ast)
+	n := len(ast.InstructionList)
 	// Slice with length 0 and capacity n
 	instructionList := make([]Instruction, 0, n)
 	// iterate over the AST
-	for i := range ast.Ast {
-		instruction, err := encodeNodeToInstr(ast.Ast[i])
+	for i := range ast.InstructionList {
+		instruction, err := encodeNodeToInstr(ast.InstructionList[i])
 		if err != nil {
 			return nil, err
 		}
@@ -50,7 +46,7 @@ func astToInstruction(ast *CasmProgram) ([]Instruction, error) {
 	return instructionList, nil
 }
 
-func encodeNodeToInstr(node AstNode) (Instruction, error) {
+func encodeNodeToInstr(node InstructionNode) (Instruction, error) {
 	var instr Instruction
 	expr := node.Expression()
 	encodeDst(&node, &instr)
@@ -60,7 +56,7 @@ func encodeNodeToInstr(node AstNode) (Instruction, error) {
 	return instr, nil
 }
 
-func encodeDst(node *AstNode, instr *Instruction) {
+func encodeDst(node *InstructionNode, instr *Instruction) {
 	if node.ApPlus != nil || node.Jump != nil {
 		// dstOffset is not involved so it is set to fp - 1 as default value
 		instr.OffDest = -1
@@ -98,7 +94,7 @@ func encodeDst(node *AstNode, instr *Instruction) {
 	}
 }
 
-func encodeOp0(node *AstNode, instr *Instruction, expr Expressioner) {
+func encodeOp0(node *InstructionNode, instr *Instruction, expr Expressioner) {
 	if node != nil && node.Call != nil {
 		// op0 is set as [ap + 1] to store current pc
 		instr.OffOp0 = 1
@@ -133,7 +129,7 @@ func encodeOp0(node *AstNode, instr *Instruction, expr Expressioner) {
 
 // Given the expression and the current encode returns an updated encode with the corresponding bit
 // and offset of op1, an immediate if exists, and a possible error
-func encodeOp1(node *AstNode, instr *Instruction, expr Expressioner) {
+func encodeOp1(node *InstructionNode, instr *Instruction, expr Expressioner) {
 	if node != nil && node.Ret != nil {
 		// op1 is set as [fp - 1], where we read the previous pc
 		instr.OffOp1 = -1
@@ -173,7 +169,7 @@ func encodeOp1(node *AstNode, instr *Instruction, expr Expressioner) {
 	}
 }
 
-func encodeFlags(node *AstNode, instr *Instruction, expression Expressioner) {
+func encodeFlags(node *InstructionNode, instr *Instruction, expression Expressioner) {
 	// Encode ResLogic
 	if expression != nil && expression.AsMathOperation() != nil {
 		if expression.AsMathOperation().Operator == "+" {
