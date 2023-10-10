@@ -47,8 +47,10 @@ type AllocSegmentOfSize struct {
 func (hint AllocSegmentOfSize) String() string {
 	return "AllocSegmentOfSize"
 }
+
 func (hint AllocSegmentOfSize) Execute(vm *VM.VirtualMachine) error {
-	// Here we use the AllocateEmptySegmentOfSize to allocate a segment of the desired size.
+
+	// allocate a segment of specific size
 	segmentIndex := vm.Memory.AllocateEmptySegmentOfSize(hint.size)
 	memAddress := memory.MemoryValueFromSegmentAndOffset(segmentIndex, 0)
 
