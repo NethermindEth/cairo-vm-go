@@ -254,13 +254,59 @@ func TestAllocateEmptySegment(t *testing.T) {
 	// Allocate a new empty segment.
 	newSegmentIndex := memory.AllocateEmptySegment()
 
-	// Point 1 & 2: Validate that a new segment is indeed allocated and the returned segment index is as expected.
-	assert.Equal(t, initialSegmentCount+1, len(memory.Segments), "A new segment should be added to memory")
-	assert.Equal(t, initialSegmentCount, newSegmentIndex, "The returned segment index should match the expected value")
+	// Validates that a new segment is indeed allocated and the returned segment index is as expected.
+	assert.Equal(
+		t,
+		initialSegmentCount+1,
+		len(memory.Segments), "A new segment should be added to memory",
+	)
+	assert.Equal(
+		t,
+		initialSegmentCount,
+		newSegmentIndex,
+		"The returned segment index should match the expected value",
+	)
 
-	// Point 3: Validate that the newly allocated segment is empty (or initialized with some default value).
-	// An empty segment is represented by all zero values.
-	for _, val := range memory.Segments[newSegmentIndex].Data {
-		assert.Equal(t, MemoryValue{}, val, "Each value in the new segment should be initialized to the zero")
-	}
+	// Validates that the newly allocated segment has the correct capacity and length.
+	assert.Equal(
+		t,
+		100,
+		cap(memory.Segments[newSegmentIndex].Data),
+		"The new segment should have a capacity of 100",
+	)
+	assert.Equal(
+		t,
+		0,
+		len(memory.Segments[newSegmentIndex].Data),
+		"The new segment should have a length of 0",
+	)
+
+}
+
+func TestAllocateEmptySegmentOfSize(t *testing.T) {
+	memory := InitializeEmptyMemory()
+
+	// Define the desired size for the new segment.
+	testCapacitySize := 150
+
+	// Before any segment allocation, there should be no segments.
+	initialSegmentCount := len(memory.Segments)
+	require.Equal(t, 0, initialSegmentCount, "Memory should start without any segments")
+
+	// Allocate a new empty segment of the specified size.
+	newSegmentIndex := memory.AllocateEmptySegmentOfSize(testCapacitySize)
+
+	// Validates that the newly allocated segment has the correct capacity and length.
+	assert.Equal(
+		t,
+		testCapacitySize,
+		cap(memory.Segments[newSegmentIndex].Data),
+		fmt.Sprintf("The new segment should have a capacity of %d", testCapacitySize),
+	)
+	assert.Equal(
+		t,
+		0,
+		len(memory.Segments[newSegmentIndex].Data),
+		"The new segment should have a length of 0",
+	)
 }

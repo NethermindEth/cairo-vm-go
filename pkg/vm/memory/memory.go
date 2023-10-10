@@ -206,19 +206,10 @@ func (memory *Memory) AllocateEmptySegment() int {
 	return len(memory.Segments) - 1
 }
 
-func (memory *Memory) AllocateEmptySegmentOfSize(size int) (int, error) {
-	if size <= 0 {
-		return 0, fmt.Errorf("invalid segment size: %d", size)
-	}
-
-	// Create a new segment with the specified size
-	newSegment := EmptySegmentWithLength(size)
-
-	// Append the new segment to the list of segments
-	memory.Segments = append(memory.Segments, newSegment)
-
-	// Return the index of the newly created segment
-	return len(memory.Segments) - 1, nil
+// Allocates an empty segment with specific size and returns its index
+func (memory *Memory) AllocateEmptySegmentOfSize(size int) int {
+	memory.Segments = append(memory.Segments, EmptySegmentWithCapacity(size))
+	return len(memory.Segments) - 1
 }
 
 // Writes to a given segment index and offset a new memory value. Errors if writing
