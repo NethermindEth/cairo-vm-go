@@ -41,24 +41,24 @@ func TestAllocSegment(t *testing.T) {
 
 }
 
-func TestAllocSegmentOfSize(t *testing.T) {
+func TestAllocConstantSize(t *testing.T) {
 	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 3
 	vm.Context.Fp = 0
 
-	const desiredSize = 200
+	const inputSize = 200
 
 	var ap ApCellRef = 5
 	var fp FpCellRef = 9
 
-	alloc1 := AllocSegmentOfSize{dst: ap, size: desiredSize}
-	alloc2 := AllocSegmentOfSize{dst: fp, size: desiredSize}
+	alloc1 := AllocConstantSize{dst: ap, size: inputSize}
+	alloc2 := AllocConstantSize{dst: fp, size: inputSize}
 
 	err := alloc1.Execute(vm)
 	require.Nil(t, err)
 
-	assert.Equal(t, 3, len(vm.Memory.Segments), "A new segment should be added to memory after alloc1")
-	assert.Equal(t, desiredSize, cap(vm.Memory.Segments[2].Data), "The segment's capacity should match the desired size")
+	assert.Equal(t, 3, len(vm.Memory.Segments))
+	assert.Equal(t, inputSize, cap(vm.Memory.Segments[2].Data))
 
 	assert.Equal(
 		t,
@@ -70,8 +70,8 @@ func TestAllocSegmentOfSize(t *testing.T) {
 	err = alloc2.Execute(vm)
 	require.Nil(t, err)
 
-	assert.Equal(t, 4, len(vm.Memory.Segments), "A new segment should be added to memory after alloc2")
-	assert.Equal(t, desiredSize, cap(vm.Memory.Segments[3].Data), "The segment's capacity should match the desired size")
+	assert.Equal(t, 4, len(vm.Memory.Segments))
+	assert.Equal(t, inputSize, cap(vm.Memory.Segments[3].Data))
 
 	assert.Equal(
 		t,

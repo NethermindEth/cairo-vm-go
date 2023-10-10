@@ -39,16 +39,16 @@ func (hint AllocSegment) Execute(vm *VM.VirtualMachine) error {
 	return nil
 }
 
-type AllocSegmentOfSize struct {
+type AllocConstantSize struct {
 	dst  CellRefer
 	size int
 }
 
-func (hint AllocSegmentOfSize) String() string {
-	return "AllocSegmentOfSize"
+func (hint AllocConstantSize) String() string {
+	return "AllocConstantSize"
 }
 
-func (hint AllocSegmentOfSize) Execute(vm *VM.VirtualMachine) error {
+func (hint AllocConstantSize) Execute(vm *VM.VirtualMachine) error {
 
 	// allocate a segment of specific size
 	segmentIndex := vm.Memory.AllocateEmptySegmentOfSize(hint.size)
