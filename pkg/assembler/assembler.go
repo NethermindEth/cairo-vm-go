@@ -9,7 +9,7 @@ var parser *participle.Parser[CasmProgram] = participle.MustBuild[CasmProgram](
 	// mandatory lookahead to disambiguate between productions:
 	// expr -> [reg + n] + [reg + m] and
 	// expr -> [reg + n]
-	participle.UseLookahead(5),
+	participle.UseLookahead(7),
 )
 
 func CasmToBytecode(code string) ([]*f.Element, error) {
