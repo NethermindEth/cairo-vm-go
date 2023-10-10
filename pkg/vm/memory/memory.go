@@ -206,7 +206,7 @@ func (memory *Memory) AllocateEmptySegment() int {
 	return len(memory.Segments) - 1
 }
 
-func (memory *Memory) AllocateSegmentOfSize(size int) (int, error) {
+func (memory *Memory) AllocateEmptySegmentOfSize(size int) (int, error) {
 	if size <= 0 {
 		return 0, fmt.Errorf("invalid segment size: %d", size)
 	}

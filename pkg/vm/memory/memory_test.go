@@ -243,3 +243,24 @@ func defaultSegment(anyData ...any) Segment {
 		BuiltinRunner: &NoBuiltin{},
 	}
 }
+
+func TestAllocateEmptySegment(t *testing.T) {
+	memory := InitializeEmptyMemory()
+
+	// Before any segment allocation, there should be no segments.
+	initialSegmentCount := len(memory.Segments)
+	require.Equal(t, 0, initialSegmentCount, "Memory should start without any segments")
+
+	// Allocate a new empty segment.
+	newSegmentIndex := memory.AllocateEmptySegment()
+
+	// Point 1 & 2: Validate that a new segment is indeed allocated and the returned segment index is as expected.
+	assert.Equal(t, initialSegmentCount+1, len(memory.Segments), "A new segment should be added to memory")
+	assert.Equal(t, initialSegmentCount, newSegmentIndex, "The returned segment index should match the expected value")
+
+	// Point 3: Validate that the newly allocated segment is empty (or initialized with some default value).
+	// An empty segment is represented by all zero values.
+	for _, val := range memory.Segments[newSegmentIndex].Data {
+		assert.Equal(t, MemoryValue{}, val, "Each value in the new segment should be initialized to the zero")
+	}
+}
