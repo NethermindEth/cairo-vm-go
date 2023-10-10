@@ -39,6 +39,32 @@ func (hint AllocSegment) Execute(vm *VM.VirtualMachine) error {
 	return nil
 }
 
+type AllocSegmentOfSize struct {
+	dst  CellRefer
+	size int
+}
+
+func (hint AllocSegmentOfSize) String() string {
+	return "AllocSegmentOfSize"
+}
+func (hint AllocSegmentOfSize) Execute(vm *VM.VirtualMachine) error {
+	// Here we use the AllocateEmptySegmentOfSize to allocate a segment of the desired size.
+	segmentIndex := vm.Memory.AllocateEmptySegmentOfSize(hint.size)
+	memAddress := memory.MemoryValueFromSegmentAndOffset(segmentIndex, 0)
+
+	regAddr, err := hint.dst.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get register %s: %w", hint.dst, err)
+	}
+
+	err = vm.Memory.WriteToAddress(&regAddr, &memAddress)
+	if err != nil {
+		return fmt.Errorf("write to address %s: %v", regAddr, err)
+	}
+
+	return nil
+}
+
 type TestLessThan struct {
 	dst CellRefer
 	lhs ResOperander
