@@ -10,7 +10,7 @@ import (
 )
 
 func TestGetAp(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 5
 	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap+7, memory.MemoryValueFromInt(11))
 
@@ -26,7 +26,7 @@ func TestGetAp(t *testing.T) {
 }
 
 func TestGetFp(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Fp = 15
 	writeTo(vm, VM.ExecutionSegment, vm.Context.Fp-7, memory.MemoryValueFromInt(11))
 
@@ -41,7 +41,7 @@ func TestGetFp(t *testing.T) {
 }
 
 func TestResolveDeref(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 5
 	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap+7, memory.MemoryValueFromInt(11))
 
@@ -55,7 +55,7 @@ func TestResolveDeref(t *testing.T) {
 }
 
 func TestResolveDoubleDerefPositiveOffset(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 5
 	writeTo(
 		vm,
@@ -77,7 +77,7 @@ func TestResolveDoubleDerefPositiveOffset(t *testing.T) {
 }
 
 func TestResolveDoubleDerefNegativeOffset(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 5
 	writeTo(
 		vm,
@@ -110,7 +110,7 @@ func TestResolveImmediate(t *testing.T) {
 }
 
 func TestResolveAddOp(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	// Set the information used by the lhs
 	vm.Context.Fp = 0
 	vm.Context.Ap = 5
@@ -147,7 +147,7 @@ func TestResolveAddOp(t *testing.T) {
 }
 
 func TestResolveMulOp(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	// Set the information used by the lhs
 	vm.Context.Fp = 0
 	vm.Context.Ap = 5

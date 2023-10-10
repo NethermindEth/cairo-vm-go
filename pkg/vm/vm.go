@@ -512,3 +512,32 @@ func (vm *VirtualMachine) relocateTrace() []Trace {
 	}
 	return relocatedTrace
 }
+
+func (vm *VirtualMachine) RelocateMemory() []*f.Element {
+	segmentsOffsets, maxMemoryUsed := vm.Memory.SegmentsOffsets()
+	// the prover expect first element of the relocated memory to start at index 1,
+	// this way we fill relocatedMemory starting from zero, but the actual value
+	// returned has nil as its first element.
+	relocatedMemory := make([]*f.Element, maxMemoryUsed)
+	for i, segment := range vm.Memory.Segments {
+		// fmt.Printf("s: %s", segment)
+		for j := uint64(0); j < segment.Len(); j++ {
+			cell := segment.Data[j]
+			if !cell.Known() {
+				continue
+			}
+
+			var felt *f.Element
+			if cell.IsAddress() {
+				//cell.MemoryAddress()
+				addr, _ := cell.MemoryAddress()
+				felt = addr.Relocate(segmentsOffsets)
+			} else {
+				felt, _ = cell.FieldElement()
+			}
+
+			relocatedMemory[segmentsOffsets[i]+j] = felt
+		}
+	}
+	return relocatedMemory
+}

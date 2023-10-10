@@ -257,3 +257,21 @@ func (memory *Memory) Peek(segmentIndex uint64, offset uint64) (MemoryValue, err
 func (memory *Memory) PeekFromAddress(address *MemoryAddress) (MemoryValue, error) {
 	return memory.Peek(address.SegmentIndex, address.Offset)
 }
+
+// It returns all segment offsets and max memory used
+func (memory *Memory) SegmentsOffsets() ([]uint64, uint64) {
+	// this begins at one, because the prover expects for max memory used to
+	var maxMemoryUsed uint64 = 1
+
+	// segmentsOffsets[0] = 1
+	// segmentsOffsets[1] = 1 + len(segment[0])
+	// segmentsOffsets[N] = 1 + len(segment[n-1]) + sum of segements[n-1-i] for i in [1, n-1]
+	segmentsOffsets := make([]uint64, uint64(len(memory.Segments))+1)
+	segmentsOffsets[0] = 1
+	for i, segment := range memory.Segments {
+		segmentLength := segment.Len()
+		maxMemoryUsed += segmentLength
+		segmentsOffsets[i+1] = segmentsOffsets[i] + segmentLength
+	}
+	return segmentsOffsets, maxMemoryUsed
+}
