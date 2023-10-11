@@ -220,13 +220,19 @@ func TestSegmentsOffsets(t *testing.T) {
 	memory.AllocateEmptySegment() //Execution
 	memory.AllocateEmptySegment()
 
-	memory.Segments[1].Write(0, memoryValuePointerFromInt(1))
-	memory.Segments[1].Write(1, memoryValuePointerFromInt(1))
-	memory.Segments[1].Write(2, memoryValuePointerFromInt(1))
-	memory.Segments[1].Write(3, memoryValuePointerFromInt(1))
+	err := memory.Segments[1].Write(0, memoryValuePointerFromInt(1))
+	assert.NoError(t, err)
+	err = memory.Segments[1].Write(1, memoryValuePointerFromInt(2))
+	assert.NoError(t, err)
+	err = memory.Segments[1].Write(2, memoryValuePointerFromInt(3))
+	assert.NoError(t, err)
+	err = memory.Segments[1].Write(3, memoryValuePointerFromInt(4))
+	assert.NoError(t, err)
 
-	memory.Segments[2].Write(0, memoryValuePointerFromInt(1))
-	memory.Segments[2].Write(1, memoryValuePointerFromInt(1))
+	err = memory.Segments[2].Write(0, memoryValuePointerFromInt(5))
+	assert.NoError(t, err)
+	err = memory.Segments[2].Write(1, memoryValuePointerFromInt(6))
+	assert.NoError(t, err)
 
 	// segmentsOffsets[0] = 1
 	// segmentsOffsets[1] = 1
