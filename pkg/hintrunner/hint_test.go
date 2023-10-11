@@ -40,34 +40,6 @@ func TestAllocSegment(t *testing.T) {
 
 }
 
-func TestTestLessThanFalse(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
-	vm.Context.Ap = 0
-	vm.Context.Fp = 0
-	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(17))
-
-	var dst ApCellRef = 1
-
-	lhs := Immediate(*big.NewInt(32))
-
-	var rhsRef FpCellRef = 0
-	rhs := Deref{rhsRef}
-
-	hint := TestLessThan{
-		dst: dst,
-		lhs: lhs,
-		rhs: rhs,
-	}
-
-	err := hint.Execute(vm)
-	require.Nil(t, err)
-	require.Equal(
-		t,
-		memory.EmptyMemoryValueAsFelt(),
-		readFrom(vm, VM.ExecutionSegment, 1),
-	)
-}
-
 func TestTestLessThanTrue(t *testing.T) {
 	vm, _ := defaultVirtualMachine()
 	vm.Context.Ap = 0
@@ -75,11 +47,10 @@ func TestTestLessThanTrue(t *testing.T) {
 	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(23))
 
 	var dst ApCellRef = 1
-
-	lhs := Immediate(*big.NewInt(13))
-
 	var rhsRef FpCellRef = 0
 	rhs := Deref{rhsRef}
+
+	lhs := Immediate(*big.NewInt(13))
 
 	hint := TestLessThan{
 		dst: dst,
@@ -88,10 +59,116 @@ func TestTestLessThanTrue(t *testing.T) {
 	}
 
 	err := hint.Execute(vm)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(
 		t,
 		memory.MemoryValueFromInt(1),
 		readFrom(vm, VM.ExecutionSegment, 1),
+		"Expected the hint to evaluate to True when lhs is less than rhs",
+	)
+}
+func TestTestLessThanFalse(t *testing.T) {
+	testCases := []struct {
+		lhsValue    *big.Int
+		expectedMsg string
+	}{
+		{big.NewInt(32), "Expected the hint to evaluate to False when lhs is larger"},
+		{big.NewInt(17), "Expected the hint to evaluate to False when values are equal"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.expectedMsg, func(t *testing.T) {
+			vm, _ := defaultVirtualMachine()
+			vm.Context.Ap = 0
+			vm.Context.Fp = 0
+			writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(17))
+
+			var dst ApCellRef = 1
+			var rhsRef FpCellRef = 0
+			rhs := Deref{rhsRef}
+
+			lhs := Immediate(*tc.lhsValue)
+			hint := TestLessThan{
+				dst: dst,
+				lhs: lhs,
+				rhs: rhs,
+			}
+
+			err := hint.Execute(vm)
+			require.NoError(t, err)
+			require.Equal(
+				t,
+				memory.EmptyMemoryValueAsFelt(),
+				readFrom(vm, VM.ExecutionSegment, 1),
+				tc.expectedMsg,
+			)
+		})
+	}
+}
+
+func TestTestLessThanOrEqTrue(t *testing.T) {
+	testCases := []struct {
+		lhsValue    *big.Int
+		expectedMsg string
+	}{
+		{big.NewInt(13), "Expected the hint to evaluate to True when lhs is less than rhs"},
+		{big.NewInt(23), "Expected the hint to evaluate to True when values are equal"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.expectedMsg, func(t *testing.T) {
+			vm, _ := defaultVirtualMachine()
+			vm.Context.Ap = 0
+			vm.Context.Fp = 0
+			writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(23))
+
+			var dst ApCellRef = 1
+			var rhsRef FpCellRef = 0
+			rhs := Deref{rhsRef}
+
+			lhs := Immediate(*tc.lhsValue)
+			hint := TestLessThanOrEqual{
+				dst: dst,
+				lhs: lhs,
+				rhs: rhs,
+			}
+
+			err := hint.Execute(vm)
+			require.NoError(t, err)
+			require.Equal(
+				t,
+				memory.MemoryValueFromInt(1),
+				readFrom(vm, VM.ExecutionSegment, 1),
+				tc.expectedMsg,
+			)
+		})
+	}
+}
+
+func TestTestLessThanOrEqFalse(t *testing.T) {
+	vm, _ := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(17))
+
+	var dst ApCellRef = 1
+	var rhsRef FpCellRef = 0
+	rhs := Deref{rhsRef}
+
+	lhs := Immediate(*big.NewInt(32))
+
+	hint := TestLessThanOrEqual{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err := hint.Execute(vm)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		memory.EmptyMemoryValueAsFelt(),
+		readFrom(vm, VM.ExecutionSegment, 1),
+		"Expected the hint to evaluate to False when lhs is larger",
 	)
 }
