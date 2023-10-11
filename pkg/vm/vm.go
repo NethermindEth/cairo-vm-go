@@ -513,6 +513,9 @@ func (vm *VirtualMachine) relocateTrace() []Trace {
 	return relocatedTrace
 }
 
+// It returns all segments in memory but relocated as a single segment
+// Each element is a pointer to a field element, if the cell was not accessed,
+// nil is stored instead
 func (vm *VirtualMachine) RelocateMemory() []*f.Element {
 	segmentsOffsets, maxMemoryUsed := vm.Memory.SegmentsOffsets()
 	// the prover expect first element of the relocated memory to start at index 1,
@@ -520,7 +523,6 @@ func (vm *VirtualMachine) RelocateMemory() []*f.Element {
 	// returned has nil as its first element.
 	relocatedMemory := make([]*f.Element, maxMemoryUsed)
 	for i, segment := range vm.Memory.Segments {
-		// fmt.Printf("s: %s", segment)
 		for j := uint64(0); j < segment.Len(); j++ {
 			cell := segment.Data[j]
 			if !cell.Known() {
@@ -529,7 +531,6 @@ func (vm *VirtualMachine) RelocateMemory() []*f.Element {
 
 			var felt *f.Element
 			if cell.IsAddress() {
-				//cell.MemoryAddress()
 				addr, _ := cell.MemoryAddress()
 				felt = addr.Relocate(segmentsOffsets)
 			} else {
