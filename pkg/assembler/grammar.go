@@ -8,10 +8,10 @@ import (
 // Grammar and AST
 
 type CasmProgram struct {
-	Instructions []Instruction `@@*`
+	InstructionList []InstructionNode `@@*`
 }
 
-type Instruction struct {
+type InstructionNode struct {
 	AssertEq  *AssertEq `( @@ |`
 	Jnz       *Jnz      `  @@ |`
 	Jump      *Jump     `  @@ )`
@@ -88,7 +88,7 @@ type CoreInstructioner interface {
 	Expression() Expressioner
 }
 
-func (instruction Instruction) Expression() Expressioner {
+func (instruction InstructionNode) Expression() Expressioner {
 	switch {
 	case instruction.AssertEq != nil:
 		return instruction.AssertEq.Value
@@ -148,27 +148,26 @@ func (deref *Deref) IsFp() bool {
 	return deref.Name == "fp"
 }
 
-func (deref *Deref) BiasedOffset() (uint16, error) {
+func (deref *Deref) SignedOffset() (int16, error) {
 	if deref.Offset == nil {
-		return biasedZero, nil
+		return 0, nil
 	}
-	return biasedOffset(deref.Offset.Sign == "-", *deref.Offset.Value)
+	return signedOffset(deref.Offset.Sign == "-", *deref.Offset.Value)
 }
 
-func (dderef *DoubleDeref) BiasedOffset() (uint16, error) {
+func (dderef *DoubleDeref) SignedOffset() (int16, error) {
 	if dderef.Offset == nil {
-		return biasedZero, nil
+		return 0, nil
 	}
-	return biasedOffset(dderef.Offset.Sign == "-", *dderef.Offset.Value)
+	return signedOffset(dderef.Offset.Sign == "-", *dderef.Offset.Value)
 }
 
-func biasedOffset(neg bool, value int) (uint16, error) {
+func signedOffset(neg bool, value int) (int16, error) {
 	if neg {
 		value = -value
 	}
 	if value > math.MaxInt16 || value < math.MinInt16 {
 		return 0, fmt.Errorf("offset value outside of (-2**16, 2**16)")
 	}
-	biasedOffset := uint16(value) ^ 0x8000
-	return biasedOffset, nil
+	return int16(value), nil
 }
