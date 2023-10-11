@@ -15,7 +15,7 @@ func TestAssertEqualWithRegisterGrammar(t *testing.T) {
 	require.Equal(
 		t,
 		&CasmProgram{
-			[]Instruction{
+			[]InstructionNode{
 				{
 					AssertEq: &AssertEq{
 						Dst: &Deref{
@@ -52,7 +52,7 @@ func TestAssertEqualWithApPlusGrammar(t *testing.T) {
 	require.Equal(
 		t,
 		&CasmProgram{
-			[]Instruction{
+			[]InstructionNode{
 				{
 					AssertEq: &AssertEq{
 						Dst: &Deref{
@@ -89,7 +89,7 @@ func TestAssertEqualWithImmediateGrammar(t *testing.T) {
 	require.Equal(
 		t,
 		&CasmProgram{
-			[]Instruction{
+			[]InstructionNode{
 				{
 					AssertEq: &AssertEq{
 						Dst: &Deref{
@@ -120,7 +120,7 @@ func TestAssertEqualWithMathOperationGrammar(t *testing.T) {
 	require.Equal(
 		t,
 		&CasmProgram{
-			[]Instruction{
+			[]InstructionNode{
 				{
 					AssertEq: &AssertEq{
 						Dst: &Deref{
@@ -160,7 +160,7 @@ func TestCallAbsGrammar(t *testing.T) {
 	require.Equal(
 		t,
 		&CasmProgram{
-			[]Instruction{
+			[]InstructionNode{
 				{
 					Call: &Call{
 						CallType: "abs",
@@ -185,7 +185,7 @@ func TestRetGrammar(t *testing.T) {
 	require.Equal(
 		t,
 		&CasmProgram{
-			[]Instruction{
+			[]InstructionNode{
 				{
 					Ret: &Ret{
 						Ret: "",

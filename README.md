@@ -28,7 +28,7 @@ After completing these steps, you can find the compiled VM in `bin/cairo-vm`.
 
 ### Run The VM
 
-To run the VM you need first to have a compiled Cario file using the Cairo compiler at [cairo-lang](https://github.com/starkware-libs/cairo-lang).
+To run the VM you need first to have a compiled Cairo file using the Cairo compiler at [cairo-lang](https://github.com/starkware-libs/cairo-lang).
 Install it with the following command:
 
 ```bash
