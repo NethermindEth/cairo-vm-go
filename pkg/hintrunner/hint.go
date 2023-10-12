@@ -71,6 +71,56 @@ func (hint TestLessThan) Execute(vm *VM.VirtualMachine) error {
 	}
 
 	resFelt := f.Element{}
+	if lhsFelt.Cmp(rhsFelt) < 0 {
+		resFelt.SetOne()
+	}
+
+	dstAddr, err := hint.dst.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get dst address %s: %w", dstAddr, err)
+	}
+
+	mv := memory.MemoryValueFromFieldElement(&resFelt)
+	err = vm.Memory.WriteToAddress(&dstAddr, &mv)
+	if err != nil {
+		return fmt.Errorf("write to dst address %s: %w", dstAddr, err)
+	}
+
+	return nil
+}
+
+type TestLessThanOrEqual struct {
+	dst CellRefer
+	lhs ResOperander
+	rhs ResOperander
+}
+
+func (hint TestLessThanOrEqual) String() string {
+	return "TestLessThanOrEqual"
+}
+
+func (hint TestLessThanOrEqual) Execute(vm *VM.VirtualMachine) error {
+	lhsVal, err := hint.lhs.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve lhs operand %s: %w", hint.lhs, err)
+	}
+
+	rhsVal, err := hint.rhs.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve rhs operand %s: %w", hint.rhs, err)
+	}
+
+	lhsFelt, err := lhsVal.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	rhsFelt, err := rhsVal.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	resFelt := f.Element{}
 	if lhsFelt.Cmp(rhsFelt) <= 0 {
 		resFelt.SetOne()
 	}
