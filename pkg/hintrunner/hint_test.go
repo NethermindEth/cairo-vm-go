@@ -6,6 +6,7 @@ import (
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -171,4 +172,62 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 		readFrom(vm, VM.ExecutionSegment, 1),
 		"Expected the hint to evaluate to False when lhs is larger",
 	)
+}
+
+func TestWideMul128(t *testing.T) {
+	vm, _ := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var dstLow ApCellRef = 1
+	var dstHigh ApCellRef = 2
+
+	lhs := Immediate(*big.NewInt(1).Lsh(big.NewInt(1), 127))
+	rhs := Immediate(*big.NewInt(1<<8 + 1))
+
+	hint := WideMul128{
+		low:  dstLow,
+		high: dstHigh,
+		lhs:  lhs,
+		rhs:  rhs,
+	}
+
+	err := hint.Execute(vm)
+	require.Nil(t, err)
+
+	low := &f.Element{}
+	low.SetBigInt(big.NewInt(1).Lsh(big.NewInt(1), 127))
+
+	require.Equal(
+		t,
+		memory.MemoryValueFromFieldElement(low),
+		readFrom(vm, VM.ExecutionSegment, 1),
+	)
+	require.Equal(
+		t,
+		memory.MemoryValueFromInt(1<<7),
+		readFrom(vm, VM.ExecutionSegment, 2),
+	)
+}
+
+func TestWideMul128IncorrectRange(t *testing.T) {
+	vm, _ := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var dstLow ApCellRef = 1
+	var dstHigh ApCellRef = 2
+
+	lhs := Immediate(*big.NewInt(1).Lsh(big.NewInt(1), 128))
+	rhs := Immediate(*big.NewInt(1))
+
+	hint := WideMul128{
+		low:  dstLow,
+		high: dstHigh,
+		lhs:  lhs,
+		rhs:  rhs,
+	}
+
+	err := hint.Execute(vm)
+	require.ErrorContains(t, err, "should be u128")
 }

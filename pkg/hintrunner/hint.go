@@ -3,6 +3,8 @@ package hintrunner
 import (
 	"fmt"
 
+	"github.com/holiman/uint256"
+
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -134,6 +136,81 @@ func (hint TestLessThanOrEqual) Execute(vm *VM.VirtualMachine) error {
 	err = vm.Memory.WriteToAddress(&dstAddr, &mv)
 	if err != nil {
 		return fmt.Errorf("write to dst address %s: %w", dstAddr, err)
+	}
+
+	return nil
+}
+
+type WideMul128 struct {
+	lhs  ResOperander
+	rhs  ResOperander
+	high CellRefer
+	low  CellRefer
+}
+
+func (hint WideMul128) String() string {
+	return "WideMul128"
+}
+
+func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
+	mask := MaxU128()
+
+	lhs, err := hint.lhs.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve lhs operand %s: %v", hint.lhs, err)
+	}
+	rhs, err := hint.rhs.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve rhs operand %s: %v", hint.rhs, err)
+	}
+
+	lhsFelt, err := lhs.FieldElement()
+	if err != nil {
+		return err
+	}
+	rhsFelt, err := rhs.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	lhsU256 := uint256.Int(lhsFelt.Bits())
+	rhsU256 := uint256.Int(rhsFelt.Bits())
+
+	if lhsU256.Gt(&mask) {
+		return fmt.Errorf("lhs operand %s should be u128", lhsFelt)
+	}
+	if rhsU256.Gt(&mask) {
+		return fmt.Errorf("rhs operand %s should be u128", rhsFelt)
+	}
+
+	mul := lhsU256.Mul(&lhsU256, &rhsU256)
+
+	bytes := mul.Bytes32()
+
+	low := f.Element{}
+	low.SetBytes(bytes[16:])
+
+	high := f.Element{}
+	high.SetBytes(bytes[:16])
+
+	lowAddr, err := hint.low.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get destination cell: %v", err)
+	}
+	mvLow := memory.MemoryValueFromFieldElement(&low)
+	err = vm.Memory.WriteToAddress(&lowAddr, &mvLow)
+	if err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+
+	highAddr, err := hint.high.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get destination cell: %v", err)
+	}
+	mvHigh := memory.MemoryValueFromFieldElement(&high)
+	err = vm.Memory.WriteToAddress(&highAddr, &mvHigh)
+	if err != nil {
+		return fmt.Errorf("write cell: %v", err)
 	}
 
 	return nil
