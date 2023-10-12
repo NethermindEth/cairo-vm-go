@@ -187,10 +187,10 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 
 	bytes := mul.Bytes32()
 
-	low := f.One()
+	low := f.Element{}
 	low.SetBytes(bytes[16:])
 
-	high := f.One()
+	high := f.Element{}
 	high.SetBytes(bytes[:16])
 
 	lowAddr, err := hint.low.Get(vm)
