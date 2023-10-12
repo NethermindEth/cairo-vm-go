@@ -12,6 +12,7 @@ var parser *participle.Parser[CasmProgram] = participle.MustBuild[CasmProgram](
 	participle.UseLookahead(7),
 )
 
+// Given a CASM program it returns its encoded bytecode
 func CasmToBytecode(code string) ([]*f.Element, error) {
 	casmAst, err := parser.ParseString("", code)
 	if err != nil {
@@ -26,9 +27,7 @@ func CasmToBytecode(code string) ([]*f.Element, error) {
 	return encodeInstructionListToBytecode(wordList)
 }
 
-/*
-*    Casm to instruction list functions
- */
+// Given an a CASM ast it returns a list of instructions
 func astToInstruction(ast *CasmProgram) ([]Word, error) {
 	// Vist ast
 	n := len(ast.InstructionList)
@@ -49,6 +48,7 @@ func astToInstruction(ast *CasmProgram) ([]Word, error) {
 	return wordList, nil
 }
 
+// Given an Instruction Node return an Instruction and possible Immediate
 func nodeToInstruction(node InstructionNode) (Word, Immediate, error) {
 	var instr Instruction
 	var imm Immediate
