@@ -14,10 +14,9 @@ import (
 
 type ZeroRunner struct {
 	// core components
-	program       *Program
-	vm            *vm.VirtualMachine
-	hintrunner    hintrunner.HintRunner
-	memoryManager *memory.MemoryManager
+	program    *Program
+	vm         *vm.VirtualMachine
+	hintrunner hintrunner.HintRunner
 	// config
 	proofmode bool
 	maxsteps  uint64
@@ -27,22 +26,14 @@ type ZeroRunner struct {
 
 // Creates a new Runner of a Cairo Zero program
 func NewRunner(program *Program, proofmode bool, maxsteps uint64) (*ZeroRunner, error) {
-	memoryManager := memory.CreateMemoryManager()
-	_, err := memoryManager.Memory.AllocateSegment(program.Bytecode) // ProgramSegment
-	if err != nil {
-		return nil, err
-	}
-	memoryManager.Memory.AllocateEmptySegment() // ExecutionSegment
-
 	// todo(rodro): given the program get the appropiate hints
 	hintrunner := hintrunner.NewHintRunner(make(map[uint64]hintrunner.Hinter))
 
 	return &ZeroRunner{
-		program:       program,
-		hintrunner:    hintrunner,
-		memoryManager: memoryManager,
-		proofmode:     proofmode,
-		maxsteps:      maxsteps,
+		program:    program,
+		hintrunner: hintrunner,
+		proofmode:  proofmode,
+		maxsteps:   maxsteps,
 	}, nil
 }
 
@@ -74,6 +65,13 @@ func (runner *ZeroRunner) Run() error {
 }
 
 func (runner *ZeroRunner) InitializeMainEntrypoint() (memory.MemoryAddress, error) {
+	mem := memory.InitializeEmptyMemory()
+	_, err := mem.AllocateSegment(runner.program.Bytecode) // ProgramSegment
+	if err != nil {
+		return memory.UnknownAddress, err
+	}
+
+	mem.AllocateEmptySegment() // ExecutionSegment
 	if runner.proofmode {
 		initialPCOffset, ok := runner.program.Labels["__start__"]
 		if !ok {
@@ -92,18 +90,18 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (memory.MemoryAddress, erro
 		return memory.MemoryAddress{SegmentIndex: vm.ProgramSegment, Offset: endPcOffset}, runner.initializeVm(&memory.MemoryAddress{
 			SegmentIndex: vm.ProgramSegment,
 			Offset:       initialPCOffset,
-		}, stack)
+		}, stack, mem)
 	}
-
 	returnFp := memory.MemoryValueFromSegmentAndOffset(
-		runner.memory().AllocateEmptySegment(),
+		mem.AllocateEmptySegment(),
 		0,
 	)
-	return runner.InitializeEntrypoint("main", nil, &returnFp)
+
+	return runner.InitializeEntrypoint("main", nil, &returnFp, mem)
 }
 
 func (runner *ZeroRunner) InitializeEntrypoint(
-	funcName string, arguments []*f.Element, returnFp *memory.MemoryValue,
+	funcName string, arguments []*f.Element, returnFp *memory.MemoryValue, mem *memory.Memory,
 ) (memory.MemoryAddress, error) {
 	initialPCOffset, ok := runner.program.Entrypoints[funcName]
 	if !ok {
@@ -115,18 +113,21 @@ func (runner *ZeroRunner) InitializeEntrypoint(
 		stack = append(stack, memory.MemoryValueFromFieldElement(arguments[i]))
 	}
 	end := memory.MemoryAddress{
-		SegmentIndex: uint64(runner.memory().AllocateEmptySegment()),
+		SegmentIndex: uint64(mem.AllocateEmptySegment()),
 		Offset:       0,
 	}
+
 	stack = append(stack, *returnFp, memory.MemoryValueFromMemoryAddress(&end))
 	return end, runner.initializeVm(&memory.MemoryAddress{
 		SegmentIndex: vm.ProgramSegment,
 		Offset:       initialPCOffset,
-	}, stack)
+	}, stack, mem)
 }
 
-func (runner *ZeroRunner) initializeVm(initialPC *memory.MemoryAddress, stack []memory.MemoryValue) error {
-	executionSegment := runner.segments()[vm.ExecutionSegment]
+func (runner *ZeroRunner) initializeVm(initialPC *memory.MemoryAddress, stack []memory.MemoryValue, memory *memory.Memory) error {
+	//Initialize memory
+
+	executionSegment := memory.Segments[vm.ExecutionSegment]
 	offset := executionSegment.Len()
 	for idx := range stack {
 		if err := executionSegment.Write(offset+uint64(idx), &stack[idx]); err != nil {
@@ -140,7 +141,7 @@ func (runner *ZeroRunner) initializeVm(initialPC *memory.MemoryAddress, stack []
 		Pc: *initialPC,
 		Ap: offset + uint64(len(stack)),
 		Fp: offset + uint64(len(stack)),
-	}, runner.memoryManager.Memory, vm.VirtualMachineConfig{ProofMode: runner.proofmode})
+	}, memory, vm.VirtualMachineConfig{ProofMode: runner.proofmode})
 	return err
 }
 
@@ -191,15 +192,7 @@ func (runner *ZeroRunner) BuildProof() ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 
-	return EncodeTrace(relocatedTrace), EncodeMemory(runner.memoryManager.RelocateMemory()), nil
-}
-
-func (runner *ZeroRunner) memory() *memory.Memory {
-	return runner.memoryManager.Memory
-}
-
-func (runner *ZeroRunner) segments() []*memory.Segment {
-	return runner.memoryManager.Memory.Segments
+	return EncodeTrace(relocatedTrace), EncodeMemory(runner.vm.RelocateMemory()), nil
 }
 
 func (runner *ZeroRunner) pc() memory.MemoryAddress {

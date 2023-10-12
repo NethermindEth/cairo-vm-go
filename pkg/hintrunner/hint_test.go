@@ -11,7 +11,7 @@ import (
 )
 
 func TestAllocSegment(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 3
 	vm.Context.Fp = 0
 
@@ -42,7 +42,7 @@ func TestAllocSegment(t *testing.T) {
 }
 
 func TestTestLessThanTrue(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(23))
@@ -79,7 +79,7 @@ func TestTestLessThanFalse(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.expectedMsg, func(t *testing.T) {
-			vm, _ := defaultVirtualMachine()
+			vm := defaultVirtualMachine()
 			vm.Context.Ap = 0
 			vm.Context.Fp = 0
 			writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(17))
@@ -118,7 +118,7 @@ func TestTestLessThanOrEqTrue(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.expectedMsg, func(t *testing.T) {
-			vm, _ := defaultVirtualMachine()
+			vm := defaultVirtualMachine()
 			vm.Context.Ap = 0
 			vm.Context.Fp = 0
 			writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(23))
@@ -147,7 +147,7 @@ func TestTestLessThanOrEqTrue(t *testing.T) {
 }
 
 func TestTestLessThanOrEqFalse(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(17))
