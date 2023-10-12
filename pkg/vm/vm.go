@@ -85,7 +85,9 @@ type VirtualMachine struct {
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
-func NewVirtualMachine(initialContext Context, memory *mem.Memory, config VirtualMachineConfig) (*VirtualMachine, error) {
+func NewVirtualMachine(
+	initialContext Context, memory *mem.Memory, config VirtualMachineConfig,
+) (*VirtualMachine, error) {
 	// Initialize the trace if necesary
 	var trace []Context
 	if config.ProofMode {
@@ -101,9 +103,13 @@ func NewVirtualMachine(initialContext Context, memory *mem.Memory, config Virtua
 	}, nil
 }
 
-// todo(rodro): add a cache mechanism for not decoding the same instruction twice
-
 func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
+	// first run the hint
+	err := hintRunner.RunHint(vm)
+	if err != nil {
+		return err
+	}
+
 	// if instruction is not in cache, redecode and store it
 	instruction, ok := vm.instructions[vm.Context.Pc.Offset]
 	if !ok {
@@ -129,7 +135,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 		vm.Trace = append(vm.Trace, vm.Context)
 	}
 
-	err := vm.RunInstruction(instruction)
+	err = vm.RunInstruction(instruction)
 	if err != nil {
 		return fmt.Errorf("running instruction: %w", err)
 	}
@@ -226,7 +232,8 @@ func (vm *VirtualMachine) getOp0Addr(instruction *a.Instruction) (mem.MemoryAddr
 
 	addr, isOverflow := safemath.SafeOffset(op0Register, instruction.OffOp0)
 	if isOverflow {
-		return mem.UnknownAddress, fmt.Errorf("offset overflow: %d + %d", op0Register, instruction.OffOp0)
+		return mem.UnknownAddress,
+			fmt.Errorf("offset overflow: %d + %d", op0Register, instruction.OffOp0)
 	}
 	return mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: addr}, nil
 }
