@@ -175,7 +175,7 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 }
 
 func TestWideMul128(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
@@ -211,7 +211,7 @@ func TestWideMul128(t *testing.T) {
 }
 
 func TestWideMul128IncorrectRange(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
