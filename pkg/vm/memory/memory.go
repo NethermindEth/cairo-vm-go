@@ -259,8 +259,8 @@ func (memory *Memory) PeekFromAddress(address *MemoryAddress) (MemoryValue, erro
 }
 
 // It returns all segment offsets and max memory used
-func (memory *Memory) SegmentsOffsets() ([]uint64, uint64) {
-	// this begins at one, because the prover expects for max memory used to
+func (memory *Memory) RelocationOffsets() ([]uint64, uint64) {
+	// Prover expects maxMemoryUsed to start at one
 	var maxMemoryUsed uint64 = 1
 
 	// segmentsOffsets[0] = 1

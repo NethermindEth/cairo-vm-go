@@ -517,7 +517,7 @@ func (vm *VirtualMachine) relocateTrace() []Trace {
 // Each element is a pointer to a field element, if the cell was not accessed,
 // nil is stored instead
 func (vm *VirtualMachine) RelocateMemory() []*f.Element {
-	segmentsOffsets, maxMemoryUsed := vm.Memory.SegmentsOffsets()
+	segmentsOffsets, maxMemoryUsed := vm.Memory.RelocationOffsets()
 	// the prover expect first element of the relocated memory to start at index 1,
 	// this way we fill relocatedMemory starting from zero, but the actual value
 	// returned has nil as its first element.

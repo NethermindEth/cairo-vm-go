@@ -214,7 +214,7 @@ func TestSegmentBuiltin(t *testing.T) {
 	})
 }
 
-func TestSegmentsOffsets(t *testing.T) {
+func TestRelocationOffsets(t *testing.T) {
 	memory := InitializeEmptyMemory()
 	memory.AllocateEmptySegment() //Program
 	memory.AllocateEmptySegment() //Execution
@@ -240,7 +240,7 @@ func TestSegmentsOffsets(t *testing.T) {
 	// segmentsOffsets[3] = 1+4+2
 	expected_offsets := []uint64{1, 1, 5, 7}
 
-	offsets, memoryUsed := memory.SegmentsOffsets()
+	offsets, memoryUsed := memory.RelocationOffsets()
 	for i, v := range offsets {
 		assert.Equal(t, expected_offsets[i], v)
 
