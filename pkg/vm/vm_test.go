@@ -921,16 +921,9 @@ func TestAssertEqualInstruction(t *testing.T) {
 }
 
 func writeToDataSegment(vm *VirtualMachine, index uint64, value any) mem.MemoryAddress {
-	var mv mem.MemoryValue
-	var err error
-
-	if t, ok := value.(mem.MemoryValue); ok {
-		mv = t
-	} else {
-		mv, err = mem.MemoryValueFromAny(value)
-		if err != nil {
-			panic(err)
-		}
+	mv, err := mem.MemoryValueFromAny(value)
+	if err != nil {
+		panic(err)
 	}
 
 	err = vm.Memory.Write(ExecutionSegment, index, &mv)

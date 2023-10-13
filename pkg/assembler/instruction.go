@@ -364,7 +364,6 @@ func encodeInstructionListToBytecode(wordList []Word) ([]*f.Element, error) {
 	for i, word := range wordList {
 		switch w := word.(type) {
 		case Instruction:
-			fmt.Println("type:", w)
 			bytecode, err := encodeOneInstruction(&w)
 			if err != nil {
 				return nil, err
