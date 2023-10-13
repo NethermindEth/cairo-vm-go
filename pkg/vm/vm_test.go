@@ -7,8 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	assembler "github.com/NethermindEth/cairo-vm-go/pkg/assembler"
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	a "github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
@@ -19,11 +18,11 @@ func TestGetCellApDst(t *testing.T) {
 	const offDest = 15
 	const ap = 30
 	vm.Context.Ap = ap
-	writeToDataSegment(vm, ap+offDest, mem.MemoryValueFromInt(200))
+	writeToDataSegment(vm, ap+offDest, 200)
 
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffDest:     offDest,
-		DstRegister: assembler.Ap,
+		DstRegister: a.Ap,
 	}
 
 	addr, err := vm.getDstAddr(&instruction)
@@ -46,11 +45,11 @@ func TestGetCellFpDst(t *testing.T) {
 	)
 	vm.Context.Ap = ap
 	vm.Context.Fp = fp
-	writeToDataSegment(vm, fp+offDest, mem.MemoryValueFromInt(123))
+	writeToDataSegment(vm, fp+offDest, 123)
 
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffDest:     offDest,
-		DstRegister: assembler.Fp,
+		DstRegister: a.Fp,
 	}
 
 	addr, err := vm.getDstAddr(&instruction)
@@ -70,11 +69,11 @@ func TestGetCellApDstWithDifferentOffsets(t *testing.T) {
 		const ap = 30
 		vm.Context.Ap = ap
 
-		writeToDataSegment(vm, uint64(ap+offset), mem.MemoryValueFromInt(200))
+		writeToDataSegment(vm, uint64(ap+offset), 200)
 
-		instruction := assembler.Instruction{
+		instruction := a.Instruction{
 			OffDest:     int16(offset),
-			DstRegister: assembler.Ap,
+			DstRegister: a.Ap,
 		}
 
 		addr, err := vm.getDstAddr(&instruction)
@@ -96,11 +95,11 @@ func TestGetCellDstApNegativeOffset(t *testing.T) {
 	)
 	vm.Context.Ap = ap
 
-	writeToDataSegment(vm, ap+offDest, mem.MemoryValueFromInt(100))
+	writeToDataSegment(vm, ap+offDest, 100)
 
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffDest:     offDest,
-		DstRegister: assembler.Ap,
+		DstRegister: a.Ap,
 	}
 
 	addr, err := vm.getDstAddr(&instruction)
@@ -121,11 +120,11 @@ func TestGetCellDstFpNegativeOffset(t *testing.T) {
 	)
 	vm.Context.Fp = fp
 
-	writeToDataSegment(vm, fp+offDest, mem.MemoryValueFromInt(100))
+	writeToDataSegment(vm, fp+offDest, 100)
 
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffDest:     offDest,
-		DstRegister: assembler.Fp,
+		DstRegister: a.Fp,
 	}
 
 	addr, err := vm.getDstAddr(&instruction)
@@ -146,11 +145,11 @@ func TestGetApCellOp0(t *testing.T) {
 		ap     = 30
 	)
 	vm.Context.Ap = ap
-	writeToDataSegment(vm, ap+offOp0, mem.MemoryValueFromInt(123))
+	writeToDataSegment(vm, ap+offOp0, 123)
 
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffOp0:      offOp0,
-		Op0Register: assembler.Ap,
+		Op0Register: a.Ap,
 	}
 
 	addr, err := vm.getOp0Addr(&instruction)
@@ -172,11 +171,11 @@ func TestGetApCellOp0NegOff(t *testing.T) {
 		ap     = 20
 	)
 	vm.Context.Ap = ap
-	writeToDataSegment(vm, ap+offOp0, mem.MemoryValueFromInt(155))
+	writeToDataSegment(vm, ap+offOp0, 155)
 
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffOp0:      offOp0,
-		Op0Register: assembler.Ap,
+		Op0Register: a.Ap,
 	}
 
 	addr, err := vm.getOp0Addr(&instruction)
@@ -198,11 +197,11 @@ func TestGetFpCellOp0(t *testing.T) {
 		fp     = 74
 	)
 	vm.Context.Fp = fp
-	writeToDataSegment(vm, fp+offOp0, mem.MemoryValueFromInt(365))
+	writeToDataSegment(vm, fp+offOp0, 365)
 
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffOp0:      offOp0,
-		Op0Register: assembler.Fp,
+		Op0Register: a.Fp,
 	}
 
 	addr, err := vm.getOp0Addr(&instruction)
@@ -224,11 +223,11 @@ func TestGetFpCellOp0NegOff(t *testing.T) {
 		fp     = 67
 	)
 	vm.Context.Fp = fp
-	writeToDataSegment(vm, fp+offOp0, mem.MemoryValueFromInt(286))
+	writeToDataSegment(vm, fp+offOp0, 286)
 
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffOp0:      offOp0,
-		Op0Register: assembler.Fp,
+		Op0Register: a.Fp,
 	}
 
 	addr, err := vm.getOp0Addr(&instruction)
@@ -253,9 +252,9 @@ func TestGetImmCellOp1(t *testing.T) {
 	const offOp1 = 1                                              // target imm
 	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 1} // "current instruction"
 
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffOp1:    offOp1,
-		Op1Source: assembler.Imm,
+		Op1Source: a.Imm,
 	}
 
 	addr, err := vm.getOp1Addr(&instruction, nil)
@@ -276,14 +275,14 @@ func TestGetOp0PosCellOp1(t *testing.T) {
 			newElementPtr(333), // op0+offset
 		},
 	)
-	writeToDataSegment(vm, 0, mem.MemoryValueFromSegmentAndOffset(0, 2))
+	writeToDataSegment(vm, 0, &mem.MemoryAddress{SegmentIndex: 0, Offset: 2})
 	op0Addr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
 
 	// Prepare vm with dummy values
 	const offOp1 = 1 // target relative to op0 offset
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffOp1:    offOp1,
-		Op1Source: assembler.Op0,
+		Op1Source: a.Op0,
 	}
 
 	addr, err := vm.getOp1Addr(&instruction, &op0Addr)
@@ -304,14 +303,14 @@ func TestGetOp0NegCellOp1(t *testing.T) {
 			newElementPtr(444), // op0 - offset
 		},
 	)
-	writeToDataSegment(vm, 0, mem.MemoryValueFromSegmentAndOffset(0, 4))
+	writeToDataSegment(vm, 0, &mem.MemoryAddress{SegmentIndex: 0, Offset: 4})
 	op0Addr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
 
 	// Prepare vm with dummy values
 	const offOp1 = -1 // target relative to op0 offset
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffOp1:    offOp1,
-		Op1Source: assembler.Op0,
+		Op1Source: a.Op0,
 	}
 
 	addr, err := vm.getOp1Addr(&instruction, &op0Addr)
@@ -329,12 +328,12 @@ func TestGetFpPosCellOp1(t *testing.T) {
 	// Prepare vm with dummy values
 	const offOp1 = 2  // target relative to Fp
 	vm.Context.Fp = 7 // "frame pointer"
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffOp1:    offOp1,
-		Op1Source: assembler.FpPlusOffOp1,
+		Op1Source: a.FpPlusOffOp1,
 	}
 
-	writeToDataSegment(vm, vm.Context.Fp+2, mem.MemoryValueFromInt(321)) //Write to Execution Segment at Fp+2
+	writeToDataSegment(vm, vm.Context.Fp+2, 321) //Write to Execution Segment at Fp+2
 
 	addr, err := vm.getOp1Addr(&instruction, nil)
 	require.NoError(t, err)
@@ -351,12 +350,12 @@ func TestGetFpNegCellOp1(t *testing.T) {
 	// Prepare vm with dummy values
 	const offOp1 = -2 // target relative to Fp
 	vm.Context.Fp = 7 // "frame pointer"
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffOp1:    offOp1,
-		Op1Source: assembler.FpPlusOffOp1,
+		Op1Source: a.FpPlusOffOp1,
 	}
 
-	writeToDataSegment(vm, vm.Context.Fp-2, mem.MemoryValueFromInt(123)) //Write to Execution Segment at Fp-2
+	writeToDataSegment(vm, vm.Context.Fp-2, 123) //Write to Execution Segment at Fp-2
 
 	addr, err := vm.getOp1Addr(&instruction, nil)
 	require.NoError(t, err)
@@ -373,11 +372,11 @@ func TestGetApPosCellOp1(t *testing.T) {
 	// Prepare vm with dummy values
 	vm.Context.Ap = 3 // "allocation pointer"
 	const offOp1 = 2  // target relative to Ap
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffOp1:    offOp1,
-		Op1Source: assembler.ApPlusOffOp1,
+		Op1Source: a.ApPlusOffOp1,
 	}
-	writeToDataSegment(vm, vm.Context.Ap+2, mem.MemoryValueFromInt(41)) //Write to Execution Segment at Ap+2
+	writeToDataSegment(vm, vm.Context.Ap+2, 41) //Write to Execution Segment at Ap+2
 
 	addr, err := vm.getOp1Addr(&instruction, nil)
 	require.NoError(t, err)
@@ -394,11 +393,11 @@ func TestGetApNegCellOp1(t *testing.T) {
 	// Prepare vm with dummy values
 	vm.Context.Ap = 3 // "allocation pointer"
 	const offOp1 = -2 // target relative to Ap
-	instruction := assembler.Instruction{
+	instruction := a.Instruction{
 		OffOp1:    offOp1,
-		Op1Source: assembler.ApPlusOffOp1,
+		Op1Source: a.ApPlusOffOp1,
 	}
-	writeToDataSegment(vm, vm.Context.Ap-2, mem.MemoryValueFromInt(57)) //Write to Execution Segment at Ap-2
+	writeToDataSegment(vm, vm.Context.Ap-2, 57) //Write to Execution Segment at Ap-2
 
 	addr, err := vm.getOp1Addr(&instruction, nil)
 	require.NoError(t, err)
@@ -411,12 +410,12 @@ func TestGetApNegCellOp1(t *testing.T) {
 
 func TestInferOperandSub(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{
-		Opcode: assembler.OpCodeAssertEq,
-		Res:    assembler.AddOperands,
+	instruction := a.Instruction{
+		Opcode: a.OpCodeAssertEq,
+		Res:    a.AddOperands,
 	}
-	writeToDataSegment(vm, 0, mem.MemoryValueFromSegmentAndOffset(3, 15)) //destCell
-	writeToDataSegment(vm, 1, mem.MemoryValueFromSegmentAndOffset(3, 7))  //op1Cell
+	writeToDataSegment(vm, 0, &mem.MemoryAddress{SegmentIndex: 3, Offset: 15}) //destCell
+	writeToDataSegment(vm, 1, &mem.MemoryAddress{SegmentIndex: 3, Offset: 7})  //op1Cell
 	dstAddr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
 	op1Addr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 1}
 	op0Addr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 2}
@@ -433,11 +432,11 @@ func TestInferOperandSub(t *testing.T) {
 
 func TestInferResOp1(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{
-		Opcode: assembler.OpCodeAssertEq,
-		Res:    assembler.Op1,
+	instruction := a.Instruction{
+		Opcode: a.OpCodeAssertEq,
+		Res:    a.Op1,
 	}
-	writeToDataSegment(vm, 0, mem.MemoryValueFromInt(1337)) //destCell
+	writeToDataSegment(vm, 0, 1337) //destCell
 	dstAddr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
 	op1Addr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 1}
 	op0Addr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 2}
@@ -454,7 +453,7 @@ func TestInferResOp1(t *testing.T) {
 
 func TestComputeResUnconstrained(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{Res: assembler.Unconstrained}
+	instruction := a.Instruction{Res: a.Unconstrained}
 	res, err := vm.computeRes(&instruction, nil, nil)
 	require.NoError(t, err)
 	require.False(t, res.Known())
@@ -462,9 +461,9 @@ func TestComputeResUnconstrained(t *testing.T) {
 
 func TestComputeResOp1(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{Res: assembler.Op1}
+	instruction := a.Instruction{Res: a.Op1}
 
-	writeToDataSegment(vm, 3, mem.MemoryValueFromInt(15))
+	writeToDataSegment(vm, 3, 15)
 	op1Addr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 3}
 
 	res, err := vm.computeRes(&instruction, nil, &op1Addr)
@@ -476,10 +475,12 @@ func TestComputeResOp1(t *testing.T) {
 
 func TestComputeAddResAddrToFelt(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{Res: assembler.AddOperands}
+	instruction := a.Instruction{Res: a.AddOperands}
 
-	op0Addr := writeToDataSegment(vm, 3, mem.MemoryValueFromSegmentAndOffset(2, 10))
-	op1Addr := writeToDataSegment(vm, 8, mem.MemoryValueFromInt(15))
+	op0Addr := writeToDataSegment(
+		vm, 3, &mem.MemoryAddress{SegmentIndex: 2, Offset: 10},
+	)
+	op1Addr := writeToDataSegment(vm, 8, 15)
 
 	res, err := vm.computeRes(&instruction, &op0Addr, &op1Addr)
 	require.NoError(t, err)
@@ -490,10 +491,12 @@ func TestComputeAddResAddrToFelt(t *testing.T) {
 
 func TestComputeAddResFeltToAddr(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{Res: assembler.AddOperands}
+	instruction := a.Instruction{Res: a.AddOperands}
 
-	op0Addr := writeToDataSegment(vm, 2, mem.MemoryValueFromInt(8))
-	op1Addr := writeToDataSegment(vm, 5, mem.MemoryValueFromSegmentAndOffset(2, 7))
+	op0Addr := writeToDataSegment(vm, 2, 8)
+	op1Addr := writeToDataSegment(
+		vm, 5, &mem.MemoryAddress{SegmentIndex: 2, Offset: 7},
+	)
 
 	res, err := vm.computeRes(&instruction, &op0Addr, &op1Addr)
 	require.NoError(t, err)
@@ -503,10 +506,14 @@ func TestComputeAddResFeltToAddr(t *testing.T) {
 
 func TestComputeAddResBothAddrs(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{Res: assembler.AddOperands}
+	instruction := a.Instruction{Res: a.AddOperands}
 
-	op0Addr := writeToDataSegment(vm, 3, mem.MemoryValueFromSegmentAndOffset(2, 10))
-	op1Addr := writeToDataSegment(vm, 4, mem.MemoryValueFromSegmentAndOffset(2, 15))
+	op0Addr := writeToDataSegment(
+		vm, 3, &mem.MemoryAddress{SegmentIndex: 2, Offset: 10},
+	)
+	op1Addr := writeToDataSegment(
+		vm, 4, &mem.MemoryAddress{SegmentIndex: 2, Offset: 15},
+	)
 
 	_, err := vm.computeRes(&instruction, &op0Addr, &op1Addr)
 	require.Error(t, err) // Expecting an error since adding two addresses is not allowed
@@ -514,10 +521,10 @@ func TestComputeAddResBothAddrs(t *testing.T) {
 
 func TestComputeAddResBothFelts(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{Res: assembler.AddOperands}
+	instruction := a.Instruction{Res: a.AddOperands}
 
-	op0Addr := writeToDataSegment(vm, 3, mem.MemoryValueFromInt(10))
-	op1Addr := writeToDataSegment(vm, 4, mem.MemoryValueFromInt(15))
+	op0Addr := writeToDataSegment(vm, 3, 10)
+	op1Addr := writeToDataSegment(vm, 4, 15)
 
 	res, err := vm.computeRes(&instruction, &op0Addr, &op1Addr)
 	require.NoError(t, err)
@@ -529,10 +536,10 @@ func TestComputeAddResBothFelts(t *testing.T) {
 func TestComputeMulResPosToPosFelt(t *testing.T) {
 	//Positive Felt to Positive Felt compute
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{Res: assembler.MulOperands}
+	instruction := a.Instruction{Res: a.MulOperands}
 
-	op0Addr := writeToDataSegment(vm, 3, mem.MemoryValueFromInt(10))
-	op1Addr := writeToDataSegment(vm, 4, mem.MemoryValueFromInt(15))
+	op0Addr := writeToDataSegment(vm, 3, 10)
+	op1Addr := writeToDataSegment(vm, 4, 15)
 
 	res, err := vm.computeRes(&instruction, &op0Addr, &op1Addr)
 	require.NoError(t, err)
@@ -542,10 +549,10 @@ func TestComputeMulResPosToPosFelt(t *testing.T) {
 
 func TestComputeMulResNegToPosFelts(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{Res: assembler.MulOperands}
+	instruction := a.Instruction{Res: a.MulOperands}
 	//Negative to Positive
-	op0Addr := writeToDataSegment(vm, 3, mem.MemoryValueFromInt(-10))
-	op1Addr := writeToDataSegment(vm, 4, mem.MemoryValueFromInt(15))
+	op0Addr := writeToDataSegment(vm, 3, -10)
+	op1Addr := writeToDataSegment(vm, 4, 15)
 
 	res, err := vm.computeRes(&instruction, &op0Addr, &op1Addr)
 	require.NoError(t, err)
@@ -555,10 +562,10 @@ func TestComputeMulResNegToPosFelts(t *testing.T) {
 
 func TestComputeMulResPosToNegFelt(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{Res: assembler.MulOperands}
+	instruction := a.Instruction{Res: a.MulOperands}
 	//Positive to Negative
-	op0Addr := writeToDataSegment(vm, 3, mem.MemoryValueFromInt(10))
-	op1Addr := writeToDataSegment(vm, 4, mem.MemoryValueFromInt(-15))
+	op0Addr := writeToDataSegment(vm, 3, 10)
+	op1Addr := writeToDataSegment(vm, 4, -15)
 
 	res, err := vm.computeRes(&instruction, &op0Addr, &op1Addr)
 	require.NoError(t, err)
@@ -568,10 +575,10 @@ func TestComputeMulResPosToNegFelt(t *testing.T) {
 
 func TestComputeMulResNegToNegFelt(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{Res: assembler.MulOperands}
+	instruction := a.Instruction{Res: a.MulOperands}
 	//Netagive to Negative
-	op0Addr := writeToDataSegment(vm, 3, mem.MemoryValueFromInt(-10))
-	op1Addr := writeToDataSegment(vm, 4, mem.MemoryValueFromInt(-15))
+	op0Addr := writeToDataSegment(vm, 3, -10)
+	op1Addr := writeToDataSegment(vm, 4, -15)
 
 	res, err := vm.computeRes(&instruction, &op0Addr, &op1Addr)
 	require.NoError(t, err)
@@ -583,10 +590,12 @@ func TestComputeMulResNegToNegFelt(t *testing.T) {
 // three failing cases
 func TestComputeMulResAddrToFelt(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{Res: assembler.MulOperands}
+	instruction := a.Instruction{Res: a.MulOperands}
 
-	op0Addr := writeToDataSegment(vm, 3, mem.MemoryValueFromSegmentAndOffset(2, 10))
-	op1Addr := writeToDataSegment(vm, 4, mem.MemoryValueFromInt(15))
+	op0Addr := writeToDataSegment(
+		vm, 3, &mem.MemoryAddress{SegmentIndex: 2, Offset: 10},
+	)
+	op1Addr := writeToDataSegment(vm, 4, 15)
 
 	_, err := vm.computeRes(&instruction, &op0Addr, &op1Addr)
 	require.Error(t, err) // Expecting an error since multiplying an address with a felt is not allowed
@@ -594,10 +603,12 @@ func TestComputeMulResAddrToFelt(t *testing.T) {
 
 func TestComputeMulResFeltToAddr(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{Res: assembler.MulOperands}
+	instruction := a.Instruction{Res: a.MulOperands}
 
-	op0Addr := writeToDataSegment(vm, 3, mem.MemoryValueFromInt(10))
-	op1Addr := writeToDataSegment(vm, 4, mem.MemoryValueFromSegmentAndOffset(2, 15))
+	op0Addr := writeToDataSegment(vm, 3, 10)
+	op1Addr := writeToDataSegment(
+		vm, 4, &mem.MemoryAddress{SegmentIndex: 2, Offset: 15},
+	)
 
 	_, err := vm.computeRes(&instruction, &op0Addr, &op1Addr)
 	require.Error(t, err)
@@ -605,10 +616,14 @@ func TestComputeMulResFeltToAddr(t *testing.T) {
 
 func TestComputeMulResBothAddrs(t *testing.T) {
 	vm := defaultVirtualMachine()
-	instruction := assembler.Instruction{Res: assembler.MulOperands}
+	instruction := a.Instruction{Res: a.MulOperands}
 
-	op0Addr := writeToDataSegment(vm, 3, mem.MemoryValueFromSegmentAndOffset(2, 10))
-	op1Addr := writeToDataSegment(vm, 4, mem.MemoryValueFromSegmentAndOffset(2, 15))
+	op0Addr := writeToDataSegment(
+		vm, 3, &mem.MemoryAddress{SegmentIndex: 2, Offset: 10},
+	)
+	op1Addr := writeToDataSegment(
+		vm, 4, &mem.MemoryAddress{SegmentIndex: 2, Offset: 15},
+	)
 
 	_, err := vm.computeRes(&instruction, &op0Addr, &op1Addr)
 	require.Error(t, err) // Expecting an error since multiplying two addresses is not allowed
@@ -618,8 +633,8 @@ func TestOpcodeAssertionAssertEq(t *testing.T) {
 	vm := defaultVirtualMachine()
 	dstAddr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
 
-	instruction := assembler.Instruction{
-		Opcode: assembler.OpCodeAssertEq,
+	instruction := a.Instruction{
+		Opcode: a.OpCodeAssertEq,
 	}
 
 	res := mem.MemoryValueFromSegmentAndOffset(2, 10)
@@ -635,9 +650,9 @@ func TestUpdatePcNextInstr(t *testing.T) {
 	vm := defaultVirtualMachine()
 
 	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
-	instruction := assembler.Instruction{
-		PcUpdate:  assembler.PcUpdateNextInstr,
-		Op1Source: assembler.Op0, // anything but imm
+	instruction := a.Instruction{
+		PcUpdate:  a.PcUpdateNextInstr,
+		Op1Source: a.Op0, // anything but imm
 	}
 
 	nextPc, err := vm.updatePc(&instruction, nil, nil, nil)
@@ -649,9 +664,9 @@ func TestUpdatePcNextInstrImm(t *testing.T) {
 	vm := defaultVirtualMachine()
 
 	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
-	instruction := assembler.Instruction{
-		PcUpdate:  assembler.PcUpdateNextInstr,
-		Op1Source: assembler.Imm,
+	instruction := a.Instruction{
+		PcUpdate:  a.PcUpdateNextInstr,
+		Op1Source: a.Imm,
 	}
 
 	nextPc, err := vm.updatePc(&instruction, nil, nil, nil)
@@ -666,8 +681,8 @@ func TestUpdatePcJump(t *testing.T) {
 	jumpAddr := uint64(10)
 	res := mem.MemoryValueFromSegmentAndOffset(0, jumpAddr)
 
-	instruction := assembler.Instruction{
-		PcUpdate: assembler.PcUpdateJump,
+	instruction := a.Instruction{
+		PcUpdate: a.PcUpdateJump,
 	}
 	nextPc, err := vm.updatePc(&instruction, nil, nil, &res)
 
@@ -682,8 +697,8 @@ func TestUpdatePcJumpRel(t *testing.T) {
 	relAddr := uint64(10)
 	res := mem.MemoryValueFromInt(relAddr)
 
-	instruction := assembler.Instruction{
-		PcUpdate: assembler.PcUpdateJumpRel,
+	instruction := a.Instruction{
+		PcUpdate: a.PcUpdateJumpRel,
 	}
 	nextPc, err := vm.updatePc(&instruction, nil, nil, &res)
 
@@ -694,16 +709,16 @@ func TestUpdatePcJumpRel(t *testing.T) {
 func TestUpdatePcJnz(t *testing.T) {
 	vm := defaultVirtualMachine()
 	relAddr := uint64(10)
-	writeToDataSegment(vm, 0, mem.MemoryValueFromInt(10))      //dstCell
-	writeToDataSegment(vm, 1, mem.MemoryValueFromInt(relAddr)) //op1Cell
+	writeToDataSegment(vm, 0, 10)      //dstCell
+	writeToDataSegment(vm, 1, relAddr) //op1Cell
 	dstAddr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
 	op1Addr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 1}
 
 	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 11}
 	res := mem.MemoryValueFromInt(10)
-	instruction := assembler.Instruction{
-		PcUpdate:  assembler.PcUpdateJnz,
-		Op1Source: assembler.Op0,
+	instruction := a.Instruction{
+		PcUpdate:  a.PcUpdateJnz,
+		Op1Source: a.Op0,
 	}
 	nextPc, err := vm.updatePc(&instruction, &dstAddr, &op1Addr, &res)
 
@@ -713,14 +728,14 @@ func TestUpdatePcJnz(t *testing.T) {
 
 func TestUpdatePcJnzDstZero(t *testing.T) {
 	vm := defaultVirtualMachine()
-	writeToDataSegment(vm, 0, mem.MemoryValueFromInt(0)) //dstCell
+	writeToDataSegment(vm, 0, 0) //dstCell
 	dstAddr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
 
 	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 11}
 
-	instruction := assembler.Instruction{
-		PcUpdate:  assembler.PcUpdateJnz,
-		Op1Source: assembler.Op0,
+	instruction := a.Instruction{
+		PcUpdate:  a.PcUpdateJnz,
+		Op1Source: a.Op0,
 	}
 	nextPc, err := vm.updatePc(&instruction, &dstAddr, nil, nil)
 
@@ -730,14 +745,14 @@ func TestUpdatePcJnzDstZero(t *testing.T) {
 
 func TestUpdatePcJnzDstZeroImm(t *testing.T) {
 	vm := defaultVirtualMachine()
-	writeToDataSegment(vm, 0, mem.MemoryValueFromInt(0)) //dstCell
+	writeToDataSegment(vm, 0, 0) //dstCell
 	dstAddr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
 
 	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 9}
 
-	instruction := assembler.Instruction{
-		PcUpdate:  assembler.PcUpdateJnz,
-		Op1Source: assembler.Imm,
+	instruction := a.Instruction{
+		PcUpdate:  a.PcUpdateJnz,
+		Op1Source: a.Imm,
 	}
 	nextPc, err := vm.updatePc(&instruction, &dstAddr, nil, nil)
 
@@ -749,9 +764,9 @@ func TestUpdateApSameAp(t *testing.T) {
 	vm := defaultVirtualMachine()
 
 	vm.Context.Ap = 5
-	instruction := assembler.Instruction{
-		Opcode:   assembler.OpCodeNop,
-		ApUpdate: assembler.SameAp,
+	instruction := a.Instruction{
+		Opcode:   a.OpCodeNop,
+		ApUpdate: a.SameAp,
 	}
 
 	nextAp, err := vm.updateAp(&instruction, nil)
@@ -763,9 +778,9 @@ func TestUpdateApAddImmPos(t *testing.T) {
 	vm := defaultVirtualMachine()
 
 	vm.Context.Ap = 5
-	instruction := assembler.Instruction{
-		Opcode:   assembler.OpCodeNop,
-		ApUpdate: assembler.AddRes,
+	instruction := a.Instruction{
+		Opcode:   a.OpCodeNop,
+		ApUpdate: a.AddRes,
 	}
 
 	res := mem.MemoryValueFromInt(7)
@@ -779,9 +794,9 @@ func TestUpdateApAddImmNeg(t *testing.T) {
 	vm := defaultVirtualMachine()
 
 	vm.Context.Ap = 10
-	instruction := assembler.Instruction{
-		Opcode:   assembler.OpCodeNop,
-		ApUpdate: assembler.AddRes,
+	instruction := a.Instruction{
+		Opcode:   a.OpCodeNop,
+		ApUpdate: a.AddRes,
 	}
 
 	res := mem.MemoryValueFromInt(-3)
@@ -795,9 +810,9 @@ func TestUpdateApAddOne(t *testing.T) {
 	vm := defaultVirtualMachine()
 
 	vm.Context.Ap = 5
-	instruction := assembler.Instruction{
-		Opcode:   assembler.OpCodeNop,
-		ApUpdate: assembler.Add1,
+	instruction := a.Instruction{
+		Opcode:   a.OpCodeNop,
+		ApUpdate: a.Add1,
 	}
 
 	nextAp, err := vm.updateAp(&instruction, nil)
@@ -809,9 +824,9 @@ func TestUpdateApAddTwo(t *testing.T) {
 	vm := defaultVirtualMachine()
 
 	vm.Context.Ap = 5
-	instruction := assembler.Instruction{
-		Opcode:   assembler.OpCodeNop,
-		ApUpdate: assembler.Add2,
+	instruction := a.Instruction{
+		Opcode:   a.OpCodeNop,
+		ApUpdate: a.Add2,
 	}
 
 	nextAp, err := vm.updateAp(&instruction, nil)
@@ -823,8 +838,8 @@ func TestUpdateFp(t *testing.T) {
 	vm := defaultVirtualMachine()
 
 	vm.Context.Fp = 5
-	instruction := assembler.Instruction{
-		Opcode: assembler.OpCodeNop,
+	instruction := a.Instruction{
+		Opcode: a.OpCodeNop,
 	}
 
 	nextFp, err := vm.updateFp(&instruction, nil)
@@ -832,10 +847,88 @@ func TestUpdateFp(t *testing.T) {
 	assert.Equal(t, vm.Context.Fp, nextFp)
 }
 
-func writeToDataSegment(vm *VirtualMachine, index uint64, value mem.MemoryValue) mem.MemoryAddress {
-	err := vm.Memory.Write(ExecutionSegment, index, &value)
+type noHintRunner struct{}
+
+func (r *noHintRunner) RunHint(_ *VirtualMachine) error {
+	return nil
+}
+
+func TestAssertEqualInstruction(t *testing.T) {
+	hintrunner := noHintRunner{}
+	setInitialReg := func(vm *VirtualMachine, regvals ...uint64) {
+		if len(regvals) != 3 {
+			panic("expected three register values")
+		}
+		vm.Context.Ap = regvals[0]
+		vm.Context.Fp = regvals[1]
+		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: regvals[2]}
+	}
+
+	t.Run("assign right to left;", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("[ap + 1] = [ap];")
+		setInitialReg(vm, 1, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Ap, 2)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Ap+1)
+		require.NoError(t, err)
+		assert.Equal(t, mem.MemoryValueFromInt(2), mv)
+	})
+	t.Run("assign left to right", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("[ap + 1] = [ap];")
+		setInitialReg(vm, 1, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Ap+1, 2)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Ap)
+		require.NoError(t, err)
+		assert.Equal(t, mem.MemoryValueFromInt(2), mv)
+	})
+	t.Run("addition", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("[ap] = [ap - 1] + [fp];")
+		setInitialReg(vm, 3, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Fp, 10)
+		writeToDataSegment(vm, vm.Context.Ap-1, 5)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Ap)
+		require.NoError(t, err)
+		assert.Equal(t, mem.MemoryValueFromInt(15), mv)
+	})
+	t.Run("substraction", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("[ap] = [ap - 1] + [fp];")
+		setInitialReg(vm, 3, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Fp, 10)
+		writeToDataSegment(vm, vm.Context.Ap, 5)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Ap-1)
+		require.NoError(t, err)
+		assert.Equal(t, mem.MemoryValueFromInt(-5), mv)
+	})
+}
+
+func writeToDataSegment(vm *VirtualMachine, index uint64, value any) mem.MemoryAddress {
+	mv, err := mem.MemoryValueFromAny(value)
 	if err != nil {
-		panic("error in test util: writeToDataSegment")
+		panic(err)
+	}
+
+	err = vm.Memory.Write(ExecutionSegment, index, &mv)
+	if err != nil {
+		panic(err)
 	}
 	return mem.MemoryAddress{
 		SegmentIndex: ExecutionSegment,
@@ -847,8 +940,17 @@ func defaultVirtualMachine() *VirtualMachine {
 	return defaultVirtualMachineWithBytecode(nil)
 }
 
+func defaultVirtualMachineWithCode(code string) *VirtualMachine {
+	bytecode, err := a.CasmToBytecode(code)
+	if err != nil {
+		panic(err)
+	}
+
+	return defaultVirtualMachineWithBytecode(bytecode)
+}
+
 func defaultVirtualMachineWithBytecode(bytecode []*f.Element) *VirtualMachine {
-	memory := memory.InitializeEmptyMemory()
+	memory := mem.InitializeEmptyMemory()
 	_, err := memory.AllocateSegment(bytecode)
 	if err != nil {
 		panic(err)
