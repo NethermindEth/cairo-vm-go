@@ -36,7 +36,7 @@ func TestSimpleProgram(t *testing.T) {
 	err = runner.RunUntilPc(&endPc)
 	require.NoError(t, err)
 
-	executionSegment := runner.segments()[vm.ExecutionSegment]
+	executionSegment := runner.vm.Memory.Segments[vm.ExecutionSegment]
 
 	assert.Equal(
 		t,
@@ -81,7 +81,7 @@ func TestStepLimitExceeded(t *testing.T) {
 	err = runner.RunUntilPc(&endPc)
 	require.ErrorContains(t, err, "step limit exceeded")
 
-	executionSegment := runner.segments()[vm.ExecutionSegment]
+	executionSegment := runner.vm.Memory.Segments[vm.ExecutionSegment]
 
 	assert.Equal(
 		t,
@@ -133,7 +133,7 @@ func TestStepLimitExceededProofMode(t *testing.T) {
 		err = runner.Run()
 		require.ErrorContains(t, err, "step limit exceeded")
 
-		executionSegment := runner.segments()[vm.ExecutionSegment]
+		executionSegment := runner.vm.Memory.Segments[vm.ExecutionSegment]
 
 		assert.Equal(
 			t,

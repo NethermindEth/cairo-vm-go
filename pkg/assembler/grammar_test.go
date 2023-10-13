@@ -1,6 +1,7 @@
 package assembler
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -196,6 +197,52 @@ func TestRetGrammar(t *testing.T) {
 		},
 		casmAst,
 	)
+}
+
+func TestJumpGrammar(t *testing.T) {
+	for _, jmpType := range []string{"abs", "rel"} {
+		t.Logf("jmpType: %s", jmpType)
+
+		code := fmt.Sprintf("jmp %s [ap + 1] + [fp - 7];", jmpType)
+
+		casmAst, err := parseCode(code)
+		require.NoError(t, err)
+
+		require.Equal(
+			t,
+			&CasmProgram{
+				[]InstructionNode{
+					{
+						Jump: &Jump{
+							JumpType: jmpType,
+							Value: &Expression{
+								MathOperation: &MathOperation{
+									Lhs: &Deref{
+										Name: "ap",
+										Offset: &Offset{
+											Sign:  "+",
+											Value: ptrOf(1),
+										},
+									},
+									Rhs: &DerefOrImm{
+										Deref: &Deref{
+											Name: "fp",
+											Offset: &Offset{
+												Sign:  "-",
+												Value: ptrOf(7),
+											},
+										},
+									},
+									Operator: "+",
+								},
+							},
+						},
+					},
+				},
+			},
+			casmAst,
+		)
+	}
 }
 
 func ptrOf[T any](n T) *T {

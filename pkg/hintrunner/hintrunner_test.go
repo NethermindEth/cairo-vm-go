@@ -9,7 +9,7 @@ import (
 )
 
 func TestExistingHint(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 3
 
 	var ap ApCellRef = 5
@@ -33,7 +33,7 @@ func TestExistingHint(t *testing.T) {
 }
 
 func TestNoHint(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 3
 
 	var ap ApCellRef = 5
