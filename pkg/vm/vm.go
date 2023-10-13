@@ -31,9 +31,8 @@ type Context struct {
 
 func (ctx *Context) String() string {
 	return fmt.Sprintf(
-		"Context {pc: %d:%d, fp: %d, ap: %d}",
-		ctx.Pc.SegmentIndex,
-		ctx.Pc.Offset,
+		"Context {pc: %s, fp: %d, ap: %d}",
+		ctx.Pc,
 		ctx.Fp,
 		ctx.Ap,
 	)

@@ -855,15 +855,18 @@ func (r *noHintRunner) RunHint(_ *VirtualMachine) error {
 
 func TestAssertEqualInstruction(t *testing.T) {
 	hintrunner := noHintRunner{}
-	setInitialReg := func(vm *VirtualMachine) {
-		vm.Context.Ap = 1
-		vm.Context.Fp = 1
-		vm.Context.Pc = mem.MemoryAddress{}
+	setInitialReg := func(vm *VirtualMachine, regvals ...uint64) {
+		if len(regvals) != 3 {
+			panic("expected three register values")
+		}
+		vm.Context.Ap = regvals[0]
+		vm.Context.Fp = regvals[1]
+		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: regvals[2]}
 	}
 
 	t.Run("assign right to left;", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("[ap + 1] = [ap];")
-		setInitialReg(vm)
+		setInitialReg(vm, 1, 1, 0)
 
 		writeToDataSegment(vm, vm.Context.Ap, 2)
 
@@ -876,7 +879,7 @@ func TestAssertEqualInstruction(t *testing.T) {
 	})
 	t.Run("assign left to right", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("[ap + 1] = [ap];")
-		setInitialReg(vm)
+		setInitialReg(vm, 1, 1, 0)
 
 		writeToDataSegment(vm, vm.Context.Ap+1, 2)
 
@@ -886,6 +889,34 @@ func TestAssertEqualInstruction(t *testing.T) {
 		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Ap)
 		require.NoError(t, err)
 		assert.Equal(t, mem.MemoryValueFromInt(2), mv)
+	})
+	t.Run("addition", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("[ap] = [ap - 1] + [fp];")
+		setInitialReg(vm, 3, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Fp, 10)
+		writeToDataSegment(vm, vm.Context.Ap-1, 5)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Ap)
+		require.NoError(t, err)
+		assert.Equal(t, mem.MemoryValueFromInt(15), mv)
+	})
+	t.Run("substraction", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("[ap] = [ap - 1] + [fp];")
+		setInitialReg(vm, 3, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Fp, 10)
+		writeToDataSegment(vm, vm.Context.Ap, 5)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Ap-1)
+		require.NoError(t, err)
+		assert.Equal(t, mem.MemoryValueFromInt(-5), mv)
 	})
 }
 
