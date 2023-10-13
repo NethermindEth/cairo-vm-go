@@ -43,7 +43,7 @@ func TestAllocSegment(t *testing.T) {
 }
 
 func TestAllocConstantSize(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 3
 	vm.Context.Fp = 0
 
