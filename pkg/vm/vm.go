@@ -281,6 +281,15 @@ func (vm *VirtualMachine) inferOperand(
 		return mem.MemoryValue{}, nil
 	}
 
+	dstValue, err := vm.Memory.PeekFromAddress(dstAddr)
+	if err != nil {
+		return mem.MemoryValue{}, fmt.Errorf("cannot read dst: %w", err)
+	}
+
+	if !dstValue.Known() {
+		return mem.MemoryValue{}, nil // let computeRes try to handle it
+	}
+
 	op0Value, err := vm.Memory.PeekFromAddress(op0Addr)
 	if err != nil {
 		return mem.MemoryValue{}, fmt.Errorf("cannot read op0: %w", err)
@@ -292,15 +301,6 @@ func (vm *VirtualMachine) inferOperand(
 
 	if op0Value.Known() && op1Value.Known() {
 		return mem.MemoryValue{}, nil
-	}
-
-	dstValue, err := vm.Memory.PeekFromAddress(dstAddr)
-	if err != nil {
-		return mem.MemoryValue{}, fmt.Errorf("cannot read dst: %w", err)
-	}
-
-	if !dstValue.Known() {
-		return mem.MemoryValue{}, fmt.Errorf("value at dst is unknown")
 	}
 
 	if instruction.Res == a.Op1 && !op1Value.Known() {
