@@ -226,7 +226,7 @@ func (runner *ZeroRunner) steps() uint64 {
 // been any runs yet.
 func (runner *ZeroRunner) Output() []*fp.Element {
 	if runner.vm == nil {
-		panic("")
+		panic("cannot get the output from an uninitialized runner")
 	}
 
 	output := []*fp.Element{}
@@ -234,6 +234,7 @@ func (runner *ZeroRunner) Output() []*fp.Element {
 		if segment.BuiltinRunner.String() == "output" {
 			for offset := uint64(0); offset < segment.Len(); offset++ {
 				value := segment.Peek(offset)
+				// todo(rodro): check if output can only contains field elements
 				valueFelt, _ := value.FieldElement()
 				output = append(output, valueFelt)
 			}
