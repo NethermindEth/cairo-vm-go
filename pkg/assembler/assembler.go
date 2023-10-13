@@ -9,9 +9,13 @@ var parser *participle.Parser[CasmProgram] = participle.MustBuild[CasmProgram](
 	// mandatory lookahead to disambiguate between productions:
 	// expr -> [reg + n] + [reg + m] and
 	// expr -> [reg + n]
+	// also required for:
+	// instr -> jmp rel <expr> and
+	// instr -> jmp rel <expr> if <val> != 0
 	participle.UseLookahead(7),
 )
 
+// Given a CASM program it returns its encoded bytecode
 func CasmToBytecode(code string) ([]*f.Element, error) {
 	casmAst, err := parser.ParseString("", code)
 	if err != nil {
@@ -26,21 +30,15 @@ func CasmToBytecode(code string) ([]*f.Element, error) {
 	return encodeInstructionListToBytecode(wordList)
 }
 
-/*
-*    Casm to instruction list functions
- */
+// Given an a CASM ast it returns a list of instructions
 func astToInstruction(ast *CasmProgram) ([]Word, error) {
-	// Vist ast
 	n := len(ast.InstructionList)
-	// Slice with length 0 and capacity n
 	wordList := make([]Word, 0, n)
-	// iterate over the AST
 	for i := range ast.InstructionList {
 		instruction, imm, err := nodeToInstruction(ast.InstructionList[i])
 		if err != nil {
 			return nil, err
 		}
-		// Append instruction to list
 		wordList = append(wordList, instruction)
 		if imm != "" {
 			wordList = append(wordList, imm)
@@ -49,6 +47,7 @@ func astToInstruction(ast *CasmProgram) ([]Word, error) {
 	return wordList, nil
 }
 
+// Given an Instruction Node return an Instruction and possible Immediate
 func nodeToInstruction(node InstructionNode) (Word, Immediate, error) {
 	var instr Instruction
 	var imm Immediate
@@ -145,8 +144,9 @@ func setInstructionOp0(node *InstructionNode, instr *Instruction, expr Expressio
 	return nil
 }
 
-// Given the expression and the current encode returns an updated encode with the corresponding bit
-// and offset of op1, an immediate if exists, and a possible error
+// Given an instruction node and an instruction set the corresponding offset and
+// register of op1. It returns an immediate if it exists and the ocurrence of an
+// error.
 func setInstructionOp1(node *InstructionNode, instr *Instruction, expr Expressioner) (Immediate, error) {
 	if node != nil && node.Ret != nil {
 		// op1 is set as [fp - 1], where we read the previous pc
@@ -187,7 +187,7 @@ func setInstructionOp1(node *InstructionNode, instr *Instruction, expr Expressio
 }
 
 func setInstructionFlags(node *InstructionNode, instr *Instruction, expression Expressioner) error {
-	// Encode ResLogic
+	// Set ResLogic
 	if expression != nil && expression.AsMathOperation() != nil {
 		if expression.AsMathOperation().Operator == "+" {
 			instr.Res = AddOperands
@@ -196,7 +196,7 @@ func setInstructionFlags(node *InstructionNode, instr *Instruction, expression E
 		}
 	}
 
-	// Encode PcUpdate
+	// Set PcUpdate
 	if node.Jump != nil || node.Call != nil {
 		var isAbs bool
 		if node.Jump != nil {
@@ -215,14 +215,14 @@ func setInstructionFlags(node *InstructionNode, instr *Instruction, expression E
 		instr.PcUpdate = PcUpdateJump
 	}
 
-	// Encode ApUpdate
+	// Set ApUpdate
 	if node.ApPlus != nil {
 		instr.ApUpdate = AddRes
 	} else if node.ApPlusOne {
 		instr.ApUpdate = Add1
 	}
 
-	// Encode Opcode
+	// Set Opcode
 	if node.Call != nil {
 		instr.Opcode = OpCodeCall
 	} else if node.Ret != nil {
