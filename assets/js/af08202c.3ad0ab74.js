@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[422],{6247:e=>{e.exports=JSON.parse('{"title":"VM - Fundamentals","slug":"/category/vm---fundamentals","permalink":"/docs/category/vm---fundamentals","navigation":{"previous":{"title":"Cairo VM Docs","permalink":"/docs/intro"},"next":{"title":"Intro","permalink":"/docs/vm-fundamentals/intro"}}}')}}]);

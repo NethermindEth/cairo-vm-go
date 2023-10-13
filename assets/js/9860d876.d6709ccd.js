@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[667],{2530:e=>{e.exports=JSON.parse('{"title":"VM - Extras","slug":"/category/vm---extras","permalink":"/docs/category/vm---extras","navigation":{"previous":{"title":"Hints","permalink":"/docs/vm-fundamentals/hints"},"next":{"title":"Cairo Runner","permalink":"/docs/vm-extras/runner"}}}')}}]);
