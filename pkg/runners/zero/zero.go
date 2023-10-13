@@ -8,7 +8,9 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -64,69 +66,86 @@ func (runner *ZeroRunner) Run() error {
 	return nil
 }
 
-func (runner *ZeroRunner) InitializeMainEntrypoint() (memory.MemoryAddress, error) {
-	mem := memory.InitializeEmptyMemory()
-	_, err := mem.AllocateSegment(runner.program.Bytecode) // ProgramSegment
+func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) {
+	memory := mem.InitializeEmptyMemory()
+	_, err := memory.AllocateSegment(runner.program.Bytecode) // ProgramSegment
 	if err != nil {
-		return memory.UnknownAddress, err
+		return mem.UnknownAddress, err
 	}
 
-	mem.AllocateEmptySegment() // ExecutionSegment
+	memory.AllocateEmptySegment() // ExecutionSegment
 	if runner.proofmode {
 		initialPCOffset, ok := runner.program.Labels["__start__"]
 		if !ok {
-			return memory.UnknownAddress, errors.New("start label not found. Try compiling with `--proof_mode`")
+			return mem.UnknownAddress, errors.New("start label not found. Try compiling with `--proof_mode`")
 		}
 		endPcOffset, ok := runner.program.Labels["__end__"]
 		if !ok {
-			return memory.UnknownAddress, errors.New("end label not found. Try compiling with `--proof_mode`")
+			return mem.UnknownAddress, errors.New("end label not found. Try compiling with `--proof_mode`")
 		}
 
+		stack := runner.initializeBuiltins(memory)
 		// Add the dummy last fp and pc to the public memory, so that the verifier can enforce [fp - 2] = fp.
-		stack := []memory.MemoryValue{memory.MemoryValueFromSegmentAndOffset(
+		stack = append([]mem.MemoryValue{mem.MemoryValueFromSegmentAndOffset(
 			vm.ProgramSegment,
 			len(runner.program.Bytecode)+2,
-		), memory.EmptyMemoryValueAsFelt()}
-		return memory.MemoryAddress{SegmentIndex: vm.ProgramSegment, Offset: endPcOffset}, runner.initializeVm(&memory.MemoryAddress{
+		), mem.EmptyMemoryValueAsFelt()}, stack...)
+
+		if err := runner.initializeVm(&mem.MemoryAddress{
 			SegmentIndex: vm.ProgramSegment,
 			Offset:       initialPCOffset,
-		}, stack, mem)
+		}, stack, memory); err != nil {
+			return mem.UnknownAddress, err
+		}
+
+		// __start__ will advance Ap and Fp
+		runner.vm.Context.Ap = 2
+		runner.vm.Context.Fp = 2
+		return mem.MemoryAddress{SegmentIndex: vm.ProgramSegment, Offset: endPcOffset}, nil
 	}
-	returnFp := memory.MemoryValueFromSegmentAndOffset(
-		mem.AllocateEmptySegment(),
+
+	returnFp := mem.MemoryValueFromSegmentAndOffset(
+		memory.AllocateEmptySegment(),
 		0,
 	)
-
-	return runner.InitializeEntrypoint("main", nil, &returnFp, mem)
+	return runner.InitializeEntrypoint("main", nil, &returnFp, memory)
 }
 
 func (runner *ZeroRunner) InitializeEntrypoint(
-	funcName string, arguments []*f.Element, returnFp *memory.MemoryValue, mem *memory.Memory,
-) (memory.MemoryAddress, error) {
+	funcName string, arguments []*f.Element, returnFp *mem.MemoryValue, memory *mem.Memory,
+) (mem.MemoryAddress, error) {
 	initialPCOffset, ok := runner.program.Entrypoints[funcName]
 	if !ok {
-		return memory.UnknownAddress, fmt.Errorf("unknown entrypoint: %s", funcName)
+		return mem.UnknownAddress, fmt.Errorf("unknown entrypoint: %s", funcName)
 	}
 
-	stack := make([]memory.MemoryValue, 0, len(arguments)+2) // end + fp
+	stack := runner.initializeBuiltins(memory)
 	for i := range arguments {
-		stack = append(stack, memory.MemoryValueFromFieldElement(arguments[i]))
+		stack = append(stack, mem.MemoryValueFromFieldElement(arguments[i]))
 	}
-	end := memory.MemoryAddress{
-		SegmentIndex: uint64(mem.AllocateEmptySegment()),
+	end := mem.MemoryAddress{
+		SegmentIndex: uint64(memory.AllocateEmptySegment()),
 		Offset:       0,
 	}
 
-	stack = append(stack, *returnFp, memory.MemoryValueFromMemoryAddress(&end))
-	return end, runner.initializeVm(&memory.MemoryAddress{
+	stack = append(stack, *returnFp, mem.MemoryValueFromMemoryAddress(&end))
+	return end, runner.initializeVm(&mem.MemoryAddress{
 		SegmentIndex: vm.ProgramSegment,
 		Offset:       initialPCOffset,
-	}, stack, mem)
+	}, stack, memory)
 }
 
-func (runner *ZeroRunner) initializeVm(initialPC *memory.MemoryAddress, stack []memory.MemoryValue, memory *memory.Memory) error {
-	//Initialize memory
+func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) []mem.MemoryValue {
+	stack := []mem.MemoryValue{}
+	for _, builtin := range runner.program.Builtins {
+		bRunner := builtins.Runner(builtin)
+		builtinSegment := memory.AllocateBuiltinSegment(bRunner)
+		stack = append(stack, mem.MemoryValueFromSegmentAndOffset(builtinSegment, 0))
+	}
+	return stack
+}
 
+func (runner *ZeroRunner) initializeVm(initialPC *mem.MemoryAddress, stack []mem.MemoryValue, memory *mem.Memory) error {
 	executionSegment := memory.Segments[vm.ExecutionSegment]
 	offset := executionSegment.Len()
 	for idx := range stack {
@@ -146,7 +165,7 @@ func (runner *ZeroRunner) initializeVm(initialPC *memory.MemoryAddress, stack []
 }
 
 // run until the program counter equals the `pc` parameter
-func (runner *ZeroRunner) RunUntilPc(pc *memory.MemoryAddress) error {
+func (runner *ZeroRunner) RunUntilPc(pc *mem.MemoryAddress) error {
 	for !runner.vm.Context.Pc.Equal(pc) {
 		if runner.steps() >= runner.maxsteps {
 			return fmt.Errorf(
@@ -195,12 +214,34 @@ func (runner *ZeroRunner) BuildProof() ([]byte, []byte, error) {
 	return EncodeTrace(relocatedTrace), EncodeMemory(runner.vm.RelocateMemory()), nil
 }
 
-func (runner *ZeroRunner) pc() memory.MemoryAddress {
+func (runner *ZeroRunner) pc() mem.MemoryAddress {
 	return runner.vm.Context.Pc
 }
 
 func (runner *ZeroRunner) steps() uint64 {
 	return runner.vm.Step
+}
+
+// Gives the output of the last run. Panics if there hasn't
+// been any runs yet.
+func (runner *ZeroRunner) Output() []*fp.Element {
+	if runner.vm == nil {
+		panic("cannot get the output from an uninitialized runner")
+	}
+
+	output := []*fp.Element{}
+	for _, segment := range runner.vm.Memory.Segments {
+		if segment.BuiltinRunner.String() == "output" {
+			for offset := uint64(0); offset < segment.Len(); offset++ {
+				value := segment.Peek(offset)
+				// todo(rodro): check if output can only contains field elements
+				valueFelt, _ := value.FieldElement()
+				output = append(output, valueFelt)
+			}
+			break
+		}
+	}
+	return output
 }
 
 const ctxSize = 3 * 8
