@@ -9,7 +9,7 @@ var parser *participle.Parser[CasmProgram] = participle.MustBuild[CasmProgram](
 	// mandatory lookahead to disambiguate between productions:
 	// expr -> [reg + n] + [reg + m] and
 	// expr -> [reg + n]
-	participle.UseLookahead(5),
+	participle.UseLookahead(7),
 )
 
 func CasmToBytecode(code string) ([]*f.Element, error) {
@@ -17,140 +17,112 @@ func CasmToBytecode(code string) ([]*f.Element, error) {
 	if err != nil {
 		return nil, err
 	}
-	return encodeCasmProgram(*casmAst)
+	// Ast To Instruction List
+	wordList, err := astToInstruction(casmAst)
+	if err != nil {
+		return nil, err
+	}
+	// Instruction to bytecode
+	return encodeInstructionListToBytecode(wordList)
 }
 
-//
-// Functions that visit the AST in order to encode the instructions
-//
-
-const (
-	// offsets
-	op0Offset = 16
-	op1Offset = 32
-
-	// flag values
-	dstRegBit         = 48
-	op0RegBit         = 49
-	op1ImmBit         = 50
-	op1FpBit          = 51
-	op1ApBit          = 52
-	resAddBit         = 53
-	resMulBit         = 54
-	pcJumpAbsBit      = 55
-	pcJumpRelBit      = 56
-	pcJnzBit          = 57
-	apAddBit          = 58
-	apAdd1Bit         = 59
-	opcodeCallBit     = 60
-	opcodeRetBit      = 61
-	opcodeAssertEqBit = 62
-
-	// default values
-	biasedZero     uint16 = 0x8000
-	biasedPlusOne  uint16 = 0x8001
-	biasedMinusOne uint16 = 0x7FFF
-	biasedMinusTwo uint16 = 0x7FFE
-)
-
-func encodeCasmProgram(casmAst CasmProgram) ([]*f.Element, error) {
-	n := len(casmAst.Instructions)
-	bytecode := make([]*f.Element, 0, n+(n/2)+1)
-	var err error
-	for i := range casmAst.Instructions {
-		bytecode, err = encodeInstruction(bytecode, casmAst.Instructions[i])
+/*
+*    Casm to instruction list functions
+ */
+func astToInstruction(ast *CasmProgram) ([]Word, error) {
+	// Vist ast
+	n := len(ast.InstructionList)
+	// Slice with length 0 and capacity n
+	wordList := make([]Word, 0, n)
+	// iterate over the AST
+	for i := range ast.InstructionList {
+		instruction, imm, err := nodeToInstruction(ast.InstructionList[i])
 		if err != nil {
 			return nil, err
 		}
+		// Append instruction to list
+		wordList = append(wordList, instruction)
+		if imm != "" {
+			wordList = append(wordList, imm)
+		}
 	}
-	return bytecode, nil
+	return wordList, nil
 }
 
-func encodeInstruction(bytecode []*f.Element, instruction Instruction) ([]*f.Element, error) {
-	var encode uint64 = 0
-	expression := instruction.Expression()
-
-	encode, err := encodeDstReg(&instruction, encode)
+func nodeToInstruction(node InstructionNode) (Word, Immediate, error) {
+	var instr Instruction
+	var imm Immediate
+	expr := node.Expression()
+	err := setInstructionDst(&node, &instr)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-
-	encode, err = encodeOp0Reg(&instruction, expression, encode)
+	err = setInstructionOp0(&node, &instr, expr)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-
-	encode, imm, err := encodeOp1Source(&instruction, expression, encode)
+	imm, err = setInstructionOp1(&node, &instr, expr)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-
-	encode = encodeResLogic(expression, encode) |
-		encodePcUpdate(instruction, encode) |
-		encodeApUpdate(instruction, encode) |
-		encodeOpCode(instruction, encode)
-
-	encodeAsFelt := new(f.Element).SetUint64(encode)
-
-	bytecode = append(bytecode, encodeAsFelt)
-	if imm != nil {
-		bytecode = append(bytecode, imm)
+	err = setInstructionFlags(&node, &instr, expr)
+	if err != nil {
+		return nil, "", err
 	}
-
-	return bytecode, nil
+	return instr, imm, nil
 }
 
-func encodeDstReg(instr *Instruction, encode uint64) (uint64, error) {
-	if instr.ApPlus != nil || instr.Jump != nil {
+func setInstructionDst(node *InstructionNode, instr *Instruction) error {
+	if node.ApPlus != nil || node.Jump != nil {
 		// dstOffset is not involved so it is set to fp - 1 as default value
-		encode |= 1 << dstRegBit
-		encode |= uint64(biasedMinusOne)
-		return encode, nil
+		instr.OffDest = -1
+		instr.DstRegister = Fp
+		return nil
 	}
-	if instr.Call != nil {
+	if node.Call != nil {
 		// dstOffset is set to ap + 0
-		encode |= uint64(biasedZero)
-		return encode, nil
+		instr.OffDest = 0
+		return nil
 	}
-	if instr.Ret != nil {
+	if node.Ret != nil {
 		// dstOffset is set as fp - 2
-		encode |= 1 << dstRegBit
-		encode |= uint64(biasedMinusTwo)
-		return encode, nil
+		instr.OffDest = -2
+		instr.DstRegister = Fp
+		return nil
 	}
 
 	var deref *Deref
-	if instr.AssertEq != nil {
-		deref = instr.AssertEq.Dst
-	} else if instr.Jnz != nil {
-		deref = instr.Jnz.Condition
+	if node.AssertEq != nil {
+		deref = node.AssertEq.Dst
+	} else if node.Jnz != nil {
+		deref = node.Jnz.Condition
 	}
 
-	biasedOffset, err := deref.BiasedOffset()
+	offset, err := deref.SignedOffset()
 	if err != nil {
-		return 0, err
+		return err
 	}
-	encode |= uint64(biasedOffset)
+	instr.OffDest = offset
 	if deref.IsFp() {
-		encode |= 1 << dstRegBit
+		instr.DstRegister = Fp
+	} else {
+		instr.DstRegister = Ap
 	}
-
-	return encode, nil
-
+	return nil
 }
 
-func encodeOp0Reg(instr *Instruction, expr Expressioner, encode uint64) (uint64, error) {
-	if instr != nil && instr.Call != nil {
+func setInstructionOp0(node *InstructionNode, instr *Instruction, expr Expressioner) error {
+	if node != nil && node.Call != nil {
 		// op0 is set as [ap + 1] to store current pc
-		encode |= uint64(biasedPlusOne) << op0Offset
-		return encode, nil
+		instr.OffOp0 = 1
+		return nil
 	}
-	if (instr != nil && (instr.Jnz != nil || instr.Ret != nil)) ||
+	if (node != nil && (node.Jnz != nil || node.Ret != nil)) ||
 		(expr.AsDeref() != nil || expr.AsImmediate() != nil) {
 		// op0 is not involved, it is set as fp - 1 as default value
-		encode |= 1 << op0RegBit
-		encode |= uint64(biasedMinusOne) << op0Offset
-		return encode, nil
+		instr.OffOp0 = -1
+		instr.Op0Register = Fp
+		return nil
 	}
 
 	var deref *Deref
@@ -160,109 +132,103 @@ func encodeOp0Reg(instr *Instruction, expr Expressioner, encode uint64) (uint64,
 		deref = expr.AsMathOperation().Lhs
 	}
 
-	biasedOffset, err := deref.BiasedOffset()
+	offset, err := deref.SignedOffset()
 	if err != nil {
-		return 0, err
+		return err
 	}
-	encode |= uint64(biasedOffset) << op0Offset
+	instr.OffOp0 = offset
 	if deref.IsFp() {
-		encode |= 1 << op0RegBit
+		instr.Op0Register = Fp
+	} else {
+		instr.Op0Register = Ap
 	}
-
-	return encode, nil
+	return nil
 }
 
 // Given the expression and the current encode returns an updated encode with the corresponding bit
-// and offset of op1, an immeadiate if exists, and a possible error
-func encodeOp1Source(inst *Instruction, expr Expressioner, encode uint64) (uint64, *f.Element, error) {
-	if inst != nil && inst.Ret != nil {
+// and offset of op1, an immediate if exists, and a possible error
+func setInstructionOp1(node *InstructionNode, instr *Instruction, expr Expressioner) (Immediate, error) {
+	if node != nil && node.Ret != nil {
 		// op1 is set as [fp - 1], where we read the previous pc
-		encode |= uint64(biasedMinusOne) << op1Offset
-		encode |= 1 << op1FpBit
-		return encode, nil, nil
+		instr.OffOp1 = -1
+		instr.Op1Source = FpPlusOffOp1
+		return "", nil
 	}
 
 	if expr.AsDeref() != nil {
-		biasedOffset, err := expr.AsDeref().BiasedOffset()
+		offset, err := expr.AsDeref().SignedOffset()
 		if err != nil {
-			return 0, nil, err
+			return "", err
 		}
-		encode |= uint64(biasedOffset) << op1Offset
+		instr.OffOp1 = offset
 		if expr.AsDeref().IsFp() {
-			encode |= 1 << op1FpBit
+			instr.Op1Source = FpPlusOffOp1
 		} else {
-			encode |= 1 << op1ApBit
+			instr.Op1Source = ApPlusOffOp1
 		}
-		return encode, nil, nil
+		return "", nil
 	} else if expr.AsDoubleDeref() != nil {
-		biasedOffset, err := expr.AsDoubleDeref().BiasedOffset()
+		offset, err := expr.AsDoubleDeref().SignedOffset()
 		if err != nil {
-			return 0, nil, err
+			return "", err
 		}
-		encode |= uint64(biasedOffset) << op1Offset
-		return encode, nil, nil
+		instr.OffOp1 = offset
+		return "", nil
 	} else if expr.AsImmediate() != nil {
-		imm, err := new(f.Element).SetString(*expr.AsImmediate())
-		if err != nil {
-			return 0, nil, err
-		}
-		encode |= uint64(biasedPlusOne) << op1Offset
-		return encode | 1<<op1ImmBit, imm, nil
-	} else {
-		//  if it is a math operation, the op1 source is set by the right hand side
-		return encodeOp1Source(inst, expr.AsMathOperation().Rhs, encode)
+		// immediate is converted to Felt during bytecode conversion
+		imm := expr.AsImmediate()
+		instr.OffOp1 = 1
+		instr.Op1Source = Imm
+		// instr.Imm = *imm
+		return *imm, nil
 	}
+	//  if it is a math operation, the op1 source is set by the right hand side
+	return setInstructionOp1(node, instr, expr.AsMathOperation().Rhs)
 }
 
-func encodeResLogic(expression Expressioner, encode uint64) uint64 {
+func setInstructionFlags(node *InstructionNode, instr *Instruction, expression Expressioner) error {
+	// Encode ResLogic
 	if expression != nil && expression.AsMathOperation() != nil {
 		if expression.AsMathOperation().Operator == "+" {
-			encode |= 1 << resAddBit
+			instr.Res = AddOperands
 		} else {
-			encode |= 1 << resMulBit
+			instr.Res = MulOperands
 		}
 	}
-	return encode
-}
 
-func encodePcUpdate(instruction Instruction, encode uint64) uint64 {
-	if instruction.Jump != nil || instruction.Call != nil {
+	// Encode PcUpdate
+	if node.Jump != nil || node.Call != nil {
 		var isAbs bool
-		if instruction.Jump != nil {
-			isAbs = instruction.Jump.JumpType == "abs"
+		if node.Jump != nil {
+			isAbs = node.Jump.JumpType == "abs"
 		} else {
-			isAbs = instruction.Call.CallType == "abs"
+			isAbs = node.Call.CallType == "abs"
 		}
 		if isAbs {
-			encode |= 1 << pcJumpAbsBit
+			instr.PcUpdate = PcUpdateJump
 		} else {
-			encode |= 1 << pcJumpRelBit
+			instr.PcUpdate = PcUpdateJumpRel
 		}
-	} else if instruction.Jnz != nil {
-		encode |= 1 << pcJnzBit
-	} else if instruction.Ret != nil {
-		encode |= 1 << pcJumpAbsBit
+	} else if node.Jnz != nil {
+		instr.PcUpdate = PcUpdateJnz
+	} else if node.Ret != nil {
+		instr.PcUpdate = PcUpdateJump
 	}
 
-	return encode
-}
-
-func encodeApUpdate(instruction Instruction, encode uint64) uint64 {
-	if instruction.ApPlus != nil {
-		encode |= 1 << apAddBit
-	} else if instruction.ApPlusOne {
-		encode |= 1 << apAdd1Bit
+	// Encode ApUpdate
+	if node.ApPlus != nil {
+		instr.ApUpdate = AddRes
+	} else if node.ApPlusOne {
+		instr.ApUpdate = Add1
 	}
-	return encode
-}
 
-func encodeOpCode(instruction Instruction, encode uint64) uint64 {
-	if instruction.Call != nil {
-		encode |= 1 << opcodeCallBit
-	} else if instruction.Ret != nil {
-		encode |= 1 << opcodeRetBit
-	} else if instruction.AssertEq != nil {
-		encode |= 1 << opcodeAssertEqBit
+	// Encode Opcode
+	if node.Call != nil {
+		instr.Opcode = OpCodeCall
+	} else if node.Ret != nil {
+		instr.Opcode = OpCodeRet
+	} else if node.AssertEq != nil {
+		instr.Opcode = OpCodeAssertEq
 	}
-	return encode
+	return nil
 }
