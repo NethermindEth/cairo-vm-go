@@ -214,6 +214,40 @@ func TestSegmentBuiltin(t *testing.T) {
 	})
 }
 
+func TestRelocationOffsets(t *testing.T) {
+	memory := InitializeEmptyMemory()
+	memory.AllocateEmptySegment() //Program
+	memory.AllocateEmptySegment() //Execution
+	memory.AllocateEmptySegment()
+
+	err := memory.Segments[1].Write(0, memoryValuePointerFromInt(1))
+	assert.NoError(t, err)
+	err = memory.Segments[1].Write(1, memoryValuePointerFromInt(2))
+	assert.NoError(t, err)
+	err = memory.Segments[1].Write(2, memoryValuePointerFromInt(3))
+	assert.NoError(t, err)
+	err = memory.Segments[1].Write(3, memoryValuePointerFromInt(4))
+	assert.NoError(t, err)
+
+	err = memory.Segments[2].Write(0, memoryValuePointerFromInt(5))
+	assert.NoError(t, err)
+	err = memory.Segments[2].Write(1, memoryValuePointerFromInt(6))
+	assert.NoError(t, err)
+
+	// segmentsOffsets[0] = 1
+	// segmentsOffsets[1] = 1
+	// segmentsOffsets[2] = 1+4
+	// segmentsOffsets[3] = 1+4+2
+	expected_offsets := []uint64{1, 1, 5, 7}
+
+	offsets, memoryUsed := memory.RelocationOffsets()
+	for i, v := range offsets {
+		assert.Equal(t, expected_offsets[i], v)
+
+	}
+	assert.Equal(t, memoryUsed, uint64(7))
+}
+
 // compares the memory value match an expected value at the given segment and offset
 func noErrorAndEqualSegmentRead(t *testing.T, s *Segment, offset uint64, expected MemoryValue) {
 	v, err := s.Read(offset)

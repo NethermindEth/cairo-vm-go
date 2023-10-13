@@ -274,6 +274,15 @@ func (vm *VirtualMachine) inferOperand(
 		return mem.MemoryValue{}, nil
 	}
 
+	dstValue, err := vm.Memory.PeekFromAddress(dstAddr)
+	if err != nil {
+		return mem.MemoryValue{}, fmt.Errorf("cannot read dst: %w", err)
+	}
+
+	if !dstValue.Known() {
+		return mem.MemoryValue{}, nil // let computeRes try to handle it
+	}
+
 	op0Value, err := vm.Memory.PeekFromAddress(op0Addr)
 	if err != nil {
 		return mem.MemoryValue{}, fmt.Errorf("cannot read op0: %w", err)
@@ -285,15 +294,6 @@ func (vm *VirtualMachine) inferOperand(
 
 	if op0Value.Known() && op1Value.Known() {
 		return mem.MemoryValue{}, nil
-	}
-
-	dstValue, err := vm.Memory.PeekFromAddress(dstAddr)
-	if err != nil {
-		return mem.MemoryValue{}, fmt.Errorf("cannot read dst: %w", err)
-	}
-
-	if !dstValue.Known() {
-		return mem.MemoryValue{}, fmt.Errorf("value at dst is unknown")
 	}
 
 	if instruction.Res == a.Op1 && !op1Value.Known() {
@@ -511,4 +511,34 @@ func (vm *VirtualMachine) relocateTrace() []Trace {
 		relocatedTrace[i] = vm.Trace[i].Relocate(totalBytecode)
 	}
 	return relocatedTrace
+}
+
+// It returns all segments in memory but relocated as a single segment
+// Each element is a pointer to a field element, if the cell was not accessed,
+// nil is stored instead
+func (vm *VirtualMachine) RelocateMemory() []*f.Element {
+	segmentsOffsets, maxMemoryUsed := vm.Memory.RelocationOffsets()
+	// the prover expect first element of the relocated memory to start at index 1,
+	// this way we fill relocatedMemory starting from zero, but the actual value
+	// returned has nil as its first element.
+	relocatedMemory := make([]*f.Element, maxMemoryUsed)
+	for i, segment := range vm.Memory.Segments {
+		for j := uint64(0); j < segment.Len(); j++ {
+			cell := segment.Data[j]
+			if !cell.Known() {
+				continue
+			}
+
+			var felt *f.Element
+			if cell.IsAddress() {
+				addr, _ := cell.MemoryAddress()
+				felt = addr.Relocate(segmentsOffsets)
+			} else {
+				felt, _ = cell.FieldElement()
+			}
+
+			relocatedMemory[segmentsOffsets[i]+j] = felt
+		}
+	}
+	return relocatedMemory
 }

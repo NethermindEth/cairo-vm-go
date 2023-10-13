@@ -212,6 +212,13 @@ func (memory *Memory) AllocateEmptySegmentOfSize(size int) int {
 	return len(memory.Segments) - 1
 }
 
+// Allocate a Builtin segment
+func (memory *Memory) AllocateBuiltinSegment(builtinRunner BuiltinRunner) int {
+	builtinSegment := EmptySegment().WithBuiltinRunner(builtinRunner)
+	memory.Segments = append(memory.Segments, builtinSegment)
+	return len(memory.Segments) - 1
+}
+
 // Writes to a given segment index and offset a new memory value. Errors if writing
 // to an unallocated segment or if overwriting a different memory value
 func (memory *Memory) Write(segmentIndex uint64, offset uint64, value *MemoryValue) error {
@@ -262,4 +269,22 @@ func (memory *Memory) Peek(segmentIndex uint64, offset uint64) (MemoryValue, err
 // modifying it in any way. Errors if peeking from an unallocated segment
 func (memory *Memory) PeekFromAddress(address *MemoryAddress) (MemoryValue, error) {
 	return memory.Peek(address.SegmentIndex, address.Offset)
+}
+
+// It returns all segment offsets and max memory used
+func (memory *Memory) RelocationOffsets() ([]uint64, uint64) {
+	// Prover expects maxMemoryUsed to start at one
+	var maxMemoryUsed uint64 = 1
+
+	// segmentsOffsets[0] = 1
+	// segmentsOffsets[1] = 1 + len(segment[0])
+	// segmentsOffsets[N] = 1 + len(segment[n-1]) + sum of segements[n-1-i] for i in [1, n-1]
+	segmentsOffsets := make([]uint64, uint64(len(memory.Segments))+1)
+	segmentsOffsets[0] = 1
+	for i, segment := range memory.Segments {
+		segmentLength := segment.Len()
+		maxMemoryUsed += segmentLength
+		segmentsOffsets[i+1] = segmentsOffsets[i] + segmentLength
+	}
+	return segmentsOffsets, maxMemoryUsed
 }
