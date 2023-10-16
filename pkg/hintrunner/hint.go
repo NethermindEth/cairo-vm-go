@@ -156,6 +156,9 @@ func (hint LinearSplit) Execute(vm *VM.VirtualMachine) error {
 		return fmt.Errorf("resolve value operand %s: %w", hint.value, err)
 	}
 	valueField, err := value.FieldElement()
+	if err != nil {
+		return err
+	}
 	scalar, err := hint.scalar.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve scalar operand %s: %w", hint.scalar, err)
