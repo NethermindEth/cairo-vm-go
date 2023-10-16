@@ -6,16 +6,16 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
-func defaultVirtualMachine() (*vm.VirtualMachine, *memory.MemoryManager) {
-	manager := memory.CreateMemoryManager()
-	manager.Memory.AllocateEmptySegment()
-	manager.Memory.AllocateEmptySegment()
+func defaultVirtualMachine() *vm.VirtualMachine {
+	memory := memory.InitializeEmptyMemory()
+	memory.AllocateEmptySegment()
+	memory.AllocateEmptySegment()
 
-	vm, err := vm.NewVirtualMachine(vm.Context{}, manager.Memory, vm.VirtualMachineConfig{})
+	vm, err := vm.NewVirtualMachine(vm.Context{}, memory, vm.VirtualMachineConfig{})
 	if err != nil {
 		panic(err)
 	}
-	return vm, manager
+	return vm
 }
 
 func writeTo(vm *VM.VirtualMachine, segment uint64, offset uint64, val memory.MemoryValue) {

@@ -6,11 +6,12 @@ import (
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAllocSegment(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 3
 	vm.Context.Fp = 0
 
@@ -41,7 +42,7 @@ func TestAllocSegment(t *testing.T) {
 }
 
 func TestTestLessThanTrue(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(23))
@@ -78,7 +79,7 @@ func TestTestLessThanFalse(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.expectedMsg, func(t *testing.T) {
-			vm, _ := defaultVirtualMachine()
+			vm := defaultVirtualMachine()
 			vm.Context.Ap = 0
 			vm.Context.Fp = 0
 			writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(17))
@@ -117,7 +118,7 @@ func TestTestLessThanOrEqTrue(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.expectedMsg, func(t *testing.T) {
-			vm, _ := defaultVirtualMachine()
+			vm := defaultVirtualMachine()
 			vm.Context.Ap = 0
 			vm.Context.Fp = 0
 			writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(23))
@@ -146,7 +147,7 @@ func TestTestLessThanOrEqTrue(t *testing.T) {
 }
 
 func TestTestLessThanOrEqFalse(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(17))
@@ -174,7 +175,7 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 }
 
 func TestLinearSplit(t *testing.T) {
-	vm, _ := defaultVirtualMachine()
+	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
@@ -199,7 +200,7 @@ func TestLinearSplit(t *testing.T) {
 	yy := readFrom(vm, VM.ExecutionSegment, 1)
 	require.Equal(t, yy, memory.MemoryValueFromInt(14))
 
-	vm, _ = defaultVirtualMachine()
+	vm = defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
@@ -219,4 +220,62 @@ func TestLinearSplit(t *testing.T) {
 	require.Equal(t, xx, memory.MemoryValueFromInt(223343))
 	yy = readFrom(vm, VM.ExecutionSegment, 1)
 	require.Equal(t, yy, memory.MemoryValueFromInt(14+42))
+}
+
+func TestWideMul128(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var dstLow ApCellRef = 1
+	var dstHigh ApCellRef = 2
+
+	lhs := Immediate(*big.NewInt(1).Lsh(big.NewInt(1), 127))
+	rhs := Immediate(*big.NewInt(1<<8 + 1))
+
+	hint := WideMul128{
+		low:  dstLow,
+		high: dstHigh,
+		lhs:  lhs,
+		rhs:  rhs,
+	}
+
+	err := hint.Execute(vm)
+	require.Nil(t, err)
+
+	low := &f.Element{}
+	low.SetBigInt(big.NewInt(1).Lsh(big.NewInt(1), 127))
+
+	require.Equal(
+		t,
+		memory.MemoryValueFromFieldElement(low),
+		readFrom(vm, VM.ExecutionSegment, 1),
+	)
+	require.Equal(
+		t,
+		memory.MemoryValueFromInt(1<<7),
+		readFrom(vm, VM.ExecutionSegment, 2),
+	)
+}
+
+func TestWideMul128IncorrectRange(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var dstLow ApCellRef = 1
+	var dstHigh ApCellRef = 2
+
+	lhs := Immediate(*big.NewInt(1).Lsh(big.NewInt(1), 128))
+	rhs := Immediate(*big.NewInt(1))
+
+	hint := WideMul128{
+		low:  dstLow,
+		high: dstHigh,
+		lhs:  lhs,
+		rhs:  rhs,
+	}
+
+	err := hint.Execute(vm)
+	require.ErrorContains(t, err, "should be u128")
 }
