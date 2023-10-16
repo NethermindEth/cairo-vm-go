@@ -2,6 +2,7 @@ package hintrunner
 
 import (
 	"fmt"
+	"math/big"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -134,6 +135,86 @@ func (hint TestLessThanOrEqual) Execute(vm *VM.VirtualMachine) error {
 	err = vm.Memory.WriteToAddress(&dstAddr, &mv)
 	if err != nil {
 		return fmt.Errorf("write to dst address %s: %w", dstAddr, err)
+	}
+
+	return nil
+}
+
+type LinearSplit struct {
+	value  ResOperander
+	scalar ResOperander
+	max_x  ResOperander
+	x      CellRefer
+	y      CellRefer
+}
+
+func (hint LinearSplit) Execute(vm *VM.VirtualMachine) error {
+	value, err := hint.value.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve value operand %s: %w", hint.value, err)
+	}
+	valueField, err := value.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	scalar, err := hint.scalar.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve scalar operand %s: %w", hint.scalar, err)
+	}
+	scalarField, err := scalar.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	max_x, err := hint.max_x.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve max_x operand %s: %w", hint.max_x, err)
+	}
+	max_xField, err := max_x.FieldElement()
+	if err != nil {
+		return err
+	}
+	scalarBig := &big.Int{}
+	valueBig := &big.Int{}
+	maxBig := &big.Int{}
+	scalarField.BigInt(scalarBig)
+	valueField.BigInt(valueBig)
+	max_xField.BigInt(maxBig)
+
+	x := (&big.Int{}).Div(valueBig, scalarBig)
+
+	if x.Cmp(maxBig) > 0 {
+		x.Set(maxBig)
+	}
+
+	y := &big.Int{}
+	y = y.Sub(valueBig, y.Mul(scalarBig, x))
+
+	xAddr, err := hint.x.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get x address %s: %w", xAddr, err)
+	}
+
+	yAddr, err := hint.y.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get y address %s: %w", yAddr, err)
+	}
+
+	xFiled := &f.Element{}
+	yFiled := &f.Element{}
+	xFiled.SetBigInt(x)
+	yFiled.SetBigInt(y)
+	mv := memory.MemoryValueFromFieldElement(xFiled)
+	err = vm.Memory.WriteToAddress(&xAddr, &mv)
+	if err != nil {
+		return fmt.Errorf("write to x address %s: %w", xAddr, err)
+	}
+
+	mv = memory.MemoryValueFromFieldElement(yFiled)
+	err = vm.Memory.WriteToAddress(&yAddr, &mv)
+	if err != nil {
+		return fmt.Errorf("write to y address %s: %w", yAddr, err)
 	}
 
 	return nil
