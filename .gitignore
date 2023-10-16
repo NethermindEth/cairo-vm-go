@@ -1,6 +1,11 @@
+# Project Specific
 bin/
-.idea/
-.python-version
+cov.out
+cpu.out
+*.test
 
+# Local Env Specific
+.python-version
 .DS_Store
+.idea/
 vendor/
