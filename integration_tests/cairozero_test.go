@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/runners/zero"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/assert"
@@ -173,13 +172,13 @@ func decodeProof(traceLocation string, memoryLocation string) ([]vm.Trace, []*fp
 	if err != nil {
 		return nil, nil, err
 	}
-	decodedTrace := zero.DecodeTrace(trace)
+	decodedTrace := vm.DecodeTrace(trace)
 
 	memory, err := os.ReadFile(memoryLocation)
 	if err != nil {
 		return nil, nil, err
 	}
-	decodedMemory := zero.DecodeMemory(memory)
+	decodedMemory := vm.DecodeMemory(memory)
 
 	return decodedTrace, decodedMemory, nil
 }
