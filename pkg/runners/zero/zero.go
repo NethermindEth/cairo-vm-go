@@ -1,7 +1,6 @@
 package zero
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 
@@ -211,7 +210,7 @@ func (runner *ZeroRunner) BuildProof() ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 
-	return EncodeTrace(relocatedTrace), EncodeMemory(runner.vm.RelocateMemory()), nil
+	return vm.EncodeTrace(relocatedTrace), vm.EncodeMemory(runner.vm.RelocateMemory()), nil
 }
 
 func (runner *ZeroRunner) pc() mem.MemoryAddress {
@@ -242,87 +241,4 @@ func (runner *ZeroRunner) Output() []*fp.Element {
 		}
 	}
 	return output
-}
-
-const ctxSize = 3 * 8
-
-func EncodeTrace(trace []vm.Trace) []byte {
-	content := make([]byte, 0, len(trace)*ctxSize)
-	for i := range trace {
-		content = binary.LittleEndian.AppendUint64(content, trace[i].Ap)
-		content = binary.LittleEndian.AppendUint64(content, trace[i].Fp)
-		content = binary.LittleEndian.AppendUint64(content, trace[i].Pc)
-	}
-	return content
-}
-
-func DecodeTrace(content []byte) []vm.Trace {
-	trace := make([]vm.Trace, 0, len(content)/ctxSize)
-	for i := 0; i < len(content); i += ctxSize {
-		trace = append(
-			trace,
-			vm.Trace{
-				Ap: binary.LittleEndian.Uint64(content[i : i+8]),
-				Fp: binary.LittleEndian.Uint64(content[i+8 : i+16]),
-				Pc: binary.LittleEndian.Uint64(content[i+16 : i+24]),
-			},
-		)
-	}
-	return trace
-}
-
-const addrSize = 8
-const feltSize = 32
-
-// Encody the relocated memory in the (address, value) form
-// in a consecutive way
-func EncodeMemory(memory []*f.Element) []byte {
-	// Check non nil elements for optimal array size
-	nonNilElms := 0
-	for i := range memory {
-		if memory[i] != nil {
-			nonNilElms++
-		}
-	}
-	content := make([]byte, nonNilElms*(addrSize+feltSize))
-
-	count := 0
-	for i := range memory {
-		if memory[i] == nil {
-			continue
-		}
-		// set the right content index
-		j := count * (addrSize + feltSize)
-		// store the address
-		binary.LittleEndian.PutUint64(content[j:j+addrSize], uint64(i))
-		// store the field element
-		f.LittleEndian.PutElement(
-			(*[32]byte)(content[j+addrSize:j+addrSize+feltSize]),
-			*memory[i],
-		)
-
-		// increase the number of elements stored
-		count++
-	}
-	return content
-}
-
-func DecodeMemory(content []byte) []*f.Element {
-	// calculate the max memory index
-	lastContentInd := len(content) - (addrSize + feltSize)
-	lasMemIndex := binary.LittleEndian.Uint64(content[lastContentInd : lastContentInd+addrSize])
-
-	// create the memory array with the same length as the max memory index
-	memory := make([]*f.Element, lasMemIndex+1)
-
-	// decode the encontent and store it in memory
-	for i := 0; i < len(content); i += addrSize + feltSize {
-		memIndex := binary.LittleEndian.Uint64(content[i : i+addrSize])
-		felt, err := f.LittleEndian.Element((*[32]byte)(content[i+addrSize : i+addrSize+feltSize]))
-		if err != nil {
-			panic(err)
-		}
-		memory[memIndex] = &felt
-	}
-	return memory
 }
