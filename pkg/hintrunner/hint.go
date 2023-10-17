@@ -215,3 +215,49 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 
 	return nil
 }
+
+type SquareRoot struct {
+	value ResOperander
+	dst   CellRefer
+}
+
+func (hint SquareRoot) String() string {
+	return "SquareRoot"
+}
+
+func (hint SquareRoot) Execute(vm *VM.VirtualMachine) error {
+	mask := MaxU128()
+	value, err := hint.value.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve lhs operand %s: %v", hint.value, err)
+	}
+
+	valueFelt, err := value.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	valueU256 := uint256.Int(valueFelt.Bits())
+
+	if valueU256.Gt(&mask) {
+		return fmt.Errorf("lhs operand %s should be u128", valueFelt)
+	}
+
+	sqrt := valueU256.Sqrt(&valueU256)
+
+	bytes := sqrt.Bytes32()
+
+	dst := f.Element{}
+	dst.SetBytes(bytes[16:])
+
+	dstAddr, err := hint.dst.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get destination cell: %v", err)
+	}
+	dstVal := memory.MemoryValueFromFieldElement(&dst)
+	err = vm.Memory.WriteToAddress(&dstAddr, &dstVal)
+	if err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+	return nil
+}
