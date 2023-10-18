@@ -2,17 +2,22 @@ package builtins
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
+
+const BitwiseName = "bitwise"
 
 const cellsPerBitwise = 5
 const inputCellsPerBitwise = 2
 
 type Bitwise struct{}
 
-func (b *Bitwise) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
+func (b *Bitwise) CheckWrite(
+	segment *memory.Segment, offset uint64, value *memory.MemoryValue,
+) error {
 	return nil
 }
 
@@ -26,14 +31,14 @@ func (b *Bitwise) InferValue(segment *memory.Segment, offset uint64) error {
 	xOffset := offset - bitwiseIndex
 	yOffset := xOffset + 1
 
-	xValue, err := segment.Read(xOffset)
-	if err != nil {
-		return err
+	xValue := segment.Peek(xOffset)
+	if !xValue.Known() {
+		return fmt.Errorf("cannot infer value: input value at offset %d is unknown", xOffset)
 	}
 
-	yValue, err := segment.Read(yOffset)
-	if err != nil {
-		return err
+	yValue := segment.Peek(yOffset)
+	if !yValue.Known() {
+		return fmt.Errorf("cannot infer value: input value at offset %d is unknown", yOffset)
 	}
 
 	xFelt, err := xValue.FieldElement()
@@ -83,5 +88,5 @@ func (b *Bitwise) InferValue(segment *memory.Segment, offset uint64) error {
 }
 
 func (b *Bitwise) String() string {
-	return "bitwise"
+	return BitwiseName
 }
