@@ -1,7 +1,10 @@
 package hintrunner
 
 import (
+	"fmt"
+	"io"
 	"math/big"
+	"os"
 	"testing"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -230,4 +233,38 @@ func TestWideMul128IncorrectRange(t *testing.T) {
 
 	err := hint.Execute(vm)
 	require.ErrorContains(t, err, "should be u128")
+}
+
+func TestDebugPrint(t *testing.T) {
+
+	//Save the old stdout
+	rescueStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	v := memory.MemoryValueFromInt(10)
+	vm.Memory.Write(VM.ExecutionSegment, 0, &v)
+	v = memory.MemoryValueFromInt(20)
+	vm.Memory.Write(VM.ExecutionSegment, 1, &v)
+	v = memory.MemoryValueFromInt(30)
+	vm.Memory.Write(VM.ExecutionSegment, 2, &v)
+
+	start := Immediate(*big.NewInt(0))
+	end := Immediate(*big.NewInt(2))
+	hint := DebugPrint{
+		start: start,
+		end:   end,
+	}
+	err := hint.Execute(vm)
+
+	w.Close()
+	out, _ := io.ReadAll(r)
+	//Restore stdout at the end of the test
+	os.Stdout = rescueStdout
+
+	fmt.Println(out)
+	require.NoError(t, err)
 }
