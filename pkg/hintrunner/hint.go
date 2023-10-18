@@ -226,7 +226,6 @@ func (hint SquareRoot) String() string {
 }
 
 func (hint SquareRoot) Execute(vm *VM.VirtualMachine) error {
-	mask := MaxU128()
 	value, err := hint.value.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve lhs operand %s: %v", hint.value, err)
@@ -237,15 +236,9 @@ func (hint SquareRoot) Execute(vm *VM.VirtualMachine) error {
 		return err
 	}
 
-	valueU256 := uint256.Int(valueFelt.Bits())
+	sqrt := valueFelt.Sqrt(valueFelt)
 
-	if valueU256.Gt(&mask) {
-		return fmt.Errorf("lhs operand %s should be u128", valueFelt)
-	}
-
-	sqrt := valueU256.Sqrt(&valueU256)
-
-	bytes := sqrt.Bytes32()
+	bytes := sqrt.Bytes()
 
 	dst := f.Element{}
 	dst.SetBytes(bytes[16:])
