@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	starknetParser "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
+	sn "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -17,7 +17,7 @@ type Program struct {
 	// it stores the start and end label pcs
 	Labels map[string]uint64
 	// builtins
-	Builtins []starknetParser.Builtin
+	Builtins []sn.Builtin
 }
 
 func LoadCairoZeroProgram(content []byte) (*Program, error) {
