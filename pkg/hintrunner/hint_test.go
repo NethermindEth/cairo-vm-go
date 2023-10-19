@@ -235,7 +235,6 @@ func TestWideMul128IncorrectRange(t *testing.T) {
 }
 
 func TestDebugPrint(t *testing.T) {
-
 	//Save the old stdout
 	rescueStdout := os.Stdout
 	r, w, _ := os.Pipe()
@@ -244,12 +243,10 @@ func TestDebugPrint(t *testing.T) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
-	v := memory.MemoryValueFromInt(10)
-	vm.Memory.Write(VM.ExecutionSegment, 0, &v)
-	v = memory.MemoryValueFromInt(20)
-	vm.Memory.Write(VM.ExecutionSegment, 1, &v)
-	v = memory.MemoryValueFromInt(30)
-	vm.Memory.Write(VM.ExecutionSegment, 2, &v)
+
+	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(10))
+	writeTo(vm, VM.ExecutionSegment, 1, memory.MemoryValueFromInt(20))
+	writeTo(vm, VM.ExecutionSegment, 2, memory.MemoryValueFromInt(30))
 
 	var startRef ApCellRef = 0
 	var endRef FpCellRef = 3
