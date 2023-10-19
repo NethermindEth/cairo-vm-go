@@ -51,6 +51,7 @@ integration:
 
 testall:
 	@echo "Running all tests..."
+	@$(MAKE) build
 	@go test ./...
 
 bench:
