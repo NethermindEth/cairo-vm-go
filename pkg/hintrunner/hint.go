@@ -238,10 +238,8 @@ func (hint SquareRoot) Execute(vm *VM.VirtualMachine) error {
 
 	sqrt := valueFelt.Sqrt(valueFelt)
 
-	bytes := sqrt.Bytes()
-
 	dst := f.Element{}
-	dst.SetBytes(bytes[:])
+	dst.Set(sqrt)
 
 	dstAddr, err := hint.dst.Get(vm)
 	if err != nil {
