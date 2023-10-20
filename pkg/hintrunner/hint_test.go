@@ -1,6 +1,7 @@
 package hintrunner
 
 import (
+	"fmt"
 	"io"
 	"math/big"
 	"os"
@@ -256,11 +257,12 @@ func TestDebugPrint(t *testing.T) {
 		start: start,
 		end:   end,
 	}
-	expected := []byte("[DEBUG] 10\n[DEBUG] 20\n[DEBUG] 30\n")
+	expected := []byte("[DEBUG] a\n[DEBUG] 14\n[DEBUG] 1e\n")
 	err := hint.Execute(vm)
 
 	w.Close()
 	out, _ := io.ReadAll(r)
+	fmt.Println(string(out))
 	//Restore stdout at the end of the test
 	os.Stdout = rescueStdout
 

@@ -253,13 +253,9 @@ func (hint DebugPrint) Execute(vm *VM.VirtualMachine) error {
 			return err
 		}
 
-		fmt.Printf("[DEBUG] %s\n", v)
+		fmt.Printf("[DEBUG] %s\n", v.Hex())
 		current += 1
 	}
-
-	//if err != nil {
-	//	return fmt.Errorf("read memory address %s: %v", err)
-	//}
 
 	return nil
 }

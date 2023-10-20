@@ -88,6 +88,12 @@ func (address MemoryAddress) String() string {
 	)
 }
 
+func (address MemoryAddress) Hex() string {
+	return fmt.Sprintf(
+		"%x:%x", address.SegmentIndex, address.Offset,
+	)
+}
+
 // Stores all posible types that can be stored in a Memory cell,
 //
 //   - either a Felt value (an `f.Element`),
@@ -273,6 +279,13 @@ func (mv MemoryValue) String() string {
 		return mv.addrUnsafe().String()
 	}
 	return mv.felt.String()
+}
+
+func (mv MemoryValue) Hex() string {
+	if mv.IsAddress() {
+		return fmt.Sprintf("%x", mv.addrUnsafe())
+	}
+	return mv.felt.Text(16)
 }
 
 // Retuns a MemoryValue holding a felt as uint if it fits
