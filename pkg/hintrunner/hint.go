@@ -241,7 +241,7 @@ func (hint SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	bytes := sqrt.Bytes()
 
 	dst := f.Element{}
-	dst.SetBytes(bytes[16:])
+	dst.SetBytes(bytes[:])
 
 	dstAddr, err := hint.dst.Get(vm)
 	if err != nil {
