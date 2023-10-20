@@ -268,13 +268,6 @@ func (hint Uint256SquareRoot) String() string {
 }
 
 func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
-	/*
-		Computes the square root of value_low<<128+value_high, stores the 64bit limbs of the result in
-		sqrt0 and sqrt1 as well as the 128bit limbs of the remainder in remainder_low and remainder_high.
-		The remainder is defined as value - sqrt**2.
-		Lastly it checks whether 2*sqrt - remainder >= 2**128.
-	*/
-
 	valueLow, err := hint.valueLow.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve valueLow operand %s: %v", hint.valueLow, err)
