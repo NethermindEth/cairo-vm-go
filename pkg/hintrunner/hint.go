@@ -228,7 +228,7 @@ func (hint SquareRoot) String() string {
 func (hint SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	value, err := hint.value.Resolve(vm)
 	if err != nil {
-		return fmt.Errorf("resolve lhs operand %s: %v", hint.value, err)
+		return fmt.Errorf("resolve value operand %s: %v", hint.value, err)
 	}
 
 	valueFelt, err := value.FieldElement()
