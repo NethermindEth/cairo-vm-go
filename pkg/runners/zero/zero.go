@@ -240,7 +240,8 @@ func (runner *ZeroRunner) Output() []*fp.Element {
 
 	for offset := uint64(0); offset < outputSegment.Len(); offset++ {
 		value := outputSegment.Peek(offset)
-		// todo(rodro): check if output can only contains field elements
+		// no need to check for an error here since only felts can be written
+		// to the output segment
 		valueFelt, _ := value.FieldElement()
 		output = append(output, valueFelt)
 	}
