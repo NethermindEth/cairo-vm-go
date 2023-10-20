@@ -292,23 +292,32 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	valueLowU256 := uint256.Int(valueLowFelt.Bits())
 	valueHighU256 := uint256.Int(valueHighFelt.Bits())
 
-	shifted := valueLowU256.Lsh(&valueLowU256, 128)
-	value := valueHighU256.Add(shifted, &valueHighU256)
+	shifted := valueHighU256.Lsh(&valueHighU256, 128)
+	value := valueHighU256.Add(&valueLowU256, shifted)
 
 	// root = math.isqrt(value)
 	root := value.Sqrt(value)
+
 	// remainder = value - root ** 2
-	// TODO: Is there any Power method?
 	root2 := root.Mul(root, root)
 	remainder := value.Sub(value, root2)
 
 	// memory{sqrt0} = root & 0xFFFFFFFFFFFFFFFF
-	mask64 := uint256.NewInt(0xFFFFFFFFFFFFFFFF)
-	rootMasked := root.And(root, mask64)
+	// memory{sqrt1} = root >> 64
+	rootBytes := root.Bytes()
+
 	sqrt0 := f.Element{}
-	sqrt0.SetBytes(rootMasked.Bytes())
+	sqrt0.SetBytes(rootBytes[:64])
+
+	sqrt1 := f.Element{}
+	sqrt1.SetBytes(rootBytes[64:])
 
 	sqrt0Addr, err := hint.sqrt0.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get sqrt0 cell: %v", err)
+	}
+
+	sqrt1Addr, err := hint.sqrt1.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get sqrt0 cell: %v", err)
 	}
@@ -319,16 +328,6 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 		return fmt.Errorf("get remainderHigh cell: %v", err)
 	}
 
-	// memory{sqrt1} = root >> 64
-	rootShifted := root.Rsh(root, 64)
-	sqrt1 := f.Element{}
-	sqrt1.SetBytes(rootShifted.Bytes())
-
-	sqrt1Addr, err := hint.sqrt1.Get(vm)
-	if err != nil {
-		return fmt.Errorf("get sqrt0 cell: %v", err)
-	}
-
 	sqrt1Val := memory.MemoryValueFromFieldElement(&sqrt1)
 	err = vm.Memory.WriteToAddress(&sqrt1Addr, &sqrt1Val)
 	if err != nil {
@@ -336,28 +335,27 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	}
 
 	// memory{remainder_low} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-	mask128 := MaxU128()
-	remainderMasked := remainder.And(remainder, &mask128)
+	// memory{remainder_high} = remainder >> 128
+	remainderBytes := remainder.Bytes()
+
 	remainderLow := f.Element{}
-	remainderLow.SetBytes(remainderMasked.Bytes())
+	remainderLow.SetBytes(remainderBytes[:128])
+
+	remainderHigh := f.Element{}
+	remainderHigh.SetBytes(remainderBytes[128:])
 
 	remainderLowAddr, err := hint.remainderLow.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get remainderLow cell: %v", err)
 	}
 
-	remainderLowVal := memory.MemoryValueFromFieldElement(&remainderLow)
-	err = vm.Memory.WriteToAddress(&remainderLowAddr, &remainderLowVal)
+	remainderHighAddr, err := hint.remainderHigh.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get remainderHigh cell: %v", err)
 	}
 
-	// memory{remainder_high} = remainder >> 128
-	remainderShifted := remainder.Rsh(remainder, 128)
-	remainderHigh := f.Element{}
-	remainderHigh.SetBytes(remainderShifted.Bytes())
-
-	remainderHighAddr, err := hint.remainderHigh.Get(vm)
+	remainderLowVal := memory.MemoryValueFromFieldElement(&remainderLow)
+	err = vm.Memory.WriteToAddress(&remainderLowAddr, &remainderLowVal)
 	if err != nil {
 		return fmt.Errorf("get remainderHigh cell: %v", err)
 	}
@@ -369,9 +367,14 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	}
 
 	// memory{sqrt_mul_2_minus_remainder_ge_u128} = root * 2 - remainder >= 2**128
+	rhsVal, err := uint256.FromDecimal("1")
+	if err != nil {
+		return fmt.Errorf("making rhsVal: %v", err)
+	}
 	rootMul2 := root.Lsh(root, 1)
 	lhs := rootMul2.Sub(rootMul2, remainder)
-	rhs := mask128.Mul(&mask128, &mask128)
+	rhs := rhsVal.Lsh(rhsVal, 128)
+
 	result := rhs.Gt(lhs)
 	result = !result
 	sqrtMul2MinusRemainderGeU128 := f.Element{}
