@@ -6,6 +6,8 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
+const OutputName = "output"
+
 type Output struct{}
 
 func (o *Output) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
@@ -17,5 +19,5 @@ func (o *Output) InferValue(segment *memory.Segment, offset uint64) error {
 }
 
 func (o *Output) String() string {
-	return "output"
+	return OutputName
 }

@@ -1,18 +1,22 @@
 package zero
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
+	sn "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	pedersenhash "github.com/consensys/gnark-crypto/ecc/stark-curve/pedersen-hash"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSimpleProgram(t *testing.T) {
-	program := createDefaultProgram(`
+	program := createProgram(`
         [ap] = 2, ap++;
         [ap] = 3, ap++;
         [ap] = 4, ap++;
@@ -57,7 +61,7 @@ func TestSimpleProgram(t *testing.T) {
 }
 
 func TestStepLimitExceeded(t *testing.T) {
-	program := createDefaultProgram(`
+	program := createProgram(`
         [ap] = 2;
         [ap + 1] = 3;
         [ap + 2] = 5;
@@ -106,7 +110,7 @@ func TestStepLimitExceeded(t *testing.T) {
 }
 
 func TestStepLimitExceededProofMode(t *testing.T) {
-	program := createDefaultProgram(`
+	program := createProgram(`
         [ap] = 2;
         [ap + 1] = 3;
         [ap + 2] = 5;
@@ -161,6 +165,184 @@ func TestStepLimitExceededProofMode(t *testing.T) {
 	}
 }
 
+func TestBitwiseBuiltin(t *testing.T) {
+	// bitwise segment ptr is located at fp - 3 (fp - 2 and fp - 1 contain initialization vals)
+	// We first write 16 and 8 to bitwise. Then we read the bitwise result from &, ^ and |
+	runner := createRunner(`
+        [ap] = 14, ap++;
+        [ap] = 7, ap++;
+        [ap - 2] = [[fp - 3]];
+        [ap - 1] = [[fp - 3] + 1];
+
+        [ap] = [[fp - 3] + 2];
+        [ap + 1] = [[fp - 3] + 3];
+        [ap + 2] = [[fp - 3] + 4];
+
+        [ap] = 6;
+        [ap + 1] = 9;
+        [ap + 2] = 15;
+        ret;
+    `, sn.Bitwise)
+
+	err := runner.Run()
+	require.NoError(t, err)
+
+	bitwise, ok := runner.vm.Memory.FindSegmentWithBuiltin("bitwise")
+	require.True(t, ok)
+
+	requireEqualSegments(t, createSegment(14, 7, 6, 9, 15), bitwise)
+}
+
+func TestBitwiseBuiltinError(t *testing.T) {
+	// inferring first write to cell
+	runner := createRunner(`
+	    [ap] = [[fp - 3]];
+	    ret;
+	`, sn.Bitwise)
+
+	err := runner.Run()
+	require.ErrorContains(t, err, "cannot infer value")
+
+	// inferring second write to cell
+	runner = createRunner(`
+	    [ap] = [[fp - 3] + 1];
+	    ret;
+	`, sn.Bitwise)
+	err = runner.Run()
+	require.ErrorContains(t, err, "cannot infer value")
+
+	// trying to infer without writing before
+	runner = createRunner(`
+        [ap] = [[fp - 3] + 2];
+        ret;
+    `, sn.Bitwise)
+
+	err = runner.Run()
+	require.ErrorContains(t, err, "input value at offset 0 is unknown")
+}
+
+func TestOutputBuiltin(t *testing.T) {
+	// Output builtin is located at fp - 3
+	runner := createRunner(`
+        [ap] = 5;
+        [ap] = [[fp - 3]];
+        [ap + 1] = 7;
+        [ap + 1] = [[fp - 3] + 1];
+        ret;
+    `, sn.Output)
+	err := runner.Run()
+	require.NoError(t, err)
+
+	output := runner.Output()
+
+	val1 := fp.NewElement(5)
+	val2 := fp.NewElement(7)
+	require.Equal(t, []*fp.Element{&val1, &val2}, output)
+}
+
+func TestPedersenBuiltin(t *testing.T) {
+	val1 := fp.NewElement(5)
+	val2 := fp.NewElement(7)
+	val3 := pedersenhash.Pedersen(&val1, &val2)
+
+	// pedersen builtin is located at fp - 3
+	// we first write val1 and val2 and then check the infered value is val3
+	code := fmt.Sprintf(`
+        [ap] = %s;
+        [ap] = [[fp - 3]];
+
+        [ap + 1] = %s;
+        [ap + 1] = [[fp - 3] + 1];
+
+        [ap + 2] = [[fp - 3] + 2];
+        [ap + 2] = %s;
+        ret;
+    `, val1.Text(10), val2.Text(10), val3.Text(10))
+
+	runner := createRunner(code, sn.Pedersen)
+	err := runner.Run()
+	require.NoError(t, err)
+
+	pedersen, ok := runner.vm.Memory.FindSegmentWithBuiltin("pedersen")
+	require.True(t, ok)
+	requireEqualSegments(t, createSegment(&val1, &val2, &val3), pedersen)
+}
+
+func TestPedersenBuiltinError(t *testing.T) {
+	runner := createRunner(`
+        [ap] = [[fp - 3]];
+        ret;
+    `, sn.Pedersen)
+	err := runner.Run()
+	require.ErrorContains(t, err, "cannot infer value")
+
+	runner = createRunner(`
+        [ap] = [[fp - 3] + 2];
+        ret;
+    `, sn.Pedersen)
+	err = runner.Run()
+	require.ErrorContains(t, err, "input value at offset 0 is unknown")
+}
+
+func TestRangeCheckBuiltin(t *testing.T) {
+	// range check is located at fp - 3 (fp - 2 and fp - 1 contain initialization vals)
+	// we write 5 and 2**128 - 1 to range check
+	// no error should come from this
+	runner := createRunner(`
+        [ap] = 5;
+        [ap] = [[fp - 3]];
+        [ap + 1] = 0xffffffffffffffffffffffffffffffff;
+        [ap + 1] = [[fp - 3] + 1];
+        ret;
+    `, sn.RangeCheck)
+
+	err := runner.Run()
+	require.NoError(t, err)
+
+	rangeCheck, ok := runner.vm.Memory.FindSegmentWithBuiltin("range_check")
+	require.True(t, ok)
+
+	felt := &fp.Element{}
+	felt, err = felt.SetString("0xffffffffffffffffffffffffffffffff")
+	require.NoError(t, err)
+
+	requireEqualSegments(t, createSegment(5, felt), rangeCheck)
+}
+
+func TestRangeCheckBuiltinError(t *testing.T) {
+	// first test fails due to out of bound check
+	runner := createRunner(`
+        [ap] = 0x100000000000000000000000000000000;
+        [ap] = [[fp - 3]];
+        ret;
+    `, sn.RangeCheck)
+
+	err := runner.Run()
+	require.ErrorContains(t, err, "check write: 2**128 <")
+
+	// second test fails due to reading unknown value
+	runner = createRunner(`
+        [ap] = [[fp - 3]];
+        ret;
+    `, sn.RangeCheck)
+
+	err = runner.Run()
+	require.ErrorContains(t, err, "cannot infer value")
+
+}
+
+func createRunner(code string, builtins ...sn.Builtin) ZeroRunner {
+	program := createProgramWithBuiltins(code, builtins...)
+
+	runner, err := NewRunner(program, false, math.MaxUint64)
+	if err != nil {
+		panic(err)
+	}
+	return runner
+
+}
+
+// utility to create segments easier
 func createSegment(values ...any) *memory.Segment {
 	data := make([]memory.MemoryValue, len(values))
 	for i := range values {
@@ -180,6 +362,17 @@ func createSegment(values ...any) *memory.Segment {
 	return s
 }
 
+// compare two segments ignoring builtins
+func requireEqualSegments(t *testing.T, expected, result *memory.Segment) {
+	result = trimmedSegment(result)
+
+	t.Log(expected)
+	t.Log(result)
+
+	assert.Equal(t, expected.LastIndex, result.LastIndex)
+	require.Equal(t, expected.Data, result.Data)
+}
+
 // modifies a segment in place to reduce its real length to
 // its effective lenth. It returns the same segment
 func trimmedSegment(segment *memory.Segment) *memory.Segment {
@@ -187,7 +380,7 @@ func trimmedSegment(segment *memory.Segment) *memory.Segment {
 	return segment
 }
 
-func createDefaultProgram(code string) *Program {
+func createProgram(code string) *Program {
 	bytecode, err := assembler.CasmToBytecode(code)
 	if err != nil {
 		panic(err)
@@ -201,4 +394,10 @@ func createDefaultProgram(code string) *Program {
 	}
 
 	return &program
+}
+
+func createProgramWithBuiltins(code string, builtins ...sn.Builtin) *Program {
+	program := createProgram(code)
+	program.Builtins = builtins
+	return program
 }
