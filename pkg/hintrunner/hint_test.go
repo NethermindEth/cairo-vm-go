@@ -181,14 +181,14 @@ func TestLinearSplit(t *testing.T) {
 
 	value := Immediate(*big.NewInt(42*223344 + 14))
 	scalar := Immediate(*big.NewInt(42))
-	max_x := Immediate(*big.NewInt(9999999999))
+	maxX := Immediate(*big.NewInt(9999999999))
 	var x ApCellRef = 0
 	var y ApCellRef = 1
 
 	hint := LinearSplit{
 		value:  value,
 		scalar: scalar,
-		max_x:  max_x,
+		maxX:   maxX,
 		x:      x,
 		y:      y,
 	}
@@ -205,11 +205,11 @@ func TestLinearSplit(t *testing.T) {
 	vm.Context.Fp = 0
 
 	//Lower max_x
-	max_x = Immediate(*big.NewInt(223343))
+	maxX = Immediate(*big.NewInt(223343))
 	hint = LinearSplit{
 		value:  value,
 		scalar: scalar,
-		max_x:  max_x,
+		maxX:   maxX,
 		x:      x,
 		y:      y,
 	}

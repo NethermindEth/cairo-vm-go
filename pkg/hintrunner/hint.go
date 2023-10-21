@@ -145,7 +145,7 @@ func (hint TestLessThanOrEqual) Execute(vm *VM.VirtualMachine) error {
 type LinearSplit struct {
 	value  ResOperander
 	scalar ResOperander
-	max_x  ResOperander
+	maxX   ResOperander
 	x      CellRefer
 	y      CellRefer
 }
@@ -168,11 +168,11 @@ func (hint LinearSplit) Execute(vm *VM.VirtualMachine) error {
 		return err
 	}
 
-	max_x, err := hint.max_x.Resolve(vm)
+	maxX, err := hint.maxX.Resolve(vm)
 	if err != nil {
-		return fmt.Errorf("resolve max_x operand %s: %w", hint.max_x, err)
+		return fmt.Errorf("resolve max_x operand %s: %w", hint.maxX, err)
 	}
-	max_xField, err := max_x.FieldElement()
+	maxXField, err := maxX.FieldElement()
 	if err != nil {
 		return err
 	}
@@ -181,7 +181,7 @@ func (hint LinearSplit) Execute(vm *VM.VirtualMachine) error {
 	maxBig := &big.Int{}
 	scalarField.BigInt(scalarBig)
 	valueField.BigInt(valueBig)
-	max_xField.BigInt(maxBig)
+	maxXField.BigInt(maxBig)
 
 	x := (&big.Int{}).Div(valueBig, scalarBig)
 
