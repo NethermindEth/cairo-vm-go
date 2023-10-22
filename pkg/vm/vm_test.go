@@ -928,14 +928,14 @@ func TestAssertEqualInstruction(t *testing.T) {
 		assert.Equal(t, mem.MemoryValueFromInt(-5), mv)
 	})
 
-	t.Run("multiply", func(t *testing.T){
-		vm:= defaultVirtualMachineWithCode("[ap] = [ap - 1] * [fp];")
+	t.Run("multiplication", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("[ap] = [ap - 1] * [fp];")
 		setInitialReg(vm, 3, 1, 0)
 
 		writeToDataSegment(vm, vm.Context.Fp, 5)
 		writeToDataSegment(vm, vm.Context.Ap-1, 10)
 
-		err:= vm.RunStep(&hintrunner)
+		err := vm.RunStep(&hintrunner)
 		require.NoError(t, err)
 
 		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Ap)
@@ -943,14 +943,14 @@ func TestAssertEqualInstruction(t *testing.T) {
 		assert.Equal(t, mem.MemoryValueFromInt(50), mv)
 	})
 
-	t.Run("division", func(t *testing.T){
-		vm:= defaultVirtualMachineWithCode("[ap] = [ap + 1] * [fp];")
+	t.Run("division", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("[ap] = [ap + 1] * [fp];")
 		setInitialReg(vm, 3, 1, 0)
 
 		writeToDataSegment(vm, vm.Context.Fp, 2)
 		writeToDataSegment(vm, vm.Context.Ap, 10)
 
-		err:= vm.RunStep(&hintrunner)
+		err := vm.RunStep(&hintrunner)
 		require.NoError(t, err)
 
 		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Ap+1)
@@ -959,7 +959,6 @@ func TestAssertEqualInstruction(t *testing.T) {
 	})
 
 }
-
 
 // ======================
 // Test Memory Relocation
