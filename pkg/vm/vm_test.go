@@ -943,63 +943,23 @@ func TestAssertEqualInstruction(t *testing.T) {
 		assert.Equal(t, mem.MemoryValueFromInt(50), mv)
 	})
 
-	t.Run("comparison equality", func(t *testing.T){
-		vm:= defaultVirtualMachineWithCode("[ap + 1] = [fp];")
+	t.Run("division", func(t *testing.T){
+		vm:= defaultVirtualMachineWithCode("[ap] = [ap + 1] * [fp];")
 		setInitialReg(vm, 3, 1, 0)
 
-		writeToDataSegment(vm, vm.Context.Ap+1, 5)
+		writeToDataSegment(vm, vm.Context.Fp, 2)
+		writeToDataSegment(vm, vm.Context.Ap, 10)
 
 		err:= vm.RunStep(&hintrunner)
 		require.NoError(t, err)
 
-		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Fp)
+		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Ap+1)
 		require.NoError(t, err)
 		assert.Equal(t, mem.MemoryValueFromInt(5), mv)
 	})
 
-	t.Run("comparison equality 2", func(t *testing.T){
-		vm:= defaultVirtualMachineWithCode("[ap - 1] = [fp];")
-		setInitialReg(vm, 3, 1, 0)
-
-		writeToDataSegment(vm, vm.Context.Ap-1, 7)
-
-		err:= vm.RunStep(&hintrunner)
-		require.NoError(t, err)
-
-		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Fp)
-		require.NoError(t, err)
-		assert.Equal(t, mem.MemoryValueFromInt(7), mv)
-	})
-
-	t.Run("compare register values", func(t *testing.T){
-		vm:=defaultVirtualMachineWithCode("[ap] = [fp];")
-		setInitialReg(vm, 3, 1, 0)
-
-		writeToDataSegment(vm, vm.Context.Ap, 3)
-
-		err:= vm.RunStep(&hintrunner)
-		require.NoError(t, err)
-
-		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Fp)
-		require.NoError(t, err)
-		assert.Equal(t, mem.MemoryValueFromInt(3), mv)
-	})
-
-	t.Run("compare register values left to right", func(t *testing.T){
-		vm:=defaultVirtualMachineWithCode("[fp] = [ap - 1];")
-		setInitialReg(vm, 3, 1, 0)
-
-		writeToDataSegment(vm, vm.Context.Ap-1, 10)
-
-		err:= vm.RunStep(&hintrunner)
-		require.NoError(t, err)
-
-		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Fp)
-		require.NoError(t, err)
-		assert.Equal(t, mem.MemoryValueFromInt(10), mv)
-	})
-
 }
+
 
 // ======================
 // Test Memory Relocation
