@@ -273,7 +273,7 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 		return fmt.Errorf("resolve valueLow operand %s: %v", hint.valueLow, err)
 	}
 
-	valueHigh, err := hint.valueLow.Resolve(vm)
+	valueHigh, err := hint.valueHigh.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve valueHigh operand %s: %v", hint.valueHigh, err)
 	}
@@ -292,25 +292,32 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	valueLowU256 := uint256.Int(valueLowFelt.Bits())
 	valueHighU256 := uint256.Int(valueHighFelt.Bits())
 
-	shifted := valueHighU256.Lsh(&valueHighU256, 128)
-	value := valueHighU256.Add(&valueLowU256, shifted)
+	shifted := valueHighU256.Clone()
+	shifted.Lsh(&valueHighU256, 128)
+	value := shifted.Clone()
+	value.Add(shifted, &valueLowU256)
 
 	// root = math.isqrt(value)
-	root := value.Sqrt(value)
+	root := value.Clone()
+	root.Sqrt(value)
 
 	// remainder = value - root ** 2
-	root2 := root.Mul(root, root)
+	root2 := root.Clone()
+	root2.Mul(root, root)
 	remainder := value.Sub(value, root2)
 
 	// memory{sqrt0} = root & 0xFFFFFFFFFFFFFFFF
 	// memory{sqrt1} = root >> 64
-	rootBytes := root.Bytes()
+	mask64 := uint256.NewInt(0xFFFFFFFFFFFFFFFF)
+	rootMasked := root.Clone()
+	rootMasked.And(root, mask64)
 
 	sqrt0 := f.Element{}
-	sqrt0.SetBytes(rootBytes[:64])
+	sqrt0.SetBytes(rootMasked.Bytes())
 
+	rootShifted := root.Rsh(root, 64)
 	sqrt1 := f.Element{}
-	sqrt1.SetBytes(rootBytes[64:])
+	sqrt1.SetBytes(rootShifted.Bytes())
 
 	sqrt0Addr, err := hint.sqrt0.Get(vm)
 	if err != nil {
@@ -319,43 +326,46 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 
 	sqrt1Addr, err := hint.sqrt1.Get(vm)
 	if err != nil {
-		return fmt.Errorf("get sqrt0 cell: %v", err)
+		return fmt.Errorf("get sqrt1 cell: %v", err)
 	}
 
 	sqrt0Val := memory.MemoryValueFromFieldElement(&sqrt0)
 	err = vm.Memory.WriteToAddress(&sqrt0Addr, &sqrt0Val)
 	if err != nil {
-		return fmt.Errorf("get remainderHigh cell: %v", err)
+		return fmt.Errorf("write sqrt0 cell: %v", err)
 	}
 
 	sqrt1Val := memory.MemoryValueFromFieldElement(&sqrt1)
 	err = vm.Memory.WriteToAddress(&sqrt1Addr, &sqrt1Val)
 	if err != nil {
-		return fmt.Errorf("get remainderHigh cell: %v", err)
+		return fmt.Errorf("write sqrt1 cell: %v", err)
 	}
 
 	// memory{remainder_low} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-	// memory{remainder_high} = remainder >> 128
-	remainderBytes := remainder.Bytes()
-
+	mask128 := MaxU128()
+	remainderMasked := remainder.Clone()
+	remainderMasked.And(remainder, &mask128)
 	remainderLow := f.Element{}
-	remainderLow.SetBytes(remainderBytes[:128])
-
-	remainderHigh := f.Element{}
-	remainderHigh.SetBytes(remainderBytes[128:])
+	remainderLow.SetBytes(remainderMasked.Bytes())
 
 	remainderLowAddr, err := hint.remainderLow.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get remainderLow cell: %v", err)
 	}
 
-	remainderHighAddr, err := hint.remainderHigh.Get(vm)
+	remainderLowVal := memory.MemoryValueFromFieldElement(&remainderLow)
+	err = vm.Memory.WriteToAddress(&remainderLowAddr, &remainderLowVal)
 	if err != nil {
 		return fmt.Errorf("get remainderHigh cell: %v", err)
 	}
 
-	remainderLowVal := memory.MemoryValueFromFieldElement(&remainderLow)
-	err = vm.Memory.WriteToAddress(&remainderLowAddr, &remainderLowVal)
+	// memory{remainder_high} = remainder >> 128
+	remainderShifted := remainder.Clone()
+	remainderShifted.Rsh(remainder, 128)
+	remainderHigh := f.Element{}
+	remainderHigh.SetBytes(remainderShifted.Bytes())
+
+	remainderHighAddr, err := hint.remainderHigh.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get remainderHigh cell: %v", err)
 	}
@@ -367,14 +377,12 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	}
 
 	// memory{sqrt_mul_2_minus_remainder_ge_u128} = root * 2 - remainder >= 2**128
-	rhsVal, err := uint256.FromDecimal("1")
-	if err != nil {
-		return fmt.Errorf("making rhsVal: %v", err)
-	}
-	rootMul2 := root.Lsh(root, 1)
-	lhs := rootMul2.Sub(rootMul2, remainder)
-	rhs := rhsVal.Lsh(rhsVal, 128)
-
+	rootMul2 := root.Clone()
+	rootMul2.Lsh(root, 1)
+	lhs := rootMul2.Clone()
+	lhs.Sub(rootMul2, remainder)
+	rhs := mask128.Clone()
+	rhs.Mul(&mask128, &mask128)
 	result := rhs.Gt(lhs)
 	result = !result
 	sqrtMul2MinusRemainderGeU128 := f.Element{}
