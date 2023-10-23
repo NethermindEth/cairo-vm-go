@@ -237,7 +237,7 @@ func (hint SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	}
 
 	sqrt := valueFelt.Sqrt(valueFelt)
-  
+
 	dstAddr, err := hint.dst.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
