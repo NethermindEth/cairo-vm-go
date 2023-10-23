@@ -1,7 +1,6 @@
 package zero
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 
@@ -27,11 +26,11 @@ type ZeroRunner struct {
 }
 
 // Creates a new Runner of a Cairo Zero program
-func NewRunner(program *Program, proofmode bool, maxsteps uint64) (*ZeroRunner, error) {
+func NewRunner(program *Program, proofmode bool, maxsteps uint64) (ZeroRunner, error) {
 	// todo(rodro): given the program get the appropiate hints
 	hintrunner := hintrunner.NewHintRunner(make(map[uint64]hintrunner.Hinter))
 
-	return &ZeroRunner{
+	return ZeroRunner{
 		program:    program,
 		hintrunner: hintrunner,
 		proofmode:  proofmode,
@@ -77,11 +76,13 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) 
 	if runner.proofmode {
 		initialPCOffset, ok := runner.program.Labels["__start__"]
 		if !ok {
-			return mem.UnknownAddress, errors.New("start label not found. Try compiling with `--proof_mode`")
+			return mem.UnknownAddress,
+				errors.New("start label not found. Try compiling with `--proof_mode`")
 		}
 		endPcOffset, ok := runner.program.Labels["__end__"]
 		if !ok {
-			return mem.UnknownAddress, errors.New("end label not found. Try compiling with `--proof_mode`")
+			return mem.UnknownAddress,
+				errors.New("end label not found. Try compiling with `--proof_mode`")
 		}
 
 		stack := runner.initializeBuiltins(memory)
@@ -145,7 +146,9 @@ func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) []mem.MemoryVal
 	return stack
 }
 
-func (runner *ZeroRunner) initializeVm(initialPC *mem.MemoryAddress, stack []mem.MemoryValue, memory *mem.Memory) error {
+func (runner *ZeroRunner) initializeVm(
+	initialPC *mem.MemoryAddress, stack []mem.MemoryValue, memory *mem.Memory,
+) error {
 	executionSegment := memory.Segments[vm.ExecutionSegment]
 	offset := executionSegment.Len()
 	for idx := range stack {
@@ -196,7 +199,7 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 		if err := runner.vm.RunStep(runner.hintrunner); err != nil {
 			return fmt.Errorf(
 				"pc %s step %d: %w",
-				runner.pc().String(),
+				runner.pc(),
 				runner.steps(),
 				err,
 			)
@@ -211,7 +214,7 @@ func (runner *ZeroRunner) BuildProof() ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 
-	return EncodeTrace(relocatedTrace), EncodeMemory(runner.vm.RelocateMemory()), nil
+	return vm.EncodeTrace(relocatedTrace), vm.EncodeMemory(runner.vm.RelocateMemory()), nil
 }
 
 func (runner *ZeroRunner) pc() mem.MemoryAddress {
@@ -230,99 +233,16 @@ func (runner *ZeroRunner) Output() []*fp.Element {
 	}
 
 	output := []*fp.Element{}
-	for _, segment := range runner.vm.Memory.Segments {
-		if segment.BuiltinRunner.String() == "output" {
-			for offset := uint64(0); offset < segment.Len(); offset++ {
-				value := segment.Peek(offset)
-				// todo(rodro): check if output can only contains field elements
-				valueFelt, _ := value.FieldElement()
-				output = append(output, valueFelt)
-			}
-			break
-		}
+	outputSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin("output")
+	if !ok {
+		return output
+	}
+
+	for offset := uint64(0); offset < outputSegment.Len(); offset++ {
+		value := outputSegment.Peek(offset)
+		// todo(rodro): check if output can only contains field elements
+		valueFelt, _ := value.FieldElement()
+		output = append(output, valueFelt)
 	}
 	return output
-}
-
-const ctxSize = 3 * 8
-
-func EncodeTrace(trace []vm.Trace) []byte {
-	content := make([]byte, 0, len(trace)*ctxSize)
-	for i := range trace {
-		content = binary.LittleEndian.AppendUint64(content, trace[i].Ap)
-		content = binary.LittleEndian.AppendUint64(content, trace[i].Fp)
-		content = binary.LittleEndian.AppendUint64(content, trace[i].Pc)
-	}
-	return content
-}
-
-func DecodeTrace(content []byte) []vm.Trace {
-	trace := make([]vm.Trace, 0, len(content)/ctxSize)
-	for i := 0; i < len(content); i += ctxSize {
-		trace = append(
-			trace,
-			vm.Trace{
-				Ap: binary.LittleEndian.Uint64(content[i : i+8]),
-				Fp: binary.LittleEndian.Uint64(content[i+8 : i+16]),
-				Pc: binary.LittleEndian.Uint64(content[i+16 : i+24]),
-			},
-		)
-	}
-	return trace
-}
-
-const addrSize = 8
-const feltSize = 32
-
-// Encody the relocated memory in the (address, value) form
-// in a consecutive way
-func EncodeMemory(memory []*f.Element) []byte {
-	// Check non nil elements for optimal array size
-	nonNilElms := 0
-	for i := range memory {
-		if memory[i] != nil {
-			nonNilElms++
-		}
-	}
-	content := make([]byte, nonNilElms*(addrSize+feltSize))
-
-	count := 0
-	for i := range memory {
-		if memory[i] == nil {
-			continue
-		}
-		// set the right content index
-		j := count * (addrSize + feltSize)
-		// store the address
-		binary.LittleEndian.PutUint64(content[j:j+addrSize], uint64(i))
-		// store the field element
-		f.LittleEndian.PutElement(
-			(*[32]byte)(content[j+addrSize:j+addrSize+feltSize]),
-			*memory[i],
-		)
-
-		// increase the number of elements stored
-		count++
-	}
-	return content
-}
-
-func DecodeMemory(content []byte) []*f.Element {
-	// calculate the max memory index
-	lastContentInd := len(content) - (addrSize + feltSize)
-	lasMemIndex := binary.LittleEndian.Uint64(content[lastContentInd : lastContentInd+addrSize])
-
-	// create the memory array with the same length as the max memory index
-	memory := make([]*f.Element, lasMemIndex+1)
-
-	// decode the encontent and store it in memory
-	for i := 0; i < len(content); i += addrSize + feltSize {
-		memIndex := binary.LittleEndian.Uint64(content[i : i+addrSize])
-		felt, err := f.LittleEndian.Element((*[32]byte)(content[i+addrSize : i+addrSize+feltSize]))
-		if err != nil {
-			panic(err)
-		}
-		memory[memIndex] = &felt
-	}
-	return memory
 }

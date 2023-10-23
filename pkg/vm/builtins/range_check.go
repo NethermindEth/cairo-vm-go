@@ -8,6 +8,8 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+const RangeCheckName = "range_check"
+
 type RangeCheck struct{}
 
 // 1 << 128
@@ -31,5 +33,5 @@ func (r *RangeCheck) InferValue(segment *memory.Segment, offset uint64) error {
 }
 
 func (r *RangeCheck) String() string {
-	return "range_check"
+	return RangeCheckName
 }

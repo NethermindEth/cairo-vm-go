@@ -269,3 +269,25 @@ func TestDebugPrint(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expected, out)
 }
+
+func TestSquareRoot(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	var dst ApCellRef = 1
+
+	value := Immediate(*big.NewInt(36))
+	hint := SquareRoot{
+		value: value,
+		dst:   dst,
+	}
+
+	err := hint.Execute(vm)
+
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		memory.MemoryValueFromInt(6),
+		readFrom(vm, VM.ExecutionSegment, 1),
+	)
+}
