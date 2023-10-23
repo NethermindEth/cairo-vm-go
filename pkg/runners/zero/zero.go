@@ -26,11 +26,11 @@ type ZeroRunner struct {
 }
 
 // Creates a new Runner of a Cairo Zero program
-func NewRunner(program *Program, proofmode bool, maxsteps uint64) (*ZeroRunner, error) {
+func NewRunner(program *Program, proofmode bool, maxsteps uint64) (ZeroRunner, error) {
 	// todo(rodro): given the program get the appropiate hints
 	hintrunner := hintrunner.NewHintRunner(make(map[uint64]hintrunner.Hinter))
 
-	return &ZeroRunner{
+	return ZeroRunner{
 		program:    program,
 		hintrunner: hintrunner,
 		proofmode:  proofmode,
@@ -76,11 +76,13 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) 
 	if runner.proofmode {
 		initialPCOffset, ok := runner.program.Labels["__start__"]
 		if !ok {
-			return mem.UnknownAddress, errors.New("start label not found. Try compiling with `--proof_mode`")
+			return mem.UnknownAddress,
+				errors.New("start label not found. Try compiling with `--proof_mode`")
 		}
 		endPcOffset, ok := runner.program.Labels["__end__"]
 		if !ok {
-			return mem.UnknownAddress, errors.New("end label not found. Try compiling with `--proof_mode`")
+			return mem.UnknownAddress,
+				errors.New("end label not found. Try compiling with `--proof_mode`")
 		}
 
 		stack := runner.initializeBuiltins(memory)
@@ -144,7 +146,9 @@ func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) []mem.MemoryVal
 	return stack
 }
 
-func (runner *ZeroRunner) initializeVm(initialPC *mem.MemoryAddress, stack []mem.MemoryValue, memory *mem.Memory) error {
+func (runner *ZeroRunner) initializeVm(
+	initialPC *mem.MemoryAddress, stack []mem.MemoryValue, memory *mem.Memory,
+) error {
 	executionSegment := memory.Segments[vm.ExecutionSegment]
 	offset := executionSegment.Len()
 	for idx := range stack {
@@ -195,7 +199,7 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 		if err := runner.vm.RunStep(runner.hintrunner); err != nil {
 			return fmt.Errorf(
 				"pc %s step %d: %w",
-				runner.pc().String(),
+				runner.pc(),
 				runner.steps(),
 				err,
 			)
@@ -229,16 +233,16 @@ func (runner *ZeroRunner) Output() []*fp.Element {
 	}
 
 	output := []*fp.Element{}
-	for _, segment := range runner.vm.Memory.Segments {
-		if segment.BuiltinRunner.String() == "output" {
-			for offset := uint64(0); offset < segment.Len(); offset++ {
-				value := segment.Peek(offset)
-				// todo(rodro): check if output can only contains field elements
-				valueFelt, _ := value.FieldElement()
-				output = append(output, valueFelt)
-			}
-			break
-		}
+	outputSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin("output")
+	if !ok {
+		return output
+	}
+
+	for offset := uint64(0); offset < outputSegment.Len(); offset++ {
+		value := outputSegment.Peek(offset)
+		// todo(rodro): check if output can only contains field elements
+		valueFelt, _ := value.FieldElement()
+		output = append(output, valueFelt)
 	}
 	return output
 }

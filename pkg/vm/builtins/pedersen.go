@@ -2,11 +2,13 @@ package builtins
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	pedersenhash "github.com/consensys/gnark-crypto/ecc/stark-curve/pedersen-hash"
 )
 
+const PedersenName = "pedersen"
 const cellsPerPedersen = 3
 const inputCellsPerPedersen = 2
 
@@ -26,14 +28,14 @@ func (p *Pedersen) InferValue(segment *memory.Segment, offset uint64) error {
 	xOffset := offset - hashIndex
 	yOffset := xOffset + 1
 
-	xValue, err := segment.Read(xOffset)
-	if err != nil {
-		return err
+	xValue := segment.Peek(xOffset)
+	if !xValue.Known() {
+		return fmt.Errorf("cannot infer value: input value at offset %d is unknown", xOffset)
 	}
 
-	yValue, err := segment.Read(yOffset)
-	if err != nil {
-		return err
+	yValue := segment.Peek(yOffset)
+	if !yValue.Known() {
+		return fmt.Errorf("cannot infer value: input value at offset %d is unknown", yOffset)
 	}
 
 	xFelt, err := xValue.FieldElement()
@@ -52,5 +54,5 @@ func (p *Pedersen) InferValue(segment *memory.Segment, offset uint64) error {
 }
 
 func (p *Pedersen) String() string {
-	return "pedersen"
+	return PedersenName
 }
