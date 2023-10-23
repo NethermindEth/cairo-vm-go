@@ -86,7 +86,7 @@ func AddPadding(input []uint64, lastInputWord uint64, lastInputNumBytes int) ([]
 		firstWordToAppend = firstPaddingBytePart + r
 	}
 
-	// Debug print statements:
+	//	// Debug print statements:
 	fmt.Printf("firstPaddingBytePart: %x\n", firstPaddingBytePart)
 	fmt.Printf("r: %x\n", r)
 	fmt.Printf("firstWordToAppend: %x\n", firstWordToAppend)
@@ -108,6 +108,7 @@ func AddPadding(input []uint64, lastInputWord uint64, lastInputNumBytes int) ([]
 		}
 		return input
 	}
+	//Debug when error
 	fmt.Println("Before finalizePadding:", input)
 	input = finalizePadding(input, uint32(KECCAK_FULL_RATE_IN_U64S-1-lastBlockNumFullWords))
 	fmt.Println("After finalizePadding:", input)
