@@ -115,7 +115,7 @@ func (segment *Segment) Read(offset uint64) (MemoryValue, error) {
 
 func (segment *Segment) Peek(offset uint64) MemoryValue {
 	if offset >= segment.RealLen() {
-		segment.IncreaseSegmentSize(offset + 1)
+		return UnknownValue
 	}
 	return segment.Data[offset]
 }
@@ -266,6 +266,21 @@ func (memory *Memory) Peek(segmentIndex uint64, offset uint64) (MemoryValue, err
 // modifying it in any way. Errors if peeking from an unallocated segment
 func (memory *Memory) PeekFromAddress(address *MemoryAddress) (MemoryValue, error) {
 	return memory.Peek(address.SegmentIndex, address.Offset)
+}
+
+// Given a segment index and offset returns true if the value at that address
+// is known
+func (memory *Memory) KnownValue(segment uint64, offset uint64) bool {
+	if segment >= uint64(len(memory.Segments)) ||
+		offset >= uint64(len(memory.Segments[segment].Data)) {
+		return false
+	}
+	return memory.Segments[segment].Data[offset].Known()
+}
+
+// Given an address returns true if it contains a known value
+func (memory *Memory) KnownValueAtAddress(address *MemoryAddress) bool {
+	return memory.KnownValue(address.SegmentIndex, address.Offset)
 }
 
 // It returns all segment offsets and max memory used
