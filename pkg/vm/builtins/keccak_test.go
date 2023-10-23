@@ -2,6 +2,7 @@ package builtins
 
 import (
 	"encoding/hex"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,4 +25,56 @@ func TestKeccak256(t *testing.T) {
 
 	// Compare the obtained hash with the expected hash.
 	assert.Equal(t, expectedHash, hashHex, "Expected %s, got %s", expectedHash, hashHex)
+}
+
+func TestU128ToU64(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected uint64
+		err      bool
+	}{
+		{"1234567890", 1234567890, false},
+		{"18446744073709551615", 18446744073709551615, false}, // Maximum uint64 value
+		{"18446744073709551616", 0, true},                     // Just over uint64 max
+	}
+
+	for _, test := range tests {
+		input := new(big.Int)
+		input.SetString(test.input, 10)
+		result, err := U128ToU64(input)
+		if (err != nil) != test.err {
+			t.Errorf("unexpected error for input %s: %v", test.input, err)
+		}
+		if result != test.expected {
+			t.Errorf("expected %d, got %d for input %s", test.expected, result, test.input)
+		}
+	}
+}
+
+func TestU128Split(t *testing.T) {
+	tests := []struct {
+		input        string
+		expectedHigh uint64
+		expectedLow  uint64
+		expectedErr  bool
+	}{
+		{
+			input:        "00000001000000020000000300000004",
+			expectedHigh: 4294967298,
+			expectedLow:  12884901892,
+			expectedErr:  false,
+		},
+	}
+
+	for _, test := range tests {
+		input := new(big.Int)
+		input.SetString(test.input, 16)
+		high, low, err := U128Split(input)
+		if (err != nil) != test.expectedErr {
+			t.Errorf("unexpected error for input %s: %v", test.input, err)
+		}
+		if high != test.expectedHigh || low != test.expectedLow {
+			t.Errorf("expected (%d, %d), got (%d, %d) for input %s", test.expectedHigh, test.expectedLow, high, low, test.input)
+		}
+	}
 }
