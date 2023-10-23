@@ -255,7 +255,7 @@ func TestSquareRoot(t *testing.T) {
 	)
 }
 
-func TestUint256SquareRoot(t *testing.T) {
+func TestUint256SquareRootLow(t *testing.T) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
@@ -285,6 +285,53 @@ func TestUint256SquareRoot(t *testing.T) {
 
 	expectedSqrt0 := memory.MemoryValueFromInt(11)
 	expectedSqrt1 := memory.MemoryValueFromInt(0)
+	expectedRemainderLow := memory.MemoryValueFromInt(0)
+	expectedRemainderHigh := memory.MemoryValueFromInt(0)
+	expectedSqrtMul2MinusRemainderGeU128 := memory.MemoryValueFromInt(0)
+
+	actualSqrt0 := readFrom(vm, VM.ExecutionSegment, 1)
+	actualSqrt1 := readFrom(vm, VM.ExecutionSegment, 2)
+	actualRemainderLow := readFrom(vm, VM.ExecutionSegment, 3)
+	actualRemainderHigh := readFrom(vm, VM.ExecutionSegment, 4)
+	actualSqrtMul2MinusRemainderGeU128 := readFrom(vm, VM.ExecutionSegment, 5)
+
+	require.Equal(t, expectedSqrt0, actualSqrt0)
+	require.Equal(t, expectedSqrt1, actualSqrt1)
+	require.Equal(t, expectedRemainderLow, actualRemainderLow)
+	require.Equal(t, expectedRemainderHigh, actualRemainderHigh)
+	require.Equal(t, expectedSqrtMul2MinusRemainderGeU128, actualSqrtMul2MinusRemainderGeU128)
+}
+
+func TestUint256SquareRootHigh(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var sqrt0 ApCellRef = 1
+	var sqrt1 ApCellRef = 2
+	var remainderLow ApCellRef = 3
+	var remainderHigh ApCellRef = 4
+	var sqrtMul2MinusRemainderGeU128 ApCellRef = 5
+
+	valueLow := Immediate(*big.NewInt(0))
+	valueHigh := Immediate(*big.NewInt(1 << 8))
+
+	hint := Uint256SquareRoot{
+		valueLow:                     valueLow,
+		valueHigh:                    valueHigh,
+		sqrt0:                        sqrt0,
+		sqrt1:                        sqrt1,
+		remainderLow:                 remainderLow,
+		remainderHigh:                remainderHigh,
+		sqrtMul2MinusRemainderGeU128: sqrtMul2MinusRemainderGeU128,
+	}
+
+	err := hint.Execute(vm)
+
+	require.NoError(t, err)
+
+	expectedSqrt0 := memory.MemoryValueFromInt(0)
+	expectedSqrt1 := memory.MemoryValueFromInt(16)
 	expectedRemainderLow := memory.MemoryValueFromInt(0)
 	expectedRemainderHigh := memory.MemoryValueFromInt(0)
 	expectedSqrtMul2MinusRemainderGeU128 := memory.MemoryValueFromInt(0)

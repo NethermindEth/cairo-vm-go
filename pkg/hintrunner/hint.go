@@ -304,7 +304,8 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	// remainder = value - root ** 2
 	root2 := root.Clone()
 	root2.Mul(root, root)
-	remainder := value.Sub(value, root2)
+	remainder := value.Clone()
+	remainder.Sub(value, root2)
 
 	// memory{sqrt0} = root & 0xFFFFFFFFFFFFFFFF
 	// memory{sqrt1} = root >> 64
