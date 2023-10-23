@@ -242,6 +242,7 @@ func (hint SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
+
 	dstVal := memory.MemoryValueFromFieldElement(sqrt)
 	err = vm.Memory.WriteToAddress(&dstAddr, &dstVal)
 	if err != nil {
