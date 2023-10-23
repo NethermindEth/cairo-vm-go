@@ -60,8 +60,8 @@ func TestU128Split(t *testing.T) {
 	}{
 		{
 			input:        "00000001000000020000000300000004",
-			expectedHigh: 4294967298,
-			expectedLow:  12884901892,
+			expectedHigh: 0x0000000100000002,
+			expectedLow:  0x0000000300000004,
 			expectedErr:  false,
 		},
 	}
@@ -75,6 +75,60 @@ func TestU128Split(t *testing.T) {
 		}
 		if high != test.expectedHigh || low != test.expectedLow {
 			t.Errorf("expected (%d, %d), got (%d, %d) for input %s", test.expectedHigh, test.expectedLow, high, low, test.input)
+		}
+	}
+}
+
+func TestAddPaddingPlainCase(t *testing.T) {
+	// Define your test cases as a table
+	testCases := []struct {
+		input             []uint64
+		lastInputWord     uint64
+		lastInputNumBytes int
+		expected          []uint64
+	}{
+		{
+			input:             []uint64{},
+			lastInputWord:     0,
+			lastInputNumBytes: 0,
+			expected:          []uint64{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x8000000000000000},
+		},
+		{
+			input:             []uint64{0x1234567890abcdef},
+			lastInputWord:     0,
+			lastInputNumBytes: 0,
+			expected:          []uint64{0x1234567890abcdef, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x8000000000000000},
+		},
+	}
+
+	for _, testCase := range testCases {
+		result, err := AddPadding(testCase.input, testCase.lastInputWord, testCase.lastInputNumBytes)
+		if assert.NoError(t, err) {
+			assert.Equal(t, testCase.expected, result)
+		}
+	}
+}
+
+func TestAddPaddingOperandCase(t *testing.T) {
+	// Define your test cases as a table
+	testCases := []struct {
+		input             []uint64
+		lastInputWord     uint64
+		lastInputNumBytes int
+		expected          []uint64
+	}{
+		{
+			input:             []uint64{0x1234567890abcdef},
+			lastInputWord:     0xabcdef,
+			lastInputNumBytes: 3,
+			expected:          []uint64{0x1234567890abcdef, 0x1000000 + 0xabcdef, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x8000000000000000},
+		},
+	}
+
+	for _, testCase := range testCases {
+		result, err := AddPadding(testCase.input, testCase.lastInputWord, testCase.lastInputNumBytes)
+		if assert.NoError(t, err) {
+			assert.Equal(t, testCase.expected, result)
 		}
 	}
 }
