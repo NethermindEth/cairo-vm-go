@@ -1,4 +1,4 @@
-package vm
+package starknet
 
 import (
 	"encoding/json"

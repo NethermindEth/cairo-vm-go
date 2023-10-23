@@ -105,7 +105,9 @@ func (segment *Segment) Read(offset uint64) (MemoryValue, error) {
 		if err := segment.BuiltinRunner.InferValue(segment, offset); err != nil {
 			return UnknownValue, fmt.Errorf("%s: %w", segment.BuiltinRunner, err)
 		}
-		// set the last index to the offset only if the value was inferred
+	}
+
+	if offset > segment.Len() {
 		segment.LastIndex = int(offset)
 	}
 	return *mv, nil
@@ -156,7 +158,8 @@ func (segment *Segment) IncreaseSegmentSize(newSize uint64) {
 
 func (segment *Segment) String() string {
 	header := fmt.Sprintf(
-		"real len: %d real cap: %d len: %d\n",
+		"%s real len: %d real cap: %d len: %d\n",
+		segment.BuiltinRunner,
 		len(segment.Data),
 		cap(segment.Data),
 		segment.Len(),
@@ -281,4 +284,14 @@ func (memory *Memory) RelocationOffsets() ([]uint64, uint64) {
 		segmentsOffsets[i+1] = segmentsOffsets[i] + segmentLength
 	}
 	return segmentsOffsets, maxMemoryUsed
+}
+
+// It finds a segment with a given builtin name, it returns the segment and true if found
+func (memory *Memory) FindSegmentWithBuiltin(builtinName string) (*Segment, bool) {
+	for i := range memory.Segments {
+		if memory.Segments[i].BuiltinRunner.String() == builtinName {
+			return memory.Segments[i], true
+		}
+	}
+	return nil, false
 }

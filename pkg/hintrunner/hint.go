@@ -237,15 +237,12 @@ func (hint SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	}
 
 	sqrt := valueFelt.Sqrt(valueFelt)
-
-	dst := f.Element{}
-	dst.Set(sqrt)
-
+  
 	dstAddr, err := hint.dst.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
-	dstVal := memory.MemoryValueFromFieldElement(&dst)
+	dstVal := memory.MemoryValueFromFieldElement(sqrt)
 	err = vm.Memory.WriteToAddress(&dstAddr, &dstVal)
 	if err != nil {
 		return fmt.Errorf("write cell: %v", err)
