@@ -46,7 +46,7 @@ func SafeOffset(x uint64, y int16) (res uint64, isOverflow bool) {
 func NextPowerOfTwo(n uint64) uint64 {
 	// it is already a power of 2
 	if (n & (n - 1)) == 0 {
-		return uint64(n)
+		return n
 	}
 
 	higherBit := 64 - bits.LeadingZeros64(n)
