@@ -175,7 +175,6 @@ func (segment *Segment) String() string {
 	return header
 }
 
-// todo(rodro): Check out temprary segments
 // Represents the whole VM memory divided into segments
 type Memory struct {
 	Segments []*Segment
