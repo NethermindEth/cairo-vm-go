@@ -291,11 +291,8 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	// value = {value_low} + {value_high} * 2**128
 	valueLowU256 := uint256.Int(valueLowFelt.Bits())
 	valueHighU256 := uint256.Int(valueHighFelt.Bits())
-
-	shifted := valueHighU256.Clone()
-	shifted.Lsh(&valueHighU256, 128)
-	value := shifted.Clone()
-	value.Add(shifted, &valueLowU256)
+	valueHighU256.Lsh(&valueHighU256, 128)
+	value := valueHighU256.Add(&valueHighU256, &valueLowU256)
 
 	// root = math.isqrt(value)
 	root := value.Clone()
@@ -312,11 +309,11 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	mask64 := uint256.NewInt(0xFFFFFFFFFFFFFFFF)
 	rootMasked := root.Clone()
 	rootMasked.And(root, mask64)
+	rootShifted := root.Rsh(root, 64)
 
 	sqrt0 := f.Element{}
 	sqrt0.SetBytes(rootMasked.Bytes())
 
-	rootShifted := root.Rsh(root, 64)
 	sqrt1 := f.Element{}
 	sqrt1.SetBytes(rootShifted.Bytes())
 
