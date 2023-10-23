@@ -2,7 +2,6 @@ package hintrunner
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/holiman/uint256"
 
@@ -176,21 +175,22 @@ func (hint LinearSplit) Execute(vm *VM.VirtualMachine) error {
 	if err != nil {
 		return err
 	}
-	scalarBig := &big.Int{}
-	valueBig := &big.Int{}
-	maxBig := &big.Int{}
-	scalarField.BigInt(scalarBig)
-	valueField.BigInt(valueBig)
-	maxXField.BigInt(maxBig)
 
-	x := (&big.Int{}).Div(valueBig, scalarBig)
+	scalarBytes := scalarField.Bytes()
+	valueBytes := valueField.Bytes()
+	maxXBytes := maxXField.Bytes()
+	scalarUint := new(uint256.Int).SetBytes(scalarBytes[:])
+	valueUint := new(uint256.Int).SetBytes(valueBytes[:])
+	maxXUint := new(uint256.Int).SetBytes(maxXBytes[:])
 
-	if x.Cmp(maxBig) > 0 {
-		x.Set(maxBig)
+	x := (&uint256.Int{}).Div(valueUint, scalarUint)
+
+	if x.Cmp(maxXUint) > 0 {
+		x.Set(maxXUint)
 	}
 
-	y := &big.Int{}
-	y = y.Sub(valueBig, y.Mul(scalarBig, x))
+	y := &uint256.Int{}
+	y = y.Sub(valueUint, y.Mul(scalarUint, x))
 
 	xAddr, err := hint.x.Get(vm)
 	if err != nil {
@@ -204,8 +204,8 @@ func (hint LinearSplit) Execute(vm *VM.VirtualMachine) error {
 
 	xFiled := &f.Element{}
 	yFiled := &f.Element{}
-	xFiled.SetBigInt(x)
-	yFiled.SetBigInt(y)
+	xFiled.SetBytes(x.Bytes())
+	yFiled.SetBytes(y.Bytes())
 	mv := memory.MemoryValueFromFieldElement(xFiled)
 	err = vm.Memory.WriteToAddress(&xAddr, &mv)
 	if err != nil {
