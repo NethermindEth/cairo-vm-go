@@ -13,6 +13,14 @@ const (
 	BYTES_IN_U64_WORD         = 8
 )
 
+type uint128 struct {
+	High, Low uint64
+}
+
+type U256 struct {
+	High, Low uint128
+}
+
 // u128ToU64 converts a big.Int (representing a 128-bit integer) to a uint64,
 // assuming the big.Int fits into a uint64.
 func U128ToU64(input *big.Int) (uint64, error) {
@@ -36,6 +44,20 @@ func U128Split(input *big.Int) (high, low uint64, err error) {
 		return 0, 0, err
 	}
 	return high, low, nil
+}
+
+// SplitU256 splits a U256 into four uint64s.
+func SplitU256(value U256) (lowLow, lowHigh, highLow, highHigh uint64) {
+	lowLow, lowHigh = value.Low.Low, value.Low.High
+	highLow, highHigh = value.High.Low, value.High.High
+	return
+}
+
+// AppendU256ToSlice appends the values from a U256 to a slice in the specified order.
+func AppendU256ToSlice(slice []uint64, value U256) []uint64 {
+	lowLow, lowHigh, highLow, highHigh := SplitU256(value)
+	slice = append(slice, lowLow, lowHigh, highLow, highHigh)
+	return slice
 }
 
 // Keccak256 computes the Keccak-256 hash of the input data.
