@@ -222,20 +222,23 @@ type DebugPrint struct {
 }
 
 func (hint DebugPrint) Execute(vm *VM.VirtualMachine) error {
-	var startAddr memory.MemoryAddress
-	switch v := hint.start.(type) {
-	case Deref:
-		startAddr, _ = v.deref.Get(vm)
-	default:
-		return fmt.Errorf("start has to be a pointer")
+	start, err := hint.start.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve start operand %s: %v", hint.start, err)
 	}
 
-	var endAddr memory.MemoryAddress
-	switch v := hint.end.(type) {
-	case Deref:
-		endAddr, _ = v.deref.Get(vm)
-	default:
-		return fmt.Errorf("end has to be a pointer")
+	startAddr, err := start.MemoryAddress()
+	if err != nil {
+		return fmt.Errorf("start memory address: %v", err)
+	}
+
+	end, err := hint.end.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve end operand %s: %v", hint.end, err)
+	}
+	endAddr, err := end.MemoryAddress()
+	if err != nil {
+		return fmt.Errorf("end memory address: %v", err)
 	}
 
 	if startAddr.Offset > endAddr.Offset {
@@ -243,7 +246,6 @@ func (hint DebugPrint) Execute(vm *VM.VirtualMachine) error {
 	}
 
 	current := startAddr.Offset
-
 	for current < endAddr.Offset {
 		v, err := vm.Memory.ReadFromAddress(&memory.MemoryAddress{
 			SegmentIndex: startAddr.SegmentIndex,
@@ -253,7 +255,8 @@ func (hint DebugPrint) Execute(vm *VM.VirtualMachine) error {
 			return err
 		}
 
-		fmt.Printf("[DEBUG] %s\n", v.Hex())
+		field, _ := v.FieldElement()
+		fmt.Printf("[DEBUG] %s\n", field.Text(16))
 		current += 1
 	}
 

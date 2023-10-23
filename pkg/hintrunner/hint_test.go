@@ -1,7 +1,6 @@
 package hintrunner
 
 import (
-	"fmt"
 	"io"
 	"math/big"
 	"os"
@@ -245,13 +244,15 @@ func TestDebugPrint(t *testing.T) {
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(10))
-	writeTo(vm, VM.ExecutionSegment, 1, memory.MemoryValueFromInt(20))
-	writeTo(vm, VM.ExecutionSegment, 2, memory.MemoryValueFromInt(30))
+	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 2))
+	writeTo(vm, VM.ExecutionSegment, 1, memory.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 5))
+	writeTo(vm, VM.ExecutionSegment, 2, memory.MemoryValueFromInt(10))
+	writeTo(vm, VM.ExecutionSegment, 3, memory.MemoryValueFromInt(20))
+	writeTo(vm, VM.ExecutionSegment, 4, memory.MemoryValueFromInt(30))
 
-	var startRef ApCellRef = 0
-	var endRef FpCellRef = 3
-	start := Deref{startRef}
+	var starRef ApCellRef = 0
+	var endRef ApCellRef = 1
+	start := Deref{starRef}
 	end := Deref{endRef}
 	hint := DebugPrint{
 		start: start,
@@ -262,10 +263,9 @@ func TestDebugPrint(t *testing.T) {
 
 	w.Close()
 	out, _ := io.ReadAll(r)
-	fmt.Println(string(out))
 	//Restore stdout at the end of the test
 	os.Stdout = rescueStdout
 
 	require.NoError(t, err)
-	require.Equal(t, out, expected)
+	require.Equal(t, expected, out)
 }
