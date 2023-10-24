@@ -18,7 +18,8 @@ func BenchmarkAllocSegment(b *testing.B) {
 		alloc := AllocSegment{ap}
 		err := alloc.Execute(vm)
 		if err != nil {
-			panic(err)
+			b.Error(err)
+			break
 		}
 
 		vm.Context.Ap += 1
@@ -33,22 +34,52 @@ func BenchmarkLessThan(b *testing.B) {
 	var dst ApCellRef = 1
 	var rhsRef ApCellRef = 2
 	cell := uint64(0)
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		writeTo(vm, VM.ExecutionSegment, vm.Context.Ap+uint64(rhsRef), memory.MemoryValueFromInt(int64(23*cell)%13))
 		rhs := Deref{rhsRef}
 		lhs := Immediate(*big.NewInt(int64((13 * cell) % 11)))
+
 		hint := TestLessThan{
 			dst: dst,
 			lhs: lhs,
 			rhs: rhs,
 		}
+
 		err := hint.Execute(vm)
 		if err != nil {
-			panic(err)
+			b.Error(err)
+			break
 		}
 
 		vm.Context.Ap += 3
 		cell += 1
+	}
+}
+
+func BenchmarkSquareRoot(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var dst ApCellRef = 1
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		value := Immediate(*big.NewInt(int64(i * i)))
+		hint := SquareRoot{
+			value: value,
+			dst:   dst,
+		}
+
+		err := hint.Execute(vm)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+		vm.Context.Ap += 1
+
 	}
 
 }
