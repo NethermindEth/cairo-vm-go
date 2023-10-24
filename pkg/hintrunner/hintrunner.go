@@ -5,17 +5,23 @@ import (
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type DictionaryManager struct {
+	// Each Dictionary belongs to its own segment, so given a memory address
+	// to a dictionary we can select the right one given the address index
+
+	// dict segment index -> dict key -> dict value
+	dictionaries map[uint64]map[f.Element]*f.Element
 }
 
-// It creates a new dictionary
+// It creates a new segment which will hold dictionary values. It returns the memory
+// address of that segment.
 func (dm DictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddress {
-	return mem.MemoryAddress{
-		SegmentIndex: uint64(vm.Memory.AllocateEmptySegment()),
-		Offset:       0,
-	}
+	newDictAddr := vm.Memory.AllocateEmptySegment()
+	dm.dictionaries[newDictAddr.SegmentIndex] = make(map[f.Element]*f.Element)
+	return newDictAddr
 }
 
 type HintRunnerContext struct {

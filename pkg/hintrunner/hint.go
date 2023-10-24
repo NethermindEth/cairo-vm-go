@@ -26,8 +26,8 @@ func (hint AllocSegment) String() string {
 }
 
 func (hint AllocSegment) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
-	segmentIndex := vm.Memory.AllocateEmptySegment()
-	memAddress := mem.MemoryValueFromSegmentAndOffset(segmentIndex, 0)
+	newSegment := vm.Memory.AllocateEmptySegment()
+	memAddress := mem.MemoryValueFromMemoryAddress(&newSegment)
 
 	regAddr, err := hint.dst.Get(vm)
 	if err != nil {
@@ -36,7 +36,7 @@ func (hint AllocSegment) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) er
 
 	err = vm.Memory.WriteToAddress(&regAddr, &memAddress)
 	if err != nil {
-		return fmt.Errorf("write to address %s: %v", regAddr, err)
+		return fmt.Errorf("write to address %s: %w", regAddr, err)
 	}
 
 	return nil
@@ -158,11 +158,11 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) erro
 
 	lhs, err := hint.lhs.Resolve(vm)
 	if err != nil {
-		return fmt.Errorf("resolve lhs operand %s: %v", hint.lhs, err)
+		return fmt.Errorf("resolve lhs operand %s: %w", hint.lhs, err)
 	}
 	rhs, err := hint.rhs.Resolve(vm)
 	if err != nil {
-		return fmt.Errorf("resolve rhs operand %s: %v", hint.rhs, err)
+		return fmt.Errorf("resolve rhs operand %s: %w", hint.rhs, err)
 	}
 
 	lhsFelt, err := lhs.FieldElement()
@@ -196,7 +196,7 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) erro
 
 	lowAddr, err := hint.low.Get(vm)
 	if err != nil {
-		return fmt.Errorf("get destination cell: %v", err)
+		return fmt.Errorf("get destination cell: %w", err)
 	}
 	mvLow := mem.MemoryValueFromFieldElement(&low)
 	err = vm.Memory.WriteToAddress(&lowAddr, &mvLow)
@@ -206,12 +206,12 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) erro
 
 	highAddr, err := hint.high.Get(vm)
 	if err != nil {
-		return fmt.Errorf("get destination cell: %v", err)
+		return fmt.Errorf("get destination cell: %w", err)
 	}
 	mvHigh := mem.MemoryValueFromFieldElement(&high)
 	err = vm.Memory.WriteToAddress(&highAddr, &mvHigh)
 	if err != nil {
-		return fmt.Errorf("write cell: %v", err)
+		return fmt.Errorf("write cell: %w", err)
 	}
 
 	return nil
@@ -229,7 +229,7 @@ func (hint SquareRoot) String() string {
 func (hint SquareRoot) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	value, err := hint.value.Resolve(vm)
 	if err != nil {
-		return fmt.Errorf("resolve value operand %s: %v", hint.value, err)
+		return fmt.Errorf("resolve value operand %s: %w", hint.value, err)
 	}
 
 	valueFelt, err := value.FieldElement()
@@ -241,13 +241,13 @@ func (hint SquareRoot) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) erro
 
 	dstAddr, err := hint.dst.Get(vm)
 	if err != nil {
-		return fmt.Errorf("get destination cell: %v", err)
+		return fmt.Errorf("get destination cell: %w", err)
 	}
 
 	dstVal := mem.MemoryValueFromFieldElement(sqrt)
 	err = vm.Memory.WriteToAddress(&dstAddr, &dstVal)
 	if err != nil {
-		return fmt.Errorf("write cell: %v", err)
+		return fmt.Errorf("write cell: %w", err)
 	}
 	return nil
 }
@@ -303,3 +303,26 @@ func (hint AllocFelt252Dict) Execute(vm *VM.VirtualMachine, ctx *HintRunnerConte
 	}
 	return nil
 }
+
+type Felt252DictEntryInit struct {
+	DictPtr ResOperander
+	Key     ResOperander
+}
+
+func (hint Felt252DictEntryInit) String() string {
+	return "Felt252DictEntryInit"
+}
+
+//func (hint *Felt252DictEntryInit) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+//	dictPtr, err := ResolveAsAddress(vm, hint.DictPtr)
+//	if err != nil {
+//		return fmt.Errorf("resolve dictionary pointer: %w", err)
+//	}
+//
+//	key, err := ResolveAsFelt(vm, hint.Key)
+//	if err != nil {
+//		return fmt.Errorf("resolve key: %w", err)
+//	}
+//
+//	return nil
+//}
