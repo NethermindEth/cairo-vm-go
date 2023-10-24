@@ -35,7 +35,7 @@ func TestU128ToU64(t *testing.T) {
 	}{
 		{"1234567890", 1234567890, false},
 		{"18446744073709551615", 18446744073709551615, false}, // Maximum uint64 value
-		{"18446744073709551616", 0, true},                     // Just over uint64 max
+		{"18446744073709551616", 0, true},                     // Over uint64 max
 	}
 
 	for _, test := range tests {

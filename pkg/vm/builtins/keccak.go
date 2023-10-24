@@ -1,6 +1,7 @@
 package builtins
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math/big"
 
@@ -13,16 +14,15 @@ const (
 	BYTES_IN_U64_WORD         = 8
 )
 
-type uint128 struct {
+type U128 struct {
 	High, Low uint64
 }
 
 type U256 struct {
-	High, Low uint128
+	High, Low U128
 }
 
-// u128ToU64 converts a big.Int (representing a 128-bit integer) to a uint64,
-// assuming the big.Int fits into a uint64.
+// u128 into a uint64 when
 func U128ToU64(input *big.Int) (uint64, error) {
 	if input.BitLen() > 64 {
 		return 0, fmt.Errorf("value too large to fit in uint64")
@@ -30,7 +30,7 @@ func U128ToU64(input *big.Int) (uint64, error) {
 	return input.Uint64(), nil
 }
 
-// u128Split splits a big.Int (representing a 128-bit integer) into two uint64s.
+// when u128, into two uint64s.
 func U128Split(input *big.Int) (high, low uint64, err error) {
 	divisor := new(big.Int)
 	divisor.SetString("10000000000000000", 16) // Set the divisor using a hexadecimal string
@@ -46,18 +46,12 @@ func U128Split(input *big.Int) (high, low uint64, err error) {
 	return high, low, nil
 }
 
-// SplitU256 splits a U256 into four uint64s.
-func SplitU256(value U256) (lowLow, lowHigh, highLow, highHigh uint64) {
-	lowLow, lowHigh = value.Low.Low, value.Low.High
-	highLow, highHigh = value.High.Low, value.High.High
-	return
-}
-
-// AppendU256ToSlice appends the values from a U256 to a slice in the specified order.
-func AppendU256ToSlice(slice []uint64, value U256) []uint64 {
-	lowLow, lowHigh, highLow, highHigh := SplitU256(value)
-	slice = append(slice, lowLow, lowHigh, highLow, highHigh)
-	return slice
+func KeccakAddU256LE(keccakInput []uint64, value U256) []uint64 {
+	low, high, _ := U128Split(value.Low)
+	keccakInput = append(keccakInput, low, high)
+	low, high, _ = U128Split(value.High)
+	keccakInput = append(keccakInput, low, high)
+	return keccakInput
 }
 
 // Keccak256 computes the Keccak-256 hash of the input data.
@@ -69,13 +63,17 @@ func Keccak256(data []byte) ([]byte, error) {
 	return hasher.Sum(nil), nil // Return the hash and a nil error.
 }
 
-// Cairo_Keccak computes and prints the Keccak-256 hash of the input data.
-func Cairo_Keccak(data []byte) ([]byte, error) {
-	hash, err := Keccak256(data)
-	if err != nil {
-		return nil, err
+func CairoKeccak(input []uint64, lastInputWord uint64, lastInputNumBytes int) ([]byte, error) {
+	input, _ = AddPadding(input, lastInputWord, lastInputNumBytes)
+
+	// Convert the input slice of uint64 to a slice of byte.
+	byteData := make([]byte, len(input)*8) // 8 bytes per uint64
+	for i, word := range input {
+		binary.LittleEndian.PutUint64(byteData[i*8:], word)
 	}
-	return hash, nil
+
+	// Use your existing Keccak256 function.
+	return Keccak256(byteData)
 }
 
 func AddPadding(input []uint64, lastInputWord uint64, lastInputNumBytes int) ([]uint64, error) {
