@@ -189,30 +189,39 @@ func InitializeEmptyMemory() *Memory {
 }
 
 // Allocates a new segment providing its initial data and returns its index
-func (memory *Memory) AllocateSegment(data []*f.Element) (int, error) {
+func (memory *Memory) AllocateSegment(data []*f.Element) (MemoryAddress, error) {
 	newSegment := EmptySegmentWithLength(len(data))
 	for i := range data {
 		memVal := MemoryValueFromFieldElement(data[i])
 		err := newSegment.Write(uint64(i), &memVal)
 		if err != nil {
-			return 0, err
+			return UnknownAddress, err
 		}
 	}
 	memory.Segments = append(memory.Segments, newSegment)
-	return len(memory.Segments) - 1, nil
+	return MemoryAddress{
+		SegmentIndex: uint64(len(memory.Segments) - 1),
+		Offset:       0,
+	}, nil
 }
 
 // Allocates an empty segment and returns its index
-func (memory *Memory) AllocateEmptySegment() int {
+func (memory *Memory) AllocateEmptySegment() MemoryAddress {
 	memory.Segments = append(memory.Segments, EmptySegment())
-	return len(memory.Segments) - 1
+	return MemoryAddress{
+		SegmentIndex: uint64(len(memory.Segments) - 1),
+		Offset:       0,
+	}
 }
 
 // Allocate a Builtin segment
-func (memory *Memory) AllocateBuiltinSegment(builtinRunner BuiltinRunner) int {
+func (memory *Memory) AllocateBuiltinSegment(builtinRunner BuiltinRunner) MemoryAddress {
 	builtinSegment := EmptySegment().WithBuiltinRunner(builtinRunner)
 	memory.Segments = append(memory.Segments, builtinSegment)
-	return len(memory.Segments) - 1
+	return MemoryAddress{
+		SegmentIndex: uint64(len(memory.Segments) - 1),
+		Offset:       0,
+	}
 }
 
 // Writes to a given segment index and offset a new memory value. Errors if writing
