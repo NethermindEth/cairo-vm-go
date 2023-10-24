@@ -11,7 +11,7 @@ func defaultVirtualMachine() *vm.VirtualMachine {
 	memory.AllocateEmptySegment()
 	memory.AllocateEmptySegment()
 
-	vm, err := vm.NewVirtualMachine(vm.Context{}, memory, nil, vm.VirtualMachineConfig{})
+	vm, err := vm.NewVirtualMachine(vm.Context{}, memory, vm.VirtualMachineConfig{})
 	if err != nil {
 		panic(err)
 	}

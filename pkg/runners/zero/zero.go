@@ -178,7 +178,7 @@ func (runner *ZeroRunner) RunUntilPc(pc *mem.MemoryAddress) error {
 				runner.maxsteps,
 			)
 		}
-		if err := runner.vm.RunStep(runner.hintrunner); err != nil {
+		if err := runner.vm.RunStep(&runner.hintrunner); err != nil {
 			return fmt.Errorf("pc %s step %d: %w", runner.pc(), runner.steps(), err)
 		}
 	}
@@ -196,7 +196,7 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 				runner.maxsteps,
 			)
 		}
-		if err := runner.vm.RunStep(runner.hintrunner); err != nil {
+		if err := runner.vm.RunStep(&runner.hintrunner); err != nil {
 			return fmt.Errorf(
 				"pc %s step %d: %w",
 				runner.pc(),
