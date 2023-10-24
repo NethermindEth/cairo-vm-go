@@ -5,15 +5,16 @@ import (
 
 	"github.com/holiman/uint256"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type Hinter interface {
 	fmt.Stringer
 
-	Execute(vm *VM.VirtualMachine) error
+	Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error
 }
 
 type AllocSegment struct {
@@ -24,9 +25,9 @@ func (hint AllocSegment) String() string {
 	return "AllocSegment"
 }
 
-func (hint AllocSegment) Execute(vm *VM.VirtualMachine) error {
+func (hint AllocSegment) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	segmentIndex := vm.Memory.AllocateEmptySegment()
-	memAddress := memory.MemoryValueFromSegmentAndOffset(segmentIndex, 0)
+	memAddress := mem.MemoryValueFromSegmentAndOffset(segmentIndex, 0)
 
 	regAddr, err := hint.dst.Get(vm)
 	if err != nil {
@@ -51,7 +52,7 @@ func (hint TestLessThan) String() string {
 	return "TestLessThan"
 }
 
-func (hint TestLessThan) Execute(vm *VM.VirtualMachine) error {
+func (hint TestLessThan) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	lhsVal, err := hint.lhs.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve lhs operand %s: %w", hint.lhs, err)
@@ -82,7 +83,7 @@ func (hint TestLessThan) Execute(vm *VM.VirtualMachine) error {
 		return fmt.Errorf("get dst address %s: %w", dstAddr, err)
 	}
 
-	mv := memory.MemoryValueFromFieldElement(&resFelt)
+	mv := mem.MemoryValueFromFieldElement(&resFelt)
 	err = vm.Memory.WriteToAddress(&dstAddr, &mv)
 	if err != nil {
 		return fmt.Errorf("write to dst address %s: %w", dstAddr, err)
@@ -101,7 +102,7 @@ func (hint TestLessThanOrEqual) String() string {
 	return "TestLessThanOrEqual"
 }
 
-func (hint TestLessThanOrEqual) Execute(vm *VM.VirtualMachine) error {
+func (hint TestLessThanOrEqual) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	lhsVal, err := hint.lhs.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve lhs operand %s: %w", hint.lhs, err)
@@ -132,7 +133,7 @@ func (hint TestLessThanOrEqual) Execute(vm *VM.VirtualMachine) error {
 		return fmt.Errorf("get dst address %s: %w", dstAddr, err)
 	}
 
-	mv := memory.MemoryValueFromFieldElement(&resFelt)
+	mv := mem.MemoryValueFromFieldElement(&resFelt)
 	err = vm.Memory.WriteToAddress(&dstAddr, &mv)
 	if err != nil {
 		return fmt.Errorf("write to dst address %s: %w", dstAddr, err)
@@ -152,7 +153,7 @@ func (hint WideMul128) String() string {
 	return "WideMul128"
 }
 
-func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
+func (hint WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	mask := MaxU128()
 
 	lhs, err := hint.lhs.Resolve(vm)
@@ -197,7 +198,7 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
-	mvLow := memory.MemoryValueFromFieldElement(&low)
+	mvLow := mem.MemoryValueFromFieldElement(&low)
 	err = vm.Memory.WriteToAddress(&lowAddr, &mvLow)
 	if err != nil {
 		return fmt.Errorf("write cell: %v", err)
@@ -207,7 +208,7 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
-	mvHigh := memory.MemoryValueFromFieldElement(&high)
+	mvHigh := mem.MemoryValueFromFieldElement(&high)
 	err = vm.Memory.WriteToAddress(&highAddr, &mvHigh)
 	if err != nil {
 		return fmt.Errorf("write cell: %v", err)
@@ -225,7 +226,7 @@ func (hint SquareRoot) String() string {
 	return "SquareRoot"
 }
 
-func (hint SquareRoot) Execute(vm *VM.VirtualMachine) error {
+func (hint SquareRoot) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	value, err := hint.value.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve value operand %s: %v", hint.value, err)
@@ -243,10 +244,62 @@ func (hint SquareRoot) Execute(vm *VM.VirtualMachine) error {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
 
-	dstVal := memory.MemoryValueFromFieldElement(sqrt)
+	dstVal := mem.MemoryValueFromFieldElement(sqrt)
 	err = vm.Memory.WriteToAddress(&dstAddr, &dstVal)
 	if err != nil {
 		return fmt.Errorf("write cell: %v", err)
+	}
+	return nil
+}
+
+type AllocFelt252Dict struct {
+	SegmentArenaPtr ResOperander
+}
+
+func (hint AllocFelt252Dict) String() string {
+	return "AllocFelt252Dict"
+}
+func (hint AllocFelt252Dict) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	arenaPtr, err := ResolveAsAddress(vm, hint.SegmentArenaPtr)
+	if err != nil {
+		return fmt.Errorf("resolve segment arena pointer: %w", err)
+	}
+
+	// find for the amount of initialized dicts
+	initializedDictsOffset, overflow := safemath.SafeOffset(arenaPtr.Offset, -2)
+	if overflow {
+		return fmt.Errorf("look for initialized dicts: overflow: %s - 2", arenaPtr)
+	}
+	initializedDictsFelt, err := vm.Memory.Read(arenaPtr.SegmentIndex, initializedDictsOffset)
+	if err != nil {
+		return fmt.Errorf("read initialized dicts: %w", err)
+	}
+	initializedDicts, err := initializedDictsFelt.Uint64()
+	if err != nil {
+		return fmt.Errorf("read initialized dicts: %w", err)
+	}
+
+	// find for the segment info pointer
+	segmentInfoOffset, overflow := safemath.SafeOffset(arenaPtr.Offset, -3)
+	if overflow {
+		return fmt.Errorf("look for segment info pointer: overflow: %s - 3", arenaPtr)
+	}
+	segmentInfoMv, err := vm.Memory.Read(arenaPtr.SegmentIndex, segmentInfoOffset)
+	if err != nil {
+		return fmt.Errorf("read segment info pointer: %w", err)
+	}
+	segmentInfoPtr, err := segmentInfoMv.MemoryAddress()
+	if err != nil {
+		return fmt.Errorf("expected pointer to segment info but got a felt: %w", err)
+	}
+
+	// with the segment info pointer and the number of initialized dictionaries we know
+	// where to write the new dictionary
+	newDictAddress := ctx.DictionaryManager.NewDictionary(vm)
+	mv := mem.MemoryValueFromMemoryAddress(&newDictAddress)
+	insertOffset := segmentInfoPtr.Offset + initializedDicts*3
+	if err = vm.Memory.Write(segmentInfoPtr.SegmentIndex, insertOffset, &mv); err != nil {
+		return fmt.Errorf("write new dictionary to segment info: %w", err)
 	}
 	return nil
 }

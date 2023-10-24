@@ -21,7 +21,7 @@ func TestAllocSegment(t *testing.T) {
 	alloc1 := AllocSegment{ap}
 	alloc2 := AllocSegment{fp}
 
-	err := alloc1.Execute(vm)
+	err := alloc1.Execute(vm, nil)
 	require.Nil(t, err)
 	require.Equal(t, 3, len(vm.Memory.Segments))
 	require.Equal(
@@ -30,7 +30,7 @@ func TestAllocSegment(t *testing.T) {
 		readFrom(vm, VM.ExecutionSegment, vm.Context.Ap+5),
 	)
 
-	err = alloc2.Execute(vm)
+	err = alloc2.Execute(vm, nil)
 	require.Nil(t, err)
 	require.Equal(t, 4, len(vm.Memory.Segments))
 	require.Equal(
@@ -59,7 +59,7 @@ func TestTestLessThanTrue(t *testing.T) {
 		rhs: rhs,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 	require.NoError(t, err)
 	require.Equal(
 		t,
@@ -95,7 +95,7 @@ func TestTestLessThanFalse(t *testing.T) {
 				rhs: rhs,
 			}
 
-			err := hint.Execute(vm)
+			err := hint.Execute(vm, nil)
 			require.NoError(t, err)
 			require.Equal(
 				t,
@@ -134,7 +134,7 @@ func TestTestLessThanOrEqTrue(t *testing.T) {
 				rhs: rhs,
 			}
 
-			err := hint.Execute(vm)
+			err := hint.Execute(vm, nil)
 			require.NoError(t, err)
 			require.Equal(
 				t,
@@ -164,7 +164,7 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 		rhs: rhs,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 	require.NoError(t, err)
 	require.Equal(
 		t,
@@ -192,7 +192,7 @@ func TestWideMul128(t *testing.T) {
 		rhs:  rhs,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 	require.Nil(t, err)
 
 	low := &f.Element{}
@@ -228,7 +228,7 @@ func TestWideMul128IncorrectRange(t *testing.T) {
 		rhs:  rhs,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 	require.ErrorContains(t, err, "should be u128")
 }
 
@@ -245,7 +245,7 @@ func TestSquareRoot(t *testing.T) {
 		dst:   dst,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 
 	require.NoError(t, err)
 	require.Equal(
