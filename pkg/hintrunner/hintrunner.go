@@ -18,10 +18,25 @@ type DictionaryManager struct {
 
 // It creates a new segment which will hold dictionary values. It returns the memory
 // address of that segment.
-func (dm DictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddress {
+func (dm *DictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddress {
 	newDictAddr := vm.Memory.AllocateEmptySegment()
 	dm.dictionaries[newDictAddr.SegmentIndex] = make(map[f.Element]*f.Element)
 	return newDictAddr
+}
+
+func (dm *DictionaryManager) At(dictAddr *mem.MemoryAddress, key *f.Element) (*f.Element, error) {
+	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
+		return dict[*key], nil
+	}
+	return nil, fmt.Errorf("no dictionary at address %s", dictAddr)
+}
+
+func (dm *DictionaryManager) Set(dictAddr *mem.MemoryAddress, key *f.Element, value *f.Element) error {
+	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
+		dict[*key] = value
+		return nil
+	}
+	return fmt.Errorf("no dictionary at address %s", dictAddr)
 }
 
 type HintRunnerContext struct {

@@ -313,16 +313,26 @@ func (hint Felt252DictEntryInit) String() string {
 	return "Felt252DictEntryInit"
 }
 
-//func (hint *Felt252DictEntryInit) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
-//	dictPtr, err := ResolveAsAddress(vm, hint.DictPtr)
-//	if err != nil {
-//		return fmt.Errorf("resolve dictionary pointer: %w", err)
-//	}
-//
-//	key, err := ResolveAsFelt(vm, hint.Key)
-//	if err != nil {
-//		return fmt.Errorf("resolve key: %w", err)
-//	}
-//
-//	return nil
-//}
+func (hint *Felt252DictEntryInit) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	dictPtr, err := ResolveAsAddress(vm, hint.DictPtr)
+	if err != nil {
+		return fmt.Errorf("resolve dictionary pointer: %w", err)
+	}
+
+	key, err := ResolveAsFelt(vm, hint.Key)
+	if err != nil {
+		return fmt.Errorf("resolve key: %w", err)
+	}
+
+	prevValue, err := ctx.DictionaryManager.At(&dictPtr, &key)
+	if err != nil {
+		return fmt.Errorf("get dictionary entry: %w", err)
+	}
+	if prevValue == nil {
+		felt := &f.Element{}
+		_ = ctx.DictionaryManager.Set(&dictPtr, &key, felt)
+	}
+
+	mvFelt := mem.MemoryValueFromFieldElement(prevValue)
+	return vm.Memory.Write(dictPtr.SegmentIndex, dictPtr.Offset+1, &mvFelt)
+}
