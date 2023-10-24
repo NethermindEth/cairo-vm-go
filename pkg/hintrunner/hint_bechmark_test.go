@@ -2,6 +2,7 @@ package hintrunner
 
 import (
 	"math/big"
+	"math/rand"
 	"testing"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -31,15 +32,15 @@ func BenchmarkLessThan(b *testing.B) {
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	var dst ApCellRef = 1
-	var rhsRef ApCellRef = 2
+	var dst ApCellRef = 0
+	var rhsRef ApCellRef = 1
 	cell := uint64(0)
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		writeTo(vm, VM.ExecutionSegment, vm.Context.Ap+uint64(rhsRef), memory.MemoryValueFromInt(int64(23*cell)%13))
+		writeTo(vm, VM.ExecutionSegment, vm.Context.Ap+uint64(rhsRef), memory.MemoryValueFromInt(rand.Int63()))
 		rhs := Deref{rhsRef}
-		lhs := Immediate(*big.NewInt(int64((13 * cell) % 11)))
+		lhs := Immediate(*big.NewInt(rand.Int63()))
 
 		hint := TestLessThan{
 			dst: dst,
@@ -53,7 +54,7 @@ func BenchmarkLessThan(b *testing.B) {
 			break
 		}
 
-		vm.Context.Ap += 3
+		vm.Context.Ap += 2
 		cell += 1
 	}
 }
@@ -82,4 +83,34 @@ func BenchmarkSquareRoot(b *testing.B) {
 
 	}
 
+}
+
+func BenchmarkWideMul128(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var dstLow ApCellRef = 0
+	var dstHigh ApCellRef = 1
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		lhs := Immediate(*new(big.Int).Lsh(big.NewInt(1), 127))
+		rhs := Immediate(*big.NewInt(int64(1<<8 + i)))
+
+		hint := WideMul128{
+			low:  dstLow,
+			high: dstHigh,
+			lhs:  lhs,
+			rhs:  rhs,
+		}
+
+		err := hint.Execute(vm)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+
+		vm.Context.Ap += 2
+	}
 }
