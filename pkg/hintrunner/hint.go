@@ -311,9 +311,11 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 
 	sqrt0 := f.Element{}
 	sqrt0.SetBytes(rootMasked.Bytes())
+	fmt.Println(rootMasked.Dec())
 
 	sqrt1 := f.Element{}
 	sqrt1.SetBytes(rootShifted.Bytes())
+	fmt.Println(rootShifted.Dec())
 
 	sqrt0Addr, err := hint.sqrt0.Get(vm)
 	if err != nil {
@@ -339,9 +341,11 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 
 	// memory{remainder_low} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 	// memory{remainder_high} = remainder >> 128
-	mask128 := MaxU128()
+	mask128 := uint256.NewInt(0xFFFFFFFFFFFFFFFF)
+	mask128.Lsh(mask128, 64)
+	mask128.Or(mask128, mask64)
 	remainderMasked := remainder.Clone()
-	remainderMasked.And(remainder, &mask128)
+	remainderMasked.And(remainder, mask128)
 	remainderLow := f.Element{}
 	remainderLow.SetBytes(remainderMasked.Bytes())
 
@@ -377,8 +381,10 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	rootMul2.Lsh(root, 1)
 	lhs := rootMul2.Clone()
 	lhs.Sub(rootMul2, remainder)
-	rhs := mask128.Clone()
-	rhs.Mul(&mask128, &mask128)
+
+	rhs := uint256.NewInt(1)
+	rhs.Lsh(rhs, 128)
+	// rhs.Mul(mask128, mask128)
 	result := rhs.Gt(lhs)
 	result = !result
 
