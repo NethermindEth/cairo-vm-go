@@ -2,9 +2,11 @@ package builtins
 
 import (
 	"encoding/hex"
-	"math/big"
+	"fmt"
+	"strings"
 	"testing"
 
+	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,52 +29,29 @@ func TestKeccak256(t *testing.T) {
 	assert.Equal(t, expectedHash, hashHex, "Expected %s, got %s", expectedHash, hashHex)
 }
 
-func TestU128ToU64(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected uint64
-		err      bool
-	}{
-		{"1234567890", 1234567890, false},
-		{"18446744073709551615", 18446744073709551615, false}, // Maximum uint64 value
-		{"18446744073709551616", 0, true},                     // Over uint64 max
-	}
-
-	for _, test := range tests {
-		input := new(big.Int)
-		input.SetString(test.input, 10)
-		result, err := U128ToU64(input)
-		if (err != nil) != test.err {
-			t.Errorf("unexpected error for input %s: %v", test.input, err)
-		}
-		if result != test.expected {
-			t.Errorf("expected %d, got %d for input %s", test.expected, result, test.input)
-		}
-	}
-}
-
 func TestU128Split(t *testing.T) {
 	tests := []struct {
 		input        string
 		expectedHigh uint64
 		expectedLow  uint64
-		expectedErr  bool
 	}{
 		{
 			input:        "00000001000000020000000300000004",
 			expectedHigh: 0x0000000100000002,
 			expectedLow:  0x0000000300000004,
-			expectedErr:  false,
 		},
 	}
 
 	for _, test := range tests {
-		input := new(big.Int)
-		input.SetString(test.input, 16)
-		high, low, err := U128Split(input)
-		if (err != nil) != test.expectedErr {
-			t.Errorf("unexpected error for input %s: %v", test.input, err)
+		trimmedInput := strings.TrimLeft(test.input, "0")
+		if len(trimmedInput) == 0 {
+			trimmedInput = "0" // Ensure at least one zero remains if all digits are zero.
 		}
+		input, err := uint256.FromHex("0x" + trimmedInput)
+		if err != nil {
+			t.Fatalf("failed to parse input %s: %v", test.input, err)
+		}
+		high, low := U128Split(input)
 		if high != test.expectedHigh || low != test.expectedLow {
 			t.Errorf("expected (%d, %d), got (%d, %d) for input %s", test.expectedHigh, test.expectedLow, high, low, test.input)
 		}
@@ -130,5 +109,44 @@ func TestAddPaddingOperandCase(t *testing.T) {
 		if assert.NoError(t, err) {
 			assert.Equal(t, testCase.expected, result)
 		}
+	}
+}
+
+func TestKeccakU64(t *testing.T) {
+	tests := []struct {
+		name              string
+		input             []uint64
+		lastInputWord     uint64
+		lastInputNumBytes int
+		expectedLow       string
+		expectedHigh      string
+	}{
+		{
+			name: "Test case 1 from Rust",
+			input: []uint64{
+				0x0000000000000001,
+				0x0000000000000000,
+				0x0000000000000000,
+				0x0000000000000000,
+			},
+			lastInputWord:     0,
+			lastInputNumBytes: 0,
+			expectedLow:       "0x587f7cc3722e9654ea3963d5fe8c0748",
+			expectedHigh:      "0xa5963aa610cb75ba273817bce5f8c48f",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res, err := CairoKeccak(tt.input, tt.lastInputWord, tt.lastInputNumBytes)
+			require.NoError(t, err)
+
+			// Assuming res is a []byte that represents a 256-bit number,
+			// split it into two 128-bit numbers represented as strings.
+			low := fmt.Sprintf("%x", res[:16])
+			high := fmt.Sprintf("%x", res[16:])
+			require.Equal(t, tt.expectedLow, low)
+			require.Equal(t, tt.expectedHigh, high)
+		})
 	}
 }

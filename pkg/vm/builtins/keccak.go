@@ -3,8 +3,10 @@ package builtins
 import (
 	"encoding/binary"
 	"fmt"
-	"math/big"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
+
+	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -14,45 +16,69 @@ const (
 	BYTES_IN_U64_WORD         = 8
 )
 
-type U128 struct {
-	High, Low uint64
+// U128Split splits a uint128 (represented as a uint256.Int) into two uint64s.
+func U128Split(input *uint256.Int) (high, low uint64) {
+	low = input.Uint64()
+	input.Rsh(input, 64)
+	high = input.Uint64()
+	return
 }
 
-type U256 struct {
-	High, Low U128
-}
-
-// u128 into a uint64 when
-func U128ToU64(input *big.Int) (uint64, error) {
-	if input.BitLen() > 64 {
-		return 0, fmt.Errorf("value too large to fit in uint64")
-	}
-	return input.Uint64(), nil
-}
-
-// when u128, into two uint64s.
-func U128Split(input *big.Int) (high, low uint64, err error) {
-	divisor := new(big.Int)
-	divisor.SetString("10000000000000000", 16) // Set the divisor using a hexadecimal string
-	quotient, remainder := new(big.Int).DivMod(input, divisor, new(big.Int))
-	high, err = U128ToU64(quotient)
-	if err != nil {
-		return 0, 0, err
-	}
-	low, err = U128ToU64(remainder)
-	if err != nil {
-		return 0, 0, err
-	}
-	return high, low, nil
-}
-
-func KeccakAddU256LE(keccakInput []uint64, value U256) []uint64 {
-	low, high, _ := U128Split(value.Low)
+// KeccakAddU256LE appends the low and high 64-bit words of a U256 value to a keccak input.
+func KeccakAddU256LE(keccakInput []uint64, value *uint256.Int) []uint64 {
+	valueCopy := new(uint256.Int).Set(value)
+	// Split the low 128 bits into two uint64s and append them to keccakInput.
+	low, high := U128Split(valueCopy)
 	keccakInput = append(keccakInput, low, high)
-	low, high, _ = U128Split(value.High)
+
+	// Shift the value right by 128 bits to get the high 128 bits.
+	value.Rsh(value, 128)
+	// Split the high 128 bits into two uint64s and append them to keccakInput.
+	low, high = U128Split(value)
 	keccakInput = append(keccakInput, low, high)
+
 	return keccakInput
 }
+
+//Starting BE codes
+
+func ReverseBytes128(value *uint256.Int) *uint256.Int {
+	byteSlice := value.Bytes()
+	reversedSlice := make([]byte, len(byteSlice))
+
+	for i, byteValue := range byteSlice {
+		reversedSlice[len(byteSlice)-1-i] = byteValue
+	}
+
+	reversed := uint256.NewInt(0)
+	reversed.SetBytes(reversedSlice)
+
+	return reversed
+}
+
+func KeccakAddU256BE(keccakInput []uint64, value *uint256.Int) []uint64 {
+	valueHigh, valueLow := new(uint256.Int), new(uint256.Int)
+	valueHigh.Rsh(value, 128)
+	maxU128 := hintrunner.MaxU128()
+	valueLow.And(value, &maxU128)
+
+	reversedHigh := ReverseBytes128(valueHigh)
+	reversedLow := ReverseBytes128(valueLow)
+
+	keccakInput = KeccakAddU256LE(keccakInput, reversedHigh)
+	keccakInput = KeccakAddU256LE(keccakInput, reversedLow)
+	return keccakInput
+}
+
+func KeccakU256sBEInputs(inputs []*uint256.Int) ([]byte, error) {
+	var keccakInput []uint64
+	for _, value := range inputs {
+		keccakInput = KeccakAddU256BE(keccakInput, value)
+	}
+	return CairoKeccak(keccakInput, 0, 0)
+}
+
+// END of BE codes
 
 // Keccak256 computes the Keccak-256 hash of the input data.
 func Keccak256(data []byte) ([]byte, error) {
@@ -64,13 +90,16 @@ func Keccak256(data []byte) ([]byte, error) {
 }
 
 func CairoKeccak(input []uint64, lastInputWord uint64, lastInputNumBytes int) ([]byte, error) {
-	input, _ = AddPadding(input, lastInputWord, lastInputNumBytes)
-
+	input, err := AddPadding(input, lastInputWord, lastInputNumBytes)
+	if err != nil {
+		return nil, err // handle error
+	}
 	// Convert the input slice of uint64 to a slice of byte.
 	byteData := make([]byte, len(input)*8) // 8 bytes per uint64
 	for i, word := range input {
 		binary.LittleEndian.PutUint64(byteData[i*8:], word)
 	}
+	fmt.Println(byteData)
 
 	// Use your existing Keccak256 function.
 	return Keccak256(byteData)
