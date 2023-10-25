@@ -89,17 +89,23 @@ func Keccak256(data []byte) ([]byte, error) {
 	return hasher.Sum(nil), nil // Return the hash and a nil error.
 }
 
+// ConvertToByteData converts a slice of uint64 to a slice of byte.
+func ConvertToByteData(input []uint64) []byte {
+	byteData := make([]byte, len(input)*8) // 8 bytes per uint64
+	for i, word := range input {
+		binary.LittleEndian.PutUint64(byteData[i*8:], word)
+	}
+	return byteData
+}
+
 func CairoKeccak(input []uint64, lastInputWord uint64, lastInputNumBytes int) ([]byte, error) {
 	input, err := AddPadding(input, lastInputWord, lastInputNumBytes)
 	if err != nil {
 		return nil, err // handle error
 	}
-	// Convert the input slice of uint64 to a slice of byte.
-	byteData := make([]byte, len(input)*8) // 8 bytes per uint64
-	for i, word := range input {
-		binary.LittleEndian.PutUint64(byteData[i*8:], word)
-	}
-	fmt.Println(byteData)
+
+	// Use ConvertToByteData to get byteData.
+	byteData := ConvertToByteData(input)
 
 	// Use your existing Keccak256 function.
 	return Keccak256(byteData)
