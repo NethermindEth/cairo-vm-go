@@ -3,15 +3,19 @@
 BINARY_DIR := bin
 BINARY_NAME := cairo-vm
 
+MEM_PROFILE := mem.out
+CPU_PROFILE := cpu.out
+
 default: help
 
 help:
-	@echo "This makefile allos the following commands"
+	@echo "This makefile allows the following commands"
 	@echo "  make build           - compile the source code"
 	@echo "  make clean           - remove binary files"
 	@echo "  make unit            - run unit tests"
 	@echo "  make integration     - run integration tests"
 	@echo "  make testall         - run all tests"
+	@echo "  make bench           - benchmark all tests"
 	@echo "  make help            - show this help message"
 
 build:
@@ -28,6 +32,8 @@ build:
 clean:
 	@echo "Cleaning up..."
 	@rm -rf $(BINARY_DIR)
+	@rm -f $(MEM_PROFILE)
+	@rm	-f $(CPU_PROFILE)
 
 unit:
 	@echo "Running unit tests..."
@@ -45,4 +51,8 @@ integration:
 
 testall:
 	@echo "Running all tests..."
+	@$(MAKE) build
 	@go test ./...
+
+bench:
+	@go test ./pkg/runners/zero -bench=. -cpuprofile $(CPU_PROFILE) -memprofile $(MEM_PROFILE)

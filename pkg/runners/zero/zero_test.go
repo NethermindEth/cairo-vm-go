@@ -1,20 +1,22 @@
 package zero
 
 import (
-	"encoding/binary"
+	"fmt"
 	"math"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
+	sn "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	pedersenhash "github.com/consensys/gnark-crypto/ecc/stark-curve/pedersen-hash"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSimpleProgram(t *testing.T) {
-	program := createDefaultProgram(`
+	program := createProgram(`
         [ap] = 2, ap++;
         [ap] = 3, ap++;
         [ap] = 4, ap++;
@@ -59,7 +61,7 @@ func TestSimpleProgram(t *testing.T) {
 }
 
 func TestStepLimitExceeded(t *testing.T) {
-	program := createDefaultProgram(`
+	program := createProgram(`
         [ap] = 2;
         [ap + 1] = 3;
         [ap + 2] = 5;
@@ -108,7 +110,7 @@ func TestStepLimitExceeded(t *testing.T) {
 }
 
 func TestStepLimitExceededProofMode(t *testing.T) {
-	program := createDefaultProgram(`
+	program := createProgram(`
         [ap] = 2;
         [ap + 1] = 3;
         [ap + 2] = 5;
@@ -163,320 +165,184 @@ func TestStepLimitExceededProofMode(t *testing.T) {
 	}
 }
 
-func TestTraceEncodingDecoding(t *testing.T) {
-	trace := []vm.Trace{
-		{Ap: 1, Fp: 2, Pc: 3},
-		{Ap: 4, Fp: 5, Pc: 6},
-		{Ap: 9, Fp: 8, Pc: 7},
-	}
+func TestBitwiseBuiltin(t *testing.T) {
+	// bitwise segment ptr is located at fp - 3 (fp - 2 and fp - 1 contain initialization vals)
+	// We first write 16 and 8 to bitwise. Then we read the bitwise result from &, ^ and |
+	runner := createRunner(`
+        [ap] = 14, ap++;
+        [ap] = 7, ap++;
+        [ap - 2] = [[fp - 3]];
+        [ap - 1] = [[fp - 3] + 1];
 
-	encodedTrace := EncodeTrace(trace)
+        [ap] = [[fp - 3] + 2];
+        [ap + 1] = [[fp - 3] + 3];
+        [ap + 2] = [[fp - 3] + 4];
 
-	expected := make([]byte, len(trace)*3*8)
-	// first context
-	binary.LittleEndian.PutUint64(expected[0:8], 1)
-	binary.LittleEndian.PutUint64(expected[8:16], 2)
-	binary.LittleEndian.PutUint64(expected[16:24], 3)
-	// second context
-	binary.LittleEndian.PutUint64(expected[24:32], 4)
-	binary.LittleEndian.PutUint64(expected[32:40], 5)
-	binary.LittleEndian.PutUint64(expected[40:48], 6)
-	// third context
-	binary.LittleEndian.PutUint64(expected[48:56], 9)
-	binary.LittleEndian.PutUint64(expected[56:64], 8)
-	binary.LittleEndian.PutUint64(expected[64:72], 7)
+        [ap] = 6;
+        [ap + 1] = 9;
+        [ap + 2] = 15;
+        ret;
+    `, sn.Bitwise)
 
-	// test encoding
-	require.Equal(
-		t,
-		expected,
-		encodedTrace,
-	)
+	err := runner.Run()
+	require.NoError(t, err)
 
-	// test decoding
-	decodedTrace := DecodeTrace(encodedTrace)
-	require.Equal(
-		t,
-		trace,
-		decodedTrace,
-	)
+	bitwise, ok := runner.vm.Memory.FindSegmentWithBuiltin("bitwise")
+	require.True(t, ok)
+
+	requireEqualSegments(t, createSegment(14, 7, 6, 9, 15), bitwise)
+}
+
+func TestBitwiseBuiltinError(t *testing.T) {
+	// inferring first write to cell
+	runner := createRunner(`
+	    [ap] = [[fp - 3]];
+	    ret;
+	`, sn.Bitwise)
+
+	err := runner.Run()
+	require.ErrorContains(t, err, "cannot infer value")
+
+	// inferring second write to cell
+	runner = createRunner(`
+	    [ap] = [[fp - 3] + 1];
+	    ret;
+	`, sn.Bitwise)
+	err = runner.Run()
+	require.ErrorContains(t, err, "cannot infer value")
+
+	// trying to infer without writing before
+	runner = createRunner(`
+        [ap] = [[fp - 3] + 2];
+        ret;
+    `, sn.Bitwise)
+
+	err = runner.Run()
+	require.ErrorContains(t, err, "input value at offset 0 is unknown")
+}
+
+func TestOutputBuiltin(t *testing.T) {
+	// Output builtin is located at fp - 3
+	runner := createRunner(`
+        [ap] = 5;
+        [ap] = [[fp - 3]];
+        [ap + 1] = 7;
+        [ap + 1] = [[fp - 3] + 1];
+        ret;
+    `, sn.Output)
+	err := runner.Run()
+	require.NoError(t, err)
+
+	output := runner.Output()
+
+	val1 := fp.NewElement(5)
+	val2 := fp.NewElement(7)
+	require.Equal(t, []*fp.Element{&val1, &val2}, output)
+}
+
+func TestPedersenBuiltin(t *testing.T) {
+	val1 := fp.NewElement(5)
+	val2 := fp.NewElement(7)
+	val3 := pedersenhash.Pedersen(&val1, &val2)
+
+	// pedersen builtin is located at fp - 3
+	// we first write val1 and val2 and then check the infered value is val3
+	code := fmt.Sprintf(`
+        [ap] = %s;
+        [ap] = [[fp - 3]];
+
+        [ap + 1] = %s;
+        [ap + 1] = [[fp - 3] + 1];
+
+        [ap + 2] = [[fp - 3] + 2];
+        [ap + 2] = %s;
+        ret;
+    `, val1.Text(10), val2.Text(10), val3.Text(10))
+
+	runner := createRunner(code, sn.Pedersen)
+	err := runner.Run()
+	require.NoError(t, err)
+
+	pedersen, ok := runner.vm.Memory.FindSegmentWithBuiltin("pedersen")
+	require.True(t, ok)
+	requireEqualSegments(t, createSegment(&val1, &val2, &val3), pedersen)
+}
+
+func TestPedersenBuiltinError(t *testing.T) {
+	runner := createRunner(`
+        [ap] = [[fp - 3]];
+        ret;
+    `, sn.Pedersen)
+	err := runner.Run()
+	require.ErrorContains(t, err, "cannot infer value")
+
+	runner = createRunner(`
+        [ap] = [[fp - 3] + 2];
+        ret;
+    `, sn.Pedersen)
+	err = runner.Run()
+	require.ErrorContains(t, err, "input value at offset 0 is unknown")
+}
+
+func TestRangeCheckBuiltin(t *testing.T) {
+	// range check is located at fp - 3 (fp - 2 and fp - 1 contain initialization vals)
+	// we write 5 and 2**128 - 1 to range check
+	// no error should come from this
+	runner := createRunner(`
+        [ap] = 5;
+        [ap] = [[fp - 3]];
+        [ap + 1] = 0xffffffffffffffffffffffffffffffff;
+        [ap + 1] = [[fp - 3] + 1];
+        ret;
+    `, sn.RangeCheck)
+
+	err := runner.Run()
+	require.NoError(t, err)
+
+	rangeCheck, ok := runner.vm.Memory.FindSegmentWithBuiltin("range_check")
+	require.True(t, ok)
+
+	felt := &fp.Element{}
+	felt, err = felt.SetString("0xffffffffffffffffffffffffffffffff")
+	require.NoError(t, err)
+
+	requireEqualSegments(t, createSegment(5, felt), rangeCheck)
+}
+
+func TestRangeCheckBuiltinError(t *testing.T) {
+	// first test fails due to out of bound check
+	runner := createRunner(`
+        [ap] = 0x100000000000000000000000000000000;
+        [ap] = [[fp - 3]];
+        ret;
+    `, sn.RangeCheck)
+
+	err := runner.Run()
+	require.ErrorContains(t, err, "check write: 2**128 <")
+
+	// second test fails due to reading unknown value
+	runner = createRunner(`
+        [ap] = [[fp - 3]];
+        ret;
+    `, sn.RangeCheck)
+
+	err = runner.Run()
+	require.ErrorContains(t, err, "cannot infer value")
 
 }
 
-func TestMemoryEncodingDecoding(t *testing.T) {
-	memory := []*f.Element{
-		new(f.Element).SetUint64(4),
-		new(f.Element).SetUint64(15),
-		nil,
-		nil,
-		new(f.Element).SetUint64(8),
-		nil,
-		new(f.Element).SetUint64(2),
+func createRunner(code string, builtins ...sn.Builtin) ZeroRunner {
+	program := createProgramWithBuiltins(code, builtins...)
+
+	runner, err := NewRunner(program, false, math.MaxUint64)
+	if err != nil {
+		panic(err)
 	}
+	return runner
 
-	encodedMemory := EncodeMemory(memory)
-
-	// the array size depends on the ammount of non nil elements
-	// it stores (addres, felt) encoded in little endian in a consecutive way
-	expected := make([]byte, 4*(8+32))
-
-	//first element
-	binary.LittleEndian.PutUint64(expected[0:8], 0)
-	f.LittleEndian.PutElement((*[32]byte)(expected[8:40]), *new(f.Element).SetUint64(4))
-	//second element
-	binary.LittleEndian.PutUint64(expected[40:48], 1)
-	f.LittleEndian.PutElement((*[32]byte)(expected[48:80]), *new(f.Element).SetUint64(15))
-	//third element
-	binary.LittleEndian.PutUint64(expected[80:88], 4)
-	f.LittleEndian.PutElement((*[32]byte)(expected[88:120]), *new(f.Element).SetUint64(8))
-	//fourth element
-	binary.LittleEndian.PutUint64(expected[120:128], 6)
-	f.LittleEndian.PutElement((*[32]byte)(expected[128:160]), *new(f.Element).SetUint64(2))
-
-	require.Equal(
-		t,
-		len(expected),
-		len(encodedMemory),
-	)
-	require.Equal(
-		t,
-		expected,
-		encodedMemory,
-	)
-
-	// testing decoding
-	decodedMemory := DecodeMemory(encodedMemory)
-	require.Equal(
-		t,
-		memory,
-		decodedMemory,
-	)
 }
 
-func BenchmarkRunnerWithFibonacci(b *testing.B) {
-	compiledJson := []byte(`
-        {
-            "compiler_version": "0.11.0.2",
-            "data": [
-                "0x40780017fff7fff",
-                "0x0",
-                "0x1104800180018000",
-                "0x4",
-                "0x10780017fff7fff",
-                "0x0",
-                "0x480680017fff8000",
-                "0x1",
-                "0x480680017fff8000",
-                "0x1",
-                "0x480680017fff8000",
-                "0xf4240",
-                "0x1104800180018000",
-                "0x3",
-                "0x208b7fff7fff7ffe",
-                "0x20780017fff7ffd",
-                "0x4",
-                "0x480a7ffc7fff8000",
-                "0x208b7fff7fff7ffe",
-                "0x482a7ffc7ffb8000",
-                "0x480a7ffc7fff8000",
-                "0x48127ffe7fff8000",
-                "0x482680017ffd8000",
-                "0x800000000000011000000000000000000000000000000000000000000000000",
-                "0x1104800180018000",
-                "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffff8",
-                "0x208b7fff7fff7ffe"
-            ],
-            "identifiers": {
-                "__main__.__end__": {
-                    "pc": 4,
-                    "type": "label"
-                },
-                "__main__.__start__": {
-                    "pc": 0,
-                    "type": "label"
-                },
-                "__main__.fib": {
-                    "decorators": [],
-                    "pc": 15,
-                    "type": "function"
-                },
-                "__main__.fib.Args": {
-                    "full_name": "__main__.fib.Args",
-                    "members": {
-                        "first_element": {
-                            "cairo_type": "felt",
-                            "offset": 0
-                        },
-                        "n": {
-                            "cairo_type": "felt",
-                            "offset": 2
-                        },
-                        "second_element": {
-                            "cairo_type": "felt",
-                            "offset": 1
-                        }
-                    },
-                    "size": 3,
-                    "type": "struct"
-                },
-                "__main__.fib.ImplicitArgs": {
-                    "full_name": "__main__.fib.ImplicitArgs",
-                    "members": {},
-                    "size": 0,
-                    "type": "struct"
-                },
-                "__main__.fib.Return": {
-                    "cairo_type": "(res: felt)",
-                    "type": "type_definition"
-                },
-                "__main__.fib.SIZEOF_LOCALS": {
-                    "type": "const",
-                    "value": 0
-                },
-                "__main__.fib.first_element": {
-                    "cairo_type": "felt",
-                    "full_name": "__main__.fib.first_element",
-                    "references": [
-                        {
-                            "ap_tracking_data": {
-                                "group": 4,
-                                "offset": 0
-                            },
-                            "pc": 15,
-                            "value": "[cast(fp + (-5), felt*)]"
-                        }
-                    ],
-                    "type": "reference"
-                },
-                "__main__.fib.n": {
-                    "cairo_type": "felt",
-                    "full_name": "__main__.fib.n",
-                    "references": [
-                        {
-                            "ap_tracking_data": {
-                                "group": 4,
-                                "offset": 0
-                            },
-                            "pc": 15,
-                            "value": "[cast(fp + (-3), felt*)]"
-                        }
-                    ],
-                    "type": "reference"
-                },
-                "__main__.fib.second_element": {
-                    "cairo_type": "felt",
-                    "full_name": "__main__.fib.second_element",
-                    "references": [
-                        {
-                            "ap_tracking_data": {
-                                "group": 4,
-                                "offset": 0
-                            },
-                            "pc": 15,
-                            "value": "[cast(fp + (-4), felt*)]"
-                        }
-                    ],
-                    "type": "reference"
-                },
-                "__main__.fib.y": {
-                    "cairo_type": "felt",
-                    "full_name": "__main__.fib.y",
-                    "references": [
-                        {
-                            "ap_tracking_data": {
-                                "group": 4,
-                                "offset": 1
-                            },
-                            "pc": 20,
-                            "value": "[cast(ap + (-1), felt*)]"
-                        }
-                    ],
-                    "type": "reference"
-                },
-                "__main__.main": {
-                    "decorators": [],
-                    "pc": 6,
-                    "type": "function"
-                },
-                "__main__.main.Args": {
-                    "full_name": "__main__.main.Args",
-                    "members": {},
-                    "size": 0,
-                    "type": "struct"
-                },
-                "__main__.main.ImplicitArgs": {
-                    "full_name": "__main__.main.ImplicitArgs",
-                    "members": {},
-                    "size": 0,
-                    "type": "struct"
-                },
-                "__main__.main.Return": {
-                    "cairo_type": "()",
-                    "type": "type_definition"
-                },
-                "__main__.main.SIZEOF_LOCALS": {
-                    "type": "const",
-                    "value": 0
-                }
-            },
-            "main_scope": "__main__",
-            "prime": "0x800000000000011000000000000000000000000000000000000000000000001",
-            "reference_manager": {
-                "references": [
-                    {
-                        "ap_tracking_data": {
-                            "group": 4,
-                            "offset": 0
-                        },
-                        "pc": 15,
-                        "value": "[cast(fp + (-5), felt*)]"
-                    },
-                    {
-                        "ap_tracking_data": {
-                            "group": 4,
-                            "offset": 0
-                        },
-                        "pc": 15,
-                        "value": "[cast(fp + (-4), felt*)]"
-                    },
-                    {
-                        "ap_tracking_data": {
-                            "group": 4,
-                            "offset": 0
-                        },
-                        "pc": 15,
-                        "value": "[cast(fp + (-3), felt*)]"
-                    },
-                    {
-                        "ap_tracking_data": {
-                            "group": 4,
-                            "offset": 1
-                        },
-                        "pc": 20,
-                        "value": "[cast(ap + (-1), felt*)]"
-                    }
-                ]
-            }
-        }
-    `)
-	for i := 0; i < b.N; i++ {
-		program, err := LoadCairoZeroProgram(compiledJson)
-		if err != nil {
-			panic(err)
-		}
-
-		runner, err := NewRunner(program, true, math.MaxUint64)
-		if err != nil {
-			panic(err)
-		}
-
-		err = runner.Run()
-		if err != nil {
-			panic(err)
-		}
-	}
-}
-
+// utility to create segments easier
 func createSegment(values ...any) *memory.Segment {
 	data := make([]memory.MemoryValue, len(values))
 	for i := range values {
@@ -496,6 +362,17 @@ func createSegment(values ...any) *memory.Segment {
 	return s
 }
 
+// compare two segments ignoring builtins
+func requireEqualSegments(t *testing.T, expected, result *memory.Segment) {
+	result = trimmedSegment(result)
+
+	t.Log(expected)
+	t.Log(result)
+
+	assert.Equal(t, expected.LastIndex, result.LastIndex)
+	require.Equal(t, expected.Data, result.Data)
+}
+
 // modifies a segment in place to reduce its real length to
 // its effective lenth. It returns the same segment
 func trimmedSegment(segment *memory.Segment) *memory.Segment {
@@ -503,7 +380,7 @@ func trimmedSegment(segment *memory.Segment) *memory.Segment {
 	return segment
 }
 
-func createDefaultProgram(code string) *Program {
+func createProgram(code string) *Program {
 	bytecode, err := assembler.CasmToBytecode(code)
 	if err != nil {
 		panic(err)
@@ -517,4 +394,10 @@ func createDefaultProgram(code string) *Program {
 	}
 
 	return &program
+}
+
+func createProgramWithBuiltins(code string, builtins ...sn.Builtin) *Program {
+	program := createProgram(code)
+	program.Builtins = builtins
+	return program
 }
