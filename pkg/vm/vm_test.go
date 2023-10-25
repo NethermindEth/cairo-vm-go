@@ -964,11 +964,11 @@ func TestAssertEqualInstruction(t *testing.T) {
 func TestJumpInstructions(t *testing.T) {
 
 	// relative jumps
-	t.Run("jmp rel 5", func(t *testing.T){
-		vm := defaultVirtualMachine()
+	t.Run("jmp rel", func(t *testing.T){
+		vm := defaultVirtualMachineWithCode("jmp rel [ap + 1] + [ap - 7];")
 
-		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 1, Offset: 4}
-		relAddr := uint64(5)
+		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 1, Offset: 3}
+		relAddr := uint64(10)
 		res := mem.MemoryValueFromInt(relAddr)
 
 		instruction := a.Instruction{
@@ -977,13 +977,13 @@ func TestJumpInstructions(t *testing.T) {
 		nextPc, err := vm.updatePc(&instruction, nil, nil, &res)
 
 		require.NoError(t, err)
-		assert.Equal(t, mem.MemoryAddress{SegmentIndex: 1, Offset: 9}, nextPc)
+		assert.Equal(t, mem.MemoryAddress{SegmentIndex: 1, Offset: 3 + relAddr}, nextPc)
 
 	})
 
 	// absolute jumps
 	t.Run("jmp abs 123", func(t *testing.T) {
-		vm := defaultVirtualMachine()
+		vm := defaultVirtualMachineWithCode("jmp abs 123;")
 
 		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
 		jmpAddr := uint64(123)
