@@ -68,6 +68,7 @@ func BenchmarkSquareRoot(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		//TODO: Change to rand.Uint64()
 		value := Immediate(*big.NewInt(int64(i * i)))
 		hint := SquareRoot{
 			value: value,
@@ -95,8 +96,8 @@ func BenchmarkWideMul128(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		lhs := Immediate(*new(big.Int).Lsh(big.NewInt(1), 127))
-		rhs := Immediate(*big.NewInt(int64(1<<8 + i)))
+		lhs := Immediate(*new(big.Int).SetUint64(rand.Uint64()))
+		rhs := Immediate(*new(big.Int).SetUint64(rand.Uint64()))
 
 		hint := WideMul128{
 			low:  dstLow,
