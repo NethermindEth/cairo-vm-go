@@ -964,10 +964,10 @@ func TestAssertEqualInstruction(t *testing.T) {
 func TestJumpInstructions(t *testing.T) {
 
 	// relative jumps
-	t.Run("jmp rel", func(t *testing.T){
+	t.Run("jmp rel", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("jmp rel [ap + 1] + [ap - 7];")
 
-		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 1, Offset: 3}
+		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
 		relAddr := uint64(10)
 		res := mem.MemoryValueFromInt(relAddr)
 
@@ -1000,7 +1000,6 @@ func TestJumpInstructions(t *testing.T) {
 	})
 
 }
-
 
 // ======================
 // Test Memory Relocation
