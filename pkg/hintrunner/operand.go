@@ -152,12 +152,12 @@ func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 	}
 	lhs, err := vm.Memory.ReadFromAddress(&lhsAddr)
 	if err != nil {
-		return mem.UnknownValue, fmt.Errorf("read lhs address %s: %v", lhsAddr, err)
+		return mem.UnknownValue, fmt.Errorf("read lhs address %s: %w", lhsAddr, err)
 	}
 
 	rhs, err := bop.rhs.Resolve(vm)
 	if err != nil {
-		return mem.UnknownValue, fmt.Errorf("resolve rhs operand %s: %v", rhs, err)
+		return mem.UnknownValue, fmt.Errorf("resolve rhs operand %s: %w", rhs, err)
 	}
 
 	switch bop.operator {
