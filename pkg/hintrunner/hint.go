@@ -25,7 +25,7 @@ func (hint AllocSegment) String() string {
 	return "AllocSegment"
 }
 
-func (hint AllocSegment) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint *AllocSegment) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	newSegment := vm.Memory.AllocateEmptySegment()
 	memAddress := mem.MemoryValueFromMemoryAddress(&newSegment)
 
@@ -48,11 +48,11 @@ type TestLessThan struct {
 	rhs ResOperander
 }
 
-func (hint TestLessThan) String() string {
+func (hint *TestLessThan) String() string {
 	return "TestLessThan"
 }
 
-func (hint TestLessThan) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint *TestLessThan) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	lhsVal, err := hint.lhs.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve lhs operand %s: %w", hint.lhs, err)
@@ -98,11 +98,11 @@ type TestLessThanOrEqual struct {
 	rhs ResOperander
 }
 
-func (hint TestLessThanOrEqual) String() string {
+func (hint *TestLessThanOrEqual) String() string {
 	return "TestLessThanOrEqual"
 }
 
-func (hint TestLessThanOrEqual) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint *TestLessThanOrEqual) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	lhsVal, err := hint.lhs.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve lhs operand %s: %w", hint.lhs, err)
@@ -149,11 +149,11 @@ type WideMul128 struct {
 	low  CellRefer
 }
 
-func (hint WideMul128) String() string {
+func (hint *WideMul128) String() string {
 	return "WideMul128"
 }
 
-func (hint WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint *WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	mask := MaxU128()
 
 	lhs, err := hint.lhs.Resolve(vm)
@@ -222,11 +222,11 @@ type SquareRoot struct {
 	dst   CellRefer
 }
 
-func (hint SquareRoot) String() string {
+func (hint *SquareRoot) String() string {
 	return "SquareRoot"
 }
 
-func (hint SquareRoot) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint *SquareRoot) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	value, err := hint.value.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve value operand %s: %w", hint.value, err)
@@ -256,10 +256,10 @@ type AllocFelt252Dict struct {
 	SegmentArenaPtr ResOperander
 }
 
-func (hint AllocFelt252Dict) String() string {
+func (hint *AllocFelt252Dict) String() string {
 	return "AllocFelt252Dict"
 }
-func (hint AllocFelt252Dict) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+func (hint *AllocFelt252Dict) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
 	arenaPtr, err := ResolveAsAddress(vm, hint.SegmentArenaPtr)
 	if err != nil {
 		return fmt.Errorf("resolve segment arena pointer: %w", err)
@@ -335,4 +335,17 @@ func (hint *Felt252DictEntryInit) Execute(vm *VM.VirtualMachine, ctx *HintRunner
 
 	mvFelt := mem.MemoryValueFromFieldElement(prevValue)
 	return vm.Memory.Write(dictPtr.SegmentIndex, dictPtr.Offset+1, &mvFelt)
+}
+
+type Felt252DictEntryUpdate struct {
+	DictPtr ResOperander
+	Value   ResOperander
+}
+
+func (hint Felt252DictEntryUpdate) String() string {
+	return "Felt252DictEntryUpdate"
+}
+
+func (hint *Felt252DictEntryUpdate) Execute() error {
+	return nil
 }
