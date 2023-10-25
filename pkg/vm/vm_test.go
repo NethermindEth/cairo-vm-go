@@ -960,6 +960,48 @@ func TestAssertEqualInstruction(t *testing.T) {
 
 }
 
+// add test for each different form of jump instructions
+func TestJumpInstructions(t *testing.T) {
+
+	// relative jumps
+	t.Run("jmp rel 5", func(t *testing.T){
+		vm := defaultVirtualMachine()
+
+		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 1, Offset: 4}
+		relAddr := uint64(5)
+		res := mem.MemoryValueFromInt(relAddr)
+
+		instruction := a.Instruction{
+			PcUpdate: a.PcUpdateJumpRel,
+		}
+		nextPc, err := vm.updatePc(&instruction, nil, nil, &res)
+
+		require.NoError(t, err)
+		assert.Equal(t, mem.MemoryAddress{SegmentIndex: 1, Offset: 9}, nextPc)
+
+	})
+
+	// absolute jumps
+	t.Run("jmp abs 123", func(t *testing.T) {
+		vm := defaultVirtualMachine()
+
+		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
+		jmpAddr := uint64(123)
+		res := mem.MemoryValueFromSegmentAndOffset(0, jmpAddr)
+
+		instruction := a.Instruction{
+			PcUpdate: a.PcUpdateJump,
+		}
+		nextPc, err := vm.updatePc(&instruction, nil, nil, &res)
+
+		require.NoError(t, err)
+		assert.Equal(t, mem.MemoryAddress{SegmentIndex: 0, Offset: jmpAddr}, nextPc)
+
+	})
+
+}
+
+
 // ======================
 // Test Memory Relocation
 // ======================
