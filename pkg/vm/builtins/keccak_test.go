@@ -34,6 +34,7 @@ func TestKeccak256(t *testing.T) {
 	// Compare the obtained hash with the expected hash.
 	assert.Equal(t, expectedHash, hashHex, "Expected %s, got %s", expectedHash, hashHex)
 
+	//jake : below is for debugging. to be deleted afterwards
 	// for keccak result : https://emn178.github.io/online-tools/keccak_256.html?input_type=hex&input=0102030405060708090a0b0c0d0e0f1011
 	// which is
 	//57e46e893805ca9503660cd6ef2b39e24750a502ed7c71270f214dcb114b7113
@@ -42,6 +43,31 @@ func TestKeccak256(t *testing.T) {
 	//5ea232134fe405605b468996dd5d77e7cdf6b63be625826d4f27c302ab17d65a
 	//Rust output is : d2eb808dfba4703c528d145dfe6571afec687be9c50d2218388da73622e8fdd5
 	//D2EB808DFBA4703C528D145DFE6571AFEC687BE9C50D2218388DA73622E8FDD5
+
+}
+
+func TestKeccak256_2(t *testing.T) {
+	// Input data: array of bytes from 1 to 17, similar to the input in the Rust test.
+	input := []byte{1, 0, 0, 0}
+	hexStr := hex.EncodeToString(input)
+	fmt.Println("the hex Str is: ", hexStr)
+	//01000000
+
+	// Known correct Keccak-256 hash value for the input data, obtained from an online calculator. https://emn178.github.io/online-tools/keccak_256.html
+	expectedHash := "e37890bf230cf36ea140a5dbb9a561aa7ef84f8f995873db8386eba4a95c7bbe"
+	expectedHashByteData, err := hex.DecodeString(expectedHash)
+	fmt.Println("the expectedHash to byte is: ", expectedHashByteData, err)
+
+	// Call the Keccak256 function.
+	hash, err := Keccak256(input)
+	require.NoError(t, err) // Ensure no error is returned.
+
+	// Convert the obtained hash to a hex string.
+	hashHex := hex.EncodeToString(hash)
+	fmt.Println("the hash is: ", hash)
+
+	// Compare the obtained hash with the expected hash.
+	assert.Equal(t, expectedHash, hashHex, "Expected %s, got %s", expectedHash, hashHex)
 
 }
 
@@ -157,27 +183,20 @@ func TestAddPaddingOperandCase(t *testing.T) {
 	}
 }
 
-func TestCairoKeccakU64(t *testing.T) {
+func TestCairoKeccak(t *testing.T) {
 	tests := []struct {
 		name              string
 		input             []uint64
 		lastInputWord     uint64
 		lastInputNumBytes int
-		expectedLow       string
-		expectedHigh      string
+		expectedHash      string
 	}{
 		{
-			name: "Test case 1 from Rust",
-			input: []uint64{
-				0x0000000000000001,
-				0x0000000000000000,
-				0x0000000000000000,
-				0x0000000000000000,
-			},
+			name:              "Test case 1",
+			input:             []uint64{1, 0, 0, 0},
 			lastInputWord:     0,
 			lastInputNumBytes: 0,
-			expectedLow:       "0x587f7cc3722e9654ea3963d5fe8c0748",
-			expectedHigh:      "0xa5963aa610cb75ba273817bce5f8c48f",
+			expectedHash:      "a80c226a0612d2578acff9caeb00583cb8002ccfb5f442d47ec6838f35d72b2c",
 		},
 	}
 
@@ -186,12 +205,11 @@ func TestCairoKeccakU64(t *testing.T) {
 			res, err := CairoKeccak(tt.input, tt.lastInputWord, tt.lastInputNumBytes)
 			require.NoError(t, err)
 
-			// Assuming res is a []byte that represents a 256-bit number,
-			// split it into two 128-bit numbers represented as strings.
-			low := fmt.Sprintf("%x", res[:16])
-			high := fmt.Sprintf("%x", res[16:])
-			require.Equal(t, tt.expectedLow, low)
-			require.Equal(t, tt.expectedHigh, high)
+			hashHex := hex.EncodeToString(res)
+			fmt.Println("the hash is: ", hashHex)
+
+			// Compare the obtained hash with the expected hash.
+			assert.Equal(t, tt.expectedHash, hashHex, "Expected %s, got %s", tt.expectedHash, hashHex)
 		})
 	}
 }
@@ -206,3 +224,20 @@ func TestCairoKeccakU64(t *testing.T) {
 // 	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0   // 7
 // 	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 128 // 8
 // ]
+
+// 01000000000000000 //1, has 1
+// 00000000000000000 //2
+// 00000000000000000 //3
+// 00000000000000100 //4, has 1
+// 00000000000000000 //5
+// 00000000000000000 //6
+// 00000000000000000 //7
+// 00000000000000000 //8
+// 00000000000000000 //9
+// 00000000000000000 //10
+// 00000000000000000 //11
+// 00000000000000000 //12
+// 00000000000000000 //13
+// 00000000000000000 //14
+// 00000000000000000 //15
+// 00000000000000080 //16 , has 1
