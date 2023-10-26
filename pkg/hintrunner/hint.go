@@ -371,3 +371,32 @@ func (hint *Felt252DictEntryUpdate) Execute(vm *VM.VirtualMachine, ctx *HintRunn
 
 	return ctx.DictionaryManager.Set(&dictPtr, key, &value)
 }
+
+type FeltGetSegmentArenaIndex struct {
+	DictIndex  CellRefer
+	DictEndPtr ResOperander
+}
+
+func (hint *FeltGetSegmentArenaIndex) String() string {
+	return "FeltGetSegmentArenaIndex"
+}
+
+func (hint *FeltGetSegmentArenaIndex) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	dictIndex, err := hint.DictIndex.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get dict index: %w", err)
+	}
+
+	dictEndPtr, err := ResolveAsAddress(vm, hint.DictEndPtr)
+	if err != nil {
+		return fmt.Errorf("resolve dict end pointer: %w", err)
+	}
+
+	dict, err := ctx.DictionaryManager.GetDictionary(&dictEndPtr)
+	if err != nil {
+		return fmt.Errorf("get dictionary: %w", err)
+	}
+
+	initNum := mem.MemoryValueFromUint(dict.InitNumber())
+	return vm.Memory.WriteToAddress(&dictIndex, &initNum)
+}
