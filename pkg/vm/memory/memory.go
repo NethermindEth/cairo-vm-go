@@ -105,7 +105,9 @@ func (segment *Segment) Read(offset uint64) (MemoryValue, error) {
 		if err := segment.BuiltinRunner.InferValue(segment, offset); err != nil {
 			return UnknownValue, fmt.Errorf("%s: %w", segment.BuiltinRunner, err)
 		}
-		// set the last index to the offset only if the value was inferred
+	}
+
+	if offset > segment.Len() {
 		segment.LastIndex = int(offset)
 	}
 	return *mv, nil
@@ -113,7 +115,7 @@ func (segment *Segment) Read(offset uint64) (MemoryValue, error) {
 
 func (segment *Segment) Peek(offset uint64) MemoryValue {
 	if offset >= segment.RealLen() {
-		segment.IncreaseSegmentSize(offset + 1)
+		return UnknownValue
 	}
 	return segment.Data[offset]
 }
@@ -156,7 +158,8 @@ func (segment *Segment) IncreaseSegmentSize(newSize uint64) {
 
 func (segment *Segment) String() string {
 	header := fmt.Sprintf(
-		"real len: %d real cap: %d len: %d\n",
+		"%s real len: %d real cap: %d len: %d\n",
+		segment.BuiltinRunner,
 		len(segment.Data),
 		cap(segment.Data),
 		segment.Len(),
@@ -172,7 +175,6 @@ func (segment *Segment) String() string {
 	return header
 }
 
-// todo(rodro): Check out temprary segments
 // Represents the whole VM memory divided into segments
 type Memory struct {
 	Segments []*Segment
@@ -265,6 +267,21 @@ func (memory *Memory) PeekFromAddress(address *MemoryAddress) (MemoryValue, erro
 	return memory.Peek(address.SegmentIndex, address.Offset)
 }
 
+// Given a segment index and offset returns true if the value at that address
+// is known
+func (memory *Memory) KnownValue(segment uint64, offset uint64) bool {
+	if segment >= uint64(len(memory.Segments)) ||
+		offset >= uint64(len(memory.Segments[segment].Data)) {
+		return false
+	}
+	return memory.Segments[segment].Data[offset].Known()
+}
+
+// Given an address returns true if it contains a known value
+func (memory *Memory) KnownValueAtAddress(address *MemoryAddress) bool {
+	return memory.KnownValue(address.SegmentIndex, address.Offset)
+}
+
 // It returns all segment offsets and max memory used
 func (memory *Memory) RelocationOffsets() ([]uint64, uint64) {
 	// Prover expects maxMemoryUsed to start at one
@@ -281,4 +298,14 @@ func (memory *Memory) RelocationOffsets() ([]uint64, uint64) {
 		segmentsOffsets[i+1] = segmentsOffsets[i] + segmentLength
 	}
 	return segmentsOffsets, maxMemoryUsed
+}
+
+// It finds a segment with a given builtin name, it returns the segment and true if found
+func (memory *Memory) FindSegmentWithBuiltin(builtinName string) (*Segment, bool) {
+	for i := range memory.Segments {
+		if memory.Segments[i].BuiltinRunner.String() == builtinName {
+			return memory.Segments[i], true
+		}
+	}
+	return nil, false
 }

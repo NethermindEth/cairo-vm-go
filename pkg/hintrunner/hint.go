@@ -294,3 +294,38 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 	}
 	return nil
 }
+
+type SquareRoot struct {
+	value ResOperander
+	dst   CellRefer
+}
+
+func (hint SquareRoot) String() string {
+	return "SquareRoot"
+}
+
+func (hint SquareRoot) Execute(vm *VM.VirtualMachine) error {
+	value, err := hint.value.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve value operand %s: %v", hint.value, err)
+	}
+
+	valueFelt, err := value.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	sqrt := valueFelt.Sqrt(valueFelt)
+
+	dstAddr, err := hint.dst.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get destination cell: %v", err)
+	}
+
+	dstVal := memory.MemoryValueFromFieldElement(sqrt)
+	err = vm.Memory.WriteToAddress(&dstAddr, &dstVal)
+	if err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+	return nil
+}
