@@ -2,7 +2,6 @@ package hintrunner
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -28,7 +27,7 @@ func (ap ApCellRef) String() string {
 func (ap ApCellRef) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
 	res, overflow := safemath.SafeOffset(vm.Context.Ap, int16(ap))
 	if overflow {
-		return mem.MemoryAddress{}, safemath.NewSafeOffsetError(vm.Context.Ap, int16(ap))
+		return mem.UnknownAddress, safemath.NewSafeOffsetError(vm.Context.Ap, int16(ap))
 	}
 	return mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
 }
@@ -80,22 +79,22 @@ type DoubleDeref struct {
 func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 	lhsAddr, err := dderef.deref.Get(vm)
 	if err != nil {
-		return mem.MemoryValue{}, fmt.Errorf("get lhs address %s: %w", lhsAddr, err)
+		return mem.UnknownValue, fmt.Errorf("get lhs address %s: %w", lhsAddr, err)
 	}
 	lhs, err := vm.Memory.ReadFromAddress(&lhsAddr)
 	if err != nil {
-		return mem.MemoryValue{}, fmt.Errorf("read lhs address %s: %w", lhsAddr, err)
+		return mem.UnknownValue, fmt.Errorf("read lhs address %s: %w", lhsAddr, err)
 	}
 
 	// Double deref implies the left hand side read must be an address
 	address, err := lhs.MemoryAddress()
 	if err != nil {
-		return mem.MemoryValue{}, err
+		return mem.UnknownValue, err
 	}
 
 	newOffset, overflow := safemath.SafeOffset(address.Offset, dderef.offset)
 	if overflow {
-		return mem.MemoryValue{}, safemath.NewSafeOffsetError(address.Offset, dderef.offset)
+		return mem.UnknownValue, safemath.NewSafeOffsetError(address.Offset, dderef.offset)
 	}
 	resAddr := mem.MemoryAddress{
 		SegmentIndex: address.SegmentIndex,
@@ -104,28 +103,22 @@ func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error
 
 	value, err := vm.Memory.ReadFromAddress(&resAddr)
 	if err != nil {
-		return mem.MemoryValue{}, fmt.Errorf("read result at %s: %w", resAddr, err)
+		return mem.UnknownValue, fmt.Errorf("read result at %s: %w", resAddr, err)
 	}
 
 	return value, nil
 }
 
-type Immediate big.Int
+type Immediate f.Element
 
 func (imm Immediate) String() string {
 	return "Immediate"
 }
 
-// todo(rodro): Specs from Starkware stablish this can be uint256 and not a felt.
 // Should we respect that, or go straight to felt?
 func (imm Immediate) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
-	felt := &f.Element{}
-	bigInt := (big.Int)(imm)
-	// todo(rodro): do we require to check that big int is lesser than P, or do we
-	// just take: big_int `mod` P?
-	felt.SetBigInt(&bigInt)
-
-	return mem.MemoryValueFromFieldElement(felt), nil
+	felt := f.Element(imm)
+	return mem.MemoryValueFromFieldElement(&felt), nil
 }
 
 type Operator uint8

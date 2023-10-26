@@ -7,6 +7,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
 )
 
@@ -51,7 +52,7 @@ func TestTestLessThanTrue(t *testing.T) {
 	var rhsRef FpCellRef = 0
 	rhs := Deref{rhsRef}
 
-	lhs := Immediate(*big.NewInt(13))
+	lhs := Immediate(f.NewElement(13))
 
 	hint := TestLessThan{
 		dst: dst,
@@ -70,11 +71,11 @@ func TestTestLessThanTrue(t *testing.T) {
 }
 func TestTestLessThanFalse(t *testing.T) {
 	testCases := []struct {
-		lhsValue    *big.Int
+		lhsValue    f.Element
 		expectedMsg string
 	}{
-		{big.NewInt(32), "Expected the hint to evaluate to False when lhs is larger"},
-		{big.NewInt(17), "Expected the hint to evaluate to False when values are equal"},
+		{f.NewElement(32), "Expected the hint to evaluate to False when lhs is larger"},
+		{f.NewElement(17), "Expected the hint to evaluate to False when values are equal"},
 	}
 
 	for _, tc := range testCases {
@@ -88,7 +89,7 @@ func TestTestLessThanFalse(t *testing.T) {
 			var rhsRef FpCellRef = 0
 			rhs := Deref{rhsRef}
 
-			lhs := Immediate(*tc.lhsValue)
+			lhs := Immediate(tc.lhsValue)
 			hint := TestLessThan{
 				dst: dst,
 				lhs: lhs,
@@ -109,11 +110,11 @@ func TestTestLessThanFalse(t *testing.T) {
 
 func TestTestLessThanOrEqTrue(t *testing.T) {
 	testCases := []struct {
-		lhsValue    *big.Int
+		lhsValue    f.Element
 		expectedMsg string
 	}{
-		{big.NewInt(13), "Expected the hint to evaluate to True when lhs is less than rhs"},
-		{big.NewInt(23), "Expected the hint to evaluate to True when values are equal"},
+		{f.NewElement(13), "Expected the hint to evaluate to True when lhs is less than rhs"},
+		{f.NewElement(23), "Expected the hint to evaluate to True when values are equal"},
 	}
 
 	for _, tc := range testCases {
@@ -127,7 +128,7 @@ func TestTestLessThanOrEqTrue(t *testing.T) {
 			var rhsRef FpCellRef = 0
 			rhs := Deref{rhsRef}
 
-			lhs := Immediate(*tc.lhsValue)
+			lhs := Immediate(tc.lhsValue)
 			hint := TestLessThanOrEqual{
 				dst: dst,
 				lhs: lhs,
@@ -156,7 +157,7 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 	var rhsRef FpCellRef = 0
 	rhs := Deref{rhsRef}
 
-	lhs := Immediate(*big.NewInt(32))
+	lhs := Immediate(f.NewElement(32))
 
 	hint := TestLessThanOrEqual{
 		dst: dst,
@@ -182,8 +183,14 @@ func TestWideMul128(t *testing.T) {
 	var dstLow ApCellRef = 1
 	var dstHigh ApCellRef = 2
 
-	lhs := Immediate(*big.NewInt(1).Lsh(big.NewInt(1), 127))
-	rhs := Immediate(*big.NewInt(1<<8 + 1))
+	lhsBytes := uint256.NewInt(1).Lsh(uint256.NewInt(1), 127).Bytes32()
+	lhsFelt, err := f.BigEndian.Element(&lhsBytes)
+	require.NoError(t, err)
+
+	rhsFelt := f.NewElement(1<<8 + 1)
+
+	lhs := Immediate(lhsFelt)
+	rhs := Immediate(rhsFelt)
 
 	hint := WideMul128{
 		low:  dstLow,
@@ -192,7 +199,7 @@ func TestWideMul128(t *testing.T) {
 		rhs:  rhs,
 	}
 
-	err := hint.Execute(vm, nil)
+	err = hint.Execute(vm, nil)
 	require.Nil(t, err)
 
 	low := &f.Element{}
@@ -218,8 +225,12 @@ func TestWideMul128IncorrectRange(t *testing.T) {
 	var dstLow ApCellRef = 1
 	var dstHigh ApCellRef = 2
 
-	lhs := Immediate(*big.NewInt(1).Lsh(big.NewInt(1), 128))
-	rhs := Immediate(*big.NewInt(1))
+	lhsBytes := uint256.NewInt(1).Lsh(uint256.NewInt(1), 128).Bytes32()
+	lhsFelt, err := f.BigEndian.Element(&lhsBytes)
+	require.NoError(t, err)
+
+	lhs := Immediate(lhsFelt)
+	rhs := Immediate(f.NewElement(1))
 
 	hint := WideMul128{
 		low:  dstLow,
@@ -228,7 +239,7 @@ func TestWideMul128IncorrectRange(t *testing.T) {
 		rhs:  rhs,
 	}
 
-	err := hint.Execute(vm, nil)
+	err = hint.Execute(vm, nil)
 	require.ErrorContains(t, err, "should be u128")
 }
 
@@ -239,7 +250,7 @@ func TestSquareRoot(t *testing.T) {
 
 	var dst ApCellRef = 1
 
-	value := Immediate(*big.NewInt(36))
+	value := Immediate(f.NewElement(36))
 	hint := SquareRoot{
 		value: value,
 		dst:   dst,
