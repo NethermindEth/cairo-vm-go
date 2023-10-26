@@ -162,7 +162,7 @@ func (vm *VirtualMachine) RunInstruction(instruction *a.Instruction) error {
 
 	res, err := vm.inferOperand(instruction, &dstAddr, &op0Addr, &op1Addr)
 	if err != nil {
-		return fmt.Errorf("res infer: %w", err)
+		return fmt.Errorf("infer res: %w", err)
 	}
 	if !res.Known() {
 		res, err = vm.computeRes(instruction, &op0Addr, &op1Addr)
@@ -261,11 +261,11 @@ func (vm *VirtualMachine) getOp1Addr(instruction *a.Instruction, op0Addr *mem.Me
 		op1Address = vm.Context.AddressAp()
 	}
 
-	addr, isOverflow := safemath.SafeOffset(op1Address.Offset, instruction.OffOp1)
+	newOffset, isOverflow := safemath.SafeOffset(op1Address.Offset, instruction.OffOp1)
 	if isOverflow {
 		return mem.UnknownAddress, fmt.Errorf("offset overflow: %d + %d", op1Address.Offset, instruction.OffOp1)
 	}
-	op1Address.Offset = addr
+	op1Address.Offset = newOffset
 	return op1Address, nil
 }
 
@@ -277,18 +277,13 @@ func (vm *VirtualMachine) inferOperand(
 	instruction *a.Instruction, dstAddr *mem.MemoryAddress, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
 ) (mem.MemoryValue, error) {
 	if instruction.Opcode != a.OpCodeAssertEq ||
-		(instruction.Res == a.Unconstrained) {
+		instruction.Res == a.Unconstrained ||
+		!vm.Memory.KnownValueAtAddress(dstAddr) {
 		return mem.MemoryValue{}, nil
 	}
 
-	dstValue, err := vm.Memory.PeekFromAddress(dstAddr)
-	if err != nil {
-		return mem.MemoryValue{}, fmt.Errorf("cannot read dst: %w", err)
-	}
-
-	if !dstValue.Known() {
-		return mem.MemoryValue{}, nil // let computeRes try to handle it
-	}
+	// we known dst value is known due to previous check
+	dstValue, _ := vm.Memory.PeekFromAddress(dstAddr)
 
 	op0Value, err := vm.Memory.PeekFromAddress(op0Addr)
 	if err != nil {
