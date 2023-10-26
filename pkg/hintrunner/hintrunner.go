@@ -13,25 +13,25 @@ type DictionaryManager struct {
 	// to a dictionary we can select the right one given the address index
 
 	// dict segment index -> dict key -> dict value
-	dictionaries map[uint64]map[f.Element]*f.Element
+	dictionaries map[uint64]map[f.Element]*mem.MemoryValue
 }
 
 // It creates a new segment which will hold dictionary values. It returns the memory
 // address of that segment.
 func (dm *DictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddress {
 	newDictAddr := vm.Memory.AllocateEmptySegment()
-	dm.dictionaries[newDictAddr.SegmentIndex] = make(map[f.Element]*f.Element)
+	dm.dictionaries[newDictAddr.SegmentIndex] = make(map[f.Element]*mem.MemoryValue)
 	return newDictAddr
 }
 
-func (dm *DictionaryManager) At(dictAddr *mem.MemoryAddress, key *f.Element) (*f.Element, error) {
+func (dm *DictionaryManager) At(dictAddr *mem.MemoryAddress, key *f.Element) (*mem.MemoryValue, error) {
 	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
 		return dict[*key], nil
 	}
 	return nil, fmt.Errorf("no dictionary at address %s", dictAddr)
 }
 
-func (dm *DictionaryManager) Set(dictAddr *mem.MemoryAddress, key *f.Element, value *f.Element) error {
+func (dm *DictionaryManager) Set(dictAddr *mem.MemoryAddress, key *f.Element, value *mem.MemoryValue) error {
 	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
 		dict[*key] = value
 		return nil
