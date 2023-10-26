@@ -21,7 +21,7 @@ type AllocSegment struct {
 	dst CellRefer
 }
 
-func (hint AllocSegment) String() string {
+func (hint *AllocSegment) String() string {
 	return "AllocSegment"
 }
 
@@ -329,12 +329,11 @@ func (hint *Felt252DictEntryInit) Execute(vm *VM.VirtualMachine, ctx *HintRunner
 		return fmt.Errorf("get dictionary entry: %w", err)
 	}
 	if prevValue == nil {
-		felt := &f.Element{}
-		_ = ctx.DictionaryManager.Set(&dictPtr, &key, felt)
+		mv := mem.EmptyMemoryValueAsFelt()
+		prevValue = &mv
+		_ = ctx.DictionaryManager.Set(&dictPtr, &key, prevValue)
 	}
-
-	mvFelt := mem.MemoryValueFromFieldElement(prevValue)
-	return vm.Memory.Write(dictPtr.SegmentIndex, dictPtr.Offset+1, &mvFelt)
+	return vm.Memory.Write(dictPtr.SegmentIndex, dictPtr.Offset+1, prevValue)
 }
 
 type Felt252DictEntryUpdate struct {
@@ -346,6 +345,29 @@ func (hint Felt252DictEntryUpdate) String() string {
 	return "Felt252DictEntryUpdate"
 }
 
-func (hint *Felt252DictEntryUpdate) Execute() error {
-	return nil
+func (hint *Felt252DictEntryUpdate) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	dictPtr, err := ResolveAsAddress(vm, hint.DictPtr)
+	if err != nil {
+		return fmt.Errorf("resolve dictionary pointer: %w", err)
+	}
+
+	keyPtr, err := dictPtr.AddOffset(-3)
+	if err != nil {
+		return fmt.Errorf("get key pointer: %w", err)
+	}
+	keyMv, err := vm.Memory.ReadFromAddress(&keyPtr)
+	if err != nil {
+		return fmt.Errorf("read key pointer: %w", err)
+	}
+	key, err := keyMv.FieldElement()
+	if err != nil {
+		return fmt.Errorf("expected key to be a field element: %w", err)
+	}
+
+	value, err := hint.Value.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve value: %w", err)
+	}
+
+	return ctx.DictionaryManager.Set(&dictPtr, key, &value)
 }
