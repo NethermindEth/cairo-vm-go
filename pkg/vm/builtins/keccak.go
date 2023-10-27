@@ -39,6 +39,7 @@ func ConvertToByteData(input []uint64) []byte {
 	for i, word := range input {
 		binary.LittleEndian.PutUint64(byteData[i*8:], word)
 	}
+	fmt.Printf("ByteData result: %x\n", byteData) // to see result
 	return byteData
 }
 
@@ -132,11 +133,8 @@ func KeccakAddU256LE(keccakInput []uint64, value *uint256.Int) []uint64 {
 	return keccakInput
 }
 
-func KeccakU256sLEInputs(inputs []*uint256.Int) ([]byte, error) {
-	var keccakInput []uint64
-	for _, value := range inputs {
-		keccakInput = KeccakAddU256LE(keccakInput, value)
-	}
+func KeccakU256sLEInputs(input *uint256.Int) ([]byte, error) {
+	keccakInput := KeccakAddU256LE([]uint64{}, input)
 	return CairoKeccak(keccakInput, 0, 0)
 }
 

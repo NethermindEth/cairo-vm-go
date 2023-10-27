@@ -1,7 +1,0 @@
-# Given values
-high = 280360676274067731044963585568268448175
-low = 314240319136055307035435783795864305109
-
-# Calculating the u256 value
-u256_value = (high * (2 ** 128)) + low
-print(u256_value)

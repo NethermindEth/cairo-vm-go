@@ -34,41 +34,10 @@ func TestKeccak256(t *testing.T) {
 	// Compare the obtained hash with the expected hash.
 	assert.Equal(t, expectedHash, hashHex, "Expected %s, got %s", expectedHash, hashHex)
 
-	//jake : below is for debugging. to be deleted afterwards
+	//To verify result from the web
 	// for keccak result : https://emn178.github.io/online-tools/keccak_256.html?input_type=hex&input=0102030405060708090a0b0c0d0e0f1011
 	// which is
 	//57e46e893805ca9503660cd6ef2b39e24750a502ed7c71270f214dcb114b7113
-	// for sha3 result : https://emn178.github.io/online-tools/sha3_256.html?input_type=hex&input=0102030405060708090a0b0c0d0e0f1011
-	// which is
-	//5ea232134fe405605b468996dd5d77e7cdf6b63be625826d4f27c302ab17d65a
-	//Rust output is : d2eb808dfba4703c528d145dfe6571afec687be9c50d2218388da73622e8fdd5
-	//D2EB808DFBA4703C528D145DFE6571AFEC687BE9C50D2218388DA73622E8FDD5
-
-}
-
-func TestKeccak256_2(t *testing.T) {
-	// Input data: array of bytes from 1 to 17, similar to the input in the Rust test.
-	input := []byte{1, 0, 0, 0}
-	hexStr := hex.EncodeToString(input)
-	fmt.Println("the hex Str is: ", hexStr)
-	//01000000
-
-	// Known correct Keccak-256 hash value for the input data, obtained from an online calculator. https://emn178.github.io/online-tools/keccak_256.html
-	expectedHash := "e37890bf230cf36ea140a5dbb9a561aa7ef84f8f995873db8386eba4a95c7bbe"
-	expectedHashByteData, err := hex.DecodeString(expectedHash)
-	fmt.Println("the expectedHash to byte is: ", expectedHashByteData, err)
-
-	// Call the Keccak256 function.
-	hash, err := Keccak256(input)
-	require.NoError(t, err) // Ensure no error is returned.
-
-	// Convert the obtained hash to a hex string.
-	hashHex := hex.EncodeToString(hash)
-	fmt.Println("the hash is: ", hash)
-
-	// Compare the obtained hash with the expected hash.
-	assert.Equal(t, expectedHash, hashHex, "Expected %s, got %s", expectedHash, hashHex)
-
 }
 
 func TestU128Split(t *testing.T) {
@@ -197,6 +166,7 @@ func TestCairoKeccak(t *testing.T) {
 			lastInputWord:     0,
 			lastInputNumBytes: 0,
 			expectedHash:      "a80c226a0612d2578acff9caeb00583cb8002ccfb5f442d47ec6838f35d72b2c",
+			//https://emn178.github.io/online-tools/keccak_256.html?input_type=hex&input=01000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080
 		},
 	}
 
@@ -214,30 +184,48 @@ func TestCairoKeccak(t *testing.T) {
 	}
 }
 
-// [
-// 	1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0   // 1
-// 	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0   // 2
-// 	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0   // 3
-// 	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0   // 4
-// 	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0   // 5
-// 	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0   // 6
-// 	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0   // 7
-// 	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 128 // 8
-// ]
+func TestKeccakU256sLEInputs(t *testing.T) {
+	cases := []struct {
+		input    *uint256.Int
+		expected string
+	}{
+		{
+			input:    uint256.NewInt(1),
+			expected: "173af0af902b536af63b93f3f6dc2d7369e5b06780ffe7ce5892797e2bb1d23b",
+		},
+		{
+			input:    uint256.NewInt({1, 2, 3, 4}),
+			expected: "60cb0f84c07aa826f45e14565854ae422aac8b6e6aa448871f5f20cf9332b55a",
+		},
+	}
 
-// 01000000000000000 //1, has 1
-// 00000000000000000 //2
-// 00000000000000000 //3
-// 00000000000000100 //4, has 1
-// 00000000000000000 //5
-// 00000000000000000 //6
-// 00000000000000000 //7
-// 00000000000000000 //8
-// 00000000000000000 //9
-// 00000000000000000 //10
-// 00000000000000000 //11
-// 00000000000000000 //12
-// 00000000000000000 //13
-// 00000000000000000 //14
-// 00000000000000000 //15
-// 00000000000000080 //16 , has 1
+	for _, c := range cases {
+		hash, err := KeccakU256sLEInputs(c.input)
+		if err != nil {
+			t.Errorf("KeccakU256sLEInputs returned an error: %v", err)
+		}
+
+		// Convert the expected hex string to bytes for comparison
+		expectedBytes, err := hex.DecodeString(c.expected)
+		if err != nil {
+			t.Errorf("Failed to decode expected hex string: %v", err)
+		}
+
+		// Compare the hash with the expected bytes
+		if len(hash) != len(expectedBytes) || !compareBytes(hash, expectedBytes) {
+			t.Errorf("KeccakU256sLEInputs = %x, want %x", hash, expectedBytes)
+		}
+	}
+}
+
+func compareBytes(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
