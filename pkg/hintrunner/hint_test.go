@@ -253,27 +253,20 @@ func TestSquareRoot(t *testing.T) {
 		memory.MemoryValueFromInt(6),
 		readFrom(vm, VM.ExecutionSegment, 1),
 	)
-}
 
-func TestSquareRootNotSquare(t *testing.T) {
-	vm := defaultVirtualMachine()
-	vm.Context.Ap = 0
-	vm.Context.Fp = 0
-
-	var dst ApCellRef = 1
-
-	value := Immediate(*big.NewInt(30))
-	hint := SquareRoot{
+	dst = 2
+	value = Immediate(*big.NewInt(30))
+	hint = SquareRoot{
 		value: value,
 		dst:   dst,
 	}
 
-	err := hint.Execute(vm)
+	err = hint.Execute(vm)
 
 	require.NoError(t, err)
 	require.Equal(
 		t,
 		memory.MemoryValueFromInt(5),
-		readFrom(vm, VM.ExecutionSegment, 1),
+		readFrom(vm, VM.ExecutionSegment, 2),
 	)
 }
