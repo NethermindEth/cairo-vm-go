@@ -8,6 +8,7 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+// Used to keep track of all dictionaries
 type Dictionary struct {
 	// The data contained on a dictionary
 	data map[f.Element]*mem.MemoryValue
@@ -15,6 +16,7 @@ type Dictionary struct {
 	idx uint64
 }
 
+// Gets the memory value at certain key
 func (d *Dictionary) At(key *f.Element) (*mem.MemoryValue, error) {
 	if value, ok := d.data[*key]; ok {
 		return value, nil
@@ -22,24 +24,24 @@ func (d *Dictionary) At(key *f.Element) (*mem.MemoryValue, error) {
 	return nil, fmt.Errorf("no value for key %s", key)
 }
 
+// Given a key and a value, it sets the value at the given key
 func (d *Dictionary) Set(key *f.Element, value *mem.MemoryValue) {
 	d.data[*key] = value
 }
 
+// Returns the initialization number when the dictionary was created
 func (d *Dictionary) InitNumber() uint64 {
 	return d.idx
 }
 
 type DictionaryManager struct {
-	// Each Dictionary belongs to its own segment, so given a memory address
-	// to a dictionary we can select the right one given the address index
-
-	// a map from segment index (at the moment of allocation) to dictionary
+	// a map that links a segment index to a dictionary
 	dictionaries map[uint64]Dictionary
 }
 
-// It creates a new segment which will hold dictionary values. It returns the memory
-// address of that segment.
+// It creates a new segment which will hold dictionary values. It links this
+// segment with the current dictionary and returns the address that points
+// to the start of this segment
 func (dm *DictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddress {
 	newDictAddr := vm.Memory.AllocateEmptySegment()
 	dm.dictionaries[newDictAddr.SegmentIndex] = Dictionary{
@@ -49,6 +51,8 @@ func (dm *DictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddr
 	return newDictAddr
 }
 
+// Given a memory address, it looks for the right dictionary using the segment index. If no
+// segment is associated with the given segment index, it errors
 func (dm *DictionaryManager) GetDictionary(dictAddr *mem.MemoryAddress) (Dictionary, error) {
 	dict, ok := dm.dictionaries[dictAddr.SegmentIndex]
 	if !ok {
@@ -57,6 +61,8 @@ func (dm *DictionaryManager) GetDictionary(dictAddr *mem.MemoryAddress) (Diction
 	return dict, nil
 }
 
+// Given a memory address and a key it returns the value held at that position. The address is used
+// to locate the correct dictionary and the key to index on it
 func (dm *DictionaryManager) At(dictAddr *mem.MemoryAddress, key *f.Element) (*mem.MemoryValue, error) {
 	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
 		return dict.At(key)
@@ -64,6 +70,7 @@ func (dm *DictionaryManager) At(dictAddr *mem.MemoryAddress, key *f.Element) (*m
 	return nil, fmt.Errorf("no dictionary at address %s", dictAddr)
 }
 
+// Given a memory address,a key and a value it stores the value at the correct position.
 func (dm *DictionaryManager) Set(dictAddr *mem.MemoryAddress, key *f.Element, value *mem.MemoryValue) error {
 	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
 		dict.Set(key, value)
@@ -72,11 +79,40 @@ func (dm *DictionaryManager) Set(dictAddr *mem.MemoryAddress, key *f.Element, va
 	return fmt.Errorf("no dictionary at address %s", dictAddr)
 }
 
-type HintRunnerContext struct {
-	DictionaryManager DictionaryManager
+// Used to keep track of squashed dictionaries
+type SquashedDictionaryManager struct {
+	// A map from each key to a list of indices where the key is present
+	// the list in reversed order
+	KeyToIndices map[f.Element][]uint64
+
+	// A descending list of keys
+	Keys []f.Element
 }
 
-// todo: Can two or more hints be assigned to a specific PC?
+func (sdm *SquashedDictionaryManager) Insert(key *f.Element, index uint64) {
+	keyIndex := *key
+	if indices, ok := sdm.KeyToIndices[keyIndex]; ok {
+		indices = append(indices, index)
+	} else {
+		sdm.KeyToIndices[keyIndex] = []uint64{index}
+	}
+}
+
+func (sdm *SquashedDictionaryManager) LastKey() f.Element {
+	return sdm.Keys[len(sdm.Keys)-1]
+}
+
+func (sdm *SquashedDictionaryManager) PopKey() f.Element {
+	key := sdm.LastKey()
+	sdm.Keys = sdm.Keys[:len(sdm.Keys)-1]
+	return key
+}
+
+type HintRunnerContext struct {
+	DictionaryManager         DictionaryManager
+	SquashedDictionaryManager SquashedDictionaryManager
+}
+
 type HintRunner struct {
 	// Execution context required by certain hints such as dictionaires
 	context HintRunnerContext
@@ -88,6 +124,7 @@ func NewHintRunner(hints map[uint64]Hinter) HintRunner {
 	return HintRunner{
 		context: HintRunnerContext{
 			DictionaryManager{},
+			SquashedDictionaryManager{},
 		},
 		hints: hints,
 	}

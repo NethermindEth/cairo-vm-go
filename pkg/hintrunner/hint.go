@@ -2,6 +2,7 @@ package hintrunner
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/holiman/uint256"
 
@@ -372,16 +373,16 @@ func (hint *Felt252DictEntryUpdate) Execute(vm *VM.VirtualMachine, ctx *HintRunn
 	return ctx.DictionaryManager.Set(&dictPtr, key, &value)
 }
 
-type FeltGetSegmentArenaIndex struct {
+type GetSegmentArenaIndex struct {
 	DictIndex  CellRefer
 	DictEndPtr ResOperander
 }
 
-func (hint *FeltGetSegmentArenaIndex) String() string {
+func (hint *GetSegmentArenaIndex) String() string {
 	return "FeltGetSegmentArenaIndex"
 }
 
-func (hint *FeltGetSegmentArenaIndex) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+func (hint *GetSegmentArenaIndex) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
 	dictIndex, err := hint.DictIndex.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get dict index: %w", err)
@@ -399,4 +400,77 @@ func (hint *FeltGetSegmentArenaIndex) Execute(vm *VM.VirtualMachine, ctx *HintRu
 
 	initNum := mem.MemoryValueFromUint(dict.InitNumber())
 	return vm.Memory.WriteToAddress(&dictIndex, &initNum)
+}
+
+type InitSquashData struct {
+	FirstKey     CellRefer
+	BigKeys      CellRefer
+	DictAccesses ResOperander
+	NumAccesses  ResOperander
+}
+
+func (hint *InitSquashData) String() string {
+	return "InitSquashData"
+}
+
+func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	dictAccessPtr, err := ResolveAsAddress(vm, hint.DictAccesses)
+	if err != nil {
+		return fmt.Errorf("resolve dict access: %w", err)
+	}
+
+	numAccess, err := ResolveAsUint64(vm, hint.NumAccesses)
+	if err != nil {
+		return fmt.Errorf("resolve num access: %w", err)
+	}
+
+	const dictAccessSize = 3
+	for i := uint64(0); i < numAccess; i++ {
+		keyPtr := mem.MemoryAddress{
+			SegmentIndex: dictAccessPtr.SegmentIndex,
+			Offset:       dictAccessPtr.Offset + i*dictAccessSize,
+		}
+		key, err := vm.Memory.ReadFromAddressAsElement(&keyPtr)
+		if err != nil {
+			return fmt.Errorf("reading key at %s: %w", keyPtr, err)
+		}
+
+		ctx.SquashedDictionaryManager.Insert(&key, i)
+	}
+	for key, val := range ctx.SquashedDictionaryManager.KeyToIndices {
+		// reverse each indice access list per key
+		safemath.Reverse(val)
+		// store each key
+		ctx.SquashedDictionaryManager.Keys = append(ctx.SquashedDictionaryManager.Keys, key)
+	}
+
+	// sort the keys in descending order
+	sort.Slice(ctx.SquashedDictionaryManager.Keys, func(i, j int) bool {
+		return ctx.SquashedDictionaryManager.Keys[i].Cmp(&ctx.SquashedDictionaryManager.Keys[j]) < 0
+	})
+
+	// if the first key is bigger than 2^128, signal it
+	bigKeysAddr, err := hint.BigKeys.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get big keys address: %w", err)
+	}
+	biggestKey := ctx.SquashedDictionaryManager.Keys[0]
+	cmpRes := mem.MemoryValueFromUint[uint64](0)
+	if biggestKey.Cmp(&safemath.Max128) > 0 {
+		cmpRes = mem.MemoryValueFromUint[uint64](1)
+	}
+	err = vm.Memory.WriteToAddress(&bigKeysAddr, &cmpRes)
+	if err != nil {
+		return fmt.Errorf("write big keys address: %w", err)
+	}
+
+	// store the left most, smaller key
+	firstKeyAddr, err := hint.FirstKey.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get first key address: %w", err)
+	}
+	firstKey := ctx.SquashedDictionaryManager.LastKey()
+	mv := mem.MemoryValueFromFieldElement(&firstKey)
+
+	return vm.Memory.WriteToAddress(&firstKeyAddr, &mv)
 }
