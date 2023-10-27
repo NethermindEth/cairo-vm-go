@@ -92,7 +92,7 @@ type SquashedDictionaryManager struct {
 func (sdm *SquashedDictionaryManager) Insert(key *f.Element, index uint64) {
 	keyIndex := *key
 	if indices, ok := sdm.KeyToIndices[keyIndex]; ok {
-		indices = append(indices, index)
+		sdm.KeyToIndices[keyIndex] = append(indices, index)
 	} else {
 		sdm.KeyToIndices[keyIndex] = []uint64{index}
 	}
@@ -106,6 +106,20 @@ func (sdm *SquashedDictionaryManager) PopKey() f.Element {
 	key := sdm.LastKey()
 	sdm.Keys = sdm.Keys[:len(sdm.Keys)-1]
 	return key
+}
+
+func (sdm *SquashedDictionaryManager) LastIndex() uint64 {
+	key := sdm.LastKey()
+	indices := sdm.KeyToIndices[key]
+	return indices[len(indices)-1]
+}
+
+func (sdm *SquashedDictionaryManager) PopIndex() uint64 {
+	key := sdm.LastKey()
+	indices := sdm.KeyToIndices[key]
+	index := indices[len(indices)-1]
+	sdm.KeyToIndices[key] = indices[:len(indices)-1]
+	return index
 }
 
 type HintRunnerContext struct {

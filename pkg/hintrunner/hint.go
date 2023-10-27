@@ -474,3 +474,25 @@ func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContex
 
 	return vm.Memory.WriteToAddress(&firstKeyAddr, &mv)
 }
+
+type GetCurrentAccessIndex struct {
+	RangeCheckPtr ResOperander
+}
+
+func (hint *GetCurrentAccessIndex) String() string {
+	return "GetCurrentAccessIndex"
+}
+
+func (hint *GetCurrentAccessIndex) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	rangeCheckPtr, err := ResolveAsAddress(vm, hint.RangeCheckPtr)
+	if err != nil {
+		return fmt.Errorf("resolve range check pointer: %w", err)
+	}
+
+	lastIndex := f.NewElement(
+		ctx.SquashedDictionaryManager.LastIndex(),
+	)
+	mv := mem.MemoryValueFromFieldElement(&lastIndex)
+
+	return vm.Memory.WriteToAddress(&rangeCheckPtr, &mv)
+}
