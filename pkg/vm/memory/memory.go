@@ -261,6 +261,42 @@ func (memory *Memory) ReadFromAddress(address *MemoryAddress) (MemoryValue, erro
 	return memory.Read(address.SegmentIndex, address.Offset)
 }
 
+// Works the same as `Read` but `MemoryValue` is converted to `Element` first
+func (memory *Memory) ReadAsElement(segmentIndex uint64, offset uint64) (f.Element, error) {
+	mv, err := memory.Read(segmentIndex, offset)
+	if err != nil {
+		return f.Element{}, err
+	}
+	felt, err := mv.FieldElement()
+	if err != nil {
+		return f.Element{}, err
+	}
+	return *felt, nil
+}
+
+// Works the same as `ReadFromAddress` but `MemoryValue` is converted to `Element` first
+func (memory *Memory) ReadFromAddressAsElement(address *MemoryAddress) (f.Element, error) {
+	return memory.ReadAsElement(address.SegmentIndex, address.Offset)
+}
+
+// Works the same as `Read` but `MemoryValue` is converted to `MemoryAddress` first
+func (memory *Memory) ReadAsAddress(address *MemoryAddress) (MemoryAddress, error) {
+	mv, err := memory.Read(address.SegmentIndex, address.Offset)
+	if err != nil {
+		return UnknownAddress, err
+	}
+	addr, err := mv.MemoryAddress()
+	if err != nil {
+		return UnknownAddress, err
+	}
+	return *addr, nil
+}
+
+// Works the same as `ReadFromAddress` but `MemoryValue` is converted to `MemoryAddress` first
+func (memory *Memory) ReadFromAddressAsAddress(address *MemoryAddress) (MemoryAddress, error) {
+	return memory.ReadAsAddress(address)
+}
+
 // Given a segment index and offset, returns the memory value at that position, without
 // modifying it in any way. Errors if peeking from an unallocated segment
 func (memory *Memory) Peek(segmentIndex uint64, offset uint64) (MemoryValue, error) {
