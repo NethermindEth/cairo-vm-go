@@ -82,13 +82,17 @@ func (dm *DictionaryManager) Set(dictAddr *mem.MemoryAddress, key *f.Element, va
 // Used to keep track of squashed dictionaries
 type SquashedDictionaryManager struct {
 	// A map from each key to a list of indices where the key is present
-	// the list in reversed order
+	// the list in reversed order.
+	// Note: The indices should be Felts, but current memory limitations
+	// make it impossible to use an index that big so we use uint64 instead
 	KeyToIndices map[f.Element][]uint64
 
 	// A descending list of keys
 	Keys []f.Element
 }
 
+// It adds another index to the list of indices associated to the given key
+// If the key is not present, it creates a new entry
 func (sdm *SquashedDictionaryManager) Insert(key *f.Element, index uint64) {
 	keyIndex := *key
 	if indices, ok := sdm.KeyToIndices[keyIndex]; ok {
@@ -98,27 +102,32 @@ func (sdm *SquashedDictionaryManager) Insert(key *f.Element, index uint64) {
 	}
 }
 
+// It returns the smallest key in the key list
 func (sdm *SquashedDictionaryManager) LastKey() f.Element {
 	return sdm.Keys[len(sdm.Keys)-1]
 }
 
+// It pops out the smallest key in the key list
 func (sdm *SquashedDictionaryManager) PopKey() f.Element {
 	key := sdm.LastKey()
 	sdm.Keys = sdm.Keys[:len(sdm.Keys)-1]
 	return key
 }
 
+// It returns the list of indices associated to the smallest key
 func (sdm *SquashedDictionaryManager) LastIndices() []uint64 {
 	key := sdm.LastKey()
 	return sdm.KeyToIndices[key]
 }
 
+// It returns smallest index associated with the smallest key
 func (sdm *SquashedDictionaryManager) LastIndex() uint64 {
 	key := sdm.LastKey()
 	indices := sdm.KeyToIndices[key]
 	return indices[len(indices)-1]
 }
 
+// It pops out smallest index associated with the smallest key
 func (sdm *SquashedDictionaryManager) PopIndex() uint64 {
 	key := sdm.LastKey()
 	indices := sdm.KeyToIndices[key]
@@ -127,6 +136,8 @@ func (sdm *SquashedDictionaryManager) PopIndex() uint64 {
 	return index
 }
 
+// Global context to keep track of different results across different
+// hints execution.
 type HintRunnerContext struct {
 	DictionaryManager         DictionaryManager
 	SquashedDictionaryManager SquashedDictionaryManager
