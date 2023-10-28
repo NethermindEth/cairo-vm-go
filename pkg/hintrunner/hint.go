@@ -155,7 +155,7 @@ func (hint *WideMul128) String() string {
 }
 
 func (hint *WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
-	mask := MaxU128()
+	mask := safemath.Uint256Max128()
 
 	lhs, err := hint.lhs.Resolve(vm)
 	if err != nil {
@@ -456,7 +456,7 @@ func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContex
 	}
 	biggestKey := ctx.SquashedDictionaryManager.Keys[0]
 	cmpRes := mem.MemoryValueFromUint[uint64](0)
-	if biggestKey.Cmp(&safemath.Max128) > 0 {
+	if biggestKey.Cmp(&safemath.FeltMax128) > 0 {
 		cmpRes = mem.MemoryValueFromUint[uint64](1)
 	}
 	err = vm.Memory.WriteToAddress(&bigKeysAddr, &cmpRes)
