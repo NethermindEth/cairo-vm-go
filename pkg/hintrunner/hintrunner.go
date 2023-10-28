@@ -8,7 +8,7 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-// Used to keep track of all dictionaries
+// Used to keep track of all dictionaries data
 type Dictionary struct {
 	// The data contained on a dictionary
 	data map[f.Element]*mem.MemoryValue
@@ -34,9 +34,16 @@ func (d *Dictionary) InitNumber() uint64 {
 	return d.idx
 }
 
+// Used to manage dictionaries creation
 type DictionaryManager struct {
 	// a map that links a segment index to a dictionary
 	dictionaries map[uint64]Dictionary
+}
+
+func InitializeDictionaryManagerIfNot(ctx *HintRunnerContext) {
+	if ctx.DictionaryManager.dictionaries == nil {
+		ctx.DictionaryManager.dictionaries = make(map[uint64]Dictionary)
+	}
 }
 
 // It creates a new segment which will hold dictionary values. It links this
@@ -89,6 +96,16 @@ type SquashedDictionaryManager struct {
 
 	// A descending list of keys
 	Keys []f.Element
+}
+
+func InitializeSquashedDictionaryManager(ctx *HintRunnerContext) error {
+	if ctx.SquashedDictionaryManager.KeyToIndices != nil ||
+		ctx.SquashedDictionaryManager.Keys != nil {
+		return fmt.Errorf("squashed dictionary manager already initialized")
+	}
+	ctx.SquashedDictionaryManager.KeyToIndices = make(map[f.Element][]uint64, 100)
+	ctx.SquashedDictionaryManager.Keys = make([]f.Element, 0, 100)
+	return nil
 }
 
 // It adds another index to the list of indices associated to the given key
@@ -152,6 +169,8 @@ type HintRunner struct {
 
 func NewHintRunner(hints map[uint64]Hinter) HintRunner {
 	return HintRunner{
+		// Context for certain hints that require it. Each manager is
+		// initialized only when required by the hint
 		context: HintRunnerContext{
 			DictionaryManager{},
 			SquashedDictionaryManager{},

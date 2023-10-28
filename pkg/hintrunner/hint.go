@@ -312,6 +312,8 @@ func (hint *AllocFelt252Dict) String() string {
 	return "AllocFelt252Dict"
 }
 func (hint *AllocFelt252Dict) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	InitializeDictionaryManagerIfNot(ctx)
+
 	arenaPtr, err := ResolveAsAddress(vm, hint.SegmentArenaPtr)
 	if err != nil {
 		return fmt.Errorf("resolve segment arena pointer: %w", err)
@@ -469,6 +471,11 @@ func (hint *InitSquashData) String() string {
 }
 
 func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	err := InitializeSquashedDictionaryManager(ctx)
+	if err != nil {
+		return err
+	}
+
 	dictAccessPtr, err := ResolveAsAddress(vm, hint.DictAccesses)
 	if err != nil {
 		return fmt.Errorf("resolve dict access: %w", err)
