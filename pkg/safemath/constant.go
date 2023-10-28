@@ -5,24 +5,13 @@ import (
 	"github.com/holiman/uint256"
 )
 
-// Note: Using functions instead of `var` since they get inlined anyway
+var FeltZero = fp.Element{}
 
-func FeltZero() fp.Element {
-	return fp.Element{}
+var FeltOne = fp.Element{
+	18446744073709551585, 18446744073709551615, 18446744073709551615, 576460752303422960,
 }
 
-func FeltOne() fp.Element {
-	return fp.Element{
-		18446744073709551585, 18446744073709551615, 18446744073709551615, 576460752303422960,
-	}
-}
+// 1 << 128
+var FeltMax128 = fp.Element{18446744073700081665, 17407, 18446744073709551584, 576460752142434320}
 
-func FeltMax128() fp.Element {
-	return fp.Element{
-		18446744073700081665, 17407, 18446744073709551584, 576460752142434320,
-	}
-}
-
-func Uint256Max128() uint256.Int {
-	return uint256.Int{18446744073709551615, 18446744073709551615, 0, 0}
-}
+var Uint256Max128 = uint256.Int{18446744073709551615, 18446744073709551615, 0, 0}

@@ -155,7 +155,7 @@ func (hint *WideMul128) String() string {
 }
 
 func (hint *WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
-	mask := safemath.Uint256Max128()
+	mask := &safemath.Uint256Max128
 
 	lhs, err := hint.lhs.Resolve(vm)
 	if err != nil {
@@ -178,10 +178,10 @@ func (hint *WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) err
 	lhsU256 := uint256.Int(lhsFelt.Bits())
 	rhsU256 := uint256.Int(rhsFelt.Bits())
 
-	if lhsU256.Gt(&mask) {
+	if lhsU256.Gt(mask) {
 		return fmt.Errorf("lhs operand %s should be u128", lhsFelt)
 	}
-	if rhsU256.Gt(&mask) {
+	if rhsU256.Gt(mask) {
 		return fmt.Errorf("rhs operand %s should be u128", rhsFelt)
 	}
 
