@@ -108,6 +108,11 @@ func (sdm *SquashedDictionaryManager) PopKey() f.Element {
 	return key
 }
 
+func (sdm *SquashedDictionaryManager) LastIndices() []uint64 {
+	key := sdm.LastKey()
+	return sdm.KeyToIndices[key]
+}
+
 func (sdm *SquashedDictionaryManager) LastIndex() uint64 {
 	key := sdm.LastKey()
 	indices := sdm.KeyToIndices[key]

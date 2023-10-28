@@ -496,3 +496,93 @@ func (hint *GetCurrentAccessIndex) Execute(vm *VM.VirtualMachine, ctx *HintRunne
 
 	return vm.Memory.WriteToAddress(&rangeCheckPtr, &mv)
 }
+
+type ShouldSkipSquashLoop struct {
+	ShouldSkipLoop CellRefer
+}
+
+func (hint *ShouldSkipSquashLoop) String() string {
+	return "ShouldSkipSquashLoop"
+}
+
+func (hint *ShouldSkipSquashLoop) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	shouldSkipLoopAddr, err := hint.ShouldSkipLoop.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get should skip loop address: %w", err)
+	}
+
+	var shouldSkipLoop f.Element
+	if len(ctx.SquashedDictionaryManager.LastIndices()) > 1 {
+		shouldSkipLoop.SetOne()
+	}
+
+	mv := mem.MemoryValueFromFieldElement(&shouldSkipLoop)
+	return vm.Memory.WriteToAddress(&shouldSkipLoopAddr, &mv)
+}
+
+type GetCurrentAccessDelta struct {
+	IndexDeltaMinusOne CellRefer
+}
+
+func (hint *GetCurrentAccessDelta) String() string {
+	return "GetCurrentAccessDelta"
+}
+
+func (hint *GetCurrentAccessDelta) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	indexDeltaPtr, err := hint.IndexDeltaMinusOne.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get index delta address: %w", err)
+	}
+
+	previousKeyIndex := ctx.SquashedDictionaryManager.PopIndex()
+	currentKeyIndex := ctx.SquashedDictionaryManager.LastIndex()
+
+	// todo(rodro): could previousKeyIndex be bigger than currentKeyIndex?
+	indexDeltaMinusOne := currentKeyIndex - previousKeyIndex - 1
+	mv := mem.MemoryValueFromUint(indexDeltaMinusOne)
+
+	return vm.Memory.WriteToAddress(&indexDeltaPtr, &mv)
+}
+
+type ShouldContinueSquashLoop struct {
+	ShouldContinue CellRefer
+}
+
+func (hint *ShouldContinueSquashLoop) String() string {
+	return "ShouldContinueSquashLoop"
+}
+
+func (hint *ShouldContinueSquashLoop) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	shouldContinuePtr, err := hint.ShouldContinue.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get should continue address: %w", err)
+	}
+
+	var shouldContinueLoop f.Element
+	if len(ctx.SquashedDictionaryManager.LastIndices()) <= 1 {
+		shouldContinueLoop.SetOne()
+	}
+
+	mv := mem.MemoryValueFromFieldElement(&shouldContinueLoop)
+	return vm.Memory.WriteToAddress(&shouldContinuePtr, &mv)
+}
+
+type GetNextDictKey struct {
+	NextKey CellRefer
+}
+
+func (hint *GetNextDictKey) String() string {
+	return "GetNextDictKey"
+}
+
+func (hint *GetNextDictKey) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	nextKeyAddr, err := hint.NextKey.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get next key address: %w", err)
+	}
+
+	nextKey := ctx.SquashedDictionaryManager.PopKey()
+	mv := mem.MemoryValueFromFieldElement(&nextKey)
+
+	return vm.Memory.WriteToAddress(&nextKeyAddr, &mv)
+}
