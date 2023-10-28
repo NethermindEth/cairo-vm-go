@@ -253,6 +253,10 @@ func (hint *SquareRoot) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) err
 	return nil
 }
 
+//
+// Dictionary Hints
+//
+
 type AllocFelt252Dict struct {
 	SegmentArenaPtr ResOperander
 }
@@ -401,6 +405,10 @@ func (hint *GetSegmentArenaIndex) Execute(vm *VM.VirtualMachine, ctx *HintRunner
 	initNum := mem.MemoryValueFromUint(dict.InitNumber())
 	return vm.Memory.WriteToAddress(&dictIndex, &initNum)
 }
+
+//
+// Squashed Dictionary Hints
+//
 
 type InitSquashData struct {
 	FirstKey     CellRefer
