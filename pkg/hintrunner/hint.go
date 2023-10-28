@@ -249,7 +249,7 @@ func (hint DebugPrint) Execute(vm *VM.VirtualMachine) error {
 
 	current := startAddr.Offset
 	for current < endAddr.Offset {
-		v, err := vm.Memory.ReadFromAddress(&memory.MemoryAddress{
+		v, err := vm.Memory.ReadFromAddress(&mem.MemoryAddress{
 			SegmentIndex: startAddr.SegmentIndex,
 			Offset:       current,
 		})
