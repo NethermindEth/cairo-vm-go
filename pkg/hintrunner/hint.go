@@ -218,6 +218,53 @@ func (hint *WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) err
 	return nil
 }
 
+type DebugPrint struct {
+	start ResOperander
+	end   ResOperander
+}
+
+func (hint DebugPrint) Execute(vm *VM.VirtualMachine) error {
+	start, err := hint.start.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve start operand %s: %v", hint.start, err)
+	}
+
+	startAddr, err := start.MemoryAddress()
+	if err != nil {
+		return fmt.Errorf("start memory address: %v", err)
+	}
+
+	end, err := hint.end.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve end operand %s: %v", hint.end, err)
+	}
+	endAddr, err := end.MemoryAddress()
+	if err != nil {
+		return fmt.Errorf("end memory address: %v", err)
+	}
+
+	if startAddr.Offset > endAddr.Offset {
+		return fmt.Errorf("start cannot be greater than end")
+	}
+
+	current := startAddr.Offset
+	for current < endAddr.Offset {
+		v, err := vm.Memory.ReadFromAddress(&memory.MemoryAddress{
+			SegmentIndex: startAddr.SegmentIndex,
+			Offset:       current,
+		})
+		if err != nil {
+			return err
+		}
+
+		field, _ := v.FieldElement()
+		fmt.Printf("[DEBUG] %s\n", field.Text(16))
+		current += 1
+	}
+
+	return nil
+}
+
 type SquareRoot struct {
 	value ResOperander
 	dst   CellRefer
