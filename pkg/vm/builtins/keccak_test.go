@@ -1,6 +1,7 @@
 package builtins
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"strings"
@@ -186,16 +187,20 @@ func TestCairoKeccak(t *testing.T) {
 
 func TestKeccakU256sLEInputs(t *testing.T) {
 	cases := []struct {
-		input    *uint256.Int
+		input    uint256.Int
 		expected string
 	}{
 		{
-			input:    uint256.NewInt(1),
+			input:    *uint256.NewInt(1),
 			expected: "173af0af902b536af63b93f3f6dc2d7369e5b06780ffe7ce5892797e2bb1d23b",
 		},
 		{
-			input:    uint256.NewInt({1, 2, 3, 4}),
-			expected: "60cb0f84c07aa826f45e14565854ae422aac8b6e6aa448871f5f20cf9332b55a",
+			input:    *uint256.NewInt(123456789),
+			expected: "350187ae11fa6a4e2feead1a234e3d700888faec6db7b99cfeb99d08cd21f383",
+		},
+		{
+			input:    *uint256.NewInt(1).Lsh(uint256.NewInt(1), 256).Sub(uint256.NewInt(1), uint256.NewInt(1)),
+			expected: "b6b62fa9dcc719ee570994c986575cdc696fe70949d66ef63248ab4302563bcd",
 		},
 	}
 
@@ -212,20 +217,19 @@ func TestKeccakU256sLEInputs(t *testing.T) {
 		}
 
 		// Compare the hash with the expected bytes
-		if len(hash) != len(expectedBytes) || !compareBytes(hash, expectedBytes) {
+		if len(hash) != len(expectedBytes) || !bytes.Equal(hash, expectedBytes) {
 			t.Errorf("KeccakU256sLEInputs = %x, want %x", hash, expectedBytes)
 		}
 	}
 }
 
-func compareBytes(a, b []byte) bool {
-	if len(a) != len(b) {
-		return false
+// Helper function to convert a byte slice into a uint256.Int
+func createUint256IntFromBytes(b []byte) uint256.Int {
+	// Pad the byte slice to 32 bytes if necessary
+	for len(b) < 32 {
+		b = append(b, 0)
 	}
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-	return true
+	value := new(uint256.Int)
+	value.SetBytes(b)
+	return *value
 }

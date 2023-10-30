@@ -133,9 +133,14 @@ func KeccakAddU256LE(keccakInput []uint64, value *uint256.Int) []uint64 {
 	return keccakInput
 }
 
-func KeccakU256sLEInputs(input *uint256.Int) ([]byte, error) {
-	keccakInput := KeccakAddU256LE([]uint64{}, input)
-	return CairoKeccak(keccakInput, 0, 0)
+// 1 initializes an array (u64)
+// 2 converting input into array
+// 3 adds padding to the array
+// 4 put that array into keccak hashing
+
+func KeccakU256sLEInputs(input uint256.Int) ([]byte, error) {
+	keccakInput := KeccakAddU256LE([]uint64{}, &input) // 1,2 combined
+	return CairoKeccak(keccakInput, 0, 0)              // 3,4 combined
 }
 
 //Big Endian way codes
