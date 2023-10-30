@@ -39,16 +39,20 @@ func ConvertToByteData(input []uint64) []byte {
 	for i, word := range input {
 		binary.LittleEndian.PutUint64(byteData[i*8:], word)
 	}
-	fmt.Printf("ByteData result: %x\n", byteData) // to see result
+
+	// To verify from web https://emn178.github.io/online-tools/keccak_256.html
+	fmt.Printf("ByteData result after padding, before Keccak256 hashing: \n%x\n", byteData)
+
 	return byteData
 }
 
 func CairoKeccak(input []uint64, lastInputWord uint64, lastInputNumBytes int) ([]byte, error) {
+	//Add Padding to the input
 	paddedInput, err := AddPadding(input, lastInputWord, lastInputNumBytes)
 	if err != nil {
 		return nil, err
 	}
-
+	//convert from uint64 to byte slice and then apply Keccak
 	return Keccak256(ConvertToByteData(paddedInput))
 }
 

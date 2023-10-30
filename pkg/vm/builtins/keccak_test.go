@@ -187,25 +187,38 @@ func TestCairoKeccak(t *testing.T) {
 
 func TestKeccakU256sLEInputs(t *testing.T) {
 	cases := []struct {
-		input    uint256.Int
+		input    interface{}
 		expected string
 	}{
 		{
-			input:    *uint256.NewInt(1),
+			input:    uint64(1),
 			expected: "173af0af902b536af63b93f3f6dc2d7369e5b06780ffe7ce5892797e2bb1d23b",
 		},
 		{
-			input:    *uint256.NewInt(123456789),
+			input:    uint256.NewInt(123456789),
 			expected: "350187ae11fa6a4e2feead1a234e3d700888faec6db7b99cfeb99d08cd21f383",
 		},
 		{
-			input:    *uint256.NewInt(1).Lsh(uint256.NewInt(1), 256).Sub(uint256.NewInt(1), uint256.NewInt(1)),
+			input:    uint256.NewInt(1).Lsh(uint256.NewInt(1), 256).Sub(uint256.NewInt(1), uint256.NewInt(1)),
 			expected: "b6b62fa9dcc719ee570994c986575cdc696fe70949d66ef63248ab4302563bcd",
+		},
+		{
+			input:    createUint256IntFromBytes([]byte{1, 2, 3, 4}), // Create a uint256.Int from byte slice
+			expected: "0b162d3055df4f1f6f28b54c2fca57cb224c2b2f00e266ea305213d62b0447c6",
+		},
+		{
+			input:    StringToUint256("Hello world"), // convert string to uint256
+			expected: "7eb2e382db7d2a31f2400a62c39e4ec5486d76734442402731987b8c99280fea",
 		},
 	}
 
 	for _, c := range cases {
-		hash, err := KeccakU256sLEInputs(c.input)
+		convInput := ConvertToUint256(c.input)
+		if convInput == nil {
+			t.Errorf("Conversion to uint256.Int failed for input: %v", c.input)
+			continue
+		}
+		hash, err := KeccakU256sLEInputs(*convInput)
 		if err != nil {
 			t.Errorf("KeccakU256sLEInputs returned an error: %v", err)
 		}
@@ -223,13 +236,50 @@ func TestKeccakU256sLEInputs(t *testing.T) {
 	}
 }
 
+// Helper Function for converting various inputs to uint256
+func ConvertToUint256(input interface{}) *uint256.Int {
+	switch v := input.(type) {
+	case string:
+		// Convert string to uint256.Int
+		return StringToUint256(v)
+	case []byte:
+		// Convert byte slice to uint256.Int
+		return createUint256IntFromBytes(v)
+	case uint64:
+		// Convert uint64 to uint256.Int
+		return uint256.NewInt(v)
+	case *uint256.Int:
+		// Directly use the *uint256.Int
+		return v
+	default:
+		return nil // or handle error
+	}
+}
+
+// This function converts a string to a uint256.Int by taking the byte representation
+// of the string and using it as the least significant bytes of the uint256.Int.
+// This is for testing purposes.
+func StringToUint256(s string) *uint256.Int {
+	bytes := []byte(s)
+	intVal := uint256.NewInt(0)
+
+	// This loop adds each byte into the uint256.Int. It's a simple conversion and
+	// doesn't handle strings longer than 32 bytes (256 bits).
+	for _, b := range bytes {
+		intVal.Lsh(intVal, 8)                        // Shift left by 8 bits to make room for the next byte
+		intVal.Or(intVal, uint256.NewInt(uint64(b))) // Add the new byte
+	}
+
+	return intVal
+}
+
 // Helper function to convert a byte slice into a uint256.Int
-func createUint256IntFromBytes(b []byte) uint256.Int {
+func createUint256IntFromBytes(b []byte) *uint256.Int {
 	// Pad the byte slice to 32 bytes if necessary
 	for len(b) < 32 {
 		b = append(b, 0)
 	}
 	value := new(uint256.Int)
 	value.SetBytes(b)
-	return *value
+	return value
 }
