@@ -1,7 +1,9 @@
 package hintrunner
 
 import (
+	"io"
 	"math/big"
+	"os"
 	"testing"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -232,11 +234,46 @@ func TestWideMul128IncorrectRange(t *testing.T) {
 	require.ErrorContains(t, err, "should be u128")
 }
 
-func TestSquareRoot(t *testing.T) {
+func TestDebugPrint(t *testing.T) {
+	//Save the old stdout
+	rescueStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
+	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 2))
+	writeTo(vm, VM.ExecutionSegment, 1, memory.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 5))
+	writeTo(vm, VM.ExecutionSegment, 2, memory.MemoryValueFromInt(10))
+	writeTo(vm, VM.ExecutionSegment, 3, memory.MemoryValueFromInt(20))
+	writeTo(vm, VM.ExecutionSegment, 4, memory.MemoryValueFromInt(30))
+
+	var starRef ApCellRef = 0
+	var endRef ApCellRef = 1
+	start := Deref{starRef}
+	end := Deref{endRef}
+	hint := DebugPrint{
+		start: start,
+		end:   end,
+	}
+	expected := []byte("[DEBUG] a\n[DEBUG] 14\n[DEBUG] 1e\n")
+	err := hint.Execute(vm)
+
+	w.Close()
+	out, _ := io.ReadAll(r)
+	//Restore stdout at the end of the test
+	os.Stdout = rescueStdout
+
+	require.NoError(t, err)
+	require.Equal(t, expected, out)
+}
+
+func TestSquareRoot(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
 	var dst ApCellRef = 1
 
 	value := Immediate(*big.NewInt(36))
