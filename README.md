@@ -84,6 +84,18 @@ If you want to execute all tests of the project:
 make testall
 ```
 
+To benchmark the project run:
+
+```bash
+make bench
+```
+
+This will calculate the millionth Fibonacci number and store the execution information in a _cpu.out_ and _mem.out_ files. To graphically display them please run this command with either of those files:
+
+```bash
+go tool pprof -http=:8080 cpu.out
+```
+
 
 ### Useful Commands
 
