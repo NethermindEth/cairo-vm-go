@@ -115,3 +115,32 @@ func BenchmarkWideMul128(b *testing.B) {
 		vm.Context.Ap += 2
 	}
 }
+
+func BenchmarkLinearSplit(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var x ApCellRef = 0
+	var y ApCellRef = 1
+	for i := 0; i < b.N; i++ {
+		value := Immediate(*big.NewInt(rand.Int63()))
+		scalar := Immediate(*big.NewInt(rand.Int63()))
+		maxX := Immediate(*big.NewInt(rand.Int63()))
+		hint := LinearSplit{
+			value:  value,
+			scalar: scalar,
+			maxX:   maxX,
+			x:      x,
+			y:      y,
+		}
+
+		err := hint.Execute(vm)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+		vm.Context.Ap += 2
+	}
+
+}

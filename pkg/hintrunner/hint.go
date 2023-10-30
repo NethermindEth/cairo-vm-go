@@ -141,6 +141,86 @@ func (hint TestLessThanOrEqual) Execute(vm *VM.VirtualMachine) error {
 	return nil
 }
 
+type LinearSplit struct {
+	value  ResOperander
+	scalar ResOperander
+	maxX   ResOperander
+	x      CellRefer
+	y      CellRefer
+}
+
+func (hint LinearSplit) Execute(vm *VM.VirtualMachine) error {
+	value, err := hint.value.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve value operand %s: %w", hint.value, err)
+	}
+	valueField, err := value.FieldElement()
+	if err != nil {
+		return err
+	}
+	scalar, err := hint.scalar.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve scalar operand %s: %w", hint.scalar, err)
+	}
+	scalarField, err := scalar.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	maxX, err := hint.maxX.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve max_x operand %s: %w", hint.maxX, err)
+	}
+	maxXField, err := maxX.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	scalarBytes := scalarField.Bytes()
+	valueBytes := valueField.Bytes()
+	maxXBytes := maxXField.Bytes()
+	scalarUint := new(uint256.Int).SetBytes(scalarBytes[:])
+	valueUint := new(uint256.Int).SetBytes(valueBytes[:])
+	maxXUint := new(uint256.Int).SetBytes(maxXBytes[:])
+
+	x := (&uint256.Int{}).Div(valueUint, scalarUint)
+
+	if x.Cmp(maxXUint) > 0 {
+		x.Set(maxXUint)
+	}
+
+	y := &uint256.Int{}
+	y = y.Sub(valueUint, y.Mul(scalarUint, x))
+
+	xAddr, err := hint.x.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get x address %s: %w", xAddr, err)
+	}
+
+	yAddr, err := hint.y.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get y address %s: %w", yAddr, err)
+	}
+
+	xFiled := &f.Element{}
+	yFiled := &f.Element{}
+	xFiled.SetBytes(x.Bytes())
+	yFiled.SetBytes(y.Bytes())
+	mv := memory.MemoryValueFromFieldElement(xFiled)
+	err = vm.Memory.WriteToAddress(&xAddr, &mv)
+	if err != nil {
+		return fmt.Errorf("write to x address %s: %w", xAddr, err)
+	}
+
+	mv = memory.MemoryValueFromFieldElement(yFiled)
+	err = vm.Memory.WriteToAddress(&yAddr, &mv)
+	if err != nil {
+		return fmt.Errorf("write to y address %s: %w", yAddr, err)
+
+	}
+	return nil
+}
+
 type WideMul128 struct {
 	lhs  ResOperander
 	rhs  ResOperander
@@ -212,7 +292,6 @@ func (hint WideMul128) Execute(vm *VM.VirtualMachine) error {
 	if err != nil {
 		return fmt.Errorf("write cell: %v", err)
 	}
-
 	return nil
 }
 
