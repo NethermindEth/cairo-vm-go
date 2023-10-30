@@ -218,7 +218,7 @@ func TestKeccakU256sLEInputs(t *testing.T) {
 			t.Errorf("Conversion to uint256.Int failed for input: %v", c.input)
 			continue
 		}
-		hash, err := KeccakU256sLEInputs(*convInput)
+		hash, err := KeccakU256sLEInputs([]uint256.Int{*convInput})
 		if err != nil {
 			t.Errorf("KeccakU256sLEInputs returned an error: %v", err)
 		}
@@ -282,4 +282,57 @@ func createUint256IntFromBytes(b []byte) *uint256.Int {
 	value := new(uint256.Int)
 	value.SetBytes(b)
 	return value
+}
+
+// BE (Big Endian)
+
+func TestKeccakU256sBEInputs(t *testing.T) {
+	cases := []struct {
+		input    interface{}
+		expected string
+	}{
+		{
+			input:    uint64(1),
+			expected: "bc142d192087ce36660c866a686ee4b129ad5591ecb90152c2fc373793a2dcb5",
+		},
+		{
+			input:    uint256.NewInt(123456789),
+			expected: "b29ac0dd0032cc7e4f979c07c5c2b631eb5fb6438cda0b2e09990f5b5264e9be",
+		},
+		{
+			input:    uint256.NewInt(1).Lsh(uint256.NewInt(1), 256).Sub(uint256.NewInt(1), uint256.NewInt(1)),
+			expected: "97a2173291d40ef311333110eb76dd78bd4b38ae6d510eded63831d76c069514",
+		},
+		{
+			input:    createUint256IntFromBytes([]byte{1, 2, 3, 4}), // Create a uint256.Int from byte slice
+			expected: "6bcb98eb7d2cd01c55f355cf4ec727573517c1101d35eb0445f741029ec7694b",
+		},
+		{
+			input:    StringToUint256("Hello world"), // convert string to uint256
+			expected: "7e98083eaca37e63048eb2863b36d14ffe3a5a331346e9cd968329c76dfac50d",
+		},
+	}
+
+	for _, c := range cases {
+		convInput := ConvertToUint256(c.input)
+		if convInput == nil {
+			t.Errorf("Conversion to uint256.Int failed for input: %v", c.input)
+			continue
+		}
+		hash, err := KeccakU256sBEInputs([]uint256.Int{*convInput})
+		if err != nil {
+			t.Errorf("KeccakU256sLEInputs returned an error: %v", err)
+		}
+
+		// Convert the expected hex string to bytes for comparison
+		expectedBytes, err := hex.DecodeString(c.expected)
+		if err != nil {
+			t.Errorf("Failed to decode expected hex string: %v", err)
+		}
+
+		// Compare the hash with the expected bytes
+		if len(hash) != len(expectedBytes) || !bytes.Equal(hash, expectedBytes) {
+			t.Errorf("KeccakU256sLEInputs = %x, want %x", hash, expectedBytes)
+		}
+	}
 }

@@ -142,9 +142,12 @@ func KeccakAddU256LE(keccakInput []uint64, value *uint256.Int) []uint64 {
 // 3 adds padding to the array
 // 4 put that array into keccak hashing
 
-func KeccakU256sLEInputs(input uint256.Int) ([]byte, error) {
-	keccakInput := KeccakAddU256LE([]uint64{}, &input) // 1,2 combined
-	return CairoKeccak(keccakInput, 0, 0)              // 3,4 combined
+func KeccakU256sLEInputs(inputs []uint256.Int) ([]byte, error) {
+	var keccakInput []uint64
+	for _, input := range inputs {
+		keccakInput = KeccakAddU256LE(keccakInput, &input)
+	}
+	return CairoKeccak(keccakInput, 0, 0)
 }
 
 //Big Endian way codes
@@ -164,10 +167,11 @@ func ReverseBytes128(value *uint256.Int) *uint256.Int {
 }
 
 func KeccakAddU256BE(keccakInput []uint64, value *uint256.Int) []uint64 {
+	valueCopy := new(uint256.Int).Set(value)
 	valueHigh, valueLow := new(uint256.Int), new(uint256.Int)
-	valueHigh.Rsh(value, 128)
+	valueHigh.Rsh(valueCopy, 128)
 	maxU128 := hintrunner.MaxU128()
-	valueLow.And(value, &maxU128)
+	valueLow.And(valueCopy, &maxU128)
 
 	reversedHigh := ReverseBytes128(valueHigh)
 	reversedLow := ReverseBytes128(valueLow)
@@ -177,10 +181,10 @@ func KeccakAddU256BE(keccakInput []uint64, value *uint256.Int) []uint64 {
 	return keccakInput
 }
 
-func KeccakU256sBEInputs(inputs []*uint256.Int) ([]byte, error) {
+func KeccakU256sBEInputs(inputs []uint256.Int) ([]byte, error) {
 	var keccakInput []uint64
 	for _, value := range inputs {
-		keccakInput = KeccakAddU256BE(keccakInput, value)
+		keccakInput = KeccakAddU256BE(keccakInput, &value)
 	}
 	return CairoKeccak(keccakInput, 0, 0)
 }
