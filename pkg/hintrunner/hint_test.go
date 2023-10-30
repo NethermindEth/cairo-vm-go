@@ -176,6 +176,54 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 	)
 }
 
+func TestLinearSplit(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	value := Immediate(*big.NewInt(42*223344 + 14))
+	scalar := Immediate(*big.NewInt(42))
+	maxX := Immediate(*big.NewInt(9999999999))
+	var x ApCellRef = 0
+	var y ApCellRef = 1
+
+	hint := LinearSplit{
+		value:  value,
+		scalar: scalar,
+		maxX:   maxX,
+		x:      x,
+		y:      y,
+	}
+
+	err := hint.Execute(vm)
+	require.NoError(t, err)
+	xx := readFrom(vm, VM.ExecutionSegment, 0)
+	require.Equal(t, xx, memory.MemoryValueFromInt(223344))
+	yy := readFrom(vm, VM.ExecutionSegment, 1)
+	require.Equal(t, yy, memory.MemoryValueFromInt(14))
+
+	vm = defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	//Lower max_x
+	maxX = Immediate(*big.NewInt(223343))
+	hint = LinearSplit{
+		value:  value,
+		scalar: scalar,
+		maxX:   maxX,
+		x:      x,
+		y:      y,
+	}
+
+	err = hint.Execute(vm)
+	require.NoError(t, err)
+	xx = readFrom(vm, VM.ExecutionSegment, 0)
+	require.Equal(t, xx, memory.MemoryValueFromInt(223343))
+	yy = readFrom(vm, VM.ExecutionSegment, 1)
+	require.Equal(t, yy, memory.MemoryValueFromInt(14+42))
+}
+
 func TestWideMul128(t *testing.T) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
