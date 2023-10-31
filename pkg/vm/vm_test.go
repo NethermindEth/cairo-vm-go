@@ -2,6 +2,7 @@ package vm
 
 import (
 	"encoding/binary"
+	"fmt"
 	"testing"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -956,6 +957,74 @@ func TestAssertEqualInstruction(t *testing.T) {
 		mv, err := vm.Memory.Read(ExecutionSegment, vm.Context.Ap+1)
 		require.NoError(t, err)
 		assert.Equal(t, mem.MemoryValueFromInt(5), mv)
+	})
+
+}
+
+func TestJumpInstruction(t *testing.T) {
+	hintrunner := noHintRunner{}
+	setInitialReg := func(vm *VirtualMachine, regvals ...uint64) {
+		if len(regvals) != 3 {
+			panic("expected three register values")
+		}
+		vm.Context.Ap = regvals[0]
+		vm.Context.Fp = regvals[1]
+		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: regvals[2]}
+	}
+
+	t.Run("test rel jump e.g (pc + n)", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("jmp rel [ap + 1] + [fp];")
+		setInitialReg(vm, 1, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Ap+1, 1)
+		writeToDataSegment(vm, vm.Context.Fp, 7)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Pc.Offset, uint64(8))
+
+	})
+
+	t.Run("test abs jump", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("jmp abs 123;")
+		setInitialReg(vm, 1, 1, 0)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Pc.Offset, uint64(123))
+
+	})
+
+	t.Run("test conditional jump, if <op> != 0", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("jmp rel [ap - 1] if [fp + 2] != 0;")
+		setInitialReg(vm, 1, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Ap-1, 4)
+		writeToDataSegment(vm, vm.Context.Fp+2, 5)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		fmt.Printf("Address: %d\n", vm.Context.AddressPc())
+
+		assert.Equal(t, vm.Context.Pc.Offset, uint64(4))
+
+	})
+
+	t.Run("test conditional jump, if <op> == 0", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("jmp rel [ap - 1] if [fp + 2] != 0;")
+		setInitialReg(vm, 1, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Ap-1, 3)
+		writeToDataSegment(vm, vm.Context.Fp+2, 0)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Pc.Offset, uint64(1))
+
 	})
 
 }

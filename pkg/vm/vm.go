@@ -408,12 +408,20 @@ func (vm *VirtualMachine) updatePc(
 			SegmentIndex: vm.Context.Pc.SegmentIndex,
 			Offset:       vm.Context.Pc.Offset + uint64(instruction.Size()),
 		}, nil
+	// case a.PcUpdateJump:
+	// 	addr, err := res.MemoryAddress()
+	// 	if err != nil {
+	// 		return mem.UnknownAddress, fmt.Errorf("absolute jump: %w", err)
+	// 	}
+	// 	return *addr, nil
 	case a.PcUpdateJump:
-		addr, err := res.MemoryAddress()
+		addr, err := res.FieldElement()
 		if err != nil {
 			return mem.UnknownAddress, fmt.Errorf("absolute jump: %w", err)
 		}
-		return *addr, nil
+		newPc := vm.Context.Pc
+		err = newPc.Add(&newPc, addr)
+		return newPc, err
 	case a.PcUpdateJumpRel:
 		val, err := res.FieldElement()
 		if err != nil {
