@@ -131,6 +131,9 @@ func (e *Expression) AsMathOperation() *MathOperation {
 }
 
 func (e *Expression) AsImmediate() *string {
+	if e.Immediate == nil {
+		return nil
+	}
 	if e.Immediate.Sign != "" {
 		immediate := signedString(e.Immediate.Sign == "-", *e.Immediate.Value)
 		return &immediate

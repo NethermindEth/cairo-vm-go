@@ -102,7 +102,7 @@ func TestAssertEqualWithImmediateGrammar(t *testing.T) {
 						},
 						Value: &Expression{
 							Immediate: &ImmediateValue{
-								Sign:  "+",
+								Sign:  "",
 								Value: ptrOf(5),
 							},
 						},
