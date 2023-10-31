@@ -423,8 +423,7 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	root.Sqrt(&value)
 
 	// remainder = value - root ** 2
-	var root2 *uint256.Int
-	// root2 := root.Clone()
+	root2 := root.Clone()
 	root2.Mul(root, root)
 	remainder := value.Clone()
 	remainder.Sub(&value, root2)
