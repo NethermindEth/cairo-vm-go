@@ -414,19 +414,20 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 
 	// value = {value_low} + {value_high} * 2**128
 	valueLowU256 := uint256.Int(valueLowFelt.Bits())
-	valueHighU256 := uint256.Int(valueHighFelt.Bits())
-	valueHighU256.Lsh(&valueHighU256, 128)
-	value := valueHighU256.Add(&valueHighU256, &valueLowU256)
+	value := uint256.Int(valueHighFelt.Bits())
+	value.Lsh(&value, 128)
+	value.Add(&value, &valueLowU256)
 
 	// root = math.isqrt(value)
 	root := value.Clone()
-	root.Sqrt(value)
+	root.Sqrt(&value)
 
 	// remainder = value - root ** 2
-	root2 := root.Clone()
+	var root2 *uint256.Int
+	// root2 := root.Clone()
 	root2.Mul(root, root)
 	remainder := value.Clone()
-	remainder.Sub(value, root2)
+	remainder.Sub(&value, root2)
 
 	// memory{sqrt0} = root & 0xFFFFFFFFFFFFFFFF
 	// memory{sqrt1} = root >> 64
@@ -437,11 +438,9 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 
 	sqrt0 := f.Element{}
 	sqrt0.SetBytes(rootMasked.Bytes())
-	fmt.Println(rootMasked.Dec())
 
 	sqrt1 := f.Element{}
 	sqrt1.SetBytes(rootShifted.Bytes())
-	fmt.Println(rootShifted.Dec())
 
 	sqrt0Addr, err := hint.sqrt0.Get(vm)
 	if err != nil {
