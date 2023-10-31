@@ -50,10 +50,10 @@ type ApPlus struct {
 }
 
 type Expression struct {
-	DoubleDeref   *DoubleDeref   `@@ |`
-	MathOperation *MathOperation `@@ |`
-	Deref         *Deref         `@@ |`
-	Immediate     *string        `@Int`
+	DoubleDeref   *DoubleDeref    `@@ |`
+	MathOperation *MathOperation  `@@ |`
+	Deref         *Deref          `@@ |`
+	Immediate     *ImmediateValue `@@`
 }
 
 type Deref struct {
@@ -80,6 +80,11 @@ type MathOperation struct {
 type DerefOrImm struct {
 	Deref     *Deref  `@@ |`
 	Immediate *string `@Int`
+}
+
+type ImmediateValue struct {
+	Sign  string `@("+" | "-")?`
+	Value *int   `@Int`
 }
 
 // AST Functionality
@@ -126,7 +131,12 @@ func (e *Expression) AsMathOperation() *MathOperation {
 }
 
 func (e *Expression) AsImmediate() *string {
-	return e.Immediate
+	if e.Immediate.Sign != "" {
+		immediate := signedString(e.Immediate.Sign == "-", *e.Immediate.Value)
+		return &immediate
+	}
+	immediate := signedString(false, *e.Immediate.Value)
+	return &immediate
 }
 
 func (di *DerefOrImm) AsDeref() *Deref {
@@ -170,4 +180,11 @@ func signedOffset(neg bool, value int) (int16, error) {
 		return 0, fmt.Errorf("offset value outside of (-2**16, 2**16)")
 	}
 	return int16(value), nil
+}
+
+func signedString(neg bool, value int) string {
+	if neg {
+		return fmt.Sprintf("-%d", value)
+	}
+	return fmt.Sprintf("%d", value)
 }

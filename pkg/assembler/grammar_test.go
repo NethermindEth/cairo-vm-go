@@ -101,7 +101,10 @@ func TestAssertEqualWithImmediateGrammar(t *testing.T) {
 							},
 						},
 						Value: &Expression{
-							Immediate: ptrOf("5"),
+							Immediate: &ImmediateValue{
+								Sign:  "+",
+								Value: ptrOf(5),
+							},
 						},
 					},
 					ApPlusOne: false,
