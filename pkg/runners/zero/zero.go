@@ -105,11 +105,9 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) 
 		return mem.MemoryAddress{SegmentIndex: vm.ProgramSegment, Offset: endPcOffset}, nil
 	}
 
-	returnFp := mem.MemoryValueFromSegmentAndOffset(
-		memory.AllocateEmptySegment(),
-		0,
-	)
-	return runner.InitializeEntrypoint("main", nil, &returnFp, memory)
+	returnFp := memory.AllocateEmptySegment()
+	mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
+	return runner.InitializeEntrypoint("main", nil, &mvReturnFp, memory)
 }
 
 func (runner *ZeroRunner) InitializeEntrypoint(
@@ -124,10 +122,7 @@ func (runner *ZeroRunner) InitializeEntrypoint(
 	for i := range arguments {
 		stack = append(stack, mem.MemoryValueFromFieldElement(arguments[i]))
 	}
-	end := mem.MemoryAddress{
-		SegmentIndex: uint64(memory.AllocateEmptySegment()),
-		Offset:       0,
-	}
+	end := memory.AllocateEmptySegment()
 
 	stack = append(stack, *returnFp, mem.MemoryValueFromMemoryAddress(&end))
 	return end, runner.initializeVm(&mem.MemoryAddress{
@@ -141,7 +136,7 @@ func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) []mem.MemoryVal
 	for _, builtin := range runner.program.Builtins {
 		bRunner := builtins.Runner(builtin)
 		builtinSegment := memory.AllocateBuiltinSegment(bRunner)
-		stack = append(stack, mem.MemoryValueFromSegmentAndOffset(builtinSegment, 0))
+		stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
 	}
 	return stack
 }
@@ -178,7 +173,7 @@ func (runner *ZeroRunner) RunUntilPc(pc *mem.MemoryAddress) error {
 				runner.maxsteps,
 			)
 		}
-		if err := runner.vm.RunStep(runner.hintrunner); err != nil {
+		if err := runner.vm.RunStep(&runner.hintrunner); err != nil {
 			return fmt.Errorf("pc %s step %d: %w", runner.pc(), runner.steps(), err)
 		}
 	}
@@ -196,7 +191,7 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 				runner.maxsteps,
 			)
 		}
-		if err := runner.vm.RunStep(runner.hintrunner); err != nil {
+		if err := runner.vm.RunStep(&runner.hintrunner); err != nil {
 			return fmt.Errorf(
 				"pc %s step %d: %w",
 				runner.pc(),
