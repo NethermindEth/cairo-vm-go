@@ -144,3 +144,37 @@ func BenchmarkLinearSplit(b *testing.B) {
 	}
 
 }
+
+func BenchmarkUint256SquareRoot(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var sqrt0 ApCellRef = 1
+	var sqrt1 ApCellRef = 2
+	var remainderLow ApCellRef = 3
+	var remainderHigh ApCellRef = 4
+	var sqrtMul2MinusRemainderGeU128 ApCellRef = 5
+
+	for i := 0; i < b.N; i++ {
+		valueLow := Immediate(*big.NewInt(rand.Int63()))
+		valueHigh := Immediate(*big.NewInt(rand.Int63()))
+		hint := Uint256SquareRoot{
+			valueLow:                     valueLow,
+			valueHigh:                    valueHigh,
+			sqrt0:                        sqrt0,
+			sqrt1:                        sqrt1,
+			remainderLow:                 remainderLow,
+			remainderHigh:                remainderHigh,
+			sqrtMul2MinusRemainderGeU128: sqrtMul2MinusRemainderGeU128,
+		}
+
+		err := hint.Execute(vm)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+		vm.Context.Ap += 5
+	}
+
+}
