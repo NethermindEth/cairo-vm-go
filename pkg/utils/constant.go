@@ -1,4 +1,4 @@
-package safemath
+package utils
 
 import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
