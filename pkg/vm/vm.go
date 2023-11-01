@@ -408,18 +408,21 @@ func (vm *VirtualMachine) updatePc(
 			SegmentIndex: vm.Context.Pc.SegmentIndex,
 			Offset:       vm.Context.Pc.Offset + uint64(instruction.Size()),
 		}, nil
-	// case a.PcUpdateJump:
-	// 	addr, err := res.MemoryAddress()
-	// 	if err != nil {
-	// 		return mem.UnknownAddress, fmt.Errorf("absolute jump: %w", err)
-	// 	}
-	// 	return *addr, nil
 	case a.PcUpdateJump:
-		addr, err := res.MemoryAddress()
-		if err != nil {
-			return mem.UnknownAddress, fmt.Errorf("absolute jump: %w", err)
+		// both address and felt are allowed here. It can be a felt when used
+		// with an immediate or a memory address holding a felt. It can be an address
+		// when a memory address holds a memory address
+		if addr, err := res.MemoryAddress(); err == nil {
+			return *addr, nil
+		} else if val, err := res.Uint64(); err == nil {
+			return mem.MemoryAddress{
+				SegmentIndex: vm.Context.Pc.SegmentIndex,
+				Offset:       val,
+			}, nil
+		} else {
+			return mem.UnknownAddress,
+				fmt.Errorf("absolute jump: invalid jump location: %w", err)
 		}
-		return *addr, nil
 
 	case a.PcUpdateJumpRel:
 		val, err := res.FieldElement()

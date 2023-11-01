@@ -683,17 +683,28 @@ func TestUpdatePcNextInstrImm(t *testing.T) {
 func TestUpdatePcJump(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
-	jumpAddr := uint64(10)
-	res := mem.MemoryValueFromSegmentAndOffset(0, jumpAddr)
-
 	instruction := a.Instruction{
 		PcUpdate: a.PcUpdateJump,
 	}
-	nextPc, err := vm.updatePc(&instruction, nil, nil, &res)
 
-	require.NoError(t, err)
-	assert.Equal(t, mem.MemoryAddress{SegmentIndex: 0, Offset: jumpAddr}, nextPc)
+	jumpAddrs := []mem.MemoryValue{
+		mem.MemoryValueFromInt(10),
+		mem.MemoryValueFromSegmentAndOffset(4, 5),
+	}
+	expectedPcs := []mem.MemoryAddress{
+		{SegmentIndex: 0, Offset: 10},
+		{SegmentIndex: 4, Offset: 5},
+	}
+
+	for i := range jumpAddrs {
+		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
+		jumpAddr := jumpAddrs[i]
+		expectedPc := expectedPcs[i]
+
+		nextPc, err := vm.updatePc(&instruction, nil, nil, &jumpAddr)
+		require.NoError(t, err)
+		assert.Equal(t, expectedPc, nextPc)
+	}
 }
 
 func TestUpdatePcJumpRel(t *testing.T) {
@@ -972,7 +983,28 @@ func TestJumpInstruction(t *testing.T) {
 		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: regvals[2]}
 	}
 
-	t.Run("test rel jump ", func(t *testing.T) {
+	t.Run("test abs jump with immediate", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("jmp abs 15;")
+		setInitialReg(vm, 1, 1, 0)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Pc.Offset, uint64(15))
+	})
+	t.Run("test abs jump with address", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("jmp abs [ap];")
+		setInitialReg(vm, 1, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Ap, &mem.MemoryAddress{SegmentIndex: 15, Offset: 18})
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Pc, mem.MemoryAddress{SegmentIndex: 15, Offset: 18})
+	})
+
+	t.Run("test rel jump", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("jmp rel [ap + 1] + [fp];")
 		setInitialReg(vm, 1, 1, 0)
 
