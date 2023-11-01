@@ -516,7 +516,7 @@ type GetSegmentArenaIndex struct {
 }
 
 func (hint *GetSegmentArenaIndex) String() string {
-	return "FeltGetSegmentArenaIndex"
+	return "GetSegmentArenaIndex"
 }
 
 func (hint *GetSegmentArenaIndex) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {

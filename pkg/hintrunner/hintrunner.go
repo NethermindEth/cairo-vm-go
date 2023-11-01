@@ -62,10 +62,10 @@ func (dm *DictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddr
 // segment is associated with the given segment index, it errors
 func (dm *DictionaryManager) GetDictionary(dictAddr *mem.MemoryAddress) (Dictionary, error) {
 	dict, ok := dm.dictionaries[dictAddr.SegmentIndex]
-	if !ok {
-		return Dictionary{}, fmt.Errorf("no dictionary at address %s", dictAddr)
+	if ok {
+		return dict, nil
 	}
-	return dict, nil
+	return Dictionary{}, fmt.Errorf("no dictionary at address %s", dictAddr)
 }
 
 // Given a memory address and a key it returns the value held at that position. The address is used
