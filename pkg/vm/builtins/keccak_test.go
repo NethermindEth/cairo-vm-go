@@ -47,9 +47,10 @@ func TestKeccakBuiltin(t *testing.T) {
 	k, err := segment.Read(9)
 	require.NoError(t, err)
 	ans, err := k.FieldElement()
-	//require.NoError(t, err)
+	require.NoError(t, err)
 	expected := fp.NewElement(0)
-	expected.SetString("0x7a753f70755cbbde7882962e5969b2874c2dff11a91716ab31")
+	_, err = expected.SetString("0x7a753f70755cbbde7882962e5969b2874c2dff11a91716ab31")
+	require.NoError(t, err)
 	assert.Equal(t, ans, &expected)
 }
 
