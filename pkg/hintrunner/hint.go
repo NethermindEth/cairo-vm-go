@@ -419,21 +419,21 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	value.Add(&value, &valueLowU256)
 
 	// root = math.isqrt(value)
-	root := value.Clone()
+	root := uint256.Int{}
 	root.Sqrt(&value)
 
 	// remainder = value - root ** 2
-	root2 := root.Clone()
-	root2.Mul(root, root)
-	remainder := value.Clone()
-	remainder.Sub(&value, root2)
+	root2 := uint256.Int{}
+	root2.Mul(&root, &root)
+	remainder := uint256.Int{}
+	remainder.Sub(&value, &root2)
 
 	// memory{sqrt0} = root & 0xFFFFFFFFFFFFFFFF
 	// memory{sqrt1} = root >> 64
 	mask64 := uint256.NewInt(0xFFFFFFFFFFFFFFFF)
-	rootMasked := root.Clone()
-	rootMasked.And(root, mask64)
-	rootShifted := root.Rsh(root, 64)
+	rootMasked := uint256.Int{}
+	rootMasked.And(&root, mask64)
+	rootShifted := root.Rsh(&root, 64)
 
 	sqrt0 := f.Element{}
 	sqrt0.SetBytes(rootMasked.Bytes())
@@ -468,13 +468,13 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	mask128 := uint256.NewInt(0xFFFFFFFFFFFFFFFF)
 	mask128.Lsh(mask128, 64)
 	mask128.Or(mask128, mask64)
-	remainderMasked := remainder.Clone()
-	remainderMasked.And(remainder, mask128)
+	remainderMasked := uint256.Int{}
+	remainderMasked.And(&remainder, mask128)
 	remainderLow := f.Element{}
 	remainderLow.SetBytes(remainderMasked.Bytes())
 
-	remainderShifted := remainder.Clone()
-	remainderShifted.Rsh(remainder, 128)
+	remainderShifted := uint256.Int{}
+	remainderShifted.Rsh(&remainder, 128)
 	remainderHigh := f.Element{}
 	remainderHigh.SetBytes(remainderShifted.Bytes())
 
@@ -501,15 +501,15 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	}
 
 	// memory{sqrt_mul_2_minus_remainder_ge_u128} = root * 2 - remainder >= 2**128
-	rootMul2 := root.Clone()
-	rootMul2.Lsh(root, 1)
-	lhs := rootMul2.Clone()
-	lhs.Sub(rootMul2, remainder)
+	rootMul2 := uint256.Int{}
+	rootMul2.Lsh(&root, 1)
+	lhs := uint256.Int{}
+	lhs.Sub(&rootMul2, &remainder)
 
 	rhs := uint256.NewInt(1)
 	rhs.Lsh(rhs, 128)
 	// rhs.Mul(mask128, mask128)
-	result := rhs.Gt(lhs)
+	result := rhs.Gt(&lhs)
 	result = !result
 
 	sqrtMul2MinusRemainderGeU128 := f.Element{}
