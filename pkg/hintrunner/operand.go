@@ -27,7 +27,7 @@ func (ap ApCellRef) String() string {
 func (ap ApCellRef) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
 	res, overflow := utils.SafeOffset(vm.Context.Ap, int16(ap))
 	if overflow {
-		return mem.UnknownAddress, utils.NewSafeOffsetError(vm.Context.Ap, int16(ap))
+		return mem.UnknownAddress, fmt.Errorf("overflow %d + %d", vm.Context.Ap, int16(ap))
 	}
 	return mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
 }
@@ -41,7 +41,7 @@ func (fp FpCellRef) String() string {
 func (fp FpCellRef) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
 	res, overflow := utils.SafeOffset(vm.Context.Fp, int16(fp))
 	if overflow {
-		return mem.MemoryAddress{}, utils.NewSafeOffsetError(vm.Context.Ap, int16(fp))
+		return mem.UnknownAddress, fmt.Errorf("overflow %d + %d", vm.Context.Fp, int16(fp))
 	}
 	return mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
 }
@@ -94,7 +94,7 @@ func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error
 
 	newOffset, overflow := utils.SafeOffset(address.Offset, dderef.offset)
 	if overflow {
-		return mem.UnknownValue, utils.NewSafeOffsetError(address.Offset, dderef.offset)
+		return mem.UnknownValue, fmt.Errorf("overflow %d + %d", address.Offset, dderef.offset)
 	}
 	resAddr := mem.MemoryAddress{
 		SegmentIndex: address.SegmentIndex,
