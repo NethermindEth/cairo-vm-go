@@ -2,7 +2,6 @@ package vm
 
 import (
 	"encoding/binary"
-	"fmt"
 	"testing"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -1027,8 +1026,6 @@ func TestJumpInstruction(t *testing.T) {
 
 		err := vm.RunStep(&hintrunner)
 		require.NoError(t, err)
-
-		fmt.Printf("Address: %d\n", vm.Context.AddressPc())
 
 		assert.Equal(t, vm.Context.Pc.Offset, uint64(4))
 
