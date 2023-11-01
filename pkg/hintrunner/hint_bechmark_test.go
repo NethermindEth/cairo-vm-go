@@ -48,7 +48,7 @@ func BenchmarkLessThan(b *testing.B) {
 			memory.MemoryValueFromInt(rand.Int63()),
 		)
 		rhs := Deref{rhsRef}
-		lhs := Immediate(randomIntElement(rand))
+		lhs := Immediate(randomFeltElement(rand))
 
 		hint := TestLessThan{
 			dst: dst,
@@ -163,22 +163,6 @@ func randomFeltElement(rand *rand.Rand) f.Element {
 		rand.Uint64(),
 	}
 	return f.Element(data)
-}
-
-func randomIntElement(rand *rand.Rand) f.Element {
-	el := rand.Int63()
-	if el > 0 {
-		return f.NewElement(uint64(el))
-	}
-
-	zero := f.Element{}
-	sub := f.NewElement(uint64(-el))
-	zero.Sub(&zero, &sub)
-	return zero
-}
-
-func randomUintElement(rand *rand.Rand) f.Element {
-	return f.NewElement(rand.Uint64())
 }
 
 func defaultRandGenerator() *rand.Rand {

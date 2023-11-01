@@ -182,9 +182,9 @@ func TestLinearSplit(t *testing.T) {
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	value := Immediate(*big.NewInt(42*223344 + 14))
-	scalar := Immediate(*big.NewInt(42))
-	maxX := Immediate(*big.NewInt(9999999999))
+	value := Immediate(f.NewElement(42*223344 + 14))
+	scalar := Immediate(f.NewElement(42))
+	maxX := Immediate(f.NewElement(9999999999))
 	var x ApCellRef = 0
 	var y ApCellRef = 1
 
@@ -208,7 +208,7 @@ func TestLinearSplit(t *testing.T) {
 	vm.Context.Fp = 0
 
 	//Lower max_x
-	maxX = Immediate(*big.NewInt(223343))
+	maxX = Immediate(f.NewElement(223343))
 	hint = LinearSplit{
 		value:  value,
 		scalar: scalar,
@@ -351,13 +351,13 @@ func TestSquareRoot(t *testing.T) {
 	)
 
 	dst = 2
-	value = Immediate(*big.NewInt(30))
+	value = Immediate(f.NewElement(30))
 	hint = SquareRoot{
 		value: value,
 		dst:   dst,
 	}
 
-	err = hint.Execute(vm)
+	err = hint.Execute(vm, nil)
 
 	require.NoError(t, err)
 	require.Equal(
