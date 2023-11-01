@@ -74,10 +74,11 @@ func BenchmarkSquareRoot(b *testing.B) {
 
 	var dst ApCellRef = 1
 
+	rand := defaultRandGenerator()
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		//TODO: Change to rand.Uint64()
-		value := Immediate(f.NewElement(uint64(i * i)))
+		value := Immediate(randomFeltElement(rand))
 		hint := SquareRoot{
 			value: value,
 			dst:   dst,
