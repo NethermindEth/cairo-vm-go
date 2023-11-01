@@ -2,13 +2,80 @@ package builtins
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 )
+
+const KeccakName = "keccak"
+const cellsPerKeccak = 16
+const inputCellsPerKeccak = 8
+
+type Keccak struct {
+}
+
+func (k *Keccak) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
+	return nil
+}
+
+func (k *Keccak) InferValue(segment *memory.Segment, offset uint64) error {
+	hashIndex := offset % cellsPerKeccak
+	if hashIndex < inputCellsPerKeccak {
+		return errors.New("cannot infer value")
+	}
+
+	startOffset := offset - hashIndex
+	var data [200]byte
+	for i := uint64(0); i < inputCellsPerKeccak; i++ {
+		value := segment.Peek(startOffset + i)
+		if !value.Known() {
+			return fmt.Errorf("cannot infer value: input value at offset %d is unknown", startOffset+i)
+		}
+		v, err := value.FieldElement()
+		if err != nil {
+			return fmt.Errorf("Keccak input has to be felt")
+		}
+		var out [32]byte
+		fp.LittleEndian.PutElement(&out, *v)
+		copy(data[i*25:i*25+25], out[:25]) //25*8 = 200bits
+	}
+
+	var dataU64 [25]uint64
+	for i := 0; i < 25; i++ {
+		dataU64[i] = binary.LittleEndian.Uint64(data[8*i : 8*i+8])
+	}
+
+	out := keccakF1600(dataU64)
+
+	var output [200]byte
+	for i := 0; i < 25; i++ {
+		v := binary.LittleEndian.AppendUint64(nil, out[i])
+		copy(output[i*8:i*8+8], v)
+	}
+
+	for i := 0; i < inputCellsPerKeccak; i++ {
+		var bytes [32]byte
+		copy(bytes[:], output[i*25:i*25+25])
+		//Only 200 bits so always fits, no need to check error
+		v, _ := fp.LittleEndian.Element(&bytes)
+		mv := memory.MemoryValueFromFieldElement(&v)
+		err := segment.Write(startOffset+inputCellsPerKeccak+uint64(i), &mv)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (k *Keccak) String() string {
+	return KeccakName
+}
 
 const (
 	KECCAK_FULL_RATE_IN_U64S  = 17
