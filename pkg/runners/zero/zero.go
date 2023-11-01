@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
-	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -57,7 +57,7 @@ func (runner *ZeroRunner) Run() error {
 	if runner.proofmode {
 		// +1 because proof mode require an extra instruction run
 		// pow2 because proof mode also requires that the trace is a power of two
-		pow2Steps := safemath.NextPowerOfTwo(runner.vm.Step + 1)
+		pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
 		if err := runner.RunFor(pow2Steps); err != nil {
 			return err
 		}
