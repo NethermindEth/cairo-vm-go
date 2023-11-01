@@ -156,8 +156,8 @@ func (sdm *SquashedDictionaryManager) LastIndex() (uint64, error) {
 	}
 
 	indices := sdm.KeyToIndices[key]
-	if indices == nil || len(indices) == 0 {
-		return 0, fmt.Errorf("no indices for key %s", key)
+	if len(indices) == 0 {
+		return 0, fmt.Errorf("no indices for key %s", &key)
 	}
 
 	return indices[len(indices)-1], nil
@@ -171,8 +171,8 @@ func (sdm *SquashedDictionaryManager) PopIndex() (uint64, error) {
 	}
 
 	indices := sdm.KeyToIndices[key]
-	if indices == nil || len(indices) == 0 {
-		return 0, fmt.Errorf("no indices for key %s", key)
+	if len(indices) == 0 {
+		return 0, fmt.Errorf("no indices for key %s", &key)
 	}
 
 	index := indices[len(indices)-1]
