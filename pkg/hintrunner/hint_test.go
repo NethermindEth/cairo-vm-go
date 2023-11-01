@@ -338,4 +338,20 @@ func TestSquareRoot(t *testing.T) {
 		memory.MemoryValueFromInt(6),
 		readFrom(vm, VM.ExecutionSegment, 1),
 	)
+
+	dst = 2
+	value = Immediate(*big.NewInt(30))
+	hint = SquareRoot{
+		value: value,
+		dst:   dst,
+	}
+
+	err = hint.Execute(vm)
+
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		memory.MemoryValueFromInt(5),
+		readFrom(vm, VM.ExecutionSegment, 2),
+	)
 }

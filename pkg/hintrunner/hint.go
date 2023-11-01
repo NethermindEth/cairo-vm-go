@@ -362,14 +362,19 @@ func (hint SquareRoot) Execute(vm *VM.VirtualMachine) error {
 		return err
 	}
 
-	sqrt := valueFelt.Sqrt(valueFelt)
+	// Need to do this conversion to handle non-square values
+	valueU256 := uint256.Int(valueFelt.Bits())
+	valueU256.Sqrt(&valueU256)
+
+	sqrt := f.Element{}
+	sqrt.SetBytes(valueU256.Bytes())
 
 	dstAddr, err := hint.dst.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
 
-	dstVal := memory.MemoryValueFromFieldElement(sqrt)
+	dstVal := memory.MemoryValueFromFieldElement(&sqrt)
 	err = vm.Memory.WriteToAddress(&dstAddr, &dstVal)
 	if err != nil {
 		return fmt.Errorf("write cell: %v", err)
