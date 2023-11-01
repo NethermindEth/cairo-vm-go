@@ -185,7 +185,7 @@ func TestWideMul128(t *testing.T) {
 	var dstLow ApCellRef = 1
 	var dstHigh ApCellRef = 2
 
-	lhsBytes := uint256.NewInt(1).Lsh(uint256.NewInt(1), 127).Bytes32()
+	lhsBytes := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
 	lhsFelt, err := f.BigEndian.Element(&lhsBytes)
 	require.NoError(t, err)
 
@@ -227,7 +227,7 @@ func TestWideMul128IncorrectRange(t *testing.T) {
 	var dstLow ApCellRef = 1
 	var dstHigh ApCellRef = 2
 
-	lhsBytes := uint256.NewInt(1).Lsh(uint256.NewInt(1), 128).Bytes32()
+	lhsBytes := new(uint256.Int).Lsh(uint256.NewInt(1), 128).Bytes32()
 	lhsFelt, err := f.BigEndian.Element(&lhsBytes)
 	require.NoError(t, err)
 
