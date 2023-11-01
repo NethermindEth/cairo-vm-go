@@ -415,13 +415,12 @@ func (vm *VirtualMachine) updatePc(
 	// 	}
 	// 	return *addr, nil
 	case a.PcUpdateJump:
-		addr, err := res.FieldElement()
+		addr, err := res.MemoryAddress()
 		if err != nil {
 			return mem.UnknownAddress, fmt.Errorf("absolute jump: %w", err)
 		}
-		newPc := vm.Context.Pc
-		err = newPc.Add(&newPc, addr)
-		return newPc, err
+		return *addr, nil
+
 	case a.PcUpdateJumpRel:
 		val, err := res.FieldElement()
 		if err != nil {

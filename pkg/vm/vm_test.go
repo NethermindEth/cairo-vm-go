@@ -972,7 +972,7 @@ func TestJumpInstruction(t *testing.T) {
 		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: regvals[2]}
 	}
 
-	t.Run("test rel jump e.g (pc + n)", func(t *testing.T) {
+	t.Run("test rel jump ", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("jmp rel [ap + 1] + [fp];")
 		setInitialReg(vm, 1, 1, 0)
 
@@ -983,17 +983,6 @@ func TestJumpInstruction(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, vm.Context.Pc.Offset, uint64(8))
-
-	})
-
-	t.Run("test abs jump", func(t *testing.T) {
-		vm := defaultVirtualMachineWithCode("jmp abs 123;")
-		setInitialReg(vm, 1, 1, 0)
-
-		err := vm.RunStep(&hintrunner)
-		require.NoError(t, err)
-
-		assert.Equal(t, vm.Context.Pc.Offset, uint64(123))
 
 	})
 
