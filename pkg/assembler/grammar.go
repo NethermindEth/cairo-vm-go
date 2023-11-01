@@ -83,8 +83,8 @@ type DerefOrImm struct {
 }
 
 type ImmediateValue struct {
-	Sign  string `@("+" | "-")?`
-	Value *int   `@Int`
+	Sign  string  `@("+" | "-")?`
+	Value *string `@Int`
 }
 
 // AST Functionality
@@ -185,9 +185,9 @@ func signedOffset(neg bool, value int) (int16, error) {
 	return int16(value), nil
 }
 
-func signedString(neg bool, value int) string {
+func signedString(neg bool, value string) string {
 	if neg {
-		return fmt.Sprintf("-%d", value)
+		return fmt.Sprintf("-%s", value)
 	}
-	return fmt.Sprintf("%d", value)
+	return value
 }
