@@ -120,37 +120,64 @@ func (sdm *SquashedDictionaryManager) Insert(key *f.Element, index uint64) {
 }
 
 // It returns the smallest key in the key list
-func (sdm *SquashedDictionaryManager) LastKey() f.Element {
-	return sdm.Keys[len(sdm.Keys)-1]
+func (sdm *SquashedDictionaryManager) LastKey() (f.Element, error) {
+	if len(sdm.Keys) == 0 {
+		return f.Element{}, fmt.Errorf("no keys left")
+	}
+	return sdm.Keys[len(sdm.Keys)-1], nil
 }
 
 // It pops out the smallest key in the key list
-func (sdm *SquashedDictionaryManager) PopKey() f.Element {
-	key := sdm.LastKey()
+func (sdm *SquashedDictionaryManager) PopKey() (f.Element, error) {
+	key, err := sdm.LastKey()
+	if err != nil {
+		return key, err
+	}
+
 	sdm.Keys = sdm.Keys[:len(sdm.Keys)-1]
-	return key
+	return key, nil
 }
 
 // It returns the list of indices associated to the smallest key
-func (sdm *SquashedDictionaryManager) LastIndices() []uint64 {
-	key := sdm.LastKey()
-	return sdm.KeyToIndices[key]
+func (sdm *SquashedDictionaryManager) LastIndices() ([]uint64, error) {
+	key, err := sdm.LastKey()
+	if err != nil {
+		return nil, err
+	}
+
+	return sdm.KeyToIndices[key], nil
 }
 
 // It returns smallest index associated with the smallest key
-func (sdm *SquashedDictionaryManager) LastIndex() uint64 {
-	key := sdm.LastKey()
+func (sdm *SquashedDictionaryManager) LastIndex() (uint64, error) {
+	key, err := sdm.LastKey()
+	if err != nil {
+		return 0, err
+	}
+
 	indices := sdm.KeyToIndices[key]
-	return indices[len(indices)-1]
+	if indices == nil || len(indices) == 0 {
+		return 0, fmt.Errorf("no indices for key %s", key)
+	}
+
+	return indices[len(indices)-1], nil
 }
 
 // It pops out smallest index associated with the smallest key
-func (sdm *SquashedDictionaryManager) PopIndex() uint64 {
-	key := sdm.LastKey()
+func (sdm *SquashedDictionaryManager) PopIndex() (uint64, error) {
+	key, err := sdm.LastKey()
+	if err != nil {
+		return 0, err
+	}
+
 	indices := sdm.KeyToIndices[key]
+	if indices == nil || len(indices) == 0 {
+		return 0, fmt.Errorf("no indices for key %s", key)
+	}
+
 	index := indices[len(indices)-1]
 	sdm.KeyToIndices[key] = indices[:len(indices)-1]
-	return index
+	return index, nil
 }
 
 // Global context to keep track of different results across different

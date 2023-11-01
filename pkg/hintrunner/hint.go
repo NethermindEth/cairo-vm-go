@@ -471,6 +471,7 @@ func (hint *InitSquashData) String() string {
 }
 
 func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	// todo(rodro): Don't know if it could be called multiple times, or
 	err := InitializeSquashedDictionaryManager(ctx)
 	if err != nil {
 		return err
@@ -531,9 +532,12 @@ func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContex
 	if err != nil {
 		return fmt.Errorf("get first key address: %w", err)
 	}
-	firstKey := ctx.SquashedDictionaryManager.LastKey()
-	mv := mem.MemoryValueFromFieldElement(&firstKey)
+	firstKey, err := ctx.SquashedDictionaryManager.LastKey()
+	if err != nil {
+		return fmt.Errorf("get first key: %w", err)
+	}
 
+	mv := mem.MemoryValueFromFieldElement(&firstKey)
 	return vm.Memory.WriteToAddress(&firstKeyAddr, &mv)
 }
 
@@ -551,9 +555,12 @@ func (hint *GetCurrentAccessIndex) Execute(vm *VM.VirtualMachine, ctx *HintRunne
 		return fmt.Errorf("resolve range check pointer: %w", err)
 	}
 
-	lastIndex := f.NewElement(
-		ctx.SquashedDictionaryManager.LastIndex(),
-	)
+	lastIndex64, err := ctx.SquashedDictionaryManager.LastIndex()
+	if err != nil {
+		return fmt.Errorf("get last index: %w", err)
+	}
+
+	lastIndex := f.NewElement(lastIndex64)
 	mv := mem.MemoryValueFromFieldElement(&lastIndex)
 
 	return vm.Memory.WriteToAddress(&rangeCheckPtr, &mv)
@@ -574,8 +581,10 @@ func (hint *ShouldSkipSquashLoop) Execute(vm *VM.VirtualMachine, ctx *HintRunner
 	}
 
 	var shouldSkipLoop f.Element
-	if len(ctx.SquashedDictionaryManager.LastIndices()) > 1 {
+	if lastIndices, err := ctx.SquashedDictionaryManager.LastIndices(); err == nil && len(lastIndices) > 1 {
 		shouldSkipLoop.SetOne()
+	} else if err != nil {
+		return fmt.Errorf("get last indices: %w", err)
 	}
 
 	mv := mem.MemoryValueFromFieldElement(&shouldSkipLoop)
@@ -596,8 +605,15 @@ func (hint *GetCurrentAccessDelta) Execute(vm *VM.VirtualMachine, ctx *HintRunne
 		return fmt.Errorf("get index delta address: %w", err)
 	}
 
-	previousKeyIndex := ctx.SquashedDictionaryManager.PopIndex()
-	currentKeyIndex := ctx.SquashedDictionaryManager.LastIndex()
+	previousKeyIndex, err := ctx.SquashedDictionaryManager.PopIndex()
+	if err != nil {
+		return fmt.Errorf("pop index: %w", err)
+	}
+
+	currentKeyIndex, err := ctx.SquashedDictionaryManager.LastIndex()
+	if err != nil {
+		return fmt.Errorf("get last index: %w", err)
+	}
 
 	// todo(rodro): could previousKeyIndex be bigger than currentKeyIndex?
 	indexDeltaMinusOne := currentKeyIndex - previousKeyIndex - 1
@@ -621,8 +637,10 @@ func (hint *ShouldContinueSquashLoop) Execute(vm *VM.VirtualMachine, ctx *HintRu
 	}
 
 	var shouldContinueLoop f.Element
-	if len(ctx.SquashedDictionaryManager.LastIndices()) <= 1 {
+	if lastIndices, err := ctx.SquashedDictionaryManager.LastIndices(); err == nil && len(lastIndices) <= 1 {
 		shouldContinueLoop.SetOne()
+	} else if err != nil {
+		return fmt.Errorf("get last indices: %w", err)
 	}
 
 	mv := mem.MemoryValueFromFieldElement(&shouldContinueLoop)
@@ -643,8 +661,11 @@ func (hint *GetNextDictKey) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContex
 		return fmt.Errorf("get next key address: %w", err)
 	}
 
-	nextKey := ctx.SquashedDictionaryManager.PopKey()
-	mv := mem.MemoryValueFromFieldElement(&nextKey)
+	nextKey, err := ctx.SquashedDictionaryManager.PopKey()
+	if err != nil {
+		return fmt.Errorf("pop key: %w", err)
+	}
 
+	mv := mem.MemoryValueFromFieldElement(&nextKey)
 	return vm.Memory.WriteToAddress(&nextKeyAddr, &mv)
 }
