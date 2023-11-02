@@ -78,8 +78,8 @@ type MathOperation struct {
 }
 
 type DerefOrImm struct {
-	Deref     *Deref  `@@ |`
-	Immediate *string `@Int`
+	Deref     *Deref          `@@ |`
+	Immediate *ImmediateValue `@@`
 }
 
 type ImmediateValue struct {
@@ -134,12 +134,11 @@ func (e *Expression) AsImmediate() *string {
 	if e.Immediate == nil {
 		return nil
 	}
-	if e.Immediate.Sign != "" {
-		immediate := signedString(e.Immediate.Sign == "-", *e.Immediate.Value)
-		return &immediate
+	if e.Immediate.Sign == "-" {
+		imm := fmt.Sprintf("-%s", *e.Immediate.Value)
+		return &imm
 	}
-	immediate := signedString(false, *e.Immediate.Value)
-	return &immediate
+	return e.Immediate.Value
 }
 
 func (di *DerefOrImm) AsDeref() *Deref {
@@ -154,7 +153,14 @@ func (di *DerefOrImm) AsMathOperation() *MathOperation {
 	return nil
 }
 func (di *DerefOrImm) AsImmediate() *string {
-	return di.Immediate
+	if di.Immediate == nil {
+		return nil
+	}
+	if di.Immediate.Sign == "-" {
+		imm := fmt.Sprintf("-%s", *di.Immediate.Value)
+		return &imm
+	}
+	return di.Immediate.Value
 }
 
 func (deref *Deref) IsFp() bool {
@@ -183,11 +189,4 @@ func signedOffset(neg bool, value int) (int16, error) {
 		return 0, fmt.Errorf("offset value outside of (-2**16, 2**16)")
 	}
 	return int16(value), nil
-}
-
-func signedString(neg bool, value string) string {
-	if neg {
-		return fmt.Sprintf("-%s", value)
-	}
-	return value
 }

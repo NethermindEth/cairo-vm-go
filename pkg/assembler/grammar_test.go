@@ -142,7 +142,10 @@ func TestAssertEqualWithMathOperationGrammar(t *testing.T) {
 								},
 								Operator: "+",
 								Rhs: &DerefOrImm{
-									Immediate: ptrOf("5"),
+									Immediate: &ImmediateValue{
+										Sign:  "",
+										Value: ptrOf("5"),
+									},
 								},
 							},
 						},
@@ -169,7 +172,10 @@ func TestCallAbsGrammar(t *testing.T) {
 					Call: &Call{
 						CallType: "abs",
 						Value: &DerefOrImm{
-							Immediate: ptrOf("123"),
+							Immediate: &ImmediateValue{
+								Sign:  "",
+								Value: ptrOf("123"),
+							},
 						},
 					},
 					ApPlusOne: false,
@@ -246,6 +252,68 @@ func TestJumpGrammar(t *testing.T) {
 			casmAst,
 		)
 	}
+}
+
+func TestCallAbsGrammarNegativeImmediateGrammar(t *testing.T) {
+	code := "call abs -123;"
+
+	casmAst, err := parseCode(code)
+	require.NoError(t, err)
+
+	require.Equal(
+		t,
+		&CasmProgram{
+			[]InstructionNode{
+				{
+					Call: &Call{
+						CallType: "abs",
+						Value: &DerefOrImm{
+							Immediate: &ImmediateValue{
+								Sign:  "-",
+								Value: ptrOf("123"),
+							},
+						},
+					},
+					ApPlusOne: false,
+				},
+			},
+		},
+		casmAst,
+	)
+}
+
+func TestAssertEqualWithNegativeImmediateGrammar(t *testing.T) {
+	code := "[fp + 1] = -5;"
+
+	casmAst, err := parseCode(code)
+	require.NoError(t, err)
+
+	require.Equal(
+		t,
+		&CasmProgram{
+			[]InstructionNode{
+				{
+					AssertEq: &AssertEq{
+						Dst: &Deref{
+							Name: "fp",
+							Offset: &Offset{
+								Sign:  "+",
+								Value: ptrOf(1),
+							},
+						},
+						Value: &Expression{
+							Immediate: &ImmediateValue{
+								Sign:  "-",
+								Value: ptrOf("5"),
+							},
+						},
+					},
+					ApPlusOne: false,
+				},
+			},
+		},
+		casmAst,
+	)
 }
 
 func ptrOf[T any](n T) *T {
