@@ -508,15 +508,12 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 
 	rhs := uint256.NewInt(1)
 	rhs.Lsh(rhs, 128)
-	// rhs.Mul(mask128, mask128)
 	result := rhs.Gt(&lhs)
 	result = !result
 
 	sqrtMul2MinusRemainderGeU128 := f.Element{}
 	if result {
 		sqrtMul2MinusRemainderGeU128.SetOne()
-	} else {
-		sqrtMul2MinusRemainderGeU128.SetZero()
 	}
 
 	sqrtMul2MinusRemainderGeU128Addr, err := hint.sqrtMul2MinusRemainderGeU128.Get(vm)
