@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 
@@ -237,7 +237,7 @@ func KeccakAddU256BE(keccakInput []uint64, value *uint256.Int) []uint64 {
 	valueCopy := new(uint256.Int).Set(value)
 	valueHigh, valueLow := new(uint256.Int), new(uint256.Int)
 	valueHigh.Rsh(valueCopy, 128)
-	maxU128 := safemath.Uint256Max128
+	maxU128 := utils.Uint256Max128
 	valueLow.And(valueCopy, &maxU128)
 
 	reversedHigh := ReverseBytes128(valueHigh)
