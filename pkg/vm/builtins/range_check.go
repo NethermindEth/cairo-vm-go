@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
@@ -19,7 +19,7 @@ func (r *RangeCheck) CheckWrite(segment *memory.Segment, offset uint64, value *m
 	}
 
 	// felt >= (2^128)
-	if felt.Cmp(&safemath.FeltMax128) != -1 {
+	if felt.Cmp(&utils.FeltMax128) != -1 {
 		return fmt.Errorf("check write: 2**128 < %s", value)
 	}
 	return nil

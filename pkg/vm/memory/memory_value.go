@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"golang.org/x/exp/constraints"
 )
@@ -26,7 +26,7 @@ func (address *MemoryAddress) Equal(other *MemoryAddress) bool {
 
 // It crates a new memory address with the modified offset
 func (address *MemoryAddress) AddOffset(offset int16) (MemoryAddress, error) {
-	newOffset, overflow := safemath.SafeOffset(address.Offset, offset)
+	newOffset, overflow := utils.SafeOffset(address.Offset, offset)
 	if overflow {
 		return UnknownAddress,
 			fmt.Errorf(
