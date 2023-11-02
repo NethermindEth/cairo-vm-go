@@ -1,6 +1,7 @@
 package hintrunner
 
 import (
+	"encoding/binary"
 	"math/rand"
 	"testing"
 
@@ -103,11 +104,10 @@ func BenchmarkWideMul128(b *testing.B) {
 	var dstLow ApCellRef = 0
 	var dstHigh ApCellRef = 1
 
-	rand := defaultRandGenerator()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		lhs := Immediate(randomFeltElement(rand))
-		rhs := Immediate(randomFeltElement(rand))
+		lhs := Immediate(randomFeltElementU128())
+		rhs := Immediate(randomFeltElementU128())
 
 		hint := WideMul128{
 			low:  dstLow,
@@ -164,6 +164,16 @@ func randomFeltElement(rand *rand.Rand) f.Element {
 		rand.Uint64(),
 	}
 	return f.Element(data)
+}
+
+func randomFeltElementU128() f.Element {
+	b := [32]byte{}
+	v := binary.BigEndian.AppendUint64(nil, rand.Uint64())
+	copy(b[24:32], v)
+	v = binary.BigEndian.AppendUint64(nil, rand.Uint64())
+	copy(b[16:24], v)
+	f, _ := f.BigEndian.Element(&b)
+	return f
 }
 
 func defaultRandGenerator() *rand.Rand {
