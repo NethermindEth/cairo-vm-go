@@ -3,7 +3,7 @@ package hintrunner
 import (
 	"fmt"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -25,9 +25,9 @@ func (ap ApCellRef) String() string {
 }
 
 func (ap ApCellRef) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
-	res, overflow := safemath.SafeOffset(vm.Context.Ap, int16(ap))
+	res, overflow := utils.SafeOffset(vm.Context.Ap, int16(ap))
 	if overflow {
-		return mem.UnknownAddress, safemath.NewSafeOffsetError(vm.Context.Ap, int16(ap))
+		return mem.UnknownAddress, fmt.Errorf("overflow %d + %d", vm.Context.Ap, int16(ap))
 	}
 	return mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
 }
@@ -39,9 +39,9 @@ func (fp FpCellRef) String() string {
 }
 
 func (fp FpCellRef) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
-	res, overflow := safemath.SafeOffset(vm.Context.Fp, int16(fp))
+	res, overflow := utils.SafeOffset(vm.Context.Fp, int16(fp))
 	if overflow {
-		return mem.MemoryAddress{}, safemath.NewSafeOffsetError(vm.Context.Ap, int16(fp))
+		return mem.UnknownAddress, fmt.Errorf("overflow %d + %d", vm.Context.Fp, int16(fp))
 	}
 	return mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
 }
@@ -92,9 +92,9 @@ func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error
 		return mem.UnknownValue, err
 	}
 
-	newOffset, overflow := safemath.SafeOffset(address.Offset, dderef.offset)
+	newOffset, overflow := utils.SafeOffset(address.Offset, dderef.offset)
 	if overflow {
-		return mem.UnknownValue, safemath.NewSafeOffsetError(address.Offset, dderef.offset)
+		return mem.UnknownValue, fmt.Errorf("overflow %d + %d", address.Offset, dderef.offset)
 	}
 	resAddr := mem.MemoryAddress{
 		SegmentIndex: address.SegmentIndex,

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	a "github.com/NethermindEth/cairo-vm-go/pkg/assembler"
-	safemath "github.com/NethermindEth/cairo-vm-go/pkg/safemath"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -215,7 +215,7 @@ func (vm *VirtualMachine) getDstAddr(instruction *a.Instruction) (mem.MemoryAddr
 		dstRegister = vm.Context.Fp
 	}
 
-	addr, isOverflow := safemath.SafeOffset(dstRegister, instruction.OffDest)
+	addr, isOverflow := utils.SafeOffset(dstRegister, instruction.OffDest)
 	if isOverflow {
 		return mem.UnknownAddress, fmt.Errorf("offset overflow: %d + %d", dstRegister, instruction.OffDest)
 	}
@@ -230,7 +230,7 @@ func (vm *VirtualMachine) getOp0Addr(instruction *a.Instruction) (mem.MemoryAddr
 		op0Register = vm.Context.Fp
 	}
 
-	addr, isOverflow := safemath.SafeOffset(op0Register, instruction.OffOp0)
+	addr, isOverflow := utils.SafeOffset(op0Register, instruction.OffOp0)
 	if isOverflow {
 		return mem.UnknownAddress,
 			fmt.Errorf("offset overflow: %d + %d", op0Register, instruction.OffOp0)
@@ -261,7 +261,7 @@ func (vm *VirtualMachine) getOp1Addr(instruction *a.Instruction, op0Addr *mem.Me
 		op1Address = vm.Context.AddressAp()
 	}
 
-	newOffset, isOverflow := safemath.SafeOffset(op1Address.Offset, instruction.OffOp1)
+	newOffset, isOverflow := utils.SafeOffset(op1Address.Offset, instruction.OffOp1)
 	if isOverflow {
 		return mem.UnknownAddress, fmt.Errorf("offset overflow: %d + %d", op1Address.Offset, instruction.OffOp1)
 	}
