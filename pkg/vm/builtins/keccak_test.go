@@ -112,8 +112,7 @@ func TestU128Split(t *testing.T) {
 	}
 }
 
-func TestAddPaddingPlainCase(t *testing.T) {
-	// Define your test cases as a table
+func TestAddPadding(t *testing.T) {
 	testCases := []struct {
 		input             []uint64
 		lastInputWord     uint64
@@ -171,30 +170,6 @@ func TestAddPaddingPlainCase(t *testing.T) {
 	}
 }
 
-func TestAddPaddingOperandCase(t *testing.T) {
-	// Define your test cases as a table
-	testCases := []struct {
-		input             []uint64
-		lastInputWord     uint64
-		lastInputNumBytes int
-		expected          []uint64
-	}{
-		{
-			input:             []uint64{0x1234567890abcdef},
-			lastInputWord:     0xabcdef,
-			lastInputNumBytes: 3,
-			expected:          []uint64{0x1234567890abcdef, 0x1000000 + 0xabcdef, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x8000000000000000},
-		},
-	}
-
-	for _, testCase := range testCases {
-		result, err := AddPadding(testCase.input, testCase.lastInputWord, testCase.lastInputNumBytes)
-		if assert.NoError(t, err) {
-			assert.Equal(t, testCase.expected, result)
-		}
-	}
-}
-
 func TestCairoKeccak(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -221,7 +196,6 @@ func TestCairoKeccak(t *testing.T) {
 			hashHex := hex.EncodeToString(res)
 			fmt.Println("the hash is: ", hashHex)
 
-			// Compare the obtained hash with the expected hash.
 			assert.Equal(t, tt.expectedHash, hashHex, "Expected %s, got %s", tt.expectedHash, hashHex)
 		})
 	}
@@ -299,23 +273,19 @@ func ConvertToUint256(input interface{}) *uint256.Int {
 }
 
 // This function converts a string to a uint256.Int by taking the byte representation
-// of the string and using it as the least significant bytes of the uint256.Int.
-// This is for testing purposes.
 func StringToUint256(s string) *uint256.Int {
 	bytes := []byte(s)
 	intVal := uint256.NewInt(0)
 
-	// This loop adds each byte into the uint256.Int. It's a simple conversion and
-	// doesn't handle strings longer than 32 bytes (256 bits).
 	for _, b := range bytes {
-		intVal.Lsh(intVal, 8)                        // Shift left by 8 bits to make room for the next byte
-		intVal.Or(intVal, uint256.NewInt(uint64(b))) // Add the new byte
+		intVal.Lsh(intVal, 8)
+		intVal.Or(intVal, uint256.NewInt(uint64(b)))
 	}
 
 	return intVal
 }
 
-// Helper function to convert a byte slice into a uint256.Int
+// Converts a byte slice into a uint256.Int
 func createUint256IntFromBytes(b []byte) *uint256.Int {
 	// Pad the byte slice to 32 bytes if necessary
 	for len(b) < 32 {
@@ -326,8 +296,7 @@ func createUint256IntFromBytes(b []byte) *uint256.Int {
 	return value
 }
 
-// BE (Big Endian)
-
+// BE (Big Endian) Input Tests
 func TestKeccakU256sBEInputs(t *testing.T) {
 	cases := []struct {
 		input    interface{}
