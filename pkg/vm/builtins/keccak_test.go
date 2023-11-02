@@ -252,23 +252,19 @@ func TestKeccakU256sLEInputs(t *testing.T) {
 	}
 }
 
-// Helper Function for converting various inputs to uint256
+// Helper Function for converting various input types to uint256
 func ConvertToUint256(input interface{}) *uint256.Int {
 	switch v := input.(type) {
 	case string:
-		// Convert string to uint256.Int
 		return StringToUint256(v)
 	case []byte:
-		// Convert byte slice to uint256.Int
 		return createUint256IntFromBytes(v)
 	case uint64:
-		// Convert uint64 to uint256.Int
 		return uint256.NewInt(v)
 	case *uint256.Int:
-		// Directly use the *uint256.Int
 		return v
 	default:
-		return nil // or handle error
+		return nil
 	}
 }
 
