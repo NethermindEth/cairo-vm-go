@@ -59,7 +59,15 @@ func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
 		return fmt.Errorf("Signature is missing form ECDA builtin")
 	}
 	msgBytes := msgField.Bytes()
-	pubKey.Verify(sig.Bytes(), msgBytes[:], nil)
+	valid, err := pubKey.Verify(sig.Bytes(), msgBytes[:], nil)
+	if err != nil {
+		return err
+	}
+
+	if !valid {
+		return fmt.Errorf("Signature is not valid")
+	}
+
 	//TODO: Get r, s, pub and hash
 
 	return nil
