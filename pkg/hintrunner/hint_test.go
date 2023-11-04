@@ -462,10 +462,6 @@ func TestUint256SquareRootHigh(t *testing.T) {
 }
 
 func TestUint256SquareRoot(t *testing.T) {
-	vm := defaultVirtualMachine()
-	vm.Context.Ap = 0
-	vm.Context.Fp = 0
-
 	var sqrt0 ApCellRef = 1
 	var sqrt1 ApCellRef = 2
 	var remainderLow ApCellRef = 3
@@ -506,4 +502,142 @@ func TestUint256SquareRoot(t *testing.T) {
 	require.Equal(t, expectedRemainderLow, actualRemainderLow)
 	require.Equal(t, expectedRemainderHigh, actualRemainderHigh)
 	require.Equal(t, expectedSqrtMul2MinusRemainderGeU128, actualSqrtMul2MinusRemainderGeU128)
+}
+
+func TestUint512DivModByUint256(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var dstQuotient0 ApCellRef = 1
+	var dstQuotient1 ApCellRef = 2
+	var dstQuotient2 ApCellRef = 3
+	var dstQuotient3 ApCellRef = 4
+	var dstRemainder0 ApCellRef = 5
+	var dstRemainder1 ApCellRef = 6
+
+	dividend0 := Immediate(*big.NewInt(1).Lsh(big.NewInt(1), 127))
+	dividend1 := Immediate(*big.NewInt(1<<8 + 1))
+	dividend2 := Immediate(*big.NewInt(1).Lsh(big.NewInt(1), 127))
+	dividend3 := Immediate(*big.NewInt(1<<8 + 1))
+
+	divisor0 := Immediate(*big.NewInt(1<<8 + 1))
+	divisor1 := Immediate(*big.NewInt(1<<8 + 1))
+
+	hint := Uint512DivModByUint256{
+		dividend0:  dividend0,
+		dividend1:  dividend1,
+		dividend2:  dividend2,
+		dividend3:  dividend3,
+		divisor0:   divisor0,
+		divisor1:   divisor1,
+		quotient0:  dstQuotient0,
+		quotient1:  dstQuotient1,
+		quotient2:  dstQuotient2,
+		quotient3:  dstQuotient3,
+		remainder0: dstRemainder0,
+		remainder1: dstRemainder1,
+	}
+
+	err := hint.Execute(vm)
+	require.Nil(t, err)
+
+	quotient0 := &f.Element{}
+	val, ok := big.NewInt(1).SetString("170141183460469231731687303715884105730", 10)
+	require.True(t, ok)
+	quotient0.SetBigInt(val)
+
+	require.Equal(
+		t,
+		memory.MemoryValueFromFieldElement(quotient0),
+		readFrom(vm, VM.ExecutionSegment, 1),
+	)
+
+	quotient1 := &f.Element{}
+	val, ok = big.NewInt(1).SetString("662027951208051485337304683719393406", 10)
+	require.True(t, ok)
+	quotient1.SetBigInt(val)
+
+	require.Equal(
+		t,
+		memory.MemoryValueFromFieldElement(quotient1),
+		readFrom(vm, VM.ExecutionSegment, 2),
+	)
+
+	quotient2 := &f.Element{}
+	quotient2.SetOne()
+
+	require.Equal(
+		t,
+		memory.MemoryValueFromFieldElement(quotient2),
+		readFrom(vm, VM.ExecutionSegment, 3),
+	)
+
+	quotient3 := &f.Element{}
+	quotient3.SetZero()
+
+	require.Equal(
+		t,
+		memory.MemoryValueFromFieldElement(quotient3),
+		readFrom(vm, VM.ExecutionSegment, 4),
+	)
+
+	remainder0 := &f.Element{}
+	val, ok = big.NewInt(1).SetString("340282366920938463463374607431768210942", 10)
+	require.True(t, ok)
+	remainder0.SetBigInt(val)
+
+	require.Equal(
+		t,
+		memory.MemoryValueFromFieldElement(remainder0),
+		readFrom(vm, VM.ExecutionSegment, 5),
+	)
+
+	remainder1 := &f.Element{}
+	remainder1.SetZero()
+
+	require.Equal(
+		t,
+		memory.MemoryValueFromFieldElement(remainder1),
+		readFrom(vm, VM.ExecutionSegment, 6),
+	)
+}
+
+func TestUint512DivModByUint256DivisionByZero(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var dstQuotient0 ApCellRef = 1
+	var dstQuotient1 ApCellRef = 2
+	var dstQuotient2 ApCellRef = 3
+	var dstQuotient3 ApCellRef = 4
+	var dstRemainder0 ApCellRef = 5
+	var dstRemainder1 ApCellRef = 6
+
+	dividend0 := Immediate(*big.NewInt(1).Lsh(big.NewInt(1), 127))
+	dividend1 := Immediate(*big.NewInt(1<<8 + 1))
+	dividend2 := Immediate(*big.NewInt(1).Lsh(big.NewInt(1), 127))
+	dividend3 := Immediate(*big.NewInt(1<<8 + 1))
+
+	divisor0 := Immediate(*big.NewInt(0))
+	divisor1 := Immediate(*big.NewInt(0))
+
+	hint := Uint512DivModByUint256{
+		dividend0:  dividend0,
+		dividend1:  dividend1,
+		dividend2:  dividend2,
+		dividend3:  dividend3,
+		divisor0:   divisor0,
+		divisor1:   divisor1,
+		quotient0:  dstQuotient0,
+		quotient1:  dstQuotient1,
+		quotient2:  dstQuotient2,
+		quotient3:  dstQuotient3,
+		remainder0: dstRemainder0,
+		remainder1: dstRemainder1,
+	}
+
+	err := hint.Execute(vm)
+	require.ErrorContains(t, err, "division by zero")
 }
