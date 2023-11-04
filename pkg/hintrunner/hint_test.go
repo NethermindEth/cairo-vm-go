@@ -516,21 +516,25 @@ func TestUint512DivModByUint256(t *testing.T) {
 	var dstRemainder0 ApCellRef = 5
 	var dstRemainder1 ApCellRef = 6
 
-	dividend0 := Immediate(*big.NewInt(1).Lsh(big.NewInt(1), 127))
-	dividend1 := Immediate(*big.NewInt(1<<8 + 1))
-	dividend2 := Immediate(*big.NewInt(1).Lsh(big.NewInt(1), 127))
-	dividend3 := Immediate(*big.NewInt(1<<8 + 1))
+	b := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
 
-	divisor0 := Immediate(*big.NewInt(1<<8 + 1))
-	divisor1 := Immediate(*big.NewInt(1<<8 + 1))
+	dividend0Felt, err := f.BigEndian.Element(&b)
+	require.NoError(t, err)
+	dividend1Felt := f.NewElement(1<<8 + 1)
+	dividend2Felt, err := f.BigEndian.Element(&b)
+	require.NoError(t, err)
+	dividend3Felt := f.NewElement(1<<8 + 1)
+
+	divisor0Felt := f.NewElement(1<<8 + 1)
+	divisor1Felt := f.NewElement(1<<8 + 1)
 
 	hint := Uint512DivModByUint256{
-		dividend0:  dividend0,
-		dividend1:  dividend1,
-		dividend2:  dividend2,
-		dividend3:  dividend3,
-		divisor0:   divisor0,
-		divisor1:   divisor1,
+		dividend0:  Immediate(dividend0Felt),
+		dividend1:  Immediate(dividend1Felt),
+		dividend2:  Immediate(dividend2Felt),
+		dividend3:  Immediate(dividend3Felt),
+		divisor0:   Immediate(divisor0Felt),
+		divisor1:   Immediate(divisor1Felt),
 		quotient0:  dstQuotient0,
 		quotient1:  dstQuotient1,
 		quotient2:  dstQuotient2,
@@ -539,7 +543,7 @@ func TestUint512DivModByUint256(t *testing.T) {
 		remainder1: dstRemainder1,
 	}
 
-	err := hint.Execute(vm)
+	err = hint.Execute(vm)
 	require.Nil(t, err)
 
 	quotient0 := &f.Element{}
@@ -615,21 +619,25 @@ func TestUint512DivModByUint256DivisionByZero(t *testing.T) {
 	var dstRemainder0 ApCellRef = 5
 	var dstRemainder1 ApCellRef = 6
 
-	dividend0 := Immediate(*big.NewInt(1).Lsh(big.NewInt(1), 127))
-	dividend1 := Immediate(*big.NewInt(1<<8 + 1))
-	dividend2 := Immediate(*big.NewInt(1).Lsh(big.NewInt(1), 127))
-	dividend3 := Immediate(*big.NewInt(1<<8 + 1))
+	b := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
 
-	divisor0 := Immediate(*big.NewInt(0))
-	divisor1 := Immediate(*big.NewInt(0))
+	dividend0Felt, err := f.BigEndian.Element(&b)
+	require.NoError(t, err)
+	dividend1Felt := f.NewElement(1<<8 + 1)
+	dividend2Felt, err := f.BigEndian.Element(&b)
+	require.NoError(t, err)
+	dividend3Felt := f.NewElement(1<<8 + 1)
+
+	divisor0Felt := f.NewElement(0)
+	divisor1Felt := f.NewElement(0)
 
 	hint := Uint512DivModByUint256{
-		dividend0:  dividend0,
-		dividend1:  dividend1,
-		dividend2:  dividend2,
-		dividend3:  dividend3,
-		divisor0:   divisor0,
-		divisor1:   divisor1,
+		dividend0:  Immediate(dividend0Felt),
+		dividend1:  Immediate(dividend1Felt),
+		dividend2:  Immediate(dividend2Felt),
+		dividend3:  Immediate(dividend3Felt),
+		divisor0:   Immediate(divisor0Felt),
+		divisor1:   Immediate(divisor1Felt),
 		quotient0:  dstQuotient0,
 		quotient1:  dstQuotient1,
 		quotient2:  dstQuotient2,
@@ -638,6 +646,6 @@ func TestUint512DivModByUint256DivisionByZero(t *testing.T) {
 		remainder1: dstRemainder1,
 	}
 
-	err := hint.Execute(vm)
+	err = hint.Execute(vm)
 	require.ErrorContains(t, err, "division by zero")
 }
