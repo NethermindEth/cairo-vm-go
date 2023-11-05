@@ -873,7 +873,7 @@ func (r *noHintRunner) RunHint(_ *VirtualMachine) error {
 	return nil
 }
 
-func RunAssertEqualInstruction(t *testing.T) {
+func TestRunStepInstructions (t *testing.T){
 	hintrunner := noHintRunner{}
 	setInitialReg := func(vm *VirtualMachine, regvals ...uint64) {
 		if len(regvals) != 3 {
@@ -971,19 +971,6 @@ func RunAssertEqualInstruction(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, mem.MemoryValueFromInt(5), mv)
 	})
-
-}
-
-func TestRunStepInstructions (t *testing.T){
-	hintrunner := noHintRunner{}
-	setInitialReg := func(vm *VirtualMachine, regvals ...uint64) {
-		if len(regvals) != 3 {
-			panic("expected three register values")
-		}
-		vm.Context.Ap = regvals[0]
-		vm.Context.Fp = regvals[1]
-		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: regvals[2]}
-	}
 
 	t.Run("test advancing ap with expression", func(t *testing.T){
 		vm := defaultVirtualMachineWithCode("ap += [fp + 4] + [fp];")
