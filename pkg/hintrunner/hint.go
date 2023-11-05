@@ -6,7 +6,7 @@ import (
 
 	"github.com/holiman/uint256"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -235,7 +235,7 @@ func (hint *WideMul128) String() string {
 }
 
 func (hint *WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
-	mask := &safemath.Uint256Max128
+	mask := &utils.Uint256Max128
 
 	lhs, err := hint.lhs.Resolve(vm)
 	if err != nil {
@@ -404,7 +404,7 @@ func (hint *AllocFelt252Dict) Execute(vm *VM.VirtualMachine, ctx *HintRunnerCont
 	}
 
 	// find for the amount of initialized dicts
-	initializedDictsOffset, overflow := safemath.SafeOffset(arenaPtr.Offset, -2)
+	initializedDictsOffset, overflow := utils.SafeOffset(arenaPtr.Offset, -2)
 	if overflow {
 		return fmt.Errorf("look for initialized dicts: overflow: %s - 2", arenaPtr)
 	}
@@ -418,7 +418,7 @@ func (hint *AllocFelt252Dict) Execute(vm *VM.VirtualMachine, ctx *HintRunnerCont
 	}
 
 	// find for the segment info pointer
-	segmentInfoOffset, overflow := safemath.SafeOffset(arenaPtr.Offset, -3)
+	segmentInfoOffset, overflow := utils.SafeOffset(arenaPtr.Offset, -3)
 	if overflow {
 		return fmt.Errorf("look for segment info pointer: overflow: %s - 3", arenaPtr)
 	}
@@ -586,7 +586,7 @@ func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContex
 	}
 	for key, val := range ctx.SquashedDictionaryManager.KeyToIndices {
 		// reverse each indice access list per key
-		safemath.Reverse(val)
+		utils.Reverse(val)
 		// store each key
 		ctx.SquashedDictionaryManager.Keys = append(ctx.SquashedDictionaryManager.Keys, key)
 	}
@@ -603,7 +603,7 @@ func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContex
 	}
 	biggestKey := ctx.SquashedDictionaryManager.Keys[0]
 	cmpRes := mem.MemoryValueFromUint[uint64](0)
-	if biggestKey.Cmp(&safemath.FeltMax128) > 0 {
+	if biggestKey.Cmp(&utils.FeltMax128) > 0 {
 		cmpRes = mem.MemoryValueFromUint[uint64](1)
 	}
 	err = vm.Memory.WriteToAddress(&bigKeysAddr, &cmpRes)
