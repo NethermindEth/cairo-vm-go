@@ -873,7 +873,7 @@ func (r *noHintRunner) RunHint(_ *VirtualMachine) error {
 	return nil
 }
 
-func TestAssertEqualInstruction(t *testing.T) {
+func RunAssertEqualInstruction(t *testing.T) {
 	hintrunner := noHintRunner{}
 	setInitialReg := func(vm *VirtualMachine, regvals ...uint64) {
 		if len(regvals) != 3 {
@@ -897,6 +897,7 @@ func TestAssertEqualInstruction(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, mem.MemoryValueFromInt(2), mv)
 	})
+
 	t.Run("assign left to right", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("[ap + 1] = [ap];")
 		setInitialReg(vm, 1, 1, 0)
@@ -910,6 +911,7 @@ func TestAssertEqualInstruction(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, mem.MemoryValueFromInt(2), mv)
 	})
+
 	t.Run("addition", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("[ap] = [ap - 1] + [fp];")
 		setInitialReg(vm, 3, 1, 0)
@@ -924,6 +926,7 @@ func TestAssertEqualInstruction(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, mem.MemoryValueFromInt(15), mv)
 	})
+
 	t.Run("substraction", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("[ap] = [ap - 1] + [fp];")
 		setInitialReg(vm, 3, 1, 0)
@@ -971,7 +974,7 @@ func TestAssertEqualInstruction(t *testing.T) {
 
 }
 
-func TestAdvancingAp (t *testing.T){
+func TestRunStepInstructions (t *testing.T){
 	hintrunner := noHintRunner{}
 	setInitialReg := func(vm *VirtualMachine, regvals ...uint64) {
 		if len(regvals) != 3 {
@@ -982,7 +985,7 @@ func TestAdvancingAp (t *testing.T){
 		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: regvals[2]}
 	}
 
-	t.Run("test advancing ap with address", func(t *testing.T){
+	t.Run("test advancing ap with expression", func(t *testing.T){
 		vm := defaultVirtualMachineWithCode("ap += [fp + 4] + [fp];")
 		setInitialReg(vm, 1, 1 ,0)
 
@@ -1004,18 +1007,6 @@ func TestAdvancingAp (t *testing.T){
 
 		assert.Equal(t, vm.Context.Ap, uint64(124))
 	})
-}
-
-func TestJumpInstruction(t *testing.T) {
-	hintrunner := noHintRunner{}
-	setInitialReg := func(vm *VirtualMachine, regvals ...uint64) {
-		if len(regvals) != 3 {
-			panic("expected three register values")
-		}
-		vm.Context.Ap = regvals[0]
-		vm.Context.Fp = regvals[1]
-		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: regvals[2]}
-	}
 
 	t.Run("test abs jump with immediate", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("jmp abs 15;")
@@ -1038,7 +1029,7 @@ func TestJumpInstruction(t *testing.T) {
 		assert.Equal(t, vm.Context.Pc, mem.MemoryAddress{SegmentIndex: 15, Offset: 18})
 	})
 
-	t.Run("test rel jump with address", func(t *testing.T) {
+	t.Run("test rel jump with expression", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("jmp rel [ap + 1] + [fp];")
 		setInitialReg(vm, 1, 1, 0)
 
@@ -1090,19 +1081,6 @@ func TestJumpInstruction(t *testing.T) {
 		assert.Equal(t, vm.Context.Pc.Offset, uint64(1))
 
 	})
-
-}
-
-func TestCallAndRetInstructions(t *testing.T){
-	hintrunner := noHintRunner{}
-	setInitialReg := func(vm *VirtualMachine, regvals ...uint64) {
-		if len(regvals) != 3 {
-			panic("expected three register values")
-		}
-		vm.Context.Ap = regvals[0]
-		vm.Context.Fp = regvals[1]
-		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: regvals[2]}
-	}
 
 	t.Run("test 'call abs <address>'", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("call abs [fp + 4];")
