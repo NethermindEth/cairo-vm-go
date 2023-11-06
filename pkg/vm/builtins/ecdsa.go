@@ -103,8 +103,8 @@ func (e *ECDSA) String() string {
 func recoverY(x *fp.Element) (*fp.Element, error) {
 	ALPHA := fp.NewElement(1)
 	BETA := fp.Element{}
-	BETA.SetString("3141592653589793238462643383279502884197169399375105820974944592307816406665")
-	//y_squared = (x * x * x + ALPHA * x + BETA) % FIELD_PRIME
+	_, _ = BETA.SetString("3141592653589793238462643383279502884197169399375105820974944592307816406665")
+	// y_squared = (x * x * x + ALPHA * x + BETA) % FIELD_PRIME
 	x2 := new(fp.Element).Mul(x, x)
 	x3 := x2.Mul(x2, x)
 	a := new(fp.Element).Mul(&ALPHA, x)
