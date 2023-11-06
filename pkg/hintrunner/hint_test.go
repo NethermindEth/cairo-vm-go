@@ -543,7 +543,7 @@ func TestUint512DivModByUint256(t *testing.T) {
 		remainder1: dstRemainder1,
 	}
 
-	err = hint.Execute(vm)
+	err = hint.Execute(vm, nil)
 	require.Nil(t, err)
 
 	quotient0 := &f.Element{}
@@ -646,6 +646,6 @@ func TestUint512DivModByUint256DivisionByZero(t *testing.T) {
 		remainder1: dstRemainder1,
 	}
 
-	err = hint.Execute(vm)
+	err = hint.Execute(vm, nil)
 	require.ErrorContains(t, err, "division by zero")
 }

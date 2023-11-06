@@ -927,7 +927,7 @@ func (hint Uint512DivModByUint256) String() string {
 	return "Uint512DivModByUint256"
 }
 
-func (hint Uint512DivModByUint256) Execute(vm *VM.VirtualMachine) error {
+func (hint Uint512DivModByUint256) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	dividend0, err := hint.dividend0.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve dividend0 operand %s: %v", hint.dividend0, err)
