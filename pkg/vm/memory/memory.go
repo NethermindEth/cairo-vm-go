@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -135,7 +135,7 @@ func (segment *Segment) IncreaseSegmentSize(newSize uint64) {
 	if cap(segmentData) > int(newSize) {
 		newSegmentData = segmentData[:cap(segmentData)]
 	} else {
-		newSegmentData = make([]MemoryValue, safemath.Max(newSize, uint64(len(segmentData)*2)))
+		newSegmentData = make([]MemoryValue, utils.Max(newSize, uint64(len(segmentData)*2)))
 		copy(newSegmentData, segmentData)
 	}
 	segment.Data = newSegmentData
@@ -189,30 +189,39 @@ func InitializeEmptyMemory() *Memory {
 }
 
 // Allocates a new segment providing its initial data and returns its index
-func (memory *Memory) AllocateSegment(data []*f.Element) (int, error) {
+func (memory *Memory) AllocateSegment(data []*f.Element) (MemoryAddress, error) {
 	newSegment := EmptySegmentWithLength(len(data))
 	for i := range data {
 		memVal := MemoryValueFromFieldElement(data[i])
 		err := newSegment.Write(uint64(i), &memVal)
 		if err != nil {
-			return 0, err
+			return UnknownAddress, err
 		}
 	}
 	memory.Segments = append(memory.Segments, newSegment)
-	return len(memory.Segments) - 1, nil
+	return MemoryAddress{
+		SegmentIndex: uint64(len(memory.Segments) - 1),
+		Offset:       0,
+	}, nil
 }
 
 // Allocates an empty segment and returns its index
-func (memory *Memory) AllocateEmptySegment() int {
+func (memory *Memory) AllocateEmptySegment() MemoryAddress {
 	memory.Segments = append(memory.Segments, EmptySegment())
-	return len(memory.Segments) - 1
+	return MemoryAddress{
+		SegmentIndex: uint64(len(memory.Segments) - 1),
+		Offset:       0,
+	}
 }
 
 // Allocate a Builtin segment
-func (memory *Memory) AllocateBuiltinSegment(builtinRunner BuiltinRunner) int {
+func (memory *Memory) AllocateBuiltinSegment(builtinRunner BuiltinRunner) MemoryAddress {
 	builtinSegment := EmptySegment().WithBuiltinRunner(builtinRunner)
 	memory.Segments = append(memory.Segments, builtinSegment)
-	return len(memory.Segments) - 1
+	return MemoryAddress{
+		SegmentIndex: uint64(len(memory.Segments) - 1),
+		Offset:       0,
+	}
 }
 
 // Writes to a given segment index and offset a new memory value. Errors if writing
@@ -250,6 +259,42 @@ func (memory *Memory) Read(segmentIndex uint64, offset uint64) (MemoryValue, err
 // an unallocated segment or if reading an unknown memory value
 func (memory *Memory) ReadFromAddress(address *MemoryAddress) (MemoryValue, error) {
 	return memory.Read(address.SegmentIndex, address.Offset)
+}
+
+// Works the same as `Read` but `MemoryValue` is converted to `Element` first
+func (memory *Memory) ReadAsElement(segmentIndex uint64, offset uint64) (f.Element, error) {
+	mv, err := memory.Read(segmentIndex, offset)
+	if err != nil {
+		return f.Element{}, err
+	}
+	felt, err := mv.FieldElement()
+	if err != nil {
+		return f.Element{}, err
+	}
+	return *felt, nil
+}
+
+// Works the same as `ReadFromAddress` but `MemoryValue` is converted to `Element` first
+func (memory *Memory) ReadFromAddressAsElement(address *MemoryAddress) (f.Element, error) {
+	return memory.ReadAsElement(address.SegmentIndex, address.Offset)
+}
+
+// Works the same as `Read` but `MemoryValue` is converted to `MemoryAddress` first
+func (memory *Memory) ReadAsAddress(address *MemoryAddress) (MemoryAddress, error) {
+	mv, err := memory.Read(address.SegmentIndex, address.Offset)
+	if err != nil {
+		return UnknownAddress, err
+	}
+	addr, err := mv.MemoryAddress()
+	if err != nil {
+		return UnknownAddress, err
+	}
+	return *addr, nil
+}
+
+// Works the same as `ReadFromAddress` but `MemoryValue` is converted to `MemoryAddress` first
+func (memory *Memory) ReadFromAddressAsAddress(address *MemoryAddress) (MemoryAddress, error) {
+	return memory.ReadAsAddress(address)
 }
 
 // Given a segment index and offset, returns the memory value at that position, without
