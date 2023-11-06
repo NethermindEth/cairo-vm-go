@@ -121,5 +121,6 @@ func recoverY(x *fp.Element) (*fp.Element, error) {
 	if y == nil {
 		return nil, fmt.Errorf("Invalid Public key")
 	}
-	return y, nil
+	//TODO: Figure out if we need to check both
+	return y.Neg(y), nil
 }
