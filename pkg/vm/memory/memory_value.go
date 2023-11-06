@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"unsafe"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"golang.org/x/exp/constraints"
 )
@@ -21,6 +22,23 @@ var UnknownAddress = MemoryAddress{}
 
 func (address *MemoryAddress) Equal(other *MemoryAddress) bool {
 	return address.SegmentIndex == other.SegmentIndex && address.Offset == other.Offset
+}
+
+// It crates a new memory address with the modified offset
+func (address *MemoryAddress) AddOffset(offset int16) (MemoryAddress, error) {
+	newOffset, overflow := utils.SafeOffset(address.Offset, offset)
+	if overflow {
+		return UnknownAddress,
+			fmt.Errorf(
+				"address new invalid offseet: %d + %d = %d",
+				address.Offset, offset, newOffset,
+			)
+	}
+	return MemoryAddress{
+		SegmentIndex: address.SegmentIndex,
+		Offset:       newOffset,
+	}, nil
+
 }
 
 // Adds a memory address and a field element
