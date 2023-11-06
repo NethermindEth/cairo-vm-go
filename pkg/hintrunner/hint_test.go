@@ -462,6 +462,10 @@ func TestUint256SquareRootHigh(t *testing.T) {
 }
 
 func TestUint256SquareRoot(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
 	var sqrt0 ApCellRef = 1
 	var sqrt1 ApCellRef = 2
 	var remainderLow ApCellRef = 3
