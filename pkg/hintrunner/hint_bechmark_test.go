@@ -104,10 +104,12 @@ func BenchmarkWideMul128(b *testing.B) {
 	var dstLow ApCellRef = 0
 	var dstHigh ApCellRef = 1
 
+	rand := defaultRandGenerator()
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		lhs := Immediate(randomFeltElementU128())
-		rhs := Immediate(randomFeltElementU128())
+		lhs := Immediate(randomFeltElementU128(rand))
+		rhs := Immediate(randomFeltElementU128(rand))
 
 		hint := WideMul128{
 			low:  dstLow,
@@ -166,7 +168,7 @@ func randomFeltElement(rand *rand.Rand) f.Element {
 	return f.Element(data)
 }
 
-func randomFeltElementU128() f.Element {
+func randomFeltElementU128(rand *rand.Rand) f.Element {
 	b := [32]byte{}
 	v := binary.BigEndian.AppendUint64(nil, rand.Uint64())
 	copy(b[24:32], v)
