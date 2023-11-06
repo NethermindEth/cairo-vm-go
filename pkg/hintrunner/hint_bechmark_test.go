@@ -159,13 +159,18 @@ func BenchmarkLinearSplit(b *testing.B) {
 }
 
 func randomFeltElement(rand *rand.Rand) f.Element {
-	data := [4]uint64{
-		rand.Uint64(),
-		rand.Uint64(),
-		rand.Uint64(),
-		rand.Uint64(),
-	}
-	return f.Element(data)
+	b := [32]byte{}
+	v := binary.BigEndian.AppendUint64(nil, rand.Uint64())
+	copy(b[24:32], v)
+	v = binary.BigEndian.AppendUint64(nil, rand.Uint64())
+	copy(b[16:24], v)
+	v = binary.BigEndian.AppendUint64(nil, rand.Uint64())
+	copy(b[8:16], v)
+	//Limit to 59 bits so at max we have a 251 bit number
+	v = binary.BigEndian.AppendUint64(nil, rand.Uint64()>>5)
+	copy(b[0:8], v)
+	f, _ := f.BigEndian.Element(&b)
+	return f
 }
 
 func randomFeltElementU128(rand *rand.Rand) f.Element {
