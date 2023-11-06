@@ -18,7 +18,6 @@ type ECDSA struct {
 }
 
 func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
-	fmt.Println("INGERING")
 	ecdsaIndex := offset % cellsPerECDSA
 	pubOffset := offset - ecdsaIndex
 	msg_offset := pubOffset + 1
@@ -44,12 +43,13 @@ func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
 	}
 
 	//Sig verification
-	pubY, err := recoverY(pubX)
+	posY, negY, err := recoverY(pubX)
 	if err != nil {
 		return err
 	}
 
-	key := starkcurve.G1Affine{X: *pubX, Y: *pubY}
+	//Try first with positive y
+	key := starkcurve.G1Affine{X: *pubX, Y: *posY}
 	if !key.IsOnCurve() {
 		return fmt.Errorf("Key is not on curve")
 	}
@@ -59,15 +59,24 @@ func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
 	if !ok {
 		return fmt.Errorf("Signature is missing form ECDA builtin")
 	}
+
 	msgBytes := msgField.Bytes()
 	valid, err := pubKey.Verify(sig.Bytes(), msgBytes[:], nil)
 	if err != nil {
 		return err
 	}
-	fmt.Println(valid, err)
 
 	if !valid {
-		return fmt.Errorf("Signature is not valid")
+		// Now try with Neg Y. Already know the point is on the curve so no need to check again
+		key = starkcurve.G1Affine{X: *pubX, Y: *negY}
+		pubKey = &ecdsa.PublicKey{A: key}
+		valid, err := pubKey.Verify(sig.Bytes(), msgBytes[:], nil)
+		if err != nil {
+			return err
+		}
+		if !valid {
+			return fmt.Errorf("Signature is not valid")
+		}
 	}
 	v := memory.MemoryValueFromInt(0)
 	segment.Write(offset, &v)
@@ -106,8 +115,8 @@ func (e *ECDSA) String() string {
 	return ECDSAName
 }
 
-// recoverY recovers the y coordinate of x. True y can be either y or -y
-func recoverY(x *fp.Element) (*fp.Element, error) {
+// recoverY recovers the y and -y coordinate of x. True y can be either y or -y
+func recoverY(x *fp.Element) (*fp.Element, *fp.Element, error) {
 	ALPHA := fp.NewElement(1)
 	BETA := fp.Element{}
 	_, _ = BETA.SetString("3141592653589793238462643383279502884197169399375105820974944592307816406665")
@@ -119,8 +128,8 @@ func recoverY(x *fp.Element) (*fp.Element, error) {
 	x3.Add(x3, &BETA)
 	y := x3.Sqrt(x3)
 	if y == nil {
-		return nil, fmt.Errorf("Invalid Public key")
+		return nil, nil, fmt.Errorf("Invalid Public key")
 	}
 	//TODO: Figure out if we need to check both
-	return y.Neg(y), nil
+	return y, new(fp.Element).Neg(y), nil
 }
