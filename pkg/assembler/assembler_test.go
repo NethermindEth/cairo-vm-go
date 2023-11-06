@@ -544,7 +544,7 @@ func TestCallAbsNegative(t *testing.T) {
 	expectedImm := f.Element{}
 	expectedImm.SetInt64(-123)
 	// verify imm
-	assert.Equal(t, expectedImm.Bits(), imm.Bits())
+	assert.Equal(t, expectedImm, imm)
 
 	// verify offsets
 	dstOffset := uint16(encode)
