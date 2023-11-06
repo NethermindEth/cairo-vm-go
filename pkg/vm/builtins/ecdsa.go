@@ -10,7 +10,7 @@ import (
 )
 
 const ECDSAName = "ecdsa"
-const cellsPerECDSA = 2
+const cellsPerECDSA = 3
 const inputCellsPerECDSA = 2 //Public key and msg
 
 type ECDSA struct {
@@ -18,12 +18,13 @@ type ECDSA struct {
 }
 
 func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
+	fmt.Println("INGERING")
 	ecdsaIndex := offset % cellsPerECDSA
-	// input cell
 	pubOffset := offset - ecdsaIndex
 	msg_offset := pubOffset + 1
+	fmt.Println(offset, cellsPerECDSA, offset&cellsPerECDSA, pubOffset, msg_offset)
 
-	pub := segment.Peek(offset)
+	pub := segment.Peek(pubOffset)
 	if !pub.Known() {
 		return fmt.Errorf("cannot infer value: input value at offset %d is unknown", pubOffset)
 	}
@@ -33,7 +34,7 @@ func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
 		return err
 	}
 
-	msg := segment.Peek(offset)
+	msg := segment.Peek(msg_offset)
 	if !msg.Known() {
 		return fmt.Errorf("cannot infer value: input value at offset %d is unknown", msg_offset)
 	}
@@ -63,10 +64,13 @@ func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(valid, err)
 
 	if !valid {
 		return fmt.Errorf("Signature is not valid")
 	}
+	v := memory.MemoryValueFromInt(0)
+	segment.Write(offset, &v)
 
 	//TODO: Get r, s, pub and hash
 
@@ -74,7 +78,10 @@ func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
 }
 
 // "code": "ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))",
-func (e *ECDSA) addSignature(pubOffset uint64, r, s fp.Element) error {
+func (e *ECDSA) AddSignature(pubOffset uint64, r, s fp.Element) error {
+	if e.signatures == nil {
+		e.signatures = make(map[uint64]ecdsa.Signature)
+	}
 	bytes := make([]byte, 0, 64)
 	rBytes := r.Bytes()
 	bytes = append(bytes, rBytes[:]...)
