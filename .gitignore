@@ -1,5 +1,6 @@
 # Project Specific
 bin/
+benchmarks
 cov.out
 cpu.out
 *.test
