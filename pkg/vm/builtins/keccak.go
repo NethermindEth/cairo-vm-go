@@ -51,11 +51,11 @@ func (k *Keccak) InferValue(segment *memory.Segment, offset uint64) error {
 		dataU64[i] = binary.LittleEndian.Uint64(data[8*i : 8*i+8])
 	}
 
-	out := keccakF1600(dataU64)
+	keccakF1600(&dataU64)
 
 	var output [200]byte
 	for i := 0; i < 25; i++ {
-		v := binary.LittleEndian.AppendUint64(nil, out[i])
+		v := binary.LittleEndian.AppendUint64(nil, dataU64[i])
 		copy(output[i*8:i*8+8], v)
 	}
 

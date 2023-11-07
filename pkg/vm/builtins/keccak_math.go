@@ -2,7 +2,7 @@ package builtins
 
 import "math/bits"
 
-// Slighly modified from: https://github.com/golang/crypto/blob/master/sha3/keccakf.go
+// Code taken from: https://github.com/golang/crypto/blob/master/sha3/keccakf.go
 
 // rc stores the round constants for use in the ι step.
 var rc = [24]uint64{
@@ -34,7 +34,7 @@ var rc = [24]uint64{
 
 // keccakF1600 applies the Keccak permutation to a 1600b-wide
 // state represented as a slice of 25 uint64s.
-func keccakF1600(a [25]uint64) [25]uint64 {
+func keccakF1600(a *[25]uint64) {
 	// Implementation translated from Keccak-inplace.c
 	// in the keccak reference code.
 	var t, bc0, bc1, bc2, bc3, bc4, d0, d1, d2, d3, d4 uint64
@@ -407,5 +407,4 @@ func keccakF1600(a [25]uint64) [25]uint64 {
 		a[23] = bc3 ^ (bc0 &^ bc4)
 		a[24] = bc4 ^ (bc1 &^ bc0)
 	}
-	return a
 }
