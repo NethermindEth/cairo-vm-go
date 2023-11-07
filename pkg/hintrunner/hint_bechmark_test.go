@@ -1,6 +1,7 @@
 package hintrunner
 
 import (
+	"encoding/binary"
 	"math/rand"
 	"testing"
 
@@ -104,10 +105,11 @@ func BenchmarkWideMul128(b *testing.B) {
 	var dstHigh ApCellRef = 1
 
 	rand := defaultRandGenerator()
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		lhs := Immediate(randomFeltElement(rand))
-		rhs := Immediate(randomFeltElement(rand))
+		lhs := Immediate(randomFeltElementU128(rand))
+		rhs := Immediate(randomFeltElementU128(rand))
 
 		hint := WideMul128{
 			low:  dstLow,
@@ -157,15 +159,60 @@ func BenchmarkLinearSplit(b *testing.B) {
 }
 
 func randomFeltElement(rand *rand.Rand) f.Element {
-	data := [4]uint64{
-		rand.Uint64(),
-		rand.Uint64(),
-		rand.Uint64(),
-		rand.Uint64(),
-	}
-	return f.Element(data)
+	b := [32]byte{}
+	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
+	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
+	binary.BigEndian.PutUint64(b[8:16], rand.Uint64())
+	//Limit to 59 bits so at max we have a 251 bit number
+	binary.BigEndian.PutUint64(b[0:8], rand.Uint64()>>5)
+	f, _ := f.BigEndian.Element(&b)
+	return f
+}
+
+func randomFeltElementU128(rand *rand.Rand) f.Element {
+	b := [32]byte{}
+	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
+	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
+	f, _ := f.BigEndian.Element(&b)
+	return f
 }
 
 func defaultRandGenerator() *rand.Rand {
 	return rand.New(rand.NewSource(0))
+}
+
+func BenchmarkUint256SquareRoot(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	rand := defaultRandGenerator()
+
+	var sqrt0 ApCellRef = 1
+	var sqrt1 ApCellRef = 2
+	var remainderLow ApCellRef = 3
+	var remainderHigh ApCellRef = 4
+	var sqrtMul2MinusRemainderGeU128 ApCellRef = 5
+
+	for i := 0; i < b.N; i++ {
+		valueLow := Immediate(randomFeltElement(rand))
+		valueHigh := Immediate(randomFeltElement(rand))
+		hint := Uint256SquareRoot{
+			valueLow:                     valueLow,
+			valueHigh:                    valueHigh,
+			sqrt0:                        sqrt0,
+			sqrt1:                        sqrt1,
+			remainderLow:                 remainderLow,
+			remainderHigh:                remainderHigh,
+			sqrtMul2MinusRemainderGeU128: sqrtMul2MinusRemainderGeU128,
+		}
+
+		err := hint.Execute(vm)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+		vm.Context.Ap += 5
+	}
+
 }
