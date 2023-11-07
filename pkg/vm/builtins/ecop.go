@@ -24,6 +24,10 @@ var feltThree f.Element = f.Element(
 
 type EcOp struct{}
 
+func (e *EcOp) String() string {
+	return EcOpName
+}
+
 func (e *EcOp) CheckWrite(segment *mem.Segment, offset uint64, value *mem.MemoryValue) error {
 	return nil
 }

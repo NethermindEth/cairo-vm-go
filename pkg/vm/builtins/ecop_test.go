@@ -1,89 +1,78 @@
 package builtins
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEcOp(t *testing.T) {
-	wayOne()
+	// input p
+	px, _ := new(fp.Element).SetString("0x49EE3EBA8C1600700EE1B87EB599F16716B0B1022947733551FDE4050CA6804")
+	py, _ := new(fp.Element).SetString("0x3CA0CFE4B3BC6DDF346D49D06EA0ED34E621062C0E056C1D0405D266E10268A")
 
-	wayTwo()
+	// input q
+	qx, _ := new(fp.Element).SetString("0x1EF15C18599971B7BECED415A40F0C7DEACFD9B0D1819E03D723D8BC943CFCA")
 
-	wayThree()
+	qy, _ := new(fp.Element).SetString("0x5668060AA49730B7BE4801DF46EC62DE53ECD11ABE43A32873000C36E8DC1F")
 
-	// two and three
-	two := fp.NewElement(2)
-	fmt.Printf("two %d\n", two)
+	// input m
+	m := new(fp.Element).SetInt64(3)
 
-	three := fp.NewElement(3)
-	fmt.Printf("three %d\n", three)
+	// expected r
+	mult := ecmult(&point{*qx, *qy}, m, &utils.FeltOne)
+	r := ecadd(&point{*px, *py}, &mult)
+
+	segment := memory.EmptySegmentWithLength(cellsPerEcOp)
+	ecop := &EcOp{}
+	segment.WithBuiltinRunner(ecop)
+
+	// write P to segment
+	pxValue := memory.MemoryValueFromFieldElement(px)
+	require.NoError(t, segment.Write(0, &pxValue))
+	pyValue := memory.MemoryValueFromFieldElement(py)
+	require.NoError(t, segment.Write(1, &pyValue))
+
+	// write Q to segment
+	qxValue := memory.MemoryValueFromFieldElement(qx)
+	require.NoError(t, segment.Write(2, &qxValue))
+	qyValue := memory.MemoryValueFromFieldElement(qy)
+	require.NoError(t, segment.Write(3, &qyValue))
+
+	// write m to segment
+	mValue := memory.MemoryValueFromFieldElement(m)
+	require.NoError(t, segment.Write(4, &mValue))
+
+	rxValue, err := segment.Read(5)
+	require.NoError(t, err)
+	ryValue, err := segment.Read(6)
+	require.NoError(t, err)
+
+	rx, err := rxValue.FieldElement()
+	require.NoError(t, err)
+	ry, err := ryValue.FieldElement()
+	require.NoError(t, err)
+
+	require.Equal(t, r.X, *rx)
+	require.Equal(t, r.Y, *ry)
 }
 
-func wayOne() fp.Element {
-	betaLow := &fp.Element{}
-	betaLow, err := betaLow.SetString("0x609ad26c15c915c1f4cdfcb99cee9e89")
-	if err != nil {
-		panic(err)
+func ecmult(p *point, m, alpha *fp.Element) point {
+	if m.IsOne() {
+		return *p
 	}
 
-	betaHigh := &fp.Element{}
-	betaHigh, err = betaHigh.SetString("0x6f21413efbe40de150e596d72f7a8c5")
-	if err != nil {
-		panic(err)
+	// if m is even
+	if m.Bits()[0]%2 == 0 {
+		m.Halve()
+		double := ecdouble(p, alpha)
+		return ecmult(&double, m, alpha)
 	}
 
-	fmt.Println("beta low", betaLow)
-	fmt.Println("beta high", betaHigh)
-
-	lowBytes := betaLow.Bytes()
-	highBytes := betaHigh.Bytes()
-
-	fmt.Println("beta low bytes", lowBytes)
-	fmt.Println("beta high bytes", highBytes)
-
-	copy(lowBytes[16:32], highBytes[16:32])
-
-	fmt.Println("beta bytes", lowBytes)
-
-	beta, err := fp.BigEndian.Element(&lowBytes)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("beta", beta.Text(10), beta)
-	return beta
-}
-
-func wayTwo() fp.Element {
-	betaLow := &fp.Element{}
-	betaLow, err := betaLow.SetString("0x609ad26c15c915c1f4cdfcb99cee9e89")
-	if err != nil {
-		panic(err)
-	}
-
-	betaHigh := &fp.Element{}
-	betaHigh, err = betaHigh.SetString("0x6f21413efbe40de150e596d72f7a8c5")
-	if err != nil {
-		panic(err)
-	}
-
-	for i := 0; i < 128; i++ {
-		betaHigh.Double(betaHigh)
-	}
-	betaHigh.Add(betaHigh, betaLow)
-
-	fmt.Println("beta 2:", betaHigh.Text(10), betaHigh)
-
-	return *betaHigh
-}
-
-func wayThree() fp.Element {
-	beta := &fp.Element{}
-	beta.SetString("3141592653589793238462643383279502884197169399375105820974944592307816406665")
-	fmt.Printf("beta 3: %d\n", beta)
-	fmt.Printf("beta 3: %s\n", beta)
-	return *beta
+	m.Sub(m, &utils.FeltOne)
+	mult := ecmult(p, m, alpha)
+	return ecadd(p, &mult)
 }
