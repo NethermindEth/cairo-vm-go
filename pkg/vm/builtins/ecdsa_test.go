@@ -1,7 +1,6 @@
 package builtins
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -24,7 +23,9 @@ func TestECDSA(t *testing.T) {
 
 	require.NoError(t, segment.Write(0, &pubkeyValue))
 	require.NoError(t, segment.Write(1, &msgValue))
-	ecdsa.AddSignature(0, *r, *s)
+	err := ecdsa.AddSignature(0, *r, *s)
+	require.NoError(t, err)
 
-	fmt.Println(segment.Read(2))
+	_, err = segment.Read(2)
+	require.NoError(t, err)
 }

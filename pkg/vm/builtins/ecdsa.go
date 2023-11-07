@@ -78,9 +78,6 @@ func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
 			return fmt.Errorf("Signature is not valid")
 		}
 	}
-	v := memory.MemoryValueFromInt(0)
-	segment.Write(offset, &v)
-
 	//TODO: Get r, s, pub and hash
 
 	return nil
