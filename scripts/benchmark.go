@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -12,11 +13,12 @@ import (
 	"strings"
 )
 
-func RunBenchmarks() {
+func RunBenchmarks(pkgSubstr, testSubstr string) {
+	pkgPrefix := filepath.Join(".", "pkg")
 	benchmarkDirs := []string{
-		"./pkg/hintrunner",
-		"./pkg/vm",
-		"./pkg/runners/zero",
+		filepath.Join(pkgPrefix, "hintrunner"),
+		filepath.Join(pkgPrefix, "vm"),
+		filepath.Join(pkgPrefix, "runners", "zero"),
 	}
 
 	// create benchmark result folder
@@ -31,9 +33,17 @@ func RunBenchmarks() {
 
 	for _, pkgDir := range benchmarkDirs {
 		pkg := filepath.Base(pkgDir)
+		if !strings.Contains(pkg, pkgSubstr) {
+			continue
+		}
+
+		pkgDir, err := filepath.Abs(pkgDir)
+		if err != nil {
+			log.Fatalf("locating pkg %s", pkg)
+		}
 
 		benchPath := filepath.Join(dirPath, pkg)
-		err := os.MkdirAll(benchPath, 0755)
+		err = os.MkdirAll(benchPath, 0755)
 		if err != nil {
 			log.Fatalf("creating benchmark subfolder for pkg %s: %s", pkg, err)
 		}
@@ -42,7 +52,7 @@ func RunBenchmarks() {
 		memPath := filepath.Join(benchPath, "mem.out")
 
 		cmd := exec.Command(
-			"go", "test", pkgDir, "-bench", ".",
+			"go", "test", pkgDir, "-bench", testSubstr,
 			"-cpuprofile", cpuPath, "-memprofile", memPath, "-benchmem",
 		)
 		var stdOut bytes.Buffer
@@ -51,15 +61,15 @@ func RunBenchmarks() {
 
 		err = cmd.Run()
 		if err != nil {
-			log.Fatalf("command failed: %s", err)
+			log.Fatalf("failed to benchmark %s: %s", pkg, err)
 		}
 
 		stdOutPath := filepath.Join(benchPath, "stdout.txt")
 		err = os.WriteFile(stdOutPath, stdOut.Bytes(), 0644)
 
-		fmt.Printf("%s benchmark complete\n", pkg)
+		fmt.Printf(" - %s ✔\n", pkg)
 	}
-	fmt.Printf("\nBenchmarking complete. Results stored in:\n\"%s\"\n", dirPath)
+	fmt.Printf("Done! Results stored in: \"%s\"\n", dirPath)
 }
 
 func getGitInfo() (string, string, string) {
@@ -84,5 +94,15 @@ func getGitInfo() (string, string, string) {
 }
 
 func main() {
-	RunBenchmarks()
+	var pkgName string
+	var testName string
+	flag.StringVar(
+		&pkgName, "pkg", "", "package names that contain this substring will be benchmarked",
+	)
+	flag.StringVar(
+		&testName, "test", ".", "test names that contain this substring will be benchmarked",
+	)
+	flag.Parse()
+
+	RunBenchmarks(pkgName, testName)
 }
