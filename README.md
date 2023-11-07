@@ -65,7 +65,7 @@ We currently have defined three sets of tests:
 
 * unit tests where we check the correct work of each component individually.
 * integration tests where we compare that the proof of execution of our VM is the same as the proof of execution of the Python VM.
-* benchmark tests to check our 
+* benchmark tests to have a baseline performance.
 
 Unit tests can be automatically run with:
 

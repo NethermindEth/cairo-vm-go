@@ -52,4 +52,5 @@ testall:
 	@go test ./...
 
 bench:
+	@echo "Running benchmarks..."
 	@go run scripts/benchmark.go --pkg=${PKG_NAME} --test=${TEST}
