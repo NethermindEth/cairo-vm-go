@@ -538,6 +538,54 @@ func TestAddApImm(t *testing.T) {
 
 }
 
+func TestCallAbsNegative(t *testing.T) {
+	encode, imm := parseImmediateInstruction("call abs -123;")
+
+	expectedImm := f.Element{}
+	expectedImm.SetInt64(-123)
+	// verify imm
+	assert.Equal(t, expectedImm, *imm)
+
+	// verify offsets
+	dstOffset := uint16(encode)
+	assert.Equal(t, biased(0), dstOffset)
+
+	op0Offset := uint16(encode >> 16)
+	assert.Equal(t, biased(1), op0Offset)
+
+	op1Offset := uint16(encode >> 32)
+	assert.Equal(t, biased(1), op1Offset)
+
+	// verify flags
+	flagsReg := uint16(encode >> flagsOffset)
+	assert.True(t, (flagsReg>>dstRegBit)&1 == 0)
+	assert.True(t, (flagsReg>>op0RegBit)&1 == 0)
+	assert.True(
+		t,
+		(flagsReg>>op1ImmBit)&1 == 1 &&
+			(flagsReg>>op1FpBit)&1 == 0 &&
+			(flagsReg>>op1ApBit)&1 == 0,
+	)
+	assert.True(
+		t, (flagsReg>>resAddBit)&1 == 0 && (flagsReg>>resMulBit)&1 == 0,
+	)
+	assert.True(
+		t,
+		(flagsReg>>pcJumpAbsBit)&1 == 1 &&
+			(flagsReg>>pcJumpRelBit)&1 == 0 &&
+			(flagsReg>>pcJnzBit)&1 == 0,
+	)
+	assert.True(
+		t, (flagsReg>>apAddBit)&1 == 0 && (flagsReg>>apAdd1Bit)&1 == 0,
+	)
+	assert.True(
+		t,
+		(flagsReg>>opcodeRetBit)&1 == 0 &&
+			(flagsReg>>opcodeCallBit)&1 == 1 &&
+			(flagsReg>>opcodeAssertEqBit)&1 == 0,
+	)
+}
+
 func parseImmediateInstruction(casmCode string) (uint64, *f.Element) {
 	instructions, err := CasmToBytecode(casmCode)
 	if err != nil {
