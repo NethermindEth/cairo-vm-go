@@ -55,14 +55,13 @@ func (k *Keccak) InferValue(segment *memory.Segment, offset uint64) error {
 
 	var output [200]byte
 	for i := 0; i < 25; i++ {
-		v := binary.LittleEndian.AppendUint64(nil, dataU64[i])
-		copy(output[i*8:i*8+8], v)
+		binary.LittleEndian.PutUint64(output[i*8:i*8+8], dataU64[i])
 	}
 
 	for i := 0; i < inputCellsPerKeccak; i++ {
 		var bytes [32]byte
 		copy(bytes[:], output[i*25:i*25+25])
-		//Only 200 bits so always fits, no need to check error
+		//This is 25*8 bits which is smaller than max felt 252 bits so no need to check the error
 		v, _ := fp.LittleEndian.Element(&bytes)
 		mv := memory.MemoryValueFromFieldElement(&v)
 		err := segment.Write(startOffset+inputCellsPerKeccak+uint64(i), &mv)
