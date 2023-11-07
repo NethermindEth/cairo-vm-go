@@ -10,13 +10,17 @@ import (
 	"github.com/holiman/uint256"
 )
 
-// todo:
-// * Set alpha and beta felt values
-// * Set feltTwo and feltThree value
-
 const EcOpName = "ec_op"
 const cellsPerEcOp = 7
 const inputCellsPerEcOp = 5
+
+var feltThree f.Element = f.Element(
+	[]uint64{
+		18446744073709551521,
+		18446744073709551615,
+		18446744073709551615,
+		576460752303421872,
+	})
 
 type EcOp struct{}
 
@@ -60,12 +64,21 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 		inputsFelt[i] = felt
 	}
 
-	// todo(rodro): the python vm has an upper limit on the size of `m`(the fifth input)  but
-	// since the max size seems to be maxout at 2**252, I see no point to currently add a check
+	// Note: the python vm has an upper limit on the size of `m`(the fifth input)  but
+	// since it is always maxout at 2**252, I see no point to currently add a check
 	// for it
 
+	// alpha and beta, curves by the parameter
+	// extracted from pedersen_params.json in https://github.com/starkware-libs/cairo-lang
+	alpha := f.One()
+	beta := f.Element([]uint64{
+		3863487492851900874,
+		7432612994240712710,
+		12360725113329547591,
+		88155977965380735,
+	})
+
 	// verify p and q are in the curve
-	var alpha, beta f.Element
 	p := point{*inputsFelt[0], *inputsFelt[1]}
 	q := point{*inputsFelt[2], *inputsFelt[3]}
 	if !pointOnCurve(&p, &alpha, &beta) {
@@ -187,7 +200,10 @@ func ecdouble(p *point, alpha *f.Element) point {
 	// get the double slope
 	doubleSlope := f.Element{}
 	doubleSlope.Square(&p.X)
-	doubleSlope.Mul(&doubleSlope, &utils.FeltThree)
+	doubleSlope.Mul(
+		&doubleSlope,
+		&feltThree,
+	)
 	doubleSlope.Add(&doubleSlope, alpha)
 
 	// get the x coordinate: x = slope^2 - 2 * p.X
