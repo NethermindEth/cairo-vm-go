@@ -22,7 +22,7 @@ Currently, it is only possible to use it by building it from source by following
 1. Clone the repo to your machine: `git clone https://github.com/NethermindEth/cairo-vm-go`.
 2. Install `Go` on your PC, instructions [here](https://go.dev/.doc/install).
 3. Execute on the root folder of the repo: `make build`.
-4. Make sure everything is running smoothly by executing: `make testall`.
+4. Make sure everything is running smoothly by executing: `make unit`.
 
 After completing these steps, you can find the compiled VM in `bin/cairo-vm`.
 
@@ -61,10 +61,11 @@ To learn about all the possible options the VM can be run with, execute the `run
 
 ### Testing
 
-We currently have defined two sets of tests:
+We currently have defined three sets of tests:
 
 * unit tests where we check the correct work of each component individually.
 * integration tests where we compare that the proof of execution of our VM is the same as the proof of execution of the Python VM.
+* benchmark tests to check our 
 
 Unit tests can be automatically run with:
 
@@ -90,12 +91,19 @@ To benchmark the project run:
 make bench
 ```
 
-This will calculate the millionth Fibonacci number and store the execution information in a _cpu.out_ and _mem.out_ files. To graphically display them please run this command with either of those files:
+This will run benchmarks for most of the project packages. It will create a _benchmark_ folder and a subfolder named after the current branch git information. Inside this subfolder, each package that was benchmarked will have a _cpu.out_, _mem.out_ and _stdout.text_. The first two files will hold profiling data regarding CPU and memory usage respectively, the last one will hold allocations/operations per second per benchmark test.
+
+To view profiling information with a web UI, run:
 
 ```bash
-go tool pprof -http=:8080 cpu.out
+go tool pprof -http=:8080 benchmarks/<subfolder>/<pkg>/cpu.out
 ```
 
+You may also be interested in benchmarking a specific package or a specific function, you can use the `PKG_NAME` and `TEST` flags for this.
+
+```bash
+make bench PKG_NAME="hintrunner" TEST="AllocSegment"
+```
 
 ### Useful Commands
 
