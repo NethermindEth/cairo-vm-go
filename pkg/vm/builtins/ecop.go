@@ -93,7 +93,7 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 	}
 
 	// calculate the elliptic curve operation
-	r, err := ecop(&p, &q, inputsFelt[4], &alpha, &beta)
+	r, err := ecop(&p, &q, inputsFelt[4], &alpha)
 	if err != nil {
 		return err
 	}
@@ -139,11 +139,11 @@ func (p *point) onCurve(alpha, beta *f.Element) bool {
 	return y2.Equal(&x3)
 }
 
-// returns the result of the ecop operation on points `P` and `Q` with params
-// `m`, `alpha` and `beta`. The resulting point `R` is equal to  P + m * Q
-func ecop(p *point, q *point, m, alpha, beta *f.Element) (point, error) {
-	doublePoint := *p
-	partialSum := *q
+// returns the result of the ecop operation on points `P` and `Q` with scalar
+// `m` and param `alpha`. The resulting point `R` is equal to  P + m * Q
+func ecop(p *point, q *point, m, alpha *f.Element) (point, error) {
+	partialSum := *p
+	doublePoint := *q
 
 	mBytes := m.Bytes()
 	scalar := uint256.Int{}
@@ -153,7 +153,7 @@ func ecop(p *point, q *point, m, alpha, beta *f.Element) (point, error) {
 	// therefore we treat it as a constant
 	const height = 256
 	// todo(rodro): iteration could be cut short on the biggest bit with a one of the `scalar`
-	for i := 0; i < height; i++ {
+	for i := 0; i < height && !scalar.IsZero(); i++ {
 		// we check that both points are always different between each others
 		// `ecadd` assume `x` ordinates are always different
 		// `ecdouble` assumes `y` coordinates are always different
@@ -171,7 +171,6 @@ func ecop(p *point, q *point, m, alpha, beta *f.Element) (point, error) {
 
 		// todo(rodro): This loop can be optimized, potentially innecesary shift operations
 		doublePoint = ecdouble(&doublePoint, alpha)
-		fmt.Println("scalar")
 		scalar.Rsh(&scalar, 1)
 	}
 

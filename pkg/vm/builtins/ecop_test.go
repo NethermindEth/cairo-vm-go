@@ -1,12 +1,12 @@
 package builtins
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,7 +24,7 @@ func TestEcOp(t *testing.T) {
 	m := new(fp.Element).SetInt64(3)
 
 	// expected r
-	mult := ecmult(&point{*qx, *qy}, m, &utils.FeltOne)
+	mult := ecmult(&point{*qx, *qy}, new(uint256.Int).SetUint64(3), &utils.FeltOne)
 	r := ecadd(&point{*px, *py}, &mult)
 
 	segment := memory.EmptySegmentWithLength(cellsPerEcOp)
@@ -47,6 +47,7 @@ func TestEcOp(t *testing.T) {
 	mValue := memory.MemoryValueFromFieldElement(m)
 	require.NoError(t, segment.Write(4, &mValue))
 
+	// infer R
 	rxValue, err := segment.Read(5)
 	require.NoError(t, err)
 	ryValue, err := segment.Read(6)
@@ -61,19 +62,23 @@ func TestEcOp(t *testing.T) {
 	require.Equal(t, r.Y, *ry)
 }
 
-func ecmult(p *point, m, alpha *fp.Element) point {
-	if m.IsOne() {
+// performs elliptic curve multiplication on point `p` with scalar `m` and param `alpha`.
+// `m` value gets modified in place
+func ecmult(p *point, m *uint256.Int, alpha *fp.Element) point {
+	if m.Eq(&utils.Uint256One) {
 		return *p
 	}
 
 	// if m is even
-	if m.Bits()[0]%2 == 0 {
-		m.Halve()
+	and := uint256.Int{}
+	and.And(m, &utils.Uint256One)
+	if and.IsZero() {
+		m.Rsh(m, 1)
 		double := ecdouble(p, alpha)
 		return ecmult(&double, m, alpha)
 	}
 
-	m.Sub(m, &utils.FeltOne)
+	m.SubUint64(m, 1)
 	mult := ecmult(p, m, alpha)
 	return ecadd(p, &mult)
 }
