@@ -12,6 +12,14 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+//
+// todo(jkktom) find a way to let users know how to implement or make use of Keccak
+// Below includes direct implementation of Keccak (Keccak256).
+// Note that it's composed of two sections, implementing F1600 (Keccak F1600) as builtins,
+// and also as Keccak Library for additional use (Keccak related hints or directly using it)
+// It's useful to give users options to use Keccak just as Rust VM does it with it's keccak.cairo as library.
+//
+
 const KeccakName = "keccak"
 const cellsPerKeccak = 16
 const inputCellsPerKeccak = 8
