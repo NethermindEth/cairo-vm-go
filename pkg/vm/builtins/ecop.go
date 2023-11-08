@@ -69,10 +69,10 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 	}
 
 	// Note: the python vm has an upper limit on the size of `m`(the fifth input)  but
-	// since it is always maxout at 2**252, I see no point to currently add a check
-	// for it
+	// since it is always maxout at 2**252, I see no point on adding a check
+	// for it for now
 
-	// alpha and beta, curves by the parameter
+	// alpha and beta are paremeters required by the curve
 	// extracted from pedersen_params.json in https://github.com/starkware-libs/cairo-lang
 	alpha := f.One()
 	beta := f.Element([]uint64{
@@ -85,18 +85,20 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 	// verify p and q are in the curve
 	p := point{*inputsFelt[0], *inputsFelt[1]}
 	q := point{*inputsFelt[2], *inputsFelt[3]}
-	if !pointOnCurve(&p, &alpha, &beta) {
+	if !p.onCurve(&alpha, &beta) {
 		return fmt.Errorf("point P(%s, %s) is not on the curve", &p.X, &p.Y)
 	}
-	if !pointOnCurve(&q, &alpha, &beta) {
+	if !q.onCurve(&alpha, &beta) {
 		return fmt.Errorf("point Q(%s, %s) is not on the curve", &q.X, &q.Y)
 	}
 
+	// calculate the elliptic curve operation
 	r, err := ecop(&p, &q, inputsFelt[4], &alpha, &beta)
 	if err != nil {
 		return err
 	}
 
+	// store the resulting point `r`
 	outputOff := inputOff + inputCellsPerEcOp
 
 	rxMV := mem.MemoryValueFromFieldElement(&r.X)
@@ -115,9 +117,9 @@ type point struct {
 	X, Y f.Element
 }
 
-// returns true if a point `p` ins the `ec` curve ruled by the params `alpha`,
-// `beta` and `prime`. In other words, true if  y^2 = x^3 + alpha * x + beta
-func pointOnCurve(p *point, alpha, beta *f.Element) bool {
+// returns true if a point `p` belongs to the `ec` curve ruled by the params `alpha` and
+// `beta`. In other words, true if  y^2 = x^3 + alpha * x + beta
+func (p *point) onCurve(alpha, beta *f.Element) bool {
 	// calculate lhs
 	y2 := f.Element{}
 	y2.Square(&p.Y)
@@ -147,26 +149,29 @@ func ecop(p *point, q *point, m, alpha, beta *f.Element) (point, error) {
 	scalar := uint256.Int{}
 	scalar.SetBytes32(mBytes[:])
 
-	// Note: In the python VM the height is a parameter but it is always set at 256,
-	// we treated as a constant as a result
+	// Note: In the python VM the height is a parameter but it is always set at 256
+	// therefore we treat it as a constant
 	const height = 256
+	// todo(rodro): iteration could be cut short on the biggest bit with a one of the `scalar`
 	for i := 0; i < height; i++ {
 		// we check that both points are always different between each others
 		// `ecadd` assume `x` ordinates are always different
 		// `ecdouble` assumes `y` coordinates are always different
 		if doublePoint.X.Equal(&partialSum.X) || doublePoint.Y.Equal(&partialSum.Y) {
 			return point{}, fmt.Errorf(
-				"at least one similar coordinates between P(%s, %s) and Q(%s, %s)",
+				"at least one similar coordinate between P(%s, %s) and Q(%s, %s)",
 				&p.X, &p.Y, &q.X, &q.Y,
 			)
 		}
 		and := uint256.Int{}
 		and.And(&scalar, &utils.Uint256One)
-		if and.Cmp(&utils.Uint256Zero) != 0 {
+		if !and.IsZero() {
 			partialSum = ecadd(&partialSum, &doublePoint)
 		}
 
+		// todo(rodro): This loop can be optimized, potentially innecesary shift operations
 		doublePoint = ecdouble(&doublePoint, alpha)
+		fmt.Println("scalar")
 		scalar.Rsh(&scalar, 1)
 	}
 
@@ -198,7 +203,7 @@ func ecadd(p *point, q *point) point {
 	return point{x, y}
 }
 
-// performs elliptic curve doubling over a point. Assumes `y` ordinates are
+// performs elliptic curve doubling over a point. Assumes `y` coordinates are
 // always different
 func ecdouble(p *point, alpha *f.Element) point {
 	// get the double slope
@@ -209,6 +214,9 @@ func ecdouble(p *point, alpha *f.Element) point {
 		&feltThree,
 	)
 	doubleSlope.Add(&doubleSlope, alpha)
+	denom := f.Element{}
+	denom.Double(&p.Y)
+	doubleSlope.Div(&doubleSlope, &denom)
 
 	// get the x coordinate: x = slope^2 - 2 * p.X
 	x := f.Element{}

@@ -1,6 +1,7 @@
 package builtins
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
