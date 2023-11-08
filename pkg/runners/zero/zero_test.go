@@ -328,7 +328,36 @@ func TestRangeCheckBuiltinError(t *testing.T) {
 
 	err = runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
+}
 
+func TestEcOpBuiltin(t *testing.T) {
+	// first, store P.x, P.y, Q.x, Q.y and m in the data segment
+	// then store them the EcOp builtin segment
+	// infer the values, effectively calculating EcOp
+	// assert the values are correct
+	runner := createRunner(`
+        [ap] = 0x6a4beaef5a93425b973179cdba0c9d42f30e01a5f1e2db73da0884b8d6756fc;
+        [ap + 1] = 0x72565ec81bc09ff53fbfad99324a92aa5b39fb58267e395e8abe36290ebf24f;
+        [ap + 2] = 0x654fd7e67a123dd13868093b3b7777f1ffef596c2e324f25ceaf9146698482c;
+        [ap + 3] = 0x4fad269cbf860980e38768fe9cb6b0b9ab03ee3fe84cfde2eccce597c874fd8;
+        [ap + 4] = 34;
+
+        [ap] = [[fp - 3]];
+        [ap + 1] = [[fp - 3] + 1];
+        [ap + 2] = [[fp - 3] + 2];
+        [ap + 3] = [[fp - 3] + 3];
+        [ap + 4] = [[fp - 3] + 4];
+
+        [ap + 5] = [[fp - 3] + 5];
+        [ap + 6] = [[fp - 3] + 6];
+
+        [ap + 5] = 108925483682366235368969256555281508851459278989259552980345066351008608800;
+        [ap + 6] = 1592365885972480102953613056006596671718206128324372995731808913669237079419;
+        ret;
+    `, sn.ECOP)
+
+	err := runner.Run()
+	require.NoError(t, err)
 }
 
 func createRunner(code string, builtins ...sn.Builtin) ZeroRunner {

@@ -340,7 +340,12 @@ func (vm *VirtualMachine) computeRes(
 	case a.Unconstrained:
 		return mem.MemoryValue{}, nil
 	case a.Op1:
-		return vm.Memory.ReadFromAddress(op1Addr)
+		op1, err := vm.Memory.ReadFromAddress(op1Addr)
+		if err != nil {
+			return mem.UnknownValue, fmt.Errorf("cannot read op1: %w", err)
+		}
+		return op1, nil
+
 	default:
 		op0, err := vm.Memory.ReadFromAddress(op0Addr)
 		if err != nil {
