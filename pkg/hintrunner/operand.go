@@ -2,11 +2,10 @@ package hintrunner
 
 import (
 	"fmt"
-	"math/big"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -16,7 +15,7 @@ import (
 type CellRefer interface {
 	fmt.Stringer
 
-	Get(vm *VM.VirtualMachine) (memory.MemoryAddress, error)
+	Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error)
 }
 
 type ApCellRef int16
@@ -25,12 +24,12 @@ func (ap ApCellRef) String() string {
 	return fmt.Sprintf("ApCellRef(%d)", ap)
 }
 
-func (ap ApCellRef) Get(vm *VM.VirtualMachine) (memory.MemoryAddress, error) {
-	res, overflow := safemath.SafeOffset(vm.Context.Ap, int16(ap))
+func (ap ApCellRef) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+	res, overflow := utils.SafeOffset(vm.Context.Ap, int16(ap))
 	if overflow {
-		return memory.MemoryAddress{}, safemath.NewSafeOffsetError(vm.Context.Ap, int16(ap))
+		return mem.UnknownAddress, fmt.Errorf("overflow %d + %d", vm.Context.Ap, int16(ap))
 	}
-	return memory.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
+	return mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
 }
 
 type FpCellRef int16
@@ -39,12 +38,12 @@ func (fp FpCellRef) String() string {
 	return fmt.Sprintf("FpCellRef(%d)", fp)
 }
 
-func (fp FpCellRef) Get(vm *VM.VirtualMachine) (memory.MemoryAddress, error) {
-	res, overflow := safemath.SafeOffset(vm.Context.Fp, int16(fp))
+func (fp FpCellRef) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+	res, overflow := utils.SafeOffset(vm.Context.Fp, int16(fp))
 	if overflow {
-		return memory.MemoryAddress{}, safemath.NewSafeOffsetError(vm.Context.Ap, int16(fp))
+		return mem.UnknownAddress, fmt.Errorf("overflow %d + %d", vm.Context.Fp, int16(fp))
 	}
-	return memory.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
+	return mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
 }
 
 //
@@ -53,7 +52,7 @@ func (fp FpCellRef) Get(vm *VM.VirtualMachine) (memory.MemoryAddress, error) {
 type ResOperander interface {
 	fmt.Stringer
 
-	Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, error)
+	Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error)
 }
 
 type Deref struct {
@@ -64,10 +63,10 @@ func (deref Deref) String() string {
 	return "Deref"
 }
 
-func (deref Deref) Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, error) {
+func (deref Deref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 	address, err := deref.deref.Get(vm)
 	if err != nil {
-		return memory.MemoryValue{}, fmt.Errorf("get cell: %w", err)
+		return mem.MemoryValue{}, fmt.Errorf("get cell: %w", err)
 	}
 	return vm.Memory.ReadFromAddress(&address)
 }
@@ -77,55 +76,49 @@ type DoubleDeref struct {
 	offset int16
 }
 
-func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, error) {
+func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 	lhsAddr, err := dderef.deref.Get(vm)
 	if err != nil {
-		return memory.MemoryValue{}, fmt.Errorf("get lhs address %s: %w", lhsAddr, err)
+		return mem.UnknownValue, fmt.Errorf("get lhs address %s: %w", lhsAddr, err)
 	}
 	lhs, err := vm.Memory.ReadFromAddress(&lhsAddr)
 	if err != nil {
-		return memory.MemoryValue{}, fmt.Errorf("read lhs address %s: %w", lhsAddr, err)
+		return mem.UnknownValue, fmt.Errorf("read lhs address %s: %w", lhsAddr, err)
 	}
 
 	// Double deref implies the left hand side read must be an address
 	address, err := lhs.MemoryAddress()
 	if err != nil {
-		return memory.MemoryValue{}, err
+		return mem.UnknownValue, err
 	}
 
-	newOffset, overflow := safemath.SafeOffset(address.Offset, dderef.offset)
+	newOffset, overflow := utils.SafeOffset(address.Offset, dderef.offset)
 	if overflow {
-		return memory.MemoryValue{}, safemath.NewSafeOffsetError(address.Offset, dderef.offset)
+		return mem.UnknownValue, fmt.Errorf("overflow %d + %d", address.Offset, dderef.offset)
 	}
-	resAddr := memory.MemoryAddress{
+	resAddr := mem.MemoryAddress{
 		SegmentIndex: address.SegmentIndex,
 		Offset:       newOffset,
 	}
 
 	value, err := vm.Memory.ReadFromAddress(&resAddr)
 	if err != nil {
-		return memory.MemoryValue{}, fmt.Errorf("read result at %s: %w", resAddr, err)
+		return mem.UnknownValue, fmt.Errorf("read result at %s: %w", resAddr, err)
 	}
 
 	return value, nil
 }
 
-type Immediate big.Int
+type Immediate f.Element
 
 func (imm Immediate) String() string {
 	return "Immediate"
 }
 
-// todo(rodro): Specs from Starkware stablish this can be uint256 and not a felt.
 // Should we respect that, or go straight to felt?
-func (imm Immediate) Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, error) {
-	felt := &f.Element{}
-	bigInt := (big.Int)(imm)
-	// todo(rodro): do we require to check that big int is lesser than P, or do we
-	// just take: big_int `mod` P?
-	felt.SetBigInt(&bigInt)
-
-	return memory.MemoryValueFromFieldElement(felt), nil
+func (imm Immediate) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
+	felt := f.Element(imm)
+	return mem.MemoryValueFromFieldElement(&felt), nil
 }
 
 type Operator uint8
@@ -145,31 +138,31 @@ func (bop BinaryOp) String() string {
 	return "BinaryOperator"
 }
 
-func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (memory.MemoryValue, error) {
+func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 	lhsAddr, err := bop.lhs.Get(vm)
 	if err != nil {
-		return memory.MemoryValue{}, fmt.Errorf("get lhs address %s: %w", bop.lhs, err)
+		return mem.UnknownValue, fmt.Errorf("get lhs address %s: %w", bop.lhs, err)
 	}
 	lhs, err := vm.Memory.ReadFromAddress(&lhsAddr)
 	if err != nil {
-		return memory.MemoryValue{}, fmt.Errorf("read lhs address %s: %v", lhsAddr, err)
+		return mem.UnknownValue, fmt.Errorf("read lhs address %s: %w", lhsAddr, err)
 	}
 
 	rhs, err := bop.rhs.Resolve(vm)
 	if err != nil {
-		return memory.MemoryValue{}, fmt.Errorf("resolve rhs operand %s: %v", rhs, err)
+		return mem.UnknownValue, fmt.Errorf("resolve rhs operand %s: %w", rhs, err)
 	}
 
 	switch bop.operator {
 	case Add:
-		mv := memory.EmptyMemoryValueAs(lhs.IsAddress() || rhs.IsAddress())
+		mv := mem.EmptyMemoryValueAs(lhs.IsAddress() || rhs.IsAddress())
 		err := mv.Add(&lhs, &rhs)
 		return mv, err
 	case Mul:
-		mv := memory.EmptyMemoryValueAsFelt()
+		mv := mem.EmptyMemoryValueAsFelt()
 		err := mv.Mul(&lhs, &rhs)
 		return mv, err
 	default:
-		return memory.MemoryValue{}, fmt.Errorf("unknown binary operator: %d", bop.operator)
+		return mem.UnknownValue, fmt.Errorf("unknown binary operator: %d", bop.operator)
 	}
 }

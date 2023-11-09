@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
-	"github.com/NethermindEth/cairo-vm-go/pkg/safemath"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -57,7 +57,7 @@ func (runner *ZeroRunner) Run() error {
 	if runner.proofmode {
 		// +1 because proof mode require an extra instruction run
 		// pow2 because proof mode also requires that the trace is a power of two
-		pow2Steps := safemath.NextPowerOfTwo(runner.vm.Step + 1)
+		pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
 		if err := runner.RunFor(pow2Steps); err != nil {
 			return err
 		}
@@ -105,11 +105,9 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) 
 		return mem.MemoryAddress{SegmentIndex: vm.ProgramSegment, Offset: endPcOffset}, nil
 	}
 
-	returnFp := mem.MemoryValueFromSegmentAndOffset(
-		memory.AllocateEmptySegment(),
-		0,
-	)
-	return runner.InitializeEntrypoint("main", nil, &returnFp, memory)
+	returnFp := memory.AllocateEmptySegment()
+	mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
+	return runner.InitializeEntrypoint("main", nil, &mvReturnFp, memory)
 }
 
 func (runner *ZeroRunner) InitializeEntrypoint(
@@ -124,10 +122,7 @@ func (runner *ZeroRunner) InitializeEntrypoint(
 	for i := range arguments {
 		stack = append(stack, mem.MemoryValueFromFieldElement(arguments[i]))
 	}
-	end := mem.MemoryAddress{
-		SegmentIndex: uint64(memory.AllocateEmptySegment()),
-		Offset:       0,
-	}
+	end := memory.AllocateEmptySegment()
 
 	stack = append(stack, *returnFp, mem.MemoryValueFromMemoryAddress(&end))
 	return end, runner.initializeVm(&mem.MemoryAddress{
@@ -141,7 +136,7 @@ func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) []mem.MemoryVal
 	for _, builtin := range runner.program.Builtins {
 		bRunner := builtins.Runner(builtin)
 		builtinSegment := memory.AllocateBuiltinSegment(bRunner)
-		stack = append(stack, mem.MemoryValueFromSegmentAndOffset(builtinSegment, 0))
+		stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
 	}
 	return stack
 }
@@ -178,7 +173,7 @@ func (runner *ZeroRunner) RunUntilPc(pc *mem.MemoryAddress) error {
 				runner.maxsteps,
 			)
 		}
-		if err := runner.vm.RunStep(runner.hintrunner); err != nil {
+		if err := runner.vm.RunStep(&runner.hintrunner); err != nil {
 			return fmt.Errorf("pc %s step %d: %w", runner.pc(), runner.steps(), err)
 		}
 	}
@@ -196,7 +191,7 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 				runner.maxsteps,
 			)
 		}
-		if err := runner.vm.RunStep(runner.hintrunner); err != nil {
+		if err := runner.vm.RunStep(&runner.hintrunner); err != nil {
 			return fmt.Errorf(
 				"pc %s step %d: %w",
 				runner.pc(),
