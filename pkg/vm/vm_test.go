@@ -873,7 +873,7 @@ func (r *noHintRunner) RunHint(_ *VirtualMachine) error {
 	return nil
 }
 
-func TestRunStepInstructions (t *testing.T){
+func TestRunStepInstructions(t *testing.T) {
 	hintrunner := noHintRunner{}
 	setInitialReg := func(vm *VirtualMachine, regvals ...uint64) {
 		if len(regvals) != 3 {
@@ -972,24 +972,24 @@ func TestRunStepInstructions (t *testing.T){
 		assert.Equal(t, mem.MemoryValueFromInt(5), mv)
 	})
 
-	t.Run("test advancing ap with expression", func(t *testing.T){
+	t.Run("test advancing ap with expression", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("ap += [fp + 4] + [fp];")
-		setInitialReg(vm, 1, 1 ,0)
+		setInitialReg(vm, 1, 1, 0)
 
 		writeToDataSegment(vm, vm.Context.Fp+4, 5)
 		writeToDataSegment(vm, vm.Context.Fp, 5)
 
-		err:= vm.RunStep(&hintrunner)
+		err := vm.RunStep(&hintrunner)
 		require.NoError(t, err)
 
 		assert.Equal(t, vm.Context.Ap, uint64(11))
 	})
 
-	t.Run("test advancing ap with immediate", func(t *testing.T){
+	t.Run("test advancing ap with immediate", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("ap += 123;")
-		setInitialReg(vm, 1, 1 ,0)
+		setInitialReg(vm, 1, 1, 0)
 
-		err:= vm.RunStep(&hintrunner)
+		err := vm.RunStep(&hintrunner)
 		require.NoError(t, err)
 
 		assert.Equal(t, vm.Context.Ap, uint64(124))
@@ -1084,7 +1084,7 @@ func TestRunStepInstructions (t *testing.T){
 		assert.Equal(t, vm.Context.Ap, vm.Context.Fp, uint64(3))
 	})
 
-	t.Run("test call rel with immediate", func(t *testing.T){
+	t.Run("test call rel with immediate", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("call rel 123;")
 		setInitialReg(vm, 2, 1, 0)
 
@@ -1113,18 +1113,23 @@ func TestRunStepInstructions (t *testing.T){
 
 	})
 
-	t.Run("test ret", func(t *testing.T){
-		vm := defaultVirtualMachineWithCode("call rel [ap + 4]; ret;")
-		setInitialReg(vm, 5, 1, 0)
+	t.Run("test ret", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("ret;")
+		setInitialReg(vm, 1, 3, 0)
 
-		writeToDataSegment(vm, vm.Context.Ap+4, 5)
+		// The value from [fp - 1] is read. This is the return PC.
+		writeToDataSegment(vm, vm.Context.Fp-1, &mem.MemoryAddress{SegmentIndex: 5, Offset: 6})
+		writeToDataSegment(vm, vm.Context.Ap, &mem.MemoryAddress{SegmentIndex: 3, Offset: 46})
 
 		err := vm.RunStep(&hintrunner)
 		require.NoError(t, err)
 
-		// The ret instruction resets the value of fp
-		// ap is advanced by 2, and fp is set to the new ap.
-		assert.Equal(t, vm.Context.Fp, vm.Context.Ap, uint64(7))
+		// the ret instruction reads the value from [fp - 1] to determine the next program counter (PC)
+		assert.Equal(t, vm.Context.Pc, mem.MemoryAddress{SegmentIndex: 5, Offset: 6})
+
+		// the value of ap is written to fp
+		assert.Equal(t, vm.Context.Fp, uint64(46))
+
 	})
 }
 
