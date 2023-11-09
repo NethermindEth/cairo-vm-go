@@ -27,3 +27,14 @@ var Uint256Zero = uint256.Int{}
 var Uint256One = uint256.Int{1, 0, 0, 0}
 
 var Uint256Max128 = uint256.Int{18446744073709551615, 18446744073709551615, 0, 0}
+
+// Alpha and Beta are paremeters required by the elliptic curve used by Cairo
+// extracted from pedersen_params.json in https://github.com/starkware-libs/cairo-lang
+var Alpha = fp.One()
+
+var Beta = fp.Element([]uint64{
+	3863487492851900874,
+	7432612994240712710,
+	12360725113329547591,
+	88155977965380735,
+})

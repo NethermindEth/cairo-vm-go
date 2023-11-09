@@ -72,28 +72,18 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 	// since it is always maxout at 2**252, I see no point on adding a check
 	// for it for now
 
-	// alpha and beta are paremeters required by the curve
-	// extracted from pedersen_params.json in https://github.com/starkware-libs/cairo-lang
-	alpha := f.One()
-	beta := f.Element([]uint64{
-		3863487492851900874,
-		7432612994240712710,
-		12360725113329547591,
-		88155977965380735,
-	})
-
 	// verify p and q are in the curve
 	p := point{*inputsFelt[0], *inputsFelt[1]}
 	q := point{*inputsFelt[2], *inputsFelt[3]}
-	if !p.onCurve(&alpha, &beta) {
+	if !p.onCurve(&utils.Alpha, &utils.Beta) {
 		return fmt.Errorf("point P(%s, %s) is not on the curve", &p.X, &p.Y)
 	}
-	if !q.onCurve(&alpha, &beta) {
+	if !q.onCurve(&utils.Alpha, &utils.Beta) {
 		return fmt.Errorf("point Q(%s, %s) is not on the curve", &q.X, &q.Y)
 	}
 
 	// calculate the elliptic curve operation
-	r, err := ecop(&p, &q, inputsFelt[4], &alpha)
+	r, err := ecop(&p, &q, inputsFelt[4], &utils.Alpha)
 	if err != nil {
 		return err
 	}
