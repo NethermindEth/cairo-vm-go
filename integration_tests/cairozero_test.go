@@ -268,3 +268,15 @@ func TestPedersen(t *testing.T) {
 
 	clean("./builtin_tests/")
 }
+
+func TestECDSA(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/ecdsa_test.cairo")
+	require.NoError(t, err)
+
+	_, _, output, err := runVm(compiledOutput)
+	fmt.Println(output)
+	require.NoError(t, err)
+	//require.Contains(t, output, "Program output:\n\t2089986280348253421170679821480865132823066470938446095505822317253594081284")
+
+	clean("./builtin_tests/")
+}

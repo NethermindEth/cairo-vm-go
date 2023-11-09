@@ -10,11 +10,19 @@ import (
 )
 
 const ECDSAName = "ecdsa"
-const cellsPerECDSA = 3
+const cellsPerECDSA = 2
 const inputCellsPerECDSA = 2 //Public key and msg
 
 type ECDSA struct {
 	signatures map[uint64]ecdsa.Signature
+}
+
+//	verify_ecdsa_signature(message_hash, public_key, sig_r, sig_s)
+//
+// Test with casm ?
+func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
+	fmt.Printf("Checking write for %v:%v value :%s\n", segment, offset, value)
+	return nil
 }
 
 func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
@@ -101,10 +109,6 @@ func (e *ECDSA) AddSignature(pubOffset uint64, r, s fp.Element) error {
 	}
 
 	e.signatures[pubOffset] = sig
-	return nil
-}
-
-func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
 	return nil
 }
 
