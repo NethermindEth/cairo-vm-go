@@ -1004,6 +1004,7 @@ func TestRunStepInstructions(t *testing.T) {
 
 		assert.Equal(t, vm.Context.Pc.Offset, uint64(15))
 	})
+	
 	t.Run("test abs jump with address", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("jmp abs [ap];")
 		setInitialReg(vm, 1, 1, 0)
@@ -1027,7 +1028,6 @@ func TestRunStepInstructions(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, vm.Context.Pc.Offset, uint64(8))
-
 	})
 
 	t.Run("test rel jump with immediate", func(t *testing.T) {
@@ -1038,7 +1038,6 @@ func TestRunStepInstructions(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, vm.Context.Pc.Offset, uint64(123))
-
 	})
 
 	t.Run("test conditional jump, if <op> != 0", func(t *testing.T) {
@@ -1052,7 +1051,6 @@ func TestRunStepInstructions(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, vm.Context.Pc.Offset, uint64(4))
-
 	})
 
 	t.Run("test conditional jump, if <op> == 0", func(t *testing.T) {
@@ -1066,7 +1064,6 @@ func TestRunStepInstructions(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, vm.Context.Pc.Offset, uint64(1))
-
 	})
 
 	t.Run("test 'call abs <address>'", func(t *testing.T) {
@@ -1110,7 +1107,6 @@ func TestRunStepInstructions(t *testing.T) {
 
 		// ap is advanced by 2 and fp is set to the new ap
 		assert.Equal(t, vm.Context.Ap, vm.Context.Fp, uint64(3))
-
 	})
 
 	t.Run("test ret", func(t *testing.T) {
@@ -1129,7 +1125,6 @@ func TestRunStepInstructions(t *testing.T) {
 
 		// the value of ap is written to fp
 		assert.Equal(t, vm.Context.Fp, uint64(46))
-
 	})
 }
 
