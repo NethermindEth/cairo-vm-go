@@ -147,9 +147,9 @@ func ecop(p *point, q *point, m, alpha *f.Element) (point, error) {
 		// we check that both points are always different between each others
 		// `ecadd` assume `x` ordinates are always different
 		// `ecdouble` assumes `y` coordinates are always different
-		if doublePoint.X.Equal(&partialSum.X) || doublePoint.Y.Equal(&partialSum.Y) {
+		if doublePoint.X.Equal(&partialSum.X) || doublePoint.Y.Equal(&utils.FeltZero) {
 			return point{}, fmt.Errorf(
-				"at least one similar coordinate between P(%s, %s) and Q(%s, %s)",
+				"EcOp requires from P(%s, %s) and Q(%s, %s) that P.X != Q.X and Q.Y != 0 ",
 				&p.X, &p.Y, &q.X, &q.Y,
 			)
 		}
@@ -192,8 +192,8 @@ func ecadd(p *point, q *point) point {
 	return point{x, y}
 }
 
-// performs elliptic curve doubling over a point. Assumes `y` coordinates are
-// always different
+// performs elliptic curve doubling over a point. Assumes `y` coordinate
+// is different than 0
 func ecdouble(p *point, alpha *f.Element) point {
 	// get the double slope
 	doubleSlope := f.Element{}
