@@ -11,7 +11,6 @@ import (
 
 const ECDSAName = "ecdsa"
 const cellsPerECDSA = 2
-const inputCellsPerECDSA = 2 //Public key and msg
 
 type ECDSA struct {
 	signatures map[uint64]ecdsa.Signature

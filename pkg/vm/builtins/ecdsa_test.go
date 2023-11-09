@@ -21,10 +21,9 @@ func TestECDSA(t *testing.T) {
 	pubkeyValue := memory.MemoryValueFromFieldElement(pubkey)
 	msgValue := memory.MemoryValueFromFieldElement(msg)
 
-	err := ecdsa.AddSignature(0, *r, *s)
+	require.NoError(t, ecdsa.AddSignature(0, *r, *s))
 	require.NoError(t, segment.Write(1, &msgValue))
 	require.NoError(t, segment.Write(0, &pubkeyValue))
-	require.NoError(t, err)
 
 }
 func TestECDSAInvalidSig(t *testing.T) {
@@ -40,9 +39,9 @@ func TestECDSAInvalidSig(t *testing.T) {
 	pubkeyValue := memory.MemoryValueFromFieldElement(pubkey)
 	msgValue := memory.MemoryValueFromFieldElement(msg)
 
-	err := ecdsa.AddSignature(0, *r, *s)
+	require.NoError(t, ecdsa.AddSignature(0, *r, *s))
 	require.NoError(t, segment.Write(0, &pubkeyValue))
-	err = segment.Write(1, &msgValue)
+	err := segment.Write(1, &msgValue)
 	require.ErrorContains(t, err, "Signature is not valid")
 
 }
