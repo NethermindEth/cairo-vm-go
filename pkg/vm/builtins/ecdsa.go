@@ -26,7 +26,7 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 
 	pub := segment.Peek(pubOffset)
 	if !pub.Known() {
-		//Not sure if this is the right approach. It seems the msg and pub key  can be passed in either order
+		//Not sure if this is the right approach. It seems the msg and pub key  can be passed in either order.
 		return nil
 		//return fmt.Errorf("cannot infer value: input value at offset %d is unknown", pubOffset)
 	}
@@ -82,9 +82,7 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 			return fmt.Errorf("Signature is not valid")
 		}
 	}
-	//TODO: Get r, s, pub and hash
 	fmt.Println("VALID")
-
 	return nil
 }
 
@@ -92,7 +90,34 @@ func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
 	return fmt.Errorf("Can't infer value")
 }
 
-// "code": "ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))",
+/*
+Hint that will call this function looks like this:
+
+	"hints": {
+	    "6": [
+	        {
+	            "accessible_scopes": [
+	                "starkware.cairo.common.signature",
+	                "starkware.cairo.common.signature.verify_ecdsa_signature"
+	            ],
+	            "code": "ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))",
+	            "flow_tracking_data": {
+	                "ap_tracking": {
+	                    "group": 2,
+	                    "offset": 0
+	                },
+	                "reference_ids": {
+	                    "starkware.cairo.common.signature.verify_ecdsa_signature.ecdsa_ptr": 4,
+	                    "starkware.cairo.common.signature.verify_ecdsa_signature.message": 0,
+	                    "starkware.cairo.common.signature.verify_ecdsa_signature.public_key": 1,
+	                    "starkware.cairo.common.signature.verify_ecdsa_signature.signature_r": 2,
+	                    "starkware.cairo.common.signature.verify_ecdsa_signature.signature_s": 3
+	                }
+	            }
+	        }
+	    ]
+	},
+*/
 func (e *ECDSA) AddSignature(pubOffset uint64, r, s fp.Element) error {
 	if e.signatures == nil {
 		e.signatures = make(map[uint64]ecdsa.Signature)
