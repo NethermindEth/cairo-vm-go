@@ -16,9 +16,7 @@ type ECDSA struct {
 	signatures map[uint64]ecdsa.Signature
 }
 
-//	verify_ecdsa_signature(message_hash, public_key, sig_r, sig_s)
-//
-// Test with casm ?
+// verify_ecdsa_signature(message_hash, public_key, sig_r, sig_s)
 func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
 	ecdsaIndex := offset % cellsPerECDSA
 	pubOffset := offset - ecdsaIndex
@@ -46,7 +44,7 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 		return err
 	}
 
-	//Sig verification
+	//Recover Y part of the public key
 	posY, negY, err := recoverY(pubX)
 	if err != nil {
 		return err
