@@ -21,19 +21,15 @@ type ECDSA struct {
 //
 // Test with casm ?
 func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
-	fmt.Printf("Checking write for %v:%v value :%s\n", segment, offset, value)
-	return nil
-}
-
-func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
 	ecdsaIndex := offset % cellsPerECDSA
 	pubOffset := offset - ecdsaIndex
 	msg_offset := pubOffset + 1
-	fmt.Println(offset, cellsPerECDSA, offset&cellsPerECDSA, pubOffset, msg_offset)
 
 	pub := segment.Peek(pubOffset)
 	if !pub.Known() {
-		return fmt.Errorf("cannot infer value: input value at offset %d is unknown", pubOffset)
+		//Not sure if this is the right approach. It seems the msg and pub key  can be passed in either order
+		return nil
+		//return fmt.Errorf("cannot infer value: input value at offset %d is unknown", pubOffset)
 	}
 
 	pubX, err := pub.FieldElement() //X element of the sig
@@ -43,7 +39,8 @@ func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
 
 	msg := segment.Peek(msg_offset)
 	if !msg.Known() {
-		return fmt.Errorf("cannot infer value: input value at offset %d is unknown", msg_offset)
+		return nil
+		//return fmt.Errorf("cannot infer value: input value at offset %d is unknown", msg_offset)
 	}
 	msgField, err := msg.FieldElement()
 	if err != nil {
@@ -87,8 +84,13 @@ func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
 		}
 	}
 	//TODO: Get r, s, pub and hash
+	fmt.Println("VALID")
 
 	return nil
+}
+
+func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
+	return fmt.Errorf("Can't infer value")
 }
 
 // "code": "ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))",

@@ -274,9 +274,9 @@ func TestECDSA(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, output, err := runVm(compiledOutput)
+	//Note: This fails because no addSiganture hint
 	fmt.Println(output)
 	require.NoError(t, err)
-	//require.Contains(t, output, "Program output:\n\t2089986280348253421170679821480865132823066470938446095505822317253594081284")
 
 	clean("./builtin_tests/")
 }
