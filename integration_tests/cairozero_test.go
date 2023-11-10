@@ -269,6 +269,17 @@ func TestPedersen(t *testing.T) {
 	clean("./builtin_tests/")
 }
 
+func TestEcOp(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/ecop.cairo")
+	require.NoError(t, err)
+
+	_, _, _, err = runVm(compiledOutput)
+	// todo(rodro): This test is failing due to the lack of hint processing. It should be address soon
+	require.Error(t, err)
+  
+  clean("./builtin_tests/")
+}
+
 func TestKeccak(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/keccak_test.cairo")
 	require.NoError(t, err)
