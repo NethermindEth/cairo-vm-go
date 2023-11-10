@@ -551,9 +551,8 @@ func TestUint512DivModByUint256(t *testing.T) {
 	require.Nil(t, err)
 
 	quotient0 := &f.Element{}
-	val, ok := big.NewInt(1).SetString("170141183460469231731687303715884105730", 10)
-	require.True(t, ok)
-	quotient0.SetBigInt(val)
+	_, err = quotient0.SetString("170141183460469231731687303715884105730")
+	require.Nil(t, err)
 
 	require.Equal(
 		t,
@@ -562,9 +561,8 @@ func TestUint512DivModByUint256(t *testing.T) {
 	)
 
 	quotient1 := &f.Element{}
-	val, ok = big.NewInt(1).SetString("662027951208051485337304683719393406", 10)
-	require.True(t, ok)
-	quotient1.SetBigInt(val)
+	_, err = quotient1.SetString("662027951208051485337304683719393406")
+	require.Nil(t, err)
 
 	require.Equal(
 		t,
@@ -591,9 +589,8 @@ func TestUint512DivModByUint256(t *testing.T) {
 	)
 
 	remainder0 := &f.Element{}
-	val, ok = big.NewInt(1).SetString("340282366920938463463374607431768210942", 10)
-	require.True(t, ok)
-	remainder0.SetBigInt(val)
+	_, err = remainder0.SetString("340282366920938463463374607431768210942")
+	require.Nil(t, err)
 
 	require.Equal(
 		t,

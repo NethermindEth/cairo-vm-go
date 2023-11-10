@@ -978,27 +978,35 @@ func (hint Uint512DivModByUint256) Execute(vm *VM.VirtualMachine, _ *HintRunnerC
 		return err
 	}
 
+	var dividendBytes [64]byte
 	dividend0Bytes := dividend0Felt.Bytes()
 	dividend1Bytes := dividend1Felt.Bytes()
 	dividend2Bytes := dividend2Felt.Bytes()
 	dividend3Bytes := dividend3Felt.Bytes()
-	low := append(dividend1Bytes[16:], dividend0Bytes[16:]...)
-	high := append(dividend3Bytes[16:], dividend2Bytes[16:]...)
+	copy(dividendBytes[:16], dividend3Bytes[16:])
+	copy(dividendBytes[16:32], dividend2Bytes[16:])
+	copy(dividendBytes[32:48], dividend1Bytes[16:])
+	copy(dividendBytes[48:], dividend0Bytes[16:])
+	// TODO: check for possible use of uint512 module.
 	dividend := &big.Int{}
-	dividend.SetBytes(append(high, low...))
+	dividend.SetBytes(dividendBytes[:])
 
+	var divisorBytes [32]byte
 	divisor0Bytes := divisor0Felt.Bytes()
 	divisor1Bytes := divisor1Felt.Bytes()
+	copy(divisorBytes[:16], divisor1Bytes[16:])
+	copy(divisorBytes[16:], divisor0Bytes[16:])
+	// TODO: check for possible use of uint512 module.
 	divisor := &big.Int{}
-	divisor.SetBytes(append(divisor1Bytes[16:], divisor0Bytes[16:]...))
+	divisor.SetBytes(divisorBytes[:])
 	if divisor.Cmp(big.NewInt(0)) == 0 {
 		return fmt.Errorf("division by zero")
 	}
 
 	quotient, rem := dividend.DivMod(dividend, divisor, &big.Int{})
 
-	qBytes := make([]byte, 64)
-	quotient.FillBytes(qBytes)
+	var qBytes [64]byte
+	quotient.FillBytes(qBytes[:])
 	qlimb3 := f.Element{}
 	qlimb3.SetBytes(qBytes[:16])
 	qlimb2 := f.Element{}
@@ -1008,8 +1016,8 @@ func (hint Uint512DivModByUint256) Execute(vm *VM.VirtualMachine, _ *HintRunnerC
 	qlimb0 := f.Element{}
 	qlimb0.SetBytes(qBytes[48:])
 
-	rBytes := make([]byte, 32)
-	rem.FillBytes(rBytes)
+	var rBytes [32]byte
+	rem.FillBytes(rBytes[:])
 	rlimb1 := f.Element{}
 	rlimb1.SetBytes(rBytes[:16])
 	rlimb0 := f.Element{}
@@ -1020,35 +1028,35 @@ func (hint Uint512DivModByUint256) Execute(vm *VM.VirtualMachine, _ *HintRunnerC
 		return fmt.Errorf("get destination cell: %v", err)
 	}
 	quotient0Val := mem.MemoryValueFromFieldElement(&qlimb0)
-	err = vm.Memory.WriteToAddress(&quotient0Addr, &quotient0Val)
-	if err != nil {
+
+	if err = vm.Memory.WriteToAddress(&quotient0Addr, &quotient0Val); err != nil {
 		return fmt.Errorf("write cell: %v", err)
 	}
+
 	quotient1Addr, err := hint.quotient1.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
 	quotient1Val := mem.MemoryValueFromFieldElement(&qlimb1)
-	err = vm.Memory.WriteToAddress(&quotient1Addr, &quotient1Val)
-	if err != nil {
+	if err = vm.Memory.WriteToAddress(&quotient1Addr, &quotient1Val); err != nil {
 		return fmt.Errorf("write cell: %v", err)
 	}
+
 	quotient2Addr, err := hint.quotient2.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
 	quotient2Val := mem.MemoryValueFromFieldElement(&qlimb2)
-	err = vm.Memory.WriteToAddress(&quotient2Addr, &quotient2Val)
-	if err != nil {
+	if err = vm.Memory.WriteToAddress(&quotient2Addr, &quotient2Val); err != nil {
 		return fmt.Errorf("write cell: %v", err)
 	}
+
 	quotient3Addr, err := hint.quotient3.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
 	quotient3Val := mem.MemoryValueFromFieldElement(&qlimb3)
-	err = vm.Memory.WriteToAddress(&quotient3Addr, &quotient3Val)
-	if err != nil {
+	if err = vm.Memory.WriteToAddress(&quotient3Addr, &quotient3Val); err != nil {
 		return fmt.Errorf("write cell: %v", err)
 	}
 
@@ -1057,17 +1065,16 @@ func (hint Uint512DivModByUint256) Execute(vm *VM.VirtualMachine, _ *HintRunnerC
 		return fmt.Errorf("get destination cell: %v", err)
 	}
 	remainder0Val := mem.MemoryValueFromFieldElement(&rlimb0)
-	err = vm.Memory.WriteToAddress(&remainder0Addr, &remainder0Val)
-	if err != nil {
+	if err = vm.Memory.WriteToAddress(&remainder0Addr, &remainder0Val); err != nil {
 		return fmt.Errorf("write cell: %v", err)
 	}
+
 	remainder1Addr, err := hint.remainder1.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get destination cell: %v", err)
 	}
 	remainder1Val := mem.MemoryValueFromFieldElement(&rlimb1)
-	err = vm.Memory.WriteToAddress(&remainder1Addr, &remainder1Val)
-	if err != nil {
+	if err = vm.Memory.WriteToAddress(&remainder1Addr, &remainder1Val); err != nil {
 		return fmt.Errorf("write cell: %v", err)
 	}
 	return nil
