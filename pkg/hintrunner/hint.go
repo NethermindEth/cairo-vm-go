@@ -552,7 +552,7 @@ type Pair struct {
 	Position int
 }
 
-func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine) error {
+func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
 	primeOver3High, err := uint256.FromDecimal("3544607988759775765608368578435044694")
 	if err != nil {
 		return err
@@ -592,10 +592,13 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine) error {
 		{val, 2},
 	}
 
+	// Sort
 	sort.Slice(lengthsAndIndices, func(i, j int) bool {
 		// return lengthsAndIndices[i].Value < lengthsAndIndices[j].Value
 		return lengthsAndIndices[i].Value.Cmp(&lengthsAndIndices[j].Value) == -1
 	})
+
+	ctx.ExcludedArc = lengthsAndIndices[2].Position
 
 	// Felt252::from(lengths_and_indices[0].0.to_biguint() % prime_over_3_high
 	tmp := uint256.Int(lengthsAndIndices[0].Value.Bits())
@@ -608,38 +611,33 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine) error {
 	val2 := f.Element{}
 	val2.SetBytes(tmp.Bytes())
 
-	rangeCheckPtrMemVal, err := hint.rangeCheckPtr.Resolve(vm)
-	if err != nil {
-		return fmt.Errorf("get rangeCheckPtr cell: %v", err)
-	}
-
-	rangeCheckPtrMemAddr, err := rangeCheckPtrMemVal.MemoryAddress()
+	rangeCheckPtrMemAddr, err := ResolveAsAddress(vm, hint.rangeCheckPtr)
 
 	if err != nil {
-		return fmt.Errorf("get rangeCheckPtr cell: %v", err)
+		return fmt.Errorf("resolve rangeCheckPtr cell addr: %v", err)
 	}
 
 	writeValue := mem.MemoryValueFromFieldElement(&val1)
-	err = vm.Memory.WriteToAddress(rangeCheckPtrMemAddr, &writeValue)
+	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
 	if err != nil {
 		return fmt.Errorf("write rangeCheckPtr cell: %v", err)
 	}
 
 	rangeCheckPtrMemAddr.Offset += 1
-	err = vm.Memory.WriteToAddress(rangeCheckPtrMemAddr, &writeValue)
+	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
 	if err != nil {
 		return fmt.Errorf("write rangeCheckPtr+1 cell: %v", err)
 	}
 
 	rangeCheckPtrMemAddr.Offset += 1
 	writeValue = mem.MemoryValueFromFieldElement(&val2)
-	err = vm.Memory.WriteToAddress(rangeCheckPtrMemAddr, &writeValue)
+	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
 	if err != nil {
 		return fmt.Errorf("write rangeCheckPtr+2 cell: %v", err)
 	}
 
 	rangeCheckPtrMemAddr.Offset += 1
-	err = vm.Memory.WriteToAddress(rangeCheckPtrMemAddr, &writeValue)
+	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
 	if err != nil {
 		return fmt.Errorf("write rangeCheckPtr+3 cell: %v", err)
 	}

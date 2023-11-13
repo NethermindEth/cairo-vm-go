@@ -507,3 +507,46 @@ func TestUint256SquareRoot(t *testing.T) {
 	require.Equal(t, expectedRemainderHigh, actualRemainderHigh)
 	require.Equal(t, expectedSqrtMul2MinusRemainderGeU128, actualSqrtMul2MinusRemainderGeU128)
 }
+
+func TestAssertLeFindSmallArc(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	// vm.Memory.Segments = append(vm.Memory.Segments, memory.EmptySegment())
+
+	ctx := HintRunnerContext{
+		DictionaryManager:         DictionaryManager{},
+		SquashedDictionaryManager: SquashedDictionaryManager{},
+		ExcludedArc:               0,
+	}
+
+	valA := Immediate(f.NewElement(12))
+	valB := Immediate(f.NewElement(13))
+
+	rangeCheckPtr := Deref{ApCellRef(0)}
+
+	hint := AssertLeFindSmallArc{
+		a:             valA,
+		b:             valB,
+		rangeCheckPtr: rangeCheckPtr,
+	}
+
+	err := hint.Execute(vm, &ctx)
+
+	require.NoError(t, err)
+
+	expected1 := memory.MemoryValueFromInt(0)
+	expected2 := memory.MemoryValueFromInt(0)
+	expected3 := memory.MemoryValueFromInt(0)
+	expected4 := memory.MemoryValueFromInt(0)
+
+	actual1 := readFrom(vm, VM.ExecutionSegment, 1)
+	actual2 := readFrom(vm, VM.ExecutionSegment, 2)
+	actual3 := readFrom(vm, VM.ExecutionSegment, 3)
+	actual4 := readFrom(vm, VM.ExecutionSegment, 4)
+
+	require.Equal(t, expected1, actual1)
+	require.Equal(t, expected2, actual2)
+	require.Equal(t, expected3, actual3)
+	require.Equal(t, expected4, actual4)
+}
