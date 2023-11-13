@@ -3,6 +3,7 @@ package builtins
 import (
 	"fmt"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	starkcurve "github.com/consensys/gnark-crypto/ecc/stark-curve"
 	ecdsa "github.com/consensys/gnark-crypto/ecc/stark-curve/ecdsa"
@@ -20,7 +21,7 @@ type ECDSA struct {
 func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
 	ecdsaIndex := offset % cellsPerECDSA
 	pubOffset := offset - ecdsaIndex
-	msg_offset := pubOffset + 1
+	msgOffset := pubOffset + 1
 
 	pub := segment.Peek(pubOffset)
 	if !pub.Known() {
@@ -34,7 +35,7 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 		return err
 	}
 
-	msg := segment.Peek(msg_offset)
+	msg := segment.Peek(msgOffset)
 	if !msg.Known() {
 		return nil
 		//return fmt.Errorf("cannot infer value: input value at offset %d is unknown", msg_offset)
@@ -51,15 +52,15 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 	}
 
 	//Try first with positive y
-	key := starkcurve.G1Affine{X: *pubX, Y: *posY}
+	key := starkcurve.G1Affine{X: *pubX, Y: posY}
 	if !key.IsOnCurve() {
-		return fmt.Errorf("Key is not on curve")
+		return fmt.Errorf("key is not on curve")
 	}
 
 	pubKey := &ecdsa.PublicKey{A: key}
 	sig, ok := e.signatures[pubOffset]
 	if !ok {
-		return fmt.Errorf("Signature is missing form ECDA builtin")
+		return fmt.Errorf("signature is missing form ECDA builtin")
 	}
 
 	msgBytes := msgField.Bytes()
@@ -70,17 +71,16 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 
 	if !valid {
 		// Now try with Neg Y. Already know the point is on the curve so no need to check again
-		key = starkcurve.G1Affine{X: *pubX, Y: *negY}
+		key = starkcurve.G1Affine{X: *pubX, Y: negY}
 		pubKey = &ecdsa.PublicKey{A: key}
 		valid, err := pubKey.Verify(sig.Bytes(), msgBytes[:], nil)
 		if err != nil {
 			return err
 		}
 		if !valid {
-			return fmt.Errorf("Signature is not valid")
+			return fmt.Errorf("signature is not valid")
 		}
 	}
-	fmt.Println("VALID")
 	return nil
 }
 
@@ -116,7 +116,7 @@ Hint that will call this function looks like this:
 	    ]
 	},
 */
-func (e *ECDSA) AddSignature(pubOffset uint64, r, s fp.Element) error {
+func (e *ECDSA) AddSignature(pubOffset uint64, r, s *fp.Element) error {
 	if e.signatures == nil {
 		e.signatures = make(map[uint64]ecdsa.Signature)
 	}
@@ -141,20 +141,20 @@ func (e *ECDSA) String() string {
 }
 
 // recoverY recovers the y and -y coordinate of x. True y can be either y or -y
-func recoverY(x *fp.Element) (*fp.Element, *fp.Element, error) {
-	ALPHA := fp.NewElement(1)
-	BETA := fp.Element{}
-	_, _ = BETA.SetString("3141592653589793238462643383279502884197169399375105820974944592307816406665")
+func recoverY(x *fp.Element) (fp.Element, fp.Element, error) {
 	// y_squared = (x * x * x + ALPHA * x + BETA) % FIELD_PRIME
-	x2 := new(fp.Element).Mul(x, x)
-	x3 := x2.Mul(x2, x)
-	a := new(fp.Element).Mul(&ALPHA, x)
-	x3.Add(x3, a)
-	x3.Add(x3, &BETA)
-	y := x3.Sqrt(x3)
+	ax := &fp.Element{}
+	ax.Mul(&utils.Alpha, x)
+	x2 := &fp.Element{}
+	x2.Mul(x, x)
+	x2.Mul(x2, x)
+	x2.Add(x2, ax)
+	x2.Add(x2, &utils.Beta)
+	y := x2.Sqrt(x2)
 	if y == nil {
-		return nil, nil, fmt.Errorf("Invalid Public key")
+		return fp.Element{}, fp.Element{}, fmt.Errorf("Invalid Public key")
 	}
-	//TODO: Figure out if we need to check both
-	return y, new(fp.Element).Neg(y), nil
+	negY := fp.Element{}
+	negY.Neg(y)
+	return *y, negY, nil
 }
