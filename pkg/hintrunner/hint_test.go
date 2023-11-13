@@ -8,6 +8,7 @@ import (
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
@@ -512,7 +513,11 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
-	// vm.Memory.Segments = append(vm.Memory.Segments, memory.EmptySegment())
+	addr := mem.MemoryAddress{
+		SegmentIndex: 1,
+		Offset:       3,
+	}
+	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromMemoryAddress(&addr))
 
 	ctx := HintRunnerContext{
 		DictionaryManager:         DictionaryManager{},
@@ -535,18 +540,23 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 
 	require.NoError(t, err)
 
-	expected1 := memory.MemoryValueFromInt(0)
-	expected2 := memory.MemoryValueFromInt(0)
-	expected3 := memory.MemoryValueFromInt(0)
-	expected4 := memory.MemoryValueFromInt(0)
+	expected1 := memory.MemoryValueFromInt(1)
+	expected2 := memory.MemoryValueFromInt(1)
+	expected3 := memory.MemoryValueFromInt(12)
+	expected4 := memory.MemoryValueFromInt(12)
+	expectedPtr := memory.MemoryValueFromMemoryAddress(&addr)
+	expectedExcludedArc := int(2)
 
-	actual1 := readFrom(vm, VM.ExecutionSegment, 1)
-	actual2 := readFrom(vm, VM.ExecutionSegment, 2)
-	actual3 := readFrom(vm, VM.ExecutionSegment, 3)
-	actual4 := readFrom(vm, VM.ExecutionSegment, 4)
+	actual1 := readFrom(vm, VM.ExecutionSegment, 3)
+	actual2 := readFrom(vm, VM.ExecutionSegment, 4)
+	actual3 := readFrom(vm, VM.ExecutionSegment, 5)
+	actual4 := readFrom(vm, VM.ExecutionSegment, 6)
+	actual1Ptr := readFrom(vm, VM.ExecutionSegment, 0)
 
 	require.Equal(t, expected1, actual1)
 	require.Equal(t, expected2, actual2)
 	require.Equal(t, expected3, actual3)
 	require.Equal(t, expected4, actual4)
+	require.Equal(t, expectedPtr, actual1Ptr)
+	require.Equal(t, expectedExcludedArc, ctx.ExcludedArc)
 }

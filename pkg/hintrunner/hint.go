@@ -947,14 +947,14 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 		return err
 	}
 
-	val := f.Element{}
-	val.SetInt64(-1)
-	val.Sub(&val, bFelt)
+	thirdLength := f.Element{}
+	thirdLength.SetInt64(-1)
+	thirdLength.Sub(&thirdLength, bFelt)
 
 	lengthsAndIndices := []Pair{
 		{*aFelt, 0},
 		{*bFelt.Sub(bFelt, aFelt), 1},
-		{val, 2},
+		{thirdLength, 2},
 	}
 
 	// Sort
@@ -963,6 +963,7 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 		return lengthsAndIndices[i].Value.Cmp(&lengthsAndIndices[j].Value) == -1
 	})
 
+	// Exclude the largest arc after sorting
 	ctx.ExcludedArc = lengthsAndIndices[2].Position
 
 	// Felt252::from(lengths_and_indices[0].0.to_biguint() % prime_over_3_high
