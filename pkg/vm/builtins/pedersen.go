@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	pedersenhash "github.com/consensys/gnark-crypto/ecc/stark-curve/pedersen-hash"
 )
 
@@ -14,11 +14,11 @@ const inputCellsPerPedersen = 2
 
 type Pedersen struct{}
 
-func (p *Pedersen) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
+func (p *Pedersen) CheckWrite(segment *mem.Segment, offset uint64, value *mem.MemoryValue) error {
 	return nil
 }
 
-func (p *Pedersen) InferValue(segment *memory.Segment, offset uint64) error {
+func (p *Pedersen) InferValue(segment *mem.Segment, offset uint64) error {
 	hashIndex := offset % cellsPerPedersen
 	// input cell
 	if hashIndex < inputCellsPerPedersen {
@@ -49,7 +49,7 @@ func (p *Pedersen) InferValue(segment *memory.Segment, offset uint64) error {
 	}
 
 	hash := pedersenhash.Pedersen(xFelt, yFelt)
-	hashValue := memory.MemoryValueFromFieldElement(&hash)
+	hashValue := mem.MemoryValueFromFieldElement(&hash)
 	return segment.Write(xOffset+2, &hashValue)
 }
 
