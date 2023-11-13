@@ -682,17 +682,28 @@ func TestUpdatePcNextInstrImm(t *testing.T) {
 func TestUpdatePcJump(t *testing.T) {
 	vm := defaultVirtualMachine()
 
-	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
-	jumpAddr := uint64(10)
-	res := mem.MemoryValueFromSegmentAndOffset(0, jumpAddr)
-
 	instruction := a.Instruction{
 		PcUpdate: a.PcUpdateJump,
 	}
-	nextPc, err := vm.updatePc(&instruction, nil, nil, &res)
 
-	require.NoError(t, err)
-	assert.Equal(t, mem.MemoryAddress{SegmentIndex: 0, Offset: jumpAddr}, nextPc)
+	jumpAddrs := []mem.MemoryValue{
+		mem.MemoryValueFromInt(10),
+		mem.MemoryValueFromSegmentAndOffset(4, 5),
+	}
+	expectedPcs := []mem.MemoryAddress{
+		{SegmentIndex: 0, Offset: 10},
+		{SegmentIndex: 4, Offset: 5},
+	}
+
+	for i := range jumpAddrs {
+		vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
+		jumpAddr := jumpAddrs[i]
+		expectedPc := expectedPcs[i]
+
+		nextPc, err := vm.updatePc(&instruction, nil, nil, &jumpAddr)
+		require.NoError(t, err)
+		assert.Equal(t, expectedPc, nextPc)
+	}
 }
 
 func TestUpdatePcJumpRel(t *testing.T) {
@@ -862,7 +873,7 @@ func (r *noHintRunner) RunHint(_ *VirtualMachine) error {
 	return nil
 }
 
-func TestAssertEqualInstruction(t *testing.T) {
+func TestRunStepInstructions(t *testing.T) {
 	hintrunner := noHintRunner{}
 	setInitialReg := func(vm *VirtualMachine, regvals ...uint64) {
 		if len(regvals) != 3 {
@@ -886,6 +897,7 @@ func TestAssertEqualInstruction(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, mem.MemoryValueFromInt(2), mv)
 	})
+
 	t.Run("assign left to right", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("[ap + 1] = [ap];")
 		setInitialReg(vm, 1, 1, 0)
@@ -899,6 +911,7 @@ func TestAssertEqualInstruction(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, mem.MemoryValueFromInt(2), mv)
 	})
+
 	t.Run("addition", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("[ap] = [ap - 1] + [fp];")
 		setInitialReg(vm, 3, 1, 0)
@@ -913,6 +926,7 @@ func TestAssertEqualInstruction(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, mem.MemoryValueFromInt(15), mv)
 	})
+
 	t.Run("substraction", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("[ap] = [ap - 1] + [fp];")
 		setInitialReg(vm, 3, 1, 0)
@@ -958,6 +972,160 @@ func TestAssertEqualInstruction(t *testing.T) {
 		assert.Equal(t, mem.MemoryValueFromInt(5), mv)
 	})
 
+	t.Run("test advancing ap with expression", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("ap += [fp + 4] + [fp];")
+		setInitialReg(vm, 1, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Fp+4, 5)
+		writeToDataSegment(vm, vm.Context.Fp, 5)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Ap, uint64(11))
+	})
+
+	t.Run("test advancing ap with immediate", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("ap += 123;")
+		setInitialReg(vm, 1, 1, 0)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Ap, uint64(124))
+	})
+
+	t.Run("test abs jump with immediate", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("jmp abs 15;")
+		setInitialReg(vm, 1, 1, 0)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Pc.Offset, uint64(15))
+	})
+	
+	t.Run("test abs jump with address", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("jmp abs [ap];")
+		setInitialReg(vm, 1, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Ap, &mem.MemoryAddress{SegmentIndex: 15, Offset: 18})
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Pc, mem.MemoryAddress{SegmentIndex: 15, Offset: 18})
+	})
+
+	t.Run("test rel jump with expression", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("jmp rel [ap + 1] + [fp];")
+		setInitialReg(vm, 1, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Ap+1, 1)
+		writeToDataSegment(vm, vm.Context.Fp, 7)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Pc.Offset, uint64(8))
+	})
+
+	t.Run("test rel jump with immediate", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("jmp rel 123;")
+		setInitialReg(vm, 1, 1, 0)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Pc.Offset, uint64(123))
+	})
+
+	t.Run("test conditional jump, if <op> != 0", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("jmp rel [ap - 1] if [fp + 2] != 0;")
+		setInitialReg(vm, 1, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Ap-1, 4)
+		writeToDataSegment(vm, vm.Context.Fp+2, 5)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Pc.Offset, uint64(4))
+	})
+
+	t.Run("test conditional jump, if <op> == 0", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("jmp rel [ap - 1] if [fp + 2] != 0;")
+		setInitialReg(vm, 1, 1, 0)
+
+		writeToDataSegment(vm, vm.Context.Ap-1, 3)
+		writeToDataSegment(vm, vm.Context.Fp+2, 0)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Pc.Offset, uint64(1))
+	})
+
+	t.Run("test 'call abs <address>'", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("call abs [fp + 4];")
+		setInitialReg(vm, 1, 4, 0)
+
+		writeToDataSegment(vm, vm.Context.Fp+4, &mem.MemoryAddress{SegmentIndex: 5, Offset: 8})
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Pc, mem.MemoryAddress{SegmentIndex: 5, Offset: 8})
+
+		// ap is advanced by 2 and fp is set to the new ap
+		assert.Equal(t, vm.Context.Ap, vm.Context.Fp, uint64(3))
+	})
+
+	t.Run("test call rel with immediate", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("call rel 123;")
+		setInitialReg(vm, 2, 1, 0)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Pc, mem.MemoryAddress{SegmentIndex: 0, Offset: 123})
+
+		// ap is advanced by 2 and fp is set to the new ap
+		assert.Equal(t, vm.Context.Fp, vm.Context.Ap, uint64(4))
+	})
+
+	t.Run("test call rel with address", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("call rel [ap + 4];")
+		setInitialReg(vm, 1, 4, 0)
+
+		writeToDataSegment(vm, vm.Context.Ap+4, 5)
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		assert.Equal(t, vm.Context.Pc, mem.MemoryAddress{SegmentIndex: 0, Offset: 5})
+
+		// ap is advanced by 2 and fp is set to the new ap
+		assert.Equal(t, vm.Context.Ap, vm.Context.Fp, uint64(3))
+	})
+
+	t.Run("test ret", func(t *testing.T) {
+		vm := defaultVirtualMachineWithCode("ret;")
+		setInitialReg(vm, 1, 3, 0)
+
+		// The value from [fp - 1] is read. This is the return PC.
+		writeToDataSegment(vm, vm.Context.Fp-1, &mem.MemoryAddress{SegmentIndex: 5, Offset: 6})
+		writeToDataSegment(vm, vm.Context.Ap, &mem.MemoryAddress{SegmentIndex: 3, Offset: 46})
+
+		err := vm.RunStep(&hintrunner)
+		require.NoError(t, err)
+
+		// the ret instruction reads the value from [fp - 1] to determine the next program counter (PC)
+		assert.Equal(t, vm.Context.Pc, mem.MemoryAddress{SegmentIndex: 5, Offset: 6})
+
+		// the value of ap is written to fp
+		assert.Equal(t, vm.Context.Fp, uint64(46))
+	})
 }
 
 // ======================
