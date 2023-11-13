@@ -81,7 +81,7 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 }
 
 func (e *ECDSA) InferValue(segment *memory.Segment, offset uint64) error {
-	return fmt.Errorf("Can't infer value")
+	return fmt.Errorf("can't infer value")
 }
 
 /*
