@@ -50,10 +50,10 @@ type ApPlus struct {
 }
 
 type Expression struct {
-	DoubleDeref   *DoubleDeref   `@@ |`
-	MathOperation *MathOperation `@@ |`
-	Deref         *Deref         `@@ |`
-	Immediate     *string        `@Int`
+	DoubleDeref   *DoubleDeref    `@@ |`
+	MathOperation *MathOperation  `@@ |`
+	Deref         *Deref          `@@ |`
+	Immediate     *ImmediateValue `@@`
 }
 
 type Deref struct {
@@ -78,8 +78,13 @@ type MathOperation struct {
 }
 
 type DerefOrImm struct {
-	Deref     *Deref  `@@ |`
-	Immediate *string `@Int`
+	Deref     *Deref          `@@ |`
+	Immediate *ImmediateValue `@@`
+}
+
+type ImmediateValue struct {
+	Sign  string  `@("+" | "-")?`
+	Value *string `@Int`
 }
 
 // AST Functionality
@@ -126,7 +131,14 @@ func (e *Expression) AsMathOperation() *MathOperation {
 }
 
 func (e *Expression) AsImmediate() *string {
-	return e.Immediate
+	if e.Immediate == nil {
+		return nil
+	}
+	if e.Immediate.Sign == "-" {
+		imm := fmt.Sprintf("-%s", *e.Immediate.Value)
+		return &imm
+	}
+	return e.Immediate.Value
 }
 
 func (di *DerefOrImm) AsDeref() *Deref {
@@ -141,7 +153,14 @@ func (di *DerefOrImm) AsMathOperation() *MathOperation {
 	return nil
 }
 func (di *DerefOrImm) AsImmediate() *string {
-	return di.Immediate
+	if di.Immediate == nil {
+		return nil
+	}
+	if di.Immediate.Sign == "-" {
+		imm := fmt.Sprintf("-%s", *di.Immediate.Value)
+		return &imm
+	}
+	return di.Immediate.Value
 }
 
 func (deref *Deref) IsFp() bool {
