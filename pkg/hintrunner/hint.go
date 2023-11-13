@@ -537,109 +537,6 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
 	return nil
 }
 
-type AssertLeFindSmallArc struct {
-	a             ResOperander
-	b             ResOperander
-	rangeCheckPtr ResOperander
-}
-
-func (hint AssertLeFindSmallArc) String() string {
-	return "AssertLeFindSmallArc"
-}
-
-func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
-	primeOver3High, err := uint256.FromDecimal("3544607988759775765608368578435044694")
-	if err != nil {
-		return err
-	}
-	primeOver2High, err := uint256.FromDecimal("5316911983139663648412552867652567041")
-	if err != nil {
-		return err
-	}
-
-	a, err := hint.a.Resolve(vm)
-	if err != nil {
-		return fmt.Errorf("resolve a operand %s: %v", hint.a, err)
-	}
-
-	b, err := hint.b.Resolve(vm)
-	if err != nil {
-		return fmt.Errorf("resolve b operand %s: %v", hint.b, err)
-	}
-
-	aFelt, err := a.FieldElement()
-	if err != nil {
-		return err
-	}
-
-	bFelt, err := b.FieldElement()
-	if err != nil {
-		return err
-	}
-
-	val := f.Element{}
-	val.SetInt64(-1)
-	val.Sub(&val, bFelt)
-
-	lengthsAndIndices := []Pair{
-		{*aFelt, 0},
-		{*bFelt.Sub(bFelt, aFelt), 1},
-		{val, 2},
-	}
-
-	// Sort
-	sort.Slice(lengthsAndIndices, func(i, j int) bool {
-		// return lengthsAndIndices[i].Value < lengthsAndIndices[j].Value
-		return lengthsAndIndices[i].Value.Cmp(&lengthsAndIndices[j].Value) == -1
-	})
-
-	ctx.ExcludedArc = lengthsAndIndices[2].Position
-
-	// Felt252::from(lengths_and_indices[0].0.to_biguint() % prime_over_3_high
-	tmp := uint256.Int(lengthsAndIndices[0].Value.Bits())
-	tmp.Mod(&tmp, primeOver3High)
-	val1 := f.Element{}
-	val1.SetBytes(tmp.Bytes())
-	// Felt252::from(lengths_and_indices[1].0.to_biguint() % prime_over_2_high)
-	tmp = uint256.Int(lengthsAndIndices[1].Value.Bits())
-	tmp.Mod(&tmp, primeOver2High)
-	val2 := f.Element{}
-	val2.SetBytes(tmp.Bytes())
-
-	rangeCheckPtrMemAddr, err := ResolveAsAddress(vm, hint.rangeCheckPtr)
-
-	if err != nil {
-		return fmt.Errorf("resolve rangeCheckPtr cell addr: %v", err)
-	}
-
-	writeValue := mem.MemoryValueFromFieldElement(&val1)
-	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
-	if err != nil {
-		return fmt.Errorf("write rangeCheckPtr cell: %v", err)
-	}
-
-	rangeCheckPtrMemAddr.Offset += 1
-	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
-	if err != nil {
-		return fmt.Errorf("write rangeCheckPtr+1 cell: %v", err)
-	}
-
-	rangeCheckPtrMemAddr.Offset += 1
-	writeValue = mem.MemoryValueFromFieldElement(&val2)
-	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
-	if err != nil {
-		return fmt.Errorf("write rangeCheckPtr+2 cell: %v", err)
-	}
-
-	rangeCheckPtrMemAddr.Offset += 1
-	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
-	if err != nil {
-		return fmt.Errorf("write rangeCheckPtr+3 cell: %v", err)
-	}
-
-	return nil
-}
-
 //
 // Dictionary Hints
 //
@@ -1008,4 +905,107 @@ func (hint *GetNextDictKey) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContex
 
 	mv := mem.MemoryValueFromFieldElement(&nextKey)
 	return vm.Memory.WriteToAddress(&nextKeyAddr, &mv)
+}
+
+type AssertLeFindSmallArc struct {
+	a             ResOperander
+	b             ResOperander
+	rangeCheckPtr ResOperander
+}
+
+func (hint AssertLeFindSmallArc) String() string {
+	return "AssertLeFindSmallArc"
+}
+
+func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	primeOver3High, err := uint256.FromDecimal("3544607988759775765608368578435044694")
+	if err != nil {
+		return err
+	}
+	primeOver2High, err := uint256.FromDecimal("5316911983139663648412552867652567041")
+	if err != nil {
+		return err
+	}
+
+	a, err := hint.a.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve a operand %s: %v", hint.a, err)
+	}
+
+	b, err := hint.b.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve b operand %s: %v", hint.b, err)
+	}
+
+	aFelt, err := a.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	bFelt, err := b.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	val := f.Element{}
+	val.SetInt64(-1)
+	val.Sub(&val, bFelt)
+
+	lengthsAndIndices := []Pair{
+		{*aFelt, 0},
+		{*bFelt.Sub(bFelt, aFelt), 1},
+		{val, 2},
+	}
+
+	// Sort
+	sort.Slice(lengthsAndIndices, func(i, j int) bool {
+		// return lengthsAndIndices[i].Value < lengthsAndIndices[j].Value
+		return lengthsAndIndices[i].Value.Cmp(&lengthsAndIndices[j].Value) == -1
+	})
+
+	ctx.ExcludedArc = lengthsAndIndices[2].Position
+
+	// Felt252::from(lengths_and_indices[0].0.to_biguint() % prime_over_3_high
+	tmp := uint256.Int(lengthsAndIndices[0].Value.Bits())
+	tmp.Mod(&tmp, primeOver3High)
+	val1 := f.Element{}
+	val1.SetBytes(tmp.Bytes())
+	// Felt252::from(lengths_and_indices[1].0.to_biguint() % prime_over_2_high)
+	tmp = uint256.Int(lengthsAndIndices[1].Value.Bits())
+	tmp.Mod(&tmp, primeOver2High)
+	val2 := f.Element{}
+	val2.SetBytes(tmp.Bytes())
+
+	rangeCheckPtrMemAddr, err := ResolveAsAddress(vm, hint.rangeCheckPtr)
+
+	if err != nil {
+		return fmt.Errorf("resolve rangeCheckPtr cell addr: %v", err)
+	}
+
+	writeValue := mem.MemoryValueFromFieldElement(&val1)
+	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
+	if err != nil {
+		return fmt.Errorf("write rangeCheckPtr cell: %v", err)
+	}
+
+	rangeCheckPtrMemAddr.Offset += 1
+	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
+	if err != nil {
+		return fmt.Errorf("write rangeCheckPtr+1 cell: %v", err)
+	}
+
+	rangeCheckPtrMemAddr.Offset += 1
+	writeValue = mem.MemoryValueFromFieldElement(&val2)
+	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
+	if err != nil {
+		return fmt.Errorf("write rangeCheckPtr+2 cell: %v", err)
+	}
+
+	rangeCheckPtrMemAddr.Offset += 1
+	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
+	if err != nil {
+		return fmt.Errorf("write rangeCheckPtr+3 cell: %v", err)
+	}
+
+	return nil
 }
