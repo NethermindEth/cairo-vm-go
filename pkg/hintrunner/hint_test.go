@@ -8,7 +8,6 @@ import (
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
@@ -513,7 +512,7 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
-	addr := mem.MemoryAddress{
+	addr := memory.MemoryAddress{
 		SegmentIndex: 1,
 		Offset:       3,
 	}
