@@ -24,10 +24,11 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 	msgOffset := pubOffset + 1
 
 	pub := segment.Peek(pubOffset)
-	if !pub.Known() {
-		//Not sure if this is the right approach. It seems the msg and pub key  can be passed in either order.
+	msg := segment.Peek(msgOffset)
+
+	//Both must be known to check the signature
+	if !msg.Known() || !pub.Known() {
 		return nil
-		//return fmt.Errorf("cannot infer value: input value at offset %d is unknown", pubOffset)
 	}
 
 	pubX, err := pub.FieldElement() //X element of the sig
@@ -35,11 +36,6 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 		return err
 	}
 
-	msg := segment.Peek(msgOffset)
-	if !msg.Known() {
-		return nil
-		//return fmt.Errorf("cannot infer value: input value at offset %d is unknown", msg_offset)
-	}
 	msgField, err := msg.FieldElement()
 	if err != nil {
 		return err
