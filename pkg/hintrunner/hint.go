@@ -547,11 +547,6 @@ func (hint AssertLeFindSmallArc) String() string {
 	return "AssertLeFindSmallArc"
 }
 
-type Pair struct {
-	Value    f.Element
-	Position int
-}
-
 func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
 	primeOver3High, err := uint256.FromDecimal("3544607988759775765608368578435044694")
 	if err != nil {

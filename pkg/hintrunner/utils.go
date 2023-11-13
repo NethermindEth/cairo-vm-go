@@ -8,6 +8,11 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+type Pair struct {
+	Value    f.Element
+	Position int
+}
+
 func ResolveAsAddress(vm *VM.VirtualMachine, op ResOperander) (mem.MemoryAddress, error) {
 	mv, err := op.Resolve(vm)
 	if err != nil {
