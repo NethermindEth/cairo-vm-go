@@ -947,11 +947,14 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 		return err
 	}
 
-	thirdLength := f.Element{}
-	thirdLength.SetInt64(-1)
+	thirdLength := f.Element{32, 0, 0, 544} // -1 field element
 	thirdLength.Sub(&thirdLength, bFelt)
 
-	lengthsAndIndices := []Pair{
+	// Array of pairs (2-tuple)
+	lengthsAndIndices := []struct {
+		Value    f.Element
+		Position int
+	}{
 		{*aFelt, 0},
 		{*bFelt.Sub(bFelt, aFelt), 1},
 		{thirdLength, 2},
@@ -966,12 +969,15 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 	// Exclude the largest arc after sorting
 	ctx.ExcludedArc = lengthsAndIndices[2].Position
 
-	// Felt252::from(lengths_and_indices[0].0.to_biguint() % prime_over_3_high
+	// Find the modulo of the first element's value of the sorted array
+	// w.r.t. primeOver3High
 	tmp := uint256.Int(lengthsAndIndices[0].Value.Bits())
 	tmp.Mod(&tmp, primeOver3High)
 	val1 := f.Element{}
 	val1.SetBytes(tmp.Bytes())
-	// Felt252::from(lengths_and_indices[1].0.to_biguint() % prime_over_2_high)
+
+	// Find the modulo of the second element' value of the sorted array
+	// w.r.t. primeOver2High
 	tmp = uint256.Int(lengthsAndIndices[1].Value.Bits())
 	tmp.Mod(&tmp, primeOver2High)
 	val2 := f.Element{}
