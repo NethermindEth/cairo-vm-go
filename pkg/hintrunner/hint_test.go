@@ -507,3 +507,59 @@ func TestUint256SquareRoot(t *testing.T) {
 	require.Equal(t, expectedRemainderHigh, actualRemainderHigh)
 	require.Equal(t, expectedSqrtMul2MinusRemainderGeU128, actualSqrtMul2MinusRemainderGeU128)
 }
+
+func TestAssertLeIsFirstArcExcluded(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	ctx := HintRunnerContext{
+		DictionaryManager:         DictionaryManager{},
+		SquashedDictionaryManager: SquashedDictionaryManager{},
+		ExcludedArc:               2,
+	}
+
+	var flag ApCellRef = 0
+
+	hint := AssertLeIsFirstArcExcluded{
+		skipExcludeAFlag: flag,
+	}
+
+	err := hint.Execute(vm, &ctx)
+
+	require.NoError(t, err)
+
+	expected := memory.MemoryValueFromInt(1)
+
+	actual := readFrom(vm, VM.ExecutionSegment, 0)
+
+	require.Equal(t, expected, actual)
+}
+
+func TestAssertLeIsSecondArcExcluded(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	ctx := HintRunnerContext{
+		DictionaryManager:         DictionaryManager{},
+		SquashedDictionaryManager: SquashedDictionaryManager{},
+		ExcludedArc:               1,
+	}
+
+	var flag ApCellRef = 0
+
+	hint := AssertLeIsSecondArcExcluded{
+		skipExcludeBMinusA: flag,
+	}
+
+	err := hint.Execute(vm, &ctx)
+
+	require.NoError(t, err)
+
+	expected := memory.MemoryValueFromInt(0)
+
+	actual := readFrom(vm, VM.ExecutionSegment, 0)
+
+	require.Equal(t, expected, actual)
+}
