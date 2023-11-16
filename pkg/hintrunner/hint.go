@@ -969,46 +969,58 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 	// Exclude the largest arc after sorting
 	ctx.ExcludedArc = lengthsAndIndices[2].Position
 
-	// Find the modulo of the first element's value of the sorted array
-	// w.r.t. primeOver3High
-	tmp := uint256.Int(lengthsAndIndices[0].Value.Bits())
-	tmp.Mod(&tmp, primeOver3High)
-	val1 := f.Element{}
-	val1.SetBytes(tmp.Bytes())
-
-	// Find the modulo of the second element' value of the sorted array
-	// w.r.t. primeOver2High
-	tmp = uint256.Int(lengthsAndIndices[1].Value.Bits())
-	tmp.Mod(&tmp, primeOver2High)
-	val2 := f.Element{}
-	val2.SetBytes(tmp.Bytes())
-
 	rangeCheckPtrMemAddr, err := ResolveAsAddress(vm, hint.rangeCheckPtr)
-
 	if err != nil {
 		return fmt.Errorf("resolve rangeCheckPtr cell addr: %v", err)
 	}
 
-	writeValue := mem.MemoryValueFromFieldElement(&val1)
+	// Find the quotient and modulo of the first element's value of the sorted array
+	// w.r.t. primeOver3High
+	quotientBits := uint256.Int(lengthsAndIndices[0].Value.Bits())
+	remainderBits := uint256.Int{}
+	quotientBits.DivMod(&quotientBits, primeOver3High, &remainderBits)
+
+	remainderFelt := f.Element{}
+	remainderFelt.SetBytes(remainderBits.Bytes())
+
+	quotientFelt := f.Element{}
+	quotientFelt.SetBytes(quotientBits.Bytes())
+
+	// Store remainder 1
+	writeValue := mem.MemoryValueFromFieldElement(&remainderFelt)
 	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
 	if err != nil {
 		return fmt.Errorf("write rangeCheckPtr cell: %v", err)
 	}
 
+	// Store quotient 1
 	rangeCheckPtrMemAddr.Offset += 1
+	writeValue = mem.MemoryValueFromFieldElement(&quotientFelt)
 	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
 	if err != nil {
 		return fmt.Errorf("write rangeCheckPtr+1 cell: %v", err)
 	}
 
+	// Find the quotient and modulo of the second element' value of the sorted array
+	// w.r.t. primeOver2High
+	quotientBits = uint256.Int(lengthsAndIndices[1].Value.Bits())
+	remainderBits = uint256.Int{}
+	quotientBits.DivMod(&quotientBits, primeOver2High, &remainderBits)
+
+	remainderFelt.SetBytes(remainderBits.Bytes())
+	quotientFelt.SetBytes(quotientBits.Bytes())
+
+	// Store remainder 2
 	rangeCheckPtrMemAddr.Offset += 1
-	writeValue = mem.MemoryValueFromFieldElement(&val2)
+	writeValue = mem.MemoryValueFromFieldElement(&remainderFelt)
 	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
 	if err != nil {
 		return fmt.Errorf("write rangeCheckPtr+2 cell: %v", err)
 	}
 
+	// Store quotient 2
 	rangeCheckPtrMemAddr.Offset += 1
+	writeValue = mem.MemoryValueFromFieldElement(&quotientFelt)
 	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
 	if err != nil {
 		return fmt.Errorf("write rangeCheckPtr+3 cell: %v", err)
