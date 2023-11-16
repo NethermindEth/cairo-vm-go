@@ -512,6 +512,7 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
+	// The addr that the range check pointer will point to
 	addr := memory.MemoryAddress{
 		SegmentIndex: 1,
 		Offset:       3,
@@ -524,8 +525,8 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		ExcludedArc:               0,
 	}
 
-	valA := Immediate(f.NewElement(12))
-	valB := Immediate(f.NewElement(13))
+	valA := Immediate(f.NewElement(1024))
+	valB := Immediate(f.NewElement(1025))
 
 	rangeCheckPtr := Deref{ApCellRef(0)}
 
@@ -539,23 +540,23 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 
 	require.NoError(t, err)
 
-	expected1 := memory.MemoryValueFromInt(1)
-	expected2 := memory.MemoryValueFromInt(1)
-	expected3 := memory.MemoryValueFromInt(12)
-	expected4 := memory.MemoryValueFromInt(12)
+	expectedRem1 := memory.MemoryValueFromInt(1)
+	expectedQuotient1 := memory.MemoryValueFromInt(0)
+	expectedRem2 := memory.MemoryValueFromInt(1024)
+	expectedQuotient2 := memory.MemoryValueFromInt(0)
 	expectedPtr := memory.MemoryValueFromMemoryAddress(&addr)
 	expectedExcludedArc := int(2)
 
-	actual1 := readFrom(vm, VM.ExecutionSegment, 3)
-	actual2 := readFrom(vm, VM.ExecutionSegment, 4)
-	actual3 := readFrom(vm, VM.ExecutionSegment, 5)
-	actual4 := readFrom(vm, VM.ExecutionSegment, 6)
+	actualRem1 := readFrom(vm, VM.ExecutionSegment, 3)
+	actualQuotient1 := readFrom(vm, VM.ExecutionSegment, 4)
+	actualRem2 := readFrom(vm, VM.ExecutionSegment, 5)
+	actualQuotient2 := readFrom(vm, VM.ExecutionSegment, 6)
 	actual1Ptr := readFrom(vm, VM.ExecutionSegment, 0)
 
-	require.Equal(t, expected1, actual1)
-	require.Equal(t, expected2, actual2)
-	require.Equal(t, expected3, actual3)
-	require.Equal(t, expected4, actual4)
+	require.Equal(t, expectedRem1, actualRem1)
+	require.Equal(t, expectedQuotient1, actualQuotient1)
+	require.Equal(t, expectedRem2, actualRem2)
+	require.Equal(t, expectedQuotient2, actualQuotient2)
 	require.Equal(t, expectedPtr, actual1Ptr)
 	require.Equal(t, expectedExcludedArc, ctx.ExcludedArc)
 }

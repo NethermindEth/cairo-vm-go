@@ -918,14 +918,9 @@ func (hint AssertLeFindSmallArc) String() string {
 }
 
 func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
-	primeOver3High, err := uint256.FromDecimal("3544607988759775765608368578435044694")
-	if err != nil {
-		return err
-	}
-	primeOver2High, err := uint256.FromDecimal("5316911983139663648412552867652567041")
-	if err != nil {
-		return err
-	}
+	primeOver3High := uint256.Int{6148914691236517206, 192153584101141168, 0, 0}
+
+	primeOver2High := uint256.Int{9223372036854775809, 288230376151711752, 0, 0}
 
 	a, err := hint.a.Resolve(vm)
 	if err != nil {
@@ -978,7 +973,7 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 	// w.r.t. primeOver3High
 	quotientBits := uint256.Int(lengthsAndIndices[0].Value.Bits())
 	remainderBits := uint256.Int{}
-	quotientBits.DivMod(&quotientBits, primeOver3High, &remainderBits)
+	quotientBits.DivMod(&quotientBits, &primeOver3High, &remainderBits)
 
 	remainderFelt := f.Element{}
 	remainderFelt.SetBytes(remainderBits.Bytes())
@@ -1005,7 +1000,7 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 	// w.r.t. primeOver2High
 	quotientBits = uint256.Int(lengthsAndIndices[1].Value.Bits())
 	remainderBits = uint256.Int{}
-	quotientBits.DivMod(&quotientBits, primeOver2High, &remainderBits)
+	quotientBits.DivMod(&quotientBits, &primeOver2High, &remainderBits)
 
 	remainderFelt.SetBytes(remainderBits.Bytes())
 	quotientFelt.SetBytes(quotientBits.Bytes())

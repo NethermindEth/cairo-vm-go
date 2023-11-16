@@ -216,3 +216,41 @@ func BenchmarkUint256SquareRoot(b *testing.B) {
 	}
 
 }
+
+func BenchmarkAssertLeFindSmallArc(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	rand := defaultRandGenerator()
+
+	ctx := HintRunnerContext{
+		DictionaryManager:         DictionaryManager{},
+		SquashedDictionaryManager: SquashedDictionaryManager{},
+		ExcludedArc:               0,
+	}
+
+	for i := 0; i < b.N; i++ {
+		aVal := Immediate(randomFeltElement(rand))
+		bVal := Immediate(randomFeltElement(rand))
+		addr := memory.MemoryAddress{
+			SegmentIndex: 1,
+			Offset:       vm.Context.Ap + 1,
+		}
+		writeTo(vm, VM.ExecutionSegment, vm.Context.Ap, memory.MemoryValueFromMemoryAddress(&addr))
+		rangeCheckPtr := Deref{ApCellRef(vm.Context.Ap)}
+		hint := AssertLeFindSmallArc{
+			a:             aVal,
+			b:             bVal,
+			rangeCheckPtr: rangeCheckPtr,
+		}
+
+		err := hint.Execute(vm, &ctx)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+		vm.Context.Ap += 5
+	}
+
+}
