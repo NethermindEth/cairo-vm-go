@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -219,38 +220,38 @@ func BenchmarkUint256SquareRoot(b *testing.B) {
 
 func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 	vm := defaultVirtualMachine()
-	vm.Context.Ap = 0
-	vm.Context.Fp = 0
 
 	rand := defaultRandGenerator()
-
 	ctx := HintRunnerContext{
-		DictionaryManager:         DictionaryManager{},
-		SquashedDictionaryManager: SquashedDictionaryManager{},
-		ExcludedArc:               0,
+		ExcludedArc: 0,
 	}
 
+	rangeCheckPtr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
+
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		aVal := Immediate(randomFeltElement(rand))
-		bVal := Immediate(randomFeltElement(rand))
-		addr := memory.MemoryAddress{
-			SegmentIndex: 1,
-			Offset:       vm.Context.Ap + 1,
-		}
-		writeTo(vm, VM.ExecutionSegment, vm.Context.Ap, memory.MemoryValueFromMemoryAddress(&addr))
-		rangeCheckPtr := Deref{ApCellRef(vm.Context.Ap)}
+		// store the range check ptr at current ap
+		writeTo(
+			vm,
+			VM.ExecutionSegment,
+			vm.Context.Ap,
+			memory.MemoryValueFromMemoryAddress(&rangeCheckPtr),
+		)
+
 		hint := AssertLeFindSmallArc{
-			a:             aVal,
-			b:             bVal,
-			rangeCheckPtr: rangeCheckPtr,
+			a:             Immediate(randomFeltElement(rand)),
+			b:             Immediate(randomFeltElement(rand)),
+			rangeCheckPtr: Deref{ApCellRef(0)},
 		}
 
 		err := hint.Execute(vm, &ctx)
 		if err != nil {
 			b.Error(err)
-			break
+			b.FailNow()
 		}
-		vm.Context.Ap += 5
+
+		rangeCheckPtr.Offset += 4
+		vm.Context.Ap += 1
 	}
 
 }
