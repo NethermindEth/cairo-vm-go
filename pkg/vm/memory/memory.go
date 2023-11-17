@@ -25,7 +25,7 @@ func (b *NoBuiltin) InferValue(segment *Segment, offset uint64) error {
 }
 
 func (b *NoBuiltin) String() string {
-	return ""
+	return "no builtin"
 }
 
 type Segment struct {
@@ -91,7 +91,11 @@ func (segment *Segment) Write(offset uint64, value *MemoryValue) error {
 		return fmt.Errorf("rewriting value: old value: %s, new value: %s", mv, value)
 	}
 	segment.Data[offset] = *value
-	return segment.BuiltinRunner.CheckWrite(segment, offset, value)
+	if err := segment.BuiltinRunner.CheckWrite(segment, offset, value); err != nil {
+		return fmt.Errorf("%s: %w", segment.BuiltinRunner, err)
+	}
+
+	return nil
 }
 
 // Reads a memory value from a specified offset at the segment
