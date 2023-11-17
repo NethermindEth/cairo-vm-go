@@ -239,8 +239,8 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 		)
 
 		hint := AssertLeFindSmallArc{
-			a:             Immediate(randomFeltElement(rand)),
-			b:             Immediate(randomFeltElement(rand)),
+			a:             Immediate(randomFeltElementU128(rand)),
+			b:             Immediate(randomFeltElementU128(rand)),
 			rangeCheckPtr: Deref{ApCellRef(0)},
 		}
 
