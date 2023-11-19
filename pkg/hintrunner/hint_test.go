@@ -196,7 +196,7 @@ func TestLinearSplit(t *testing.T) {
 		y:      y,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 	require.NoError(t, err)
 	xx := readFrom(vm, VM.ExecutionSegment, 0)
 	require.Equal(t, xx, memory.MemoryValueFromInt(223344))
@@ -217,7 +217,7 @@ func TestLinearSplit(t *testing.T) {
 		y:      y,
 	}
 
-	err = hint.Execute(vm)
+	err = hint.Execute(vm, nil)
 	require.NoError(t, err)
 	xx = readFrom(vm, VM.ExecutionSegment, 0)
 	require.Equal(t, xx, memory.MemoryValueFromInt(223343))
@@ -318,7 +318,7 @@ func TestDebugPrint(t *testing.T) {
 		end:   end,
 	}
 	expected := []byte("[DEBUG] a\n[DEBUG] 14\n[DEBUG] 1e\n")
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 
 	w.Close()
 	out, _ := io.ReadAll(r)
@@ -391,7 +391,7 @@ func TestUint256SquareRootLow(t *testing.T) {
 		sqrtMul2MinusRemainderGeU128: sqrtMul2MinusRemainderGeU128,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 
 	require.NoError(t, err)
 
@@ -438,7 +438,7 @@ func TestUint256SquareRootHigh(t *testing.T) {
 		sqrtMul2MinusRemainderGeU128: sqrtMul2MinusRemainderGeU128,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 
 	require.NoError(t, err)
 
@@ -485,7 +485,7 @@ func TestUint256SquareRoot(t *testing.T) {
 		sqrtMul2MinusRemainderGeU128: sqrtMul2MinusRemainderGeU128,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 
 	require.NoError(t, err)
 

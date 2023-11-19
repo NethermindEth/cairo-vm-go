@@ -152,7 +152,7 @@ type LinearSplit struct {
 	y      CellRefer
 }
 
-func (hint LinearSplit) Execute(vm *VM.VirtualMachine) error {
+func (hint LinearSplit) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	value, err := hint.value.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve value operand %s: %w", hint.value, err)
@@ -303,7 +303,7 @@ type DebugPrint struct {
 	end   ResOperander
 }
 
-func (hint DebugPrint) Execute(vm *VM.VirtualMachine) error {
+func (hint DebugPrint) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	start, err := hint.start.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve start operand %s: %v", hint.start, err)
@@ -399,7 +399,7 @@ func (hint Uint256SquareRoot) String() string {
 	return "Uint256SquareRoot"
 }
 
-func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
+func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	valueLow, err := hint.valueLow.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve valueLow operand %s: %v", hint.valueLow, err)
