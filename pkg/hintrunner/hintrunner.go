@@ -185,6 +185,8 @@ func (sdm *SquashedDictionaryManager) PopIndex() (uint64, error) {
 type HintRunnerContext struct {
 	DictionaryManager         DictionaryManager
 	SquashedDictionaryManager SquashedDictionaryManager
+	// points towards free memory of a segment
+	ConstantSizeSegment mem.MemoryAddress
 }
 
 type HintRunner struct {
@@ -201,6 +203,7 @@ func NewHintRunner(hints map[uint64]Hinter) HintRunner {
 		context: HintRunnerContext{
 			DictionaryManager{},
 			SquashedDictionaryManager{},
+			mem.UnknownAddress,
 		},
 		hints: hints,
 	}
