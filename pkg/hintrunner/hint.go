@@ -1077,5 +1077,40 @@ func (hint Uint512DivModByUint256) Execute(vm *VM.VirtualMachine, _ *HintRunnerC
 	if err = vm.Memory.WriteToAddress(&remainder1Addr, &remainder1Val); err != nil {
 		return fmt.Errorf("write cell: %v", err)
 	}
+
+	return nil
+}
+
+type AllocConstantSize struct {
+	Size ResOperander
+	Dst  CellRefer
+}
+
+func (hint *AllocConstantSize) String() string {
+	return "AllocConstantSize"
+}
+
+func (hint *AllocConstantSize) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	size, err := ResolveAsUint64(vm, hint.Size)
+	if err != nil {
+		return fmt.Errorf("size to big: %w", err)
+	}
+
+	if ctx.ConstantSizeSegment.Equal(&mem.UnknownAddress) {
+		ctx.ConstantSizeSegment = vm.Memory.AllocateEmptySegment()
+	}
+
+	dst, err := hint.Dst.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get dst %w", err)
+	}
+
+	val := mem.MemoryValueFromMemoryAddress(&ctx.ConstantSizeSegment)
+	if err = vm.Memory.WriteToAddress(&dst, &val); err != nil {
+		return err
+	}
+
+	// todo(rodro): Is possible for this to overflow
+	ctx.ConstantSizeSegment.Offset += size
 	return nil
 }
