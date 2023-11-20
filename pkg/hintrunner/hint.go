@@ -2,6 +2,7 @@ package hintrunner
 
 import (
 	"fmt"
+	"math/big"
 	"sort"
 
 	"github.com/holiman/uint256"
@@ -151,7 +152,7 @@ type LinearSplit struct {
 	y      CellRefer
 }
 
-func (hint LinearSplit) Execute(vm *VM.VirtualMachine) error {
+func (hint LinearSplit) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	value, err := hint.value.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve value operand %s: %w", hint.value, err)
@@ -302,7 +303,7 @@ type DebugPrint struct {
 	end   ResOperander
 }
 
-func (hint DebugPrint) Execute(vm *VM.VirtualMachine) error {
+func (hint DebugPrint) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	start, err := hint.start.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve start operand %s: %v", hint.start, err)
@@ -398,7 +399,7 @@ func (hint Uint256SquareRoot) String() string {
 	return "Uint256SquareRoot"
 }
 
-func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine) error {
+func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 	valueLow, err := hint.valueLow.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve valueLow operand %s: %v", hint.valueLow, err)
@@ -905,6 +906,179 @@ func (hint *GetNextDictKey) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContex
 
 	mv := mem.MemoryValueFromFieldElement(&nextKey)
 	return vm.Memory.WriteToAddress(&nextKeyAddr, &mv)
+}
+
+type Uint512DivModByUint256 struct {
+	dividend0  ResOperander
+	dividend1  ResOperander
+	dividend2  ResOperander
+	dividend3  ResOperander
+	divisor0   ResOperander
+	divisor1   ResOperander
+	quotient0  CellRefer
+	quotient1  CellRefer
+	quotient2  CellRefer
+	quotient3  CellRefer
+	remainder0 CellRefer
+	remainder1 CellRefer
+}
+
+func (hint Uint512DivModByUint256) String() string {
+	return "Uint512DivModByUint256"
+}
+
+func (hint Uint512DivModByUint256) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+	dividend0, err := hint.dividend0.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve dividend0 operand %s: %v", hint.dividend0, err)
+	}
+	dividend0Felt, err := dividend0.FieldElement()
+	if err != nil {
+		return err
+	}
+	dividend1, err := hint.dividend1.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve dividend1 operand %s: %v", hint.dividend1, err)
+	}
+	dividend1Felt, err := dividend1.FieldElement()
+	if err != nil {
+		return err
+	}
+	dividend2, err := hint.dividend2.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve dividend2 operand %s: %v", hint.dividend2, err)
+	}
+	dividend2Felt, err := dividend2.FieldElement()
+	if err != nil {
+		return err
+	}
+	dividend3, err := hint.dividend3.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve dividend3 operand %s: %v", hint.dividend3, err)
+	}
+	dividend3Felt, err := dividend3.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	divisor0, err := hint.divisor0.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve divisor0 operand %s: %v", hint.divisor0, err)
+	}
+	divisor0Felt, err := divisor0.FieldElement()
+	if err != nil {
+		return err
+	}
+	divisor1, err := hint.divisor1.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve divisor1 operand %s: %v", hint.divisor1, err)
+	}
+	divisor1Felt, err := divisor1.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	var dividendBytes [64]byte
+	dividend0Bytes := dividend0Felt.Bytes()
+	dividend1Bytes := dividend1Felt.Bytes()
+	dividend2Bytes := dividend2Felt.Bytes()
+	dividend3Bytes := dividend3Felt.Bytes()
+	copy(dividendBytes[:16], dividend3Bytes[16:])
+	copy(dividendBytes[16:32], dividend2Bytes[16:])
+	copy(dividendBytes[32:48], dividend1Bytes[16:])
+	copy(dividendBytes[48:], dividend0Bytes[16:])
+	// TODO: check for possible use of uint512 module.
+	dividend := &big.Int{}
+	dividend.SetBytes(dividendBytes[:])
+
+	var divisorBytes [32]byte
+	divisor0Bytes := divisor0Felt.Bytes()
+	divisor1Bytes := divisor1Felt.Bytes()
+	copy(divisorBytes[:16], divisor1Bytes[16:])
+	copy(divisorBytes[16:], divisor0Bytes[16:])
+	// TODO: check for possible use of uint512 module.
+	divisor := &big.Int{}
+	divisor.SetBytes(divisorBytes[:])
+	if divisor.Cmp(big.NewInt(0)) == 0 {
+		return fmt.Errorf("division by zero")
+	}
+
+	quotient, rem := dividend.DivMod(dividend, divisor, &big.Int{})
+
+	var qBytes [64]byte
+	quotient.FillBytes(qBytes[:])
+	qlimb3 := f.Element{}
+	qlimb3.SetBytes(qBytes[:16])
+	qlimb2 := f.Element{}
+	qlimb2.SetBytes(qBytes[16:32])
+	qlimb1 := f.Element{}
+	qlimb1.SetBytes(qBytes[32:48])
+	qlimb0 := f.Element{}
+	qlimb0.SetBytes(qBytes[48:])
+
+	var rBytes [32]byte
+	rem.FillBytes(rBytes[:])
+	rlimb1 := f.Element{}
+	rlimb1.SetBytes(rBytes[:16])
+	rlimb0 := f.Element{}
+	rlimb0.SetBytes(rBytes[16:])
+
+	quotient0Addr, err := hint.quotient0.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get destination cell: %v", err)
+	}
+	quotient0Val := mem.MemoryValueFromFieldElement(&qlimb0)
+
+	if err = vm.Memory.WriteToAddress(&quotient0Addr, &quotient0Val); err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+
+	quotient1Addr, err := hint.quotient1.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get destination cell: %v", err)
+	}
+	quotient1Val := mem.MemoryValueFromFieldElement(&qlimb1)
+	if err = vm.Memory.WriteToAddress(&quotient1Addr, &quotient1Val); err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+
+	quotient2Addr, err := hint.quotient2.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get destination cell: %v", err)
+	}
+	quotient2Val := mem.MemoryValueFromFieldElement(&qlimb2)
+	if err = vm.Memory.WriteToAddress(&quotient2Addr, &quotient2Val); err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+
+	quotient3Addr, err := hint.quotient3.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get destination cell: %v", err)
+	}
+	quotient3Val := mem.MemoryValueFromFieldElement(&qlimb3)
+	if err = vm.Memory.WriteToAddress(&quotient3Addr, &quotient3Val); err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+
+	remainder0Addr, err := hint.remainder0.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get destination cell: %v", err)
+	}
+	remainder0Val := mem.MemoryValueFromFieldElement(&rlimb0)
+	if err = vm.Memory.WriteToAddress(&remainder0Addr, &remainder0Val); err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+
+	remainder1Addr, err := hint.remainder1.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get destination cell: %v", err)
+	}
+	remainder1Val := mem.MemoryValueFromFieldElement(&rlimb1)
+	if err = vm.Memory.WriteToAddress(&remainder1Addr, &remainder1Val); err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+
+	return nil
 }
 
 type AllocConstantSize struct {

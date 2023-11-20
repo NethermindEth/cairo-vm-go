@@ -196,7 +196,7 @@ func TestLinearSplit(t *testing.T) {
 		y:      y,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 	require.NoError(t, err)
 	xx := readFrom(vm, VM.ExecutionSegment, 0)
 	require.Equal(t, xx, mem.MemoryValueFromInt(223344))
@@ -217,7 +217,7 @@ func TestLinearSplit(t *testing.T) {
 		y:      y,
 	}
 
-	err = hint.Execute(vm)
+	err = hint.Execute(vm, nil)
 	require.NoError(t, err)
 	xx = readFrom(vm, VM.ExecutionSegment, 0)
 	require.Equal(t, xx, mem.MemoryValueFromInt(223343))
@@ -318,7 +318,7 @@ func TestDebugPrint(t *testing.T) {
 		end:   end,
 	}
 	expected := []byte("[DEBUG] a\n[DEBUG] 14\n[DEBUG] 1e\n")
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 
 	w.Close()
 	out, _ := io.ReadAll(r)
@@ -391,7 +391,7 @@ func TestUint256SquareRootLow(t *testing.T) {
 		sqrtMul2MinusRemainderGeU128: sqrtMul2MinusRemainderGeU128,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 
 	require.NoError(t, err)
 
@@ -438,7 +438,7 @@ func TestUint256SquareRootHigh(t *testing.T) {
 		sqrtMul2MinusRemainderGeU128: sqrtMul2MinusRemainderGeU128,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 
 	require.NoError(t, err)
 
@@ -485,7 +485,7 @@ func TestUint256SquareRoot(t *testing.T) {
 		sqrtMul2MinusRemainderGeU128: sqrtMul2MinusRemainderGeU128,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 
 	require.NoError(t, err)
 
@@ -506,6 +506,149 @@ func TestUint256SquareRoot(t *testing.T) {
 	require.Equal(t, expectedRemainderLow, actualRemainderLow)
 	require.Equal(t, expectedRemainderHigh, actualRemainderHigh)
 	require.Equal(t, expectedSqrtMul2MinusRemainderGeU128, actualSqrtMul2MinusRemainderGeU128)
+}
+
+func TestUint512DivModByUint256(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var dstQuotient0 ApCellRef = 1
+	var dstQuotient1 ApCellRef = 2
+	var dstQuotient2 ApCellRef = 3
+	var dstQuotient3 ApCellRef = 4
+	var dstRemainder0 ApCellRef = 5
+	var dstRemainder1 ApCellRef = 6
+
+	b := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
+
+	dividend0Felt, err := f.BigEndian.Element(&b)
+	require.NoError(t, err)
+	dividend1Felt := f.NewElement(1<<8 + 1)
+	dividend2Felt, err := f.BigEndian.Element(&b)
+	require.NoError(t, err)
+	dividend3Felt := f.NewElement(1<<8 + 1)
+
+	divisor0Felt := f.NewElement(1<<8 + 1)
+	divisor1Felt := f.NewElement(1<<8 + 1)
+
+	hint := Uint512DivModByUint256{
+		dividend0:  Immediate(dividend0Felt),
+		dividend1:  Immediate(dividend1Felt),
+		dividend2:  Immediate(dividend2Felt),
+		dividend3:  Immediate(dividend3Felt),
+		divisor0:   Immediate(divisor0Felt),
+		divisor1:   Immediate(divisor1Felt),
+		quotient0:  dstQuotient0,
+		quotient1:  dstQuotient1,
+		quotient2:  dstQuotient2,
+		quotient3:  dstQuotient3,
+		remainder0: dstRemainder0,
+		remainder1: dstRemainder1,
+	}
+
+	err = hint.Execute(vm, nil)
+	require.Nil(t, err)
+
+	quotient0 := &f.Element{}
+	_, err = quotient0.SetString("170141183460469231731687303715884105730")
+	require.Nil(t, err)
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(quotient0),
+		readFrom(vm, VM.ExecutionSegment, 1),
+	)
+
+	quotient1 := &f.Element{}
+	_, err = quotient1.SetString("662027951208051485337304683719393406")
+	require.Nil(t, err)
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(quotient1),
+		readFrom(vm, VM.ExecutionSegment, 2),
+	)
+
+	quotient2 := &f.Element{}
+	quotient2.SetOne()
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(quotient2),
+		readFrom(vm, VM.ExecutionSegment, 3),
+	)
+
+	quotient3 := &f.Element{}
+	quotient3.SetZero()
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(quotient3),
+		readFrom(vm, VM.ExecutionSegment, 4),
+	)
+
+	remainder0 := &f.Element{}
+	_, err = remainder0.SetString("340282366920938463463374607431768210942")
+	require.Nil(t, err)
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(remainder0),
+		readFrom(vm, VM.ExecutionSegment, 5),
+	)
+
+	remainder1 := &f.Element{}
+	remainder1.SetZero()
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(remainder1),
+		readFrom(vm, VM.ExecutionSegment, 6),
+	)
+}
+
+func TestUint512DivModByUint256DivisionByZero(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var dstQuotient0 ApCellRef = 1
+	var dstQuotient1 ApCellRef = 2
+	var dstQuotient2 ApCellRef = 3
+	var dstQuotient3 ApCellRef = 4
+	var dstRemainder0 ApCellRef = 5
+	var dstRemainder1 ApCellRef = 6
+
+	b := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
+
+	dividend0Felt, err := f.BigEndian.Element(&b)
+	require.NoError(t, err)
+	dividend1Felt := f.NewElement(1<<8 + 1)
+	dividend2Felt, err := f.BigEndian.Element(&b)
+	require.NoError(t, err)
+	dividend3Felt := f.NewElement(1<<8 + 1)
+
+	divisor0Felt := f.NewElement(0)
+	divisor1Felt := f.NewElement(0)
+
+	hint := Uint512DivModByUint256{
+		dividend0:  Immediate(dividend0Felt),
+		dividend1:  Immediate(dividend1Felt),
+		dividend2:  Immediate(dividend2Felt),
+		dividend3:  Immediate(dividend3Felt),
+		divisor0:   Immediate(divisor0Felt),
+		divisor1:   Immediate(divisor1Felt),
+		quotient0:  dstQuotient0,
+		quotient1:  dstQuotient1,
+		quotient2:  dstQuotient2,
+		quotient3:  dstQuotient3,
+		remainder0: dstRemainder0,
+		remainder1: dstRemainder1,
+	}
+
+	err = hint.Execute(vm, nil)
+	require.ErrorContains(t, err, "division by zero")
 }
 
 func TestAllocConstantSize(t *testing.T) {
@@ -543,5 +686,4 @@ func TestAllocConstantSize(t *testing.T) {
 	}
 
 	require.Equal(t, ctx.ConstantSizeSegment, mem.MemoryAddress{SegmentIndex: 2, Offset: 30})
-
 }

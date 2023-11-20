@@ -149,12 +149,58 @@ func BenchmarkLinearSplit(b *testing.B) {
 			y:      y,
 		}
 
-		err := hint.Execute(vm)
+		err := hint.Execute(vm, nil)
 		if err != nil {
 			b.Error(err)
 			break
 		}
 		vm.Context.Ap += 2
+	}
+}
+
+func BenchmarkUint512DivModByUint256(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	rand := defaultRandGenerator()
+
+	var quotient0 ApCellRef = 1
+	var quotient1 ApCellRef = 2
+	var quotient2 ApCellRef = 3
+	var quotient3 ApCellRef = 4
+	var remainder0 ApCellRef = 5
+	var remainder1 ApCellRef = 6
+
+	for i := 0; i < b.N; i++ {
+		dividend0 := Immediate(randomFeltElement(rand))
+		dividend1 := Immediate(randomFeltElement(rand))
+		dividend2 := Immediate(randomFeltElement(rand))
+		dividend3 := Immediate(randomFeltElement(rand))
+		divisor0 := Immediate(randomFeltElement(rand))
+		divisor1 := Immediate(randomFeltElement(rand))
+
+		hint := Uint512DivModByUint256{
+			dividend0,
+			dividend1,
+			dividend2,
+			dividend3,
+			divisor0,
+			divisor1,
+			quotient0,
+			quotient1,
+			quotient2,
+			quotient3,
+			remainder0,
+			remainder1,
+		}
+
+		err := hint.Execute(vm, nil)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+		vm.Context.Ap += 6
 	}
 }
 
@@ -207,7 +253,7 @@ func BenchmarkUint256SquareRoot(b *testing.B) {
 			sqrtMul2MinusRemainderGeU128: sqrtMul2MinusRemainderGeU128,
 		}
 
-		err := hint.Execute(vm)
+		err := hint.Execute(vm, nil)
 		if err != nil {
 			b.Error(err)
 			break
