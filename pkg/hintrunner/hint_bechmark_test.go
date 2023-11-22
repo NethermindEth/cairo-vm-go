@@ -204,29 +204,6 @@ func BenchmarkUint512DivModByUint256(b *testing.B) {
 	}
 }
 
-func randomFeltElement(rand *rand.Rand) f.Element {
-	b := [32]byte{}
-	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
-	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
-	binary.BigEndian.PutUint64(b[8:16], rand.Uint64())
-	//Limit to 59 bits so at max we have a 251 bit number
-	binary.BigEndian.PutUint64(b[0:8], rand.Uint64()>>5)
-	f, _ := f.BigEndian.Element(&b)
-	return f
-}
-
-func randomFeltElementU128(rand *rand.Rand) f.Element {
-	b := [32]byte{}
-	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
-	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
-	f, _ := f.BigEndian.Element(&b)
-	return f
-}
-
-func defaultRandGenerator() *rand.Rand {
-	return rand.New(rand.NewSource(0))
-}
-
 func BenchmarkUint256SquareRoot(b *testing.B) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
@@ -260,5 +237,85 @@ func BenchmarkUint256SquareRoot(b *testing.B) {
 		}
 		vm.Context.Ap += 5
 	}
+}
 
+func BenchmarkAssertLeIsFirstArcExcluded(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	ctx := HintRunnerContext{
+		ExcludedArc: 0,
+	}
+
+	var skipExcludeAFlag ApCellRef = 1
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+
+		hint := AssertLeIsFirstArcExcluded{
+			skipExcludeAFlag: skipExcludeAFlag,
+		}
+
+		err := hint.Execute(vm, &ctx)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+
+		vm.Context.Ap += 1
+	}
+
+}
+
+func BenchmarkAssertLeIsSecondArcExcluded(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	ctx := HintRunnerContext{
+		ExcludedArc: 0,
+	}
+
+	var skipExcludeBMinusA ApCellRef = 1
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+
+		hint := AssertLeIsSecondArcExcluded{
+			skipExcludeBMinusA: skipExcludeBMinusA,
+		}
+
+		err := hint.Execute(vm, &ctx)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+
+		vm.Context.Ap += 1
+	}
+
+}
+
+func randomFeltElement(rand *rand.Rand) f.Element {
+	b := [32]byte{}
+	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
+	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
+	binary.BigEndian.PutUint64(b[8:16], rand.Uint64())
+	//Limit to 59 bits so at max we have a 251 bit number
+	binary.BigEndian.PutUint64(b[0:8], rand.Uint64()>>5)
+	f, _ := f.BigEndian.Element(&b)
+	return f
+}
+
+func randomFeltElementU128(rand *rand.Rand) f.Element {
+	b := [32]byte{}
+	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
+	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
+	f, _ := f.BigEndian.Element(&b)
+	return f
+}
+
+func defaultRandGenerator() *rand.Rand {
+	return rand.New(rand.NewSource(0))
 }
