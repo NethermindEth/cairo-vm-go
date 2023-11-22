@@ -1121,11 +1121,11 @@ type AssertLeFindSmallArc struct {
 	rangeCheckPtr ResOperander
 }
 
-func (hint AssertLeFindSmallArc) String() string {
+func (hint *AssertLeFindSmallArc) String() string {
 	return "AssertLeFindSmallArc"
 }
 
-func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
 	primeOver3High := uint256.Int{6148914691236517206, 192153584101141168, 0, 0}
 	primeOver2High := uint256.Int{9223372036854775809, 288230376151711752, 0, 0}
 
