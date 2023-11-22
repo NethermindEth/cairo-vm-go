@@ -1115,7 +1115,6 @@ func (hint *AllocConstantSize) Execute(vm *VM.VirtualMachine, ctx *HintRunnerCon
 	return nil
 }
 
-
 type AssertLeFindSmallArc struct {
 	a             ResOperander
 	b             ResOperander
@@ -1273,3 +1272,5 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 	if err != nil {
 		return fmt.Errorf("write second quotient: %w", err)
 	}
+	return nil
+}

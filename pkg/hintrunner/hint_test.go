@@ -696,7 +696,7 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 	vm.Context.Fp = 0
 	// The addr that the range check pointer will point to
 	addr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
-	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap, memory.MemoryValueFromMemoryAddress(&addr))
+	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&addr))
 
 	ctx := HintRunnerContext{
 		ExcludedArc: 0,
@@ -715,11 +715,11 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 
 	require.NoError(t, err)
 
-	expectedRem1 := memory.MemoryValueFromInt(1)
-	expectedQuotient1 := memory.MemoryValueFromInt(0)
-	expectedRem2 := memory.MemoryValueFromInt(1024)
-	expectedQuotient2 := memory.MemoryValueFromInt(0)
-	expectedPtr := memory.MemoryValueFromMemoryAddress(&addr)
+	expectedRem1 := mem.MemoryValueFromInt(1)
+	expectedQuotient1 := mem.MemoryValueFromInt(0)
+	expectedRem2 := mem.MemoryValueFromInt(1024)
+	expectedQuotient2 := mem.MemoryValueFromInt(0)
+	expectedPtr := mem.MemoryValueFromMemoryAddress(&addr)
 	expectedExcludedArc := int(2)
 
 	actualRem1 := readFrom(vm, 2, 0)
@@ -742,7 +742,7 @@ func TestAssertLeFindSmallArcFail(t *testing.T) {
 	vm.Context.Fp = 0
 	// The addr that the range check pointer will point to
 	addr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
-	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap, memory.MemoryValueFromMemoryAddress(&addr))
+	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&addr))
 
 	ctx := HintRunnerContext{
 		ExcludedArc: 0,
@@ -767,11 +767,11 @@ func TestAssertLeFindSmallArcFail(t *testing.T) {
 
 	require.NoError(t, err)
 
-	expectedRem1 := memory.MemoryValueFromInt(1)
-	expectedQuotient1 := memory.MemoryValueFromInt(0)
-	expectedRem2 := memory.MemoryValueFromInt(1024)
-	expectedQuotient2 := memory.MemoryValueFromInt(0)
-	expectedPtr := memory.MemoryValueFromMemoryAddress(&addr)
+	expectedRem1 := mem.MemoryValueFromInt(1)
+	expectedQuotient1 := mem.MemoryValueFromInt(0)
+	expectedRem2 := mem.MemoryValueFromInt(1024)
+	expectedQuotient2 := mem.MemoryValueFromInt(0)
+	expectedPtr := mem.MemoryValueFromMemoryAddress(&addr)
 	expectedExcludedArc := int(2)
 
 	actualRem1 := readFrom(vm, 2, 0)
@@ -794,7 +794,7 @@ func TestAssertLeFindSmallArcNot(t *testing.T) {
 	vm.Context.Fp = 0
 	// The addr that the range check pointer will point to
 	addr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
-	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap, memory.MemoryValueFromMemoryAddress(&addr))
+	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&addr))
 
 	ctx := HintRunnerContext{
 		ExcludedArc: 0,
@@ -819,11 +819,11 @@ func TestAssertLeFindSmallArcNot(t *testing.T) {
 
 	require.NoError(t, err)
 
-	expectedRem1 := memory.MemoryValueFromInt(1)
-	expectedQuotient1 := memory.MemoryValueFromInt(0)
-	expectedRem2 := memory.MemoryValueFromInt(1024)
-	expectedQuotient2 := memory.MemoryValueFromInt(0)
-	expectedPtr := memory.MemoryValueFromMemoryAddress(&addr)
+	expectedRem1 := mem.MemoryValueFromInt(1)
+	expectedQuotient1 := mem.MemoryValueFromInt(0)
+	expectedRem2 := mem.MemoryValueFromInt(1024)
+	expectedQuotient2 := mem.MemoryValueFromInt(0)
+	expectedPtr := mem.MemoryValueFromMemoryAddress(&addr)
 	expectedExcludedArc := int(2)
 
 	actualRem1 := readFrom(vm, 2, 0)
