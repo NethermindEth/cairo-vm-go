@@ -1114,3 +1114,118 @@ func (hint *AllocConstantSize) Execute(vm *VM.VirtualMachine, ctx *HintRunnerCon
 	ctx.ConstantSizeSegment.Offset += size
 	return nil
 }
+
+type AssertLeFindSmallArc struct {
+	a             ResOperander
+	b             ResOperander
+	rangeCheckPtr ResOperander
+}
+
+func (hint *AssertLeFindSmallArc) String() string {
+	return "AssertLeFindSmallArc"
+}
+
+func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	primeOver3High := uint256.Int{6148914691236517206, 192153584101141168, 0, 0}
+	primeOver2High := uint256.Int{9223372036854775809, 288230376151711752, 0, 0}
+
+	a, err := hint.a.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve a operand %s: %w", hint.a, err)
+	}
+
+	b, err := hint.b.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve b operand %s: %w", hint.b, err)
+	}
+
+	aFelt, err := a.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	bFelt, err := b.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	thirdLength := f.Element{32, 0, 0, 544} // -1 field element
+	thirdLength.Sub(&thirdLength, bFelt)
+
+	// Array of pairs (2-tuple)
+	lengthsAndIndices := []struct {
+		Value    f.Element
+		Position int
+	}{
+		{*aFelt, 0},
+		{*bFelt.Sub(bFelt, aFelt), 1},
+		{thirdLength, 2},
+	}
+
+	// Sort
+	sort.Slice(lengthsAndIndices, func(i, j int) bool {
+		// lengthsAndIndices[i].Value < lengthsAndIndices[j].Value
+		return lengthsAndIndices[i].Value.Cmp(&lengthsAndIndices[j].Value) == -1
+	})
+
+	// Exclude the largest arc after sorting
+	ctx.ExcludedArc = lengthsAndIndices[2].Position
+
+	rangeCheckPtrMemAddr, err := ResolveAsAddress(vm, hint.rangeCheckPtr)
+	if err != nil {
+		return fmt.Errorf("resolve range check pointer: %w", err)
+	}
+
+	// Find the quotient and modulo of the first element's value of the sorted array
+	// w.r.t. primeOver3High
+	quotient := uint256.Int(lengthsAndIndices[0].Value.Bits())
+	remainder := uint256.Int{}
+	quotient.DivMod(&quotient, &primeOver3High, &remainder)
+
+	remainderFelt := f.Element{}
+	remainderFelt.SetBytes(remainder.Bytes())
+
+	quotientFelt := f.Element{}
+	quotientFelt.SetBytes(quotient.Bytes())
+
+	// Store remainder 1
+	writeValue := mem.MemoryValueFromFieldElement(&remainderFelt)
+	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
+	if err != nil {
+		return fmt.Errorf("write first remainder: %w", err)
+	}
+
+	// Store quotient 1
+	rangeCheckPtrMemAddr.Offset += 1
+	writeValue = mem.MemoryValueFromFieldElement(&quotientFelt)
+	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
+	if err != nil {
+		return fmt.Errorf("write first quotient: %w", err)
+	}
+
+	// Find the quotient and modulo of the second element' value of the sorted array
+	// w.r.t. primeOver2High
+	quotient = uint256.Int(lengthsAndIndices[1].Value.Bits())
+	remainder = uint256.Int{}
+	quotient.DivMod(&quotient, &primeOver2High, &remainder)
+
+	remainderFelt.SetBytes(remainder.Bytes())
+	quotientFelt.SetBytes(quotient.Bytes())
+
+	// Store remainder 2
+	rangeCheckPtrMemAddr.Offset += 1
+	writeValue = mem.MemoryValueFromFieldElement(&remainderFelt)
+	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
+	if err != nil {
+		return fmt.Errorf("write second remainder: %w", err)
+	}
+
+	// Store quotient 2
+	rangeCheckPtrMemAddr.Offset += 1
+	writeValue = mem.MemoryValueFromFieldElement(&quotientFelt)
+	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
+	if err != nil {
+		return fmt.Errorf("write second quotient: %w", err)
+	}
+	return nil
+}
