@@ -1149,9 +1149,6 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 		return err
 	}
 
-	secondLength := f.Element{}
-	secondLength.Sub(bFelt, aFelt)
-
 	thirdLength := f.Element{32, 0, 0, 544} // -1 field element
 	thirdLength.Sub(&thirdLength, bFelt)
 
@@ -1161,13 +1158,13 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 		Position int
 	}{
 		{*aFelt, 0},
-		{secondLength, 1},
+		{*bFelt.Sub(bFelt, aFelt), 1},
 		{thirdLength, 2},
 	}
 
 	// Sort
 	sort.Slice(lengthsAndIndices, func(i, j int) bool {
-		// return lengthsAndIndices[i].Value < lengthsAndIndices[j].Value
+		// lengthsAndIndices[i].Value < lengthsAndIndices[j].Value
 		return lengthsAndIndices[i].Value.Cmp(&lengthsAndIndices[j].Value) == -1
 	})
 
