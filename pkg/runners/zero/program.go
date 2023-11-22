@@ -20,12 +20,7 @@ type Program struct {
 	Builtins []sn.Builtin
 }
 
-func LoadCairoZeroProgram(content []byte) (*Program, error) {
-	cairoZeroJson, err := zero.ZeroProgramFromJSON(content)
-	if err != nil {
-		return nil, err
-	}
-
+func LoadCairoZeroProgram(cairoZeroJson *zero.ZeroProgram) (*Program, error) {
 	// bytecode
 	bytecode := make([]*f.Element, len(cairoZeroJson.Data))
 	for i := range cairoZeroJson.Data {
