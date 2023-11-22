@@ -1119,11 +1119,11 @@ type AssertLeIsFirstArcExcluded struct {
 	skipExcludeAFlag CellRefer
 }
 
-func (hint AssertLeIsFirstArcExcluded) String() string {
+func (hint *AssertLeIsFirstArcExcluded) String() string {
 	return "AssertLeIsFirstArcExcluded"
 }
 
-func (hint AssertLeIsFirstArcExcluded) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+func (hint *AssertLeIsFirstArcExcluded) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
 	addr, err := hint.skipExcludeAFlag.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get skipExcludeAFlag addr: %v", err)
@@ -1143,11 +1143,11 @@ type AssertLeIsSecondArcExcluded struct {
 	skipExcludeBMinusA CellRefer
 }
 
-func (hint AssertLeIsSecondArcExcluded) String() string {
+func (hint *AssertLeIsSecondArcExcluded) String() string {
 	return "AssertLeIsSecondArcExcluded"
 }
 
-func (hint AssertLeIsSecondArcExcluded) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+func (hint *AssertLeIsSecondArcExcluded) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
 	addr, err := hint.skipExcludeBMinusA.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get skipExcludeBMinusA addr: %v", err)
