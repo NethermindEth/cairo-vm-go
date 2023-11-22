@@ -186,6 +186,8 @@ type HintRunnerContext struct {
 	DictionaryManager         DictionaryManager
 	SquashedDictionaryManager SquashedDictionaryManager
 	ExcludedArc               int
+	// points towards free memory of a segment
+	ConstantSizeSegment mem.MemoryAddress
 }
 
 type HintRunner struct {
@@ -203,6 +205,7 @@ func NewHintRunner(hints map[uint64]Hinter) HintRunner {
 			DictionaryManager{},
 			SquashedDictionaryManager{},
 			0,
+			mem.UnknownAddress,
 		},
 		hints: hints,
 	}

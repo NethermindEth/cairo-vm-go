@@ -269,6 +269,17 @@ func TestPedersen(t *testing.T) {
 	clean("./builtin_tests/")
 }
 
+func TestECDSA(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/ecdsa_test.cairo")
+	require.NoError(t, err)
+
+	_, _, _, err = runVm(compiledOutput)
+	//Note: This fails because no addSiganture hint
+	require.Error(t, err)
+
+	clean("./builtin_tests/")
+}
+
 func TestEcOp(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/ecop.cairo")
 	require.NoError(t, err)
@@ -276,8 +287,8 @@ func TestEcOp(t *testing.T) {
 	_, _, _, err = runVm(compiledOutput)
 	// todo(rodro): This test is failing due to the lack of hint processing. It should be address soon
 	require.Error(t, err)
-  
-  clean("./builtin_tests/")
+
+	clean("./builtin_tests/")
 }
 
 func TestKeccak(t *testing.T) {
