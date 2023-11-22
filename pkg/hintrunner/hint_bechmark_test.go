@@ -276,7 +276,6 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		// fmt.Println("i", i)
 		// store the range check ptr at current ap
 		writeTo(
 			vm,
@@ -293,10 +292,6 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 			b:             Immediate(r2),
 			rangeCheckPtr: Deref{ApCellRef(0)},
 		}
-
-		// fmt.Println("r1", r1)
-		// fmt.Println("r2", r2)
-		// fmt.Println("mem addr", rangeCheckPtr)
 
 		err := hint.Execute(vm, &ctx)
 		if err != nil {
