@@ -918,9 +918,17 @@ func (hint AssertLeFindSmallArc) String() string {
 }
 
 func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
-	primeOver3High := uint256.Int{6148914691236517206, 192153584101141168, 0, 0}
+	// primeOver3High := uint256.Int{6148914691236517206, 192153584101141168, 0, 0}
+	// primeOver2High := uint256.Int{9223372036854775809, 288230376151711752, 0, 0}
 
-	primeOver2High := uint256.Int{9223372036854775809, 288230376151711752, 0, 0}
+	primeOver3High, _ := uint256.FromDecimal("3544607988759775765608368578435044694")
+	primeOver2High, _ := uint256.FromDecimal("5316911983139663648412552867652567041")
+
+	// p, _ := uint256.FromDecimal("5316911983139663648412552867652567041")
+	// fmt.Println("p", p)
+
+	// asfafd := f.Element{}
+	// asfafd.SetBytes(p.Bytes())
 
 	a, err := hint.a.Resolve(vm)
 	if err != nil {
@@ -942,8 +950,31 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 		return err
 	}
 
+	test := utils.FeltMax128
+
+	fmt.Println("max", test.String())
+	fmt.Println("bFelt", bFelt)
 	thirdLength := f.Element{32, 0, 0, 544} // -1 field element
+
+	// tlu := uint256.Int(thirdLength.Bits())
+	// fmt.Println("tlu", tlu)
+
+	// bu := uint256.Int(bFelt.Bits())
+	// fmt.Println("bu", bu)
+
+	// tlu.Sub(&tlu, &bu)
+	// fmt.Println("tlu", tlu)
+
+	// res := f.Element{}
+	// res.SetBytes(tlu.Bytes())
+	// fmt.Println("res", res.String())
+
+	fmt.Println("thirdLength", thirdLength)
 	thirdLength.Sub(&thirdLength, bFelt)
+	fmt.Println("thirdLength sub", thirdLength)
+
+	secondLength := f.Element{}
+	secondLength.Sub(bFelt, aFelt)
 
 	// Array of pairs (2-tuple)
 	lengthsAndIndices := []struct {
@@ -951,8 +982,12 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 		Position int
 	}{
 		{*aFelt, 0},
-		{*bFelt.Sub(bFelt, aFelt), 1},
+		{secondLength, 1},
 		{thirdLength, 2},
+	}
+
+	for _, v := range lengthsAndIndices {
+		fmt.Println("lengthsAndIndices", v.Value.String())
 	}
 
 	// Sort
@@ -960,6 +995,10 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 		// return lengthsAndIndices[i].Value < lengthsAndIndices[j].Value
 		return lengthsAndIndices[i].Value.Cmp(&lengthsAndIndices[j].Value) == -1
 	})
+
+	for _, v := range lengthsAndIndices {
+		fmt.Println("lengthsAndIndices", v.Value.String())
+	}
 
 	// Exclude the largest arc after sorting
 	ctx.ExcludedArc = lengthsAndIndices[2].Position
@@ -973,7 +1012,7 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 	// w.r.t. primeOver3High
 	quotient := uint256.Int(lengthsAndIndices[0].Value.Bits())
 	remainder := uint256.Int{}
-	quotient.DivMod(&quotient, &primeOver3High, &remainder)
+	quotient.DivMod(&quotient, primeOver3High, &remainder)
 
 	remainderFelt := f.Element{}
 	remainderFelt.SetBytes(remainder.Bytes())
@@ -1000,10 +1039,15 @@ func (hint AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerC
 	// w.r.t. primeOver2High
 	quotient = uint256.Int(lengthsAndIndices[1].Value.Bits())
 	remainder = uint256.Int{}
-	quotient.DivMod(&quotient, &primeOver2High, &remainder)
+	quotient.DivMod(&quotient, primeOver2High, &remainder)
 
 	remainderFelt.SetBytes(remainder.Bytes())
 	quotientFelt.SetBytes(quotient.Bytes())
+
+	fmt.Println("quotient", quotientFelt.String())
+
+	// q := lengthsAndIndices[1].Value
+	// q.Div(&q, &asfafd)
 
 	// Store remainder 2
 	rangeCheckPtrMemAddr.Offset += 1

@@ -1,12 +1,14 @@
 package hintrunner
 
 import (
+	"fmt"
 	"io"
 	"math/big"
 	"os"
 	"testing"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
@@ -513,27 +515,20 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 	// The addr that the range check pointer will point to
-	addr := memory.MemoryAddress{
-		SegmentIndex: 1,
-		Offset:       3,
-	}
-	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromMemoryAddress(&addr))
+	addr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
+	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap, memory.MemoryValueFromMemoryAddress(&addr))
 
 	ctx := HintRunnerContext{
-		DictionaryManager:         DictionaryManager{},
-		SquashedDictionaryManager: SquashedDictionaryManager{},
-		ExcludedArc:               0,
+		ExcludedArc: 0,
 	}
 
 	valA := Immediate(f.NewElement(1024))
 	valB := Immediate(f.NewElement(1025))
 
-	rangeCheckPtr := Deref{ApCellRef(0)}
-
 	hint := AssertLeFindSmallArc{
 		a:             valA,
 		b:             valB,
-		rangeCheckPtr: rangeCheckPtr,
+		rangeCheckPtr: Deref{ApCellRef(0)},
 	}
 
 	err := hint.Execute(vm, &ctx)
@@ -547,11 +542,115 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 	expectedPtr := memory.MemoryValueFromMemoryAddress(&addr)
 	expectedExcludedArc := int(2)
 
-	actualRem1 := readFrom(vm, VM.ExecutionSegment, 3)
-	actualQuotient1 := readFrom(vm, VM.ExecutionSegment, 4)
-	actualRem2 := readFrom(vm, VM.ExecutionSegment, 5)
-	actualQuotient2 := readFrom(vm, VM.ExecutionSegment, 6)
-	actual1Ptr := readFrom(vm, VM.ExecutionSegment, 0)
+	actualRem1 := readFrom(vm, 2, 0)
+	actualQuotient1 := readFrom(vm, 2, 1)
+	actualRem2 := readFrom(vm, 2, 2)
+	actualQuotient2 := readFrom(vm, 2, 3)
+	actual1Ptr := readFrom(vm, 1, 0)
+
+	require.Equal(t, expectedRem1, actualRem1)
+	require.Equal(t, expectedQuotient1, actualQuotient1)
+	require.Equal(t, expectedRem2, actualRem2)
+	require.Equal(t, expectedQuotient2, actualQuotient2)
+	require.Equal(t, expectedPtr, actual1Ptr)
+	require.Equal(t, expectedExcludedArc, ctx.ExcludedArc)
+}
+
+func TestAssertLeFindSmallArcFail(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	// The addr that the range check pointer will point to
+	addr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
+	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap, memory.MemoryValueFromMemoryAddress(&addr))
+
+	ctx := HintRunnerContext{
+		ExcludedArc: 0,
+	}
+
+	aFelt := f.Element{16105985855437757446, 3337516373913211447, 18446744073709551593, 559362950619143269}
+	bFelt := f.Element{10245485391250542258, 2824003701665652436, 18446744073709551596, 82104455625325009}
+
+	fmt.Println(aFelt.String())
+	fmt.Println(bFelt.String())
+
+	valA := Immediate(aFelt)
+	valB := Immediate(bFelt)
+
+	hint := AssertLeFindSmallArc{
+		a:             valA,
+		b:             valB,
+		rangeCheckPtr: Deref{ApCellRef(0)},
+	}
+
+	err := hint.Execute(vm, &ctx)
+
+	require.NoError(t, err)
+
+	expectedRem1 := memory.MemoryValueFromInt(1)
+	expectedQuotient1 := memory.MemoryValueFromInt(0)
+	expectedRem2 := memory.MemoryValueFromInt(1024)
+	expectedQuotient2 := memory.MemoryValueFromInt(0)
+	expectedPtr := memory.MemoryValueFromMemoryAddress(&addr)
+	expectedExcludedArc := int(2)
+
+	actualRem1 := readFrom(vm, 2, 0)
+	actualQuotient1 := readFrom(vm, 2, 1)
+	actualRem2 := readFrom(vm, 2, 2)
+	actualQuotient2 := readFrom(vm, 2, 3)
+	actual1Ptr := readFrom(vm, 1, 0)
+
+	require.Equal(t, expectedRem1, actualRem1)
+	require.Equal(t, expectedQuotient1, actualQuotient1)
+	require.Equal(t, expectedRem2, actualRem2)
+	require.Equal(t, expectedQuotient2, actualQuotient2)
+	require.Equal(t, expectedPtr, actual1Ptr)
+	require.Equal(t, expectedExcludedArc, ctx.ExcludedArc)
+}
+
+func TestAssertLeFindSmallArcNot(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	// The addr that the range check pointer will point to
+	addr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
+	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap, memory.MemoryValueFromMemoryAddress(&addr))
+
+	ctx := HintRunnerContext{
+		ExcludedArc: 0,
+	}
+
+	aFelt := f.Element{13984218141608664100, 13287333742236603547, 18446744073709551615, 229878458336812643}
+	bFelt := f.Element{6079377935050068685, 3868297591914914705, 18446744073709551587, 162950233538363292}
+
+	fmt.Println(aFelt.String())
+	fmt.Println(bFelt.String())
+
+	valA := Immediate(aFelt)
+	valB := Immediate(bFelt)
+
+	hint := AssertLeFindSmallArc{
+		a:             valA,
+		b:             valB,
+		rangeCheckPtr: Deref{ApCellRef(0)},
+	}
+
+	err := hint.Execute(vm, &ctx)
+
+	require.NoError(t, err)
+
+	expectedRem1 := memory.MemoryValueFromInt(1)
+	expectedQuotient1 := memory.MemoryValueFromInt(0)
+	expectedRem2 := memory.MemoryValueFromInt(1024)
+	expectedQuotient2 := memory.MemoryValueFromInt(0)
+	expectedPtr := memory.MemoryValueFromMemoryAddress(&addr)
+	expectedExcludedArc := int(2)
+
+	actualRem1 := readFrom(vm, 2, 0)
+	actualQuotient1 := readFrom(vm, 2, 1)
+	actualRem2 := readFrom(vm, 2, 2)
+	actualQuotient2 := readFrom(vm, 2, 3)
+	actual1Ptr := readFrom(vm, 1, 0)
 
 	require.Equal(t, expectedRem1, actualRem1)
 	require.Equal(t, expectedQuotient1, actualQuotient1)

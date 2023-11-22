@@ -2,6 +2,7 @@ package hintrunner
 
 import (
 	"encoding/binary"
+	"fmt"
 	"math/rand"
 	"testing"
 
@@ -230,6 +231,7 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		fmt.Println("i", i)
 		// store the range check ptr at current ap
 		writeTo(
 			vm,
@@ -238,11 +240,18 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 			memory.MemoryValueFromMemoryAddress(&rangeCheckPtr),
 		)
 
+		r1 := randomFeltElementU128(rand)
+		r2 := randomFeltElementU128(rand)
+
 		hint := AssertLeFindSmallArc{
-			a:             Immediate(randomFeltElementU128(rand)),
-			b:             Immediate(randomFeltElementU128(rand)),
+			a:             Immediate(r1),
+			b:             Immediate(r2),
 			rangeCheckPtr: Deref{ApCellRef(0)},
 		}
+
+		fmt.Println("r1", r1)
+		fmt.Println("r2", r2)
+		fmt.Println("mem addr", rangeCheckPtr)
 
 		err := hint.Execute(vm, &ctx)
 		if err != nil {
