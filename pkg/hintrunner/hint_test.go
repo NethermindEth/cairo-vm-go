@@ -691,9 +691,10 @@ func TestAllocConstantSize(t *testing.T) {
 
 func TestAssertLeFindSmallArc(t *testing.T) {
 	testCases := []struct {
-		aFelt, bFelt                                                     f.Element
-		expectedRem1, expectedQuotient1, expectedRem2, expectedQuotient2 mem.MemoryValue
-		expectedExcludedArc                                              int
+		aFelt, bFelt                    f.Element
+		expectedRem1, expectedQuotient1 mem.MemoryValue
+		expectedRem2, expectedQuotient2 mem.MemoryValue
+		expectedExcludedArc             int
 	}{
 		// First test case
 		{
@@ -707,16 +708,38 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		},
 		// Second test case
 		{
-			aFelt: f.Element{13984218141608664100, 13287333742236603547, 18446744073709551615, 229878458336812643},
-			bFelt: f.Element{6079377935050068685, 3868297591914914705, 18446744073709551587, 162950233538363292},
+			// 2974197561122951277584414786853691079
+			aFelt: f.Element{
+				13984218141608664100,
+				13287333742236603547,
+				18446744073709551615,
+				229878458336812643,
+			},
+			// 306150973282131698343156044521811432643
+			bFelt: f.Element{
+				6079377935050068685,
+				3868297591914914705,
+				18446744073709551587,
+				162950233538363292,
+			},
+			// 2974197561122951277584414786853691079
 			expectedRem1: mem.MemoryValueFromFieldElement(
-				&f.Element{13984218141608664100, 13287333742236603547, 18446744073709551615, 229878458336812643}),
-			expectedQuotient1: mem.MemoryValueFromFieldElement(
-				&f.Element{0, 0, 0, 0}),
+				&f.Element{
+					13984218141608664100,
+					13287333742236603547,
+					18446744073709551615,
+					229878458336812643,
+				}),
+			expectedQuotient1: mem.MemoryValueFromInt(0),
+			// 112792682047919106056116278761420227
 			expectedRem2: mem.MemoryValueFromFieldElement(
-				&f.Element{10541903867150958026, 18251079960242638581, 18446744073709551615, 509532527505005161}),
-			expectedQuotient2: mem.MemoryValueFromFieldElement(
-				&f.Element{18446744073709549793, 18446744073709551615, 18446744073709551615, 576460752303392496}),
+				&f.Element{
+					10541903867150958026,
+					18251079960242638581,
+					18446744073709551615,
+					509532527505005161,
+				}),
+			expectedQuotient2:   mem.MemoryValueFromInt(57),
 			expectedExcludedArc: 2,
 		},
 	}
