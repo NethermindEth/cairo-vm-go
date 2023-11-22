@@ -689,6 +689,8 @@ func TestAllocConstantSize(t *testing.T) {
 }
 
 func TestAssertLeIsFirstArcExcluded(t *testing.T) {
+	vm := defaultVirtualMachine()
+
 	ctx := HintRunnerContext{
 		DictionaryManager:         DictionaryManager{},
 		SquashedDictionaryManager: SquashedDictionaryManager{},
@@ -705,7 +707,7 @@ func TestAssertLeIsFirstArcExcluded(t *testing.T) {
 
 	require.NoError(t, err)
 
-	expected := memory.MemoryValueFromInt(1)
+	expected := mem.MemoryValueFromInt(1)
 
 	actual := readFrom(vm, VM.ExecutionSegment, 0)
 
@@ -733,7 +735,7 @@ func TestAssertLeIsSecondArcExcluded(t *testing.T) {
 
 	require.NoError(t, err)
 
-	expected := memory.MemoryValueFromInt(0)
+	expected := mem.MemoryValueFromInt(0)
 
 	actual := readFrom(vm, VM.ExecutionSegment, 0)
 
