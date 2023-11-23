@@ -6,8 +6,10 @@ import (
 	"testing"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkAllocSegment(b *testing.B) {
@@ -292,6 +294,68 @@ func BenchmarkAssertLeIsSecondArcExcluded(b *testing.B) {
 			break
 		}
 
+		vm.Context.Ap += 1
+	}
+
+}
+
+func randomFeltElement(rand *rand.Rand) f.Element {
+	b := [32]byte{}
+	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
+	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
+	binary.BigEndian.PutUint64(b[8:16], rand.Uint64())
+	//Limit to 59 bits so at max we have a 251 bit number
+	binary.BigEndian.PutUint64(b[0:8], rand.Uint64()>>5)
+	f, _ := f.BigEndian.Element(&b)
+	return f
+}
+
+func randomFeltElementU128(rand *rand.Rand) f.Element {
+	b := [32]byte{}
+	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
+	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
+	f, _ := f.BigEndian.Element(&b)
+	return f
+}
+
+func defaultRandGenerator() *rand.Rand {
+	return rand.New(rand.NewSource(0))
+}
+
+func BenchmarkAssertLeFindSmallArc(b *testing.B) {
+	vm := defaultVirtualMachine()
+
+	rand := defaultRandGenerator()
+	ctx := HintRunnerContext{
+		ExcludedArc: 0,
+	}
+
+	rangeCheckPtr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// store the range check ptr at current ap
+		writeTo(
+			vm,
+			VM.ExecutionSegment,
+			vm.Context.Ap,
+			memory.MemoryValueFromMemoryAddress(&rangeCheckPtr),
+		)
+
+		r1 := randomFeltElement(rand)
+		r2 := randomFeltElement(rand)
+		hint := AssertLeFindSmallArc{
+			a:             Immediate(r1),
+			b:             Immediate(r2),
+			rangeCheckPtr: Deref{ApCellRef(0)},
+		}
+
+		if err := hint.Execute(vm, &ctx); err != nil &&
+			!assert.ErrorContains(b, err, "check write: 2**128 <") {
+			b.FailNow()
+		}
+
+		rangeCheckPtr.Offset += 4
 		vm.Context.Ap += 1
 	}
 
