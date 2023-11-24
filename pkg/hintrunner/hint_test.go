@@ -789,9 +789,7 @@ func TestAssertLeIsFirstArcExcluded(t *testing.T) {
 	vm := defaultVirtualMachine()
 
 	ctx := HintRunnerContext{
-		DictionaryManager:         DictionaryManager{},
-		SquashedDictionaryManager: SquashedDictionaryManager{},
-		ExcludedArc:               2,
+		ExcludedArc: 2,
 	}
 
 	var flag ApCellRef = 0
@@ -817,9 +815,7 @@ func TestAssertLeIsSecondArcExcluded(t *testing.T) {
 	vm.Context.Fp = 0
 
 	ctx := HintRunnerContext{
-		DictionaryManager:         DictionaryManager{},
-		SquashedDictionaryManager: SquashedDictionaryManager{},
-		ExcludedArc:               1,
+		ExcludedArc: 1,
 	}
 
 	var flag ApCellRef = 0
