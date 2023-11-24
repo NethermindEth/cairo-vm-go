@@ -784,3 +784,53 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		require.Equal(t, tc.expectedExcludedArc, ctx.ExcludedArc)
 	}
 }
+
+func TestAssertLeIsFirstArcExcluded(t *testing.T) {
+	vm := defaultVirtualMachine()
+
+	ctx := HintRunnerContext{
+		ExcludedArc: 2,
+	}
+
+	var flag ApCellRef = 0
+
+	hint := AssertLeIsFirstArcExcluded{
+		skipExcludeAFlag: flag,
+	}
+
+	err := hint.Execute(vm, &ctx)
+
+	require.NoError(t, err)
+
+	expected := mem.MemoryValueFromInt(1)
+
+	actual := readFrom(vm, VM.ExecutionSegment, 0)
+
+	require.Equal(t, expected, actual)
+}
+
+func TestAssertLeIsSecondArcExcluded(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	ctx := HintRunnerContext{
+		ExcludedArc: 1,
+	}
+
+	var flag ApCellRef = 0
+
+	hint := AssertLeIsSecondArcExcluded{
+		skipExcludeBMinusA: flag,
+	}
+
+	err := hint.Execute(vm, &ctx)
+
+	require.NoError(t, err)
+
+	expected := mem.MemoryValueFromInt(0)
+
+	actual := readFrom(vm, VM.ExecutionSegment, 0)
+
+	require.Equal(t, expected, actual)
+}

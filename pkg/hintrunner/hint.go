@@ -1229,3 +1229,52 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunner
 	}
 	return nil
 }
+
+
+type AssertLeIsFirstArcExcluded struct {
+	skipExcludeAFlag CellRefer
+}
+
+func (hint *AssertLeIsFirstArcExcluded) String() string {
+	return "AssertLeIsFirstArcExcluded"
+}
+
+func (hint *AssertLeIsFirstArcExcluded) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	addr, err := hint.skipExcludeAFlag.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get skipExcludeAFlag addr: %v", err)
+	}
+
+	var writeValue mem.MemoryValue
+	if ctx.ExcludedArc != 0 {
+		writeValue = mem.MemoryValueFromInt(1)
+	} else {
+		writeValue = mem.MemoryValueFromInt(0)
+	}
+
+	return vm.Memory.WriteToAddress(&addr, &writeValue)
+}
+
+type AssertLeIsSecondArcExcluded struct {
+	skipExcludeBMinusA CellRefer
+}
+
+func (hint *AssertLeIsSecondArcExcluded) String() string {
+	return "AssertLeIsSecondArcExcluded"
+}
+
+func (hint *AssertLeIsSecondArcExcluded) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+	addr, err := hint.skipExcludeBMinusA.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get skipExcludeBMinusA addr: %v", err)
+	}
+
+	var writeValue mem.MemoryValue
+	if ctx.ExcludedArc != 1 {
+		writeValue = mem.MemoryValueFromInt(1)
+	} else {
+		writeValue = mem.MemoryValueFromInt(0)
+	}
+
+	return vm.Memory.WriteToAddress(&addr, &writeValue)
+}

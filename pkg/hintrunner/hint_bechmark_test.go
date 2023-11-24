@@ -239,6 +239,63 @@ func BenchmarkUint256SquareRoot(b *testing.B) {
 		}
 		vm.Context.Ap += 5
 	}
+}
+
+func BenchmarkAssertLeIsFirstArcExcluded(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	ctx := HintRunnerContext{
+		ExcludedArc: 0,
+	}
+
+	var skipExcludeAFlag ApCellRef = 1
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+
+		hint := AssertLeIsFirstArcExcluded{
+			skipExcludeAFlag: skipExcludeAFlag,
+		}
+
+		err := hint.Execute(vm, &ctx)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+
+		vm.Context.Ap += 1
+	}
+
+}
+
+func BenchmarkAssertLeIsSecondArcExcluded(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	ctx := HintRunnerContext{
+		ExcludedArc: 0,
+	}
+
+	var skipExcludeBMinusA ApCellRef = 1
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+
+		hint := AssertLeIsSecondArcExcluded{
+			skipExcludeBMinusA: skipExcludeBMinusA,
+		}
+
+		err := hint.Execute(vm, &ctx)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+
+		vm.Context.Ap += 1
+	}
 
 }
 
