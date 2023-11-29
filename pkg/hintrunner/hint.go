@@ -1292,9 +1292,6 @@ func (hint *RandomEcPoint) String() string {
 func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
 	// Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic residue.
 	betaFelt := f.Element{3863487492851900874, 7432612994240712710, 12360725113329547591, 88155977965380735}
-	// Legendre == 1 -> Quadratic residue
-	// Legendre == -1 -> Quadratic non-residue
-	// Legendre == 0 -> Zero
 	var randomX, randomYSquared f.Element
 	rand := defaultRandGenerator()
 	for {
@@ -1304,6 +1301,9 @@ func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
 		randomYSquared.Mul(&randomYSquared, &randomX)
 		randomYSquared.Add(&randomYSquared, &randomX)
 		randomYSquared.Add(&randomYSquared, &betaFelt)
+		// Legendre == 1 -> Quadratic residue
+		// Legendre == -1 -> Quadratic non-residue
+		// Legendre == 0 -> Zero
 		if randomYSquared.Legendre() == 1 {
 			break
 		}
