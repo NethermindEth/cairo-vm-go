@@ -1,8 +1,10 @@
 package hintrunner
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math/big"
+	"math/rand"
 	"sort"
 
 	"github.com/holiman/uint256"
@@ -1230,7 +1232,6 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunner
 	return nil
 }
 
-
 type AssertLeIsFirstArcExcluded struct {
 	skipExcludeAFlag CellRefer
 }
@@ -1277,4 +1278,82 @@ func (hint *AssertLeIsSecondArcExcluded) Execute(vm *VM.VirtualMachine, ctx *Hin
 	}
 
 	return vm.Memory.WriteToAddress(&addr, &writeValue)
+}
+
+type RandomEcPoint struct {
+	x CellRefer
+	y CellRefer
+}
+
+func (hint *RandomEcPoint) String() string {
+	return "RandomEc"
+}
+
+func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
+	// Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic residue.
+	betaFelt := f.Element{3863487492851900874, 7432612994240712710, 12360725113329547591, 88155977965380735}
+	// Legendre == 1 -> Quadratic residue
+	// Legendre == -1 -> Quadratic non-residue
+	// Legendre == 0 -> Zero
+	var randomX, randomYSquared f.Element
+	rand := defaultRandGenerator()
+	for {
+		randomX = randomFeltElement(rand)
+		randomYSquared = f.Element{}
+		randomYSquared.Square(&randomX)
+		randomYSquared.Mul(&randomYSquared, &randomX)
+		randomYSquared.Add(&randomYSquared, &randomX)
+		randomYSquared.Add(&randomYSquared, &betaFelt)
+		if randomYSquared.Legendre() == 1 {
+			break
+		}
+	}
+
+	xVal := mem.MemoryValueFromFieldElement(&randomX)
+	yVal := mem.MemoryValueFromFieldElement(randomYSquared.Square(&randomYSquared))
+
+	xAddr, err := hint.x.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get register x %s: %w", hint.x, err)
+	}
+
+	err = vm.Memory.WriteToAddress(&xAddr, &xVal)
+	if err != nil {
+		return fmt.Errorf("write to address x %s: %w", xVal, err)
+	}
+
+	yAddr, err := hint.y.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get register y %s: %w", hint.y, err)
+	}
+
+	err = vm.Memory.WriteToAddress(&yAddr, &yVal)
+	if err != nil {
+		return fmt.Errorf("write to address y %s: %w", yVal, err)
+	}
+
+	return nil
+}
+
+func randomFeltElement(rand *rand.Rand) f.Element {
+	b := [32]byte{}
+	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
+	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
+	binary.BigEndian.PutUint64(b[8:16], rand.Uint64())
+	//Limit to 59 bits so at max we have a 251 bit number
+	binary.BigEndian.PutUint64(b[0:8], rand.Uint64()>>5)
+	f, _ := f.BigEndian.Element(&b)
+	return f
+}
+
+func randomFeltElementU128(rand *rand.Rand) f.Element {
+	b := [32]byte{}
+	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
+	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
+	f, _ := f.BigEndian.Element(&b)
+	return f
+}
+
+func defaultRandGenerator() *rand.Rand {
+	return rand.New(rand.NewSource(0))
 }

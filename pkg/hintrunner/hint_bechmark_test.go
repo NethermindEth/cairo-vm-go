@@ -1,14 +1,11 @@
 package hintrunner
 
 import (
-	"encoding/binary"
-	"math/rand"
 	"testing"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -338,25 +335,24 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 
 }
 
-func randomFeltElement(rand *rand.Rand) f.Element {
-	b := [32]byte{}
-	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
-	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
-	binary.BigEndian.PutUint64(b[8:16], rand.Uint64())
-	//Limit to 59 bits so at max we have a 251 bit number
-	binary.BigEndian.PutUint64(b[0:8], rand.Uint64()>>5)
-	f, _ := f.BigEndian.Element(&b)
-	return f
-}
+func BenchmarkRandomEcPoint(b *testing.B) {
+	vm := defaultVirtualMachine()
 
-func randomFeltElementU128(rand *rand.Rand) f.Element {
-	b := [32]byte{}
-	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
-	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
-	f, _ := f.BigEndian.Element(&b)
-	return f
-}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
 
-func defaultRandGenerator() *rand.Rand {
-	return rand.New(rand.NewSource(0))
+		hint := RandomEcPoint{
+			x: ApCellRef(0),
+			y: ApCellRef(1),
+		}
+
+		err := hint.Execute(vm)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+
+		vm.Context.Ap += 2
+	}
+
 }
