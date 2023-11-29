@@ -6,8 +6,10 @@ import (
 	"testing"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkAllocSegment(b *testing.B) {
@@ -149,7 +151,7 @@ func BenchmarkLinearSplit(b *testing.B) {
 			y:      y,
 		}
 
-		err := hint.Execute(vm)
+		err := hint.Execute(vm, nil)
 		if err != nil {
 			b.Error(err)
 			break
@@ -158,27 +160,50 @@ func BenchmarkLinearSplit(b *testing.B) {
 	}
 }
 
-func randomFeltElement(rand *rand.Rand) f.Element {
-	b := [32]byte{}
-	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
-	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
-	binary.BigEndian.PutUint64(b[8:16], rand.Uint64())
-	//Limit to 59 bits so at max we have a 251 bit number
-	binary.BigEndian.PutUint64(b[0:8], rand.Uint64()>>5)
-	f, _ := f.BigEndian.Element(&b)
-	return f
-}
+func BenchmarkUint512DivModByUint256(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
 
-func randomFeltElementU128(rand *rand.Rand) f.Element {
-	b := [32]byte{}
-	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
-	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
-	f, _ := f.BigEndian.Element(&b)
-	return f
-}
+	rand := defaultRandGenerator()
 
-func defaultRandGenerator() *rand.Rand {
-	return rand.New(rand.NewSource(0))
+	var quotient0 ApCellRef = 1
+	var quotient1 ApCellRef = 2
+	var quotient2 ApCellRef = 3
+	var quotient3 ApCellRef = 4
+	var remainder0 ApCellRef = 5
+	var remainder1 ApCellRef = 6
+
+	for i := 0; i < b.N; i++ {
+		dividend0 := Immediate(randomFeltElement(rand))
+		dividend1 := Immediate(randomFeltElement(rand))
+		dividend2 := Immediate(randomFeltElement(rand))
+		dividend3 := Immediate(randomFeltElement(rand))
+		divisor0 := Immediate(randomFeltElement(rand))
+		divisor1 := Immediate(randomFeltElement(rand))
+
+		hint := Uint512DivModByUint256{
+			dividend0,
+			dividend1,
+			dividend2,
+			dividend3,
+			divisor0,
+			divisor1,
+			quotient0,
+			quotient1,
+			quotient2,
+			quotient3,
+			remainder0,
+			remainder1,
+		}
+
+		err := hint.Execute(vm, nil)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+		vm.Context.Ap += 6
+	}
 }
 
 func BenchmarkUint256SquareRoot(b *testing.B) {
@@ -207,12 +232,131 @@ func BenchmarkUint256SquareRoot(b *testing.B) {
 			sqrtMul2MinusRemainderGeU128: sqrtMul2MinusRemainderGeU128,
 		}
 
-		err := hint.Execute(vm)
+		err := hint.Execute(vm, nil)
 		if err != nil {
 			b.Error(err)
 			break
 		}
 		vm.Context.Ap += 5
 	}
+}
 
+func BenchmarkAssertLeIsFirstArcExcluded(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	ctx := HintRunnerContext{
+		ExcludedArc: 0,
+	}
+
+	var skipExcludeAFlag ApCellRef = 1
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+
+		hint := AssertLeIsFirstArcExcluded{
+			skipExcludeAFlag: skipExcludeAFlag,
+		}
+
+		err := hint.Execute(vm, &ctx)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+
+		vm.Context.Ap += 1
+	}
+
+}
+
+func BenchmarkAssertLeIsSecondArcExcluded(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	ctx := HintRunnerContext{
+		ExcludedArc: 0,
+	}
+
+	var skipExcludeBMinusA ApCellRef = 1
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+
+		hint := AssertLeIsSecondArcExcluded{
+			skipExcludeBMinusA: skipExcludeBMinusA,
+		}
+
+		err := hint.Execute(vm, &ctx)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+
+		vm.Context.Ap += 1
+	}
+
+}
+
+func BenchmarkAssertLeFindSmallArc(b *testing.B) {
+	vm := defaultVirtualMachine()
+
+	rand := defaultRandGenerator()
+	ctx := HintRunnerContext{
+		ExcludedArc: 0,
+	}
+
+	rangeCheckPtr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// store the range check ptr at current ap
+		writeTo(
+			vm,
+			VM.ExecutionSegment,
+			vm.Context.Ap,
+			memory.MemoryValueFromMemoryAddress(&rangeCheckPtr),
+		)
+
+		r1 := randomFeltElement(rand)
+		r2 := randomFeltElement(rand)
+		hint := AssertLeFindSmallArc{
+			a:             Immediate(r1),
+			b:             Immediate(r2),
+			rangeCheckPtr: Deref{ApCellRef(0)},
+		}
+
+		if err := hint.Execute(vm, &ctx); err != nil &&
+			!assert.ErrorContains(b, err, "check write: 2**128 <") {
+			b.FailNow()
+		}
+
+		rangeCheckPtr.Offset += 4
+		vm.Context.Ap += 1
+	}
+
+}
+
+func randomFeltElement(rand *rand.Rand) f.Element {
+	b := [32]byte{}
+	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
+	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
+	binary.BigEndian.PutUint64(b[8:16], rand.Uint64())
+	//Limit to 59 bits so at max we have a 251 bit number
+	binary.BigEndian.PutUint64(b[0:8], rand.Uint64()>>5)
+	f, _ := f.BigEndian.Element(&b)
+	return f
+}
+
+func randomFeltElementU128(rand *rand.Rand) f.Element {
+	b := [32]byte{}
+	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
+	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
+	f, _ := f.BigEndian.Element(&b)
+	return f
+}
+
+func defaultRandGenerator() *rand.Rand {
+	return rand.New(rand.NewSource(0))
 }

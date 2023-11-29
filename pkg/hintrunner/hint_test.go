@@ -7,7 +7,8 @@ import (
 	"testing"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
@@ -29,7 +30,7 @@ func TestAllocSegment(t *testing.T) {
 	require.Equal(t, 3, len(vm.Memory.Segments))
 	require.Equal(
 		t,
-		memory.MemoryValueFromSegmentAndOffset(2, 0),
+		mem.MemoryValueFromSegmentAndOffset(2, 0),
 		readFrom(vm, VM.ExecutionSegment, vm.Context.Ap+5),
 	)
 
@@ -38,7 +39,7 @@ func TestAllocSegment(t *testing.T) {
 	require.Equal(t, 4, len(vm.Memory.Segments))
 	require.Equal(
 		t,
-		memory.MemoryValueFromSegmentAndOffset(3, 0),
+		mem.MemoryValueFromSegmentAndOffset(3, 0),
 		readFrom(vm, VM.ExecutionSegment, vm.Context.Fp+9),
 	)
 
@@ -48,7 +49,7 @@ func TestTestLessThanTrue(t *testing.T) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
-	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(23))
+	writeTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(23))
 
 	var dst ApCellRef = 1
 	var rhsRef FpCellRef = 0
@@ -66,7 +67,7 @@ func TestTestLessThanTrue(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(
 		t,
-		memory.MemoryValueFromInt(1),
+		mem.MemoryValueFromInt(1),
 		readFrom(vm, VM.ExecutionSegment, 1),
 		"Expected the hint to evaluate to True when lhs is less than rhs",
 	)
@@ -85,7 +86,7 @@ func TestTestLessThanFalse(t *testing.T) {
 			vm := defaultVirtualMachine()
 			vm.Context.Ap = 0
 			vm.Context.Fp = 0
-			writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(17))
+			writeTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(17))
 
 			var dst ApCellRef = 1
 			var rhsRef FpCellRef = 0
@@ -102,7 +103,7 @@ func TestTestLessThanFalse(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(
 				t,
-				memory.EmptyMemoryValueAsFelt(),
+				mem.EmptyMemoryValueAsFelt(),
 				readFrom(vm, VM.ExecutionSegment, 1),
 				tc.expectedMsg,
 			)
@@ -124,7 +125,7 @@ func TestTestLessThanOrEqTrue(t *testing.T) {
 			vm := defaultVirtualMachine()
 			vm.Context.Ap = 0
 			vm.Context.Fp = 0
-			writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(23))
+			writeTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(23))
 
 			var dst ApCellRef = 1
 			var rhsRef FpCellRef = 0
@@ -141,7 +142,7 @@ func TestTestLessThanOrEqTrue(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(
 				t,
-				memory.MemoryValueFromInt(1),
+				mem.MemoryValueFromInt(1),
 				readFrom(vm, VM.ExecutionSegment, 1),
 				tc.expectedMsg,
 			)
@@ -153,7 +154,7 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
-	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromInt(17))
+	writeTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(17))
 
 	var dst ApCellRef = 1
 	var rhsRef FpCellRef = 0
@@ -171,7 +172,7 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(
 		t,
-		memory.EmptyMemoryValueAsFelt(),
+		mem.EmptyMemoryValueAsFelt(),
 		readFrom(vm, VM.ExecutionSegment, 1),
 		"Expected the hint to evaluate to False when lhs is larger",
 	)
@@ -196,12 +197,12 @@ func TestLinearSplit(t *testing.T) {
 		y:      y,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 	require.NoError(t, err)
 	xx := readFrom(vm, VM.ExecutionSegment, 0)
-	require.Equal(t, xx, memory.MemoryValueFromInt(223344))
+	require.Equal(t, xx, mem.MemoryValueFromInt(223344))
 	yy := readFrom(vm, VM.ExecutionSegment, 1)
-	require.Equal(t, yy, memory.MemoryValueFromInt(14))
+	require.Equal(t, yy, mem.MemoryValueFromInt(14))
 
 	vm = defaultVirtualMachine()
 	vm.Context.Ap = 0
@@ -217,12 +218,12 @@ func TestLinearSplit(t *testing.T) {
 		y:      y,
 	}
 
-	err = hint.Execute(vm)
+	err = hint.Execute(vm, nil)
 	require.NoError(t, err)
 	xx = readFrom(vm, VM.ExecutionSegment, 0)
-	require.Equal(t, xx, memory.MemoryValueFromInt(223343))
+	require.Equal(t, xx, mem.MemoryValueFromInt(223343))
 	yy = readFrom(vm, VM.ExecutionSegment, 1)
-	require.Equal(t, yy, memory.MemoryValueFromInt(14+42))
+	require.Equal(t, yy, mem.MemoryValueFromInt(14+42))
 }
 
 func TestWideMul128(t *testing.T) {
@@ -257,12 +258,12 @@ func TestWideMul128(t *testing.T) {
 
 	require.Equal(
 		t,
-		memory.MemoryValueFromFieldElement(low),
+		mem.MemoryValueFromFieldElement(low),
 		readFrom(vm, VM.ExecutionSegment, 1),
 	)
 	require.Equal(
 		t,
-		memory.MemoryValueFromInt(1<<7),
+		mem.MemoryValueFromInt(1<<7),
 		readFrom(vm, VM.ExecutionSegment, 2),
 	)
 }
@@ -303,11 +304,11 @@ func TestDebugPrint(t *testing.T) {
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	writeTo(vm, VM.ExecutionSegment, 0, memory.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 2))
-	writeTo(vm, VM.ExecutionSegment, 1, memory.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 5))
-	writeTo(vm, VM.ExecutionSegment, 2, memory.MemoryValueFromInt(10))
-	writeTo(vm, VM.ExecutionSegment, 3, memory.MemoryValueFromInt(20))
-	writeTo(vm, VM.ExecutionSegment, 4, memory.MemoryValueFromInt(30))
+	writeTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 2))
+	writeTo(vm, VM.ExecutionSegment, 1, mem.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 5))
+	writeTo(vm, VM.ExecutionSegment, 2, mem.MemoryValueFromInt(10))
+	writeTo(vm, VM.ExecutionSegment, 3, mem.MemoryValueFromInt(20))
+	writeTo(vm, VM.ExecutionSegment, 4, mem.MemoryValueFromInt(30))
 
 	var starRef ApCellRef = 0
 	var endRef ApCellRef = 1
@@ -318,7 +319,7 @@ func TestDebugPrint(t *testing.T) {
 		end:   end,
 	}
 	expected := []byte("[DEBUG] a\n[DEBUG] 14\n[DEBUG] 1e\n")
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 
 	w.Close()
 	out, _ := io.ReadAll(r)
@@ -346,7 +347,7 @@ func TestSquareRoot(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(
 		t,
-		memory.MemoryValueFromInt(6),
+		mem.MemoryValueFromInt(6),
 		readFrom(vm, VM.ExecutionSegment, 1),
 	)
 
@@ -362,7 +363,7 @@ func TestSquareRoot(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(
 		t,
-		memory.MemoryValueFromInt(5),
+		mem.MemoryValueFromInt(5),
 		readFrom(vm, VM.ExecutionSegment, 2),
 	)
 }
@@ -391,15 +392,15 @@ func TestUint256SquareRootLow(t *testing.T) {
 		sqrtMul2MinusRemainderGeU128: sqrtMul2MinusRemainderGeU128,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 
 	require.NoError(t, err)
 
-	expectedSqrt0 := memory.MemoryValueFromInt(11)
-	expectedSqrt1 := memory.MemoryValueFromInt(0)
-	expectedRemainderLow := memory.MemoryValueFromInt(0)
-	expectedRemainderHigh := memory.MemoryValueFromInt(0)
-	expectedSqrtMul2MinusRemainderGeU128 := memory.MemoryValueFromInt(0)
+	expectedSqrt0 := mem.MemoryValueFromInt(11)
+	expectedSqrt1 := mem.MemoryValueFromInt(0)
+	expectedRemainderLow := mem.MemoryValueFromInt(0)
+	expectedRemainderHigh := mem.MemoryValueFromInt(0)
+	expectedSqrtMul2MinusRemainderGeU128 := mem.MemoryValueFromInt(0)
 
 	actualSqrt0 := readFrom(vm, VM.ExecutionSegment, 1)
 	actualSqrt1 := readFrom(vm, VM.ExecutionSegment, 2)
@@ -438,15 +439,15 @@ func TestUint256SquareRootHigh(t *testing.T) {
 		sqrtMul2MinusRemainderGeU128: sqrtMul2MinusRemainderGeU128,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 
 	require.NoError(t, err)
 
-	expectedSqrt0 := memory.MemoryValueFromInt(0)
-	expectedSqrt1 := memory.MemoryValueFromInt(16)
-	expectedRemainderLow := memory.MemoryValueFromInt(0)
-	expectedRemainderHigh := memory.MemoryValueFromInt(0)
-	expectedSqrtMul2MinusRemainderGeU128 := memory.MemoryValueFromInt(0)
+	expectedSqrt0 := mem.MemoryValueFromInt(0)
+	expectedSqrt1 := mem.MemoryValueFromInt(16)
+	expectedRemainderLow := mem.MemoryValueFromInt(0)
+	expectedRemainderHigh := mem.MemoryValueFromInt(0)
+	expectedSqrtMul2MinusRemainderGeU128 := mem.MemoryValueFromInt(0)
 
 	actualSqrt0 := readFrom(vm, VM.ExecutionSegment, 1)
 	actualSqrt1 := readFrom(vm, VM.ExecutionSegment, 2)
@@ -485,15 +486,15 @@ func TestUint256SquareRoot(t *testing.T) {
 		sqrtMul2MinusRemainderGeU128: sqrtMul2MinusRemainderGeU128,
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 
 	require.NoError(t, err)
 
-	expectedSqrt0 := memory.MemoryValueFromInt(0)
-	expectedSqrt1 := memory.MemoryValueFromInt(32)
-	expectedRemainderLow := memory.MemoryValueFromInt(51)
-	expectedRemainderHigh := memory.MemoryValueFromInt(0)
-	expectedSqrtMul2MinusRemainderGeU128 := memory.MemoryValueFromInt(0)
+	expectedSqrt0 := mem.MemoryValueFromInt(0)
+	expectedSqrt1 := mem.MemoryValueFromInt(32)
+	expectedRemainderLow := mem.MemoryValueFromInt(51)
+	expectedRemainderHigh := mem.MemoryValueFromInt(0)
+	expectedSqrtMul2MinusRemainderGeU128 := mem.MemoryValueFromInt(0)
 
 	actualSqrt0 := readFrom(vm, VM.ExecutionSegment, 1)
 	actualSqrt1 := readFrom(vm, VM.ExecutionSegment, 2)
@@ -506,4 +507,330 @@ func TestUint256SquareRoot(t *testing.T) {
 	require.Equal(t, expectedRemainderLow, actualRemainderLow)
 	require.Equal(t, expectedRemainderHigh, actualRemainderHigh)
 	require.Equal(t, expectedSqrtMul2MinusRemainderGeU128, actualSqrtMul2MinusRemainderGeU128)
+}
+
+func TestUint512DivModByUint256(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var dstQuotient0 ApCellRef = 1
+	var dstQuotient1 ApCellRef = 2
+	var dstQuotient2 ApCellRef = 3
+	var dstQuotient3 ApCellRef = 4
+	var dstRemainder0 ApCellRef = 5
+	var dstRemainder1 ApCellRef = 6
+
+	b := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
+
+	dividend0Felt, err := f.BigEndian.Element(&b)
+	require.NoError(t, err)
+	dividend1Felt := f.NewElement(1<<8 + 1)
+	dividend2Felt, err := f.BigEndian.Element(&b)
+	require.NoError(t, err)
+	dividend3Felt := f.NewElement(1<<8 + 1)
+
+	divisor0Felt := f.NewElement(1<<8 + 1)
+	divisor1Felt := f.NewElement(1<<8 + 1)
+
+	hint := Uint512DivModByUint256{
+		dividend0:  Immediate(dividend0Felt),
+		dividend1:  Immediate(dividend1Felt),
+		dividend2:  Immediate(dividend2Felt),
+		dividend3:  Immediate(dividend3Felt),
+		divisor0:   Immediate(divisor0Felt),
+		divisor1:   Immediate(divisor1Felt),
+		quotient0:  dstQuotient0,
+		quotient1:  dstQuotient1,
+		quotient2:  dstQuotient2,
+		quotient3:  dstQuotient3,
+		remainder0: dstRemainder0,
+		remainder1: dstRemainder1,
+	}
+
+	err = hint.Execute(vm, nil)
+	require.Nil(t, err)
+
+	quotient0 := &f.Element{}
+	_, err = quotient0.SetString("170141183460469231731687303715884105730")
+	require.Nil(t, err)
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(quotient0),
+		readFrom(vm, VM.ExecutionSegment, 1),
+	)
+
+	quotient1 := &f.Element{}
+	_, err = quotient1.SetString("662027951208051485337304683719393406")
+	require.Nil(t, err)
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(quotient1),
+		readFrom(vm, VM.ExecutionSegment, 2),
+	)
+
+	quotient2 := &f.Element{}
+	quotient2.SetOne()
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(quotient2),
+		readFrom(vm, VM.ExecutionSegment, 3),
+	)
+
+	quotient3 := &f.Element{}
+	quotient3.SetZero()
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(quotient3),
+		readFrom(vm, VM.ExecutionSegment, 4),
+	)
+
+	remainder0 := &f.Element{}
+	_, err = remainder0.SetString("340282366920938463463374607431768210942")
+	require.Nil(t, err)
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(remainder0),
+		readFrom(vm, VM.ExecutionSegment, 5),
+	)
+
+	remainder1 := &f.Element{}
+	remainder1.SetZero()
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(remainder1),
+		readFrom(vm, VM.ExecutionSegment, 6),
+	)
+}
+
+func TestUint512DivModByUint256DivisionByZero(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var dstQuotient0 ApCellRef = 1
+	var dstQuotient1 ApCellRef = 2
+	var dstQuotient2 ApCellRef = 3
+	var dstQuotient3 ApCellRef = 4
+	var dstRemainder0 ApCellRef = 5
+	var dstRemainder1 ApCellRef = 6
+
+	b := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
+
+	dividend0Felt, err := f.BigEndian.Element(&b)
+	require.NoError(t, err)
+	dividend1Felt := f.NewElement(1<<8 + 1)
+	dividend2Felt, err := f.BigEndian.Element(&b)
+	require.NoError(t, err)
+	dividend3Felt := f.NewElement(1<<8 + 1)
+
+	divisor0Felt := f.NewElement(0)
+	divisor1Felt := f.NewElement(0)
+
+	hint := Uint512DivModByUint256{
+		dividend0:  Immediate(dividend0Felt),
+		dividend1:  Immediate(dividend1Felt),
+		dividend2:  Immediate(dividend2Felt),
+		dividend3:  Immediate(dividend3Felt),
+		divisor0:   Immediate(divisor0Felt),
+		divisor1:   Immediate(divisor1Felt),
+		quotient0:  dstQuotient0,
+		quotient1:  dstQuotient1,
+		quotient2:  dstQuotient2,
+		quotient3:  dstQuotient3,
+		remainder0: dstRemainder0,
+		remainder1: dstRemainder1,
+	}
+
+	err = hint.Execute(vm, nil)
+	require.ErrorContains(t, err, "division by zero")
+}
+
+func TestAllocConstantSize(t *testing.T) {
+	vm := defaultVirtualMachine()
+
+	sizes := [3]Immediate{
+		Immediate(f.NewElement(15)),
+		Immediate(f.NewElement(13)),
+		Immediate(f.NewElement(2)),
+	}
+	expectedAddrs := [3]mem.MemoryAddress{
+		{SegmentIndex: 2, Offset: 0},
+		{SegmentIndex: 2, Offset: 15},
+		{SegmentIndex: 2, Offset: 28},
+	}
+
+	ctx := HintRunnerContext{
+		ConstantSizeSegment: mem.UnknownAddress,
+	}
+
+	for i := 0; i < len(sizes); i++ {
+		hint := AllocConstantSize{
+			Dst:  ApCellRef(i),
+			Size: sizes[i],
+		}
+
+		err := hint.Execute(vm, &ctx)
+		require.NoError(t, err)
+
+		val := readFrom(vm, 1, uint64(i))
+		ptr, err := val.MemoryAddress()
+		require.NoError(t, err)
+
+		require.Equal(t, &expectedAddrs[i], ptr)
+	}
+
+	require.Equal(t, ctx.ConstantSizeSegment, mem.MemoryAddress{SegmentIndex: 2, Offset: 30})
+}
+
+func TestAssertLeFindSmallArc(t *testing.T) {
+	testCases := []struct {
+		aFelt, bFelt                    f.Element
+		expectedRem1, expectedQuotient1 mem.MemoryValue
+		expectedRem2, expectedQuotient2 mem.MemoryValue
+		expectedExcludedArc             int
+	}{
+		// First test case
+		{
+			aFelt:               f.NewElement(1024),
+			bFelt:               f.NewElement(1025),
+			expectedRem1:        mem.MemoryValueFromInt(1),
+			expectedQuotient1:   mem.MemoryValueFromInt(0),
+			expectedRem2:        mem.MemoryValueFromInt(1024),
+			expectedQuotient2:   mem.MemoryValueFromInt(0),
+			expectedExcludedArc: 2,
+		},
+		// Second test case
+		{
+			// 2974197561122951277584414786853691079
+			aFelt: f.Element{
+				13984218141608664100,
+				13287333742236603547,
+				18446744073709551615,
+				229878458336812643,
+			},
+			// 306150973282131698343156044521811432643
+			bFelt: f.Element{
+				6079377935050068685,
+				3868297591914914705,
+				18446744073709551587,
+				162950233538363292,
+			},
+			// 2974197561122951277584414786853691079
+			expectedRem1: mem.MemoryValueFromFieldElement(
+				&f.Element{
+					13984218141608664100,
+					13287333742236603547,
+					18446744073709551615,
+					229878458336812643,
+				}),
+			expectedQuotient1: mem.MemoryValueFromInt(0),
+			// 112792682047919106056116278761420227
+			expectedRem2: mem.MemoryValueFromFieldElement(
+				&f.Element{
+					10541903867150958026,
+					18251079960242638581,
+					18446744073709551615,
+					509532527505005161,
+				}),
+			expectedQuotient2:   mem.MemoryValueFromInt(57),
+			expectedExcludedArc: 2,
+		},
+	}
+
+	for _, tc := range testCases {
+		// Need to create a new VM for each test case
+		// to avoid rewriting in same memory address error
+		vm := defaultVirtualMachine()
+		vm.Context.Ap = 0
+		vm.Context.Fp = 0
+		// The addr that the range check pointer will point to
+		addr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
+		writeTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&addr))
+
+		hint := AssertLeFindSmallArc{
+			a:             Immediate(tc.aFelt),
+			b:             Immediate(tc.bFelt),
+			rangeCheckPtr: Deref{ApCellRef(0)},
+		}
+
+		ctx := HintRunnerContext{
+			ExcludedArc: 0,
+		}
+
+		err := hint.Execute(vm, &ctx)
+
+		require.NoError(t, err)
+
+		expectedPtr := mem.MemoryValueFromMemoryAddress(&addr)
+
+		actualRem1 := readFrom(vm, 2, 0)
+		actualQuotient1 := readFrom(vm, 2, 1)
+		actualRem2 := readFrom(vm, 2, 2)
+		actualQuotient2 := readFrom(vm, 2, 3)
+		actual1Ptr := readFrom(vm, 1, 0)
+
+		require.Equal(t, tc.expectedRem1, actualRem1)
+		require.Equal(t, tc.expectedQuotient1, actualQuotient1)
+		require.Equal(t, tc.expectedRem2, actualRem2)
+		require.Equal(t, tc.expectedQuotient2, actualQuotient2)
+		require.Equal(t, expectedPtr, actual1Ptr)
+		require.Equal(t, tc.expectedExcludedArc, ctx.ExcludedArc)
+	}
+}
+
+func TestAssertLeIsFirstArcExcluded(t *testing.T) {
+	vm := defaultVirtualMachine()
+
+	ctx := HintRunnerContext{
+		ExcludedArc: 2,
+	}
+
+	var flag ApCellRef = 0
+
+	hint := AssertLeIsFirstArcExcluded{
+		skipExcludeAFlag: flag,
+	}
+
+	err := hint.Execute(vm, &ctx)
+
+	require.NoError(t, err)
+
+	expected := mem.MemoryValueFromInt(1)
+
+	actual := readFrom(vm, VM.ExecutionSegment, 0)
+
+	require.Equal(t, expected, actual)
+}
+
+func TestAssertLeIsSecondArcExcluded(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	ctx := HintRunnerContext{
+		ExcludedArc: 1,
+	}
+
+	var flag ApCellRef = 0
+
+	hint := AssertLeIsSecondArcExcluded{
+		skipExcludeBMinusA: flag,
+	}
+
+	err := hint.Execute(vm, &ctx)
+
+	require.NoError(t, err)
+
+	expected := mem.MemoryValueFromInt(0)
+
+	actual := readFrom(vm, VM.ExecutionSegment, 0)
+
+	require.Equal(t, expected, actual)
 }
