@@ -268,6 +268,37 @@ func TestWideMul128(t *testing.T) {
 	)
 }
 
+func TestDivMod(t *testing.T) {
+    vm := defaultVirtualMachine()
+    vm.Context.Ap = 0
+    vm.Context.Fp = 0
+
+    var quo ApCellRef = 1
+    var rem ApCellRef = 2
+
+    lhsValue := Immediate(f.NewElement(19))
+    rhsValue := Immediate(f.NewElement(7))
+
+    hint := DivMod{
+        lhs:       lhsValue,
+        rhs:       rhsValue,
+        quotient:  quo,
+        remainder: rem,
+    }
+
+    err := hint.Execute(vm)
+    require.NoError(t, err)
+
+    expectedQuotient := mem.MemoryValueFromInt(2)
+    expectedRemainder := mem.MemoryValueFromInt(5)
+
+    actualQuotient := readFrom(vm, VM.ExecutionSegment, 1)
+    actualRemainder := readFrom(vm, VM.ExecutionSegment, 2)
+
+    require.Equal(t, expectedQuotient, actualQuotient)
+    require.Equal(t, expectedRemainder, actualRemainder)
+}
+
 func TestWideMul128IncorrectRange(t *testing.T) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
