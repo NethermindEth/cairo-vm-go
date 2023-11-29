@@ -14,13 +14,13 @@ func Runner(name starknetParser.Builtin) memory.BuiltinRunner {
 	case starknetParser.Pedersen:
 		return &Pedersen{}
 	case starknetParser.ECDSA:
-		panic("Not implemented")
+		return &ECDSA{}
 	case starknetParser.Keccak:
-		panic("Not implemented")
+		return &Keccak{}
 	case starknetParser.Bitwise:
 		return &Bitwise{}
 	case starknetParser.ECOP:
-		panic("Not implemented")
+		return &EcOp{}
 	case starknetParser.Poseidon:
 		panic("Not implemented")
 	case starknetParser.SegmentArena:

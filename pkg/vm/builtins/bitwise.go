@@ -25,7 +25,7 @@ func (b *Bitwise) InferValue(segment *memory.Segment, offset uint64) error {
 	bitwiseIndex := offset % cellsPerBitwise
 	// input cell
 	if bitwiseIndex < inputCellsPerBitwise {
-		return errors.New("cannot infer value")
+		return errors.New("cannot infer value from input cell")
 	}
 
 	xOffset := offset - bitwiseIndex
