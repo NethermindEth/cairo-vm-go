@@ -287,8 +287,8 @@ func TestDivMod(t *testing.T) {
         remainder: rem,
     }
 
-    err := hint.Execute(vm)
-    require.NoError(t, err)
+    err := hint.Execute(vm, nil)
+    require.Nil(t, err)
 
     expectedQuotient := mem.MemoryValueFromInt(12)
     expectedRemainder := mem.MemoryValueFromInt(5)

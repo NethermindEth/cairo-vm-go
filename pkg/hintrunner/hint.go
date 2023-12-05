@@ -309,7 +309,7 @@ func (hint DivMod) String() string {
 	return "DivMod"
 }
 
-func (hint DivMod) Execute(vm *VM.VirtualMachine) error {
+func (hint DivMod) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 
 	lhsVal, err := hint.lhs.Resolve(vm)
 	if err != nil {
@@ -380,7 +380,7 @@ func (hint DivMod) Execute(vm *VM.VirtualMachine) error {
 
 	return nil
 }
-	
+
 type DebugPrint struct {
 	start ResOperander
 	end   ResOperander
