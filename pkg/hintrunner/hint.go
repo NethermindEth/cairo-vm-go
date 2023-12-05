@@ -1289,7 +1289,10 @@ func (hint *RandomEcPoint) String() string {
 
 func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
 	// Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic residue.
+
+	// Starkware's elliptic curve Beta value https://docs.starkware.co/starkex/crypto/stark-curve.html
 	betaFelt := f.Element{3863487492851900874, 7432612994240712710, 12360725113329547591, 88155977965380735}
+
 	var randomX, randomYSquared f.Element
 	rand := defaultRandGenerator()
 	for {
