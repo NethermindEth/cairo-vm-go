@@ -1,7 +1,6 @@
 package hintrunner
 
 import (
-	"fmt"
 	"io"
 	"math/big"
 	"os"
@@ -662,12 +661,6 @@ func TestUint512DivModByUint256(t *testing.T) {
 		mem.MemoryValueFromFieldElement(remainder1),
 		readFrom(vm, VM.ExecutionSegment, 6),
 	)
-	fmt.Printf("quotient0: %v\n", quotient0)
-	fmt.Printf("quotient1: %v\n", quotient1)
-	fmt.Printf("quotient2: %v\n", quotient2)
-	fmt.Printf("quotient3: %v\n", quotient3)
-	fmt.Printf("remainder0: %v\n", remainder0)
-	fmt.Printf("remainder1: %v\n", remainder1)
 }
 
 func TestUint512DivModByUint256DivisionByZero(t *testing.T) {
