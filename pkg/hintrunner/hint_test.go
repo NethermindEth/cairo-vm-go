@@ -1,6 +1,7 @@
 package hintrunner
 
 import (
+	"fmt"
 	"io"
 	"math/big"
 	"os"
@@ -276,7 +277,7 @@ func TestDivMod(t *testing.T) {
     var quo ApCellRef = 1
     var rem ApCellRef = 2
 
-    lhsValue := Immediate(f.NewElement(19))
+    lhsValue := Immediate(f.NewElement(89))
     rhsValue := Immediate(f.NewElement(7))
 
     hint := DivMod{
@@ -289,7 +290,7 @@ func TestDivMod(t *testing.T) {
     err := hint.Execute(vm)
     require.NoError(t, err)
 
-    expectedQuotient := mem.MemoryValueFromInt(2)
+    expectedQuotient := mem.MemoryValueFromInt(12)
     expectedRemainder := mem.MemoryValueFromInt(5)
 
     actualQuotient := readFrom(vm, VM.ExecutionSegment, 1)
@@ -298,6 +299,29 @@ func TestDivMod(t *testing.T) {
     require.Equal(t, expectedQuotient, actualQuotient)
     require.Equal(t, expectedRemainder, actualRemainder)
 }
+
+func TestDivModDivisionByZeroError (t *testing.T) {
+	vm := defaultVirtualMachine()
+    vm.Context.Ap = 0
+    vm.Context.Fp = 0
+
+    var quo ApCellRef = 1
+    var rem ApCellRef = 2
+
+    lhsValue := Immediate(f.NewElement(43))
+    rhsValue := Immediate(f.NewElement(0))
+
+    hint := DivMod{
+        lhs:       lhsValue,
+        rhs:       rhsValue,
+        quotient:  quo,
+        remainder: rem,
+    }
+
+    err := hint.Execute(vm)
+    require.ErrorContains(t, err, "cannot be divided by zero, rhs: 0")
+}
+
 
 func TestWideMul128IncorrectRange(t *testing.T) {
 	vm := defaultVirtualMachine()
@@ -638,6 +662,12 @@ func TestUint512DivModByUint256(t *testing.T) {
 		mem.MemoryValueFromFieldElement(remainder1),
 		readFrom(vm, VM.ExecutionSegment, 6),
 	)
+	fmt.Printf("quotient0: %v\n", quotient0)
+	fmt.Printf("quotient1: %v\n", quotient1)
+	fmt.Printf("quotient2: %v\n", quotient2)
+	fmt.Printf("quotient3: %v\n", quotient3)
+	fmt.Printf("remainder0: %v\n", remainder0)
+	fmt.Printf("remainder1: %v\n", remainder1)
 }
 
 func TestUint512DivModByUint256DivisionByZero(t *testing.T) {
