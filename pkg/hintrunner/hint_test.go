@@ -318,7 +318,7 @@ func TestDivModDivisionByZeroError (t *testing.T) {
         remainder: rem,
     }
 
-    err := hint.Execute(vm)
+    err := hint.Execute(vm, nil)
     require.ErrorContains(t, err, "cannot be divided by zero, rhs: 0")
 }
 
