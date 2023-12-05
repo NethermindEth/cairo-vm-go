@@ -1335,3 +1335,45 @@ func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
 
 	return nil
 }
+
+type FieldSqrt struct {
+	val  ResOperander
+	sqrt CellRefer
+}
+
+func (hint *FieldSqrt) String() string {
+	return "FieldSqrt"
+}
+
+func (hint *FieldSqrt) Execute(vm *VM.VirtualMachine) error {
+	val, err := hint.val.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve val operand %s: %v", hint.val, err)
+	}
+
+	valFelt, err := val.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	threeFelt := f.Element{}
+	threeFelt.SetUint64(3)
+
+	var res f.Element
+	if valFelt.Legendre() == 1 {
+		res = *valFelt
+	} else {
+		res = *valFelt.Mul(valFelt, &threeFelt)
+	}
+
+	res.Sqrt(&res)
+
+	sqrtVal := mem.MemoryValueFromFieldElement(&res)
+
+	sqrtAddr, err := hint.sqrt.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get sqrt address: %v", err)
+	}
+
+	return vm.Memory.WriteToAddress(&sqrtAddr, &sqrtVal)
+}

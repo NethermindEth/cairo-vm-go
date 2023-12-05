@@ -862,3 +862,24 @@ func TestRandomEcPoint(t *testing.T) {
 	require.Equal(t, expectedX, actualX)
 	require.Equal(t, expectedY, actualY)
 }
+
+func TestFieldSqrt(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	value := Immediate(f.NewElement(49))
+	hint := FieldSqrt{
+		val:  value,
+		sqrt: ApCellRef(0),
+	}
+
+	err := hint.Execute(vm)
+
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		mem.MemoryValueFromInt(7),
+		readFrom(vm, VM.ExecutionSegment, 0),
+	)
+}
