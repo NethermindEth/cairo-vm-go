@@ -1230,7 +1230,6 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunner
 	return nil
 }
 
-
 type AssertLeIsFirstArcExcluded struct {
 	skipExcludeAFlag CellRefer
 }
@@ -1277,4 +1276,62 @@ func (hint *AssertLeIsSecondArcExcluded) Execute(vm *VM.VirtualMachine, ctx *Hin
 	}
 
 	return vm.Memory.WriteToAddress(&addr, &writeValue)
+}
+
+type RandomEcPoint struct {
+	x CellRefer
+	y CellRefer
+}
+
+func (hint *RandomEcPoint) String() string {
+	return "RandomEc"
+}
+
+func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
+	// Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic residue.
+
+	// Starkware's elliptic curve Beta value https://docs.starkware.co/starkex/crypto/stark-curve.html
+	betaFelt := f.Element{3863487492851900874, 7432612994240712710, 12360725113329547591, 88155977965380735}
+
+	var randomX, randomYSquared f.Element
+	rand := defaultRandGenerator()
+	for {
+		randomX = randomFeltElement(rand)
+		randomYSquared = f.Element{}
+		randomYSquared.Square(&randomX)
+		randomYSquared.Mul(&randomYSquared, &randomX)
+		randomYSquared.Add(&randomYSquared, &randomX)
+		randomYSquared.Add(&randomYSquared, &betaFelt)
+		// Legendre == 1 -> Quadratic residue
+		// Legendre == -1 -> Quadratic non-residue
+		// Legendre == 0 -> Zero
+		if randomYSquared.Legendre() == 1 {
+			break
+		}
+	}
+
+	xVal := mem.MemoryValueFromFieldElement(&randomX)
+	yVal := mem.MemoryValueFromFieldElement(randomYSquared.Square(&randomYSquared))
+
+	xAddr, err := hint.x.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get register x %s: %w", hint.x, err)
+	}
+
+	err = vm.Memory.WriteToAddress(&xAddr, &xVal)
+	if err != nil {
+		return fmt.Errorf("write to address x %s: %w", xVal, err)
+	}
+
+	yAddr, err := hint.y.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get register y %s: %w", hint.y, err)
+	}
+
+	err = vm.Memory.WriteToAddress(&yAddr, &yVal)
+	if err != nil {
+		return fmt.Errorf("write to address y %s: %w", yVal, err)
+	}
+
+	return nil
 }
