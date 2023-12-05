@@ -883,3 +883,4 @@ func TestFieldSqrt(t *testing.T) {
 		readFrom(vm, VM.ExecutionSegment, 0),
 	)
 }
+
