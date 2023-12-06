@@ -269,34 +269,138 @@ func TestWideMul128(t *testing.T) {
 }
 
 func TestDivMod(t *testing.T) {
-    vm := defaultVirtualMachine()
-    vm.Context.Ap = 0
-    vm.Context.Fp = 0
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
 
-    var quo ApCellRef = 1
-    var rem ApCellRef = 2
+	var quo ApCellRef = 1
+	var rem ApCellRef = 2
 
-    lhsValue := Immediate(f.NewElement(19))
-    rhsValue := Immediate(f.NewElement(7))
+	lhsValue := Immediate(f.NewElement(19))
+	rhsValue := Immediate(f.NewElement(7))
 
-    hint := DivMod{
-        lhs:       lhsValue,
-        rhs:       rhsValue,
-        quotient:  quo,
-        remainder: rem,
-    }
+	hint := DivMod{
+		lhs:       lhsValue,
+		rhs:       rhsValue,
+		quotient:  quo,
+		remainder: rem,
+	}
 
-    err := hint.Execute(vm)
-    require.NoError(t, err)
+	err := hint.Execute(vm)
+	require.NoError(t, err)
 
-    expectedQuotient := mem.MemoryValueFromInt(2)
-    expectedRemainder := mem.MemoryValueFromInt(5)
+	expectedQuotient := mem.MemoryValueFromInt(2)
+	expectedRemainder := mem.MemoryValueFromInt(5)
 
-    actualQuotient := readFrom(vm, VM.ExecutionSegment, 1)
-    actualRemainder := readFrom(vm, VM.ExecutionSegment, 2)
+	actualQuotient := readFrom(vm, VM.ExecutionSegment, 1)
+	actualRemainder := readFrom(vm, VM.ExecutionSegment, 2)
 
-    require.Equal(t, expectedQuotient, actualQuotient)
-    require.Equal(t, expectedRemainder, actualRemainder)
+	require.Equal(t, expectedQuotient, actualQuotient)
+	require.Equal(t, expectedRemainder, actualRemainder)
+}
+
+func TestUint256DivMod(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var quotient0 ApCellRef = 1
+	var quotient1 ApCellRef = 2
+	var remainder0 ApCellRef = 3
+	var remainder1 ApCellRef = 4
+
+	dividend0Felt := f.NewElement(89)
+	dividend1Felt := f.NewElement(72)
+
+	divisor0Felt := f.NewElement(3)
+	divisor1Felt := f.NewElement(7)
+
+	hint := Uint256DivMod{
+		dividend0:  Immediate(dividend0Felt),
+		dividend1:  Immediate(dividend1Felt),
+		divisor0:   Immediate(divisor0Felt),
+		divisor1:   Immediate(divisor1Felt),
+		quotient0:  quotient0,
+		quotient1:  quotient1,
+		remainder0: remainder0,
+		remainder1: remainder1,
+	}
+
+	err := hint.Execute(vm, nil)
+	require.Nil(t, err)
+
+	quotient0Val := &f.Element{}
+	_, err = quotient0Val.SetString("10")
+	require.Nil(t, err)
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(quotient0Val),
+		readFrom(vm, VM.ExecutionSegment, 1),
+	)
+
+	quotient1Val := &f.Element{}
+	quotient1Val.SetZero()
+	require.Nil(t, err)
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(quotient1Val),
+		readFrom(vm, VM.ExecutionSegment, 2),
+	)
+
+	remainder0Val := &f.Element{}
+	_, err = remainder0Val.SetString("59")
+	require.Nil(t, err)
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(remainder0Val),
+		readFrom(vm, VM.ExecutionSegment, 3),
+	)
+
+	remainder1Val := &f.Element{}
+	_, err = remainder1Val.SetString("2")
+	require.Nil(t, err)
+
+	require.Equal(
+		t,
+		mem.MemoryValueFromFieldElement(remainder1Val),
+		readFrom(vm, VM.ExecutionSegment, 4),
+	)
+
+}
+
+func TestUint256DivModDivisionByZero(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	var dstQuotient0 ApCellRef = 1
+	var dstQuotient1 ApCellRef = 2
+	var dstRemainder0 ApCellRef = 3
+	var dstRemainder1 ApCellRef = 4
+
+
+	dividend0Felt := f.NewElement(1<<8 + 1)
+	dividend1Felt := f.NewElement(1<<8 + 1)
+
+	divisor0Felt := f.NewElement(0)
+	divisor1Felt := f.NewElement(0)
+
+	hint := Uint256DivMod{
+		dividend0:  Immediate(dividend0Felt),
+		dividend1:  Immediate(dividend1Felt),
+		divisor0:   Immediate(divisor0Felt),
+		divisor1:   Immediate(divisor1Felt),
+		quotient0:  dstQuotient0,
+		quotient1:  dstQuotient1,
+		remainder0: dstRemainder0,
+		remainder1: dstRemainder1,
+	}
+
+	err := hint.Execute(vm, nil)
+	require.ErrorContains(t, err, "cannot be divided by zero, divisor: 0")
 }
 
 func TestWideMul128IncorrectRange(t *testing.T) {

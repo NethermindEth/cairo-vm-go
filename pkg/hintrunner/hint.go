@@ -299,85 +299,210 @@ func (hint *WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) err
 }
 
 type DivMod struct {
-    lhs       ResOperander
-    rhs       ResOperander
-    quotient  CellRefer
-    remainder CellRefer
+	lhs       ResOperander
+	rhs       ResOperander
+	quotient  CellRefer
+	remainder CellRefer
 }
 
 func (hint DivMod) String() string {
-    return "DivMod"
+	return "DivMod"
 }
 func (hint DivMod) Execute(vm *VM.VirtualMachine) error {
 
-    lhsVal, err := hint.lhs.Resolve(vm)
-    if err != nil {
-        return fmt.Errorf("resolve lhs operand %s: %v", hint.lhs, err)
-    }
+	lhsVal, err := hint.lhs.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve lhs operand %s: %v", hint.lhs, err)
+	}
 
-    rhsVal, err := hint.rhs.Resolve(vm)
-    if err != nil {
-        return fmt.Errorf("resolve rhs operand %s: %v", hint.rhs, err)
-    }
+	rhsVal, err := hint.rhs.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve rhs operand %s: %v", hint.rhs, err)
+	}
 
-    lhsFelt, err := lhsVal.FieldElement()
-    if err != nil {
-        return err
-    }
+	lhsFelt, err := lhsVal.FieldElement()
+	if err != nil {
+		return err
+	}
 
-    rhsFelt, err := rhsVal.FieldElement()
-    if err != nil {
-        return err
-    }
-    if rhsFelt.IsZero() {
-        return fmt.Errorf("cannot be divide by zero, rhs: %v", rhsFelt)
-    }
+	rhsFelt, err := rhsVal.FieldElement()
+	if err != nil {
+		return err
+	}
+	if rhsFelt.IsZero() {
+		return fmt.Errorf("cannot be divided by zero, rhs: %v", rhsFelt)
+	}
 
-    lhsvalue := uint256.Int(lhsFelt.Bits())
-    rhsvalue := uint256.Int(rhsFelt.Bits())
+	lhsvalue := uint256.Int(lhsFelt.Bits())
+	rhsvalue := uint256.Int(rhsFelt.Bits())
 
-    // get quotient
-    quo := uint256.Int{}
-    quo.Div(&lhsvalue, &rhsvalue)
+	// get quotient
+	quo := uint256.Int{}
+	quo.Div(&lhsvalue, &rhsvalue)
 
-    quotient := f.Element{}
-    quoVal := quo.Uint64()
-    quotient.SetUint64(quoVal)
+	quotient := f.Element{}
+	quoVal := quo.Uint64()
+	quotient.SetUint64(quoVal)
 
-    quotientAddr, err := hint.quotient.Get(vm)
-    if err != nil {
-        return fmt.Errorf("get quotient cell: %v", err)
-    }
+	quotientAddr, err := hint.quotient.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get quotient cell: %v", err)
+	}
 
-    quotientVal := mem.MemoryValueFromFieldElement(&quotient)
-    err = vm.Memory.WriteToAddress(&quotientAddr, &quotientVal)
-    if err != nil {
-        return fmt.Errorf("write cell: %v", err)
-    }
+	quotientVal := mem.MemoryValueFromFieldElement(&quotient)
+	err = vm.Memory.WriteToAddress(&quotientAddr, &quotientVal)
+	if err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
 
-    // get remainder: lhs - (rhs * quotient)
-    temp := uint256.Int{}
-    temp.Mul(&rhsvalue, &quo)
+	// get remainder: lhs - (rhs * quotient)
+	temp := uint256.Int{}
+	temp.Mul(&rhsvalue, &quo)
 
-    rem := uint256.Int{}
-    rem.Sub(&lhsvalue, &temp)
+	rem := uint256.Int{}
+	rem.Sub(&lhsvalue, &temp)
 
-    remainder := f.Element{}
-    remVal := rem.Uint64()
-    remainder.SetUint64(remVal)
+	remainder := f.Element{}
+	remVal := rem.Uint64()
+	remainder.SetUint64(remVal)
 
-    remainderAddr, err := hint.remainder.Get(vm)
-    if err != nil {
-        return fmt.Errorf("get remainder cell: %v", err)
-    }
+	remainderAddr, err := hint.remainder.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get remainder cell: %v", err)
+	}
 
-    remainderVal := mem.MemoryValueFromFieldElement(&remainder)
-    err = vm.Memory.WriteToAddress(&remainderAddr, &remainderVal)
-    if err != nil {
-        return fmt.Errorf("write cell: %v", err)
-    }
+	remainderVal := mem.MemoryValueFromFieldElement(&remainder)
+	err = vm.Memory.WriteToAddress(&remainderAddr, &remainderVal)
+	if err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
 
-    return nil
+	return nil
+}
+
+type Uint256DivMod struct {
+	dividend0  ResOperander
+	dividend1  ResOperander
+	divisor0   ResOperander
+	divisor1   ResOperander
+	quotient0  CellRefer
+	quotient1  CellRefer
+	remainder0 CellRefer
+	remainder1 CellRefer
+}
+
+func (hint Uint256DivMod) String() string {
+	return "Uint256DivMod"
+}
+
+func (hint Uint256DivMod) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+	dividend0, err := hint.dividend0.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve dividend0 operand %s: %v", hint.dividend0, err)
+	}
+	dividend0Felt, err := dividend0.FieldElement()
+	if err != nil {
+		return err
+	}
+	dividend1, err := hint.dividend1.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve dividend1 operand %s: %v", hint.dividend1, err)
+	}
+	dividend1Felt, err := dividend1.FieldElement()
+	if err != nil {
+		return err
+	}
+	divisor0, err := hint.divisor0.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve divisor0 operand %s: %v", hint.divisor0, err)
+	}
+	divisor0Felt, err := divisor0.FieldElement()
+	if err != nil {
+		return err
+	}
+	divisor1, err := hint.divisor1.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve divisor1 operand %s: %v", hint.divisor1, err)
+	}
+	divisor1Felt, err := divisor1.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	var dividendBytes [32]byte
+	dividend0Bytes := dividend0Felt.Bytes()
+	dividend1Bytes := dividend1Felt.Bytes()
+	copy(dividendBytes[:16], dividend1Bytes[16:])
+	copy(dividendBytes[16:], dividend0Bytes[16:])
+
+	dividend := &big.Int{}
+	dividend.SetBytes(dividendBytes[:])
+
+	var divisorBytes [32]byte
+	divisor0Bytes := divisor0Felt.Bytes()
+	divisor1Bytes := divisor1Felt.Bytes()
+	copy(divisorBytes[:16], divisor1Bytes[16:])
+	copy(divisorBytes[16:], divisor0Bytes[16:])
+
+	divisor := &big.Int{}
+	divisor.SetBytes(divisorBytes[:])
+	if divisor.Cmp(big.NewInt(0)) == 0 {
+		return fmt.Errorf("cannot be divided by zero, divisor: %v", divisor)
+	}
+
+	quotient, remainder := dividend.DivMod(dividend, divisor, &big.Int{})
+
+	var quotientBytes [32]byte
+	quotient.FillBytes(quotientBytes[:])
+	quotientLimb1 := f.Element{}
+	quotientLimb1.SetBytes(quotientBytes[:16])
+	quotientLimb0 := f.Element{}
+	quotientLimb0.SetBytes(quotientBytes[16:])
+
+	var remainderBytes [32]byte
+	remainder.FillBytes(remainderBytes[:])
+	remainderLimb1 := f.Element{}
+	remainderLimb1.SetBytes(remainderBytes[:16])
+	remainderLimb0 := f.Element{}
+	remainderLimb0.SetBytes(remainderBytes[16:])
+
+	quotient0Addr, err := hint.quotient0.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get destination cell: %v", err)
+	}
+	quotient0Val := mem.MemoryValueFromFieldElement(&quotientLimb0)
+
+	if err = vm.Memory.WriteToAddress(&quotient0Addr, &quotient0Val); err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+
+	quotient1Addr, err := hint.quotient1.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get destination cell: %v", err)
+	}
+	quotient1Val := mem.MemoryValueFromFieldElement(&quotientLimb1)
+	if err = vm.Memory.WriteToAddress(&quotient1Addr, &quotient1Val); err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+
+	remainder0Addr, err := hint.remainder0.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get destination cell: %v", err)
+	}
+	remainder0Val := mem.MemoryValueFromFieldElement(&remainderLimb0)
+	if err = vm.Memory.WriteToAddress(&remainder0Addr, &remainder0Val); err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+
+	remainder1Addr, err := hint.remainder1.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get destination cell: %v", err)
+	}
+	remainder1Val := mem.MemoryValueFromFieldElement(&remainderLimb1)
+	if err = vm.Memory.WriteToAddress(&remainder1Addr, &remainder1Val); err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+	return nil
 }
 
 type DebugPrint struct {
@@ -1311,7 +1436,6 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunner
 	}
 	return nil
 }
-
 
 type AssertLeIsFirstArcExcluded struct {
 	skipExcludeAFlag CellRefer
