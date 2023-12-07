@@ -26,7 +26,7 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64]Hinter, error) {
 			return nil, err
 		}
 
-		cellRefParams, resOpParams, err := GetParameters(zeroProgram, rawHint, pc)
+		cellRefParams, resOpParams, err := GetParameters(cairoZeroJson, rawHint, pc)
 		if err != nil {
 			return nil, err
 		}
@@ -123,5 +123,5 @@ func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 }
 
 func ParseIdentifier(value string) (interface{}, error) {
-
+	return nil, nil
 }
