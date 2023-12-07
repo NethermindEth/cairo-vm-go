@@ -127,6 +127,36 @@ func BenchmarkWideMul128(b *testing.B) {
 	}
 }
 
+func BenchmarkUintDivMod(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	rand := defaultRandGenerator()
+
+	var quotient ApCellRef = 1
+	var remainder ApCellRef = 2
+
+
+	for i := 0; i < b.N; i++ {
+		lhs := Immediate(randomFeltElement(rand))
+		rhs := Immediate(randomFeltElement(rand))
+		hint := DivMod{
+			lhs:                    lhs,
+			rhs:                    rhs,
+			quotient:               quotient,
+			remainder:              remainder,
+		}
+
+		err := hint.Execute(vm, nil)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+		vm.Context.Ap += 5
+	}
+}
+
 func BenchmarkLinearSplit(b *testing.B) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0

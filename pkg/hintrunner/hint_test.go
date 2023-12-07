@@ -268,6 +268,60 @@ func TestWideMul128(t *testing.T) {
 	)
 }
 
+func TestDivMod(t *testing.T) {
+    vm := defaultVirtualMachine()
+    vm.Context.Ap = 0
+    vm.Context.Fp = 0
+
+    var quo ApCellRef = 1
+    var rem ApCellRef = 2
+
+    lhsValue := Immediate(f.NewElement(89))
+    rhsValue := Immediate(f.NewElement(7))
+
+    hint := DivMod{
+        lhs:       lhsValue,
+        rhs:       rhsValue,
+        quotient:  quo,
+        remainder: rem,
+    }
+
+    err := hint.Execute(vm, nil)
+    require.Nil(t, err)
+
+    expectedQuotient := mem.MemoryValueFromInt(12)
+    expectedRemainder := mem.MemoryValueFromInt(5)
+
+    actualQuotient := readFrom(vm, VM.ExecutionSegment, 1)
+    actualRemainder := readFrom(vm, VM.ExecutionSegment, 2)
+
+    require.Equal(t, expectedQuotient, actualQuotient)
+    require.Equal(t, expectedRemainder, actualRemainder)
+}
+
+func TestDivModDivisionByZeroError (t *testing.T) {
+	vm := defaultVirtualMachine()
+    vm.Context.Ap = 0
+    vm.Context.Fp = 0
+
+    var quo ApCellRef = 1
+    var rem ApCellRef = 2
+
+    lhsValue := Immediate(f.NewElement(43))
+    rhsValue := Immediate(f.NewElement(0))
+
+    hint := DivMod{
+        lhs:       lhsValue,
+        rhs:       rhsValue,
+        quotient:  quo,
+        remainder: rem,
+    }
+
+    err := hint.Execute(vm, nil)
+    require.ErrorContains(t, err, "cannot be divided by zero, rhs: 0")
+}
+
+
 func TestWideMul128IncorrectRange(t *testing.T) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
