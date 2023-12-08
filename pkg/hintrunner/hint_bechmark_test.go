@@ -127,6 +127,36 @@ func BenchmarkWideMul128(b *testing.B) {
 	}
 }
 
+func BenchmarkUintDivMod(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	rand := defaultRandGenerator()
+
+	var quotient ApCellRef = 1
+	var remainder ApCellRef = 2
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		lhs := Immediate(randomFeltElement(rand))
+		rhs := Immediate(randomFeltElement(rand))
+		hint := DivMod{
+			lhs:       lhs,
+			rhs:       rhs,
+			quotient:  quotient,
+			remainder: remainder,
+		}
+
+		err := hint.Execute(vm, nil)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+		vm.Context.Ap += 5
+	}
+}
+
 func BenchmarkLinearSplit(b *testing.B) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
@@ -136,6 +166,8 @@ func BenchmarkLinearSplit(b *testing.B) {
 
 	var x ApCellRef = 0
 	var y ApCellRef = 1
+	
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		value := Immediate(randomFeltElement(rand))
 		scalar := Immediate(randomFeltElement(rand))
@@ -171,6 +203,7 @@ func BenchmarkUint512DivModByUint256(b *testing.B) {
 	var remainder0 ApCellRef = 5
 	var remainder1 ApCellRef = 6
 
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		dividend0 := Immediate(randomFeltElement(rand))
 		dividend1 := Immediate(randomFeltElement(rand))
@@ -216,6 +249,7 @@ func BenchmarkUint256SquareRoot(b *testing.B) {
 	var remainderHigh ApCellRef = 4
 	var sqrtMul2MinusRemainderGeU128 ApCellRef = 5
 
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		valueLow := Immediate(randomFeltElement(rand))
 		valueHigh := Immediate(randomFeltElement(rand))
