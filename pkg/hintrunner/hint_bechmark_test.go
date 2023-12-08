@@ -127,7 +127,6 @@ func BenchmarkWideMul128(b *testing.B) {
 	}
 }
 
-
 func BenchmarkUint256DivMod(b *testing.B) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
@@ -140,7 +139,9 @@ func BenchmarkUint256DivMod(b *testing.B) {
 	var remainder0 ApCellRef = 3
 	var remainder1 ApCellRef = 4
 
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+
 		dividend0 := Immediate(randomFeltElement(rand))
 		dividend1 := Immediate(randomFeltElement(rand))
 		divisor0 := Immediate(randomFeltElement(rand))
