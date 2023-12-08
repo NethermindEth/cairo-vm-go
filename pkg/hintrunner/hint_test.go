@@ -864,22 +864,43 @@ func TestRandomEcPoint(t *testing.T) {
 }
 
 func TestFieldSqrt(t *testing.T) {
-	vm := defaultVirtualMachine()
-	vm.Context.Ap = 0
-	vm.Context.Fp = 0
-
-	value := Immediate(f.NewElement(49))
-	hint := FieldSqrt{
-		val:  value,
-		sqrt: ApCellRef(0),
+	testCases := []struct {
+		name     string
+		value    uint64
+		expected int
+	}{
+		{
+			name:     "TestFieldSqrt",
+			value:    49,
+			expected: 7,
+		},
+		{
+			name:     "TestFieldSqrtNonResidue",
+			value:    27,
+			expected: -9,
+		},
 	}
 
-	err := hint.Execute(vm)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			vm := defaultVirtualMachine()
+			vm.Context.Ap = 0
+			vm.Context.Fp = 0
 
-	require.NoError(t, err)
-	require.Equal(
-		t,
-		mem.MemoryValueFromInt(7),
-		readFrom(vm, VM.ExecutionSegment, 0),
-	)
+			value := Immediate(f.NewElement(tc.value))
+			hint := FieldSqrt{
+				val:  value,
+				sqrt: ApCellRef(0),
+			}
+
+			err := hint.Execute(vm)
+
+			require.NoError(t, err)
+			require.Equal(
+				t,
+				mem.MemoryValueFromInt(tc.expected),
+				readFrom(vm, VM.ExecutionSegment, 0),
+			)
+		})
+	}
 }
