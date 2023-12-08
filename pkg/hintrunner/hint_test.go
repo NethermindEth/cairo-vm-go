@@ -938,3 +938,31 @@ func TestAssertLeIsSecondArcExcluded(t *testing.T) {
 
 	require.Equal(t, expected, actual)
 }
+
+func TestRandomEcPoint(t *testing.T) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	hint := RandomEcPoint{
+		x: ApCellRef(0),
+		y: ApCellRef(1),
+	}
+
+	err := hint.Execute(vm)
+
+	require.NoError(t, err)
+
+	expectedX := mem.MemoryValueFromFieldElement(
+		&f.Element{12217889558999792019, 3067322962467879919, 3160430244162662030, 474947714424245026},
+	)
+	expectedY := mem.MemoryValueFromFieldElement(
+		&f.Element{12193331470568888984, 1737428559173019240, 11500517745011090163, 245183001587853482},
+	)
+
+	actualX := readFrom(vm, VM.ExecutionSegment, 0)
+	actualY := readFrom(vm, VM.ExecutionSegment, 1)
+
+	require.Equal(t, expectedX, actualX)
+	require.Equal(t, expectedY, actualY)
+}
