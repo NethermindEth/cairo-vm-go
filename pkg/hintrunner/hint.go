@@ -298,6 +298,89 @@ func (hint *WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) err
 	return nil
 }
 
+type DivMod struct {
+	lhs       ResOperander
+	rhs       ResOperander
+	quotient  CellRefer
+	remainder CellRefer
+}
+
+func (hint DivMod) String() string {
+	return "DivMod"
+}
+
+func (hint DivMod) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+
+	lhsVal, err := hint.lhs.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve lhs operand %s: %v", hint.lhs, err)
+	}
+
+	rhsVal, err := hint.rhs.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve rhs operand %s: %v", hint.rhs, err)
+	}
+
+	lhsFelt, err := lhsVal.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	rhsFelt, err := rhsVal.FieldElement()
+	if err != nil {
+		return err
+	}
+	if rhsFelt.IsZero() {
+		return fmt.Errorf("cannot be divided by zero, rhs: %v", rhsFelt)
+	}
+
+	lhsvalue := uint256.Int(lhsFelt.Bits())
+	rhsvalue := uint256.Int(rhsFelt.Bits())
+
+	// get quotient
+	quo := uint256.Int{}
+	quo.Div(&lhsvalue, &rhsvalue)
+
+	quotient := f.Element{}
+	quoVal := quo.Uint64()
+	quotient.SetUint64(quoVal)
+
+	quotientAddr, err := hint.quotient.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get quotient cell: %v", err)
+	}
+
+	quotientVal := mem.MemoryValueFromFieldElement(&quotient)
+	err = vm.Memory.WriteToAddress(&quotientAddr, &quotientVal)
+	if err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+
+	// get remainder: lhs - (rhs * quotient)
+	temp := uint256.Int{}
+	temp.Mul(&rhsvalue, &quo)
+
+	rem := uint256.Int{}
+	rem.Sub(&lhsvalue, &temp)
+
+	remainder := f.Element{}
+	remVal := rem.Uint64()
+	remainder.SetUint64(remVal)
+
+	remainderAddr, err := hint.remainder.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get remainder cell: %v", err)
+	}
+
+	remainderVal := mem.MemoryValueFromFieldElement(&remainder)
+	err = vm.Memory.WriteToAddress(&remainderAddr, &remainderVal)
+	if err != nil {
+		return fmt.Errorf("write cell: %v", err)
+	}
+
+	return nil
+}
+
 type DebugPrint struct {
 	start ResOperander
 	end   ResOperander
