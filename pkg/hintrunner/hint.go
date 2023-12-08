@@ -1305,6 +1305,7 @@ func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
 		// Legendre == 1 -> Quadratic residue
 		// Legendre == -1 -> Quadratic non-residue
 		// Legendre == 0 -> Zero
+		// https://en.wikipedia.org/wiki/Legendre_symbol
 		if randomYSquared.Legendre() == 1 {
 			break
 		}
@@ -1360,6 +1361,10 @@ func (hint *FieldSqrt) Execute(vm *VM.VirtualMachine) error {
 	threeFelt.SetUint64(3)
 
 	var res f.Element
+	// Legendre == 1 -> Quadratic residue
+	// Legendre == -1 -> Quadratic non-residue
+	// Legendre == 0 -> Zero
+	// https://en.wikipedia.org/wiki/Legendre_symbol
 	if valFelt.Legendre() == 1 {
 		res = *valFelt
 	} else {
