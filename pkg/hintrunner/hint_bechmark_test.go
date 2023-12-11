@@ -157,6 +157,45 @@ func BenchmarkUintDivMod(b *testing.B) {
 	}
 }
 
+func BenchmarkUint256DivMod(b *testing.B) {
+	vm := defaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+
+	rand := defaultRandGenerator()
+
+	var quotient0 ApCellRef = 1
+	var quotient1 ApCellRef = 2
+	var remainder0 ApCellRef = 3
+	var remainder1 ApCellRef = 4
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+
+		dividend0 := Immediate(randomFeltElement(rand))
+		dividend1 := Immediate(randomFeltElement(rand))
+		divisor0 := Immediate(randomFeltElement(rand))
+		divisor1 := Immediate(randomFeltElement(rand))
+
+		hint := Uint256DivMod{
+			dividend0,
+			dividend1,
+			divisor0,
+			divisor1,
+			quotient0,
+			quotient1,
+			remainder0,
+			remainder1,
+		}
+		err := hint.Execute(vm, nil)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+		vm.Context.Ap += 6
+	}
+}
+
 func BenchmarkLinearSplit(b *testing.B) {
 	vm := defaultVirtualMachine()
 	vm.Context.Ap = 0
