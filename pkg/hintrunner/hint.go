@@ -1388,6 +1388,7 @@ func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
 		// Legendre == 1 -> Quadratic residue
 		// Legendre == -1 -> Quadratic non-residue
 		// Legendre == 0 -> Zero
+		// https://en.wikipedia.org/wiki/Legendre_symbol
 		if randomYSquared.Legendre() == 1 {
 			break
 		}
@@ -1417,4 +1418,50 @@ func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
 	}
 
 	return nil
+}
+
+type FieldSqrt struct {
+	val  ResOperander
+	sqrt CellRefer
+}
+
+func (hint *FieldSqrt) String() string {
+	return "FieldSqrt"
+}
+
+func (hint *FieldSqrt) Execute(vm *VM.VirtualMachine) error {
+	val, err := hint.val.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve val operand %s: %v", hint.val, err)
+	}
+
+	valFelt, err := val.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	threeFelt := f.Element{}
+	threeFelt.SetUint64(3)
+
+	var res f.Element
+	// Legendre == 1 -> Quadratic residue
+	// Legendre == -1 -> Quadratic non-residue
+	// Legendre == 0 -> Zero
+	// https://en.wikipedia.org/wiki/Legendre_symbol
+	if valFelt.Legendre() == 1 {
+		res = *valFelt
+	} else {
+		res = *valFelt.Mul(valFelt, &threeFelt)
+	}
+
+	res.Sqrt(&res)
+
+	sqrtVal := mem.MemoryValueFromFieldElement(&res)
+
+	sqrtAddr, err := hint.sqrt.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get sqrt address: %v", err)
+	}
+
+	return vm.Memory.WriteToAddress(&sqrtAddr, &sqrtVal)
 }

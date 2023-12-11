@@ -298,7 +298,6 @@ func BenchmarkAssertLeIsFirstArcExcluded(b *testing.B) {
 
 		vm.Context.Ap += 1
 	}
-
 }
 
 func BenchmarkAssertLeIsSecondArcExcluded(b *testing.B) {
@@ -327,7 +326,6 @@ func BenchmarkAssertLeIsSecondArcExcluded(b *testing.B) {
 
 		vm.Context.Ap += 1
 	}
-
 }
 
 func BenchmarkAssertLeFindSmallArc(b *testing.B) {
@@ -388,5 +386,27 @@ func BenchmarkRandomEcPoint(b *testing.B) {
 
 		vm.Context.Ap += 2
 	}
+}
 
+func BenchmarkFieldSqrt(b *testing.B) {
+	vm := defaultVirtualMachine()
+
+	rand := defaultRandGenerator()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+
+		hint := FieldSqrt{
+			val:  Immediate(randomFeltElement(rand)),
+			sqrt: ApCellRef(0),
+		}
+
+		err := hint.Execute(vm)
+		if err != nil {
+			b.Error(err)
+			break
+		}
+
+		vm.Context.Ap += 1
+	}
 }
