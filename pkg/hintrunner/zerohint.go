@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	// "github.com/alecthomas/participle/v2"
+	"github.com/alecthomas/participle/v2"
 	sn "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 )
@@ -13,6 +13,7 @@ const(
 	AllocSegmentCode string = "memory[ap] = segments.add()"
 )
 
+var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp]()
 
 func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64]Hinter, error) {
 	hints := make(map[uint64]Hinter)
@@ -115,5 +116,10 @@ func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 }
 
 func ParseIdentifier(value string) (interface{}, error) {
-	return nil, nil
+	identifierExp, err := parser.ParseString("", value)
+	if err != nil {
+		return nil, err
+	}
+
+	return identifierExp.Evaluate()
 }
