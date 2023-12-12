@@ -63,7 +63,7 @@ func CreateAllocSegmentHinter(cellRefParams []CellRefer, resOpParams []ResOperan
 func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) ([]CellRefer, []ResOperander, error) {
 	var cellRefParams []CellRefer
 	var resOpParams []ResOperander
-	for referenceName, _ := range hint.FlowTrackingData.ReferenceIds {
+	for referenceName := range hint.FlowTrackingData.ReferenceIds {
 		rawIdentifier, ok := zeroProgram.Identifiers[referenceName]
 		if !ok {
 			return nil, nil, fmt.Errorf("missing identifier %s", referenceName)
@@ -100,13 +100,11 @@ func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 		if err != nil {
 			return nil, nil, err
 		}
-		switch param.(type){
+		switch result := param.(type){
 		case CellRefer:
-			cellRefParam := param.(CellRefer)
-			cellRefParams = append(cellRefParams, cellRefParam)
+			cellRefParams = append(cellRefParams, result)
 		case ResOperander:
-			resOpParam := param.(ResOperander)
-			resOpParams = append(resOpParams, resOpParam)
+			resOpParams = append(resOpParams, result)
 		default:
 			return nil, nil, fmt.Errorf("unexpected type for identifier value %s", reference.Value)
 		}

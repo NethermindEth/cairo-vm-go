@@ -99,27 +99,24 @@ func (expression IdentifierExp) Evaluate() (interface{}, error) {
 }
 
 func (expression DerefCastExp) Evaluate() (interface{}, error) {
-	result, err := expression.CastExp.ValueExpr.Evaluate()
+	value, err := expression.CastExp.ValueExpr.Evaluate()
 	if err != nil {
 		return nil, err
 	}
 
-	switch result.(type) {
+	switch result := value.(type) {
 	case CellRefer:
-		cellRefValue := result.(CellRefer)
-		return Deref{cellRefValue}, nil
+		return Deref{result}, nil
 	case Deref:
-		derefValue := result.(Deref)
 		return DoubleDeref{
-			derefValue.deref,
+			result.deref,
 			0,
 		},
 		nil		
 	case DerefOffset:
-		derefOffset := result.(DerefOffset)
 		return DoubleDeref{
-			derefOffset.Deref.deref,
-			int16(*derefOffset.Offset),
+			result.Deref.deref,
+			int16(*result.Offset),
 		},
 		nil
 	default:
@@ -128,34 +125,32 @@ func (expression DerefCastExp) Evaluate() (interface{}, error) {
 }
 
 func (expression CastExp) Evaluate() (interface{}, error) {
-	result, err := expression.ValueExpr.Evaluate()
+	value, err := expression.ValueExpr.Evaluate()
 	if err != nil {
 		return nil, err
 	}
 
-	switch result.(type) {
+	switch result := value.(type) {
 	case CellRefer:
 		return result, nil
 	case Deref:
 		return result, nil
 	case DerefOffset:
-		derefOffset := result.(DerefOffset)
 		return BinaryOp{
 			0,
-			derefOffset.Deref.deref,
+			result.Deref.deref,
 			Immediate{
 				uint64(0),
 				uint64(0),
 				uint64(0),
-				uint64(*derefOffset.Offset),
+				uint64(*result.Offset),
 			},
 		}, nil
 	case DerefDeref:
-		derefDeref := result.(DerefDeref)
 		return BinaryOp{
 			0,
-			derefDeref.LeftDeref.deref,
-			derefDeref.RightDeref,
+			result.LeftDeref.deref,
+			result.RightDeref,
 		}, nil
 	default:
 		return nil, fmt.Errorf("unexpected identifier value")
@@ -232,9 +227,8 @@ func (expression BinOpExp) Evaluate() (interface{}, error) {
 		return nil, err
 	}
 
-	switch leftExp.(type){
+	switch lResult := leftExp.(type){
 	case CellRefer:
-		cellRef := leftExp.(CellRefer)
 		offset, ok := rightExp.(*int)
 		if !ok {
 			return nil, fmt.Errorf("invalid type operation")
@@ -242,17 +236,15 @@ func (expression BinOpExp) Evaluate() (interface{}, error) {
 		offsetValue := int16(*offset)
 
 		var cellRefOffset int16
-		switch cellRef.(type) {
+		switch register := lResult.(type) {
 		case ApCellRef:
-			apCellRef := cellRef.(ApCellRef)
-			cellRefOffset = int16(apCellRef)
+			cellRefOffset = int16(register)
 		case FpCellRef:
-			fpCellRef := cellRef.(FpCellRef)
-			cellRefOffset = int16(fpCellRef)
+			cellRefOffset = int16(register)
 		}
 
 		offsetValue = offsetValue + cellRefOffset
-		switch cellRef.(type) {
+		switch lResult.(type) {
 		case ApCellRef:
 			return ApCellRef(offsetValue), nil
 		case FpCellRef:
@@ -260,19 +252,16 @@ func (expression BinOpExp) Evaluate() (interface{}, error) {
 		}
 	
 	case Deref:
-		deref := leftExp.(Deref)
-		switch rightExp.(type) {
+		switch rResult := rightExp.(type) {
 		case Deref:
-			rDeref := rightExp.(Deref)
 			return DerefDeref{
-				deref,
-				rDeref,
+				lResult,
+				rResult,
 			}, nil
 		case *int:
-			offset := rightExp.(*int)
 			return DerefOffset{
-				deref,
-				offset,
+				lResult,
+				rResult,
 			}, nil
 		}
 	}
