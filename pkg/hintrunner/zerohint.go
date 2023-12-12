@@ -4,9 +4,15 @@ import (
 	"fmt"
 	"strconv"
 
+	// "github.com/alecthomas/participle/v2"
 	sn "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 )
+
+const(
+	AllocSegmentCode string = "memory[ap] = segments.add()"
+)
+
 
 func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64]Hinter, error) {
 	hints := make(map[uint64]Hinter)
@@ -20,18 +26,8 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64]Hinter, error) {
 			return nil, fmt.Errorf("expected only 1 hint but got  %d", len(rawHints))
 		}
 		rawHint := rawHints[0]
-		
-		hintName, err := IdentifyZeroHint(rawHint.Code)
-		if err != nil {
-			return nil, err
-		}
 
-		cellRefParams, resOpParams, err := GetParameters(cairoZeroJson, rawHint, pc)
-		if err != nil {
-			return nil, err
-		}
-
-		hint, err := CreateHintByName(hintName, cellRefParams, resOpParams)
+		hint, err := GetHintFromCode(cairoZeroJson, rawHint, pc)
 		if err != nil {
 			return nil, err
 		}
@@ -42,29 +38,25 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64]Hinter, error) {
 	return hints, nil
 }
 
-func IdentifyZeroHint(code string) (sn.HintName, error) {
-	switch{
-	case isAllocSegmentHint(code):
-		return sn.AllocSegmentName, nil
+func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64) (Hinter, error){
+	cellRefParams, resOpParams, err := GetParameters(program, rawHint, hintPC)
+	if err != nil {
+		return nil, err
+	}
+
+	switch rawHint.Code {
+	case AllocSegmentCode:
+		return CreateAllocSegmentHinter(cellRefParams, resOpParams)
 	default:
-		return "", fmt.Errorf("Not identified hint")
+		return nil, fmt.Errorf("Not identified hint")
 	}
 }
 
-func CreateHintByName(hintName sn.HintName, cellRefParams []CellRefer, resOpParams []ResOperander) (Hinter, error) {
-	switch hintName {
-	case sn.AllocSegmentName:
-		if len(cellRefParams) + len(resOpParams) != 0 {
-			return nil, fmt.Errorf("Expected no arguments for %s hint", sn.AllocSegmentName)
-		}
-		return &AllocSegment { dst: ApCellRef(0) }, nil
-	default:
-		return nil, fmt.Errorf("not implemented hint %s", hintName)
+func CreateAllocSegmentHinter(cellRefParams []CellRefer, resOpParams []ResOperander) (Hinter, error) {
+	if len(cellRefParams) + len(resOpParams) != 0 {
+		return nil, fmt.Errorf("Expected no arguments for %s hint", sn.AllocSegmentName)
 	}
-}
-
-func isAllocSegmentHint(code string) bool {
-	return code == "memory[ap] = segments.add()"
+	return &AllocSegment { dst: ApCellRef(0) }, nil
 }
 
 func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) ([]CellRefer, []ResOperander, error) {
