@@ -74,7 +74,11 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
+					
 					hints, err := hintrunner.GetZeroHints(cairoZeroJson)
+					if err != nil {
+						return fmt.Errorf("cannot create hints: %w", err)
+					}
 
 					fmt.Println("Running....")
 					runner, err := runnerzero.NewRunner(program, hints, proofmode, maxsteps)
