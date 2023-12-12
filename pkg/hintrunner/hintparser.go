@@ -42,9 +42,14 @@ type Expression struct {
 }
 
 type CellRefExp struct {
+	RegisterOffset *RegisterOffset `@@ |`
+	Register       string          `@("ap" | "fp")`
+}
+
+type RegisterOffset struct {
 	Register string     `@("ap" | "fp")`
-	Operator string     `(@("+" | "-"))?`
-	Offset   *OffsetExp `(@@)?`
+	Operator string     `@("+" | "-")`
+	Offset   *OffsetExp `@@`
 }
 
 type DerefExp struct {
@@ -53,8 +58,7 @@ type DerefExp struct {
 
 type BinOpExp struct {
 	LeftExp  *LeftExp   `@@`
-	Operator string     `@("+" | "-")`
-	RightExp *RightExp  `@@`
+	RightExp *RightExp  `"+" @@`
 }
 
 type OffsetExp struct {
@@ -63,7 +67,7 @@ type OffsetExp struct {
 }
 
 type LeftExp struct {
-	CellRefExp *CellRefExp `@@ |`
+	CellRefExp *RegisterOffset `@@ |`
 	DerefExp   *DerefExp   `@@`
 }
 
@@ -171,17 +175,26 @@ func (expression Expression) Evaluate() (interface{}, error) {
 	}
 }
 
-func (expression CellRefExp) Evaluate() (interface{}, error) {
-	var offset int16
-	if expression.Offset != nil {
-		offsetValue, _ := expression.Offset.Evaluate()
-		offset = int16(*offsetValue)
-		if expression.Operator == "-" {
-			offset = -offset
-		}
+func (expression RegisterOffset) Evaluate() (interface{}, error) {
+	offsetValue, _ := expression.Offset.Evaluate()
+	offset := int16(*offsetValue)
+	if expression.Operator == "-" {
+		offset = -offset
 	}
+	
+	return EvaluateRegister(expression.Register, offset)
+}
 
-	switch expression.Register{
+func (expression CellRefExp) Evaluate() (interface{}, error) {
+	if expression.RegisterOffset != nil {
+		return expression.RegisterOffset.Evaluate()
+	}
+	
+	return EvaluateRegister(expression.Register, 0)
+}
+
+func EvaluateRegister(register string, offset int16) (CellRefer, error) {
+	switch register{
 	case "ap":
 		return ApCellRef(offset), nil
 	case "fp":
@@ -209,11 +222,6 @@ func (expression DerefExp) Evaluate() (interface{}, error) {
 }
 
 func (expression BinOpExp) Evaluate() (interface{}, error) {
-	// Operator must be a '+'
-	if expression.Operator != "+" {
-		return nil, fmt.Errorf("invalid operation")
-	}
-
 	leftExp, err := expression.LeftExp.Evaluate()
 	if err != nil {
 		return nil, err
