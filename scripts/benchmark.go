@@ -3,7 +3,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -55,17 +54,14 @@ func RunBenchmarks(pkgSubstr, testSubstr string) {
 			"go", "test", pkgDir, "-bench", testSubstr,
 			"-cpuprofile", cpuPath, "-memprofile", memPath, "-benchmem",
 		)
-		var stdOut bytes.Buffer
-		cmd.Stdout = &stdOut
-		cmd.Stderr = os.Stderr
 
-		err = cmd.Run()
+		output, err := cmd.CombinedOutput()
 		if err != nil {
-			log.Fatalf("failed to benchmark %s: %s", pkg, err)
+			log.Fatalf("failed to benchmark %s: %s\n%s", pkg, err, string(output))
 		}
 
 		stdOutPath := filepath.Join(benchPath, "stdout.txt")
-		err = os.WriteFile(stdOutPath, stdOut.Bytes(), 0644)
+		err = os.WriteFile(stdOutPath, output, 0644)
 
 		fmt.Printf(" - %s ✔\n", pkg)
 	}
