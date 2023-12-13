@@ -216,6 +216,7 @@ func BenchmarkRunnerWithFibonacci(b *testing.B) {
         }
     `)
 
+    b.ResetTimer()
 	for i := 0; i < b.N; i++ {
         cairoZeroJson, err := zero.ZeroProgramFromJSON(compiledJson)
         if err != nil {
