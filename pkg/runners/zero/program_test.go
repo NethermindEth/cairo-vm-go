@@ -4,6 +4,8 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
 	"testing"
+
+	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 )
 
 func TestLoadCairoZeroProgram(t *testing.T) {
@@ -39,7 +41,12 @@ func TestLoadCairoZeroProgram(t *testing.T) {
 		return felt
 	}
 
-	program, err := LoadCairoZeroProgram(content)
+	cairoZeroJson, err := zero.ZeroProgramFromJSON(content)
+	if err != nil {
+		panic(err)
+	}
+
+	program, err := LoadCairoZeroProgram(cairoZeroJson)
 	require.NoError(t, err)
 
 	require.Equal(t, &Program{

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	sn "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -25,7 +26,8 @@ func TestSimpleProgram(t *testing.T) {
         ret;
     `)
 
-	runner, err := NewRunner(program, false, math.MaxUint64)
+	hints := make(map[uint64]hintrunner.Hinter)
+	runner, err := NewRunner(program, hints, false, math.MaxUint64)
 	require.NoError(t, err)
 
 	endPc, err := runner.InitializeMainEntrypoint()
@@ -71,7 +73,8 @@ func TestStepLimitExceeded(t *testing.T) {
         ret;
     `)
 
-	runner, err := NewRunner(program, false, 3)
+	hints := make(map[uint64]hintrunner.Hinter)
+	runner, err := NewRunner(program, hints, false, 3)
 	require.NoError(t, err)
 
 	endPc, err := runner.InitializeMainEntrypoint()
@@ -129,7 +132,8 @@ func TestStepLimitExceededProofMode(t *testing.T) {
 		t.Logf("Using maxstep: %d\n", maxstep)
 		// when maxstep = 6, it fails executing the extra step required by proof mode
 		// when maxstep = 7, it fails trying to get the trace to be a power of 2
-		runner, err := NewRunner(program, true, uint64(maxstep))
+		hints := make(map[uint64]hintrunner.Hinter)
+		runner, err := NewRunner(program, hints, true, uint64(maxstep))
 		require.NoError(t, err)
 
 		err = runner.Run()
@@ -363,7 +367,8 @@ func TestEcOpBuiltin(t *testing.T) {
 func createRunner(code string, builtins ...sn.Builtin) ZeroRunner {
 	program := createProgramWithBuiltins(code, builtins...)
 
-	runner, err := NewRunner(program, false, math.MaxUint64)
+	hints := make(map[uint64]hintrunner.Hinter)
+	runner, err := NewRunner(program, hints, false, math.MaxUint64)
 	if err != nil {
 		panic(err)
 	}
