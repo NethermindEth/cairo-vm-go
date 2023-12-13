@@ -9,10 +9,6 @@ import (
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 )
 
-const(
-	AllocSegmentCode string = "memory[ap] = segments.add()"
-)
-
 var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp]()
 
 func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64]Hinter, error) {
