@@ -76,6 +76,10 @@ type DoubleDeref struct {
 	offset int16
 }
 
+func (dderef DoubleDeref) String() string {
+	return "DoubleDeref"
+}
+
 func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 	lhsAddr, err := dderef.deref.Get(vm)
 	if err != nil {

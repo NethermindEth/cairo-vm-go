@@ -31,12 +31,12 @@ type DerefCastExp struct {
 }
 
 type CastExp struct {
-	ValueExpr *Expression `"cast(" @@`
-	CastType  string      `"," @String ")"`
+	ValueExpr *Expression `"cast" "(" @@ ","`
+	CastType  []string  `@Ident ("." @Ident)* ("*")? ("*")? ")"`
 }
 
 type Expression struct {
-	CellRefExp *CellRefExp `"("@@")" | @@ |`
+	CellRefExp *CellRefExp `"(" @@ ")" | @@ |`
 	DerefExp   *DerefExp   `@@ |`
 	BinOpExp   *BinOpExp   `@@`
 }
@@ -57,13 +57,13 @@ type DerefExp struct {
 }
 
 type BinOpExp struct {
-	LeftExp  *LeftExp   `@@`
-	RightExp *RightExp  `"+" @@`
+	LeftExp  *LeftExp   `@@ "+"`
+	RightExp *RightExp  `@@`
 }
 
 type OffsetExp struct {
-	Number    *int `@Int`
-	NegNumber *int `"(-" @Int ")"`
+	Number    *int `@Int |`
+	NegNumber *int `"(" "-" @Int ")"`
 }
 
 type LeftExp struct {
@@ -200,8 +200,15 @@ func EvaluateRegister(register string, offset int16) (CellRefer, error) {
 }
 
 func (expression OffsetExp) Evaluate() (*int, error) {
-	result := *expression.Number - *expression.NegNumber
-	return &result, nil
+	switch {
+	case expression.Number != nil:
+		return expression.Number, nil
+	case expression.NegNumber != nil:
+		negNumber := -*expression.NegNumber
+		return &negNumber, nil
+	default:
+		return nil, fmt.Errorf("Expected a number")
+	}
 }
 
 func (expression DerefExp) Evaluate() (interface{}, error) {
