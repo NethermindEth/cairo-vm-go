@@ -1,7 +1,6 @@
 package hintrunner
 
 import (
-	// "fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -21,10 +20,10 @@ func TestHintParser(t *testing.T) {
 			ExpectedResOperander: nil,
 		},
 		{
-			Parameter:            "[cast(ap + (-1), starkware.cairo.common.cairo_builtins.BitwiseBuiltin**)]",
+			Parameter:            "[cast(ap + (-1) + 2, starkware.cairo.common.cairo_builtins.BitwiseBuiltin**)]",
 			ExpectedCellRefer:    nil,
 			ExpectedResOperander: Deref{
-				deref: ApCellRef(-1),
+				deref: ApCellRef(1),
 			},
 		},
 		{
@@ -33,6 +32,17 @@ func TestHintParser(t *testing.T) {
 			ExpectedResOperander: DoubleDeref{
 				deref: ApCellRef(2),
 				offset: 0,
+			},
+		},
+		{
+			Parameter:            "cast([ap + 2] + [ap], felt)",
+			ExpectedCellRefer:    nil,
+			ExpectedResOperander: BinaryOp {
+				operator: Add,
+				lhs: ApCellRef(2),
+				rhs: Deref {
+					deref: ApCellRef(0),
+				},
 			},
 		},
 	}

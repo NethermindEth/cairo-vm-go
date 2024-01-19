@@ -36,9 +36,9 @@ type CastExp struct {
 }
 
 type Expression struct {
+	BinOpExp   *BinOpExp   `@@ |`
 	CellRefExp *CellRefExp `"(" @@ ")" | @@ |`
-	DerefExp   *DerefExp   `@@ |`
-	BinOpExp   *BinOpExp   `@@`
+	DerefExp   *DerefExp   `@@`
 }
 
 type CellRefExp struct {

@@ -9,7 +9,7 @@ import (
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 )
 
-var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp]()
+var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp](participle.UseLookahead(10))
 
 func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64]Hinter, error) {
 	hints := make(map[uint64]Hinter)
