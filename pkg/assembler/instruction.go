@@ -332,13 +332,15 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 	}
 	instruction.Opcode = Opcode(opcode)
 
-	// for pc udpate Jnz, res should be unconstrainded, no opcode, and ap should update with Imm
+	// for pc udpate Jnz, res should be unconstrainded, no opcode;
+	// it used to have an ap update check, but new Cairo1 compiler
+	// emits Jnz with ap_add1 sometimes
+	// See #184
 	if instruction.PcUpdate == PcUpdateJnz &&
 		(instruction.Res != Unconstrained ||
-			instruction.Opcode != OpCodeNop ||
-			instruction.ApUpdate != SameAp) {
+			instruction.Opcode != OpCodeNop) {
 		return fmt.Errorf(
-			"jnz opcode must have unconstrained res logic, no opcode, and no ap change",
+			"jnz opcode must have unconstrained res logic and no opcode",
 		)
 	}
 

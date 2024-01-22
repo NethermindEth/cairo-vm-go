@@ -214,9 +214,8 @@ func TestInvalidOpcode(t *testing.T) {
 func TestPcUpdateJnzInvalid(t *testing.T) {
 	instructionInvalidRes := new(f.Element).SetBytes([]byte{0x06, 0x27, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
 	instructionInvalidOpcode := new(f.Element).SetBytes([]byte{0x16, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
-	instructionInvalidApUpdate := new(f.Element).SetBytes([]byte{0x06, 0x07, 0x80, 0x01, 0x80, 0x01, 0x80, 0x00})
 
-	expectedError := "jnz opcode must have unconstrained res logic, no opcode, and no ap change"
+	expectedError := "jnz opcode must have unconstrained res logic and no opcode"
 
 	_, err := DecodeInstruction(instructionInvalidRes)
 
@@ -224,11 +223,6 @@ func TestPcUpdateJnzInvalid(t *testing.T) {
 	assert.ErrorContains(t, err, expectedError)
 
 	_, err = DecodeInstruction(instructionInvalidOpcode)
-
-	require.Error(t, err)
-	assert.ErrorContains(t, err, expectedError)
-
-	_, err = DecodeInstruction(instructionInvalidApUpdate)
 
 	require.Error(t, err)
 	assert.ErrorContains(t, err, expectedError)
