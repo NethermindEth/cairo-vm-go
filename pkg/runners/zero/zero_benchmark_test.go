@@ -4,8 +4,8 @@ import (
 	"math"
 	"testing"
 
-    hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
-	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
+	hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
+	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"    
 )
 
 func BenchmarkRunnerWithFibonacci(b *testing.B) {
