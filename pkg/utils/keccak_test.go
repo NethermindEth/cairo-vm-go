@@ -160,7 +160,7 @@ func TestCairoKeccak(t *testing.T) {
 
 func TestKeccakU256sLEInputs(t *testing.T) {
 	cases := []struct {
-		input    interface{}
+		input    any
 		expected string
 	}{
 		{
@@ -210,7 +210,7 @@ func TestKeccakU256sLEInputs(t *testing.T) {
 }
 
 // Helper Function for converting various input types to uint256
-func ConvertToUint256(input interface{}) *uint256.Int {
+func ConvertToUint256(input any) *uint256.Int {
 	switch v := input.(type) {
 	case string:
 		return StringToUint256(v)
@@ -252,7 +252,7 @@ func createUint256IntFromBytes(b []byte) *uint256.Int {
 // BE (Big Endian) Input Tests
 func TestKeccakU256sBEInputs(t *testing.T) {
 	cases := []struct {
-		input    interface{}
+		input    any
 		expected string
 	}{
 		{

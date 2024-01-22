@@ -109,7 +109,7 @@ func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 	return cellRefParams, resOpParams, nil
 }
 
-func ParseIdentifier(value string) (interface{}, error) {
+func ParseIdentifier(value string) (any, error) {
 	identifierExp, err := parser.ParseString("", value)
 	if err != nil {
 		return nil, err

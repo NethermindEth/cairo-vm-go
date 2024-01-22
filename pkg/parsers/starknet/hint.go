@@ -295,7 +295,7 @@ func (ro *ResOperand) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	var op interface{}
+	var op any
 	for k := range resOp {
 		switch ResOperandName(k) {
 		case DerefName:
@@ -330,7 +330,7 @@ type InnerDoubleDeref struct {
 }
 
 func (i *InnerDoubleDeref) UnmarshalJSON(data []byte) error {
-	var s []interface{}
+	var s []any
 	err := json.Unmarshal(data, &s)
 	if err != nil {
 		return err
@@ -413,7 +413,7 @@ func (d *DerefOrImmediate) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	var op interface{}
+	var op any
 	for k := range rawDerefOrImmediate {
 		switch ResOperandName(k) {
 		case DerefName:
@@ -450,7 +450,7 @@ func (h *Hint) UnmarshalJSON(data []byte) error {
 
 	for k, v := range rawHint {
 		h.Name = HintName(k)
-		var args interface{}
+		var args any
 
 		switch h.Name {
 		// Starknet hints

@@ -87,7 +87,7 @@ type DerefDeref struct {
 
 
 // AST Functionality
-func (expression IdentifierExp) Evaluate() (interface{}, error) {
+func (expression IdentifierExp) Evaluate() (any, error) {
 	switch {
 	case expression.DerefCastExp != nil:
 		return expression.DerefCastExp.Evaluate()
@@ -98,7 +98,7 @@ func (expression IdentifierExp) Evaluate() (interface{}, error) {
 	}
 }
 
-func (expression DerefCastExp) Evaluate() (interface{}, error) {
+func (expression DerefCastExp) Evaluate() (any, error) {
 	value, err := expression.CastExp.ValueExpr.Evaluate()
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func (expression DerefCastExp) Evaluate() (interface{}, error) {
 	}
 }
 
-func (expression CastExp) Evaluate() (interface{}, error) {
+func (expression CastExp) Evaluate() (any, error) {
 	value, err := expression.ValueExpr.Evaluate()
 	if err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ func (expression CastExp) Evaluate() (interface{}, error) {
 	}
 }
 
-func (expression Expression) Evaluate() (interface{}, error) {
+func (expression Expression) Evaluate() (any, error) {
 	switch {
 	case expression.CellRefExp != nil:
 		return expression.CellRefExp.Evaluate()
@@ -170,7 +170,7 @@ func (expression Expression) Evaluate() (interface{}, error) {
 	}
 }
 
-func (expression RegisterOffset) Evaluate() (interface{}, error) {
+func (expression RegisterOffset) Evaluate() (any, error) {
 	offsetValue, _ := expression.Offset.Evaluate()
 	offset := int16(*offsetValue)
 	if expression.Operator == "-" {
@@ -180,7 +180,7 @@ func (expression RegisterOffset) Evaluate() (interface{}, error) {
 	return EvaluateRegister(expression.Register, offset)
 }
 
-func (expression CellRefExp) Evaluate() (interface{}, error) {
+func (expression CellRefExp) Evaluate() (any, error) {
 	if expression.RegisterOffset != nil {
 		return expression.RegisterOffset.Evaluate()
 	}
@@ -211,7 +211,7 @@ func (expression OffsetExp) Evaluate() (*int, error) {
 	}
 }
 
-func (expression DerefExp) Evaluate() (interface{}, error) {
+func (expression DerefExp) Evaluate() (any, error) {
 	cellRefExp, err := expression.CellRefExp.Evaluate()
 	if err != nil {
 		return nil, err
@@ -223,7 +223,7 @@ func (expression DerefExp) Evaluate() (interface{}, error) {
 	return Deref{cellRef}, nil
 }
 
-func (expression BinOpExp) Evaluate() (interface{}, error) {
+func (expression BinOpExp) Evaluate() (any, error) {
 	leftExp, err := expression.LeftExp.Evaluate()
 	if err != nil {
 		return nil, err
@@ -276,7 +276,7 @@ func (expression BinOpExp) Evaluate() (interface{}, error) {
 	return nil, fmt.Errorf("invalid binary operation")
 }
 
-func (expression LeftExp) Evaluate() (interface{}, error) {
+func (expression LeftExp) Evaluate() (any, error) {
 	switch{
 	case expression.CellRefExp != nil:
 		return expression.CellRefExp.Evaluate()
@@ -286,7 +286,7 @@ func (expression LeftExp) Evaluate() (interface{}, error) {
 	return nil, fmt.Errorf("Unexpected left expression in binary operation")
 }
 
-func (expression RightExp) Evaluate() (interface{}, error) {
+func (expression RightExp) Evaluate() (any, error) {
 	switch{
 	case expression.DerefExp != nil:
 		return expression.DerefExp.Evaluate()

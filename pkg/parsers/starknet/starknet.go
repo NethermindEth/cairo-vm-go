@@ -99,7 +99,7 @@ type Hints struct {
 // Hints are serialized as tuples of (index, []hint)
 // https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-starknet/src/casm_contract_class.rs#L90
 func (hints *Hints) UnmarshalJSON(data []byte) error {
-	var rawHints []interface{}
+	var rawHints []any
 	if err := json.Unmarshal(data, &rawHints); err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (hints *Hints) UnmarshalJSON(data []byte) error {
 }
 
 func (hints *Hints) MarshalJSON() ([]byte, error) {
-	var rawHints []interface{}
+	var rawHints []any
 	rawHints = append(rawHints, hints.Index)
 	rawHints = append(rawHints, hints.Hints)
 
