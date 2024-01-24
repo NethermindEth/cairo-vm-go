@@ -68,7 +68,7 @@ type DoubleDeref struct {
 
 type Offset struct {
 	Sign  string `@("+" | "-")`
-	Value *int   `@Int`
+	Value *int   `@("-"? Int)`
 }
 
 type MathOperation struct {

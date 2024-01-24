@@ -12,7 +12,10 @@ var parser *participle.Parser[CasmProgram] = participle.MustBuild[CasmProgram](
 	// also required for:
 	// instr -> jmp rel <expr> and
 	// instr -> jmp rel <expr> if <val> != 0
-	participle.UseLookahead(7),
+	//
+	// an extra +1 (7->8) step is required for an optionally negative offset (see #186):
+	// jmp rel [fp + -111]; without lookahead=8, it won't be parsed sucessfully
+	participle.UseLookahead(8),
 )
 
 // Given a CASM program it returns its encoded bytecode
