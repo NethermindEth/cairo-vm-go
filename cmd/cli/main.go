@@ -5,6 +5,8 @@ import (
 	"math"
 	"os"
 
+	hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
+	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	runnerzero "github.com/NethermindEth/cairo-vm-go/pkg/runners/zero"
 	"github.com/urfave/cli/v2"
 )
@@ -64,13 +66,22 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
-					program, err := runnerzero.LoadCairoZeroProgram(content)
+					cairoZeroJson, err := zero.ZeroProgramFromJSON(content)
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
+					program, err := runnerzero.LoadCairoZeroProgram(cairoZeroJson)
+					if err != nil {
+						return fmt.Errorf("cannot load program: %w", err)
+					}
+					
+					hints, err := hintrunner.GetZeroHints(cairoZeroJson)
+					if err != nil {
+						return fmt.Errorf("cannot create hints: %w", err)
+					}
 
 					fmt.Println("Running....")
-					runner, err := runnerzero.NewRunner(program, proofmode, maxsteps)
+					runner, err := runnerzero.NewRunner(program, hints, proofmode, maxsteps)
 					if err != nil {
 						return fmt.Errorf("cannot create runner: %w", err)
 					}
