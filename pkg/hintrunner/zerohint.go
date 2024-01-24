@@ -19,6 +19,7 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64]Hinter, error) {
 			return nil, err
 		}
 
+		// TODO: Check if it is possible to have more than one hint
 		if len(rawHints) != 1 {
 			return nil, fmt.Errorf("expected only 1 hint but got  %d", len(rawHints))
 		}
