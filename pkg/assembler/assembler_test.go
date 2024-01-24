@@ -8,6 +8,44 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestCondJumpNegativeImmediate(t *testing.T) {
+	// See #186
+	instrList := parseSingleInstructionToInstrList("jmp rel [ap+5] if [fp + -3] != 0;")
+
+	expected := Instruction{
+		OffDest:     -3,
+		OffOp0:      -1,
+		OffOp1:      5,
+		DstRegister: Fp,
+		Op0Register: Fp,
+		Op1Source:   ApPlusOffOp1,
+		Res:         Op1,
+		PcUpdate:    PcUpdateJnz,
+		ApUpdate:    SameAp,
+		Opcode:      OpCodeNop,
+	}
+	assert.Equal(t, expected, instrList[0])
+}
+
+func TestJumpNegativeImmediate(t *testing.T) {
+	// See #186
+	instrList := parseSingleInstructionToInstrList("jmp rel [fp + -111];")
+
+	expected := Instruction{
+		OffDest:     -1,
+		OffOp0:      -1,
+		OffOp1:      -111,
+		DstRegister: Fp,
+		Op0Register: Fp,
+		Op1Source:   FpPlusOffOp1,
+		Res:         Op1,
+		PcUpdate:    PcUpdateJumpRel,
+		ApUpdate:    SameAp,
+		Opcode:      OpCodeNop,
+	}
+	assert.Equal(t, expected, instrList[0])
+}
+
 func TestAssertEqRegisterToInstrList(t *testing.T) {
 	instrList := parseSingleInstructionToInstrList("[ap] = [fp], ap++;")
 
