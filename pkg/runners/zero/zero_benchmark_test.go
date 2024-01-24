@@ -3,6 +3,9 @@ package zero
 import (
 	"math"
 	"testing"
+
+	hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
+	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"    
 )
 
 func BenchmarkRunnerWithFibonacci(b *testing.B) {
@@ -213,13 +216,24 @@ func BenchmarkRunnerWithFibonacci(b *testing.B) {
         }
     `)
 
+    b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		program, err := LoadCairoZeroProgram(compiledJson)
+        cairoZeroJson, err := zero.ZeroProgramFromJSON(compiledJson)
+        if err != nil {
+            panic(err)
+        }
+
+		program, err := LoadCairoZeroProgram(cairoZeroJson)
 		if err != nil {
 			panic(err)
 		}
 
-		runner, err := NewRunner(program, true, math.MaxUint64)
+        hints, err := hintrunner.GetZeroHints(cairoZeroJson)
+        if err != nil {
+            panic(err)
+        }
+
+		runner, err := NewRunner(program, hints, true, math.MaxUint64)
 		if err != nil {
 			panic(err)
 		}
