@@ -1,4 +1,4 @@
 run:
   skip-files:
     - pkg/assembler/grammar.go
-    - pkg/hintrunner/hintparser.go
+    - pkg/hintrunner/zero/hintparser.go

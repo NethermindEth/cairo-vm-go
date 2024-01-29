@@ -111,17 +111,17 @@ func (expression DerefCastExp) Evaluate() (any, error) {
 
 	switch result := value.(type) {
 	case op.CellRefer:
-		return op.Deref{result}, nil
+		return op.Deref{Deref: result}, nil
 	case op.Deref:
 		return op.DoubleDeref{
-			result.Deref,
-			0,
+			Deref:  result.Deref,
+			Offset: 0,
 		},
 		nil		
 	case DerefOffset:
 		return op.DoubleDeref{
-			result.Deref.Deref,
-			int16(*result.Offset),
+			Deref:  result.Deref.Deref,
+			Offset: int16(*result.Offset),
 		},
 		nil
 	default:
@@ -142,9 +142,9 @@ func (expression CastExp) Evaluate() (any, error) {
 		return result, nil
 	case DerefOffset:
 		return op.BinaryOp{
-			0,
-			result.Deref.Deref,
-			op.Immediate{
+			Operator: 0,
+			Lhs:      result.Deref.Deref,
+			Rhs:      op.Immediate{
 				uint64(0),
 				uint64(0),
 				uint64(0),
@@ -153,9 +153,9 @@ func (expression CastExp) Evaluate() (any, error) {
 		}, nil
 	case DerefDeref:
 		return op.BinaryOp{
-			0,
-			result.LeftDeref.Deref,
-			result.RightDeref,
+			Operator: 0,
+			Lhs:      result.LeftDeref.Deref,
+			Rhs:      result.RightDeref,
 		}, nil
 	default:
 		return nil, fmt.Errorf("unexpected identifier value")
@@ -225,7 +225,7 @@ func (expression DerefExp) Evaluate() (any, error) {
 	if !ok {
 		return nil, fmt.Errorf("Expected a CellRefer expression but got %s", cellRefExp)
 	}
-	return op.Deref{cellRef}, nil
+	return op.Deref{Deref: cellRef}, nil
 }
 
 func (expression BinOpExp) Evaluate() (any, error) {

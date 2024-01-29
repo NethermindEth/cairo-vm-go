@@ -20,10 +20,10 @@ func NewHintRunner(hints map[uint64]h.Hinter) HintRunner {
 		// Context for certain hints that require it. Each manager is
 		// initialized only when required by the hint
 		context: h.HintRunnerContext{
-			h.DictionaryManager{},
-			h.SquashedDictionaryManager{},
-			0,
-			mem.UnknownAddress,
+			DictionaryManager:         h.DictionaryManager{},
+			SquashedDictionaryManager: h.SquashedDictionaryManager{},
+			ExcludedArc:               0,
+			ConstantSizeSegment:       mem.UnknownAddress,
 		},
 		hints: hints,
 	}

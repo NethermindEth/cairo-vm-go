@@ -49,7 +49,7 @@ func BenchmarkLessThan(b *testing.B) {
 			vm.Context.Ap+uint64(rhsRef),
 			memory.MemoryValueFromInt(rand.Int63()),
 		)
-		rhs := hinter.Deref{rhsRef}
+		rhs := hinter.Deref{Deref: rhsRef}
 		lhs := hinter.Immediate(utils.RandomFeltElement(rand))
 
 		hint := TestLessThan{
@@ -394,7 +394,7 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 		hint := AssertLeFindSmallArc{
 			a:             hinter.Immediate(r1),
 			b:             hinter.Immediate(r2),
-			rangeCheckPtr: hinter.Deref{hinter.ApCellRef(0)},
+			rangeCheckPtr: hinter.Deref{Deref: hinter.ApCellRef(0)},
 		}
 
 		if err := hint.Execute(vm, &ctx); err != nil &&

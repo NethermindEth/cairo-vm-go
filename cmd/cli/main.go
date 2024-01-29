@@ -5,7 +5,7 @@ import (
 	"math"
 	"os"
 
-	hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
+	hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/zero"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	runnerzero "github.com/NethermindEth/cairo-vm-go/pkg/runners/zero"
 	"github.com/urfave/cli/v2"

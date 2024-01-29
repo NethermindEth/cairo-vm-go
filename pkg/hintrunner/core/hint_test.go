@@ -55,7 +55,7 @@ func TestTestLessThanTrue(t *testing.T) {
 
 	var dst hinter.ApCellRef = 1
 	var rhsRef hinter.FpCellRef = 0
-	rhs := hinter.Deref{rhsRef}
+	rhs := hinter.Deref{Deref: rhsRef}
 
 	lhs := hinter.Immediate(f.NewElement(13))
 
@@ -92,7 +92,7 @@ func TestTestLessThanFalse(t *testing.T) {
 
 			var dst hinter.ApCellRef = 1
 			var rhsRef hinter.FpCellRef = 0
-			rhs := hinter.Deref{rhsRef}
+			rhs := hinter.Deref{Deref: rhsRef}
 
 			lhs := hinter.Immediate(tc.lhsValue)
 			hint := TestLessThan{
@@ -131,7 +131,7 @@ func TestTestLessThanOrEqTrue(t *testing.T) {
 
 			var dst hinter.ApCellRef = 1
 			var rhsRef hinter.FpCellRef = 0
-			rhs := hinter.Deref{rhsRef}
+			rhs := hinter.Deref{Deref: rhsRef}
 
 			lhs := hinter.Immediate(tc.lhsValue)
 			hint := TestLessThanOrEqual{
@@ -160,7 +160,7 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 
 	var dst hinter.ApCellRef = 1
 	var rhsRef hinter.FpCellRef = 0
-	rhs := hinter.Deref{rhsRef}
+	rhs := hinter.Deref{Deref: rhsRef}
 
 	lhs := hinter.Immediate(f.NewElement(32))
 
@@ -546,8 +546,8 @@ func TestDebugPrint(t *testing.T) {
 
 	var starRef hinter.ApCellRef = 0
 	var endRef hinter.ApCellRef = 1
-	start := hinter.Deref{starRef}
-	end := hinter.Deref{endRef}
+	start := hinter.Deref{Deref: starRef}
+	end := hinter.Deref{Deref: endRef}
 	hint := DebugPrint{
 		start: start,
 		end:   end,
@@ -991,7 +991,7 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		hint := AssertLeFindSmallArc{
 			a:             hinter.Immediate(tc.aFelt),
 			b:             hinter.Immediate(tc.bFelt),
-			rangeCheckPtr: hinter.Deref{hinter.ApCellRef(0)},
+			rangeCheckPtr: hinter.Deref{Deref: hinter.ApCellRef(0)},
 		}
 
 		ctx := hinter.HintRunnerContext{
