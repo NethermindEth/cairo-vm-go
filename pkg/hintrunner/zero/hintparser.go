@@ -1,8 +1,13 @@
-package hintrunner
+package zero
 
 import (
 	"fmt"
+
+	"github.com/alecthomas/participle/v2"
+	op "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 )
+
+var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp](participle.UseLookahead(10))
 
 // Possible cases extracted from https://github.com/lambdaclass/cairo-vm_in_go/blob/main/pkg/hints/hint_utils/hint_reference.go#L41
 // Immediate: cast(number, type)
@@ -77,12 +82,12 @@ type RightExp struct {
 }
 
 type DerefOffset struct {
-	Deref  Deref
+	Deref  op.Deref
 	Offset *int
 }
 type DerefDeref struct {
-	LeftDeref  Deref
-	RightDeref Deref
+	LeftDeref  op.Deref
+	RightDeref op.Deref
 }
 
 
@@ -105,17 +110,17 @@ func (expression DerefCastExp) Evaluate() (any, error) {
 	}
 
 	switch result := value.(type) {
-	case CellRefer:
-		return Deref{result}, nil
-	case Deref:
-		return DoubleDeref{
-			result.deref,
+	case op.CellRefer:
+		return op.Deref{result}, nil
+	case op.Deref:
+		return op.DoubleDeref{
+			result.Deref,
 			0,
 		},
 		nil		
 	case DerefOffset:
-		return DoubleDeref{
-			result.Deref.deref,
+		return op.DoubleDeref{
+			result.Deref.Deref,
 			int16(*result.Offset),
 		},
 		nil
@@ -131,15 +136,15 @@ func (expression CastExp) Evaluate() (any, error) {
 	}
 
 	switch result := value.(type) {
-	case CellRefer:
+	case op.CellRefer:
 		return result, nil
-	case Deref:
+	case op.Deref:
 		return result, nil
 	case DerefOffset:
-		return BinaryOp{
+		return op.BinaryOp{
 			0,
-			result.Deref.deref,
-			Immediate{
+			result.Deref.Deref,
+			op.Immediate{
 				uint64(0),
 				uint64(0),
 				uint64(0),
@@ -147,9 +152,9 @@ func (expression CastExp) Evaluate() (any, error) {
 			},
 		}, nil
 	case DerefDeref:
-		return BinaryOp{
+		return op.BinaryOp{
 			0,
-			result.LeftDeref.deref,
+			result.LeftDeref.Deref,
 			result.RightDeref,
 		}, nil
 	default:
@@ -188,12 +193,12 @@ func (expression CellRefExp) Evaluate() (any, error) {
 	return EvaluateRegister(expression.Register, 0)
 }
 
-func EvaluateRegister(register string, offset int16) (CellRefer, error) {
+func EvaluateRegister(register string, offset int16) (op.CellRefer, error) {
 	switch register{
 	case "ap":
-		return ApCellRef(offset), nil
+		return op.ApCellRef(offset), nil
 	case "fp":
-		return FpCellRef(offset), nil
+		return op.FpCellRef(offset), nil
 	default:
 		return nil, fmt.Errorf("invalid offset value")
 	}
@@ -216,11 +221,11 @@ func (expression DerefExp) Evaluate() (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	cellRef, ok := cellRefExp.(CellRefer)
+	cellRef, ok := cellRefExp.(op.CellRefer)
 	if !ok {
 		return nil, fmt.Errorf("Expected a CellRefer expression but got %s", cellRefExp)
 	}
-	return Deref{cellRef}, nil
+	return op.Deref{cellRef}, nil
 }
 
 func (expression BinOpExp) Evaluate() (any, error) {
@@ -235,7 +240,7 @@ func (expression BinOpExp) Evaluate() (any, error) {
 	}
 
 	switch lResult := leftExp.(type){
-	case CellRefer:
+	case op.CellRefer:
 		offset, ok := rightExp.(*int)
 		if !ok {
 			return nil, fmt.Errorf("invalid type operation")
@@ -244,23 +249,23 @@ func (expression BinOpExp) Evaluate() (any, error) {
 
 		var cellRefOffset int16
 		switch register := lResult.(type) {
-		case ApCellRef:
+		case op.ApCellRef:
 			cellRefOffset = int16(register)
-		case FpCellRef:
+		case op.FpCellRef:
 			cellRefOffset = int16(register)
 		}
 
 		offsetValue = offsetValue + cellRefOffset
 		switch lResult.(type) {
-		case ApCellRef:
-			return ApCellRef(offsetValue), nil
-		case FpCellRef:
-			return FpCellRef(offsetValue), nil
+		case op.ApCellRef:
+			return op.ApCellRef(offsetValue), nil
+		case op.FpCellRef:
+			return op.FpCellRef(offsetValue), nil
 		}
 	
-	case Deref:
+	case op.Deref:
 		switch rResult := rightExp.(type) {
-		case Deref:
+		case op.Deref:
 			return DerefDeref{
 				lResult,
 				rResult,
@@ -294,4 +299,13 @@ func (expression RightExp) Evaluate() (any, error) {
 		return expression.Offset.Evaluate()
 	}
 	return nil, fmt.Errorf("Unexpected right expression in binary operation")
+}
+
+func ParseIdentifier(value string) (any, error) {
+	identifierExp, err := parser.ParseString("", value)
+	if err != nil {
+		return nil, err
+	}
+
+	return identifierExp.Evaluate()
 }

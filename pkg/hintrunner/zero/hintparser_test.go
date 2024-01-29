@@ -1,47 +1,47 @@
-package hintrunner
+package zero
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 )
 
 func TestHintParser(t *testing.T) {
 	type testSetType struct {
 		Parameter            string
-		ExpectedCellRefer    CellRefer
-		ExpectedResOperander ResOperander
+		ExpectedCellRefer    hinter.CellRefer
+		ExpectedResOperander hinter.ResOperander
 	}
 
 	testSet := []testSetType{
 		{
 			Parameter:            "cast(fp + (-3), felt*)",
-			ExpectedCellRefer:    FpCellRef(-3),
+			ExpectedCellRefer:    hinter.FpCellRef(-3),
 			ExpectedResOperander: nil,
 		},
 		{
 			Parameter:            "[cast(ap + (-1) + 2, starkware.cairo.common.cairo_builtins.BitwiseBuiltin**)]",
 			ExpectedCellRefer:    nil,
-			ExpectedResOperander: Deref{
-				deref: ApCellRef(1),
+			ExpectedResOperander: hinter.Deref{
+				Deref: hinter.ApCellRef(1),
 			},
 		},
 		{
 			Parameter:            "[cast([ap + 2], felt)]",
 			ExpectedCellRefer:    nil,
-			ExpectedResOperander: DoubleDeref{
-				deref: ApCellRef(2),
-				offset: 0,
-			},
+			ExpectedResOperander: hinter.DoubleDeref{
+				Deref: hinter.ApCellRef(2),
+				Offset: 0,			},
 		},
 		{
 			Parameter:            "cast([ap + 2] + [ap], felt)",
 			ExpectedCellRefer:    nil,
-			ExpectedResOperander: BinaryOp {
-				operator: Add,
-				lhs: ApCellRef(2),
-				rhs: Deref {
-					deref: ApCellRef(0),
+			ExpectedResOperander: hinter.BinaryOp {
+				Operator: hinter.Add,
+				Lhs: hinter.ApCellRef(2),
+				Rhs: hinter.Deref {
+					Deref: hinter.ApCellRef(0),
 				},
 			},
 		},
