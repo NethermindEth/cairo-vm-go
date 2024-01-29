@@ -26,7 +26,7 @@ type ZeroRunner struct {
 }
 
 // Creates a new Runner of a Cairo Zero program
-func NewRunner(program *Program, hints map[uint64]hintrunner.Hinter, proofmode bool, maxsteps uint64) (ZeroRunner, error) {
+func NewRunner(program *Program, hints map[uint64][]hintrunner.Hinter, proofmode bool, maxsteps uint64) (ZeroRunner, error) {
 	hintrunner := hintrunner.NewHintRunner(hints)
 
 	return ZeroRunner{
