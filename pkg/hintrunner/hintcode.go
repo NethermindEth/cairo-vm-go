@@ -1,6 +1,5 @@
 package hintrunner
 
-
-const(
+const (
 	AllocSegmentCode string = "memory[ap] = segments.add()"
 )

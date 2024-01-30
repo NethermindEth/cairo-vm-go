@@ -20,27 +20,27 @@ func TestHintParser(t *testing.T) {
 			ExpectedResOperander: nil,
 		},
 		{
-			Parameter:            "[cast(ap + (-1) + 2, starkware.cairo.common.cairo_builtins.BitwiseBuiltin**)]",
-			ExpectedCellRefer:    nil,
+			Parameter:         "[cast(ap + (-1) + 2, starkware.cairo.common.cairo_builtins.BitwiseBuiltin**)]",
+			ExpectedCellRefer: nil,
 			ExpectedResOperander: Deref{
 				deref: ApCellRef(1),
 			},
 		},
 		{
-			Parameter:            "[cast([ap + 2], felt)]",
-			ExpectedCellRefer:    nil,
+			Parameter:         "[cast([ap + 2], felt)]",
+			ExpectedCellRefer: nil,
 			ExpectedResOperander: DoubleDeref{
-				deref: ApCellRef(2),
+				deref:  ApCellRef(2),
 				offset: 0,
 			},
 		},
 		{
-			Parameter:            "cast([ap + 2] + [ap], felt)",
-			ExpectedCellRefer:    nil,
-			ExpectedResOperander: BinaryOp {
+			Parameter:         "cast([ap + 2] + [ap], felt)",
+			ExpectedCellRefer: nil,
+			ExpectedResOperander: BinaryOp{
 				operator: Add,
-				lhs: ApCellRef(2),
-				rhs: Deref {
+				lhs:      ApCellRef(2),
+				rhs: Deref{
 					deref: ApCellRef(0),
 				},
 			},

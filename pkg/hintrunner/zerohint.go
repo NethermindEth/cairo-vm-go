@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/alecthomas/participle/v2"
 	sn "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
+	"github.com/alecthomas/participle/v2"
 )
 
 var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp](participle.UseLookahead(10))
@@ -36,7 +36,7 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64]Hinter, error) {
 	return hints, nil
 }
 
-func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64) (Hinter, error){
+func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64) (Hinter, error) {
 	cellRefParams, resOpParams, err := GetParameters(program, rawHint, hintPC)
 	if err != nil {
 		return nil, err
@@ -51,10 +51,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 }
 
 func CreateAllocSegmentHinter(cellRefParams []CellRefer, resOpParams []ResOperander) (Hinter, error) {
-	if len(cellRefParams) + len(resOpParams) != 0 {
+	if len(cellRefParams)+len(resOpParams) != 0 {
 		return nil, fmt.Errorf("Expected no arguments for %s hint", sn.AllocSegmentName)
 	}
-	return &AllocSegment { dst: ApCellRef(0) }, nil
+	return &AllocSegment{dst: ApCellRef(0)}, nil
 }
 
 func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) ([]CellRefer, []ResOperander, error) {
@@ -83,12 +83,12 @@ func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 		var reference zero.Reference
 		ok = false
 		for i := len(references) - 1; i >= 0; i-- {
-			if references[i].Pc <= hintPC{
+			if references[i].Pc <= hintPC {
 				reference = references[i]
 				ok = true
 				break
-			} 
-		}	
+			}
+		}
 		if !ok {
 			return nil, nil, fmt.Errorf("identifier %s should have a reference with pc smaller or equal than %d", referenceName, hintPC)
 		}
@@ -97,7 +97,7 @@ func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 		if err != nil {
 			return nil, nil, err
 		}
-		switch result := param.(type){
+		switch result := param.(type) {
 		case CellRefer:
 			cellRefParams = append(cellRefParams, result)
 		case ResOperander:
