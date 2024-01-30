@@ -35,7 +35,7 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64]hinter.Hinter, er
 	return hints, nil
 }
 
-func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64) (hinter.Hinter, error){
+func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64) (hinter.Hinter, error) {
 	cellRefParams, resOpParams, err := GetParameters(program, rawHint, hintPC)
 	if err != nil {
 		return nil, err
@@ -50,10 +50,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 }
 
 func CreateAllocSegmentHinter(cellRefParams []hinter.CellRefer, resOpParams []hinter.ResOperander) (hinter.Hinter, error) {
-	if len(cellRefParams) + len(resOpParams) != 0 {
+	if len(cellRefParams)+len(resOpParams) != 0 {
 		return nil, fmt.Errorf("Expected no arguments for %s hint", sn.AllocSegmentName)
 	}
-	return &core.AllocSegment { Dst: hinter.ApCellRef(0) }, nil
+	return &core.AllocSegment{Dst: hinter.ApCellRef(0)}, nil
 }
 
 func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) ([]hinter.CellRefer, []hinter.ResOperander, error) {
@@ -96,7 +96,7 @@ func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 		if err != nil {
 			return nil, nil, err
 		}
-		switch result := param.(type){
+		switch result := param.(type) {
 		case hinter.CellRefer:
 			cellRefParams = append(cellRefParams, result)
 		case hinter.ResOperander:

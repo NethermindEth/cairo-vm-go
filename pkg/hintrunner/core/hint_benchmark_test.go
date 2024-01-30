@@ -207,7 +207,7 @@ func BenchmarkLinearSplit(b *testing.B) {
 
 	var x hinter.ApCellRef = 0
 	var y hinter.ApCellRef = 1
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		value := hinter.Immediate(utils.RandomFeltElement(rand))

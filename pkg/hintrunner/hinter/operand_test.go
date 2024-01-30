@@ -3,9 +3,9 @@ package hinter
 import (
 	"testing"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
 )

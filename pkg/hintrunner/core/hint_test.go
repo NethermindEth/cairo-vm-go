@@ -271,15 +271,15 @@ func TestWideMul128(t *testing.T) {
 }
 
 func TestDivMod(t *testing.T) {
-    vm := VM.DefaultVirtualMachine()
-    vm.Context.Ap = 0
-    vm.Context.Fp = 0
+	vm := VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
 
-    var quo hinter.ApCellRef = 1
-    var rem hinter.ApCellRef = 2
+	var quo hinter.ApCellRef = 1
+	var rem hinter.ApCellRef = 2
 
-    lhsValue := hinter.Immediate(f.NewElement(89))
-    rhsValue := hinter.Immediate(f.NewElement(7))
+	lhsValue := hinter.Immediate(f.NewElement(89))
+	rhsValue := hinter.Immediate(f.NewElement(7))
 
 	hint := DivMod{
 		lhs:       lhsValue,
@@ -294,23 +294,23 @@ func TestDivMod(t *testing.T) {
 	expectedQuotient := mem.MemoryValueFromInt(12)
 	expectedRemainder := mem.MemoryValueFromInt(5)
 
-    actualQuotient := utils.ReadFrom(vm, VM.ExecutionSegment, 1)
-    actualRemainder := utils.ReadFrom(vm, VM.ExecutionSegment, 2)
+	actualQuotient := utils.ReadFrom(vm, VM.ExecutionSegment, 1)
+	actualRemainder := utils.ReadFrom(vm, VM.ExecutionSegment, 2)
 
 	require.Equal(t, expectedQuotient, actualQuotient)
 	require.Equal(t, expectedRemainder, actualRemainder)
 }
 
-func TestDivModDivisionByZeroError (t *testing.T) {
+func TestDivModDivisionByZeroError(t *testing.T) {
 	vm := VM.DefaultVirtualMachine()
-    vm.Context.Ap = 0
-    vm.Context.Fp = 0
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
 
-    var quo hinter.ApCellRef = 1
-    var rem hinter.ApCellRef = 2
+	var quo hinter.ApCellRef = 1
+	var rem hinter.ApCellRef = 2
 
-    lhsValue := hinter.Immediate(f.NewElement(43))
-    rhsValue := hinter.Immediate(f.NewElement(0))
+	lhsValue := hinter.Immediate(f.NewElement(43))
+	rhsValue := hinter.Immediate(f.NewElement(0))
 
 	hint := DivMod{
 		lhs:       lhsValue,

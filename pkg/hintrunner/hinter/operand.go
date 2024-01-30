@@ -133,7 +133,6 @@ const (
 )
 
 type BinaryOp struct {
-	
 	Operator Operator
 	Lhs      CellRefer
 	Rhs      ResOperander // (except DoubleDeref and BinaryOp)

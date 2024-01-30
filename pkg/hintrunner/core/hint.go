@@ -7,12 +7,12 @@ import (
 
 	"github.com/holiman/uint256"
 
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	u "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type AllocSegment struct {
