@@ -1,8 +1,9 @@
 package zero
 
 import (
-	starknetParser "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"testing"
+
+	starknetParser "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 
 	"github.com/stretchr/testify/require"
 )
@@ -220,41 +221,41 @@ func TestIdentifiers(t *testing.T) {
 	require.Equal(
 		t,
 		&ZeroProgram{
-			Identifiers: map[string]any{
-				"__main__.fib": map[string]any{
-					"decorators": make([]any, 0),
-					"pc":         float64(9),
-					"type":       "function",
+			Identifiers: map[string]*Identifier{
+				"__main__.fib": {
+					Decorators:     make([]any, 0),
+					Pc:             9,
+					IdentifierType: "function",
 				},
-				"__main__.BitwiseBuiltin": map[string]any{
-					"destination": "starkware.cairo.common.cairo_builtins.BitwiseBuiltin",
-					"type":        "alias",
+				"__main__.BitwiseBuiltin": {
+					Destination:    "starkware.cairo.common.cairo_builtins.BitwiseBuiltin",
+					IdentifierType: "alias",
 				},
-				"__main__.fill_array.Args": map[string]any{
-					"full_name": "__main__.fill_array.Args",
-					"members": map[string]any{
+				"__main__.fill_array.Args": {
+					FullName: "__main__.fill_array.Args",
+					Members: map[string]any{
 						"array": map[string]any{
 							"cairo_type": "felt*",
 							"offset":     float64(0),
 						},
 					},
-					"size": float64(1),
-					"type": "struct",
+					Size:           1,
+					IdentifierType: "struct",
 				},
-				"__main__.fill_array.__temp18": map[string]any{
-					"cairo_type": "felt",
-					"full_name":  "__main__.fill_array.__temp18",
-					"references": []any{
-						map[string]any{
-							"ap_tracking_data": map[string]any{
-								"group":  float64(26),
-								"offset": float64(1),
+				"__main__.fill_array.__temp18": {
+					CairoType: "felt",
+					FullName:  "__main__.fill_array.__temp18",
+					References: []Reference{
+						{
+							ApTrackingData: ApTracking{
+								Group:  26,
+								Offset: 1,
 							},
-							"pc":    float64(312),
-							"value": "[cast(ap + (-1), felt*)]",
+							Pc:    312,
+							Value: "[cast(ap + (-1), felt*)]",
 						},
 					},
-					"type": "reference",
+					IdentifierType: "reference",
 				},
 			},
 		},

@@ -1,7 +1,6 @@
 package zero
 
 import (
-	"errors"
 	"fmt"
 
 	sn "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
@@ -56,14 +55,10 @@ func extractEntrypoints(json *zero.ZeroProgram) (map[string]uint64, error) {
 	result := make(map[string]uint64)
 	err := scanIdentifiers(
 		json,
-		func(key string, typex string, value map[string]any) error {
-			if typex == "function" {
-				pc, ok := value["pc"].(float64)
-				if !ok {
-					return fmt.Errorf("%s: unknown entrypoint pc", key)
-				}
+		func(key string, ident *zero.Identifier) error {
+			if ident.IdentifierType == "function" {
 				name := key[len(json.MainScope)+1:]
-				result[name] = uint64(pc)
+				result[name] = uint64(ident.Pc)
 			}
 			return nil
 		},
@@ -79,14 +74,10 @@ func extractLabels(json *zero.ZeroProgram) (map[string]uint64, error) {
 	labels := make(map[string]uint64, 2)
 	err := scanIdentifiers(
 		json,
-		func(key string, typex string, value map[string]any) error {
-			if typex == "label" {
-				pc, ok := value["pc"].(float64)
-				if !ok {
-					return fmt.Errorf("%s: unknown entrypoint pc", key)
-				}
+		func(key string, ident *zero.Identifier) error {
+			if ident.IdentifierType == "label" {
 				name := key[len(json.MainScope)+1:]
-				labels[name] = uint64(pc)
+				labels[name] = uint64(ident.Pc)
 			}
 			return nil
 		},
@@ -98,18 +89,9 @@ func extractLabels(json *zero.ZeroProgram) (map[string]uint64, error) {
 	return labels, nil
 }
 
-func scanIdentifiers(
-	json *zero.ZeroProgram,
-	f func(key string, typex string, value map[string]any) error,
-) error {
-	for key, value := range json.Identifiers {
-		properties := value.(map[string]any)
-
-		typex, ok := properties["type"].(string)
-		if !ok {
-			return errors.New("unnespecified identifier type")
-		}
-		if err := f(key, typex, properties); err != nil {
+func scanIdentifiers(json *zero.ZeroProgram, f func(key string, ident *zero.Identifier) error) error {
+	for key, ident := range json.Identifiers {
+		if err := f(key, ident); err != nil {
 			return err
 		}
 	}
