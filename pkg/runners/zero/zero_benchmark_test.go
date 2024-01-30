@@ -216,22 +216,22 @@ func BenchmarkRunnerWithFibonacci(b *testing.B) {
         }
     `)
 
-    b.ResetTimer()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-        cairoZeroJson, err := zero.ZeroProgramFromJSON(compiledJson)
-        if err != nil {
-            panic(err)
-        }
+		cairoZeroJson, err := zero.ZeroProgramFromJSON(compiledJson)
+		if err != nil {
+			panic(err)
+		}
 
 		program, err := LoadCairoZeroProgram(cairoZeroJson)
 		if err != nil {
 			panic(err)
 		}
 
-        hints, err := hintrunner.GetZeroHints(cairoZeroJson)
-        if err != nil {
-            panic(err)
-        }
+		hints, err := hintrunner.GetZeroHints(cairoZeroJson)
+		if err != nil {
+			panic(err)
+		}
 
 		runner, err := NewRunner(program, hints, true, math.MaxUint64)
 		if err != nil {

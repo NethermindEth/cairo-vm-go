@@ -281,24 +281,24 @@ func TestDivMod(t *testing.T) {
     lhsValue := hinter.Immediate(f.NewElement(89))
     rhsValue := hinter.Immediate(f.NewElement(7))
 
-    hint := DivMod{
-        lhs:       lhsValue,
-        rhs:       rhsValue,
-        quotient:  quo,
-        remainder: rem,
-    }
+	hint := DivMod{
+		lhs:       lhsValue,
+		rhs:       rhsValue,
+		quotient:  quo,
+		remainder: rem,
+	}
 
-    err := hint.Execute(vm, nil)
-    require.Nil(t, err)
+	err := hint.Execute(vm, nil)
+	require.Nil(t, err)
 
-    expectedQuotient := mem.MemoryValueFromInt(12)
-    expectedRemainder := mem.MemoryValueFromInt(5)
+	expectedQuotient := mem.MemoryValueFromInt(12)
+	expectedRemainder := mem.MemoryValueFromInt(5)
 
     actualQuotient := utils.ReadFrom(vm, VM.ExecutionSegment, 1)
     actualRemainder := utils.ReadFrom(vm, VM.ExecutionSegment, 2)
 
-    require.Equal(t, expectedQuotient, actualQuotient)
-    require.Equal(t, expectedRemainder, actualRemainder)
+	require.Equal(t, expectedQuotient, actualQuotient)
+	require.Equal(t, expectedRemainder, actualRemainder)
 }
 
 func TestDivModDivisionByZeroError (t *testing.T) {
@@ -312,17 +312,16 @@ func TestDivModDivisionByZeroError (t *testing.T) {
     lhsValue := hinter.Immediate(f.NewElement(43))
     rhsValue := hinter.Immediate(f.NewElement(0))
 
-    hint := DivMod{
-        lhs:       lhsValue,
-        rhs:       rhsValue,
-        quotient:  quo,
-        remainder: rem,
-    }
+	hint := DivMod{
+		lhs:       lhsValue,
+		rhs:       rhsValue,
+		quotient:  quo,
+		remainder: rem,
+	}
 
-    err := hint.Execute(vm, nil)
-    require.ErrorContains(t, err, "cannot be divided by zero, rhs: 0")
+	err := hint.Execute(vm, nil)
+	require.ErrorContains(t, err, "cannot be divided by zero, rhs: 0")
 }
-
 
 func TestUint256DivMod(t *testing.T) {
 	t.Run("test uint256DivMod", func(t *testing.T) {
@@ -337,10 +336,10 @@ func TestUint256DivMod(t *testing.T) {
 
 		dividend0Felt := f.NewElement(89)
 		dividend1Felt := f.NewElement(72)
-	
+
 		divisor0Felt := f.NewElement(3)
 		divisor1Felt := f.NewElement(7)
-	
+
 		hint := Uint256DivMod{
 			dividend0:  hinter.Immediate(dividend0Felt),
 			dividend1:  hinter.Immediate(dividend1Felt),
@@ -351,44 +350,44 @@ func TestUint256DivMod(t *testing.T) {
 			remainder0: remainder0,
 			remainder1: remainder1,
 		}
-	
+
 		err := hint.Execute(vm, nil)
 		require.Nil(t, err)
-	
+
 		quotient0Val := &f.Element{}
 		_, err = quotient0Val.SetString("10")
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(quotient0Val),
 			utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 		)
-	
+
 		quotient1Val := &f.Element{}
 		quotient1Val.SetZero()
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(quotient1Val),
 			utils.ReadFrom(vm, VM.ExecutionSegment, 2),
 		)
-	
+
 		remainder0Val := &f.Element{}
 		_, err = remainder0Val.SetString("59")
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(remainder0Val),
 			utils.ReadFrom(vm, VM.ExecutionSegment, 3),
 		)
-	
+
 		remainder1Val := &f.Element{}
 		_, err = remainder1Val.SetString("2")
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(remainder1Val),
@@ -413,7 +412,7 @@ func TestUint256DivMod(t *testing.T) {
 
 		divisor0Felt := f.NewElement(1<<8 + 1)
 		divisor1Felt := f.NewElement(1<<8 + 1)
-	
+
 		hint := Uint256DivMod{
 			dividend0:  hinter.Immediate(dividend0Felt),
 			dividend1:  hinter.Immediate(dividend1Felt),
@@ -424,51 +423,51 @@ func TestUint256DivMod(t *testing.T) {
 			remainder0: remainder0,
 			remainder1: remainder1,
 		}
-	
+
 		err = hint.Execute(vm, nil)
 		require.Nil(t, err)
-	
+
 		quotient0Val := &f.Element{}
 		quotient0Val.SetOne()
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(quotient0Val),
 			utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 		)
-	
+
 		quotient1Val := &f.Element{}
 		quotient1Val.SetZero()
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(quotient1Val),
 			utils.ReadFrom(vm, VM.ExecutionSegment, 2),
 		)
-	
+
 		remainder0Val := &f.Element{}
 		_, err = remainder0Val.SetString("170141183460469231731687303715884105471")
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(remainder0Val),
 			utils.ReadFrom(vm, VM.ExecutionSegment, 3),
 		)
-	
+
 		remainder1Val := &f.Element{}
 		remainder1Val.SetZero()
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(remainder1Val),
 			utils.ReadFrom(vm, VM.ExecutionSegment, 4),
 		)
 	})
-}	
+}
 
 func TestUint256DivModDivisionByZero(t *testing.T) {
 	vm := VM.DefaultVirtualMachine()
@@ -479,7 +478,6 @@ func TestUint256DivModDivisionByZero(t *testing.T) {
 	var dstQuotient1 hinter.ApCellRef = 2
 	var dstRemainder0 hinter.ApCellRef = 3
 	var dstRemainder1 hinter.ApCellRef = 4
-
 
 	dividend0Felt := f.NewElement(1<<8 + 1)
 	dividend1Felt := f.NewElement(1<<8 + 1)
@@ -1138,4 +1136,3 @@ func TestFieldSqrt(t *testing.T) {
 		})
 	}
 }
-

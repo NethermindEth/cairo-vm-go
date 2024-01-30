@@ -1004,7 +1004,7 @@ func TestRunStepInstructions(t *testing.T) {
 
 		assert.Equal(t, vm.Context.Pc.Offset, uint64(15))
 	})
-	
+
 	t.Run("test abs jump with address", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("jmp abs [ap];")
 		setInitialReg(vm, 1, 1, 0)

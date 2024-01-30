@@ -82,12 +82,12 @@ func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 		var reference zero.Reference
 		ok = false
 		for i := len(references) - 1; i >= 0; i-- {
-			if references[i].Pc <= hintPC{
+			if references[i].Pc <= hintPC {
 				reference = references[i]
 				ok = true
 				break
-			} 
-		}	
+			}
+		}
 		if !ok {
 			return nil, nil, fmt.Errorf("identifier %s should have a reference with pc smaller or equal than %d", referenceName, hintPC)
 		}
