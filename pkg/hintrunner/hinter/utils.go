@@ -1,9 +1,7 @@
-package hintrunner
+package hinter
 
 import (
-	"encoding/binary"
 	"fmt"
-	"math/rand"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -50,27 +48,4 @@ func ResolveAsUint64(vm *VM.VirtualMachine, op ResOperander) (uint64, error) {
 	}
 
 	return uint64Value, nil
-}
-
-func randomFeltElement(rand *rand.Rand) f.Element {
-	b := [32]byte{}
-	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
-	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
-	binary.BigEndian.PutUint64(b[8:16], rand.Uint64())
-	//Limit to 59 bits so at max we have a 251 bit number
-	binary.BigEndian.PutUint64(b[0:8], rand.Uint64()>>5)
-	f, _ := f.BigEndian.Element(&b)
-	return f
-}
-
-func randomFeltElementU128(rand *rand.Rand) f.Element {
-	b := [32]byte{}
-	binary.BigEndian.PutUint64(b[24:32], rand.Uint64())
-	binary.BigEndian.PutUint64(b[16:24], rand.Uint64())
-	f, _ := f.BigEndian.Element(&b)
-	return f
-}
-
-func defaultRandGenerator() *rand.Rand {
-	return rand.New(rand.NewSource(0))
 }

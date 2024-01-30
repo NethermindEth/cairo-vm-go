@@ -1,8 +1,10 @@
-package hintrunner
+package core
 
 import (
 	"testing"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -10,10 +12,10 @@ import (
 )
 
 func BenchmarkAllocSegment(b *testing.B) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
-	var ap ApCellRef = 1
+	var ap hinter.ApCellRef = 1
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -29,26 +31,26 @@ func BenchmarkAllocSegment(b *testing.B) {
 }
 
 func BenchmarkLessThan(b *testing.B) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	var dst ApCellRef = 0
-	var rhsRef ApCellRef = 1
+	var dst hinter.ApCellRef = 0
+	var rhsRef hinter.ApCellRef = 1
 	cell := uint64(0)
 
-	rand := defaultRandGenerator()
+	rand := utils.DefaultRandGenerator()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		writeTo(
+		utils.WriteTo(
 			vm,
 			VM.ExecutionSegment,
 			vm.Context.Ap+uint64(rhsRef),
 			memory.MemoryValueFromInt(rand.Int63()),
 		)
-		rhs := Deref{rhsRef}
-		lhs := Immediate(randomFeltElement(rand))
+		rhs := hinter.Deref{Deref: rhsRef}
+		lhs := hinter.Immediate(utils.RandomFeltElement(rand))
 
 		hint := TestLessThan{
 			dst: dst,
@@ -68,17 +70,17 @@ func BenchmarkLessThan(b *testing.B) {
 }
 
 func BenchmarkSquareRoot(b *testing.B) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	var dst ApCellRef = 1
+	var dst hinter.ApCellRef = 1
 
-	rand := defaultRandGenerator()
+	rand := utils.DefaultRandGenerator()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		value := Immediate(randomFeltElement(rand))
+		value := hinter.Immediate(utils.RandomFeltElement(rand))
 		hint := SquareRoot{
 			value: value,
 			dst:   dst,
@@ -96,19 +98,19 @@ func BenchmarkSquareRoot(b *testing.B) {
 }
 
 func BenchmarkWideMul128(b *testing.B) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	var dstLow ApCellRef = 0
-	var dstHigh ApCellRef = 1
+	var dstLow hinter.ApCellRef = 0
+	var dstHigh hinter.ApCellRef = 1
 
-	rand := defaultRandGenerator()
+	rand := utils.DefaultRandGenerator()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		lhs := Immediate(randomFeltElementU128(rand))
-		rhs := Immediate(randomFeltElementU128(rand))
+		lhs := hinter.Immediate(utils.RandomFeltElementU128(rand))
+		rhs := hinter.Immediate(utils.RandomFeltElementU128(rand))
 
 		hint := WideMul128{
 			low:  dstLow,
@@ -128,19 +130,19 @@ func BenchmarkWideMul128(b *testing.B) {
 }
 
 func BenchmarkUintDivMod(b *testing.B) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	rand := defaultRandGenerator()
+	rand := utils.DefaultRandGenerator()
 
-	var quotient ApCellRef = 1
-	var remainder ApCellRef = 2
+	var quotient hinter.ApCellRef = 1
+	var remainder hinter.ApCellRef = 2
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		lhs := Immediate(randomFeltElement(rand))
-		rhs := Immediate(randomFeltElement(rand))
+		lhs := hinter.Immediate(utils.RandomFeltElement(rand))
+		rhs := hinter.Immediate(utils.RandomFeltElement(rand))
 		hint := DivMod{
 			lhs:       lhs,
 			rhs:       rhs,
@@ -158,24 +160,24 @@ func BenchmarkUintDivMod(b *testing.B) {
 }
 
 func BenchmarkUint256DivMod(b *testing.B) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	rand := defaultRandGenerator()
+	rand := utils.DefaultRandGenerator()
 
-	var quotient0 ApCellRef = 1
-	var quotient1 ApCellRef = 2
-	var remainder0 ApCellRef = 3
-	var remainder1 ApCellRef = 4
+	var quotient0 hinter.ApCellRef = 1
+	var quotient1 hinter.ApCellRef = 2
+	var remainder0 hinter.ApCellRef = 3
+	var remainder1 hinter.ApCellRef = 4
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 
-		dividend0 := Immediate(randomFeltElement(rand))
-		dividend1 := Immediate(randomFeltElement(rand))
-		divisor0 := Immediate(randomFeltElement(rand))
-		divisor1 := Immediate(randomFeltElement(rand))
+		dividend0 := hinter.Immediate(utils.RandomFeltElement(rand))
+		dividend1 := hinter.Immediate(utils.RandomFeltElement(rand))
+		divisor0 := hinter.Immediate(utils.RandomFeltElement(rand))
+		divisor1 := hinter.Immediate(utils.RandomFeltElement(rand))
 
 		hint := Uint256DivMod{
 			dividend0,
@@ -197,20 +199,20 @@ func BenchmarkUint256DivMod(b *testing.B) {
 }
 
 func BenchmarkLinearSplit(b *testing.B) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	rand := defaultRandGenerator()
+	rand := utils.DefaultRandGenerator()
 
-	var x ApCellRef = 0
-	var y ApCellRef = 1
+	var x hinter.ApCellRef = 0
+	var y hinter.ApCellRef = 1
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		value := Immediate(randomFeltElement(rand))
-		scalar := Immediate(randomFeltElement(rand))
-		maxX := Immediate(randomFeltElement(rand))
+		value := hinter.Immediate(utils.RandomFeltElement(rand))
+		scalar := hinter.Immediate(utils.RandomFeltElement(rand))
+		maxX := hinter.Immediate(utils.RandomFeltElement(rand))
 		hint := LinearSplit{
 			value:  value,
 			scalar: scalar,
@@ -229,27 +231,27 @@ func BenchmarkLinearSplit(b *testing.B) {
 }
 
 func BenchmarkUint512DivModByUint256(b *testing.B) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	rand := defaultRandGenerator()
+	rand := utils.DefaultRandGenerator()
 
-	var quotient0 ApCellRef = 1
-	var quotient1 ApCellRef = 2
-	var quotient2 ApCellRef = 3
-	var quotient3 ApCellRef = 4
-	var remainder0 ApCellRef = 5
-	var remainder1 ApCellRef = 6
+	var quotient0 hinter.ApCellRef = 1
+	var quotient1 hinter.ApCellRef = 2
+	var quotient2 hinter.ApCellRef = 3
+	var quotient3 hinter.ApCellRef = 4
+	var remainder0 hinter.ApCellRef = 5
+	var remainder1 hinter.ApCellRef = 6
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		dividend0 := Immediate(randomFeltElement(rand))
-		dividend1 := Immediate(randomFeltElement(rand))
-		dividend2 := Immediate(randomFeltElement(rand))
-		dividend3 := Immediate(randomFeltElement(rand))
-		divisor0 := Immediate(randomFeltElement(rand))
-		divisor1 := Immediate(randomFeltElement(rand))
+		dividend0 := hinter.Immediate(utils.RandomFeltElement(rand))
+		dividend1 := hinter.Immediate(utils.RandomFeltElement(rand))
+		dividend2 := hinter.Immediate(utils.RandomFeltElement(rand))
+		dividend3 := hinter.Immediate(utils.RandomFeltElement(rand))
+		divisor0 := hinter.Immediate(utils.RandomFeltElement(rand))
+		divisor1 := hinter.Immediate(utils.RandomFeltElement(rand))
 
 		hint := Uint512DivModByUint256{
 			dividend0,
@@ -276,22 +278,22 @@ func BenchmarkUint512DivModByUint256(b *testing.B) {
 }
 
 func BenchmarkUint256SquareRoot(b *testing.B) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	rand := defaultRandGenerator()
+	rand := utils.DefaultRandGenerator()
 
-	var sqrt0 ApCellRef = 1
-	var sqrt1 ApCellRef = 2
-	var remainderLow ApCellRef = 3
-	var remainderHigh ApCellRef = 4
-	var sqrtMul2MinusRemainderGeU128 ApCellRef = 5
+	var sqrt0 hinter.ApCellRef = 1
+	var sqrt1 hinter.ApCellRef = 2
+	var remainderLow hinter.ApCellRef = 3
+	var remainderHigh hinter.ApCellRef = 4
+	var sqrtMul2MinusRemainderGeU128 hinter.ApCellRef = 5
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		valueLow := Immediate(randomFeltElement(rand))
-		valueHigh := Immediate(randomFeltElement(rand))
+		valueLow := hinter.Immediate(utils.RandomFeltElement(rand))
+		valueHigh := hinter.Immediate(utils.RandomFeltElement(rand))
 		hint := Uint256SquareRoot{
 			valueLow:                     valueLow,
 			valueHigh:                    valueHigh,
@@ -312,15 +314,15 @@ func BenchmarkUint256SquareRoot(b *testing.B) {
 }
 
 func BenchmarkAssertLeIsFirstArcExcluded(b *testing.B) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	ctx := HintRunnerContext{
+	ctx := hinter.HintRunnerContext{
 		ExcludedArc: 0,
 	}
 
-	var skipExcludeAFlag ApCellRef = 1
+	var skipExcludeAFlag hinter.ApCellRef = 1
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -340,15 +342,15 @@ func BenchmarkAssertLeIsFirstArcExcluded(b *testing.B) {
 }
 
 func BenchmarkAssertLeIsSecondArcExcluded(b *testing.B) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	ctx := HintRunnerContext{
+	ctx := hinter.HintRunnerContext{
 		ExcludedArc: 0,
 	}
 
-	var skipExcludeBMinusA ApCellRef = 1
+	var skipExcludeBMinusA hinter.ApCellRef = 1
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -368,10 +370,10 @@ func BenchmarkAssertLeIsSecondArcExcluded(b *testing.B) {
 }
 
 func BenchmarkAssertLeFindSmallArc(b *testing.B) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 
-	rand := defaultRandGenerator()
-	ctx := HintRunnerContext{
+	rand := utils.DefaultRandGenerator()
+	ctx := hinter.HintRunnerContext{
 		ExcludedArc: 0,
 	}
 
@@ -380,19 +382,19 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// store the range check ptr at current ap
-		writeTo(
+		utils.WriteTo(
 			vm,
 			VM.ExecutionSegment,
 			vm.Context.Ap,
 			memory.MemoryValueFromMemoryAddress(&rangeCheckPtr),
 		)
 
-		r1 := randomFeltElement(rand)
-		r2 := randomFeltElement(rand)
+		r1 := utils.RandomFeltElement(rand)
+		r2 := utils.RandomFeltElement(rand)
 		hint := AssertLeFindSmallArc{
-			a:             Immediate(r1),
-			b:             Immediate(r2),
-			rangeCheckPtr: Deref{ApCellRef(0)},
+			a:             hinter.Immediate(r1),
+			b:             hinter.Immediate(r2),
+			rangeCheckPtr: hinter.Deref{Deref: hinter.ApCellRef(0)},
 		}
 
 		if err := hint.Execute(vm, &ctx); err != nil &&
@@ -407,14 +409,14 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 }
 
 func BenchmarkRandomEcPoint(b *testing.B) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 
 		hint := RandomEcPoint{
-			x: ApCellRef(0),
-			y: ApCellRef(1),
+			x: hinter.ApCellRef(0),
+			y: hinter.ApCellRef(1),
 		}
 
 		err := hint.Execute(vm)
@@ -428,16 +430,16 @@ func BenchmarkRandomEcPoint(b *testing.B) {
 }
 
 func BenchmarkFieldSqrt(b *testing.B) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 
-	rand := defaultRandGenerator()
+	rand := utils.DefaultRandGenerator()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 
 		hint := FieldSqrt{
-			val:  Immediate(randomFeltElement(rand)),
-			sqrt: ApCellRef(0),
+			val:  hinter.Immediate(utils.RandomFeltElement(rand)),
+			sqrt: hinter.ApCellRef(0),
 		}
 
 		err := hint.Execute(vm)

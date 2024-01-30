@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
+	hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/zero"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 )
 

@@ -1,8 +1,9 @@
-package hintrunner
+package hinter
 
 import (
 	"testing"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -10,9 +11,9 @@ import (
 )
 
 func TestGetAp(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 5
-	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap+7, memory.MemoryValueFromInt(11))
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap+7, memory.MemoryValueFromInt(11))
 
 	var apReg ApCellRef = 7
 	apAddr, err := apReg.Get(vm)
@@ -26,9 +27,9 @@ func TestGetAp(t *testing.T) {
 }
 
 func TestGetFp(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Fp = 15
-	writeTo(vm, VM.ExecutionSegment, vm.Context.Fp-7, memory.MemoryValueFromInt(11))
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Fp-7, memory.MemoryValueFromInt(11))
 
 	var fpReg FpCellRef = -7
 	fpAddr, err := fpReg.Get(vm)
@@ -41,9 +42,9 @@ func TestGetFp(t *testing.T) {
 }
 
 func TestResolveDeref(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 5
-	writeTo(vm, VM.ExecutionSegment, vm.Context.Ap+7, memory.MemoryValueFromInt(11))
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap+7, memory.MemoryValueFromInt(11))
 
 	var apCell ApCellRef = 7
 	deref := Deref{apCell}
@@ -55,14 +56,14 @@ func TestResolveDeref(t *testing.T) {
 }
 
 func TestResolveDoubleDerefPositiveOffset(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 5
-	writeTo(
+	utils.WriteTo(
 		vm,
 		VM.ExecutionSegment, vm.Context.Ap+7,
 		memory.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 0),
 	)
-	writeTo(
+	utils.WriteTo(
 		vm,
 		VM.ExecutionSegment, 14,
 		memory.MemoryValueFromInt(13),
@@ -77,14 +78,14 @@ func TestResolveDoubleDerefPositiveOffset(t *testing.T) {
 }
 
 func TestResolveDoubleDerefNegativeOffset(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 5
-	writeTo(
+	utils.WriteTo(
 		vm,
 		VM.ExecutionSegment, vm.Context.Ap+7,
 		memory.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 20),
 	)
-	writeTo(
+	utils.WriteTo(
 		vm,
 		VM.ExecutionSegment, 6,
 		memory.MemoryValueFromInt(13),
@@ -110,17 +111,17 @@ func TestResolveImmediate(t *testing.T) {
 }
 
 func TestResolveAddOp(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	// Set the information used by the lhs
 	vm.Context.Fp = 0
 	vm.Context.Ap = 5
-	writeTo(
+	utils.WriteTo(
 		vm,
 		VM.ExecutionSegment, vm.Context.Ap+7,
 		memory.MemoryValueFromSegmentAndOffset(4, 29),
 	)
 	// Set the information used by the rhs
-	writeTo(
+	utils.WriteTo(
 		vm,
 		VM.ExecutionSegment, vm.Context.Fp+20,
 		memory.MemoryValueFromInt(30),
@@ -136,9 +137,9 @@ func TestResolveAddOp(t *testing.T) {
 	operator := Add
 
 	bop := BinaryOp{
-		operator: operator,
-		lhs:      ap,
-		rhs:      deref,
+		Operator: operator,
+		Lhs:      ap,
+		Rhs:      deref,
 	}
 
 	res, err := bop.Resolve(vm)
@@ -147,17 +148,17 @@ func TestResolveAddOp(t *testing.T) {
 }
 
 func TestResolveMulOp(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	// Set the information used by the lhs
 	vm.Context.Fp = 0
 	vm.Context.Ap = 5
-	writeTo(
+	utils.WriteTo(
 		vm,
 		VM.ExecutionSegment, vm.Context.Ap+7,
 		memory.MemoryValueFromInt(100),
 	)
 	// Set the information used by the rhs
-	writeTo(
+	utils.WriteTo(
 		vm,
 		VM.ExecutionSegment, vm.Context.Fp+20,
 		memory.MemoryValueFromInt(5),
@@ -173,9 +174,9 @@ func TestResolveMulOp(t *testing.T) {
 	operator := Mul
 
 	bop := BinaryOp{
-		operator: operator,
-		lhs:      ap,
-		rhs:      deref,
+		Operator: operator,
+		Lhs:      ap,
+		Rhs:      deref,
 	}
 
 	res, err := bop.Resolve(vm)

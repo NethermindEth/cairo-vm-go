@@ -3,19 +3,22 @@ package hintrunner
 import (
 	"testing"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/stretchr/testify/require"
 )
 
 func TestExistingHint(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 3
 
-	var ap ApCellRef = 5
-	allocHint := AllocSegment{ap}
+	var ap hinter.ApCellRef = 5
+	allocHint := core.AllocSegment{Dst: ap}
 
-	hr := NewHintRunner(map[uint64]Hinter{
+	hr := NewHintRunner(map[uint64]hinter.Hinter{
 		10: &allocHint,
 	})
 
@@ -28,18 +31,18 @@ func TestExistingHint(t *testing.T) {
 	require.Equal(
 		t,
 		memory.MemoryValueFromSegmentAndOffset(2, 0),
-		readFrom(vm, VM.ExecutionSegment, vm.Context.Ap+5),
+		utils.ReadFrom(vm, VM.ExecutionSegment, vm.Context.Ap+5),
 	)
 }
 
 func TestNoHint(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 3
 
-	var ap ApCellRef = 5
-	allocHint := AllocSegment{ap}
+	var ap hinter.ApCellRef = 5
+	allocHint := core.AllocSegment{Dst: ap}
 
-	hr := NewHintRunner(map[uint64]Hinter{
+	hr := NewHintRunner(map[uint64]hinter.Hinter{
 		10: &allocHint,
 	})
 

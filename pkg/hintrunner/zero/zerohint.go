@@ -1,18 +1,17 @@
-package hintrunner
+package zero
 
 import (
 	"fmt"
 	"strconv"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	sn "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
-	"github.com/alecthomas/participle/v2"
 )
 
-var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp](participle.UseLookahead(10))
-
-func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64]Hinter, error) {
-	hints := make(map[uint64]Hinter)
+func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64]hinter.Hinter, error) {
+	hints := make(map[uint64]hinter.Hinter)
 	for counter, rawHints := range cairoZeroJson.Hints {
 		pc, err := strconv.ParseUint(counter, 10, 64)
 		if err != nil {
@@ -36,7 +35,7 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64]Hinter, error) {
 	return hints, nil
 }
 
-func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64) (Hinter, error) {
+func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64) (hinter.Hinter, error) {
 	cellRefParams, resOpParams, err := GetParameters(program, rawHint, hintPC)
 	if err != nil {
 		return nil, err
@@ -50,16 +49,16 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	}
 }
 
-func CreateAllocSegmentHinter(cellRefParams []CellRefer, resOpParams []ResOperander) (Hinter, error) {
+func CreateAllocSegmentHinter(cellRefParams []hinter.CellRefer, resOpParams []hinter.ResOperander) (hinter.Hinter, error) {
 	if len(cellRefParams)+len(resOpParams) != 0 {
 		return nil, fmt.Errorf("Expected no arguments for %s hint", sn.AllocSegmentName)
 	}
-	return &AllocSegment{dst: ApCellRef(0)}, nil
+	return &core.AllocSegment{Dst: hinter.ApCellRef(0)}, nil
 }
 
-func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) ([]CellRefer, []ResOperander, error) {
-	var cellRefParams []CellRefer
-	var resOpParams []ResOperander
+func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) ([]hinter.CellRefer, []hinter.ResOperander, error) {
+	var cellRefParams []hinter.CellRefer
+	var resOpParams []hinter.ResOperander
 	for referenceName := range hint.FlowTrackingData.ReferenceIds {
 		rawIdentifier, ok := zeroProgram.Identifiers[referenceName]
 		if !ok {
@@ -98,9 +97,9 @@ func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 			return nil, nil, err
 		}
 		switch result := param.(type) {
-		case CellRefer:
+		case hinter.CellRefer:
 			cellRefParams = append(cellRefParams, result)
-		case ResOperander:
+		case hinter.ResOperander:
 			resOpParams = append(resOpParams, result)
 		default:
 			return nil, nil, fmt.Errorf("unexpected type for identifier value %s", reference.Value)
@@ -108,13 +107,4 @@ func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 	}
 
 	return cellRefParams, resOpParams, nil
-}
-
-func ParseIdentifier(value string) (any, error) {
-	identifierExp, err := parser.ParseString("", value)
-	if err != nil {
-		return nil, err
-	}
-
-	return identifierExp.Evaluate()
 }

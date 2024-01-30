@@ -1,4 +1,4 @@
-package hintrunner
+package hinter
 
 import (
 	"fmt"
@@ -56,7 +56,7 @@ type ResOperander interface {
 }
 
 type Deref struct {
-	deref CellRefer
+	Deref CellRefer
 }
 
 func (deref Deref) String() string {
@@ -64,7 +64,7 @@ func (deref Deref) String() string {
 }
 
 func (deref Deref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
-	address, err := deref.deref.Get(vm)
+	address, err := deref.Deref.Get(vm)
 	if err != nil {
 		return mem.MemoryValue{}, fmt.Errorf("get cell: %w", err)
 	}
@@ -72,8 +72,8 @@ func (deref Deref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 }
 
 type DoubleDeref struct {
-	deref  CellRefer
-	offset int16
+	Deref  CellRefer
+	Offset int16
 }
 
 func (dderef DoubleDeref) String() string {
@@ -81,7 +81,7 @@ func (dderef DoubleDeref) String() string {
 }
 
 func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
-	lhsAddr, err := dderef.deref.Get(vm)
+	lhsAddr, err := dderef.Deref.Get(vm)
 	if err != nil {
 		return mem.UnknownValue, fmt.Errorf("get lhs address %s: %w", lhsAddr, err)
 	}
@@ -96,9 +96,9 @@ func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error
 		return mem.UnknownValue, err
 	}
 
-	newOffset, overflow := utils.SafeOffset(address.Offset, dderef.offset)
+	newOffset, overflow := utils.SafeOffset(address.Offset, dderef.Offset)
 	if overflow {
-		return mem.UnknownValue, fmt.Errorf("overflow %d + %d", address.Offset, dderef.offset)
+		return mem.UnknownValue, fmt.Errorf("overflow %d + %d", address.Offset, dderef.Offset)
 	}
 	resAddr := mem.MemoryAddress{
 		SegmentIndex: address.SegmentIndex,
@@ -133,9 +133,9 @@ const (
 )
 
 type BinaryOp struct {
-	operator Operator
-	lhs      CellRefer
-	rhs      ResOperander // (except DoubleDeref and BinaryOp)
+	Operator Operator
+	Lhs      CellRefer
+	Rhs      ResOperander // (except DoubleDeref and BinaryOp)
 }
 
 func (bop BinaryOp) String() string {
@@ -143,21 +143,21 @@ func (bop BinaryOp) String() string {
 }
 
 func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
-	lhsAddr, err := bop.lhs.Get(vm)
+	lhsAddr, err := bop.Lhs.Get(vm)
 	if err != nil {
-		return mem.UnknownValue, fmt.Errorf("get lhs address %s: %w", bop.lhs, err)
+		return mem.UnknownValue, fmt.Errorf("get lhs address %s: %w", bop.Lhs, err)
 	}
 	lhs, err := vm.Memory.ReadFromAddress(&lhsAddr)
 	if err != nil {
 		return mem.UnknownValue, fmt.Errorf("read lhs address %s: %w", lhsAddr, err)
 	}
 
-	rhs, err := bop.rhs.Resolve(vm)
+	rhs, err := bop.Rhs.Resolve(vm)
 	if err != nil {
 		return mem.UnknownValue, fmt.Errorf("resolve rhs operand %s: %w", rhs, err)
 	}
 
-	switch bop.operator {
+	switch bop.Operator {
 	case Add:
 		mv := mem.EmptyMemoryValueAs(lhs.IsAddress() || rhs.IsAddress())
 		err := mv.Add(&lhs, &rhs)
@@ -167,6 +167,6 @@ func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 		err := mv.Mul(&lhs, &rhs)
 		return mv, err
 	default:
-		return mem.UnknownValue, fmt.Errorf("unknown binary operator: %d", bop.operator)
+		return mem.UnknownValue, fmt.Errorf("unknown binary operator: %d", bop.Operator)
 	}
 }

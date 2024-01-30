@@ -1,4 +1,4 @@
-package hintrunner
+package core
 
 import (
 	"fmt"
@@ -7,33 +7,29 @@ import (
 
 	"github.com/holiman/uint256"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	u "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-type Hinter interface {
-	fmt.Stringer
-
-	Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error
-}
-
 type AllocSegment struct {
-	dst CellRefer
+	Dst hinter.CellRefer
 }
 
 func (hint *AllocSegment) String() string {
 	return "AllocSegment"
 }
 
-func (hint *AllocSegment) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint *AllocSegment) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	newSegment := vm.Memory.AllocateEmptySegment()
 	memAddress := mem.MemoryValueFromMemoryAddress(&newSegment)
 
-	regAddr, err := hint.dst.Get(vm)
+	regAddr, err := hint.Dst.Get(vm)
 	if err != nil {
-		return fmt.Errorf("get register %s: %w", hint.dst, err)
+		return fmt.Errorf("get register %s: %w", hint.Dst, err)
 	}
 
 	err = vm.Memory.WriteToAddress(&regAddr, &memAddress)
@@ -45,16 +41,16 @@ func (hint *AllocSegment) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) e
 }
 
 type TestLessThan struct {
-	dst CellRefer
-	lhs ResOperander
-	rhs ResOperander
+	dst hinter.CellRefer
+	lhs hinter.ResOperander
+	rhs hinter.ResOperander
 }
 
 func (hint *TestLessThan) String() string {
 	return "TestLessThan"
 }
 
-func (hint *TestLessThan) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint *TestLessThan) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	lhsVal, err := hint.lhs.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve lhs operand %s: %w", hint.lhs, err)
@@ -95,16 +91,16 @@ func (hint *TestLessThan) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) e
 }
 
 type TestLessThanOrEqual struct {
-	dst CellRefer
-	lhs ResOperander
-	rhs ResOperander
+	dst hinter.CellRefer
+	lhs hinter.ResOperander
+	rhs hinter.ResOperander
 }
 
 func (hint *TestLessThanOrEqual) String() string {
 	return "TestLessThanOrEqual"
 }
 
-func (hint *TestLessThanOrEqual) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint *TestLessThanOrEqual) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	lhsVal, err := hint.lhs.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve lhs operand %s: %w", hint.lhs, err)
@@ -145,14 +141,14 @@ func (hint *TestLessThanOrEqual) Execute(vm *VM.VirtualMachine, _ *HintRunnerCon
 }
 
 type LinearSplit struct {
-	value  ResOperander
-	scalar ResOperander
-	maxX   ResOperander
-	x      CellRefer
-	y      CellRefer
+	value  hinter.ResOperander
+	scalar hinter.ResOperander
+	maxX   hinter.ResOperander
+	x      hinter.CellRefer
+	y      hinter.CellRefer
 }
 
-func (hint LinearSplit) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint LinearSplit) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	value, err := hint.value.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve value operand %s: %w", hint.value, err)
@@ -225,17 +221,17 @@ func (hint LinearSplit) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) err
 }
 
 type WideMul128 struct {
-	lhs  ResOperander
-	rhs  ResOperander
-	high CellRefer
-	low  CellRefer
+	lhs  hinter.ResOperander
+	rhs  hinter.ResOperander
+	high hinter.CellRefer
+	low  hinter.CellRefer
 }
 
 func (hint *WideMul128) String() string {
 	return "WideMul128"
 }
 
-func (hint *WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint *WideMul128) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	mask := &utils.Uint256Max128
 
 	lhs, err := hint.lhs.Resolve(vm)
@@ -299,17 +295,17 @@ func (hint *WideMul128) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) err
 }
 
 type DivMod struct {
-	lhs       ResOperander
-	rhs       ResOperander
-	quotient  CellRefer
-	remainder CellRefer
+	lhs       hinter.ResOperander
+	rhs       hinter.ResOperander
+	quotient  hinter.CellRefer
+	remainder hinter.CellRefer
 }
 
 func (hint DivMod) String() string {
 	return "DivMod"
 }
 
-func (hint DivMod) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 
 	lhsVal, err := hint.lhs.Resolve(vm)
 	if err != nil {
@@ -382,21 +378,21 @@ func (hint DivMod) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
 }
 
 type Uint256DivMod struct {
-	dividend0  ResOperander
-	dividend1  ResOperander
-	divisor0   ResOperander
-	divisor1   ResOperander
-	quotient0  CellRefer
-	quotient1  CellRefer
-	remainder0 CellRefer
-	remainder1 CellRefer
+	dividend0  hinter.ResOperander
+	dividend1  hinter.ResOperander
+	divisor0   hinter.ResOperander
+	divisor1   hinter.ResOperander
+	quotient0  hinter.CellRefer
+	quotient1  hinter.CellRefer
+	remainder0 hinter.CellRefer
+	remainder1 hinter.CellRefer
 }
 
 func (hint Uint256DivMod) String() string {
 	return "Uint256DivMod"
 }
 
-func (hint Uint256DivMod) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint Uint256DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	dividend0, err := hint.dividend0.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve dividend0 operand %s: %v", hint.dividend0, err)
@@ -506,11 +502,11 @@ func (hint Uint256DivMod) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) e
 }
 
 type DebugPrint struct {
-	start ResOperander
-	end   ResOperander
+	start hinter.ResOperander
+	end   hinter.ResOperander
 }
 
-func (hint DebugPrint) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint DebugPrint) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	start, err := hint.start.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve start operand %s: %v", hint.start, err)
@@ -553,15 +549,15 @@ func (hint DebugPrint) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) erro
 }
 
 type SquareRoot struct {
-	value ResOperander
-	dst   CellRefer
+	value hinter.ResOperander
+	dst   hinter.CellRefer
 }
 
 func (hint *SquareRoot) String() string {
 	return "SquareRoot"
 }
 
-func (hint *SquareRoot) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint *SquareRoot) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	value, err := hint.value.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve value operand %s: %w", hint.value, err)
@@ -593,20 +589,20 @@ func (hint *SquareRoot) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) err
 }
 
 type Uint256SquareRoot struct {
-	valueLow                     ResOperander
-	valueHigh                    ResOperander
-	sqrt0                        CellRefer
-	sqrt1                        CellRefer
-	remainderLow                 CellRefer
-	remainderHigh                CellRefer
-	sqrtMul2MinusRemainderGeU128 CellRefer
+	valueLow                     hinter.ResOperander
+	valueHigh                    hinter.ResOperander
+	sqrt0                        hinter.CellRefer
+	sqrt1                        hinter.CellRefer
+	remainderLow                 hinter.CellRefer
+	remainderHigh                hinter.CellRefer
+	sqrtMul2MinusRemainderGeU128 hinter.CellRefer
 }
 
 func (hint Uint256SquareRoot) String() string {
 	return "Uint256SquareRoot"
 }
 
-func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	valueLow, err := hint.valueLow.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve valueLow operand %s: %v", hint.valueLow, err)
@@ -750,16 +746,16 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine, _ *HintRunnerContex
 //
 
 type AllocFelt252Dict struct {
-	SegmentArenaPtr ResOperander
+	SegmentArenaPtr hinter.ResOperander
 }
 
 func (hint *AllocFelt252Dict) String() string {
 	return "AllocFelt252Dict"
 }
-func (hint *AllocFelt252Dict) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
-	InitializeDictionaryManagerIfNot(ctx)
+func (hint *AllocFelt252Dict) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+	hinter.InitializeDictionaryManager(ctx)
 
-	arenaPtr, err := ResolveAsAddress(vm, hint.SegmentArenaPtr)
+	arenaPtr, err := hinter.ResolveAsAddress(vm, hint.SegmentArenaPtr)
 	if err != nil {
 		return fmt.Errorf("resolve segment arena pointer: %w", err)
 	}
@@ -804,21 +800,21 @@ func (hint *AllocFelt252Dict) Execute(vm *VM.VirtualMachine, ctx *HintRunnerCont
 }
 
 type Felt252DictEntryInit struct {
-	DictPtr ResOperander
-	Key     ResOperander
+	DictPtr hinter.ResOperander
+	Key     hinter.ResOperander
 }
 
 func (hint Felt252DictEntryInit) String() string {
 	return "Felt252DictEntryInit"
 }
 
-func (hint *Felt252DictEntryInit) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
-	dictPtr, err := ResolveAsAddress(vm, hint.DictPtr)
+func (hint *Felt252DictEntryInit) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+	dictPtr, err := hinter.ResolveAsAddress(vm, hint.DictPtr)
 	if err != nil {
 		return fmt.Errorf("resolve dictionary pointer: %w", err)
 	}
 
-	key, err := ResolveAsFelt(vm, hint.Key)
+	key, err := hinter.ResolveAsFelt(vm, hint.Key)
 	if err != nil {
 		return fmt.Errorf("resolve key: %w", err)
 	}
@@ -836,16 +832,16 @@ func (hint *Felt252DictEntryInit) Execute(vm *VM.VirtualMachine, ctx *HintRunner
 }
 
 type Felt252DictEntryUpdate struct {
-	DictPtr ResOperander
-	Value   ResOperander
+	DictPtr hinter.ResOperander
+	Value   hinter.ResOperander
 }
 
 func (hint Felt252DictEntryUpdate) String() string {
 	return "Felt252DictEntryUpdate"
 }
 
-func (hint *Felt252DictEntryUpdate) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
-	dictPtr, err := ResolveAsAddress(vm, hint.DictPtr)
+func (hint *Felt252DictEntryUpdate) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+	dictPtr, err := hinter.ResolveAsAddress(vm, hint.DictPtr)
 	if err != nil {
 		return fmt.Errorf("resolve dictionary pointer: %w", err)
 	}
@@ -872,21 +868,21 @@ func (hint *Felt252DictEntryUpdate) Execute(vm *VM.VirtualMachine, ctx *HintRunn
 }
 
 type GetSegmentArenaIndex struct {
-	DictIndex  CellRefer
-	DictEndPtr ResOperander
+	DictIndex  hinter.CellRefer
+	DictEndPtr hinter.ResOperander
 }
 
 func (hint *GetSegmentArenaIndex) String() string {
 	return "GetSegmentArenaIndex"
 }
 
-func (hint *GetSegmentArenaIndex) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+func (hint *GetSegmentArenaIndex) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 	dictIndex, err := hint.DictIndex.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get dict index: %w", err)
 	}
 
-	dictEndPtr, err := ResolveAsAddress(vm, hint.DictEndPtr)
+	dictEndPtr, err := hinter.ResolveAsAddress(vm, hint.DictEndPtr)
 	if err != nil {
 		return fmt.Errorf("resolve dict end pointer: %w", err)
 	}
@@ -905,29 +901,29 @@ func (hint *GetSegmentArenaIndex) Execute(vm *VM.VirtualMachine, ctx *HintRunner
 //
 
 type InitSquashData struct {
-	FirstKey     CellRefer
-	BigKeys      CellRefer
-	DictAccesses ResOperander
-	NumAccesses  ResOperander
+	FirstKey     hinter.CellRefer
+	BigKeys      hinter.CellRefer
+	DictAccesses hinter.ResOperander
+	NumAccesses  hinter.ResOperander
 }
 
 func (hint *InitSquashData) String() string {
 	return "InitSquashData"
 }
 
-func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 	// todo(rodro): Don't know if it could be called multiple times, or
-	err := InitializeSquashedDictionaryManager(ctx)
+	err := hinter.InitializeSquashedDictionaryManager(ctx)
 	if err != nil {
 		return err
 	}
 
-	dictAccessPtr, err := ResolveAsAddress(vm, hint.DictAccesses)
+	dictAccessPtr, err := hinter.ResolveAsAddress(vm, hint.DictAccesses)
 	if err != nil {
 		return fmt.Errorf("resolve dict access: %w", err)
 	}
 
-	numAccess, err := ResolveAsUint64(vm, hint.NumAccesses)
+	numAccess, err := hinter.ResolveAsUint64(vm, hint.NumAccesses)
 	if err != nil {
 		return fmt.Errorf("resolve num access: %w", err)
 	}
@@ -987,15 +983,15 @@ func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContex
 }
 
 type GetCurrentAccessIndex struct {
-	RangeCheckPtr ResOperander
+	RangeCheckPtr hinter.ResOperander
 }
 
 func (hint *GetCurrentAccessIndex) String() string {
 	return "GetCurrentAccessIndex"
 }
 
-func (hint *GetCurrentAccessIndex) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
-	rangeCheckPtr, err := ResolveAsAddress(vm, hint.RangeCheckPtr)
+func (hint *GetCurrentAccessIndex) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+	rangeCheckPtr, err := hinter.ResolveAsAddress(vm, hint.RangeCheckPtr)
 	if err != nil {
 		return fmt.Errorf("resolve range check pointer: %w", err)
 	}
@@ -1012,14 +1008,14 @@ func (hint *GetCurrentAccessIndex) Execute(vm *VM.VirtualMachine, ctx *HintRunne
 }
 
 type ShouldSkipSquashLoop struct {
-	ShouldSkipLoop CellRefer
+	ShouldSkipLoop hinter.CellRefer
 }
 
 func (hint *ShouldSkipSquashLoop) String() string {
 	return "ShouldSkipSquashLoop"
 }
 
-func (hint *ShouldSkipSquashLoop) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+func (hint *ShouldSkipSquashLoop) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 	shouldSkipLoopAddr, err := hint.ShouldSkipLoop.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get should skip loop address: %w", err)
@@ -1037,14 +1033,14 @@ func (hint *ShouldSkipSquashLoop) Execute(vm *VM.VirtualMachine, ctx *HintRunner
 }
 
 type GetCurrentAccessDelta struct {
-	IndexDeltaMinusOne CellRefer
+	IndexDeltaMinusOne hinter.CellRefer
 }
 
 func (hint *GetCurrentAccessDelta) String() string {
 	return "GetCurrentAccessDelta"
 }
 
-func (hint *GetCurrentAccessDelta) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+func (hint *GetCurrentAccessDelta) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 	indexDeltaPtr, err := hint.IndexDeltaMinusOne.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get index delta address: %w", err)
@@ -1068,14 +1064,14 @@ func (hint *GetCurrentAccessDelta) Execute(vm *VM.VirtualMachine, ctx *HintRunne
 }
 
 type ShouldContinueSquashLoop struct {
-	ShouldContinue CellRefer
+	ShouldContinue hinter.CellRefer
 }
 
 func (hint *ShouldContinueSquashLoop) String() string {
 	return "ShouldContinueSquashLoop"
 }
 
-func (hint *ShouldContinueSquashLoop) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+func (hint *ShouldContinueSquashLoop) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 	shouldContinuePtr, err := hint.ShouldContinue.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get should continue address: %w", err)
@@ -1093,14 +1089,14 @@ func (hint *ShouldContinueSquashLoop) Execute(vm *VM.VirtualMachine, ctx *HintRu
 }
 
 type GetNextDictKey struct {
-	NextKey CellRefer
+	NextKey hinter.CellRefer
 }
 
 func (hint *GetNextDictKey) String() string {
 	return "GetNextDictKey"
 }
 
-func (hint *GetNextDictKey) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+func (hint *GetNextDictKey) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 	nextKeyAddr, err := hint.NextKey.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get next key address: %w", err)
@@ -1116,25 +1112,25 @@ func (hint *GetNextDictKey) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContex
 }
 
 type Uint512DivModByUint256 struct {
-	dividend0  ResOperander
-	dividend1  ResOperander
-	dividend2  ResOperander
-	dividend3  ResOperander
-	divisor0   ResOperander
-	divisor1   ResOperander
-	quotient0  CellRefer
-	quotient1  CellRefer
-	quotient2  CellRefer
-	quotient3  CellRefer
-	remainder0 CellRefer
-	remainder1 CellRefer
+	dividend0  hinter.ResOperander
+	dividend1  hinter.ResOperander
+	dividend2  hinter.ResOperander
+	dividend3  hinter.ResOperander
+	divisor0   hinter.ResOperander
+	divisor1   hinter.ResOperander
+	quotient0  hinter.CellRefer
+	quotient1  hinter.CellRefer
+	quotient2  hinter.CellRefer
+	quotient3  hinter.CellRefer
+	remainder0 hinter.CellRefer
+	remainder1 hinter.CellRefer
 }
 
 func (hint Uint512DivModByUint256) String() string {
 	return "Uint512DivModByUint256"
 }
 
-func (hint Uint512DivModByUint256) Execute(vm *VM.VirtualMachine, _ *HintRunnerContext) error {
+func (hint Uint512DivModByUint256) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	dividend0, err := hint.dividend0.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve dividend0 operand %s: %v", hint.dividend0, err)
@@ -1289,16 +1285,16 @@ func (hint Uint512DivModByUint256) Execute(vm *VM.VirtualMachine, _ *HintRunnerC
 }
 
 type AllocConstantSize struct {
-	Size ResOperander
-	Dst  CellRefer
+	Size hinter.ResOperander
+	Dst  hinter.CellRefer
 }
 
 func (hint *AllocConstantSize) String() string {
 	return "AllocConstantSize"
 }
 
-func (hint *AllocConstantSize) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
-	size, err := ResolveAsUint64(vm, hint.Size)
+func (hint *AllocConstantSize) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+	size, err := hinter.ResolveAsUint64(vm, hint.Size)
 	if err != nil {
 		return fmt.Errorf("size to big: %w", err)
 	}
@@ -1323,16 +1319,16 @@ func (hint *AllocConstantSize) Execute(vm *VM.VirtualMachine, ctx *HintRunnerCon
 }
 
 type AssertLeFindSmallArc struct {
-	a             ResOperander
-	b             ResOperander
-	rangeCheckPtr ResOperander
+	a             hinter.ResOperander
+	b             hinter.ResOperander
+	rangeCheckPtr hinter.ResOperander
 }
 
 func (hint *AssertLeFindSmallArc) String() string {
 	return "AssertLeFindSmallArc"
 }
 
-func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 	primeOver3High := uint256.Int{6148914691236517206, 192153584101141168, 0, 0}
 	primeOver2High := uint256.Int{9223372036854775809, 288230376151711752, 0, 0}
 
@@ -1378,7 +1374,7 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunner
 	// Exclude the largest arc after sorting
 	ctx.ExcludedArc = lengthsAndIndices[2].Position
 
-	rangeCheckPtrMemAddr, err := ResolveAsAddress(vm, hint.rangeCheckPtr)
+	rangeCheckPtrMemAddr, err := hinter.ResolveAsAddress(vm, hint.rangeCheckPtr)
 	if err != nil {
 		return fmt.Errorf("resolve range check pointer: %w", err)
 	}
@@ -1438,14 +1434,14 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *HintRunner
 }
 
 type AssertLeIsFirstArcExcluded struct {
-	skipExcludeAFlag CellRefer
+	skipExcludeAFlag hinter.CellRefer
 }
 
 func (hint *AssertLeIsFirstArcExcluded) String() string {
 	return "AssertLeIsFirstArcExcluded"
 }
 
-func (hint *AssertLeIsFirstArcExcluded) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+func (hint *AssertLeIsFirstArcExcluded) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 	addr, err := hint.skipExcludeAFlag.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get skipExcludeAFlag addr: %v", err)
@@ -1462,14 +1458,14 @@ func (hint *AssertLeIsFirstArcExcluded) Execute(vm *VM.VirtualMachine, ctx *Hint
 }
 
 type AssertLeIsSecondArcExcluded struct {
-	skipExcludeBMinusA CellRefer
+	skipExcludeBMinusA hinter.CellRefer
 }
 
 func (hint *AssertLeIsSecondArcExcluded) String() string {
 	return "AssertLeIsSecondArcExcluded"
 }
 
-func (hint *AssertLeIsSecondArcExcluded) Execute(vm *VM.VirtualMachine, ctx *HintRunnerContext) error {
+func (hint *AssertLeIsSecondArcExcluded) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 	addr, err := hint.skipExcludeBMinusA.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get skipExcludeBMinusA addr: %v", err)
@@ -1486,8 +1482,8 @@ func (hint *AssertLeIsSecondArcExcluded) Execute(vm *VM.VirtualMachine, ctx *Hin
 }
 
 type RandomEcPoint struct {
-	x CellRefer
-	y CellRefer
+	x hinter.CellRefer
+	y hinter.CellRefer
 }
 
 func (hint *RandomEcPoint) String() string {
@@ -1501,9 +1497,9 @@ func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
 	betaFelt := f.Element{3863487492851900874, 7432612994240712710, 12360725113329547591, 88155977965380735}
 
 	var randomX, randomYSquared f.Element
-	rand := defaultRandGenerator()
+	rand := u.DefaultRandGenerator()
 	for {
-		randomX = randomFeltElement(rand)
+		randomX = u.RandomFeltElement(rand)
 		randomYSquared = f.Element{}
 		randomYSquared.Square(&randomX)
 		randomYSquared.Mul(&randomYSquared, &randomX)
@@ -1545,8 +1541,8 @@ func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
 }
 
 type FieldSqrt struct {
-	val  ResOperander
-	sqrt CellRefer
+	val  hinter.ResOperander
+	sqrt hinter.CellRefer
 }
 
 func (hint *FieldSqrt) String() string {
