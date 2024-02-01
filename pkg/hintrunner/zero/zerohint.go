@@ -64,19 +64,11 @@ func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 		if !ok {
 			return nil, nil, fmt.Errorf("missing identifier %s", referenceName)
 		}
-		identifier, ok := rawIdentifier.(map[string]any)
-		if !ok {
-			return nil, nil, fmt.Errorf("wrong structure for identifier")
-		}
 
-		rawReferences, ok := identifier["references"]
-		if !ok {
+		if len(rawIdentifier.References) == 0 {
 			return nil, nil, fmt.Errorf("identifier %s should have at least one reference", referenceName)
 		}
-		references, ok := rawReferences.([]zero.Reference)
-		if !ok {
-			return nil, nil, fmt.Errorf("expected a list of references")
-		}
+		references := rawIdentifier.References
 
 		// Go through the references in reverse order to get the one with biggest pc smaller or equal to the hint pc
 		var reference zero.Reference
