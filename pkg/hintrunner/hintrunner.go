@@ -35,7 +35,7 @@ func (hr *HintRunner) RunHint(vm *VM.VirtualMachine) error {
 		return nil
 	}
 
-	for _, hint := range hints{
+	for _, hint := range hints {
 		err := hint.Execute(vm, &hr.context)
 		if err != nil {
 			return fmt.Errorf("execute hint %s: %v", hint, err)

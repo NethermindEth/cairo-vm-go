@@ -17,13 +17,13 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64][]hinter.Hinter, 
 		if err != nil {
 			return nil, err
 		}
-		
-		for _, rawHint:= range rawHints{
+
+		for _, rawHint := range rawHints {
 			hint, err := GetHintFromCode(cairoZeroJson, rawHint, pc)
 			if err != nil {
 				return nil, err
 			}
-	
+
 			hints[pc] = append(hints[pc], hint)
 		}
 	}
