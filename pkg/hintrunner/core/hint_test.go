@@ -1,4 +1,4 @@
-package hintrunner
+package core
 
 import (
 	"io"
@@ -6,6 +6,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -15,12 +17,12 @@ import (
 )
 
 func TestAllocSegment(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 3
 	vm.Context.Fp = 0
 
-	var ap ApCellRef = 5
-	var fp FpCellRef = 9
+	var ap hinter.ApCellRef = 5
+	var fp hinter.FpCellRef = 9
 
 	alloc1 := AllocSegment{ap}
 	alloc2 := AllocSegment{fp}
@@ -31,7 +33,7 @@ func TestAllocSegment(t *testing.T) {
 	require.Equal(
 		t,
 		mem.MemoryValueFromSegmentAndOffset(2, 0),
-		readFrom(vm, VM.ExecutionSegment, vm.Context.Ap+5),
+		utils.ReadFrom(vm, VM.ExecutionSegment, vm.Context.Ap+5),
 	)
 
 	err = alloc2.Execute(vm, nil)
@@ -40,22 +42,22 @@ func TestAllocSegment(t *testing.T) {
 	require.Equal(
 		t,
 		mem.MemoryValueFromSegmentAndOffset(3, 0),
-		readFrom(vm, VM.ExecutionSegment, vm.Context.Fp+9),
+		utils.ReadFrom(vm, VM.ExecutionSegment, vm.Context.Fp+9),
 	)
 
 }
 
 func TestTestLessThanTrue(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
-	writeTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(23))
+	utils.WriteTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(23))
 
-	var dst ApCellRef = 1
-	var rhsRef FpCellRef = 0
-	rhs := Deref{rhsRef}
+	var dst hinter.ApCellRef = 1
+	var rhsRef hinter.FpCellRef = 0
+	rhs := hinter.Deref{Deref: rhsRef}
 
-	lhs := Immediate(f.NewElement(13))
+	lhs := hinter.Immediate(f.NewElement(13))
 
 	hint := TestLessThan{
 		dst: dst,
@@ -68,7 +70,7 @@ func TestTestLessThanTrue(t *testing.T) {
 	require.Equal(
 		t,
 		mem.MemoryValueFromInt(1),
-		readFrom(vm, VM.ExecutionSegment, 1),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 		"Expected the hint to evaluate to True when lhs is less than rhs",
 	)
 }
@@ -83,16 +85,16 @@ func TestTestLessThanFalse(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.expectedMsg, func(t *testing.T) {
-			vm := defaultVirtualMachine()
+			vm := VM.DefaultVirtualMachine()
 			vm.Context.Ap = 0
 			vm.Context.Fp = 0
-			writeTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(17))
+			utils.WriteTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(17))
 
-			var dst ApCellRef = 1
-			var rhsRef FpCellRef = 0
-			rhs := Deref{rhsRef}
+			var dst hinter.ApCellRef = 1
+			var rhsRef hinter.FpCellRef = 0
+			rhs := hinter.Deref{Deref: rhsRef}
 
-			lhs := Immediate(tc.lhsValue)
+			lhs := hinter.Immediate(tc.lhsValue)
 			hint := TestLessThan{
 				dst: dst,
 				lhs: lhs,
@@ -104,7 +106,7 @@ func TestTestLessThanFalse(t *testing.T) {
 			require.Equal(
 				t,
 				mem.EmptyMemoryValueAsFelt(),
-				readFrom(vm, VM.ExecutionSegment, 1),
+				utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 				tc.expectedMsg,
 			)
 		})
@@ -122,16 +124,16 @@ func TestTestLessThanOrEqTrue(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.expectedMsg, func(t *testing.T) {
-			vm := defaultVirtualMachine()
+			vm := VM.DefaultVirtualMachine()
 			vm.Context.Ap = 0
 			vm.Context.Fp = 0
-			writeTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(23))
+			utils.WriteTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(23))
 
-			var dst ApCellRef = 1
-			var rhsRef FpCellRef = 0
-			rhs := Deref{rhsRef}
+			var dst hinter.ApCellRef = 1
+			var rhsRef hinter.FpCellRef = 0
+			rhs := hinter.Deref{Deref: rhsRef}
 
-			lhs := Immediate(tc.lhsValue)
+			lhs := hinter.Immediate(tc.lhsValue)
 			hint := TestLessThanOrEqual{
 				dst: dst,
 				lhs: lhs,
@@ -143,7 +145,7 @@ func TestTestLessThanOrEqTrue(t *testing.T) {
 			require.Equal(
 				t,
 				mem.MemoryValueFromInt(1),
-				readFrom(vm, VM.ExecutionSegment, 1),
+				utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 				tc.expectedMsg,
 			)
 		})
@@ -151,16 +153,16 @@ func TestTestLessThanOrEqTrue(t *testing.T) {
 }
 
 func TestTestLessThanOrEqFalse(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
-	writeTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(17))
+	utils.WriteTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(17))
 
-	var dst ApCellRef = 1
-	var rhsRef FpCellRef = 0
-	rhs := Deref{rhsRef}
+	var dst hinter.ApCellRef = 1
+	var rhsRef hinter.FpCellRef = 0
+	rhs := hinter.Deref{Deref: rhsRef}
 
-	lhs := Immediate(f.NewElement(32))
+	lhs := hinter.Immediate(f.NewElement(32))
 
 	hint := TestLessThanOrEqual{
 		dst: dst,
@@ -173,21 +175,21 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 	require.Equal(
 		t,
 		mem.EmptyMemoryValueAsFelt(),
-		readFrom(vm, VM.ExecutionSegment, 1),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 		"Expected the hint to evaluate to False when lhs is larger",
 	)
 }
 
 func TestLinearSplit(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	value := Immediate(f.NewElement(42*223344 + 14))
-	scalar := Immediate(f.NewElement(42))
-	maxX := Immediate(f.NewElement(9999999999))
-	var x ApCellRef = 0
-	var y ApCellRef = 1
+	value := hinter.Immediate(f.NewElement(42*223344 + 14))
+	scalar := hinter.Immediate(f.NewElement(42))
+	maxX := hinter.Immediate(f.NewElement(9999999999))
+	var x hinter.ApCellRef = 0
+	var y hinter.ApCellRef = 1
 
 	hint := LinearSplit{
 		value:  value,
@@ -199,17 +201,17 @@ func TestLinearSplit(t *testing.T) {
 
 	err := hint.Execute(vm, nil)
 	require.NoError(t, err)
-	xx := readFrom(vm, VM.ExecutionSegment, 0)
+	xx := utils.ReadFrom(vm, VM.ExecutionSegment, 0)
 	require.Equal(t, xx, mem.MemoryValueFromInt(223344))
-	yy := readFrom(vm, VM.ExecutionSegment, 1)
+	yy := utils.ReadFrom(vm, VM.ExecutionSegment, 1)
 	require.Equal(t, yy, mem.MemoryValueFromInt(14))
 
-	vm = defaultVirtualMachine()
+	vm = VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
 	//Lower max_x
-	maxX = Immediate(f.NewElement(223343))
+	maxX = hinter.Immediate(f.NewElement(223343))
 	hint = LinearSplit{
 		value:  value,
 		scalar: scalar,
@@ -220,19 +222,19 @@ func TestLinearSplit(t *testing.T) {
 
 	err = hint.Execute(vm, nil)
 	require.NoError(t, err)
-	xx = readFrom(vm, VM.ExecutionSegment, 0)
+	xx = utils.ReadFrom(vm, VM.ExecutionSegment, 0)
 	require.Equal(t, xx, mem.MemoryValueFromInt(223343))
-	yy = readFrom(vm, VM.ExecutionSegment, 1)
+	yy = utils.ReadFrom(vm, VM.ExecutionSegment, 1)
 	require.Equal(t, yy, mem.MemoryValueFromInt(14+42))
 }
 
 func TestWideMul128(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	var dstLow ApCellRef = 1
-	var dstHigh ApCellRef = 2
+	var dstLow hinter.ApCellRef = 1
+	var dstHigh hinter.ApCellRef = 2
 
 	lhsBytes := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
 	lhsFelt, err := f.BigEndian.Element(&lhsBytes)
@@ -240,8 +242,8 @@ func TestWideMul128(t *testing.T) {
 
 	rhsFelt := f.NewElement(1<<8 + 1)
 
-	lhs := Immediate(lhsFelt)
-	rhs := Immediate(rhsFelt)
+	lhs := hinter.Immediate(lhsFelt)
+	rhs := hinter.Immediate(rhsFelt)
 
 	hint := WideMul128{
 		low:  dstLow,
@@ -259,149 +261,148 @@ func TestWideMul128(t *testing.T) {
 	require.Equal(
 		t,
 		mem.MemoryValueFromFieldElement(low),
-		readFrom(vm, VM.ExecutionSegment, 1),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 	)
 	require.Equal(
 		t,
 		mem.MemoryValueFromInt(1<<7),
-		readFrom(vm, VM.ExecutionSegment, 2),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 2),
 	)
 }
 
 func TestDivMod(t *testing.T) {
-    vm := defaultVirtualMachine()
-    vm.Context.Ap = 0
-    vm.Context.Fp = 0
+	vm := VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
 
-    var quo ApCellRef = 1
-    var rem ApCellRef = 2
+	var quo hinter.ApCellRef = 1
+	var rem hinter.ApCellRef = 2
 
-    lhsValue := Immediate(f.NewElement(89))
-    rhsValue := Immediate(f.NewElement(7))
+	lhsValue := hinter.Immediate(f.NewElement(89))
+	rhsValue := hinter.Immediate(f.NewElement(7))
 
-    hint := DivMod{
-        lhs:       lhsValue,
-        rhs:       rhsValue,
-        quotient:  quo,
-        remainder: rem,
-    }
+	hint := DivMod{
+		lhs:       lhsValue,
+		rhs:       rhsValue,
+		quotient:  quo,
+		remainder: rem,
+	}
 
-    err := hint.Execute(vm, nil)
-    require.Nil(t, err)
+	err := hint.Execute(vm, nil)
+	require.Nil(t, err)
 
-    expectedQuotient := mem.MemoryValueFromInt(12)
-    expectedRemainder := mem.MemoryValueFromInt(5)
+	expectedQuotient := mem.MemoryValueFromInt(12)
+	expectedRemainder := mem.MemoryValueFromInt(5)
 
-    actualQuotient := readFrom(vm, VM.ExecutionSegment, 1)
-    actualRemainder := readFrom(vm, VM.ExecutionSegment, 2)
+	actualQuotient := utils.ReadFrom(vm, VM.ExecutionSegment, 1)
+	actualRemainder := utils.ReadFrom(vm, VM.ExecutionSegment, 2)
 
-    require.Equal(t, expectedQuotient, actualQuotient)
-    require.Equal(t, expectedRemainder, actualRemainder)
+	require.Equal(t, expectedQuotient, actualQuotient)
+	require.Equal(t, expectedRemainder, actualRemainder)
 }
 
-func TestDivModDivisionByZeroError (t *testing.T) {
-	vm := defaultVirtualMachine()
-    vm.Context.Ap = 0
-    vm.Context.Fp = 0
+func TestDivModDivisionByZeroError(t *testing.T) {
+	vm := VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
 
-    var quo ApCellRef = 1
-    var rem ApCellRef = 2
+	var quo hinter.ApCellRef = 1
+	var rem hinter.ApCellRef = 2
 
-    lhsValue := Immediate(f.NewElement(43))
-    rhsValue := Immediate(f.NewElement(0))
+	lhsValue := hinter.Immediate(f.NewElement(43))
+	rhsValue := hinter.Immediate(f.NewElement(0))
 
-    hint := DivMod{
-        lhs:       lhsValue,
-        rhs:       rhsValue,
-        quotient:  quo,
-        remainder: rem,
-    }
+	hint := DivMod{
+		lhs:       lhsValue,
+		rhs:       rhsValue,
+		quotient:  quo,
+		remainder: rem,
+	}
 
-    err := hint.Execute(vm, nil)
-    require.ErrorContains(t, err, "cannot be divided by zero, rhs: 0")
+	err := hint.Execute(vm, nil)
+	require.ErrorContains(t, err, "cannot be divided by zero, rhs: 0")
 }
-
 
 func TestUint256DivMod(t *testing.T) {
 	t.Run("test uint256DivMod", func(t *testing.T) {
-		vm := defaultVirtualMachine()
+		vm := VM.DefaultVirtualMachine()
 		vm.Context.Ap = 0
 		vm.Context.Fp = 0
 
-		var quotient0 ApCellRef = 1
-		var quotient1 ApCellRef = 2
-		var remainder0 ApCellRef = 3
-		var remainder1 ApCellRef = 4
+		var quotient0 hinter.ApCellRef = 1
+		var quotient1 hinter.ApCellRef = 2
+		var remainder0 hinter.ApCellRef = 3
+		var remainder1 hinter.ApCellRef = 4
 
 		dividend0Felt := f.NewElement(89)
 		dividend1Felt := f.NewElement(72)
-	
+
 		divisor0Felt := f.NewElement(3)
 		divisor1Felt := f.NewElement(7)
-	
+
 		hint := Uint256DivMod{
-			dividend0:  Immediate(dividend0Felt),
-			dividend1:  Immediate(dividend1Felt),
-			divisor0:   Immediate(divisor0Felt),
-			divisor1:   Immediate(divisor1Felt),
+			dividend0:  hinter.Immediate(dividend0Felt),
+			dividend1:  hinter.Immediate(dividend1Felt),
+			divisor0:   hinter.Immediate(divisor0Felt),
+			divisor1:   hinter.Immediate(divisor1Felt),
 			quotient0:  quotient0,
 			quotient1:  quotient1,
 			remainder0: remainder0,
 			remainder1: remainder1,
 		}
-	
+
 		err := hint.Execute(vm, nil)
 		require.Nil(t, err)
-	
+
 		quotient0Val := &f.Element{}
 		_, err = quotient0Val.SetString("10")
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(quotient0Val),
-			readFrom(vm, VM.ExecutionSegment, 1),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 		)
-	
+
 		quotient1Val := &f.Element{}
 		quotient1Val.SetZero()
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(quotient1Val),
-			readFrom(vm, VM.ExecutionSegment, 2),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 2),
 		)
-	
+
 		remainder0Val := &f.Element{}
 		_, err = remainder0Val.SetString("59")
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(remainder0Val),
-			readFrom(vm, VM.ExecutionSegment, 3),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 3),
 		)
-	
+
 		remainder1Val := &f.Element{}
 		_, err = remainder1Val.SetString("2")
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(remainder1Val),
-			readFrom(vm, VM.ExecutionSegment, 4),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 4),
 		)
 	})
 	t.Run("test uint256DivMod with 256-bit numbers;", func(t *testing.T) {
-		vm := defaultVirtualMachine()
+		vm := VM.DefaultVirtualMachine()
 		vm.Context.Ap = 0
 		vm.Context.Fp = 0
 
-		var quotient0 ApCellRef = 1
-		var quotient1 ApCellRef = 2
-		var remainder0 ApCellRef = 3
-		var remainder1 ApCellRef = 4
+		var quotient0 hinter.ApCellRef = 1
+		var quotient1 hinter.ApCellRef = 2
+		var remainder0 hinter.ApCellRef = 3
+		var remainder1 hinter.ApCellRef = 4
 
 		b := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
 
@@ -411,73 +412,72 @@ func TestUint256DivMod(t *testing.T) {
 
 		divisor0Felt := f.NewElement(1<<8 + 1)
 		divisor1Felt := f.NewElement(1<<8 + 1)
-	
+
 		hint := Uint256DivMod{
-			dividend0:  Immediate(dividend0Felt),
-			dividend1:  Immediate(dividend1Felt),
-			divisor0:   Immediate(divisor0Felt),
-			divisor1:   Immediate(divisor1Felt),
+			dividend0:  hinter.Immediate(dividend0Felt),
+			dividend1:  hinter.Immediate(dividend1Felt),
+			divisor0:   hinter.Immediate(divisor0Felt),
+			divisor1:   hinter.Immediate(divisor1Felt),
 			quotient0:  quotient0,
 			quotient1:  quotient1,
 			remainder0: remainder0,
 			remainder1: remainder1,
 		}
-	
+
 		err = hint.Execute(vm, nil)
 		require.Nil(t, err)
-	
+
 		quotient0Val := &f.Element{}
 		quotient0Val.SetOne()
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(quotient0Val),
-			readFrom(vm, VM.ExecutionSegment, 1),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 		)
-	
+
 		quotient1Val := &f.Element{}
 		quotient1Val.SetZero()
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(quotient1Val),
-			readFrom(vm, VM.ExecutionSegment, 2),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 2),
 		)
-	
+
 		remainder0Val := &f.Element{}
 		_, err = remainder0Val.SetString("170141183460469231731687303715884105471")
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(remainder0Val),
-			readFrom(vm, VM.ExecutionSegment, 3),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 3),
 		)
-	
+
 		remainder1Val := &f.Element{}
 		remainder1Val.SetZero()
 		require.Nil(t, err)
-	
+
 		require.Equal(
 			t,
 			mem.MemoryValueFromFieldElement(remainder1Val),
-			readFrom(vm, VM.ExecutionSegment, 4),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 4),
 		)
 	})
-}	
+}
 
 func TestUint256DivModDivisionByZero(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	var dstQuotient0 ApCellRef = 1
-	var dstQuotient1 ApCellRef = 2
-	var dstRemainder0 ApCellRef = 3
-	var dstRemainder1 ApCellRef = 4
-
+	var dstQuotient0 hinter.ApCellRef = 1
+	var dstQuotient1 hinter.ApCellRef = 2
+	var dstRemainder0 hinter.ApCellRef = 3
+	var dstRemainder1 hinter.ApCellRef = 4
 
 	dividend0Felt := f.NewElement(1<<8 + 1)
 	dividend1Felt := f.NewElement(1<<8 + 1)
@@ -486,10 +486,10 @@ func TestUint256DivModDivisionByZero(t *testing.T) {
 	divisor1Felt := f.NewElement(0)
 
 	hint := Uint256DivMod{
-		dividend0:  Immediate(dividend0Felt),
-		dividend1:  Immediate(dividend1Felt),
-		divisor0:   Immediate(divisor0Felt),
-		divisor1:   Immediate(divisor1Felt),
+		dividend0:  hinter.Immediate(dividend0Felt),
+		dividend1:  hinter.Immediate(dividend1Felt),
+		divisor0:   hinter.Immediate(divisor0Felt),
+		divisor1:   hinter.Immediate(divisor1Felt),
 		quotient0:  dstQuotient0,
 		quotient1:  dstQuotient1,
 		remainder0: dstRemainder0,
@@ -501,19 +501,19 @@ func TestUint256DivModDivisionByZero(t *testing.T) {
 }
 
 func TestWideMul128IncorrectRange(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	var dstLow ApCellRef = 1
-	var dstHigh ApCellRef = 2
+	var dstLow hinter.ApCellRef = 1
+	var dstHigh hinter.ApCellRef = 2
 
 	lhsBytes := new(uint256.Int).Lsh(uint256.NewInt(1), 128).Bytes32()
 	lhsFelt, err := f.BigEndian.Element(&lhsBytes)
 	require.NoError(t, err)
 
-	lhs := Immediate(lhsFelt)
-	rhs := Immediate(f.NewElement(1))
+	lhs := hinter.Immediate(lhsFelt)
+	rhs := hinter.Immediate(f.NewElement(1))
 
 	hint := WideMul128{
 		low:  dstLow,
@@ -532,20 +532,20 @@ func TestDebugPrint(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	writeTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 2))
-	writeTo(vm, VM.ExecutionSegment, 1, mem.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 5))
-	writeTo(vm, VM.ExecutionSegment, 2, mem.MemoryValueFromInt(10))
-	writeTo(vm, VM.ExecutionSegment, 3, mem.MemoryValueFromInt(20))
-	writeTo(vm, VM.ExecutionSegment, 4, mem.MemoryValueFromInt(30))
+	utils.WriteTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 2))
+	utils.WriteTo(vm, VM.ExecutionSegment, 1, mem.MemoryValueFromSegmentAndOffset(VM.ExecutionSegment, 5))
+	utils.WriteTo(vm, VM.ExecutionSegment, 2, mem.MemoryValueFromInt(10))
+	utils.WriteTo(vm, VM.ExecutionSegment, 3, mem.MemoryValueFromInt(20))
+	utils.WriteTo(vm, VM.ExecutionSegment, 4, mem.MemoryValueFromInt(30))
 
-	var starRef ApCellRef = 0
-	var endRef ApCellRef = 1
-	start := Deref{starRef}
-	end := Deref{endRef}
+	var starRef hinter.ApCellRef = 0
+	var endRef hinter.ApCellRef = 1
+	start := hinter.Deref{Deref: starRef}
+	end := hinter.Deref{Deref: endRef}
 	hint := DebugPrint{
 		start: start,
 		end:   end,
@@ -563,12 +563,12 @@ func TestDebugPrint(t *testing.T) {
 }
 
 func TestSquareRoot(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
-	var dst ApCellRef = 1
+	var dst hinter.ApCellRef = 1
 
-	value := Immediate(f.NewElement(36))
+	value := hinter.Immediate(f.NewElement(36))
 	hint := SquareRoot{
 		value: value,
 		dst:   dst,
@@ -580,11 +580,11 @@ func TestSquareRoot(t *testing.T) {
 	require.Equal(
 		t,
 		mem.MemoryValueFromInt(6),
-		readFrom(vm, VM.ExecutionSegment, 1),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 	)
 
 	dst = 2
-	value = Immediate(f.NewElement(30))
+	value = hinter.Immediate(f.NewElement(30))
 	hint = SquareRoot{
 		value: value,
 		dst:   dst,
@@ -596,23 +596,23 @@ func TestSquareRoot(t *testing.T) {
 	require.Equal(
 		t,
 		mem.MemoryValueFromInt(5),
-		readFrom(vm, VM.ExecutionSegment, 2),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 2),
 	)
 }
 
 func TestUint256SquareRootLow(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	var sqrt0 ApCellRef = 1
-	var sqrt1 ApCellRef = 2
-	var remainderLow ApCellRef = 3
-	var remainderHigh ApCellRef = 4
-	var sqrtMul2MinusRemainderGeU128 ApCellRef = 5
+	var sqrt0 hinter.ApCellRef = 1
+	var sqrt1 hinter.ApCellRef = 2
+	var remainderLow hinter.ApCellRef = 3
+	var remainderHigh hinter.ApCellRef = 4
+	var sqrtMul2MinusRemainderGeU128 hinter.ApCellRef = 5
 
-	valueLow := Immediate(f.NewElement(121))
-	valueHigh := Immediate(f.NewElement(0))
+	valueLow := hinter.Immediate(f.NewElement(121))
+	valueHigh := hinter.Immediate(f.NewElement(0))
 
 	hint := Uint256SquareRoot{
 		valueLow:                     valueLow,
@@ -634,11 +634,11 @@ func TestUint256SquareRootLow(t *testing.T) {
 	expectedRemainderHigh := mem.MemoryValueFromInt(0)
 	expectedSqrtMul2MinusRemainderGeU128 := mem.MemoryValueFromInt(0)
 
-	actualSqrt0 := readFrom(vm, VM.ExecutionSegment, 1)
-	actualSqrt1 := readFrom(vm, VM.ExecutionSegment, 2)
-	actualRemainderLow := readFrom(vm, VM.ExecutionSegment, 3)
-	actualRemainderHigh := readFrom(vm, VM.ExecutionSegment, 4)
-	actualSqrtMul2MinusRemainderGeU128 := readFrom(vm, VM.ExecutionSegment, 5)
+	actualSqrt0 := utils.ReadFrom(vm, VM.ExecutionSegment, 1)
+	actualSqrt1 := utils.ReadFrom(vm, VM.ExecutionSegment, 2)
+	actualRemainderLow := utils.ReadFrom(vm, VM.ExecutionSegment, 3)
+	actualRemainderHigh := utils.ReadFrom(vm, VM.ExecutionSegment, 4)
+	actualSqrtMul2MinusRemainderGeU128 := utils.ReadFrom(vm, VM.ExecutionSegment, 5)
 
 	require.Equal(t, expectedSqrt0, actualSqrt0)
 	require.Equal(t, expectedSqrt1, actualSqrt1)
@@ -648,18 +648,18 @@ func TestUint256SquareRootLow(t *testing.T) {
 }
 
 func TestUint256SquareRootHigh(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	var sqrt0 ApCellRef = 1
-	var sqrt1 ApCellRef = 2
-	var remainderLow ApCellRef = 3
-	var remainderHigh ApCellRef = 4
-	var sqrtMul2MinusRemainderGeU128 ApCellRef = 5
+	var sqrt0 hinter.ApCellRef = 1
+	var sqrt1 hinter.ApCellRef = 2
+	var remainderLow hinter.ApCellRef = 3
+	var remainderHigh hinter.ApCellRef = 4
+	var sqrtMul2MinusRemainderGeU128 hinter.ApCellRef = 5
 
-	valueLow := Immediate(f.NewElement(0))
-	valueHigh := Immediate(f.NewElement(1 << 8))
+	valueLow := hinter.Immediate(f.NewElement(0))
+	valueHigh := hinter.Immediate(f.NewElement(1 << 8))
 
 	hint := Uint256SquareRoot{
 		valueLow:                     valueLow,
@@ -681,11 +681,11 @@ func TestUint256SquareRootHigh(t *testing.T) {
 	expectedRemainderHigh := mem.MemoryValueFromInt(0)
 	expectedSqrtMul2MinusRemainderGeU128 := mem.MemoryValueFromInt(0)
 
-	actualSqrt0 := readFrom(vm, VM.ExecutionSegment, 1)
-	actualSqrt1 := readFrom(vm, VM.ExecutionSegment, 2)
-	actualRemainderLow := readFrom(vm, VM.ExecutionSegment, 3)
-	actualRemainderHigh := readFrom(vm, VM.ExecutionSegment, 4)
-	actualSqrtMul2MinusRemainderGeU128 := readFrom(vm, VM.ExecutionSegment, 5)
+	actualSqrt0 := utils.ReadFrom(vm, VM.ExecutionSegment, 1)
+	actualSqrt1 := utils.ReadFrom(vm, VM.ExecutionSegment, 2)
+	actualRemainderLow := utils.ReadFrom(vm, VM.ExecutionSegment, 3)
+	actualRemainderHigh := utils.ReadFrom(vm, VM.ExecutionSegment, 4)
+	actualSqrtMul2MinusRemainderGeU128 := utils.ReadFrom(vm, VM.ExecutionSegment, 5)
 
 	require.Equal(t, expectedSqrt0, actualSqrt0)
 	require.Equal(t, expectedSqrt1, actualSqrt1)
@@ -695,18 +695,18 @@ func TestUint256SquareRootHigh(t *testing.T) {
 }
 
 func TestUint256SquareRoot(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	var sqrt0 ApCellRef = 1
-	var sqrt1 ApCellRef = 2
-	var remainderLow ApCellRef = 3
-	var remainderHigh ApCellRef = 4
-	var sqrtMul2MinusRemainderGeU128 ApCellRef = 5
+	var sqrt0 hinter.ApCellRef = 1
+	var sqrt1 hinter.ApCellRef = 2
+	var remainderLow hinter.ApCellRef = 3
+	var remainderHigh hinter.ApCellRef = 4
+	var sqrtMul2MinusRemainderGeU128 hinter.ApCellRef = 5
 
-	valueLow := Immediate(f.NewElement(51))
-	valueHigh := Immediate(f.NewElement(1024))
+	valueLow := hinter.Immediate(f.NewElement(51))
+	valueHigh := hinter.Immediate(f.NewElement(1024))
 
 	hint := Uint256SquareRoot{
 		valueLow:                     valueLow,
@@ -728,11 +728,11 @@ func TestUint256SquareRoot(t *testing.T) {
 	expectedRemainderHigh := mem.MemoryValueFromInt(0)
 	expectedSqrtMul2MinusRemainderGeU128 := mem.MemoryValueFromInt(0)
 
-	actualSqrt0 := readFrom(vm, VM.ExecutionSegment, 1)
-	actualSqrt1 := readFrom(vm, VM.ExecutionSegment, 2)
-	actualRemainderLow := readFrom(vm, VM.ExecutionSegment, 3)
-	actualRemainderHigh := readFrom(vm, VM.ExecutionSegment, 4)
-	actualSqrtMul2MinusRemainderGeU128 := readFrom(vm, VM.ExecutionSegment, 5)
+	actualSqrt0 := utils.ReadFrom(vm, VM.ExecutionSegment, 1)
+	actualSqrt1 := utils.ReadFrom(vm, VM.ExecutionSegment, 2)
+	actualRemainderLow := utils.ReadFrom(vm, VM.ExecutionSegment, 3)
+	actualRemainderHigh := utils.ReadFrom(vm, VM.ExecutionSegment, 4)
+	actualSqrtMul2MinusRemainderGeU128 := utils.ReadFrom(vm, VM.ExecutionSegment, 5)
 
 	require.Equal(t, expectedSqrt0, actualSqrt0)
 	require.Equal(t, expectedSqrt1, actualSqrt1)
@@ -742,16 +742,16 @@ func TestUint256SquareRoot(t *testing.T) {
 }
 
 func TestUint512DivModByUint256(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	var dstQuotient0 ApCellRef = 1
-	var dstQuotient1 ApCellRef = 2
-	var dstQuotient2 ApCellRef = 3
-	var dstQuotient3 ApCellRef = 4
-	var dstRemainder0 ApCellRef = 5
-	var dstRemainder1 ApCellRef = 6
+	var dstQuotient0 hinter.ApCellRef = 1
+	var dstQuotient1 hinter.ApCellRef = 2
+	var dstQuotient2 hinter.ApCellRef = 3
+	var dstQuotient3 hinter.ApCellRef = 4
+	var dstRemainder0 hinter.ApCellRef = 5
+	var dstRemainder1 hinter.ApCellRef = 6
 
 	b := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
 
@@ -766,12 +766,12 @@ func TestUint512DivModByUint256(t *testing.T) {
 	divisor1Felt := f.NewElement(1<<8 + 1)
 
 	hint := Uint512DivModByUint256{
-		dividend0:  Immediate(dividend0Felt),
-		dividend1:  Immediate(dividend1Felt),
-		dividend2:  Immediate(dividend2Felt),
-		dividend3:  Immediate(dividend3Felt),
-		divisor0:   Immediate(divisor0Felt),
-		divisor1:   Immediate(divisor1Felt),
+		dividend0:  hinter.Immediate(dividend0Felt),
+		dividend1:  hinter.Immediate(dividend1Felt),
+		dividend2:  hinter.Immediate(dividend2Felt),
+		dividend3:  hinter.Immediate(dividend3Felt),
+		divisor0:   hinter.Immediate(divisor0Felt),
+		divisor1:   hinter.Immediate(divisor1Felt),
 		quotient0:  dstQuotient0,
 		quotient1:  dstQuotient1,
 		quotient2:  dstQuotient2,
@@ -790,7 +790,7 @@ func TestUint512DivModByUint256(t *testing.T) {
 	require.Equal(
 		t,
 		mem.MemoryValueFromFieldElement(quotient0),
-		readFrom(vm, VM.ExecutionSegment, 1),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 	)
 
 	quotient1 := &f.Element{}
@@ -800,7 +800,7 @@ func TestUint512DivModByUint256(t *testing.T) {
 	require.Equal(
 		t,
 		mem.MemoryValueFromFieldElement(quotient1),
-		readFrom(vm, VM.ExecutionSegment, 2),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 2),
 	)
 
 	quotient2 := &f.Element{}
@@ -809,7 +809,7 @@ func TestUint512DivModByUint256(t *testing.T) {
 	require.Equal(
 		t,
 		mem.MemoryValueFromFieldElement(quotient2),
-		readFrom(vm, VM.ExecutionSegment, 3),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 3),
 	)
 
 	quotient3 := &f.Element{}
@@ -818,7 +818,7 @@ func TestUint512DivModByUint256(t *testing.T) {
 	require.Equal(
 		t,
 		mem.MemoryValueFromFieldElement(quotient3),
-		readFrom(vm, VM.ExecutionSegment, 4),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 4),
 	)
 
 	remainder0 := &f.Element{}
@@ -828,7 +828,7 @@ func TestUint512DivModByUint256(t *testing.T) {
 	require.Equal(
 		t,
 		mem.MemoryValueFromFieldElement(remainder0),
-		readFrom(vm, VM.ExecutionSegment, 5),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 5),
 	)
 
 	remainder1 := &f.Element{}
@@ -837,21 +837,21 @@ func TestUint512DivModByUint256(t *testing.T) {
 	require.Equal(
 		t,
 		mem.MemoryValueFromFieldElement(remainder1),
-		readFrom(vm, VM.ExecutionSegment, 6),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 6),
 	)
 }
 
 func TestUint512DivModByUint256DivisionByZero(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	var dstQuotient0 ApCellRef = 1
-	var dstQuotient1 ApCellRef = 2
-	var dstQuotient2 ApCellRef = 3
-	var dstQuotient3 ApCellRef = 4
-	var dstRemainder0 ApCellRef = 5
-	var dstRemainder1 ApCellRef = 6
+	var dstQuotient0 hinter.ApCellRef = 1
+	var dstQuotient1 hinter.ApCellRef = 2
+	var dstQuotient2 hinter.ApCellRef = 3
+	var dstQuotient3 hinter.ApCellRef = 4
+	var dstRemainder0 hinter.ApCellRef = 5
+	var dstRemainder1 hinter.ApCellRef = 6
 
 	b := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
 
@@ -866,12 +866,12 @@ func TestUint512DivModByUint256DivisionByZero(t *testing.T) {
 	divisor1Felt := f.NewElement(0)
 
 	hint := Uint512DivModByUint256{
-		dividend0:  Immediate(dividend0Felt),
-		dividend1:  Immediate(dividend1Felt),
-		dividend2:  Immediate(dividend2Felt),
-		dividend3:  Immediate(dividend3Felt),
-		divisor0:   Immediate(divisor0Felt),
-		divisor1:   Immediate(divisor1Felt),
+		dividend0:  hinter.Immediate(dividend0Felt),
+		dividend1:  hinter.Immediate(dividend1Felt),
+		dividend2:  hinter.Immediate(dividend2Felt),
+		dividend3:  hinter.Immediate(dividend3Felt),
+		divisor0:   hinter.Immediate(divisor0Felt),
+		divisor1:   hinter.Immediate(divisor1Felt),
 		quotient0:  dstQuotient0,
 		quotient1:  dstQuotient1,
 		quotient2:  dstQuotient2,
@@ -885,12 +885,12 @@ func TestUint512DivModByUint256DivisionByZero(t *testing.T) {
 }
 
 func TestAllocConstantSize(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 
-	sizes := [3]Immediate{
-		Immediate(f.NewElement(15)),
-		Immediate(f.NewElement(13)),
-		Immediate(f.NewElement(2)),
+	sizes := [3]hinter.Immediate{
+		hinter.Immediate(f.NewElement(15)),
+		hinter.Immediate(f.NewElement(13)),
+		hinter.Immediate(f.NewElement(2)),
 	}
 	expectedAddrs := [3]mem.MemoryAddress{
 		{SegmentIndex: 2, Offset: 0},
@@ -898,20 +898,20 @@ func TestAllocConstantSize(t *testing.T) {
 		{SegmentIndex: 2, Offset: 28},
 	}
 
-	ctx := HintRunnerContext{
+	ctx := hinter.HintRunnerContext{
 		ConstantSizeSegment: mem.UnknownAddress,
 	}
 
 	for i := 0; i < len(sizes); i++ {
 		hint := AllocConstantSize{
-			Dst:  ApCellRef(i),
+			Dst:  hinter.ApCellRef(i),
 			Size: sizes[i],
 		}
 
 		err := hint.Execute(vm, &ctx)
 		require.NoError(t, err)
 
-		val := readFrom(vm, 1, uint64(i))
+		val := utils.ReadFrom(vm, 1, uint64(i))
 		ptr, err := val.MemoryAddress()
 		require.NoError(t, err)
 
@@ -979,20 +979,20 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 	for _, tc := range testCases {
 		// Need to create a new VM for each test case
 		// to avoid rewriting in same memory address error
-		vm := defaultVirtualMachine()
+		vm := VM.DefaultVirtualMachine()
 		vm.Context.Ap = 0
 		vm.Context.Fp = 0
 		// The addr that the range check pointer will point to
 		addr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
-		writeTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&addr))
+		utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&addr))
 
 		hint := AssertLeFindSmallArc{
-			a:             Immediate(tc.aFelt),
-			b:             Immediate(tc.bFelt),
-			rangeCheckPtr: Deref{ApCellRef(0)},
+			a:             hinter.Immediate(tc.aFelt),
+			b:             hinter.Immediate(tc.bFelt),
+			rangeCheckPtr: hinter.Deref{Deref: hinter.ApCellRef(0)},
 		}
 
-		ctx := HintRunnerContext{
+		ctx := hinter.HintRunnerContext{
 			ExcludedArc: 0,
 		}
 
@@ -1002,11 +1002,11 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 
 		expectedPtr := mem.MemoryValueFromMemoryAddress(&addr)
 
-		actualRem1 := readFrom(vm, 2, 0)
-		actualQuotient1 := readFrom(vm, 2, 1)
-		actualRem2 := readFrom(vm, 2, 2)
-		actualQuotient2 := readFrom(vm, 2, 3)
-		actual1Ptr := readFrom(vm, 1, 0)
+		actualRem1 := utils.ReadFrom(vm, 2, 0)
+		actualQuotient1 := utils.ReadFrom(vm, 2, 1)
+		actualRem2 := utils.ReadFrom(vm, 2, 2)
+		actualQuotient2 := utils.ReadFrom(vm, 2, 3)
+		actual1Ptr := utils.ReadFrom(vm, 1, 0)
 
 		require.Equal(t, tc.expectedRem1, actualRem1)
 		require.Equal(t, tc.expectedQuotient1, actualQuotient1)
@@ -1018,13 +1018,13 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 }
 
 func TestAssertLeIsFirstArcExcluded(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 
-	ctx := HintRunnerContext{
+	ctx := hinter.HintRunnerContext{
 		ExcludedArc: 2,
 	}
 
-	var flag ApCellRef = 0
+	var flag hinter.ApCellRef = 0
 
 	hint := AssertLeIsFirstArcExcluded{
 		skipExcludeAFlag: flag,
@@ -1036,21 +1036,21 @@ func TestAssertLeIsFirstArcExcluded(t *testing.T) {
 
 	expected := mem.MemoryValueFromInt(1)
 
-	actual := readFrom(vm, VM.ExecutionSegment, 0)
+	actual := utils.ReadFrom(vm, VM.ExecutionSegment, 0)
 
 	require.Equal(t, expected, actual)
 }
 
 func TestAssertLeIsSecondArcExcluded(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	ctx := HintRunnerContext{
+	ctx := hinter.HintRunnerContext{
 		ExcludedArc: 1,
 	}
 
-	var flag ApCellRef = 0
+	var flag hinter.ApCellRef = 0
 
 	hint := AssertLeIsSecondArcExcluded{
 		skipExcludeBMinusA: flag,
@@ -1062,19 +1062,19 @@ func TestAssertLeIsSecondArcExcluded(t *testing.T) {
 
 	expected := mem.MemoryValueFromInt(0)
 
-	actual := readFrom(vm, VM.ExecutionSegment, 0)
+	actual := utils.ReadFrom(vm, VM.ExecutionSegment, 0)
 
 	require.Equal(t, expected, actual)
 }
 
 func TestRandomEcPoint(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
 	hint := RandomEcPoint{
-		x: ApCellRef(0),
-		y: ApCellRef(1),
+		x: hinter.ApCellRef(0),
+		y: hinter.ApCellRef(1),
 	}
 
 	err := hint.Execute(vm)
@@ -1088,8 +1088,8 @@ func TestRandomEcPoint(t *testing.T) {
 		&f.Element{12193331470568888984, 1737428559173019240, 11500517745011090163, 245183001587853482},
 	)
 
-	actualX := readFrom(vm, VM.ExecutionSegment, 0)
-	actualY := readFrom(vm, VM.ExecutionSegment, 1)
+	actualX := utils.ReadFrom(vm, VM.ExecutionSegment, 0)
+	actualY := utils.ReadFrom(vm, VM.ExecutionSegment, 1)
 
 	require.Equal(t, expectedX, actualX)
 	require.Equal(t, expectedY, actualY)
@@ -1115,14 +1115,14 @@ func TestFieldSqrt(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			vm := defaultVirtualMachine()
+			vm := VM.DefaultVirtualMachine()
 			vm.Context.Ap = 0
 			vm.Context.Fp = 0
 
-			value := Immediate(f.NewElement(tc.value))
+			value := hinter.Immediate(f.NewElement(tc.value))
 			hint := FieldSqrt{
 				val:  value,
-				sqrt: ApCellRef(0),
+				sqrt: hinter.ApCellRef(0),
 			}
 
 			err := hint.Execute(vm)
@@ -1131,9 +1131,8 @@ func TestFieldSqrt(t *testing.T) {
 			require.Equal(
 				t,
 				mem.MemoryValueFromInt(tc.expected),
-				readFrom(vm, VM.ExecutionSegment, 0),
+				utils.ReadFrom(vm, VM.ExecutionSegment, 0),
 			)
 		})
 	}
 }
-

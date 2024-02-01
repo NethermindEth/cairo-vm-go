@@ -1,18 +1,17 @@
-package hintrunner
+package zero
 
 import (
 	"fmt"
 	"strconv"
 
-	"github.com/alecthomas/participle/v2"
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	sn "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 )
 
-var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp](participle.UseLookahead(10))
-
-func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64][]Hinter, error) {
-	hints := make(map[uint64][]Hinter)
+func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64][]hinter.Hinter, error) {
+	hints := make(map[uint64][]hinter.Hinter)
 	for counter, rawHints := range cairoZeroJson.Hints {
 		pc, err := strconv.ParseUint(counter, 10, 64)
 		if err != nil {
@@ -32,7 +31,7 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64][]Hinter, error) 
 	return hints, nil
 }
 
-func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64) (Hinter, error){
+func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64) (hinter.Hinter, error) {
 	cellRefParams, resOpParams, err := GetParameters(program, rawHint, hintPC)
 	if err != nil {
 		return nil, err
@@ -46,45 +45,37 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	}
 }
 
-func CreateAllocSegmentHinter(cellRefParams []CellRefer, resOpParams []ResOperander) (Hinter, error) {
-	if len(cellRefParams) + len(resOpParams) != 0 {
+func CreateAllocSegmentHinter(cellRefParams []hinter.CellRefer, resOpParams []hinter.ResOperander) (hinter.Hinter, error) {
+	if len(cellRefParams)+len(resOpParams) != 0 {
 		return nil, fmt.Errorf("Expected no arguments for %s hint", sn.AllocSegmentName)
 	}
-	return &AllocSegment { dst: ApCellRef(0) }, nil
+	return &core.AllocSegment{Dst: hinter.ApCellRef(0)}, nil
 }
 
-func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) ([]CellRefer, []ResOperander, error) {
-	var cellRefParams []CellRefer
-	var resOpParams []ResOperander
+func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) ([]hinter.CellRefer, []hinter.ResOperander, error) {
+	var cellRefParams []hinter.CellRefer
+	var resOpParams []hinter.ResOperander
 	for referenceName := range hint.FlowTrackingData.ReferenceIds {
 		rawIdentifier, ok := zeroProgram.Identifiers[referenceName]
 		if !ok {
 			return nil, nil, fmt.Errorf("missing identifier %s", referenceName)
 		}
-		identifier, ok := rawIdentifier.(map[string]any)
-		if !ok {
-			return nil, nil, fmt.Errorf("wrong structure for identifier")
-		}
 
-		rawReferences, ok := identifier["references"]
-		if !ok {
+		if len(rawIdentifier.References) == 0 {
 			return nil, nil, fmt.Errorf("identifier %s should have at least one reference", referenceName)
 		}
-		references, ok := rawReferences.([]zero.Reference)
-		if !ok {
-			return nil, nil, fmt.Errorf("expected a list of references")
-		}
+		references := rawIdentifier.References
 
 		// Go through the references in reverse order to get the one with biggest pc smaller or equal to the hint pc
 		var reference zero.Reference
 		ok = false
 		for i := len(references) - 1; i >= 0; i-- {
-			if references[i].Pc <= hintPC{
+			if references[i].Pc <= hintPC {
 				reference = references[i]
 				ok = true
 				break
-			} 
-		}	
+			}
+		}
 		if !ok {
 			return nil, nil, fmt.Errorf("identifier %s should have a reference with pc smaller or equal than %d", referenceName, hintPC)
 		}
@@ -93,10 +84,10 @@ func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 		if err != nil {
 			return nil, nil, err
 		}
-		switch result := param.(type){
-		case CellRefer:
+		switch result := param.(type) {
+		case hinter.CellRefer:
 			cellRefParams = append(cellRefParams, result)
-		case ResOperander:
+		case hinter.ResOperander:
 			resOpParams = append(resOpParams, result)
 		default:
 			return nil, nil, fmt.Errorf("unexpected type for identifier value %s", reference.Value)
@@ -104,13 +95,4 @@ func GetParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 	}
 
 	return cellRefParams, resOpParams, nil
-}
-
-func ParseIdentifier(value string) (any, error) {
-	identifierExp, err := parser.ParseString("", value)
-	if err != nil {
-		return nil, err
-	}
-
-	return identifierExp.Evaluate()
 }

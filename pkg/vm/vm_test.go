@@ -17,7 +17,7 @@ import (
 // ===========================================
 
 func TestGetCellApDst(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	const offDest = 15
@@ -40,7 +40,7 @@ func TestGetCellApDst(t *testing.T) {
 }
 
 func TestGetCellFpDst(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	const (
@@ -67,7 +67,7 @@ func TestGetCellFpDst(t *testing.T) {
 }
 
 func TestGetCellApDstWithDifferentOffsets(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	offsets := []int{-10, -5, 0, 5, 10}
 
 	for _, offset := range offsets {
@@ -92,7 +92,7 @@ func TestGetCellApDstWithDifferentOffsets(t *testing.T) {
 }
 
 func TestGetCellDstApNegativeOffset(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	const (
 		offDest = -2
@@ -117,7 +117,7 @@ func TestGetCellDstApNegativeOffset(t *testing.T) {
 }
 
 func TestGetCellDstFpNegativeOffset(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	const (
 		offDest = -19
@@ -142,7 +142,7 @@ func TestGetCellDstFpNegativeOffset(t *testing.T) {
 }
 
 func TestGetApCellOp0(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	const (
@@ -168,7 +168,7 @@ func TestGetApCellOp0(t *testing.T) {
 
 func TestGetApCellOp0NegOff(t *testing.T) {
 	// Op0 & Ap & Negative case
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	const (
@@ -194,7 +194,7 @@ func TestGetApCellOp0NegOff(t *testing.T) {
 
 func TestGetFpCellOp0(t *testing.T) {
 	// Op0 & Fp & Positive case
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	const (
@@ -220,7 +220,7 @@ func TestGetFpCellOp0(t *testing.T) {
 
 func TestGetFpCellOp0NegOff(t *testing.T) {
 	// Op0 & Fp & Negative case
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	const (
@@ -328,7 +328,7 @@ func TestGetOp0NegCellOp1(t *testing.T) {
 }
 
 func TestGetFpPosCellOp1(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	const offOp1 = 2  // target relative to Fp
@@ -350,7 +350,7 @@ func TestGetFpPosCellOp1(t *testing.T) {
 }
 
 func TestGetFpNegCellOp1(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	const offOp1 = -2 // target relative to Fp
@@ -372,7 +372,7 @@ func TestGetFpNegCellOp1(t *testing.T) {
 }
 
 func TestGetApPosCellOp1(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	vm.Context.Ap = 3 // "allocation pointer"
@@ -393,7 +393,7 @@ func TestGetApPosCellOp1(t *testing.T) {
 }
 
 func TestGetApNegCellOp1(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	// Prepare vm with dummy values
 	vm.Context.Ap = 3 // "allocation pointer"
@@ -414,7 +414,7 @@ func TestGetApNegCellOp1(t *testing.T) {
 }
 
 func TestInferOperandSub(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{
 		Opcode: a.OpCodeAssertEq,
 		Res:    a.AddOperands,
@@ -436,7 +436,7 @@ func TestInferOperandSub(t *testing.T) {
 }
 
 func TestInferResOp1(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{
 		Opcode: a.OpCodeAssertEq,
 		Res:    a.Op1,
@@ -457,7 +457,7 @@ func TestInferResOp1(t *testing.T) {
 }
 
 func TestComputeResUnconstrained(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{Res: a.Unconstrained}
 	res, err := vm.computeRes(&instruction, nil, nil)
 	require.NoError(t, err)
@@ -465,7 +465,7 @@ func TestComputeResUnconstrained(t *testing.T) {
 }
 
 func TestComputeResOp1(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{Res: a.Op1}
 
 	writeToDataSegment(vm, 3, 15)
@@ -479,7 +479,7 @@ func TestComputeResOp1(t *testing.T) {
 }
 
 func TestComputeAddResAddrToFelt(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{Res: a.AddOperands}
 
 	op0Addr := writeToDataSegment(
@@ -495,7 +495,7 @@ func TestComputeAddResAddrToFelt(t *testing.T) {
 }
 
 func TestComputeAddResFeltToAddr(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{Res: a.AddOperands}
 
 	op0Addr := writeToDataSegment(vm, 2, 8)
@@ -510,7 +510,7 @@ func TestComputeAddResFeltToAddr(t *testing.T) {
 }
 
 func TestComputeAddResBothAddrs(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{Res: a.AddOperands}
 
 	op0Addr := writeToDataSegment(
@@ -525,7 +525,7 @@ func TestComputeAddResBothAddrs(t *testing.T) {
 }
 
 func TestComputeAddResBothFelts(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{Res: a.AddOperands}
 
 	op0Addr := writeToDataSegment(vm, 3, 10)
@@ -540,7 +540,7 @@ func TestComputeAddResBothFelts(t *testing.T) {
 // Felt should be Positive or Negative. Thus four test cases
 func TestComputeMulResPosToPosFelt(t *testing.T) {
 	//Positive Felt to Positive Felt compute
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{Res: a.MulOperands}
 
 	op0Addr := writeToDataSegment(vm, 3, 10)
@@ -553,7 +553,7 @@ func TestComputeMulResPosToPosFelt(t *testing.T) {
 }
 
 func TestComputeMulResNegToPosFelts(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{Res: a.MulOperands}
 	//Negative to Positive
 	op0Addr := writeToDataSegment(vm, 3, -10)
@@ -566,7 +566,7 @@ func TestComputeMulResNegToPosFelts(t *testing.T) {
 }
 
 func TestComputeMulResPosToNegFelt(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{Res: a.MulOperands}
 	//Positive to Negative
 	op0Addr := writeToDataSegment(vm, 3, 10)
@@ -579,7 +579,7 @@ func TestComputeMulResPosToNegFelt(t *testing.T) {
 }
 
 func TestComputeMulResNegToNegFelt(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{Res: a.MulOperands}
 	//Netagive to Negative
 	op0Addr := writeToDataSegment(vm, 3, -10)
@@ -594,7 +594,7 @@ func TestComputeMulResNegToNegFelt(t *testing.T) {
 // Multiplication does not involve addresses
 // three failing cases
 func TestComputeMulResAddrToFelt(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{Res: a.MulOperands}
 
 	op0Addr := writeToDataSegment(
@@ -607,7 +607,7 @@ func TestComputeMulResAddrToFelt(t *testing.T) {
 }
 
 func TestComputeMulResFeltToAddr(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{Res: a.MulOperands}
 
 	op0Addr := writeToDataSegment(vm, 3, 10)
@@ -620,7 +620,7 @@ func TestComputeMulResFeltToAddr(t *testing.T) {
 }
 
 func TestComputeMulResBothAddrs(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	instruction := a.Instruction{Res: a.MulOperands}
 
 	op0Addr := writeToDataSegment(
@@ -635,7 +635,7 @@ func TestComputeMulResBothAddrs(t *testing.T) {
 }
 
 func TestOpcodeAssertionAssertEq(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	dstAddr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
 
 	instruction := a.Instruction{
@@ -652,7 +652,7 @@ func TestOpcodeAssertionAssertEq(t *testing.T) {
 }
 
 func TestUpdatePcNextInstr(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
 	instruction := a.Instruction{
@@ -666,7 +666,7 @@ func TestUpdatePcNextInstr(t *testing.T) {
 }
 
 func TestUpdatePcNextInstrImm(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
 	instruction := a.Instruction{
@@ -680,7 +680,7 @@ func TestUpdatePcNextInstrImm(t *testing.T) {
 }
 
 func TestUpdatePcJump(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	instruction := a.Instruction{
 		PcUpdate: a.PcUpdateJump,
@@ -707,7 +707,7 @@ func TestUpdatePcJump(t *testing.T) {
 }
 
 func TestUpdatePcJumpRel(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	vm.Context.Pc = mem.MemoryAddress{SegmentIndex: 0, Offset: 3}
 	relAddr := uint64(10)
@@ -723,7 +723,7 @@ func TestUpdatePcJumpRel(t *testing.T) {
 }
 
 func TestUpdatePcJnz(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	relAddr := uint64(10)
 	writeToDataSegment(vm, 0, 10)      //dstCell
 	writeToDataSegment(vm, 1, relAddr) //op1Cell
@@ -743,7 +743,7 @@ func TestUpdatePcJnz(t *testing.T) {
 }
 
 func TestUpdatePcJnzDstZero(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	writeToDataSegment(vm, 0, 0) //dstCell
 	dstAddr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
 
@@ -760,7 +760,7 @@ func TestUpdatePcJnzDstZero(t *testing.T) {
 }
 
 func TestUpdatePcJnzDstZeroImm(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	writeToDataSegment(vm, 0, 0) //dstCell
 	dstAddr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 0}
 
@@ -777,7 +777,7 @@ func TestUpdatePcJnzDstZeroImm(t *testing.T) {
 }
 
 func TestUpdateApSameAp(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	vm.Context.Ap = 5
 	instruction := a.Instruction{
@@ -791,7 +791,7 @@ func TestUpdateApSameAp(t *testing.T) {
 }
 
 func TestUpdateApAddImmPos(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	vm.Context.Ap = 5
 	instruction := a.Instruction{
@@ -807,7 +807,7 @@ func TestUpdateApAddImmPos(t *testing.T) {
 }
 
 func TestUpdateApAddImmNeg(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	vm.Context.Ap = 10
 	instruction := a.Instruction{
@@ -823,7 +823,7 @@ func TestUpdateApAddImmNeg(t *testing.T) {
 }
 
 func TestUpdateApAddOne(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	vm.Context.Ap = 5
 	instruction := a.Instruction{
@@ -837,7 +837,7 @@ func TestUpdateApAddOne(t *testing.T) {
 }
 
 func TestUpdateApAddTwo(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	vm.Context.Ap = 5
 	instruction := a.Instruction{
@@ -851,7 +851,7 @@ func TestUpdateApAddTwo(t *testing.T) {
 }
 
 func TestUpdateFp(t *testing.T) {
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	vm.Context.Fp = 5
 	instruction := a.Instruction{
@@ -1004,7 +1004,7 @@ func TestRunStepInstructions(t *testing.T) {
 
 		assert.Equal(t, vm.Context.Pc.Offset, uint64(15))
 	})
-	
+
 	t.Run("test abs jump with address", func(t *testing.T) {
 		vm := defaultVirtualMachineWithCode("jmp abs [ap];")
 		setInitialReg(vm, 1, 1, 0)
@@ -1136,7 +1136,7 @@ func TestMemoryRelocationWithFelt(t *testing.T) {
 	// segment 0: [2, -, -, 3]
 	// segment 3: [5, -, 7, -, 11, 13]
 	// relocated: [-, 2, -, -, 3, 5, -, 7, -, 11, 13]
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 
 	updateMemoryWithValues(
 		vm.Memory,
@@ -1189,7 +1189,7 @@ func TestMemoryRelocationWithAddress(t *testing.T) {
 	//      four:   1,  6, 10, 15,
 	// ]
 
-	vm := defaultVirtualMachine()
+	vm := DefaultVirtualMachine()
 	updateMemoryWithValues(
 		vm.Memory,
 		[]memoryWrite{
@@ -1356,35 +1356,6 @@ func writeToDataSegment(vm *VirtualMachine, index uint64, value any) mem.MemoryA
 		SegmentIndex: ExecutionSegment,
 		Offset:       index,
 	}
-}
-
-func defaultVirtualMachine() *VirtualMachine {
-	return defaultVirtualMachineWithBytecode(nil)
-}
-
-func defaultVirtualMachineWithCode(code string) *VirtualMachine {
-	bytecode, err := a.CasmToBytecode(code)
-	if err != nil {
-		panic(err)
-	}
-
-	return defaultVirtualMachineWithBytecode(bytecode)
-}
-
-func defaultVirtualMachineWithBytecode(bytecode []*f.Element) *VirtualMachine {
-	memory := mem.InitializeEmptyMemory()
-	_, err := memory.AllocateSegment(bytecode)
-	if err != nil {
-		panic(err)
-	}
-
-	memory.AllocateEmptySegment()
-
-	vm, err := NewVirtualMachine(Context{}, memory, VirtualMachineConfig{})
-	if err != nil {
-		panic(err)
-	}
-	return vm
 }
 
 // create a pointer to an Element

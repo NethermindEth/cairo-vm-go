@@ -2,8 +2,9 @@ package zero
 
 import (
 	"encoding/json"
-	starknetParser "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"os"
+
+	starknetParser "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 )
 
 type FlowTrackingData struct {
@@ -73,10 +74,25 @@ type ZeroProgram struct {
 	Hints            map[string][]Hint        `json:"hints"`
 	CompilerVersion  string                   `json:"version"`
 	MainScope        string                   `json:"main_scope"`
-	Identifiers      map[string]any           `json:"identifiers"`
+	Identifiers      map[string]*Identifier   `json:"identifiers"`
 	ReferenceManager ReferenceManager         `json:"reference_manager"`
 	Attributes       []AttributeScope         `json:"attributes"`
 	DebugInfo        DebugInfo                `json:"debug_info"`
+}
+
+type Identifier struct {
+	FullName       string         `json:"full_name"`
+	IdentifierType string         `json:"type"`
+	CairoType      string         `json:"cairo_type"`
+	Destination    string         `json:"destination"`
+	Pc             int            `json:"pc"`
+	Size           int            `json:"size"`
+	Members        map[string]any `json:"members"`
+	References     []Reference    `json:"references"`
+
+	// These fields are listed as any-typed fields before we need them.
+	Decorators any `json:"decorators"`
+	Value      any `json:"value"`
 }
 
 func (z ZeroProgram) MarshalToFile(filepath string) error {

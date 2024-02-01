@@ -1,5 +1,6 @@
-.PHONY: build clean test help format staticcheck pre-commit
+.PHONY: lint build clean test help format staticcheck pre-commit
 
+GOPATH_DIR :=`go env GOPATH`
 BINARY_DIR := bin
 BINARY_NAME := cairo-vm
 
@@ -54,3 +55,9 @@ testall:
 bench:
 	@echo "Running benchmarks..."
 	@go run scripts/benchmark.go --pkg=${PKG_NAME} --test=${TEST}
+
+# Use the same version of the golangci-lint as in our CI linting config.
+lint:
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3
+	golangci-lint run ./... -v
+	@echo "lint: all good!"

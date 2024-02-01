@@ -1,4 +1,17 @@
+linters:
+  disable-all: true # We'll use an explicit allow-list below
+  enable:
+    # First, list all the default ones:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    # Then add something extra (this list may grow over time):
+    - gofmt
 run:
   skip-files:
     - pkg/assembler/grammar.go
-    - pkg/hintrunner/hintparser.go
+    - pkg/hintrunner/zero/hintparser.go
