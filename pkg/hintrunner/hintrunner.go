@@ -12,10 +12,10 @@ type HintRunner struct {
 	// Execution context required by certain hints such as dictionaires
 	context h.HintRunnerContext
 	// A mapping from program counter to hint implementation
-	hints map[uint64]h.Hinter
+	hints map[uint64][]h.Hinter
 }
 
-func NewHintRunner(hints map[uint64]h.Hinter) HintRunner {
+func NewHintRunner(hints map[uint64][]h.Hinter) HintRunner {
 	return HintRunner{
 		// Context for certain hints that require it. Each manager is
 		// initialized only when required by the hint
@@ -30,14 +30,17 @@ func NewHintRunner(hints map[uint64]h.Hinter) HintRunner {
 }
 
 func (hr *HintRunner) RunHint(vm *VM.VirtualMachine) error {
-	hint := hr.hints[vm.Context.Pc.Offset]
-	if hint == nil {
+	hints := hr.hints[vm.Context.Pc.Offset]
+	if len(hints) == 0 {
 		return nil
 	}
 
-	err := hint.Execute(vm, &hr.context)
-	if err != nil {
-		return fmt.Errorf("execute hint %s: %v", hint, err)
+	for _, hint := range hints {
+		err := hint.Execute(vm, &hr.context)
+		if err != nil {
+			return fmt.Errorf("execute hint %s: %v", hint, err)
+		}
 	}
+
 	return nil
 }

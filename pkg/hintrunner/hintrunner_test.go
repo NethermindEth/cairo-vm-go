@@ -18,8 +18,8 @@ func TestExistingHint(t *testing.T) {
 	var ap hinter.ApCellRef = 5
 	allocHint := core.AllocSegment{Dst: ap}
 
-	hr := NewHintRunner(map[uint64]hinter.Hinter{
-		10: &allocHint,
+	hr := NewHintRunner(map[uint64][]hinter.Hinter{
+		10: {&allocHint},
 	})
 
 	vm.Context.Pc = memory.MemoryAddress{
@@ -42,8 +42,8 @@ func TestNoHint(t *testing.T) {
 	var ap hinter.ApCellRef = 5
 	allocHint := core.AllocSegment{Dst: ap}
 
-	hr := NewHintRunner(map[uint64]hinter.Hinter{
-		10: &allocHint,
+	hr := NewHintRunner(map[uint64][]hinter.Hinter{
+		10: {&allocHint},
 	})
 
 	vm.Context.Pc = memory.MemoryAddress{

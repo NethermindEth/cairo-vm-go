@@ -10,26 +10,22 @@ import (
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 )
 
-func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64]hinter.Hinter, error) {
-	hints := make(map[uint64]hinter.Hinter)
+func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64][]hinter.Hinter, error) {
+	hints := make(map[uint64][]hinter.Hinter)
 	for counter, rawHints := range cairoZeroJson.Hints {
 		pc, err := strconv.ParseUint(counter, 10, 64)
 		if err != nil {
 			return nil, err
 		}
 
-		// TODO: Check if it is possible to have more than one hint
-		if len(rawHints) != 1 {
-			return nil, fmt.Errorf("expected only 1 hint but got  %d", len(rawHints))
-		}
-		rawHint := rawHints[0]
+		for _, rawHint := range rawHints {
+			hint, err := GetHintFromCode(cairoZeroJson, rawHint, pc)
+			if err != nil {
+				return nil, err
+			}
 
-		hint, err := GetHintFromCode(cairoZeroJson, rawHint, pc)
-		if err != nil {
-			return nil, err
+			hints[pc] = append(hints[pc], hint)
 		}
-
-		hints[pc] = hint
 	}
 
 	return hints, nil
