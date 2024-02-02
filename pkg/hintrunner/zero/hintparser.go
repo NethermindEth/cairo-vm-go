@@ -3,6 +3,7 @@ package zero
 import (
 	"fmt"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	op "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/alecthomas/participle/v2"
 )
@@ -22,6 +23,7 @@ var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierEx
 // 2 dereferences off1 omitted: cast([reg] + [reg + off2], type)
 // 2 dereferences off2 omitted: cast([reg + off1] + [reg], type)
 // 2 dereferences both offs omitted: cast([reg] + [reg], type)
+// 2 dereferences with multiplication: cast([reg + off1] * [reg + off2], felt)
 // Reference no dereference 2 offsets - + : cast(reg - off1 + off2, type)
 
 // Note: The same cases apply with an external dereference. Example: [cast(number, type)]
@@ -62,7 +64,8 @@ type DerefExp struct {
 }
 
 type BinOpExp struct {
-	LeftExp  *LeftExp  `@@ "+"`
+	LeftExp  *LeftExp  `@@`
+	Operator string    `@("+" | "*")`
 	RightExp *RightExp `@@`
 }
 
@@ -83,10 +86,12 @@ type RightExp struct {
 
 type DerefOffset struct {
 	Deref  op.Deref
+	Op     op.Operator
 	Offset *int
 }
 type DerefDeref struct {
 	LeftDeref  op.Deref
+	Op         op.Operator
 	RightDeref op.Deref
 }
 
@@ -141,8 +146,9 @@ func (expression CastExp) Evaluate() (any, error) {
 		return result, nil
 	case DerefOffset:
 		return op.BinaryOp{
-			Operator: 0,
+			Operator: result.Op,
 			Lhs:      result.Deref.Deref,
+			// TODO: why we're not using something like f.NewElement here?
 			Rhs: op.Immediate{
 				uint64(0),
 				uint64(0),
@@ -152,7 +158,7 @@ func (expression CastExp) Evaluate() (any, error) {
 		}, nil
 	case DerefDeref:
 		return op.BinaryOp{
-			Operator: 0,
+			Operator: result.Op,
 			Lhs:      result.LeftDeref.Deref,
 			Rhs:      result.RightDeref,
 		}, nil
@@ -238,8 +244,16 @@ func (expression BinOpExp) Evaluate() (any, error) {
 		return nil, err
 	}
 
+	operation, err := parseOperator(expression.Operator)
+	if err != nil {
+		return nil, err
+	}
+
 	switch lResult := leftExp.(type) {
 	case op.CellRefer:
+		// Right now we assume that there is no expression like `reg - off1 * off2`,
+		// but if there are, we would need to come up with an idea how to handle it.
+		// Right now we only cover `off1 + off2` expressions here.
 		offset, ok := rightExp.(*int)
 		if !ok {
 			return nil, fmt.Errorf("invalid type operation")
@@ -267,11 +281,13 @@ func (expression BinOpExp) Evaluate() (any, error) {
 		case op.Deref:
 			return DerefDeref{
 				lResult,
+				operation,
 				rResult,
 			}, nil
 		case *int:
 			return DerefOffset{
 				lResult,
+				operation,
 				rResult,
 			}, nil
 		}
@@ -307,4 +323,15 @@ func ParseIdentifier(value string) (any, error) {
 	}
 
 	return identifierExp.Evaluate()
+}
+
+func parseOperator(op string) (hinter.Operator, error) {
+	switch op {
+	case "+":
+		return hinter.Add, nil
+	case "*":
+		return hinter.Mul, nil
+	default:
+		return 0, fmt.Errorf("unexpected op: %q", op)
+	}
 }
