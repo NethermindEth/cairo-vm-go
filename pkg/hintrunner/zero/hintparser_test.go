@@ -45,6 +45,26 @@ func TestHintParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			Parameter:         "cast([ap + (-5)] * [ap + (-1)], felt)",
+			ExpectedCellRefer: nil,
+			ExpectedResOperander: hinter.BinaryOp{
+				Operator: hinter.Mul,
+				Lhs:      hinter.ApCellRef(-5),
+				Rhs: hinter.Deref{
+					Deref: hinter.ApCellRef(-1),
+				},
+			},
+		},
+		{
+			Parameter:         "cast([ap] * 3, felt)",
+			ExpectedCellRefer: nil,
+			ExpectedResOperander: hinter.BinaryOp{
+				Operator: hinter.Mul,
+				Lhs:      hinter.ApCellRef(0),
+				Rhs:      hinter.Immediate{0, 0, 0, 3},
+			},
+		},
 	}
 
 	for _, test := range testSet {
