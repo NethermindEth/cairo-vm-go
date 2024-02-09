@@ -48,6 +48,16 @@ func ap_plus_fp_deref() -> felt {
     return [ap]; // 355
 }
 
+// cast([fp] * [fp + 1], felt)
+func fp_locals_mul() -> felt {
+    alloc_locals;
+    local l1 = 11;
+    local l2 = 22;
+    let a = l1 * l2;
+    %{ memory[ap] = ids.a %}
+    return [ap]; // 242
+}
+
 func main() {
     alloc_locals;
 
@@ -59,6 +69,8 @@ func main() {
     [ap] = v3, ap++;
     local v4 = ap_plus_fp_deref();
     [ap] = v4, ap++;
+    local v5 = fp_locals_mul();
+    [ap] = v5, ap++;
 
     ret;
 }
