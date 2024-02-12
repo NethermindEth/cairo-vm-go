@@ -91,7 +91,7 @@ func createTestAssignHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 }
 
 func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) (hintReferenceResolver, error) {
-	var resolver hintReferenceResolver
+	resolver := NewReferenceResolver()
 
 	for referenceName := range hint.FlowTrackingData.ReferenceIds {
 		rawIdentifier, ok := zeroProgram.Identifiers[referenceName]
