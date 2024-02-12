@@ -16,7 +16,7 @@ import (
 type CellRefer interface {
 	fmt.Stringer
 
-	ApplyApTracking(hint , ref zero.ApTracking) (Reference)
+	ApplyApTracking(hint, ref zero.ApTracking) Reference
 	Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error)
 }
 
@@ -54,7 +54,7 @@ func (fp FpCellRef) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
 type ResOperander interface {
 	fmt.Stringer
 
-	ApplyApTracking(hint , ref zero.ApTracking) (Reference)
+	ApplyApTracking(hint, ref zero.ApTracking) Reference
 	Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error)
 }
 
@@ -174,41 +174,40 @@ func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 	}
 }
 
-
 type Reference interface {
-	ApplyApTracking(hint , ref zero.ApTracking) (Reference)
+	ApplyApTracking(hint, ref zero.ApTracking) Reference
 }
 
-func (v ApCellRef) ApplyApTracking(hint , ref zero.ApTracking) (Reference){
+func (v ApCellRef) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	if hint.Group != ref.Group {
 		return v // Group mismatched: nothing to adjust
 	}
-	newOffset := v - ApCellRef(hint.Offset - ref.Offset)
+	newOffset := v - ApCellRef(hint.Offset-ref.Offset)
 	return ApCellRef(newOffset)
 }
 
-func (v FpCellRef) ApplyApTracking(hint , ref zero.ApTracking) (Reference){
+func (v FpCellRef) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	// Nothing to do
 	return v
 }
 
-func (v Deref) ApplyApTracking(hint , ref zero.ApTracking) (Reference){
+func (v Deref) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	v.Deref = v.Deref.ApplyApTracking(hint, ref).(CellRefer)
 	return v
 }
 
-func (v DoubleDeref) ApplyApTracking(hint , ref zero.ApTracking) (Reference){
+func (v DoubleDeref) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	v.Deref = v.Deref.ApplyApTracking(hint, ref).(CellRefer)
 	return v
 }
 
-func (v BinaryOp) ApplyApTracking(hint , ref zero.ApTracking) (Reference){
+func (v BinaryOp) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	v.Lhs = v.Lhs.ApplyApTracking(hint, ref).(CellRefer)
 	v.Rhs = v.Rhs.ApplyApTracking(hint, ref).(ResOperander)
 	return v
 }
 
-func (v Immediate) ApplyApTracking(hint , ref zero.ApTracking) (Reference){
+func (v Immediate) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	// Nothing to do
 	return v
 }

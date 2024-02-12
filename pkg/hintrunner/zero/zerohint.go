@@ -3,11 +3,9 @@ package zero
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	sn "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 )
@@ -64,24 +62,25 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 }
 
 func CreateAllocSegmentHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	if resolver.NumResOperanders()+resolver.NumCellRefers() != 0 {
-		return nil, fmt.Errorf("Expected no arguments for %s hint", sn.AllocSegmentName)
-	}
 	return &core.AllocSegment{Dst: hinter.ApCellRef(0)}, nil
 }
 
 func createTestAssignHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	if resolver.NumResOperanders() < 1 {
-		return nil, fmt.Errorf("Expected at least 1 ResOperander")
+	arg, err := resolver.GetReference("a")
+	if err != nil {
+		return nil, err
 	}
 
-	arg := resolver.GetResOperander("a")
+	a, ok := arg.(hinter.ResOperander)
+	if !ok {
+		return nil, fmt.Errorf("expected a ResOperander reference")
+	}
 
 	h := &GenericZeroHinter{
 		Name: "TestAssign",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			apAddr := vm.Context.AddressAp()
-			v, err := arg.Resolve(vm)
+			v, err := a.Resolve(vm)
 			if err != nil {
 				return err
 			}
@@ -89,15 +88,6 @@ func createTestAssignHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 		},
 	}
 	return h, nil
-}
-
-// shortSymbolName turns a full symbol name like "a.b.c" into just "c".
-func shortSymbolName(name string) string {
-	i := strings.LastIndexByte(name, '.')
-	if i != -1 {
-		return name[i+1:]
-	}
-	return name
 }
 
 func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) (hintReferenceResolver, error) {
@@ -132,49 +122,11 @@ func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 		if err != nil {
 			return resolver, err
 		}
-		param = applyApTracking(zeroProgram, hint, reference, param)
-		switch result := param.(type) {
-		case hinter.CellRefer:
-			resolver.AddCellRefer(shortSymbolName(referenceName), result)
-		case hinter.ResOperander:
-			resolver.AddResOperander(shortSymbolName(referenceName), result)
-		default:
-			return resolver, fmt.Errorf("unexpected type for identifier value %s", reference.Value)
+		param = param.ApplyApTracking(hint.FlowTrackingData.ApTracking, reference.ApTrackingData)
+		if err := resolver.AddReference(referenceName, param); err != nil {
+			return resolver, err
 		}
 	}
 
 	return resolver, nil
-}
-
-func applyApTracking(p *zero.ZeroProgram, h zero.Hint, ref zero.Reference, v any) any {
-	// We can't make an inplace modification because the v's underlying type is not a pointer type.
-	// Therefore, we need to return it from the function.
-	// This makes this function less elegant: it requires type asserts, etc.
-
-	switch v := v.(type) {
-	case hinter.ApCellRef:
-		if h.FlowTrackingData.ApTracking.Group != ref.ApTrackingData.Group {
-			return v // Group mismatched: nothing to adjust
-		}
-		newOffset := v - hinter.ApCellRef(h.FlowTrackingData.ApTracking.Offset-ref.ApTrackingData.Offset)
-		return hinter.ApCellRef(newOffset)
-
-	case hinter.Deref:
-		v.Deref = applyApTracking(p, h, ref, v.Deref).(hinter.CellRefer)
-		return v
-
-	case hinter.DoubleDeref:
-		v.Deref = applyApTracking(p, h, ref, v.Deref).(hinter.CellRefer)
-		return v
-
-	case hinter.BinaryOp:
-		v.Lhs = applyApTracking(p, h, ref, v.Lhs).(hinter.CellRefer)
-		v.Rhs = applyApTracking(p, h, ref, v.Rhs).(hinter.ResOperander)
-		return v
-
-	default:
-		// This case covers type that we don't need to visit.
-		// E.g. FpCellRef, Immediate.
-		return v
-	}
 }
