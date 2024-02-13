@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	op "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/alecthomas/participle/v2"
 )
 
@@ -85,18 +84,18 @@ type RightExp struct {
 }
 
 type DerefOffset struct {
-	Deref  op.Deref
-	Op     op.Operator
+	Deref  hinter.Deref
+	Op     hinter.Operator
 	Offset *int
 }
 type DerefDeref struct {
-	LeftDeref  op.Deref
-	Op         op.Operator
-	RightDeref op.Deref
+	LeftDeref  hinter.Deref
+	Op         hinter.Operator
+	RightDeref hinter.Deref
 }
 
 // AST Functionality
-func (expression IdentifierExp) Evaluate() (any, error) {
+func (expression IdentifierExp) Evaluate() (hinter.Reference, error) {
 	switch {
 	case expression.DerefCastExp != nil:
 		return expression.DerefCastExp.Evaluate()
@@ -107,23 +106,23 @@ func (expression IdentifierExp) Evaluate() (any, error) {
 	}
 }
 
-func (expression DerefCastExp) Evaluate() (any, error) {
+func (expression DerefCastExp) Evaluate() (hinter.Reference, error) {
 	value, err := expression.CastExp.ValueExpr.Evaluate()
 	if err != nil {
 		return nil, err
 	}
 
 	switch result := value.(type) {
-	case op.CellRefer:
-		return op.Deref{Deref: result}, nil
-	case op.Deref:
-		return op.DoubleDeref{
+	case hinter.CellRefer:
+		return hinter.Deref{Deref: result}, nil
+	case hinter.Deref:
+		return hinter.DoubleDeref{
 				Deref:  result.Deref,
 				Offset: 0,
 			},
 			nil
 	case DerefOffset:
-		return op.DoubleDeref{
+		return hinter.DoubleDeref{
 				Deref:  result.Deref.Deref,
 				Offset: int16(*result.Offset),
 			},
@@ -133,23 +132,23 @@ func (expression DerefCastExp) Evaluate() (any, error) {
 	}
 }
 
-func (expression CastExp) Evaluate() (any, error) {
+func (expression CastExp) Evaluate() (hinter.Reference, error) {
 	value, err := expression.ValueExpr.Evaluate()
 	if err != nil {
 		return nil, err
 	}
 
 	switch result := value.(type) {
-	case op.CellRefer:
+	case hinter.CellRefer:
 		return result, nil
-	case op.Deref:
+	case hinter.Deref:
 		return result, nil
 	case DerefOffset:
-		return op.BinaryOp{
+		return hinter.BinaryOp{
 			Operator: result.Op,
 			Lhs:      result.Deref.Deref,
 			// TODO: why we're not using something like f.NewElement here?
-			Rhs: op.Immediate{
+			Rhs: hinter.Immediate{
 				uint64(0),
 				uint64(0),
 				uint64(0),
@@ -157,7 +156,7 @@ func (expression CastExp) Evaluate() (any, error) {
 			},
 		}, nil
 	case DerefDeref:
-		return op.BinaryOp{
+		return hinter.BinaryOp{
 			Operator: result.Op,
 			Lhs:      result.LeftDeref.Deref,
 			Rhs:      result.RightDeref,
@@ -198,12 +197,12 @@ func (expression CellRefExp) Evaluate() (any, error) {
 	return EvaluateRegister(expression.Register, 0)
 }
 
-func EvaluateRegister(register string, offset int16) (op.CellRefer, error) {
+func EvaluateRegister(register string, offset int16) (hinter.CellRefer, error) {
 	switch register {
 	case "ap":
-		return op.ApCellRef(offset), nil
+		return hinter.ApCellRef(offset), nil
 	case "fp":
-		return op.FpCellRef(offset), nil
+		return hinter.FpCellRef(offset), nil
 	default:
 		return nil, fmt.Errorf("invalid offset value")
 	}
@@ -226,11 +225,11 @@ func (expression DerefExp) Evaluate() (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	cellRef, ok := cellRefExp.(op.CellRefer)
+	cellRef, ok := cellRefExp.(hinter.CellRefer)
 	if !ok {
 		return nil, fmt.Errorf("Expected a CellRefer expression but got %s", cellRefExp)
 	}
-	return op.Deref{Deref: cellRef}, nil
+	return hinter.Deref{Deref: cellRef}, nil
 }
 
 func (expression BinOpExp) Evaluate() (any, error) {
@@ -250,7 +249,7 @@ func (expression BinOpExp) Evaluate() (any, error) {
 	}
 
 	switch lResult := leftExp.(type) {
-	case op.CellRefer:
+	case hinter.CellRefer:
 		// Right now we assume that there is no expression like `reg - off1 * off2`,
 		// but if there are, we would need to come up with an idea how to handle it.
 		// Right now we only cover `off1 + off2` expressions here.
@@ -262,23 +261,23 @@ func (expression BinOpExp) Evaluate() (any, error) {
 
 		var cellRefOffset int16
 		switch register := lResult.(type) {
-		case op.ApCellRef:
+		case hinter.ApCellRef:
 			cellRefOffset = int16(register)
-		case op.FpCellRef:
+		case hinter.FpCellRef:
 			cellRefOffset = int16(register)
 		}
 
 		offsetValue = offsetValue + cellRefOffset
 		switch lResult.(type) {
-		case op.ApCellRef:
-			return op.ApCellRef(offsetValue), nil
-		case op.FpCellRef:
-			return op.FpCellRef(offsetValue), nil
+		case hinter.ApCellRef:
+			return hinter.ApCellRef(offsetValue), nil
+		case hinter.FpCellRef:
+			return hinter.FpCellRef(offsetValue), nil
 		}
 
-	case op.Deref:
+	case hinter.Deref:
 		switch rResult := rightExp.(type) {
-		case op.Deref:
+		case hinter.Deref:
 			return DerefDeref{
 				lResult,
 				operation,
@@ -316,7 +315,7 @@ func (expression RightExp) Evaluate() (any, error) {
 	return nil, fmt.Errorf("Unexpected right expression in binary operation")
 }
 
-func ParseIdentifier(value string) (any, error) {
+func ParseIdentifier(value string) (hinter.Reference, error) {
 	identifierExp, err := parser.ParseString("", value)
 	if err != nil {
 		return nil, err
