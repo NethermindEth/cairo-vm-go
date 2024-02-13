@@ -22,9 +22,7 @@ func (m *hintReferenceResolver) AddReference(name string, v hinter.Reference) er
 	if ok {
 		return fmt.Errorf("cannot overwrite reference %s (%s)", shortName, name)
 	}
-	fmt.Printf("hola1")
 	m.refs[shortName] = v
-	fmt.Printf("hola2")
 	return nil
 }
 
