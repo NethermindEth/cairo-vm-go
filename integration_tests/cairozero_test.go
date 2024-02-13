@@ -40,7 +40,7 @@ func TestCairoZeroFiles(t *testing.T) {
 			continue
 		}
 
-		pyTraceFile, pyMemoryFile, err := runPythonVm(compiledOutput)
+		pyTraceFile, pyMemoryFile, err := runPythonVm(dirEntry.Name(), compiledOutput)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -114,12 +114,11 @@ func compileZeroCode(path string) (string, error) {
 
 // given a path to a compiled cairo zero file, execute it using the
 // python vm and returns the trace and memory files location
-func runPythonVm(path string) (string, string, error) {
+func runPythonVm(testFilename, path string) (string, string, error) {
 	traceOutput := swapExtenstion(path, pyTraceSuffix)
 	memoryOutput := swapExtenstion(path, pyMemorySuffix)
 
-	cmd := exec.Command(
-		"cairo-run",
+	args := []string{
 		"--program",
 		path,
 		"--proof_mode",
@@ -127,7 +126,16 @@ func runPythonVm(path string) (string, string, error) {
 		traceOutput,
 		"--memory_file",
 		memoryOutput,
-	)
+	}
+
+	// If any other layouts are needed, add the suffix checks here.
+	// The convention would be: ".$layout.cairo"
+	// A file without this suffix will use the default ("plain") layout.
+	if strings.HasSuffix(testFilename, ".small.cairo") {
+		args = append(args, "--layout", "small")
+	}
+
+	cmd := exec.Command("cairo-run", args...)
 
 	res, err := cmd.CombinedOutput()
 	if err != nil {

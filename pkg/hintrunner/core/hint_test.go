@@ -987,9 +987,9 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&addr))
 
 		hint := AssertLeFindSmallArc{
-			a:             hinter.Immediate(tc.aFelt),
-			b:             hinter.Immediate(tc.bFelt),
-			rangeCheckPtr: hinter.Deref{Deref: hinter.ApCellRef(0)},
+			A:             hinter.Immediate(tc.aFelt),
+			B:             hinter.Immediate(tc.bFelt),
+			RangeCheckPtr: hinter.Deref{Deref: hinter.ApCellRef(0)},
 		}
 
 		ctx := hinter.HintRunnerContext{
@@ -1027,7 +1027,7 @@ func TestAssertLeIsFirstArcExcluded(t *testing.T) {
 	var flag hinter.ApCellRef = 0
 
 	hint := AssertLeIsFirstArcExcluded{
-		skipExcludeAFlag: flag,
+		SkipExcludeAFlag: flag,
 	}
 
 	err := hint.Execute(vm, &ctx)
@@ -1053,7 +1053,7 @@ func TestAssertLeIsSecondArcExcluded(t *testing.T) {
 	var flag hinter.ApCellRef = 0
 
 	hint := AssertLeIsSecondArcExcluded{
-		skipExcludeBMinusA: flag,
+		SkipExcludeBMinusA: flag,
 	}
 
 	err := hint.Execute(vm, &ctx)
