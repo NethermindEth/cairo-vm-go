@@ -33,6 +33,20 @@ func (m *hintReferenceResolver) GetReference(name string) (hinter.Reference, err
 	return nil, fmt.Errorf("missing reference %s", name)
 }
 
+// GetResOperander returns the result of GetReference type-asserted to ResOperander.
+// If reference is not found or it's not of ResOperander type, a non-nil error is returned.
+func (m *hintReferenceResolver) GetResOperander(name string) (hinter.ResOperander, error) {
+	ref, err := m.GetReference(name)
+	if err != nil {
+		return nil, err
+	}
+	op, ok := ref.(hinter.ResOperander)
+	if !ok {
+		return nil, fmt.Errorf("expected %s to be ResOperander (got %T)", name, ref)
+	}
+	return op, nil
+}
+
 // shortSymbolName turns a full symbol name like "a.b.c" into just "c".
 func shortSymbolName(name string) string {
 	i := strings.LastIndexByte(name, '.')

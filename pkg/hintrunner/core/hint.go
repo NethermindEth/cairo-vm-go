@@ -1319,9 +1319,9 @@ func (hint *AllocConstantSize) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRu
 }
 
 type AssertLeFindSmallArc struct {
-	a             hinter.ResOperander
-	b             hinter.ResOperander
-	rangeCheckPtr hinter.ResOperander
+	A             hinter.ResOperander
+	B             hinter.ResOperander
+	RangeCheckPtr hinter.ResOperander
 }
 
 func (hint *AssertLeFindSmallArc) String() string {
@@ -1332,14 +1332,14 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 	primeOver3High := uint256.Int{6148914691236517206, 192153584101141168, 0, 0}
 	primeOver2High := uint256.Int{9223372036854775809, 288230376151711752, 0, 0}
 
-	a, err := hint.a.Resolve(vm)
+	a, err := hint.A.Resolve(vm)
 	if err != nil {
-		return fmt.Errorf("resolve a operand %s: %w", hint.a, err)
+		return fmt.Errorf("resolve a operand %s: %w", hint.A, err)
 	}
 
-	b, err := hint.b.Resolve(vm)
+	b, err := hint.B.Resolve(vm)
 	if err != nil {
-		return fmt.Errorf("resolve b operand %s: %w", hint.b, err)
+		return fmt.Errorf("resolve b operand %s: %w", hint.B, err)
 	}
 
 	aFelt, err := a.FieldElement()
@@ -1374,7 +1374,7 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 	// Exclude the largest arc after sorting
 	ctx.ExcludedArc = lengthsAndIndices[2].Position
 
-	rangeCheckPtrMemAddr, err := hinter.ResolveAsAddress(vm, hint.rangeCheckPtr)
+	rangeCheckPtrMemAddr, err := hinter.ResolveAsAddress(vm, hint.RangeCheckPtr)
 	if err != nil {
 		return fmt.Errorf("resolve range check pointer: %w", err)
 	}
@@ -1434,7 +1434,7 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 }
 
 type AssertLeIsFirstArcExcluded struct {
-	skipExcludeAFlag hinter.CellRefer
+	SkipExcludeAFlag hinter.CellRefer
 }
 
 func (hint *AssertLeIsFirstArcExcluded) String() string {
@@ -1442,7 +1442,7 @@ func (hint *AssertLeIsFirstArcExcluded) String() string {
 }
 
 func (hint *AssertLeIsFirstArcExcluded) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-	addr, err := hint.skipExcludeAFlag.Get(vm)
+	addr, err := hint.SkipExcludeAFlag.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get skipExcludeAFlag addr: %v", err)
 	}
@@ -1458,7 +1458,7 @@ func (hint *AssertLeIsFirstArcExcluded) Execute(vm *VM.VirtualMachine, ctx *hint
 }
 
 type AssertLeIsSecondArcExcluded struct {
-	skipExcludeBMinusA hinter.CellRefer
+	SkipExcludeBMinusA hinter.CellRefer
 }
 
 func (hint *AssertLeIsSecondArcExcluded) String() string {
@@ -1466,7 +1466,7 @@ func (hint *AssertLeIsSecondArcExcluded) String() string {
 }
 
 func (hint *AssertLeIsSecondArcExcluded) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-	addr, err := hint.skipExcludeBMinusA.Get(vm)
+	addr, err := hint.SkipExcludeBMinusA.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get skipExcludeBMinusA addr: %v", err)
 	}

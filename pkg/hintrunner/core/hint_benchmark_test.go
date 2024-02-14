@@ -328,7 +328,7 @@ func BenchmarkAssertLeIsFirstArcExcluded(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 
 		hint := AssertLeIsFirstArcExcluded{
-			skipExcludeAFlag: skipExcludeAFlag,
+			SkipExcludeAFlag: skipExcludeAFlag,
 		}
 
 		err := hint.Execute(vm, &ctx)
@@ -356,7 +356,7 @@ func BenchmarkAssertLeIsSecondArcExcluded(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 
 		hint := AssertLeIsSecondArcExcluded{
-			skipExcludeBMinusA: skipExcludeBMinusA,
+			SkipExcludeBMinusA: skipExcludeBMinusA,
 		}
 
 		err := hint.Execute(vm, &ctx)
@@ -392,9 +392,9 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 		r1 := utils.RandomFeltElement(rand)
 		r2 := utils.RandomFeltElement(rand)
 		hint := AssertLeFindSmallArc{
-			a:             hinter.Immediate(r1),
-			b:             hinter.Immediate(r2),
-			rangeCheckPtr: hinter.Deref{Deref: hinter.ApCellRef(0)},
+			A:             hinter.Immediate(r1),
+			B:             hinter.Immediate(r2),
+			RangeCheckPtr: hinter.Deref{Deref: hinter.ApCellRef(0)},
 		}
 
 		if err := hint.Execute(vm, &ctx); err != nil &&
