@@ -117,13 +117,17 @@ func (expression DerefCastExp) Evaluate() (hinter.Reference, error) {
 		return hinter.Deref{Deref: result}, nil
 	case hinter.Deref:
 		return hinter.DoubleDeref{
-				Deref:  result.Deref,
+				Deref: hinter.Deref{
+					Deref: result.Deref,
+				},
 				Offset: 0,
 			},
 			nil
 	case DerefOffset:
 		return hinter.DoubleDeref{
-				Deref:  result.Deref.Deref,
+				Deref: hinter.Deref{
+					Deref: result.Deref.Deref,
+				},
 				Offset: int16(*result.Offset),
 			},
 			nil

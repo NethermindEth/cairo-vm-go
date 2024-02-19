@@ -31,8 +31,11 @@ func TestHintParser(t *testing.T) {
 			Parameter:         "[cast([ap + 2], felt)]",
 			ExpectedCellRefer: nil,
 			ExpectedResOperander: hinter.DoubleDeref{
-				Deref:  hinter.ApCellRef(2),
-				Offset: 0},
+				Deref: hinter.Deref{
+					Deref: hinter.ApCellRef(2),
+				},
+				Offset: 0,
+			},
 		},
 		{
 			Parameter:         "cast([ap + 2] + [ap], felt)",

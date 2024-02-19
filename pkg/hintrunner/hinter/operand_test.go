@@ -70,7 +70,7 @@ func TestResolveDoubleDerefPositiveOffset(t *testing.T) {
 	)
 
 	var apCell ApCellRef = 7
-	dderf := DoubleDeref{apCell, 14}
+	dderf := DoubleDeref{Deref{apCell}, 14}
 
 	value, err := dderf.Resolve(vm)
 	require.NoError(t, err)
@@ -92,7 +92,7 @@ func TestResolveDoubleDerefNegativeOffset(t *testing.T) {
 	)
 
 	var apCell ApCellRef = 7
-	dderf := DoubleDeref{apCell, -14}
+	dderf := DoubleDeref{Deref{apCell}, -14}
 
 	value, err := dderf.Resolve(vm)
 	require.NoError(t, err)
