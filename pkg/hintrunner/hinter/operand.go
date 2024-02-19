@@ -55,6 +55,7 @@ type ResOperander interface {
 	fmt.Stringer
 
 	ApplyApTracking(hint, ref zero.ApTracking) Reference
+	GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error)
 	Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error)
 }
 
@@ -67,14 +68,14 @@ func (deref Deref) String() string {
 }
 
 func (deref Deref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
-	address, err := deref.Get(vm)
+	address, err := deref.GetAddress(vm)
 	if err != nil {
 		return mem.UnknownValue, fmt.Errorf("get cell address: %w", err)
 	}
 	return vm.Memory.ReadFromAddress(&address)
 }
 
-func (deref Deref) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+func (deref Deref) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
 	return deref.Deref.Get(vm)
 }
 
@@ -88,7 +89,7 @@ func (dderef DoubleDeref) String() string {
 }
 
 func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
-	addr, err := dderef.Get(vm)
+	addr, err := dderef.GetAddress(vm)
 	if err != nil {
 		return mem.UnknownValue, err
 	}
@@ -100,7 +101,7 @@ func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error
 	return value, nil
 }
 
-func (dderef DoubleDeref) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+func (dderef DoubleDeref) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
 	lhs, err := dderef.Deref.Resolve(vm)
 	if err != nil {
 		return mem.UnknownAddress, fmt.Errorf("get lhs address: %w", err)
@@ -136,7 +137,7 @@ func (imm Immediate) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 	return mem.MemoryValueFromFieldElement(&felt), nil
 }
 
-func (imm Immediate) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+func (imm Immediate) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
 	return mem.UnknownAddress, fmt.Errorf("cannot get an address from an immediate value %s", imm)
 }
 
@@ -186,7 +187,7 @@ func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 	}
 }
 
-func (bop BinaryOp) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+func (bop BinaryOp) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
 	// TODO: Check if it's possible in some cases such as Deref + Immediate
 	return mem.UnknownAddress, fmt.Errorf("cannot get an address from a Binary Operation operand")
 }

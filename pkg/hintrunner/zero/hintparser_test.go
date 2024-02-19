@@ -75,11 +75,11 @@ func TestHintParser(t *testing.T) {
 		require.NoError(t, err)
 
 		if test.ExpectedCellRefer != nil {
-			require.Equal(t, test.ExpectedCellRefer, output, "Expected CellRefer type")
+			require.Equal(t, test.ExpectedCellRefer, output, "unexpected CellRefer type")
 		}
 
 		if test.ExpectedResOperander != nil {
-			require.Equal(t, test.ExpectedResOperander, output, "Expected ResOperander type")
+			require.Equal(t, test.ExpectedResOperander, output, "unexpected ResOperander type")
 		}
 	}
 }
