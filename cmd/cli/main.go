@@ -112,7 +112,8 @@ func main() {
 					if len(output) > 0 {
 						fmt.Println("Program output:")
 						for _, val := range output {
-							fmt.Printf("\t%s\n", val)
+							// Cairo-run v0.11-0.13 pad the output lines with two spaces.
+							fmt.Printf("  %s\n", val)
 						}
 					}
 					return nil

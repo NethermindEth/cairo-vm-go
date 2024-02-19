@@ -1,6 +1,7 @@
 package integrationtests
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -40,25 +41,26 @@ func TestCairoZeroFiles(t *testing.T) {
 			continue
 		}
 
-		pyTraceFile, pyMemoryFile, err := runPythonVm(dirEntry.Name(), compiledOutput)
+		outputMode := false
+		pyResult, err := runPythonVm(dirEntry.Name(), compiledOutput, outputMode)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
 
-		traceFile, memoryFile, _, err := runVm(compiledOutput)
+		result, err := runVm(compiledOutput, outputMode)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
 
-		pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
+		pyTrace, pyMemory, err := decodeProof(pyResult.TraceFile, pyResult.MemoryFile)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
 
-		trace, memory, err := decodeProof(traceFile, memoryFile)
+		trace, memory, err := decodeProof(result.TraceFile, result.MemoryFile)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -72,6 +74,49 @@ func TestCairoZeroFiles(t *testing.T) {
 			t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
 			t.Logf("memory;\n%s\n", memoryRepr(memory))
 		}
+	}
+
+	clean(root)
+}
+
+func TestCairoZeroOutputFiles(t *testing.T) {
+	root := "./output_tests/"
+
+	testFiles, err := os.ReadDir(root)
+	require.NoError(t, err)
+
+	runTest := func(t *testing.T, path string) {
+		compiledFilename, err := compileZeroCode(path)
+		if err != nil {
+			t.Fatalf("compiling Cairo0: %v", err)
+		}
+
+		outputMode := true
+		expectedResult, err := runPythonVm(filepath.Base(path), compiledFilename, outputMode)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		actualResult, err := runVm(compiledFilename, outputMode)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expectedLines := extractOutput([]byte(expectedResult.Output))
+		actualLines := extractOutput([]byte(actualResult.Output))
+		assert.Equal(t, expectedLines, actualLines)
+	}
+
+	for _, f := range testFiles {
+		if f.IsDir() || isGeneratedFile(f.Name()) {
+			continue
+		}
+
+		name := filepath.Base(f.Name())
+		name = strings.TrimSuffix(name, filepath.Ext(name))
+		t.Run(name, func(t *testing.T) {
+			runTest(t, filepath.Join(root, f.Name()))
+		})
 	}
 
 	clean(root)
@@ -112,66 +157,98 @@ func compileZeroCode(path string) (string, error) {
 	return compiledOutput, nil
 }
 
+type vmRunResult struct {
+	TraceFile  string
+	MemoryFile string
+	Output     []byte
+}
+
 // given a path to a compiled cairo zero file, execute it using the
 // python vm and returns the trace and memory files location
-func runPythonVm(testFilename, path string) (string, string, error) {
-	traceOutput := swapExtenstion(path, pyTraceSuffix)
-	memoryOutput := swapExtenstion(path, pyMemorySuffix)
+func runPythonVm(testFilename, path string, outputMode bool) (vmRunResult, error) {
+	var result vmRunResult
+	if !outputMode {
+		result.TraceFile = swapExtenstion(path, pyTraceSuffix)
+		result.MemoryFile = swapExtenstion(path, pyMemorySuffix)
+	}
 
 	args := []string{
 		"--program",
 		path,
-		"--proof_mode",
-		"--trace_file",
-		traceOutput,
-		"--memory_file",
-		memoryOutput,
+	}
+
+	if outputMode {
+		args = append(args, "--print_output")
+	} else {
+		// Proof mode.
+		args = append(args,
+			"--proof_mode",
+			"--trace_file",
+			result.TraceFile,
+			"--memory_file",
+			result.MemoryFile)
 	}
 
 	// If any other layouts are needed, add the suffix checks here.
 	// The convention would be: ".$layout.cairo"
 	// A file without this suffix will use the default ("plain") layout.
+	var layout string
 	if strings.HasSuffix(testFilename, ".small.cairo") {
-		args = append(args, "--layout", "small")
+		layout = "small"
+	}
+	if layout == "" && outputMode {
+		layout = "small"
+	}
+	if layout != "" {
+		args = append(args, "--layout", layout)
 	}
 
 	cmd := exec.Command("cairo-run", args...)
 
 	res, err := cmd.CombinedOutput()
+	if outputMode {
+		result.Output = res
+	}
 	if err != nil {
-		return "", "", fmt.Errorf(
+		return result, fmt.Errorf(
 			"cairo-run %s: %w\n%s", path, err, string(res),
 		)
 	}
 
-	return traceOutput, memoryOutput, nil
+	return result, nil
 }
 
 // given a path to a compiled cairo zero file, execute
 // it using our vm
-func runVm(path string) (string, string, string, error) {
-	traceOutput := swapExtenstion(path, traceSuffix)
-	memoryOutput := swapExtenstion(path, memorySuffix)
+func runVm(path string, outputMode bool) (vmRunResult, error) {
+	var result vmRunResult
+	if !outputMode {
+		result.TraceFile = swapExtenstion(path, traceSuffix)
+		result.MemoryFile = swapExtenstion(path, memorySuffix)
+	}
 
 	cmd := exec.Command(
 		"../bin/cairo-vm",
 		"run",
 		"--proofmode",
 		"--tracefile",
-		traceOutput,
+		result.TraceFile,
 		"--memoryfile",
-		memoryOutput,
+		result.MemoryFile,
 		path,
 	)
 
 	res, err := cmd.CombinedOutput()
+	if outputMode {
+		result.Output = res
+	}
 	if err != nil {
-		return "", "", string(res), fmt.Errorf(
+		return result, fmt.Errorf(
 			"cairo-vm run %s: %w\n%s", path, err, string(res),
 		)
 	}
 
-	return traceOutput, memoryOutput, string(res), nil
+	return result, nil
 
 }
 
@@ -189,6 +266,27 @@ func decodeProof(traceLocation string, memoryLocation string) ([]vm.Trace, []*fp
 	decodedMemory := vm.DecodeMemory(memory)
 
 	return decodedTrace, decodedMemory, nil
+}
+
+func extractOutput(out []byte) []string {
+	// Return the output in form of string lines,
+	// since then it will be easier for a diff tool
+	// to report the mismatching delta.
+	const header = "Program output:\n"
+	start := bytes.Index(out, []byte(header))
+	if start == -1 {
+		return nil
+	}
+	out = out[start+len(header):]
+	lines := strings.Split(string(out), "\n")
+
+	// cairo-run produces one extra newline after the output.
+	// Remove all empty trailing lines.
+	for lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
+	}
+
+	return lines
 }
 
 func clean(root string) {
@@ -250,7 +348,7 @@ func TestFailingRangeCheck(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/range_check.cairo")
 	require.NoError(t, err)
 
-	_, _, _, err = runVm(compiledOutput)
+	_, err = runVm(compiledOutput, false)
 	require.ErrorContains(t, err, "check write: 2**128 <")
 
 	clean("./builtin_tests/")
@@ -260,7 +358,7 @@ func TestBitwise(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/bitwise_builtin_test.cairo")
 	require.NoError(t, err)
 
-	_, _, _, err = runVm(compiledOutput)
+	_, err = runVm(compiledOutput, false)
 	require.NoError(t, err)
 
 	clean("./builtin_tests/")
@@ -270,9 +368,9 @@ func TestPedersen(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/pedersen_test.cairo")
 	require.NoError(t, err)
 
-	_, _, output, err := runVm(compiledOutput)
+	res, err := runVm(compiledOutput, true)
 	require.NoError(t, err)
-	require.Contains(t, output, "Program output:\n\t2089986280348253421170679821480865132823066470938446095505822317253594081284")
+	require.Contains(t, string(res.Output), "Program output:\n\t2089986280348253421170679821480865132823066470938446095505822317253594081284")
 
 	clean("./builtin_tests/")
 }
@@ -281,7 +379,7 @@ func TestECDSA(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/ecdsa_test.cairo")
 	require.NoError(t, err)
 
-	_, _, _, err = runVm(compiledOutput)
+	_, err = runVm(compiledOutput, false)
 	//Note: This fails because no addSiganture hint
 	require.Error(t, err)
 
@@ -292,7 +390,7 @@ func TestEcOp(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/ecop.cairo")
 	require.NoError(t, err)
 
-	_, _, _, err = runVm(compiledOutput)
+	_, err = runVm(compiledOutput, false)
 	// todo(rodro): This test is failing due to the lack of hint processing. It should be address soon
 	require.Error(t, err)
 
@@ -303,9 +401,9 @@ func TestKeccak(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/keccak_test.cairo")
 	require.NoError(t, err)
 
-	_, _, output, err := runVm(compiledOutput)
+	res, err := runVm(compiledOutput, true)
 	require.NoError(t, err)
-	require.Contains(t, output, "Program output:\n\t1304102964824333531548398680304964155037696012322029952943772\n\t688749063493959345342507274897412933692859993314608487848187\n\t986714560881445649520443980361539218531403996118322524237197\n\t1184757872753521629808292433475729390634371625298664050186717\n\t719230200744669084408849842242045083289669818920073250264351\n\t1543031433416778513637578850638598357854418012971636697855068\n\t63644822371671650271181212513090078620238279557402571802224\n\t879446821229338092940381117330194802032344024906379963157761\n")
+	require.Contains(t, string(res.Output), "Program output:\n\t1304102964824333531548398680304964155037696012322029952943772\n\t688749063493959345342507274897412933692859993314608487848187\n\t986714560881445649520443980361539218531403996118322524237197\n\t1184757872753521629808292433475729390634371625298664050186717\n\t719230200744669084408849842242045083289669818920073250264351\n\t1543031433416778513637578850638598357854418012971636697855068\n\t63644822371671650271181212513090078620238279557402571802224\n\t879446821229338092940381117330194802032344024906379963157761\n")
 
 	clean("./builtin_tests/")
 }
