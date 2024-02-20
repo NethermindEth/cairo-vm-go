@@ -7,7 +7,10 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 // GenericZeroHinter wraps an adhoc Cairo0 inline (pythonic) hint implementation.
@@ -54,6 +57,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	switch rawHint.Code {
 	case allocSegmentCode:
 		return CreateAllocSegmentHinter(resolver)
+	case isLeFeltCode:
+		return createIsLeFeltHinter(resolver)
+	case assertLtFeltCode:
+		return createAssertLtFeltHinter(resolver)
 	case testAssignCode:
 		return createTestAssignHinter(resolver)
 	case assertLeFeltCode:
@@ -64,6 +71,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createAssertLeFeltExcluded1Hinter(resolver)
 	case assertLeFeltExcluded2Code:
 		return createAssertLeFeltExcluded2Hinter(resolver)
+	case isNNCode:
+		return createIsNNHinter(resolver)
+	case isNNOutOfRangeCode:
+		return createIsNNOutOfRangeHinter(resolver)
 	default:
 		return nil, fmt.Errorf("Not identified hint")
 	}
@@ -71,6 +82,95 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 
 func CreateAllocSegmentHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	return &core.AllocSegment{Dst: hinter.ApCellRef(0)}, nil
+}
+
+func createIsLeFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	argA, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+	argB, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+
+	h := &GenericZeroHinter{
+		Name: "IsLeFelt",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> memory[ap] = 0 if (ids.a % PRIME) <= (ids.b % PRIME) else 1
+			apAddr := vm.Context.AddressAp()
+
+			a, err := argA.Resolve(vm)
+			if err != nil {
+				return err
+			}
+			aFelt, err := a.FieldElement()
+			if err != nil {
+				return err
+			}
+			b, err := argB.Resolve(vm)
+			if err != nil {
+				return err
+			}
+			bFelt, err := b.FieldElement()
+			if err != nil {
+				return err
+			}
+
+			var v memory.MemoryValue
+			if utils.FeltLe(aFelt, bFelt) {
+				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			} else {
+				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			}
+			return vm.Memory.WriteToAddress(&apAddr, &v)
+		},
+	}
+	return h, nil
+}
+
+func createAssertLtFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	argA, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+	argB, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+
+	h := &GenericZeroHinter{
+		Name: "AssertLtFelt",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.math_utils import assert_integer
+			//> assert_integer(ids.a)
+			//> assert_integer(ids.b)
+			//> assert (ids.a % PRIME) < (ids.b % PRIME),
+			//>        f'a = {ids.a % PRIME} is not less than b = {ids.b % PRIME}.'
+			a, err := argA.Resolve(vm)
+			if err != nil {
+				return err
+			}
+			aFelt, err := a.FieldElement()
+			if err != nil {
+				return err
+			}
+			b, err := argB.Resolve(vm)
+			if err != nil {
+				return err
+			}
+			bFelt, err := b.FieldElement()
+			if err != nil {
+				return err
+			}
+
+			if !utils.FeltLt(aFelt, bFelt) {
+				return fmt.Errorf("a = %v is not less than b = %v", aFelt, bFelt)
+			}
+			return nil
+		},
+	}
+	return h, nil
 }
 
 func createTestAssignHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
@@ -139,6 +239,76 @@ func createAssertLeFeltExcluded2Hinter(resolver hintReferenceResolver) (hinter.H
 				return fmt.Errorf("assertion `excluded == 2` failed")
 			}
 			return nil
+		},
+	}
+	return h, nil
+}
+
+func createIsNNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	argA, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	h := &GenericZeroHinter{
+		Name: "IsNN",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			apAddr := vm.Context.AddressAp()
+			//> memory[ap] = 0 if 0 <= (ids.a % PRIME) < range_check_builtin.bound else 1
+			a, err := argA.Resolve(vm)
+			if err != nil {
+				return err
+			}
+			// aFelt is already modulo PRIME, no need to adjust it.
+			aFelt, err := a.FieldElement()
+			if err != nil {
+				return err
+			}
+			// range_check_builtin.bound is utils.FeltMax128 (1 << 128).
+			var v memory.MemoryValue
+			if utils.FeltLt(aFelt, &utils.FeltMax128) {
+				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			} else {
+				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			}
+			return vm.Memory.WriteToAddress(&apAddr, &v)
+		},
+	}
+	return h, nil
+}
+
+func createIsNNOutOfRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	// This hint is executed for the negative values.
+	// If the value was non-negative, it's usually handled by the IsNN hint.
+
+	argA, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	h := &GenericZeroHinter{
+		Name: "IsNNOutOfRange",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			apAddr := vm.Context.AddressAp()
+			//> memory[ap] = 0 if 0 <= ((-ids.a - 1) % PRIME) < range_check_builtin.bound else 1
+			a, err := argA.Resolve(vm)
+			if err != nil {
+				return err
+			}
+			aFelt, err := a.FieldElement()
+			if err != nil {
+				return err
+			}
+			var lhs fp.Element
+			lhs.Sub(&utils.FeltZero, aFelt) //> -ids.a
+			lhs.Sub(&lhs, &utils.FeltOne)
+			var v memory.MemoryValue
+			if utils.FeltLt(aFelt, &utils.FeltMax128) {
+				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			} else {
+				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			}
+			return vm.Memory.WriteToAddress(&apAddr, &v)
 		},
 	}
 	return h, nil

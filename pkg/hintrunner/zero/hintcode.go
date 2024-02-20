@@ -1,7 +1,11 @@
 package zero
 
 const (
+	// This is a block for hint code strings where there is a single
+	// hint per function it belongs to (with some exceptions like testAssignCode).
 	allocSegmentCode string = "memory[ap] = segments.add()"
+	isLeFeltCode     string = "memory[ap] = 0 if (ids.a % PRIME) <= (ids.b % PRIME) else 1"
+	assertLtFeltCode string = "from starkware.cairo.common.math_utils import assert_integer\nassert_integer(ids.a)\nassert_integer(ids.b)\nassert (ids.a % PRIME) < (ids.b % PRIME), \\\n    f'a = {ids.a % PRIME} is not less than b = {ids.b % PRIME}.'"
 
 	// This is a very simple Cairo0 hint that allows us to test
 	// the identifier resolution code.
@@ -13,4 +17,8 @@ const (
 	assertLeFeltExcluded0Code string = "memory[ap] = 1 if excluded != 0 else 0"
 	assertLeFeltExcluded1Code string = "memory[ap] = 1 if excluded != 1 else 0"
 	assertLeFeltExcluded2Code string = "assert excluded == 2"
+
+	// is_nn() hints.
+	isNNCode           string = "memory[ap] = 0 if 0 <= (ids.a % PRIME) < range_check_builtin.bound else 1"
+	isNNOutOfRangeCode string = "memory[ap] = 0 if 0 <= ((-ids.a - 1) % PRIME) < range_check_builtin.bound else 1"
 )

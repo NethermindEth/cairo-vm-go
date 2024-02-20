@@ -4,6 +4,8 @@ import (
 	"math/bits"
 
 	"golang.org/x/exp/constraints"
+
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 // Takes a uint64 and an int16 and outputs their addition as well
@@ -58,4 +60,15 @@ func Max[T constraints.Integer](a, b T) T {
 		return a
 	}
 	return b
+}
+
+// FeltLt implements `a < b` felt comparison.
+func FeltLt(a, b *fp.Element) bool {
+	return a.Cmp(b) == -1
+}
+
+// FeltLe implements `a <= b` felt comparison.
+func FeltLe(a, b *fp.Element) bool {
+	// a is less or equal than b if it's not greater than b.
+	return a.Cmp(b) != 1
 }
