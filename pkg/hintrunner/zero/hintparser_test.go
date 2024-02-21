@@ -31,8 +31,11 @@ func TestHintParser(t *testing.T) {
 			Parameter:         "[cast([ap + 2], felt)]",
 			ExpectedCellRefer: nil,
 			ExpectedResOperander: hinter.DoubleDeref{
-				Deref:  hinter.ApCellRef(2),
-				Offset: 0},
+				Deref: hinter.Deref{
+					Deref: hinter.ApCellRef(2),
+				},
+				Offset: 0,
+			},
 		},
 		{
 			Parameter:         "cast([ap + 2] + [ap], felt)",
@@ -72,11 +75,11 @@ func TestHintParser(t *testing.T) {
 		require.NoError(t, err)
 
 		if test.ExpectedCellRefer != nil {
-			require.Equal(t, test.ExpectedCellRefer, output, "Expected CellRefer type")
+			require.Equal(t, test.ExpectedCellRefer, output, "unexpected CellRefer type")
 		}
 
 		if test.ExpectedResOperander != nil {
-			require.Equal(t, test.ExpectedResOperander, output, "Expected ResOperander type")
+			require.Equal(t, test.ExpectedResOperander, output, "unexpected ResOperander type")
 		}
 	}
 }
