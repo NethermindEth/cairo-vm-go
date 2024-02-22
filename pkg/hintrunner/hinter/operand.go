@@ -229,3 +229,27 @@ func (v Immediate) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	// Nothing to do
 	return v
 }
+
+func GetConsecutiveValues(vm *VM.VirtualMachine, ref ResOperander, off int16) ([]mem.MemoryValue, error) {
+	addr, err := ref.GetAddress(vm)
+	if err != nil {
+		return nil, err
+	}
+
+	var values []mem.MemoryValue
+	for i := int16(0); i < off; i++ {
+		nAddr, err := addr.AddOffset(i)
+		if err != nil {
+			return nil, err
+		}
+
+		v, err := vm.Memory.ReadFromAddress(&nAddr)
+		if err != nil {
+			return nil, err
+		}
+
+		values = append(values, v)
+	}
+
+	return values, nil
+}
