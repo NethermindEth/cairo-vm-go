@@ -54,6 +54,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	switch rawHint.Code {
 	case allocSegmentCode:
 		return CreateAllocSegmentHinter(resolver)
+	case isLeFeltCode:
+		return createIsLeFeltHinter(resolver)
+	case assertLtFeltCode:
+		return createAssertLtFeltHinter(resolver)
 	case testAssignCode:
 		return createTestAssignHinter(resolver)
 	case assertLeFeltCode:
@@ -64,6 +68,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createAssertLeFeltExcluded1Hinter(resolver)
 	case assertLeFeltExcluded2Code:
 		return createAssertLeFeltExcluded2Hinter(resolver)
+	case isNNCode:
+		return createIsNNHinter(resolver)
+	case isNNOutOfRangeCode:
+		return createIsNNOutOfRangeHinter(resolver)
 	default:
 		return nil, fmt.Errorf("Not identified hint")
 	}
@@ -93,52 +101,6 @@ func createTestAssignHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 				return err
 			}
 			return vm.Memory.WriteToAddress(&apAddr, &v)
-		},
-	}
-	return h, nil
-}
-
-func createAssertLeFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
-	if err != nil {
-		return nil, err
-	}
-	b, err := resolver.GetResOperander("b")
-	if err != nil {
-		return nil, err
-	}
-	rangeCheckPtr, err := resolver.GetResOperander("range_check_ptr")
-	if err != nil {
-		return nil, err
-	}
-
-	h := &core.AssertLeFindSmallArc{
-		A:             a,
-		B:             b,
-		RangeCheckPtr: rangeCheckPtr,
-	}
-	return h, nil
-}
-
-func createAssertLeFeltExcluded0Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	return &core.AssertLeIsFirstArcExcluded{SkipExcludeAFlag: hinter.ApCellRef(0)}, nil
-}
-
-func createAssertLeFeltExcluded1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	return &core.AssertLeIsSecondArcExcluded{SkipExcludeBMinusA: hinter.ApCellRef(0)}, nil
-}
-
-func createAssertLeFeltExcluded2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	// This hint is Cairo0-specific.
-	// It only does a python-scoped variable named "excluded" assert.
-	// We store that variable inside a hinter context.
-	h := &GenericZeroHinter{
-		Name: "AssertLeFeltExcluded2",
-		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			if ctx.ExcludedArc != 2 {
-				return fmt.Errorf("assertion `excluded == 2` failed")
-			}
-			return nil
 		},
 	}
 	return h, nil
