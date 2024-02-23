@@ -205,7 +205,7 @@ func newIsNNOutOfRangeHint(a hinter.ResOperander) hinter.Hinter {
 			lhs.Sub(&utils.FeltZero, aFelt) //> -ids.a
 			lhs.Sub(&lhs, &utils.FeltOne)
 			var v memory.MemoryValue
-			if utils.FeltLt(aFelt, &utils.FeltMax128) {
+			if utils.FeltLt(&lhs, &utils.FeltMax128) {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
 			} else {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
