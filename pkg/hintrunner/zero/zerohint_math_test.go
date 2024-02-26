@@ -128,29 +128,54 @@ func TestZeroHintMath(t *testing.T) {
 		},
 
 		"IsNNOutOfRange": {
-			{
-				operanders: []*hintOperander{
-					{Name: "a", Kind: apRelative, Value: feltInt64(0)},
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newIsNNOutOfRangeHint(ctx.operanders["a"])
-				},
-				check: apValueEquals(feltUint64(0)),
-			},
+			// Note that "a" is (-a - 1).
 
 			{
 				operanders: []*hintOperander{
+					// (-a - 1) => (-1 - 1) => -2
 					{Name: "a", Kind: apRelative, Value: feltInt64(1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newIsNNOutOfRangeHint(ctx.operanders["a"])
 				},
+				check: apValueEquals(feltUint64(1)),
+			},
+
+			{
+				operanders: []*hintOperander{
+					// (-a - 1) => (0 - 1) => -1
+					{Name: "a", Kind: apRelative, Value: feltInt64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsNNOutOfRangeHint(ctx.operanders["a"])
+				},
+				check: apValueEquals(feltUint64(1)),
+			},
+
+			{
+				operanders: []*hintOperander{
+					// (-a - 1) => (1 - 1) => 0
+					{Name: "a", Kind: apRelative, Value: feltInt64(-1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsNNOutOfRangeHint(ctx.operanders["a"])
+				},
 				check: apValueEquals(feltUint64(0)),
 			},
 
 			{
 				operanders: []*hintOperander{
-					{Name: "a", Kind: fpRelative, Value: feltInt64(-1)},
+					{Name: "a", Kind: apRelative, Value: feltAdd(&utils.FeltMax128, feltInt64(1))},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsNNOutOfRangeHint(ctx.operanders["a"])
+				},
+				check: apValueEquals(feltUint64(1)),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "a", Kind: apRelative, Value: feltAdd(&utils.FeltMax128, feltInt64(2))},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newIsNNOutOfRangeHint(ctx.operanders["a"])
@@ -166,26 +191,6 @@ func TestZeroHintMath(t *testing.T) {
 					return newIsNNOutOfRangeHint(ctx.operanders["a"])
 				},
 				check: apValueEquals(feltUint64(1)),
-			},
-
-			{
-				operanders: []*hintOperander{
-					{Name: "a", Kind: apRelative, Value: feltAdd(&utils.FeltMax128, feltInt64(1))},
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newIsNNOutOfRangeHint(ctx.operanders["a"])
-				},
-				check: apValueEquals(feltUint64(1)),
-			},
-
-			{
-				operanders: []*hintOperander{
-					{Name: "a", Kind: apRelative, Value: feltAdd(&utils.FeltMax128, feltInt64(-1))},
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newIsNNOutOfRangeHint(ctx.operanders["a"])
-				},
-				check: apValueEquals(feltUint64(0)),
 			},
 		},
 	})
