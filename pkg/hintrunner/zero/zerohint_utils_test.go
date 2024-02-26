@@ -34,6 +34,23 @@ func apValueEquals(expected *fp.Element) func(t *testing.T, ctx *hintTestContext
 	}
 }
 
+func varValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		o := ctx.operanders[varName]
+		addr, err := o.GetAddress(ctx.vm)
+		if err != nil {
+			t.Fatal(err)
+		}
+		actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&addr)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !actualFelt.Equal(expected) {
+			t.Fatalf("%s value mismatch:\nhave: %v\nwant: %v", varName, &actualFelt, expected)
+		}
+	}
+}
+
 func errorTextContains(s string) func(t *testing.T, ctx *hintTestContext, err error) {
 	return func(t *testing.T, ctx *hintTestContext, err error) {
 		if err == nil {

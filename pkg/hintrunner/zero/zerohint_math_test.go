@@ -193,5 +193,154 @@ func TestZeroHintMath(t *testing.T) {
 				check: apValueEquals(feltUint64(1)),
 			},
 		},
+
+		"IsPositive": {
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: feltInt64(10)},
+					{Name: "is_positive", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsPositiveHint(ctx.operanders["value"], ctx.operanders["is_positive"])
+				},
+				check: varValueEquals("is_positive", feltInt64(1)),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "is_positive", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsPositiveHint(ctx.operanders["value"], ctx.operanders["is_positive"])
+				},
+				check: varValueEquals("is_positive", feltInt64(1)),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: feltInt64(-1)},
+					{Name: "is_positive", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsPositiveHint(ctx.operanders["value"], ctx.operanders["is_positive"])
+				},
+				check: varValueEquals("is_positive", feltInt64(0)),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: feltAdd(&utils.FeltMax128, feltInt64(-1))},
+					{Name: "is_positive", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsPositiveHint(ctx.operanders["value"], ctx.operanders["is_positive"])
+				},
+				check: varValueEquals("is_positive", feltInt64(1)),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: &utils.FeltMax128},
+					{Name: "is_positive", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsPositiveHint(ctx.operanders["value"], ctx.operanders["is_positive"])
+				},
+				check: varValueEquals("is_positive", feltInt64(0)),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: feltAdd(&utils.FeltMax128, feltInt64(1))},
+					{Name: "is_positive", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsPositiveHint(ctx.operanders["value"], ctx.operanders["is_positive"])
+				},
+				check: varValueEquals("is_positive", feltInt64(0)),
+			},
+		},
+
+		"SplitIntAssertRange": {
+			// Zero value - assertion failed, any other - nothing.
+
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: feltInt64(1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitIntAssertRangeHint(ctx.operanders["value"])
+				},
+				errCheck: errorTextContains("split_int(): value is out of range"),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: fpRelative, Value: feltInt64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitIntAssertRangeHint(ctx.operanders["value"])
+				},
+				errCheck: errorIsNil,
+			},
+		},
+
+		"SplitIntHint": {
+			// Performs value%base and stores that to output.
+			// Asserts output<bound.
+
+			{
+				operanders: []*hintOperander{
+					{Name: "output", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(15)},
+					{Name: "base", Kind: fpRelative, Value: feltInt64(2)},
+					{Name: "bound", Kind: fpRelative, Value: feltInt64(5)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitIntHint(ctx.operanders["output"], ctx.operanders["value"], ctx.operanders["base"], ctx.operanders["bound"])
+				},
+				check: varValueEquals("output", feltInt64(1)),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "output", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(100)},
+					{Name: "base", Kind: fpRelative, Value: feltInt64(10)},
+					{Name: "bound", Kind: fpRelative, Value: feltInt64(1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitIntHint(ctx.operanders["output"], ctx.operanders["value"], ctx.operanders["base"], ctx.operanders["bound"])
+				},
+				check: varValueEquals("output", feltInt64(0)),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "output", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(100)},
+					{Name: "base", Kind: fpRelative, Value: feltInt64(6)},
+					{Name: "bound", Kind: fpRelative, Value: feltInt64(7)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitIntHint(ctx.operanders["output"], ctx.operanders["value"], ctx.operanders["base"], ctx.operanders["bound"])
+				},
+				check: varValueEquals("output", feltInt64(4)),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "output", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(100)},
+					{Name: "base", Kind: fpRelative, Value: feltInt64(6)},
+					{Name: "bound", Kind: fpRelative, Value: feltInt64(3)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitIntHint(ctx.operanders["output"], ctx.operanders["value"], ctx.operanders["base"], ctx.operanders["bound"])
+				},
+				errCheck: errorTextContains("assertion `split_int(): Limb 4 is out of range` failed"),
+			},
+		},
 	})
 }
