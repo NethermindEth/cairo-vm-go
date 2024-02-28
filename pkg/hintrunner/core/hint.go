@@ -819,14 +819,14 @@ func (hint *Felt252DictEntryInit) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 		return fmt.Errorf("resolve key: %w", err)
 	}
 
-	prevValue, err := ctx.DictionaryManager.At(&dictPtr, &key)
+	prevValue, err := ctx.DictionaryManager.At(dictPtr, key)
 	if err != nil {
 		return fmt.Errorf("get dictionary entry: %w", err)
 	}
 	if prevValue == nil {
 		mv := mem.EmptyMemoryValueAsFelt()
 		prevValue = &mv
-		_ = ctx.DictionaryManager.Set(&dictPtr, &key, prevValue)
+		_ = ctx.DictionaryManager.Set(dictPtr, key, prevValue)
 	}
 	return vm.Memory.Write(dictPtr.SegmentIndex, dictPtr.Offset+1, prevValue)
 }
@@ -864,7 +864,7 @@ func (hint *Felt252DictEntryUpdate) Execute(vm *VM.VirtualMachine, ctx *hinter.H
 		return fmt.Errorf("resolve value: %w", err)
 	}
 
-	return ctx.DictionaryManager.Set(&dictPtr, key, &value)
+	return ctx.DictionaryManager.Set(dictPtr, key, &value)
 }
 
 type GetSegmentArenaIndex struct {
@@ -887,7 +887,7 @@ func (hint *GetSegmentArenaIndex) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 		return fmt.Errorf("resolve dict end pointer: %w", err)
 	}
 
-	dict, err := ctx.DictionaryManager.GetDictionary(&dictEndPtr)
+	dict, err := ctx.DictionaryManager.GetDictionary(dictEndPtr)
 	if err != nil {
 		return fmt.Errorf("get dictionary: %w", err)
 	}
@@ -1004,7 +1004,7 @@ func (hint *GetCurrentAccessIndex) Execute(vm *VM.VirtualMachine, ctx *hinter.Hi
 	lastIndex := f.NewElement(lastIndex64)
 	mv := mem.MemoryValueFromFieldElement(&lastIndex)
 
-	return vm.Memory.WriteToAddress(&rangeCheckPtr, &mv)
+	return vm.Memory.WriteToAddress(rangeCheckPtr, &mv)
 }
 
 type ShouldSkipSquashLoop struct {
@@ -1393,7 +1393,7 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 
 	// Store remainder 1
 	writeValue := mem.MemoryValueFromFieldElement(&remainderFelt)
-	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
+	err = vm.Memory.WriteToAddress(rangeCheckPtrMemAddr, &writeValue)
 	if err != nil {
 		return fmt.Errorf("write first remainder: %w", err)
 	}
@@ -1401,7 +1401,7 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 	// Store quotient 1
 	rangeCheckPtrMemAddr.Offset += 1
 	writeValue = mem.MemoryValueFromFieldElement(&quotientFelt)
-	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
+	err = vm.Memory.WriteToAddress(rangeCheckPtrMemAddr, &writeValue)
 	if err != nil {
 		return fmt.Errorf("write first quotient: %w", err)
 	}
@@ -1418,7 +1418,7 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 	// Store remainder 2
 	rangeCheckPtrMemAddr.Offset += 1
 	writeValue = mem.MemoryValueFromFieldElement(&remainderFelt)
-	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
+	err = vm.Memory.WriteToAddress(rangeCheckPtrMemAddr, &writeValue)
 	if err != nil {
 		return fmt.Errorf("write second remainder: %w", err)
 	}
@@ -1426,7 +1426,7 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 	// Store quotient 2
 	rangeCheckPtrMemAddr.Offset += 1
 	writeValue = mem.MemoryValueFromFieldElement(&quotientFelt)
-	err = vm.Memory.WriteToAddress(&rangeCheckPtrMemAddr, &writeValue)
+	err = vm.Memory.WriteToAddress(rangeCheckPtrMemAddr, &writeValue)
 	if err != nil {
 		return fmt.Errorf("write second quotient: %w", err)
 	}

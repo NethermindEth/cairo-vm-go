@@ -8,32 +8,32 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func ResolveAsAddress(vm *VM.VirtualMachine, op ResOperander) (mem.MemoryAddress, error) {
+func ResolveAsAddress(vm *VM.VirtualMachine, op ResOperander) (*mem.MemoryAddress, error) {
 	mv, err := op.Resolve(vm)
 	if err != nil {
-		return mem.UnknownAddress, fmt.Errorf("%s: %w", op, err)
+		return &mem.UnknownAddress, fmt.Errorf("%s: %w", op, err)
 	}
 
 	addr, err := mv.MemoryAddress()
 	if err != nil {
-		return mem.UnknownAddress, fmt.Errorf("%s: %w", op, err)
+		return &mem.UnknownAddress, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return *addr, nil
+	return addr, nil
 }
 
-func ResolveAsFelt(vm *VM.VirtualMachine, op ResOperander) (f.Element, error) {
+func ResolveAsFelt(vm *VM.VirtualMachine, op ResOperander) (*f.Element, error) {
 	mv, err := op.Resolve(vm)
 	if err != nil {
-		return f.Element{}, fmt.Errorf("%s: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	felt, err := mv.FieldElement()
 	if err != nil {
-		return f.Element{}, fmt.Errorf("%s: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return *felt, nil
+	return felt, nil
 }
 
 func ResolveAsUint64(vm *VM.VirtualMachine, op ResOperander) (uint64, error) {
