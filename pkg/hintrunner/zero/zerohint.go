@@ -8,6 +8,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 // GenericZeroHinter wraps an adhoc Cairo0 inline (pythonic) hint implementation.
@@ -151,4 +152,12 @@ func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 	}
 
 	return resolver, nil
+}
+
+func resolveFieldElement(vm *VM.VirtualMachine, o hinter.ResOperander) (*fp.Element, error) {
+	v, err := o.Resolve(vm)
+	if err != nil {
+		return nil, err
+	}
+	return v.FieldElement()
 }
