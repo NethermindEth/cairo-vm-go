@@ -18,11 +18,11 @@ func newIsLeFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 			//> memory[ap] = 0 if (ids.a % PRIME) <= (ids.b % PRIME) else 1
 			apAddr := vm.Context.AddressAp()
 
-			a, err := resolveFieldElement(vm, a)
+			a, err := hinter.ResolveAsFelt(vm, a)
 			if err != nil {
 				return err
 			}
-			b, err := resolveFieldElement(vm, b)
+			b, err := hinter.ResolveAsFelt(vm, b)
 			if err != nil {
 				return err
 			}
@@ -59,11 +59,11 @@ func newAssertLtFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 			//> assert_integer(ids.b)
 			//> assert (ids.a % PRIME) < (ids.b % PRIME),
 			//>        f'a = {ids.a % PRIME} is not less than b = {ids.b % PRIME}.'
-			a, err := resolveFieldElement(vm, a)
+			a, err := hinter.ResolveAsFelt(vm, a)
 			if err != nil {
 				return err
 			}
-			b, err := resolveFieldElement(vm, b)
+			b, err := hinter.ResolveAsFelt(vm, b)
 			if err != nil {
 				return err
 			}
@@ -144,7 +144,7 @@ func newIsNNHint(a hinter.ResOperander) hinter.Hinter {
 			//> memory[ap] = 0 if 0 <= (ids.a % PRIME) < range_check_builtin.bound else 1
 
 			// a is already modulo PRIME, no need to adjust it.
-			a, err := resolveFieldElement(vm, a)
+			a, err := hinter.ResolveAsFelt(vm, a)
 			if err != nil {
 				return err
 			}
@@ -174,7 +174,7 @@ func newIsNNOutOfRangeHint(a hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			apAddr := vm.Context.AddressAp()
 			//> memory[ap] = 0 if 0 <= ((-ids.a - 1) % PRIME) < range_check_builtin.bound else 1
-			a, err := resolveFieldElement(vm, a)
+			a, err := hinter.ResolveAsFelt(vm, a)
 			if err != nil {
 				return err
 			}
@@ -216,7 +216,7 @@ func newIsPositiveHint(value, dst hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			value, err := resolveFieldElement(vm, value)
+			value, err := hinter.ResolveAsFelt(vm, value)
 			if err != nil {
 				return err
 			}
@@ -250,7 +250,7 @@ func newSplitIntAssertRangeHint(value hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> assert ids.value == 0, 'split_int(): value is out of range.'
 
-			value, err := resolveFieldElement(vm, value)
+			value, err := hinter.ResolveAsFelt(vm, value)
 			if err != nil {
 				return err
 			}
@@ -283,17 +283,17 @@ func newSplitIntHint(output, value, base, bound hinter.ResOperander) hinter.Hint
 				return err
 			}
 
-			base, err := resolveFieldElement(vm, base)
+			base, err := hinter.ResolveAsFelt(vm, base)
 			if err != nil {
 				return err
 			}
 
-			value, err := resolveFieldElement(vm, value)
+			value, err := hinter.ResolveAsFelt(vm, value)
 			if err != nil {
 				return err
 			}
 
-			bound, err := resolveFieldElement(vm, bound)
+			bound, err := hinter.ResolveAsFelt(vm, bound)
 			if err != nil {
 				return err
 			}
