@@ -18,6 +18,7 @@ func newIsLeFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 			//> memory[ap] = 0 if (ids.a % PRIME) <= (ids.b % PRIME) else 1
 			apAddr := vm.Context.AddressAp()
 
+<<<<<<< Updated upstream
 			a, err := a.Resolve(vm)
 			if err != nil {
 				return err
@@ -31,6 +32,13 @@ func newIsLeFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 			bFelt, err := b.FieldElement()
+=======
+			a, err := hinter.ResolveAsFelt(vm, a)
+			if err != nil {
+				return err
+			}
+			b, err := hinter.ResolveAsFelt(vm, b)
+>>>>>>> Stashed changes
 			if err != nil {
 				return err
 			}
@@ -67,6 +75,7 @@ func newAssertLtFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 			//> assert_integer(ids.b)
 			//> assert (ids.a % PRIME) < (ids.b % PRIME),
 			//>        f'a = {ids.a % PRIME} is not less than b = {ids.b % PRIME}.'
+<<<<<<< Updated upstream
 			a, err := a.Resolve(vm)
 			if err != nil {
 				return err
@@ -80,6 +89,13 @@ func newAssertLtFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 			bFelt, err := b.FieldElement()
+=======
+			a, err := hinter.ResolveAsFelt(vm, a)
+			if err != nil {
+				return err
+			}
+			b, err := hinter.ResolveAsFelt(vm, b)
+>>>>>>> Stashed changes
 			if err != nil {
 				return err
 			}
@@ -158,12 +174,18 @@ func newIsNNHint(a hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			apAddr := vm.Context.AddressAp()
 			//> memory[ap] = 0 if 0 <= (ids.a % PRIME) < range_check_builtin.bound else 1
+<<<<<<< Updated upstream
 			a, err := a.Resolve(vm)
 			if err != nil {
 				return err
 			}
 			// aFelt is already modulo PRIME, no need to adjust it.
 			aFelt, err := a.FieldElement()
+=======
+
+			// a is already modulo PRIME, no need to adjust it.
+			a, err := hinter.ResolveAsFelt(vm, a)
+>>>>>>> Stashed changes
 			if err != nil {
 				return err
 			}
@@ -193,11 +215,15 @@ func newIsNNOutOfRangeHint(a hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			apAddr := vm.Context.AddressAp()
 			//> memory[ap] = 0 if 0 <= ((-ids.a - 1) % PRIME) < range_check_builtin.bound else 1
+<<<<<<< Updated upstream
 			a, err := a.Resolve(vm)
 			if err != nil {
 				return err
 			}
 			aFelt, err := a.FieldElement()
+=======
+			a, err := hinter.ResolveAsFelt(vm, a)
+>>>>>>> Stashed changes
 			if err != nil {
 				return err
 			}
@@ -239,11 +265,15 @@ func newIsPositiveHint(value, dst hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
+<<<<<<< Updated upstream
 			value, err := value.Resolve(vm)
 			if err != nil {
 				return err
 			}
 			valueFelt, err := value.FieldElement()
+=======
+			value, err := hinter.ResolveAsFelt(vm, value)
+>>>>>>> Stashed changes
 			if err != nil {
 				return err
 			}
@@ -277,7 +307,11 @@ func newSplitIntAssertRangeHint(value hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> assert ids.value == 0, 'split_int(): value is out of range.'
 
+<<<<<<< Updated upstream
 			value, err := value.Resolve(vm)
+=======
+			value, err := hinter.ResolveAsFelt(vm, value)
+>>>>>>> Stashed changes
 			if err != nil {
 				return err
 			}
@@ -314,29 +348,41 @@ func newSplitIntHint(output, value, base, bound hinter.ResOperander) hinter.Hint
 				return err
 			}
 
+<<<<<<< Updated upstream
 			base, err := base.Resolve(vm)
 			if err != nil {
 				return err
 			}
 			baseFelt, err := base.FieldElement()
+=======
+			base, err := hinter.ResolveAsFelt(vm, base)
+>>>>>>> Stashed changes
 			if err != nil {
 				return err
 			}
 
+<<<<<<< Updated upstream
 			value, err := value.Resolve(vm)
 			if err != nil {
 				return err
 			}
 			valueFelt, err := value.FieldElement()
+=======
+			value, err := hinter.ResolveAsFelt(vm, value)
+>>>>>>> Stashed changes
 			if err != nil {
 				return err
 			}
 
+<<<<<<< Updated upstream
 			bound, err := bound.Resolve(vm)
 			if err != nil {
 				return err
 			}
 			boundFelt, err := bound.FieldElement()
+=======
+			bound, err := hinter.ResolveAsFelt(vm, bound)
+>>>>>>> Stashed changes
 			if err != nil {
 				return err
 			}
