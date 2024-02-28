@@ -1,6 +1,6 @@
 package zero
 
-import(
+import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -19,7 +19,7 @@ func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Elem
 		return nil, nil, err
 	}
 
-	high, err :=  values[1].FieldElement()
+	high, err := values[1].FieldElement()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -27,8 +27,8 @@ func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Elem
 	return low, high, nil
 }
 
-func newUint256AddHinter(a, b, carryLow, carryHigh hinter.ResOperander) hinter.Hinter {
-	return &GenericZeroHinter {
+func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
 		Name: "Uint256Add",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> sum_low = ids.a.low + ids.b.low
@@ -46,13 +46,14 @@ func newUint256AddHinter(a, b, carryLow, carryHigh hinter.ResOperander) hinter.H
 			}
 
 			// Calculate `carry_low` memory value
-			var sumLow *fp.Element
-			sumLow.Add(aLow, bLow)
-			cLow := utils.FeltZero
+			sumLow := new(fp.Element).Add(aLow, bLow)
+			var cLow *fp.Element
 			if utils.FeltLe(&utils.FeltMax128, sumLow) {
-				cLow = utils.FeltOne
+				cLow = &utils.FeltOne
+			} else {
+				cLow = &utils.FeltZero
 			}
-			cLowValue := memory.MemoryValueFromFieldElement(&cLow)
+			cLowValue := memory.MemoryValueFromFieldElement(cLow)
 
 			// Save `carry_low` value in address
 			addrCarryLow, err := carryLow.GetAddress(vm)
@@ -65,14 +66,15 @@ func newUint256AddHinter(a, b, carryLow, carryHigh hinter.ResOperander) hinter.H
 			}
 
 			// Calculate `carry_high` memory value
-			var sumHigh *fp.Element
-			sumHigh.Add(aHigh, bHigh)
-			sumHigh.Add(sumHigh, &cLow)
-			cHigh := utils.FeltZero
+			sumHigh := new(fp.Element).Add(aHigh, bHigh)
+			sumHigh.Add(sumHigh, cLow)
+			var cHigh *fp.Element
 			if utils.FeltLe(&utils.FeltMax128, sumHigh) {
-				cHigh = utils.FeltOne
+				cHigh = &utils.FeltOne
+			} else {
+				cHigh = &utils.FeltZero
 			}
-			cHighValue := memory.MemoryValueFromFieldElement(&cHigh)
+			cHighValue := memory.MemoryValueFromFieldElement(cHigh)
 
 			// Save `carry_high` value in address
 			addrCarryHigh, err := carryHigh.GetAddress(vm)
@@ -104,11 +106,11 @@ func createUint256AddHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	if err != nil {
 		return nil, err
 	}
-	
+
 	carryHigh, err := resolver.GetResOperander("carry_high")
 	if err != nil {
 		return nil, err
 	}
 
-	return newUint256AddHinter(a, b, carryLow, carryHigh), nil
+	return newUint256AddHint(a, b, carryLow, carryHigh), nil
 }
