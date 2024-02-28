@@ -22,7 +22,7 @@ func TestZeroHintUint256(t *testing.T) {
 					{Name: "carry_high", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUint256AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry_low"], ctx.operanders["carry_high"])
+					return newUint256AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry_low"], ctx.operanders["carry_high"], false)
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"carry_low":  feltUint64(1),
@@ -37,7 +37,7 @@ func TestZeroHintUint256(t *testing.T) {
 					{Name: "carry_high", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUint256AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry_low"], ctx.operanders["carry_high"])
+					return newUint256AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry_low"], ctx.operanders["carry_high"], false)
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"carry_low":  feltUint64(1),
@@ -52,7 +52,7 @@ func TestZeroHintUint256(t *testing.T) {
 					{Name: "carry_high", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUint256AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry_low"], ctx.operanders["carry_high"])
+					return newUint256AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry_low"], ctx.operanders["carry_high"], false)
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"carry_low":  feltUint64(0),
@@ -67,7 +67,7 @@ func TestZeroHintUint256(t *testing.T) {
 					{Name: "carry_high", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUint256AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry_low"], ctx.operanders["carry_high"])
+					return newUint256AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry_low"], ctx.operanders["carry_high"], false)
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"carry_low":  feltUint64(0),

@@ -27,12 +27,14 @@ func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Elem
 	return low, high, nil
 }
 
-func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander) hinter.Hinter {
+func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander, lowOnly bool) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint256Add",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> sum_low = ids.a.low + ids.b.low
 			//> ids.carry_low = 1 if sum_low >= ids.SHIFT else 0
+
+			// Uint256AddLow does not implement this part
 			//> sum_high = ids.a.high + ids.b.high + ids.carry_low
 			//> ids.carry_high = 1 if sum_high >= ids.SHIFT else 0
 
@@ -65,25 +67,27 @@ func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander) hinter.Hin
 				return err
 			}
 
-			// Calculate `carry_high` memory value
-			sumHigh := new(fp.Element).Add(aHigh, bHigh)
-			sumHigh.Add(sumHigh, cLow)
-			var cHigh *fp.Element
-			if utils.FeltLe(&utils.FeltMax128, sumHigh) {
-				cHigh = &utils.FeltOne
-			} else {
-				cHigh = &utils.FeltZero
-			}
-			cHighValue := memory.MemoryValueFromFieldElement(cHigh)
+			if !lowOnly {
+				// Calculate `carry_high` memory value
+				sumHigh := new(fp.Element).Add(aHigh, bHigh)
+				sumHigh.Add(sumHigh, cLow)
+				var cHigh *fp.Element
+				if utils.FeltLe(&utils.FeltMax128, sumHigh) {
+					cHigh = &utils.FeltOne
+				} else {
+					cHigh = &utils.FeltZero
+				}
+				cHighValue := memory.MemoryValueFromFieldElement(cHigh)
 
-			// Save `carry_high` value in address
-			addrCarryHigh, err := carryHigh.GetAddress(vm)
-			if err != nil {
-				return err
-			}
-			err = vm.Memory.WriteToAddress(&addrCarryHigh, &cHighValue)
-			if err != nil {
-				return err
+				// Save `carry_high` value in address
+				addrCarryHigh, err := carryHigh.GetAddress(vm)
+				if err != nil {
+					return err
+				}
+				err = vm.Memory.WriteToAddress(&addrCarryHigh, &cHighValue)
+				if err != nil {
+					return err
+				}
 			}
 
 			return nil
@@ -91,7 +95,7 @@ func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander) hinter.Hin
 	}
 }
 
-func createUint256AddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+func createUint256AddHinter(resolver hintReferenceResolver, low bool) (hinter.Hinter, error) {
 	a, err := resolver.GetResOperander("a")
 	if err != nil {
 		return nil, err
@@ -107,10 +111,13 @@ func createUint256AddHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 		return nil, err
 	}
 
-	carryHigh, err := resolver.GetResOperander("carry_high")
-	if err != nil {
-		return nil, err
+	var carryHigh hinter.ResOperander
+	if !low {
+		carryHigh, err = resolver.GetResOperander("carry_high")
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return newUint256AddHint(a, b, carryLow, carryHigh), nil
+	return newUint256AddHint(a, b, carryLow, carryHigh, low), nil
 }
