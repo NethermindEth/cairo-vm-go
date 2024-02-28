@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"math/big"
 	"math/bits"
 
 	"golang.org/x/exp/constraints"
@@ -71,4 +72,27 @@ func FeltLt(a, b *fp.Element) bool {
 func FeltLe(a, b *fp.Element) bool {
 	// a is less or equal than b if it's not greater than b.
 	return a.Cmp(b) != 1
+}
+
+func FeltIsPositive(felt *fp.Element) bool {
+	// range_check_builtin.bound is utils.FeltMax128 (1 << 128).
+	return FeltLt(felt, &FeltMax128)
+}
+
+// FeltMod implements `a % b` operation.
+func FeltMod(a, b *fp.Element) fp.Element {
+	// TODO: implement it in a better way, without bigint?
+
+	var result fp.Element
+
+	var tmpResult big.Int
+	var tmpA big.Int
+	var tmpB big.Int
+
+	a.BigInt(&tmpA)
+	b.BigInt(&tmpB)
+	tmpResult.Mod(&tmpA, &tmpB)
+
+	result.SetBigInt(&tmpResult)
+	return result
 }

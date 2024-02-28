@@ -21,4 +21,12 @@ const (
 	// is_nn() hints.
 	isNNCode           string = "memory[ap] = 0 if 0 <= (ids.a % PRIME) < range_check_builtin.bound else 1"
 	isNNOutOfRangeCode string = "memory[ap] = 0 if 0 <= ((-ids.a - 1) % PRIME) < range_check_builtin.bound else 1"
+
+	// This is a rare case when some hint is used in more than one place.
+	// isPositive is used in sign() and abs_value() functions.
+	isPositiveCode string = "from starkware.cairo.common.math_utils import is_positive\nids.is_positive = 1 if is_positive(\n    value=ids.value, prime=PRIME, rc_bound=range_check_builtin.bound) else 0"
+
+	// split_int() hints.
+	splitIntAssertRange string = "assert ids.value == 0, 'split_int(): value is out of range.'"
+	splitIntCode        string = "memory[ids.output] = res = (int(ids.value) % PRIME) % ids.base\nassert res < ids.bound, f'split_int(): Limb {res} is out of range.'"
 )
