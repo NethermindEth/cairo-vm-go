@@ -18,25 +18,17 @@ func newIsLeFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 			//> memory[ap] = 0 if (ids.a % PRIME) <= (ids.b % PRIME) else 1
 			apAddr := vm.Context.AddressAp()
 
-			a, err := a.Resolve(vm)
+			a, err := hinter.ResolveAsFelt(vm, a)
 			if err != nil {
 				return err
 			}
-			aFelt, err := a.FieldElement()
-			if err != nil {
-				return err
-			}
-			b, err := b.Resolve(vm)
-			if err != nil {
-				return err
-			}
-			bFelt, err := b.FieldElement()
+			b, err := hinter.ResolveAsFelt(vm, b)
 			if err != nil {
 				return err
 			}
 
 			var v memory.MemoryValue
-			if utils.FeltLe(aFelt, bFelt) {
+			if utils.FeltLe(a, b) {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
 			} else {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
@@ -67,25 +59,17 @@ func newAssertLtFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 			//> assert_integer(ids.b)
 			//> assert (ids.a % PRIME) < (ids.b % PRIME),
 			//>        f'a = {ids.a % PRIME} is not less than b = {ids.b % PRIME}.'
-			a, err := a.Resolve(vm)
+			a, err := hinter.ResolveAsFelt(vm, a)
 			if err != nil {
 				return err
 			}
-			aFelt, err := a.FieldElement()
-			if err != nil {
-				return err
-			}
-			b, err := b.Resolve(vm)
-			if err != nil {
-				return err
-			}
-			bFelt, err := b.FieldElement()
+			b, err := hinter.ResolveAsFelt(vm, b)
 			if err != nil {
 				return err
 			}
 
-			if !utils.FeltLt(aFelt, bFelt) {
-				return fmt.Errorf("a = %v is not less than b = %v", aFelt, bFelt)
+			if !utils.FeltLt(a, b) {
+				return fmt.Errorf("a = %v is not less than b = %v", a, b)
 			}
 			return nil
 		},
@@ -158,18 +142,15 @@ func newIsNNHint(a hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			apAddr := vm.Context.AddressAp()
 			//> memory[ap] = 0 if 0 <= (ids.a % PRIME) < range_check_builtin.bound else 1
-			a, err := a.Resolve(vm)
-			if err != nil {
-				return err
-			}
-			// aFelt is already modulo PRIME, no need to adjust it.
-			aFelt, err := a.FieldElement()
+
+			// a is already modulo PRIME, no need to adjust it.
+			a, err := hinter.ResolveAsFelt(vm, a)
 			if err != nil {
 				return err
 			}
 			// range_check_builtin.bound is utils.FeltMax128 (1 << 128).
 			var v memory.MemoryValue
-			if utils.FeltLt(aFelt, &utils.FeltMax128) {
+			if utils.FeltLt(a, &utils.FeltMax128) {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
 			} else {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
@@ -193,16 +174,12 @@ func newIsNNOutOfRangeHint(a hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			apAddr := vm.Context.AddressAp()
 			//> memory[ap] = 0 if 0 <= ((-ids.a - 1) % PRIME) < range_check_builtin.bound else 1
-			a, err := a.Resolve(vm)
-			if err != nil {
-				return err
-			}
-			aFelt, err := a.FieldElement()
+			a, err := hinter.ResolveAsFelt(vm, a)
 			if err != nil {
 				return err
 			}
 			var lhs fp.Element
-			lhs.Sub(&utils.FeltZero, aFelt) //> -ids.a
+			lhs.Sub(&utils.FeltZero, a) //> -ids.a
 			lhs.Sub(&lhs, &utils.FeltOne)
 			var v memory.MemoryValue
 			if utils.FeltLt(&lhs, &utils.FeltMax128) {
@@ -239,17 +216,13 @@ func newIsPositiveHint(value, dst hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			value, err := value.Resolve(vm)
-			if err != nil {
-				return err
-			}
-			valueFelt, err := value.FieldElement()
+			value, err := hinter.ResolveAsFelt(vm, value)
 			if err != nil {
 				return err
 			}
 
 			var v memory.MemoryValue
-			if utils.FeltIsPositive(valueFelt) {
+			if utils.FeltIsPositive(value) {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
@@ -277,15 +250,11 @@ func newSplitIntAssertRangeHint(value hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> assert ids.value == 0, 'split_int(): value is out of range.'
 
-			value, err := value.Resolve(vm)
+			value, err := hinter.ResolveAsFelt(vm, value)
 			if err != nil {
 				return err
 			}
-			valueFelt, err := value.FieldElement()
-			if err != nil {
-				return err
-			}
-			if !valueFelt.IsZero() {
+			if !value.IsZero() {
 				return fmt.Errorf("assertion `split_int(): value is out of range` failed")
 			}
 
@@ -314,35 +283,23 @@ func newSplitIntHint(output, value, base, bound hinter.ResOperander) hinter.Hint
 				return err
 			}
 
-			base, err := base.Resolve(vm)
-			if err != nil {
-				return err
-			}
-			baseFelt, err := base.FieldElement()
+			base, err := hinter.ResolveAsFelt(vm, base)
 			if err != nil {
 				return err
 			}
 
-			value, err := value.Resolve(vm)
-			if err != nil {
-				return err
-			}
-			valueFelt, err := value.FieldElement()
+			value, err := hinter.ResolveAsFelt(vm, value)
 			if err != nil {
 				return err
 			}
 
-			bound, err := bound.Resolve(vm)
-			if err != nil {
-				return err
-			}
-			boundFelt, err := bound.FieldElement()
+			bound, err := hinter.ResolveAsFelt(vm, bound)
 			if err != nil {
 				return err
 			}
 
-			result := utils.FeltMod(valueFelt, baseFelt)
-			if !utils.FeltLt(&result, boundFelt) {
+			result := utils.FeltMod(value, base)
+			if !utils.FeltLt(&result, bound) {
 				return fmt.Errorf("assertion `split_int(): Limb %v is out of range` failed", &result)
 			}
 
