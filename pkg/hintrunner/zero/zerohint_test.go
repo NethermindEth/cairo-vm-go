@@ -77,9 +77,18 @@ const (
 	// $value | Immediate($value)
 	// Requires {Name, Kind=immediate, Value}
 	immediate
+
+	// A memory cell that is allocated, but not written to yet.
+	// It's allowed to write to this address once.
+	// Requires {Name, Kind=uninitialized}
+	uninitialized
 )
 
 func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
+	// TODO: most (all?) hinter constructors inside a single test group
+	// are identical. Can we only define it once and make it reused inside
+	// the entire group?
+
 	runTest := func(t *testing.T, tc hintTestCase) {
 		// Establish an invariant that only one of the check functions is present.
 		if tc.check == nil && tc.errCheck == nil {
@@ -132,6 +141,10 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 			case immediate:
 				// Nothing to do.
 
+			case uninitialized:
+				o.memoryOffset = vm.Context.Ap
+				vm.Context.Ap++
+
 			default:
 				panic("unexpected operander kind")
 			}
@@ -141,7 +154,7 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 		// compute the relative addresses for operanders.
 		for _, o := range tc.operanders {
 			switch o.Kind {
-			case apRelative:
+			case apRelative, uninitialized:
 				relOffset := int(vm.Context.Ap - o.memoryOffset)
 				testCtx.operanders[o.Name] = &hinter.Deref{
 					Deref: hinter.ApCellRef(-relOffset),
@@ -150,7 +163,7 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 			case fpRelative:
 				relOffset := int(vm.Context.Fp - o.memoryOffset)
 				testCtx.operanders[o.Name] = &hinter.Deref{
-					Deref: hinter.FpCellRef(relOffset),
+					Deref: hinter.FpCellRef(-relOffset),
 				}
 
 			case immediate:

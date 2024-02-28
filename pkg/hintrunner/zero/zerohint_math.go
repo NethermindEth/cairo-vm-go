@@ -205,7 +205,7 @@ func newIsNNOutOfRangeHint(a hinter.ResOperander) hinter.Hinter {
 			lhs.Sub(&utils.FeltZero, aFelt) //> -ids.a
 			lhs.Sub(&lhs, &utils.FeltOne)
 			var v memory.MemoryValue
-			if utils.FeltLt(aFelt, &utils.FeltMax128) {
+			if utils.FeltLt(&lhs, &utils.FeltMax128) {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
 			} else {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
@@ -224,4 +224,150 @@ func createIsNNOutOfRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 		return nil, err
 	}
 	return newIsNNOutOfRangeHint(a), nil
+}
+
+func newIsPositiveHint(value, dst hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "IsPositive",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.math_utils import is_positive
+			//> ids.is_positive = 1 if is_positive(
+			//>     value=ids.value, prime=PRIME, rc_bound=range_check_builtin.bound) else 0
+
+			isPositiveAddr, err := dst.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			value, err := value.Resolve(vm)
+			if err != nil {
+				return err
+			}
+			valueFelt, err := value.FieldElement()
+			if err != nil {
+				return err
+			}
+
+			var v memory.MemoryValue
+			if utils.FeltIsPositive(valueFelt) {
+				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+			return vm.Memory.WriteToAddress(&isPositiveAddr, &v)
+		},
+	}
+}
+
+func createIsPositiveHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+	output, err := resolver.GetResOperander("output")
+	if err != nil {
+		return nil, err
+	}
+	return newIsPositiveHint(value, output), nil
+}
+
+func newSplitIntAssertRangeHint(value hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitIntAssertRange",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> assert ids.value == 0, 'split_int(): value is out of range.'
+
+			value, err := value.Resolve(vm)
+			if err != nil {
+				return err
+			}
+			valueFelt, err := value.FieldElement()
+			if err != nil {
+				return err
+			}
+			if !valueFelt.IsZero() {
+				return fmt.Errorf("assertion `split_int(): value is out of range` failed")
+			}
+
+			return nil
+		},
+	}
+}
+
+func createSplitIntAssertRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+	return newSplitIntAssertRangeHint(value), nil
+}
+
+func newSplitIntHint(output, value, base, bound hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitIntHint",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> memory[ids.output] = res = (int(ids.value) % PRIME) % ids.base
+			//> assert res < ids.bound, f'split_int(): Limb {res} is out of range.'
+
+			outputAddr, err := output.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			base, err := base.Resolve(vm)
+			if err != nil {
+				return err
+			}
+			baseFelt, err := base.FieldElement()
+			if err != nil {
+				return err
+			}
+
+			value, err := value.Resolve(vm)
+			if err != nil {
+				return err
+			}
+			valueFelt, err := value.FieldElement()
+			if err != nil {
+				return err
+			}
+
+			bound, err := bound.Resolve(vm)
+			if err != nil {
+				return err
+			}
+			boundFelt, err := bound.FieldElement()
+			if err != nil {
+				return err
+			}
+
+			result := utils.FeltMod(valueFelt, baseFelt)
+			if !utils.FeltLt(&result, boundFelt) {
+				return fmt.Errorf("assertion `split_int(): Limb %v is out of range` failed", &result)
+			}
+
+			v := memory.MemoryValueFromFieldElement(&result)
+			return vm.Memory.WriteToAddress(&outputAddr, &v)
+		},
+	}
+}
+
+func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	output, err := resolver.GetResOperander("output")
+	if err != nil {
+		return nil, err
+	}
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+	base, err := resolver.GetResOperander("base")
+	if err != nil {
+		return nil, err
+	}
+	bound, err := resolver.GetResOperander("bound")
+	if err != nil {
+		return nil, err
+	}
+	return newSplitIntHint(output, value, base, bound), nil
 }
