@@ -16,13 +16,15 @@ func TestZeroHintUint256(t *testing.T) {
 		"Uint256Add": {
 			{
 				operanders: []*hintOperander{
-					{Name: "a", Kind: fpRelative, Value: []*fp.Element{felt127, feltUint64(0)}},
-					{Name: "b", Kind: apRelative, Value: []*fp.Element{felt127, feltUint64(0)}},
+					{Name: "a.low", Kind: fpRelative, Value: felt127},
+					{Name: "a.high", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "b.low", Kind: apRelative, Value: felt127},
+					{Name: "b.high", Kind: apRelative, Value: feltUint64(0)},
 					{Name: "carry_low", Kind: uninitialized},
 					{Name: "carry_high", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUint256AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry_low"], ctx.operanders["carry_high"], false)
+					return newUint256AddHint(ctx.operanders["a.low"], ctx.operanders["b.low"], ctx.operanders["carry_low"], ctx.operanders["carry_high"], false)
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"carry_low":  feltUint64(1),
@@ -31,13 +33,15 @@ func TestZeroHintUint256(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "a", Kind: fpRelative, Value: []*fp.Element{felt127, felt127}},
-					{Name: "b", Kind: apRelative, Value: []*fp.Element{felt127, felt127}},
+					{Name: "a.low", Kind: fpRelative, Value: felt127},
+					{Name: "a.high", Kind: fpRelative, Value: felt127},
+					{Name: "b.low", Kind: apRelative, Value: felt127},
+					{Name: "b.high", Kind: apRelative, Value: felt127},
 					{Name: "carry_low", Kind: uninitialized},
 					{Name: "carry_high", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUint256AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry_low"], ctx.operanders["carry_high"], false)
+					return newUint256AddHint(ctx.operanders["a.low"], ctx.operanders["b.low"], ctx.operanders["carry_low"], ctx.operanders["carry_high"], false)
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"carry_low":  feltUint64(1),
@@ -46,13 +50,15 @@ func TestZeroHintUint256(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "a", Kind: fpRelative, Value: []*fp.Element{feltUint64(0), felt127}},
-					{Name: "b", Kind: apRelative, Value: []*fp.Element{feltUint64(0), felt127}},
+					{Name: "a.low", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "a.high", Kind: fpRelative, Value: felt127},
+					{Name: "b.low", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.high", Kind: apRelative, Value: felt127},
 					{Name: "carry_low", Kind: uninitialized},
 					{Name: "carry_high", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUint256AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry_low"], ctx.operanders["carry_high"], false)
+					return newUint256AddHint(ctx.operanders["a.low"], ctx.operanders["b.low"], ctx.operanders["carry_low"], ctx.operanders["carry_high"], false)
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"carry_low":  feltUint64(0),
@@ -61,13 +67,15 @@ func TestZeroHintUint256(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "a", Kind: fpRelative, Value: []*fp.Element{felt127, feltUint64(0)}},
-					{Name: "b", Kind: apRelative, Value: []*fp.Element{feltUint64(0), felt127}},
+					{Name: "a.low", Kind: fpRelative, Value: felt127},
+					{Name: "a.high", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "b.low", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.high", Kind: apRelative, Value: felt127},
 					{Name: "carry_low", Kind: uninitialized},
 					{Name: "carry_high", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUint256AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry_low"], ctx.operanders["carry_high"], false)
+					return newUint256AddHint(ctx.operanders["a.low"], ctx.operanders["b.low"], ctx.operanders["carry_low"], ctx.operanders["carry_high"], false)
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"carry_low":  feltUint64(0),
