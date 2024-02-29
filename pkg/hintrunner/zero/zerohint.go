@@ -78,38 +78,13 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSplitIntAssertRangeHinter(resolver)
 	case splitIntCode:
 		return createSplitIntHinter(resolver)
+	case uint256AddCode:
+		return createUint256AddHinter(resolver, false)
+	case uint256AddLowCode:
+		return createUint256AddHinter(resolver, true)
 	default:
 		return nil, fmt.Errorf("Not identified hint")
 	}
-}
-
-func CreateAllocSegmentHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	return &core.AllocSegment{Dst: hinter.ApCellRef(0)}, nil
-}
-
-func createTestAssignHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	arg, err := resolver.GetReference("a")
-	if err != nil {
-		return nil, err
-	}
-
-	a, ok := arg.(hinter.ResOperander)
-	if !ok {
-		return nil, fmt.Errorf("expected a ResOperander reference")
-	}
-
-	h := &GenericZeroHinter{
-		Name: "TestAssign",
-		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
-			apAddr := vm.Context.AddressAp()
-			v, err := a.Resolve(vm)
-			if err != nil {
-				return err
-			}
-			return vm.Memory.WriteToAddress(&apAddr, &v)
-		},
-	}
-	return h, nil
 }
 
 func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) (hintReferenceResolver, error) {
@@ -151,4 +126,33 @@ func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 	}
 
 	return resolver, nil
+}
+
+func CreateAllocSegmentHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	return &core.AllocSegment{Dst: hinter.ApCellRef(0)}, nil
+}
+
+func createTestAssignHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	arg, err := resolver.GetReference("a")
+	if err != nil {
+		return nil, err
+	}
+
+	a, ok := arg.(hinter.ResOperander)
+	if !ok {
+		return nil, fmt.Errorf("expected a ResOperander reference")
+	}
+
+	h := &GenericZeroHinter{
+		Name: "TestAssign",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			apAddr := vm.Context.AddressAp()
+			v, err := a.Resolve(vm)
+			if err != nil {
+				return err
+			}
+			return vm.Memory.WriteToAddress(&apAddr, &v)
+		},
+	}
+	return h, nil
 }

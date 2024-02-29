@@ -74,6 +74,7 @@ func TestTestLessThanTrue(t *testing.T) {
 		"Expected the hint to evaluate to True when lhs is less than rhs",
 	)
 }
+
 func TestTestLessThanFalse(t *testing.T) {
 	testCases := []struct {
 		lhsValue    f.Element
