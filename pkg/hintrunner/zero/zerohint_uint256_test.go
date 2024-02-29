@@ -6,7 +6,6 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	// "github.com/NethermindEth/cairo-vm-go/pkg/utils"
 )
 
 func TestZeroHintUint256(t *testing.T) {
