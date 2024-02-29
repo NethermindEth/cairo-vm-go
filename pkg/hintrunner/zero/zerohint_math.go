@@ -88,6 +88,110 @@ func createAssertLtFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 	return newAssertLtFeltHint(a, b), nil
 }
 
+func newAssertNotZeroHint(value hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "AssertNotZero",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.math_utils import assert_integer
+			//> assert_integer(ids.value)
+			//> assert ids.value % PRIME != 0, f'assert_not_zero failed: {ids.value} = 0.'
+			value, err := hinter.ResolveAsFelt(vm, value)
+			if err != nil {
+				return err
+			}
+
+			if value.IsZero() {
+				return fmt.Errorf("assertion failed: value is zero")
+			}
+			return nil
+		},
+	}
+}
+
+func createAssertNotZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+	return newAssertNotZeroHint(value), nil
+}
+
+func newAssertNNHint(a hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "AssertNN",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.math_utils import assert_integer
+			//> assert_integer(ids.a)
+			//> assert 0 <= ids.a % PRIME < range_check_builtin.bound, f'a = {ids.a} is out of range.'
+			a, err := hinter.ResolveAsFelt(vm, a)
+			if err != nil {
+				return err
+			}
+
+			if !utils.FeltIsPositive(a) {
+				return fmt.Errorf("assertion failed: a = %v is out of range", a)
+			}
+			return nil
+		},
+	}
+}
+
+func createAssertNNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+	return newAssertNNHint(a), nil
+}
+
+func newAssertNotEqualHint(a, b hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "AssertNotEqual",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.lang.vm.relocatable import RelocatableValue
+			//> both_ints = isinstance(ids.a, int) and isinstance(ids.b, int)
+			//> both_relocatable = (
+			//>    isinstance(ids.a, RelocatableValue) and isinstance(ids.b, RelocatableValue) and
+			//>    ids.a.segment_index == ids.b.segment_index)
+			//> assert both_ints or both_relocatable,
+			//>    f'assert_not_equal failed: non-comparable values: {ids.a}, {ids.b}.'
+			//> assert (ids.a - ids.b) % PRIME != 0, f'assert_not_equal failed: {ids.a} = {ids.b}.'
+
+			a, err := a.Resolve(vm)
+			if err != nil {
+				return err
+			}
+			b, err := b.Resolve(vm)
+			if err != nil {
+				return err
+			}
+
+			// Since IsFelt result can be treated as enum value for the type (there are only 2 types possible),
+			// comparing it is enough to satisfy the "same type" constraint.
+			if a.IsFelt() != b.IsFelt() {
+				return fmt.Errorf("assertion failed: non-comparable values: %v, %v", a, b)
+			}
+
+			if a.Equal(&b) {
+				return fmt.Errorf("assertion failed: %v = %v", a, b)
+			}
+			return nil
+		},
+	}
+}
+
+func createAssertNotEqualHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+	return newAssertNotEqualHint(a, b), nil
+}
+
 func newAssertLeFeltHint(a, b, rangeCheckPtr hinter.ResOperander) hinter.Hinter {
 	return &core.AssertLeFindSmallArc{
 		A:             a,
@@ -150,7 +254,7 @@ func newIsNNHint(a hinter.ResOperander) hinter.Hinter {
 			}
 			// range_check_builtin.bound is utils.FeltMax128 (1 << 128).
 			var v memory.MemoryValue
-			if utils.FeltLt(a, &utils.FeltMax128) {
+			if utils.FeltIsPositive(a) {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
 			} else {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
