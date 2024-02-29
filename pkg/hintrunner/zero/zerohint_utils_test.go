@@ -67,6 +67,14 @@ func varValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx
 	}
 }
 
+func allVarValueEquals(expectedValues map[string]*fp.Element) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		for varName, expected := range expectedValues {
+			varValueEquals(varName, expected)(t, ctx)
+		}
+	}
+}
+
 func errorTextContains(s string) func(t *testing.T, ctx *hintTestContext, err error) {
 	return func(t *testing.T, ctx *hintTestContext, err error) {
 		if err == nil {

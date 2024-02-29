@@ -13,7 +13,7 @@ func TestZeroHintMath(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: feltUint64(0)},
-					{Name: "b", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "b", Kind: apRelative, Value: feltUint64(0)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newIsLeFeltHint(ctx.operanders["a"], ctx.operanders["b"])
@@ -47,8 +47,8 @@ func TestZeroHintMath(t *testing.T) {
 		"AssertLtFelt": {
 			{
 				operanders: []*hintOperander{
-					{Name: "a", Kind: apRelative, Value: feltInt64(0)},
-					{Name: "b", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "a", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b", Kind: apRelative, Value: feltUint64(0)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newAssertLtFeltHint(ctx.operanders["a"], ctx.operanders["b"])
@@ -58,8 +58,8 @@ func TestZeroHintMath(t *testing.T) {
 
 			{
 				operanders: []*hintOperander{
-					{Name: "a", Kind: immediate, Value: feltInt64(1)},
-					{Name: "b", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "a", Kind: immediate, Value: feltUint64(1)},
+					{Name: "b", Kind: apRelative, Value: feltUint64(0)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newAssertLtFeltHint(ctx.operanders["a"], ctx.operanders["b"])
@@ -72,7 +72,7 @@ func TestZeroHintMath(t *testing.T) {
 				// and it will not be less than 14 in Cairo as well.
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: feltInt64(-10)},
-					{Name: "b", Kind: immediate, Value: feltInt64(14)},
+					{Name: "b", Kind: immediate, Value: feltUint64(14)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newAssertLtFeltHint(ctx.operanders["a"], ctx.operanders["b"])
@@ -82,8 +82,8 @@ func TestZeroHintMath(t *testing.T) {
 
 			{
 				operanders: []*hintOperander{
-					{Name: "a", Kind: fpRelative, Value: feltInt64(1)},
-					{Name: "b", Kind: fpRelative, Value: feltInt64(10)},
+					{Name: "a", Kind: fpRelative, Value: feltUint64(1)},
+					{Name: "b", Kind: fpRelative, Value: feltUint64(10)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newAssertLtFeltHint(ctx.operanders["a"], ctx.operanders["b"])
@@ -236,7 +236,7 @@ func TestZeroHintMath(t *testing.T) {
 
 			{
 				operanders: []*hintOperander{
-					{Name: "a", Kind: apRelative, Value: feltInt64(2421)},
+					{Name: "a", Kind: apRelative, Value: feltUint64(2421)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newIsNNHint(ctx.operanders["a"])
@@ -246,7 +246,7 @@ func TestZeroHintMath(t *testing.T) {
 
 			{
 				operanders: []*hintOperander{
-					{Name: "a", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "a", Kind: apRelative, Value: feltUint64(0)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newIsNNHint(ctx.operanders["a"])
@@ -292,7 +292,6 @@ func TestZeroHintMath(t *testing.T) {
 
 			{
 				operanders: []*hintOperander{
-					// (-a - 1) => (1 - 1) => 0
 					{Name: "a", Kind: apRelative, Value: feltInt64(-1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
