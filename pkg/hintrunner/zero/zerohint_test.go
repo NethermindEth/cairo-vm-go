@@ -46,7 +46,7 @@ type hintTestCase struct {
 
 type hintOperander struct {
 	Name  string
-	Value *fp.Element
+	Value any // *fp.Element or *memory.MemoryAddress
 	Kind  hintOperanderKind
 
 	// These fields are assigned automatically by the test runner.
@@ -130,10 +130,23 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 		vm.Context.Fp = uint64(len(extraValues))
 
 		for _, o := range tc.operanders {
+			if o.Value != nil {
+				switch o.Value.(type) {
+				case *fp.Element, *memory.MemoryAddress:
+					// OK
+				default:
+					panic(fmt.Sprintf("unexpected operander Value type: %T", o.Value))
+				}
+			}
+
 			switch o.Kind {
 			case apRelative, fpRelative:
 				o.memoryOffset = vm.Context.Ap
-				runnerutil.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, memory.MemoryValueFromFieldElement(o.Value))
+				v, err := memory.MemoryValueFromAny(o.Value)
+				if err != nil {
+					panic(err) // Shound never happen due to the sanity check above
+				}
+				runnerutil.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, v)
 				vm.Context.Ap++
 
 			case immediate:
@@ -165,7 +178,7 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 				}
 
 			case immediate:
-				testCtx.operanders[o.Name] = hinter.Immediate(*o.Value)
+				testCtx.operanders[o.Name] = hinter.Immediate(*o.Value.(*fp.Element))
 			}
 		}
 

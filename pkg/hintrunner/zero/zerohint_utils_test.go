@@ -4,10 +4,26 @@ import (
 	"testing"
 
 	runnerutil "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
 )
+
+func addr(offset uint64) *memory.MemoryAddress {
+	return &memory.MemoryAddress{
+		SegmentIndex: vm.ExecutionSegment,
+		Offset:       offset,
+	}
+}
+
+func addrWithSegment(segment, offset uint64) *memory.MemoryAddress {
+	return &memory.MemoryAddress{
+		SegmentIndex: segment,
+		Offset:       offset,
+	}
+}
 
 func feltInt64(v int64) *fp.Element {
 	return new(fp.Element).SetInt64(v)
