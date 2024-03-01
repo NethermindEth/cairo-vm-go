@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	runnerutil "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -23,6 +24,21 @@ func addrWithSegment(segment, offset uint64) *memory.MemoryAddress {
 		SegmentIndex: segment,
 		Offset:       offset,
 	}
+}
+
+func addrBuiltin(builtin starknet.Builtin, offset uint64) *builtinReference {
+	return &builtinReference{
+		builtin: builtin,
+		offset:  offset,
+	}
+}
+
+func feltString(s string) *fp.Element {
+	felt, err := new(fp.Element).SetString(s)
+	if err != nil {
+		panic(err)
+	}
+	return felt
 }
 
 func feltInt64(v int64) *fp.Element {

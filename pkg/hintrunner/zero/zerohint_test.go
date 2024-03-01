@@ -1,12 +1,15 @@
 package zero
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	runnerutil "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
@@ -53,6 +56,11 @@ type hintOperander struct {
 	memoryOffset uint64
 }
 
+type builtinReference struct {
+	builtin starknet.Builtin
+	offset  uint64
+}
+
 // hintOperanderKind defines how the operand is going to be constructed.
 // The same Value can be accessed in various ways: it could have an immediate
 // value as its source, or it could be stored somewhere in the VMs memory
@@ -82,6 +90,11 @@ const (
 	// It's allowed to write to this address once.
 	// Requires {Name, Kind=uninitialized}
 	uninitialized
+
+	// A value that evaluates to an address, but does not reside in memory on its own.
+	// An example is a let-bound reference, like [range_check_ptr+1]
+	// Requires {Name, Kind=reference, Value=*builtinRef{...}}
+	reference
 )
 
 func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
@@ -110,6 +123,35 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 			operanders:    make(map[string]hinter.ResOperander),
 		}
 
+		// builtinsAllocated stores fp offsets mapping for the builtin pointers.
+		// If there is only one builtin allocated at [fp-4] and so on.
+		// Some tests use 0 builtins and this map will be empty.
+		type allocatedBuiltin struct {
+			offset uint64
+			addr   memory.MemoryAddress
+		}
+		builtinsAllocated := map[starknet.Builtin]allocatedBuiltin{}
+		for _, o := range tc.operanders {
+			if o.Kind != reference {
+				continue
+			}
+			ref, ok := o.Value.(*builtinReference)
+			if !ok {
+				continue
+			}
+			if _, ok := builtinsAllocated[ref.builtin]; ok {
+				continue // Already allocated
+			}
+			b := builtins.Runner(ref.builtin)
+			addr := testCtx.vm.Memory.AllocateBuiltinSegment(b)
+			builtinsAllocated[ref.builtin] = allocatedBuiltin{
+				offset: vm.Context.Ap,
+				addr:   addr,
+			}
+			runnerutil.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, memory.MemoryValueFromMemoryAddress(&addr))
+			vm.Context.Ap++
+		}
+
 		// There are always a few extra values on the memory stack
 		// above FP to make AP-based and FP-based addressing makes more sense.
 		// These elements are identical to their index: mem[0] is 0, mem[1] is 1.
@@ -117,10 +159,10 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 		// Since these values are *below* FP, they can be considered to be arguments
 		// to the function; accessed as [fp-1], etc.
 		extraValues := []*fp.Element{
-			feltUint64(0),
-			feltUint64(1),
-			feltUint64(2),
-			feltUint64(3),
+			feltUint64(0), // [fp-0]
+			feltUint64(1), // [fp-1]
+			feltUint64(2), // [fp-2]
+			feltUint64(3), // [fp-3]
 		}
 		for _, v := range extraValues {
 			runnerutil.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, memory.MemoryValueFromFieldElement(v))
@@ -132,7 +174,7 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 		for _, o := range tc.operanders {
 			if o.Value != nil {
 				switch o.Value.(type) {
-				case *fp.Element, *memory.MemoryAddress:
+				case *fp.Element, *memory.MemoryAddress, *builtinReference:
 					// OK
 				default:
 					panic(fmt.Sprintf("unexpected operander Value type: %T", o.Value))
@@ -149,7 +191,7 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 				runnerutil.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, v)
 				vm.Context.Ap++
 
-			case immediate:
+			case immediate, reference:
 				// Nothing to do.
 
 			case uninitialized:
@@ -179,6 +221,24 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 
 			case immediate:
 				testCtx.operanders[o.Name] = hinter.Immediate(*o.Value.(*fp.Element))
+
+			case reference:
+				switch value := o.Value.(type) {
+				case *builtinReference:
+					// value.offset is an offset relative to the builtin pointer,
+					// builtin.offset is an offset that locates the builtin pointer inside the memory (fp-relative).
+					// Therefore, [[fp+relOffset] + value.offset] produces the final address.
+					builtin := builtinsAllocated[value.builtin]
+					relOffset := int(vm.Context.Fp + builtin.offset)
+					testCtx.operanders[o.Name] = &hinter.DoubleDeref{
+						Deref: hinter.Deref{
+							Deref: hinter.FpCellRef(-relOffset),
+						},
+						Offset: int16(value.offset),
+					}
+				default:
+					panic(fmt.Sprintf("unsupported reference type: %T", value))
+				}
 			}
 		}
 
@@ -198,6 +258,29 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 	}
 
 	for testGroup, cases := range tests {
+		{
+			// A sanity check: test that there are no duplicated test cases inside a group.
+			type testCaseKey struct {
+				Operanders   []*hintOperander
+				IsErrorCheck bool
+			}
+			set := map[string]struct{}{}
+			for i, tc := range cases {
+				key := testCaseKey{
+					Operanders:   tc.operanders,
+					IsErrorCheck: tc.errCheck != nil,
+				}
+				stringKey, err := json.Marshal(key)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, ok := set[string(stringKey)]; ok {
+					t.Fatalf("%s: duplicated test case case (i=%d) found: %s", testGroup, i, stringKey)
+				}
+				set[string(stringKey)] = struct{}{}
+			}
+		}
+
 		for i, tc := range cases {
 			t.Run(fmt.Sprintf("%s_%d", testGroup, i), func(t *testing.T) {
 				runTest(t, tc)

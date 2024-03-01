@@ -16,7 +16,11 @@ var FeltOne = fp.Element{
 }
 
 // 1 << 128
+// same as 2 ** 128
 var FeltMax128 = fp.Element{18446744073700081665, 17407, 18446744073709551584, 576460752142434320}
+
+// 2 ** 250
+var FeltUpperBound = fp.Element{0xfffffff5cdf80011, 0x4cc3fff, 0xfffffffffffdbe00, 0x7ffff52ad780230}
 
 //
 // Uint256 Constants
