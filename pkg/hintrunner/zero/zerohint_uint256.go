@@ -1,6 +1,8 @@
 package zero
 
 import (
+	"math/big"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -28,8 +30,12 @@ func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Elem
 }
 
 func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander, lowOnly bool) hinter.Hinter {
+	name := "Uint256Add"
+	if lowOnly {
+		name = name + "Low"
+	}
 	return &GenericZeroHinter{
-		Name: "Uint256Add",
+		Name: name,
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> sum_low = ids.a.low + ids.b.low
 			//> ids.carry_low = 1 if sum_low >= ids.SHIFT else 0
@@ -120,4 +126,72 @@ func createUint256AddHinter(resolver hintReferenceResolver, low bool) (hinter.Hi
 	}
 
 	return newUint256AddHint(a, b, carryLow, carryHigh, low), nil
+}
+
+func newSplit64Hint(a, low, high hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Split64",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> 	ids.low = ids.a & ((1<<64) - 1)
+			//> 	ids.high = ids.a >> 64
+
+			a, err := hinter.ResolveAsFelt(vm, a)
+			if err != nil {
+				return err
+			}
+			var aBig big.Int
+			a.BigInt(&aBig)
+
+			// Calculate low value
+			mask := new(big.Int).SetUint64(^uint64(0))
+			lowBig := new(big.Int).And(&aBig, mask)
+			low64 := lowBig.Uint64()
+			lowValue := memory.MemoryValueFromUint(low64)
+
+			lowAddr, err := low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			err = vm.Memory.WriteToAddress(&lowAddr, &lowValue)
+			if err != nil {
+				return err
+			}
+
+			// Calculate high value
+			highBig := new(big.Int).Rsh(&aBig, 64)
+			highValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(highBig))
+
+			highAddr, err := high.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			err = vm.Memory.WriteToAddress(&highAddr, &highValue)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+}
+
+func createSplit64Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	low, err := resolver.GetResOperander("low")
+	if err != nil {
+		return nil, err
+	}
+
+	high, err := resolver.GetResOperander("high")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplit64Hint(a, low, high), nil
 }
