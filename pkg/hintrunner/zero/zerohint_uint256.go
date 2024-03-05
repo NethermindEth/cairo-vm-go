@@ -32,7 +32,7 @@ func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Elem
 func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander, lowOnly bool) hinter.Hinter {
 	name := "Uint256Add"
 	if lowOnly {
-		name = name + "Low"
+		name += "Low"
 	}
 	return &GenericZeroHinter{
 		Name: name,
@@ -167,12 +167,7 @@ func newSplit64Hint(a, low, high hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			err = vm.Memory.WriteToAddress(&highAddr, &highValue)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return vm.Memory.WriteToAddress(&highAddr, &highValue)
 		},
 	}
 }

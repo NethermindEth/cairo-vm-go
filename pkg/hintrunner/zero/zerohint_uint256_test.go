@@ -6,16 +6,12 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestZeroHintUint256(t *testing.T) {
 	// Values used in the test cases
 	// 1 << 127
 	felt127 := new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 127))
-	// felt(-5) >> 64
-	feltHigh, err := new(fp.Element).SetString("196159429230833779654668657131193454380566933979560673279")
-	assert.NoError(t, err)
 
 	runHinterTests(t, map[string][]hintTestCase{
 		"Uint256Add": {
@@ -130,8 +126,8 @@ func TestZeroHintUint256(t *testing.T) {
 					return newSplit64Hint(ctx.operanders["a"], ctx.operanders["low"], ctx.operanders["high"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
-					"low":  feltUint64(18446744073709551612),
-					"high": feltHigh,
+					"low":  feltUint64(18446744073709551612),                                        // felt(-5) & ((1 << 64) - 1)
+					"high": feltString("196159429230833779654668657131193454380566933979560673279"), // felt(-5) >> 64
 				}),
 			},
 		},
