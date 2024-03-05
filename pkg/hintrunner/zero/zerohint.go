@@ -64,6 +64,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createAssertNNHinter(resolver)
 	case assertNotEqualCode:
 		return createAssertNotEqualHinter(resolver)
+	case assert250bits:
+		return createAssert250bitsHinter(resolver)
 	case testAssignCode:
 		return createTestAssignHinter(resolver)
 	case assertLeFeltCode:

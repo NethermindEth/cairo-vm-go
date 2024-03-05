@@ -192,6 +192,75 @@ func createAssertNotEqualHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	return newAssertNotEqualHint(a, b), nil
 }
 
+func newAssert250bitsHint(low, high, value hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Assert250bits",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> const UPPER_BOUND = 2 ** 250;
+			//> const SHIFT = 2 ** 128;
+			//
+			//> from starkware.cairo.common.math_utils import as_int
+			//> # Correctness check.
+			//> value = as_int(ids.value, PRIME) % PRIME
+			//> assert value < ids.UPPER_BOUND, f'{value} is outside of the range [0, 2**250).'
+			//> # Calculation for the assertion.
+			//> ids.high, ids.low = divmod(ids.value, ids.SHIFT)
+
+			value, err := hinter.ResolveAsFelt(vm, value)
+			if err != nil {
+				return err
+			}
+			if !utils.FeltLt(value, &utils.FeltUpperBound) {
+				return fmt.Errorf("assertion failed: %v is outside of the range [0, 2**250)", value)
+			}
+
+			lowAddr, err := low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			highAddr, err := high.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			div, rem := utils.FeltDivRem(value, &utils.FeltMax128)
+
+			// div goes to high, rem goes to low.
+			divValue := memory.MemoryValueFromFieldElement(&div)
+			if err := vm.Memory.WriteToAddress(&highAddr, &divValue); err != nil {
+				return err
+			}
+			remValue := memory.MemoryValueFromFieldElement(&rem)
+			if err := vm.Memory.WriteToAddress(&lowAddr, &remValue); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+}
+
+func createAssert250bitsHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	// low and high are expected to be references to a range_check_ptr builtin.
+	// Like that:
+	//> let low = [range_check_ptr];
+	//> let high = [range_check_ptr + 1];
+
+	low, err := resolver.GetResOperander("low")
+	if err != nil {
+		return nil, err
+	}
+	high, err := resolver.GetResOperander("high")
+	if err != nil {
+		return nil, err
+	}
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+	return newAssert250bitsHint(low, high, value), nil
+}
+
 func newAssertLeFeltHint(a, b, rangeCheckPtr hinter.ResOperander) hinter.Hinter {
 	return &core.AssertLeFindSmallArc{
 		A:             a,

@@ -4,7 +4,9 @@ import (
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func TestZeroHintMath(t *testing.T) {
@@ -477,6 +479,80 @@ func TestZeroHintMath(t *testing.T) {
 					return newSplitIntHint(ctx.operanders["output"], ctx.operanders["value"], ctx.operanders["base"], ctx.operanders["bound"])
 				},
 				errCheck: errorTextContains("assertion `split_int(): Limb 4 is out of range` failed"),
+			},
+		},
+
+		"Assert250bits": {
+			{
+				operanders: []*hintOperander{
+					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+					{Name: "value", Kind: apRelative, Value: feltInt64(3042)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newAssert250bitsHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"low":  feltInt64(3042),
+					"high": feltInt64(0),
+				}),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(4938538853994)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newAssert250bitsHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"low":  feltInt64(4938538853994),
+					"high": feltInt64(0),
+				}),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+					{Name: "value", Kind: apRelative, Value: feltString("348329493943842849393993999999231222222222")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newAssert250bitsHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"low":  feltString("220632583722801270961776596532341902734"),
+					"high": feltInt64(1023),
+				}),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+					{Name: "value", Kind: apRelative, Value: feltString("348329493943842849393124453993999999231222222222")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newAssert250bitsHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"low":  feltString("302658603189151847763334509038790380942"),
+					"high": feltInt64(1023648380),
+				}),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+					{Name: "value", Kind: apRelative, Value: feltInt64(-233)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newAssert250bitsHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
+				},
+				errCheck: errorTextContains("outside of the range [0, 2**250)"),
 			},
 		},
 	})

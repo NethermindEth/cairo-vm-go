@@ -96,3 +96,25 @@ func FeltMod(a, b *fp.Element) fp.Element {
 	result.SetBigInt(&tmpResult)
 	return result
 }
+
+func FeltDivRem(a, b *fp.Element) (div fp.Element, rem fp.Element) {
+	// It would be possible to compute the mod (rem) as `a - div*b`,
+	// but since felt div would yield a different result than bigint
+	// arithmetics, we can't use that trick here.
+	// divmod function used in Python cairovm does a non-felt divmod.
+	// Therefore, 450326666 / 136310839 is expected to have a result of 3,
+	// not 834010808316774569532950779803492285717614100391395442358316910417277897363.
+
+	var tmpA big.Int
+	var tmpB big.Int
+	var tmpDiv big.Int
+	var tmpRem big.Int
+	a.BigInt(&tmpA)
+	b.BigInt(&tmpB)
+	tmpDiv.DivMod(&tmpA, &tmpB, &tmpRem)
+
+	div.SetBigInt(&tmpDiv)
+	rem.SetBigInt(&tmpRem)
+
+	return div, rem
+}
