@@ -9,8 +9,10 @@ import (
 )
 
 func TestZeroHintUint256(t *testing.T) {
+	// Values used in the test cases
 	// 1 << 127
 	felt127 := new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 127))
+
 	runHinterTests(t, map[string][]hintTestCase{
 		"Uint256Add": {
 			{
@@ -79,6 +81,53 @@ func TestZeroHintUint256(t *testing.T) {
 				check: allVarValueEquals(map[string]*fp.Element{
 					"carry_low":  feltUint64(0),
 					"carry_high": feltUint64(0),
+				}),
+			},
+		},
+		"Split64": {
+			// `high` is zero
+			{
+				operanders: []*hintOperander{
+					{Name: "a", Kind: fpRelative, Value: feltUint64(8746)},
+					{Name: "low", Kind: uninitialized},
+					{Name: "high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplit64Hint(ctx.operanders["a"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"low":  feltUint64(8746),
+					"high": feltUint64(0),
+				}),
+			},
+			// `low` is zero
+			{
+				operanders: []*hintOperander{
+					{Name: "a", Kind: fpRelative, Value: felt127},
+					{Name: "low", Kind: uninitialized},
+					{Name: "high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplit64Hint(ctx.operanders["a"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"low":  feltUint64(0),
+					"high": feltUint64(1 << 63),
+				}),
+			},
+			// `high` is a felt that doesn't fit in uint64
+			{
+				operanders: []*hintOperander{
+					{Name: "a", Kind: fpRelative, Value: feltInt64(-5)},
+					{Name: "low", Kind: uninitialized},
+					{Name: "high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplit64Hint(ctx.operanders["a"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"low":  feltUint64(18446744073709551612),                                        // felt(-5) & ((1 << 64) - 1)
+					"high": feltString("196159429230833779654668657131193454380566933979560673279"), // felt(-5) >> 64
 				}),
 			},
 		},
