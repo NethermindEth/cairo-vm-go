@@ -1,9 +1,9 @@
 package zero
 
 const (
+	// ------ Math hints related code ------
 	// This is a block for hint code strings where there is a single
 	// hint per function it belongs to (with some exceptions like testAssignCode).
-	allocSegmentCode   string = "memory[ap] = segments.add()"
 	isLeFeltCode       string = "memory[ap] = 0 if (ids.a % PRIME) <= (ids.b % PRIME) else 1"
 	assertLtFeltCode   string = "from starkware.cairo.common.math_utils import assert_integer\nassert_integer(ids.a)\nassert_integer(ids.b)\nassert (ids.a % PRIME) < (ids.b % PRIME), \\\n    f'a = {ids.a % PRIME} is not less than b = {ids.b % PRIME}.'"
 	assertNotZeroCode  string = "from starkware.cairo.common.math_utils import assert_integer\nassert_integer(ids.value)\nassert ids.value % PRIME != 0, f'assert_not_zero failed: {ids.value} = 0.'"
@@ -34,8 +34,23 @@ const (
 	splitIntAssertRange string = "assert ids.value == 0, 'split_int(): value is out of range.'"
 	splitIntCode        string = "memory[ids.output] = res = (int(ids.value) % PRIME) % ids.base\nassert res < ids.bound, f'split_int(): Limb {res} is out of range.'"
 
-	// Uint256 hints related code
+	// ------ Uint256 hints related code ------
 	uint256AddCode    string = "sum_low = ids.a.low + ids.b.low\nids.carry_low = 1 if sum_low >= ids.SHIFT else 0\nsum_high = ids.a.high + ids.b.high + ids.carry_low\nids.carry_high = 1 if sum_high >= ids.SHIFT else 0"
 	uint256AddLowCode string = "sum_low = ids.a.low + ids.b.low\nids.carry_low = 1 if sum_low >= ids.SHIFT else 0"
 	split64Code       string = "ids.low = ids.a & ((1<<64) - 1)\nids.high = ids.a >> 64"
+
+	// ------ Usort hints related code ------
+
+	// ------ Elliptic Curve hints related code ------
+
+	// ------ Signature hints related code ------
+
+	// ------ Blake Hash hints related code ------
+
+	// ------ Keccak hints related code ------
+
+	// ------ Dictionaries hints related code ------
+
+	// ------ Other hints related code ------
+	allocSegmentCode string = "memory[ap] = segments.add()"
 )
