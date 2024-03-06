@@ -190,3 +190,36 @@ func createSplit64Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) 
 
 	return newSplit64Hint(a, low, high), nil
 }
+
+func newUint256SignedNN(a hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Uint256SignedNN",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			// memory[ap] = 1 if 0 <= (ids.a.high % PRIME) < 2 ** 127 else 0
+			apAddr := vm.Context.AddressAp()
+
+			_, aHigh, err := GetUint256AsFelts(vm, a)
+			if err != nil {
+				return err
+			}
+			var v memory.MemoryValue
+			felt127 := new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 127))
+
+			if utils.FeltLt(aHigh, felt127) {
+				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+			return vm.Memory.WriteToAddress(&apAddr, &v)
+		},
+	}
+
+}
+
+func createUint256SignedNN(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+	return newUint256SignedNN(a), nil
+}
