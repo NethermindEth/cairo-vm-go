@@ -191,7 +191,7 @@ func createSplit64Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) 
 	return newSplit64Hint(a, low, high), nil
 }
 
-func newUint256SignedNN(a hinter.ResOperander) hinter.Hinter {
+func newUint256SignedNNHint(a hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint256SignedNN",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -216,10 +216,10 @@ func newUint256SignedNN(a hinter.ResOperander) hinter.Hinter {
 
 }
 
-func createUint256SignedNN(resolver hintReferenceResolver) (hinter.Hinter, error) {
+func createUint256SignedNNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	a, err := resolver.GetResOperander("a")
 	if err != nil {
 		return nil, err
 	}
-	return newUint256SignedNN(a), nil
+	return newUint256SignedNNHint(a), nil
 }

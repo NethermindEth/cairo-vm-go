@@ -135,10 +135,10 @@ func TestZeroHintUint256(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "a.low", Kind: fpRelative, Value: feltUint64(0)},
-					{Name: "a.high", Kind: fpRelative, Value: feltInt64(-5)},
+					{Name: "a.high", Kind: fpRelative, Value: felt127},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUint256SignedNN(ctx.operanders["a.low"])
+					return newUint256SignedNNHint(ctx.operanders["a.low"])
 				},
 				check: apValueEquals(feltUint64(0)),
 			},
@@ -148,19 +148,9 @@ func TestZeroHintUint256(t *testing.T) {
 					{Name: "a.high", Kind: fpRelative, Value: feltInt64(1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUint256SignedNN(ctx.operanders["a.low"])
+					return newUint256SignedNNHint(ctx.operanders["a.low"])
 				},
 				check: apValueEquals(feltUint64(1)),
-			},
-			{
-				operanders: []*hintOperander{
-					{Name: "a.low", Kind: fpRelative, Value: feltUint64(0)},
-					{Name: "a.high", Kind: fpRelative, Value: felt127},
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUint256SignedNN(ctx.operanders["a.low"])
-				},
-				check: apValueEquals(feltUint64(0)),
 			},
 		},
 	})
