@@ -1,6 +1,7 @@
 package zero
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -8,6 +9,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/holiman/uint256"
 )
 
 func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Element, *fp.Element, error) {
@@ -191,11 +193,32 @@ func createSplit64Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) 
 	return newSplit64Hint(a, low, high), nil
 }
 
-func newUint256SqrtHint(n hinter.ResOperander) hinter.Hinter {
+func newUint256SqrtHint(n hinter.ResOperander, root hinter.ResOperander) hinter.Hinter {
 	// from starkware.python.math_utils import isqrt\nn = (ids.n.high << 128) + ids.n.low\nroot = isqrt(n)\nassert 0 <= root < 2 ** 128\nids.root.low = root\nids.root.high = 0
 	return &GenericZeroHinter{
 		Name: "Uint256Sqrt",
-		Op:   func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {},
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			nHigh, nLow, err := GetUint256AsFelts(vm, n)
+			if err != nil {
+				return err
+			}
+			var nHighBigInt, nLowBigInt big.Int
+			nHigh.BigInt(&nHighBigInt)
+			nLow.BigInt(&nLowBigInt)
+			newN := new(big.Int).Add(&nHighBigInt, &nLowBigInt)
+			calculatedRoot := uint256.Int{}
+			calculatedRoot.Sqrt(newN)
+			if !utils.FeltIsPositive(calculatedRoot) {
+				return fmt.Errorf("assertion failed: a = %v is out of range", a)
+			}
+			rootAddr, err := root.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			rootValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(calculatedRoot.ToBig()))
+			vm.Memory.WriteToAddress(&rootAddr, &rootValue)
+			return nil
+		},
 	}
 }
 
@@ -204,5 +227,9 @@ func createUint256SqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	if err != nil {
 		return nil, err
 	}
-	return newUint256SqrtHint(n), nil
+	root, err := resolver.GetResOperander("root")
+	if err != nil {
+		return nil, err
+	}
+	return newUint256SqrtHint(n, root), nil
 }
