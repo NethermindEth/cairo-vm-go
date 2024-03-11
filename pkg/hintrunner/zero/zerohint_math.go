@@ -2,6 +2,7 @@ package zero
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -500,4 +501,56 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 		return nil, err
 	}
 	return newSplitIntHint(output, value, base, bound), nil
+}
+
+func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Pow",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.locs.bit = (ids.prev_locs.exp % PRIME) & 1
+			/*>struct LoopLocals {
+				bit: felt,
+				temp0: felt,
+
+				res: felt,
+				base: felt,
+				exp: felt,
+			} */
+			// bit = memory[LoopLocals]
+			bit, err := locs.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			values, err := hinter.GetConsecutiveValues(vm, prevLocs, int16(3))
+			if err != nil {
+				return err
+			}
+			// exp = memeory[LoopLocals + 4]
+			exp, err := values[3].FieldElement()
+			if err != nil {
+				return err
+			}
+			var aBig big.Int
+			exp.BigInt(&aBig)
+			mask := new(big.Int).SetUint64(1)
+			lowBig := new(big.Int).And(&aBig, mask)
+			value := new(fp.Element).SetBigInt(lowBig)
+			v := memory.MemoryValueFromFieldElement(value)
+			vm.Memory.WriteToAddress(&bit, &v)
+			return nil
+		},
+	}
+}
+
+func createPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	locs, err := resolver.GetResOperander("locs")
+	if err != nil {
+		return nil, err
+	}
+	prev_locs, err := resolver.GetResOperander("prev_locs")
+	if err != nil {
+		return nil, err
+	}
+
+	return newPowHint(locs, prev_locs), nil
 }
