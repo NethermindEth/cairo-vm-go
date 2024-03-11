@@ -131,5 +131,19 @@ func TestZeroHintUint256(t *testing.T) {
 				}),
 			},
 		},
+		"Uint256Sqrt": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n", Kind: fpRelative, Value: felt127},
+					{Name: "root", Kind: apRelative, Value: feltUint64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint256SqrtHint(ctx.operanders["n"], ctx.operanders["root"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"root": feltUint64(1),
+				}),
+			},
+		},
 	})
 }
