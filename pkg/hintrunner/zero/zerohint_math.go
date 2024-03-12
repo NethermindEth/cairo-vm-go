@@ -516,27 +516,25 @@ func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
 				base: felt,
 				exp: felt,
 			} */
-			// bit = memory[LoopLocals]
-			bit, err := locs.GetAddress(vm)
+			const expStructOffset = 4
+			locsBitAddress, err := locs.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			values, err := hinter.GetConsecutiveValues(vm, prevLocs, int16(3))
+			loopLocals, err := hinter.GetConsecutiveValues(vm, prevLocs, expStructOffset)
 			if err != nil {
 				return err
 			}
-			// exp = memeory[LoopLocals + 4]
-			exp, err := values[3].FieldElement()
+			prevLocsExp, err := loopLocals[expStructOffset].FieldElement()
 			if err != nil {
 				return err
 			}
-			var aBig big.Int
-			exp.BigInt(&aBig)
-			mask := new(big.Int).SetUint64(1)
-			lowBig := new(big.Int).And(&aBig, mask)
-			value := new(fp.Element).SetBigInt(lowBig)
-			v := memory.MemoryValueFromFieldElement(value)
-			vm.Memory.WriteToAddress(&bit, &v)
+			var prevLocsExpBig big.Int
+			prevLocsExp.BigInt(&prevLocsExpBig)
+			locsBitBig := new(big.Int).And(&prevLocsExpBig, big.NewInt(1))
+			locsBit := new(fp.Element).SetBigInt(locsBitBig)
+			v := memory.MemoryValueFromFieldElement(locsBit)
+			vm.Memory.WriteToAddress(&locsBitAddress, &v)
 			return nil
 		},
 	}

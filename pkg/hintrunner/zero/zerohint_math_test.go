@@ -555,5 +555,32 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorTextContains("outside of the range [0, 2**250)"),
 			},
 		},
+		"Pow": {
+			// Zero value - assertion failed, any other - nothing.
+			{
+				operanders: []*hintOperander{
+					{Name: "locs", Kind: apRelative, Value: feltInt64(1)},
+					{Name: "prev_locs", Kind: apRelative, Value: feltInt64(1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newPowHint(ctx.operanders["locs"], ctx.operanders["prev_locs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"locs": feltInt64(1),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "locs", Kind: apRelative, Value: feltInt64(1)},
+					{Name: "prev_locs", Kind: apRelative, Value: feltInt64(2)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newPowHint(ctx.operanders["locs"], ctx.operanders["prev_locs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"locs": feltInt64(0),
+				}),
+			},
+		},
 	})
 }
