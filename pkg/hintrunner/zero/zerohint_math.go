@@ -515,18 +515,20 @@ func newSplitFeltHint(maxHigh, maxLow, low, high, value hinter.ResOperander) hin
 				return err
 			}
 			if !utils.FeltLt(maxHigh, &utils.FeltMax128) {
-				return fmt.Errorf("assertion `split_int(): Limb %v is out of range` failed", maxHigh)
+				return fmt.Errorf("assertion `split_felt(): MAX_HIGH %v is out of range` failed", maxHigh)
 			}
 			maxLow, err := hinter.ResolveAsFelt(vm, maxLow)
 			if err != nil {
 				return err
 			}
 			if !utils.FeltLt(maxLow, &utils.FeltMax128) {
-				return fmt.Errorf("assertion `split_int(): Limb %v is out of range` failed", maxLow)
+				return fmt.Errorf("assertion `split_felt(): MAX_LOW %v is out of range` failed", maxLow)
 			}
 			// assert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW
-			if PRIME-1 != new(fp.Element).Add(new(fp.Element).Mul(maxHigh, &utils.FeltMax128), maxLow) {
-				return fmt.Errorf("assertion `split_int(): Limb %v is out of range` failed", maxLow)
+			leftHandSide := new(fp.Element).SetInt64(-1)
+			rightHandSide := new(fp.Element).Add(new(fp.Element).Mul(maxHigh, &utils.FeltMax128), maxLow)
+			if leftHandSide != rightHandSide {
+				return fmt.Errorf("assertion `split_felt(): The sum of MAX_HIGH and MAX_LOW does not equal to PRIME - 1` failed", maxLow)
 			}
 			// assert_integer(ids.value)
 			value, err := hinter.ResolveAsFelt(vm, value)
