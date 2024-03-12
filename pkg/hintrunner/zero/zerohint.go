@@ -92,6 +92,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUint256AddHinter(resolver, true)
 	case split64Code:
 		return createSplit64Hinter(resolver)
+	case splitFeltCode:
+		return createSplitFeltHinter(resolver)
 	default:
 		return nil, fmt.Errorf("Not identified hint")
 	}

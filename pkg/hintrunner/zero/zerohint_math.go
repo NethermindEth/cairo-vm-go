@@ -2,6 +2,7 @@ package zero
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -500,4 +501,108 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 		return nil, err
 	}
 	return newSplitIntHint(output, value, base, bound), nil
+}
+
+func newSplitFeltHint(maxHigh, maxLow, low, high, value hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitFelt",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.math_utils import assert_integer\nassert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128\nassert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW\nassert_integer(ids.value)\nids.low = ids.value & ((1 << 128) - 1)\nids.high = ids.value >> 128
+
+			// assert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128
+			maxHigh, err := hinter.ResolveAsFelt(vm, maxHigh)
+			if err != nil {
+				return err
+			}
+			if !utils.FeltLt(maxHigh, &utils.FeltMax128) {
+				return fmt.Errorf("assertion `split_int(): Limb %v is out of range` failed", maxHigh)
+			}
+			maxLow, err := hinter.ResolveAsFelt(vm, maxLow)
+			if err != nil {
+				return err
+			}
+			if !utils.FeltLt(maxLow, &utils.FeltMax128) {
+				return fmt.Errorf("assertion `split_int(): Limb %v is out of range` failed", maxLow)
+			}
+			// assert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW
+			if PRIME-1 != new(fp.Element).Add(new(fp.Element).Mul(maxHigh, &utils.FeltMax128), maxLow) {
+				return fmt.Errorf("assertion `split_int(): Limb %v is out of range` failed", maxLow)
+			}
+			// assert_integer(ids.value)
+			value, err := hinter.ResolveAsFelt(vm, value)
+			if err != nil {
+				return err
+			}
+			var valueBigInt big.Int
+			value.BigInt(&valueBigInt)
+			lowFelt, err := hinter.ResolveAsFelt(vm, low)
+			if err != nil {
+				return err
+			}
+			var lowBigInt big.Int
+			lowFelt.BigInt(&lowBigInt)
+			highFelt, err := hinter.ResolveAsFelt(vm, high)
+			if err != nil {
+				return err
+			}
+			var highBigInt big.Int
+			highFelt.BigInt(&highBigInt)
+
+			// ids.low = ids.value & ((1 << 128)
+			var felt128 big.Int
+			utils.FeltMax128.BigInt(&felt128)
+			lowBigInt.And(&valueBigInt, &felt128)
+			lowValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(&lowBigInt))
+
+			lowAddr, err := low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			err = vm.Memory.WriteToAddress(&lowAddr, &lowValue)
+			if err != nil {
+				return err
+			}
+			// ids.high = ids.value >> 128
+			highBigInt.Rsh(&valueBigInt, 128)
+			highValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(&highBigInt))
+
+			highAddr, err := high.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&highAddr, &highValue)
+
+		},
+	}
+}
+
+func createSplitFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	maxHigh, err := resolver.GetResOperander("MAX_HIGH")
+	if err != nil {
+		return nil, err
+	}
+
+	maxLow, err := resolver.GetResOperander("MAX_LOW")
+	if err != nil {
+		return nil, err
+	}
+
+	low, err := resolver.GetResOperander("low")
+	if err != nil {
+		return nil, err
+	}
+
+	high, err := resolver.GetResOperander("high")
+	if err != nil {
+		return nil, err
+	}
+
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitFeltHint(maxHigh, maxLow, low, high, value), nil
 }
