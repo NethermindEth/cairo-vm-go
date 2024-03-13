@@ -195,7 +195,7 @@ func newUint256SignedNNHint(a hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint256SignedNN",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
-			// memory[ap] = 1 if 0 <= (ids.a.high % PRIME) < 2 ** 127 else 0
+			//> memory[ap] = 1 if 0 <= (ids.a.high % PRIME) < 2 ** 127 else 0
 			apAddr := vm.Context.AddressAp()
 
 			_, aHigh, err := GetUint256AsFelts(vm, a)
