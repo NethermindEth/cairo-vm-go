@@ -527,8 +527,8 @@ func newSplitFeltHint(maxHigh, maxLow, low, high, value hinter.ResOperander) hin
 			// assert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW
 			leftHandSide := new(fp.Element).SetInt64(-1)
 			rightHandSide := new(fp.Element).Add(new(fp.Element).Mul(maxHigh, &utils.FeltMax128), maxLow)
-			if leftHandSide != rightHandSide {
-				return fmt.Errorf("assertion `split_felt(): The sum of MAX_HIGH and MAX_LOW does not equal to PRIME - 1` failed", maxLow)
+			if leftHandSide.Cmp(rightHandSide) != 0 {
+				return fmt.Errorf("assertion `split_felt(): The sum of MAX_HIGH and MAX_LOW does not equal to PRIME - 1` failed")
 			}
 			// assert_integer(ids.value)
 			value, err := hinter.ResolveAsFelt(vm, value)
