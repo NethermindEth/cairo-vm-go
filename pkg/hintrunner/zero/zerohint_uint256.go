@@ -198,6 +198,13 @@ func newUint256SqrtHint(n hinter.ResOperander, root hinter.ResOperander) hinter.
 	return &GenericZeroHinter{
 		Name: "Uint256Sqrt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.python.math_utils import isqrt
+			//n = (ids.n.high << 128) + ids.n.low
+			//root = isqrt(n)
+			//assert 0 <= root < 2 ** 128
+			//ids.root.low = root
+			//ids.root.high = 0
+
 			nHigh, nLow, err := GetUint256AsFelts(vm, n)
 			if err != nil {
 				return err
@@ -210,7 +217,7 @@ func newUint256SqrtHint(n hinter.ResOperander, root hinter.ResOperander) hinter.
 
 			//> root = isqrt(n)
 			calculatedUint256Root := new(uint256.Int).Sqrt(&value)
-			calculatedFeltRoot := new(fp.Element).SetBytes(calculatedUint256Root.Bytes())
+			calculatedFeltRoot := new(fp.Element).SetBytes(utils.ReverseSlice(calculatedUint256Root.Bytes()))
 
 			//> assert 0 <= root < 2 ** 128
 			if !utils.FeltIsPositive(calculatedFeltRoot) {
@@ -220,8 +227,15 @@ func newUint256SqrtHint(n hinter.ResOperander, root hinter.ResOperander) hinter.
 			if err != nil {
 				return err
 			}
-			rootValue := memory.MemoryValueFromFieldElement(calculatedFeltRoot)
-			return vm.Memory.WriteToAddress(&rootAddr, &rootValue)
+			//> ids.root.low = root
+			rootLowValue := memory.MemoryValueFromFieldElement(calculatedFeltRoot)
+			err = vm.Memory.WriteToAddress(&rootAddr, &rootLowValue)
+			if err != nil {
+				return err
+			}
+			//> ids.root.high = 0
+			rootHighValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetInt64(0))
+			return hinter.WriteToNthStructField(vm, root, rootHighValue, 1)
 		},
 	}
 }
