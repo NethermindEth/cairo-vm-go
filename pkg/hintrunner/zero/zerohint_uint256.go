@@ -202,27 +202,26 @@ func newUint256SqrtHint(n hinter.ResOperander, root hinter.ResOperander) hinter.
 			if err != nil {
 				return err
 			}
+			//> n = (ids.n.high << 128) + ids.n.low
 			valueLowU256 := uint256.Int(nLow.Bits())
 			value := uint256.Int(nHigh.Bits())
 			value.Lsh(&value, 128)
 			value.Add(&value, &valueLowU256)
 
-			calculatedUint256Root := uint256.Int{}
-			calculatedUint256Root.Sqrt(&value)
+			//> root = isqrt(n)
+			calculatedUint256Root := new(uint256.Int).Sqrt(&value)
+			calculatedFeltRoot := new(fp.Element).SetBytes(calculatedUint256Root.Bytes())
 
-			calculatedFeltRoot := fp.Element{}
-			calculatedFeltRoot.SetBytes(calculatedUint256Root.Bytes())
-
-			if !utils.FeltIsPositive(&calculatedFeltRoot) {
+			//> assert 0 <= root < 2 ** 128
+			if !utils.FeltIsPositive(calculatedFeltRoot) {
 				return fmt.Errorf("assertion failed: a = %v is out of range", calculatedUint256Root)
 			}
 			rootAddr, err := root.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			rootValue := memory.MemoryValueFromFieldElement(&calculatedFeltRoot)
-			vm.Memory.WriteToAddress(&rootAddr, &rootValue)
-			return nil
+			rootValue := memory.MemoryValueFromFieldElement(calculatedFeltRoot)
+			return vm.Memory.WriteToAddress(&rootAddr, &rootValue)
 		},
 	}
 }
