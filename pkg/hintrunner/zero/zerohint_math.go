@@ -508,7 +508,7 @@ func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
 		Name: "Pow",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.locs.bit = (ids.prev_locs.exp % PRIME) & 1
-			/*>struct LoopLocals {
+			/*> struct LoopLocals {
 				bit: felt,
 				temp0: felt,
 
@@ -521,7 +521,7 @@ func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			loopLocals, err := hinter.GetConsecutiveValues(vm, prevLocs, expStructOffset)
+			loopLocals, err := hinter.GetConsecutiveValues(vm, prevLocs, expStructOffset+1)
 			if err != nil {
 				return err
 			}
@@ -532,10 +532,8 @@ func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
 			var prevLocsExpBig big.Int
 			prevLocsExp.BigInt(&prevLocsExpBig)
 			locsBitBig := new(big.Int).And(&prevLocsExpBig, big.NewInt(1))
-			locsBit := new(fp.Element).SetBigInt(locsBitBig)
-			v := memory.MemoryValueFromFieldElement(locsBit)
-			vm.Memory.WriteToAddress(&locsBitAddress, &v)
-			return nil
+			v := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(locsBitBig))
+			return vm.Memory.WriteToAddress(&locsBitAddress, &v)
 		},
 	}
 }

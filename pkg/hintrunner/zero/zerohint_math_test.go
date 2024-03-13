@@ -556,29 +556,36 @@ func TestZeroHintMath(t *testing.T) {
 			},
 		},
 		"Pow": {
-			// Zero value - assertion failed, any other - nothing.
 			{
 				operanders: []*hintOperander{
-					{Name: "locs", Kind: apRelative, Value: feltInt64(1)},
-					{Name: "prev_locs", Kind: apRelative, Value: feltInt64(1)},
+					{Name: "locs.bit", Kind: uninitialized},
+					{Name: "prev_locs.bit", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.temp0", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.res", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.base", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.exp", Kind: apRelative, Value: feltInt64(256)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newPowHint(ctx.operanders["locs"], ctx.operanders["prev_locs"])
+					return newPowHint(ctx.operanders["locs.bit"], ctx.operanders["prev_locs.bit"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
-					"locs": feltInt64(1),
+					"locs.bit": feltInt64(0),
 				}),
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "locs", Kind: apRelative, Value: feltInt64(1)},
-					{Name: "prev_locs", Kind: apRelative, Value: feltInt64(2)},
+					{Name: "locs.bit", Kind: uninitialized},
+					{Name: "prev_locs.bit", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.temp0", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.res", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.base", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.exp", Kind: apRelative, Value: feltInt64(255)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newPowHint(ctx.operanders["locs"], ctx.operanders["prev_locs"])
+					return newPowHint(ctx.operanders["locs.bit"], ctx.operanders["prev_locs.bit"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
-					"locs": feltInt64(0),
+					"locs.bit": feltInt64(1),
 				}),
 			},
 		},
