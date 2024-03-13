@@ -585,8 +585,8 @@ func TestZeroHintMath(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "MAX_HIGH", Kind: apRelative, Value: &utils.FeltZero},
-					{Name: "MAX_LOW", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "MAX_HIGH", Kind: fpRelative, Value: &utils.FeltZero},
+					{Name: "MAX_LOW", Kind: fpRelative, Value: &utils.FeltZero},
 					{Name: "low", Kind: uninitialized},
 					{Name: "high", Kind: uninitialized},
 					{Name: "value", Kind: apRelative, Value: feltInt64(0)},
@@ -600,8 +600,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "MAX_HIGH", Kind: apRelative, Value: new(fp.Element).Div(feltInt64(-1), &utils.FeltMax128)},
 					{Name: "MAX_LOW", Kind: apRelative, Value: &utils.FeltZero},
-					{Name: "low", Kind: uninitialized},
-					{Name: "high", Kind: uninitialized},
+					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 					{Name: "value", Kind: apRelative, Value: feltString("100000000000000000000000000000000000000")},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {

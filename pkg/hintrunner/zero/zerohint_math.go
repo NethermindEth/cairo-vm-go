@@ -509,7 +509,7 @@ func newSplitFeltHint(maxHigh, maxLow, low, high, value hinter.ResOperander) hin
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.math_utils import assert_integer\nassert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128\nassert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW\nassert_integer(ids.value)\nids.low = ids.value & ((1 << 128) - 1)\nids.high = ids.value >> 128
 
-			// assert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128
+			//> assert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128
 			maxHigh, err := hinter.ResolveAsFelt(vm, maxHigh)
 			if err != nil {
 				return err
@@ -524,55 +524,45 @@ func newSplitFeltHint(maxHigh, maxLow, low, high, value hinter.ResOperander) hin
 			if !utils.FeltLt(maxLow, &utils.FeltMax128) {
 				return fmt.Errorf("assertion `split_felt(): MAX_LOW %v is out of range` failed", maxLow)
 			}
-			// assert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW
+
+			//> assert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW
 			leftHandSide := new(fp.Element).SetInt64(-1)
 			rightHandSide := new(fp.Element).Add(new(fp.Element).Mul(maxHigh, &utils.FeltMax128), maxLow)
 			if leftHandSide.Cmp(rightHandSide) != 0 {
 				return fmt.Errorf("assertion `split_felt(): The sum of MAX_HIGH and MAX_LOW does not equal to PRIME - 1` failed")
 			}
-			// assert_integer(ids.value)
+
+			//> assert_integer(ids.value)
 			value, err := hinter.ResolveAsFelt(vm, value)
 			if err != nil {
 				return err
 			}
+
 			var valueBigInt big.Int
 			value.BigInt(&valueBigInt)
-			lowFelt, err := hinter.ResolveAsFelt(vm, low)
-			if err != nil {
-				return err
-			}
-			var lowBigInt big.Int
-			lowFelt.BigInt(&lowBigInt)
-			highFelt, err := hinter.ResolveAsFelt(vm, high)
-			if err != nil {
-				return err
-			}
-			var highBigInt big.Int
-			highFelt.BigInt(&highBigInt)
-
-			// ids.low = ids.value & ((1 << 128)
-			var felt128 big.Int
-			utils.FeltMax128.BigInt(&felt128)
-			lowBigInt.And(&valueBigInt, &felt128)
-			lowValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(&lowBigInt))
-
 			lowAddr, err := low.GetAddress(vm)
 			if err != nil {
 				return err
 			}
 
-			err = vm.Memory.WriteToAddress(&lowAddr, &lowValue)
-			if err != nil {
-				return err
-			}
-			// ids.high = ids.value >> 128
-			highBigInt.Rsh(&valueBigInt, 128)
-			highValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(&highBigInt))
-
 			highAddr, err := high.GetAddress(vm)
 			if err != nil {
 				return err
 			}
+
+			//> ids.low = ids.value & ((1 << 128) - 1)
+			felt128 := new(big.Int).Lsh(big.NewInt(1), 128)
+			felt128 = new(big.Int).Sub(felt128, big.NewInt(1))
+			lowBigInt := new(big.Int).And(&valueBigInt, felt128)
+			lowValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(lowBigInt))
+
+			err = vm.Memory.WriteToAddress(&lowAddr, &lowValue)
+			if err != nil {
+				return err
+			}
+			//> ids.high = ids.value >> 128
+			highBigInt := new(big.Int).Rsh(&valueBigInt, 128)
+			highValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(highBigInt))
 
 			return vm.Memory.WriteToAddress(&highAddr, &highValue)
 
