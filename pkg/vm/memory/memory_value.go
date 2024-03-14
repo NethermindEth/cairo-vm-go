@@ -259,7 +259,20 @@ func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) error {
 // Subs two memory values if they're in the same segment or the rhs is a Felt.
 func (mv *MemoryValue) Sub(lhs, rhs *MemoryValue) error {
 	if lhs.IsAddress() {
-		return mv.addrUnsafe().Sub(lhs.addrUnsafe(), rhs.Any())
+		asAddr := mv.addrUnsafe()
+		if rhs.IsAddress() {
+			// The result is the offset value, felt-typed.
+			// See #284
+			mv.isFelt = true
+			mv.isAddress = false
+			if err := asAddr.Sub(lhs.addrUnsafe(), rhs.Any()); err != nil {
+				return err
+			}
+			mv.felt.SetUint64(asAddr.Offset)
+			return nil
+		}
+		// This code is executed for felt-typed rhs.
+		return asAddr.Sub(lhs.addrUnsafe(), rhs.Any())
 	}
 
 	if rhs.IsAddress() {
