@@ -3,6 +3,7 @@ package zero
 import (
 	"fmt"
 	"math/big"
+	"slices"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -217,7 +218,9 @@ func newUint256SqrtHint(n hinter.ResOperander, root hinter.ResOperander) hinter.
 
 			//> root = isqrt(n)
 			calculatedUint256Root := new(uint256.Int).Sqrt(&value)
-			calculatedFeltRoot := new(fp.Element).SetBytes(utils.ReverseSlice(calculatedUint256Root.Bytes()))
+			calculatedUint256RootBytes := calculatedUint256Root.Bytes()
+			slices.Reverse(calculatedUint256RootBytes)
+			calculatedFeltRoot := new(fp.Element).SetBytes(calculatedUint256RootBytes)
 
 			//> assert 0 <= root < 2 ** 128
 			if !utils.FeltIsPositive(calculatedFeltRoot) {
