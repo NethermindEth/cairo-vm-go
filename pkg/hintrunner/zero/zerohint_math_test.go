@@ -559,53 +559,12 @@ func TestZeroHintMath(t *testing.T) {
 		"SplitFelt": {
 			{
 				operanders: []*hintOperander{
-					{Name: "MAX_HIGH", Kind: apRelative, Value: &utils.FeltMax128},
-					{Name: "MAX_LOW", Kind: apRelative, Value: &utils.FeltZero},
-					{Name: "low", Kind: uninitialized},
-					{Name: "high", Kind: uninitialized},
-					{Name: "value", Kind: apRelative, Value: feltInt64(0)},
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newSplitFeltHint(ctx.operanders["MAX_HIGH"], ctx.operanders["MAX_LOW"], ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
-				},
-				errCheck: errorTextContains("assertion `split_felt(): MAX_HIGH"),
-			},
-			{
-				operanders: []*hintOperander{
-					{Name: "MAX_HIGH", Kind: apRelative, Value: &utils.FeltZero},
-					{Name: "MAX_LOW", Kind: apRelative, Value: &utils.FeltMax128},
-					{Name: "low", Kind: uninitialized},
-					{Name: "high", Kind: uninitialized},
-					{Name: "value", Kind: apRelative, Value: feltInt64(0)},
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newSplitFeltHint(ctx.operanders["MAX_HIGH"], ctx.operanders["MAX_LOW"], ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
-				},
-				errCheck: errorTextContains("assertion `split_felt(): MAX_LOW"),
-			},
-			{
-				operanders: []*hintOperander{
-					{Name: "MAX_HIGH", Kind: fpRelative, Value: &utils.FeltZero},
-					{Name: "MAX_LOW", Kind: fpRelative, Value: &utils.FeltZero},
-					{Name: "low", Kind: uninitialized},
-					{Name: "high", Kind: uninitialized},
-					{Name: "value", Kind: apRelative, Value: feltInt64(0)},
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newSplitFeltHint(ctx.operanders["MAX_HIGH"], ctx.operanders["MAX_LOW"], ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
-				},
-				errCheck: errorTextContains("assertion `split_felt(): The sum of MAX_HIGH and MAX_LOW does not equal to PRIME - 1` failed"),
-			},
-			{
-				operanders: []*hintOperander{
-					{Name: "MAX_HIGH", Kind: apRelative, Value: new(fp.Element).Div(feltInt64(-1), &utils.FeltMax128)},
-					{Name: "MAX_LOW", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
 					{Name: "high", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 					{Name: "value", Kind: apRelative, Value: feltString("100000000000000000000000000000000000000")},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newSplitFeltHint(ctx.operanders["MAX_HIGH"], ctx.operanders["MAX_LOW"], ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
+					return newSplitFeltHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"low":  feltString("100000000000000000000000000000000000000"),
@@ -614,14 +573,12 @@ func TestZeroHintMath(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "MAX_HIGH", Kind: apRelative, Value: new(fp.Element).Div(feltInt64(-1), &utils.FeltMax128)},
-					{Name: "MAX_LOW", Kind: apRelative, Value: &utils.FeltZero},
-					{Name: "low", Kind: uninitialized},
-					{Name: "high", Kind: uninitialized},
+					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 					{Name: "value", Kind: apRelative, Value: &utils.FeltMax128},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newSplitFeltHint(ctx.operanders["MAX_HIGH"], ctx.operanders["MAX_LOW"], ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
+					return newSplitFeltHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"low":  feltInt64(0),

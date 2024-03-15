@@ -503,27 +503,20 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newSplitIntHint(output, value, base, bound), nil
 }
 
-func newSplitFeltHint(maxHigh, maxLow, low, high, value hinter.ResOperander) hinter.Hinter {
+func newSplitFeltHint(low, high, value hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitFelt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
-			//> from starkware.cairo.common.math_utils import assert_integer\nassert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128\nassert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW\nassert_integer(ids.value)\nids.low = ids.value & ((1 << 128) - 1)\nids.high = ids.value >> 128
+			//> from starkware.cairo.common.math_utils import assert_integer
+			// assert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128
+			// assert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW
+			// assert_integer(ids.value)
+			// ids.low = ids.value & ((1 << 128) - 1)
+			// ids.high = ids.value >> 128
 
 			//> assert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128
-			maxHigh, err := hinter.ResolveAsFelt(vm, maxHigh)
-			if err != nil {
-				return err
-			}
-			if !utils.FeltLt(maxHigh, &utils.FeltMax128) {
-				return fmt.Errorf("assertion `split_felt(): MAX_HIGH %v is out of range` failed", maxHigh)
-			}
-			maxLow, err := hinter.ResolveAsFelt(vm, maxLow)
-			if err != nil {
-				return err
-			}
-			if !utils.FeltLt(maxLow, &utils.FeltMax128) {
-				return fmt.Errorf("assertion `split_felt(): MAX_LOW %v is out of range` failed", maxLow)
-			}
+			maxHigh := new(fp.Element).Div(new(fp.Element).SetInt64(-1), &utils.FeltMax128)
+			maxLow := &utils.FeltZero
 
 			//> assert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW
 			leftHandSide := new(fp.Element).SetInt64(-1)
@@ -571,16 +564,6 @@ func newSplitFeltHint(maxHigh, maxLow, low, high, value hinter.ResOperander) hin
 }
 
 func createSplitFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	maxHigh, err := resolver.GetResOperander("MAX_HIGH")
-	if err != nil {
-		return nil, err
-	}
-
-	maxLow, err := resolver.GetResOperander("MAX_LOW")
-	if err != nil {
-		return nil, err
-	}
-
 	low, err := resolver.GetResOperander("low")
 	if err != nil {
 		return nil, err
@@ -596,5 +579,5 @@ func createSplitFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 		return nil, err
 	}
 
-	return newSplitFeltHint(maxHigh, maxLow, low, high, value), nil
+	return newSplitFeltHint(low, high, value), nil
 }
