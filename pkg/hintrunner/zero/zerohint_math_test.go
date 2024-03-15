@@ -558,12 +558,12 @@ func TestZeroHintMath(t *testing.T) {
 		"Pow": {
 			{
 				operanders: []*hintOperander{
-					{Name: "locs.bit", Kind: uninitialized},
 					{Name: "prev_locs.bit", Kind: apRelative, Value: feltInt64(0)},
 					{Name: "prev_locs.temp0", Kind: apRelative, Value: feltInt64(0)},
 					{Name: "prev_locs.res", Kind: apRelative, Value: feltInt64(0)},
 					{Name: "prev_locs.base", Kind: apRelative, Value: feltInt64(0)},
 					{Name: "prev_locs.exp", Kind: apRelative, Value: feltInt64(256)},
+					{Name: "locs.bit", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newPowHint(ctx.operanders["locs.bit"], ctx.operanders["prev_locs.bit"])
@@ -574,12 +574,12 @@ func TestZeroHintMath(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "locs.bit", Kind: uninitialized},
 					{Name: "prev_locs.bit", Kind: apRelative, Value: feltInt64(0)},
 					{Name: "prev_locs.temp0", Kind: apRelative, Value: feltInt64(0)},
 					{Name: "prev_locs.res", Kind: apRelative, Value: feltInt64(0)},
 					{Name: "prev_locs.base", Kind: apRelative, Value: feltInt64(0)},
 					{Name: "prev_locs.exp", Kind: apRelative, Value: feltInt64(255)},
+					{Name: "locs.bit", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newPowHint(ctx.operanders["locs.bit"], ctx.operanders["prev_locs.bit"])
