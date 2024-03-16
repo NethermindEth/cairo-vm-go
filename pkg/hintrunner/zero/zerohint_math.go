@@ -2,13 +2,13 @@ package zero
 
 import (
 	"fmt"
-
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"math/big"
 )
 
 func newIsLeFeltHint(a, b hinter.ResOperander) hinter.Hinter {
@@ -500,4 +500,79 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 		return nil, err
 	}
 	return newSplitIntHint(output, value, base, bound), nil
+}
+
+func newUnsignedDivRemCodeHinter(value, div, q, r hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "UnsignedDivRem",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.math_utils import assert_integer
+			//> assert_integer(ids.div)
+			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, \
+			//>     f'div={hex(ids.div)} is out of the valid range.'
+			//> ids.q, ids.r = divmod(ids.value, ids.div)
+
+			value, err := hinter.ResolveAsFelt(vm, value)
+			if err != nil {
+				return err
+			}
+			div, err := hinter.ResolveAsFelt(vm, div)
+			if err != nil {
+				return err
+			}
+
+			qAddr, err := q.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			rAddr, err := r.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			// (PRIME // range_check_builtin.bound)
+			divUpperBound := new(big.Int).Div(fp.Modulus(), utils.Uint256Max128.ToBig())
+
+			var divBig big.Int
+			div.BigInt(&divBig)
+
+			if div.IsZero() || divBig.Cmp(divUpperBound) == 1 {
+				return fmt.Errorf("div=0x%v is out of the valid range.", divBig.Text(16))
+			}
+
+			q, r := utils.FeltDivRem(value, div)
+
+			qValue := memory.MemoryValueFromFieldElement(&q)
+			if err := vm.Memory.WriteToAddress(&qAddr, &qValue); err != nil {
+				return err
+			}
+			rValue := memory.MemoryValueFromFieldElement(&r)
+			if err := vm.Memory.WriteToAddress(&rAddr, &rValue); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+}
+
+func createUnsignedDivRemCodeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+	div, err := resolver.GetResOperander("div")
+	if err != nil {
+		return nil, err
+	}
+	q, err := resolver.GetResOperander("q")
+	if err != nil {
+		return nil, err
+	}
+	r, err := resolver.GetResOperander("r")
+	if err != nil {
+		return nil, err
+	}
+
+	return newUnsignedDivRemCodeHinter(value, div, q, r), nil
 }
