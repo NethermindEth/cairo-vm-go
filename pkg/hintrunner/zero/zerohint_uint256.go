@@ -1,6 +1,7 @@
 package zero
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -226,7 +227,7 @@ func createUint256SignedNNHinter(resolver hintReferenceResolver) (hinter.Hinter,
 
 func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "Uint256UnsignedDivRem",
+		Name: "Uint256MulDivMod",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 
 			//> a = (ids.a.high << 128) + ids.a.low
@@ -267,45 +268,47 @@ func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hin
 			divLow.BigInt(&divLowBig)
 			var divHighBig big.Int
 			divHigh.BigInt(&divHighBig)
-
 			a := new(big.Int).Add(new(big.Int).Lsh(&aHighBig, 128), &aLowBig)
 			b := new(big.Int).Add(new(big.Int).Lsh(&bHighBig, 128), &bLowBig)
 			div := new(big.Int).Add(new(big.Int).Lsh(&divHighBig, 128), &divLowBig)
 			quot, rem := new(big.Int).DivMod(new(big.Int).Mul(a, b), div, new(big.Int))
-
 			mask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
 
 			lowQuotLow := new(fp.Element).SetBigInt(new(big.Int).And(quot, mask))
 			lowQuotHigh := new(fp.Element).SetBigInt(new(big.Int).Rsh(new(big.Int).Rsh(quot, 128), 128))
-
 			highQuotLow := new(fp.Element).SetBigInt(new(big.Int).And(new(big.Int).Rsh(quot, 256), mask))
-			highQuotHigh := new(fp.Element).SetBigInt(new(big.Int).Lsh(quot, 384))
+			highQuotHigh := new(fp.Element).SetBigInt(new(big.Int).Rsh(quot, 384))
 
 			lowRem := new(fp.Element).SetBigInt(new(big.Int).And(rem, mask))
 			highRem := new(fp.Element).SetBigInt(new(big.Int).Rsh(rem, 128))
+			fmt.Println(a, b, div, lowQuotLow, lowQuotHigh, highQuotLow, highQuotHigh, lowRem, highRem)
 
 			quotientLowAddr, err := quotientLow.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			x := memory.MemoryValueFromFieldElement(lowQuotLow)
-			err = vm.Memory.WriteToAddress(&quotientLowAddr, &x)
+
+			memoryValue := memory.MemoryValueFromFieldElement(lowQuotLow)
+			err = vm.Memory.WriteToAddress(&quotientLowAddr, &memoryValue)
 			if err != nil {
 				return err
 			}
 			err = hinter.WriteToNthStructField(vm, quotientLow, memory.MemoryValueFromFieldElement(lowQuotHigh), 1)
+			if err != nil {
+				return err
+			}
+			quotientHighAddr, err := quotientHigh.GetAddress(vm)
+			if err != nil {
+				return err
+			}
 
-			quotientHighAddr, err := quotientLow.GetAddress(vm)
+			memoryValue = memory.MemoryValueFromFieldElement(highQuotLow)
+			err = vm.Memory.WriteToAddress(&quotientHighAddr, &memoryValue)
 			if err != nil {
 				return err
 			}
-			x = memory.MemoryValueFromFieldElement(highQuotLow)
-			err = vm.Memory.WriteToAddress(&quotientHighAddr, &x)
-			if err != nil {
-				return err
-			}
+
 			err = hinter.WriteToNthStructField(vm, quotientHigh, memory.MemoryValueFromFieldElement(highQuotHigh), 1)
-
 			if err != nil {
 				return err
 			}
@@ -313,8 +316,8 @@ func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hin
 			if err != nil {
 				return err
 			}
-			x = memory.MemoryValueFromFieldElement(lowRem)
-			err = vm.Memory.WriteToAddress(&remainderAddr, &x)
+			memoryValue = memory.MemoryValueFromFieldElement(lowRem)
+			err = vm.Memory.WriteToAddress(&remainderAddr, &memoryValue)
 			if err != nil {
 				return err
 			}

@@ -154,14 +154,41 @@ func TestZeroHintUint256(t *testing.T) {
 			},
 		},
 		"Uint256MulDivMod": {
+			// {
+			// 	operanders: []*hintOperander{
+			// 		{Name: "a.low", Kind: apRelative, Value: feltUint64(6)},
+			// 		{Name: "a.high", Kind: apRelative, Value: feltUint64(0)},
+			// 		{Name: "b.low", Kind: apRelative, Value: feltUint64(6)},
+			// 		{Name: "b.high", Kind: apRelative, Value: feltUint64(0)},
+			// 		{Name: "div.low", Kind: apRelative, Value: feltUint64(2)},
+			// 		{Name: "div.high", Kind: apRelative, Value: feltUint64(0)},
+			// 		{Name: "quotient_low.low", Kind: uninitialized},
+			// 		{Name: "quotient_low.high", Kind: uninitialized},
+			// 		{Name: "quotient_high.low", Kind: uninitialized},
+			// 		{Name: "quotient_high.high", Kind: uninitialized},
+			// 		{Name: "remainder.low", Kind: uninitialized},
+			// 		{Name: "remainder.high", Kind: uninitialized},
+			// 	},
+			// 	makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+			// 		return newUint256MulDivModHint(ctx.operanders["a.low"], ctx.operanders["b.low"], ctx.operanders["div.low"], ctx.operanders["quotient_low.low"], ctx.operanders["quotient_high.low"], ctx.operanders["remainder.low"])
+			// 	},
+			// 	check: allVarValueEquals(map[string]*fp.Element{
+			// 		"quotient_low.low":   feltUint64(18),
+			// 		"quotient_low.high":  feltUint64(0),
+			// 		"quotient_high.low":  feltUint64(0),
+			// 		"quotient_high.high": feltUint64(0),
+			// 		"remainder.low":      feltUint64(0),
+			// 		"remainder.high":     feltUint64(0),
+			// 	}),
+			// },
 			{
 				operanders: []*hintOperander{
-					{Name: "a.low", Kind: fpRelative, Value: feltUint64(6)},
-					{Name: "a.high", Kind: fpRelative, Value: feltUint64(0)},
-					{Name: "b.low", Kind: fpRelative, Value: feltUint64(6)},
-					{Name: "b.high", Kind: fpRelative, Value: feltUint64(0)},
-					{Name: "div.low", Kind: fpRelative, Value: feltUint64(2)},
-					{Name: "div.high", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "a.low", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "a.high", Kind: apRelative, Value: feltUint64(6)},
+					{Name: "b.low", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.high", Kind: apRelative, Value: feltUint64(6)},
+					{Name: "div.low", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "div.high", Kind: apRelative, Value: feltUint64(2)},
 					{Name: "quotient_low.low", Kind: uninitialized},
 					{Name: "quotient_low.high", Kind: uninitialized},
 					{Name: "quotient_high.low", Kind: uninitialized},
@@ -173,9 +200,9 @@ func TestZeroHintUint256(t *testing.T) {
 					return newUint256MulDivModHint(ctx.operanders["a.low"], ctx.operanders["b.low"], ctx.operanders["div.low"], ctx.operanders["quotient_low.low"], ctx.operanders["quotient_high.low"], ctx.operanders["remainder.low"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
-					"quotient_low.low":   feltUint64(3),
+					"quotient_low.low":   feltUint64(18),
 					"quotient_low.high":  feltUint64(0),
-					"quotient_high.low":  feltUint64(3),
+					"quotient_high.low":  feltUint64(0),
 					"quotient_high.high": feltUint64(0),
 					"remainder.low":      feltUint64(0),
 					"remainder.high":     feltUint64(0),
