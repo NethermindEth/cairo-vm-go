@@ -3,7 +3,6 @@ package zero
 import (
 	"fmt"
 	"math/big"
-	"slices"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -206,7 +205,7 @@ func newUint256SqrtHint(n hinter.ResOperander, root hinter.ResOperander) hinter.
 			//ids.root.low = root
 			//ids.root.high = 0
 
-			nHigh, nLow, err := GetUint256AsFelts(vm, n)
+			nLow, nHigh, err := GetUint256AsFelts(vm, n)
 			if err != nil {
 				return err
 			}
@@ -217,13 +216,13 @@ func newUint256SqrtHint(n hinter.ResOperander, root hinter.ResOperander) hinter.
 			value.Add(&value, &valueLowU256)
 
 			//> root = isqrt(n)
-			calculatedUint256Root := new(uint256.Int).Sqrt(&value)
+			calculatedUint256Root := uint256.Int{}
+			calculatedUint256Root.Sqrt(&value)
 			calculatedUint256RootBytes := calculatedUint256Root.Bytes()
-			slices.Reverse(calculatedUint256RootBytes)
-			calculatedFeltRoot := new(fp.Element).SetBytes(calculatedUint256RootBytes)
-
+			calculatedFeltRoot := fp.Element{}
+			calculatedFeltRoot.SetBytes(calculatedUint256RootBytes)
 			//> assert 0 <= root < 2 ** 128
-			if !utils.FeltIsPositive(calculatedFeltRoot) {
+			if !utils.FeltIsPositive(&calculatedFeltRoot) {
 				return fmt.Errorf("assertion failed: a = %v is out of range", calculatedUint256Root)
 			}
 			rootAddr, err := root.GetAddress(vm)
@@ -231,7 +230,7 @@ func newUint256SqrtHint(n hinter.ResOperander, root hinter.ResOperander) hinter.
 				return err
 			}
 			//> ids.root.low = root
-			rootLowValue := memory.MemoryValueFromFieldElement(calculatedFeltRoot)
+			rootLowValue := memory.MemoryValueFromFieldElement(&calculatedFeltRoot)
 			err = vm.Memory.WriteToAddress(&rootAddr, &rootLowValue)
 			if err != nil {
 				return err
