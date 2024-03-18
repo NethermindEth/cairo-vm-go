@@ -229,12 +229,12 @@ func newUint256UnsignedDivRemHint(a, div, quotient, remainder hinter.ResOperande
 		Name: "Uint256UnsignedDivRem",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> a = (ids.a.high << 128) + ids.a.low
-			//div = (ids.div.high << 128) + ids.div.low
-			//quotient, remainder = divmod(a, div)
-			//ids.quotient.low = quotient & ((1 << 128) - 1)
-			//ids.quotient.high = quotient >> 128
-			//ids.remainder.low = remainder & ((1 << 128) - 1)
-			//ids.remainder.high = remainder >> 128
+			//> div = (ids.div.high << 128) + ids.div.low
+			//> quotient, remainder = divmod(a, div)
+			//> ids.quotient.low = quotient & ((1 << 128) - 1)
+			//> ids.quotient.high = quotient >> 128
+			//> ids.remainder.low = remainder & ((1 << 128) - 1)
+			//> ids.remainder.high = remainder >> 128
 			aLow, aHigh, err := GetUint256AsFelts(vm, a)
 			if err != nil {
 				return err
@@ -253,34 +253,24 @@ func newUint256UnsignedDivRemHint(a, div, quotient, remainder hinter.ResOperande
 			var divHighBig big.Int
 			divHigh.BigInt(&divHighBig)
 
-			a := new(big.Int).Add(new(big.Int).Lsh(&aHighBig, 128), &aLowBig)
-			div := new(big.Int).Add(new(big.Int).Lsh(&divHighBig, 128), &divLowBig)
-			quot, rem := utils.FeltDivRem(new(fp.Element).SetBigInt(a), new(fp.Element).SetBigInt(div))
-
-			var quotBig big.Int
-			quot.BigInt(&quotBig)
-
-			var remBig big.Int
-			rem.BigInt(&remBig)
+			aBig := new(big.Int).Add(new(big.Int).Lsh(&aHighBig, 128), &aLowBig)
+			divBig := new(big.Int).Add(new(big.Int).Lsh(&divHighBig, 128), &divLowBig)
+			quotBig := new(big.Int).Div(aBig, divBig)
+			remBig := new(big.Int).Mod(aBig, divBig)
 
 			mask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
 
-			lowQuot := new(fp.Element).SetBigInt(new(big.Int).And(&quotBig, mask))
-			highQuot := new(fp.Element).SetBigInt(new(big.Int).Rsh(&quotBig, 128))
+			lowQuot := new(fp.Element).SetBigInt(new(big.Int).And(quotBig, mask))
+			highQuot := new(fp.Element).SetBigInt(new(big.Int).Rsh(quotBig, 128))
 
-			lowRem := new(fp.Element).SetBigInt(new(big.Int).And(&remBig, mask))
-			highRem := new(fp.Element).SetBigInt(new(big.Int).Rsh(&remBig, 128))
+			lowRem := new(fp.Element).SetBigInt(new(big.Int).And(remBig, mask))
+			highRem := new(fp.Element).SetBigInt(new(big.Int).Rsh(remBig, 128))
 
 			quotientAddr, err := quotient.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			x := memory.MemoryValueFromFieldElement(lowQuot)
-			err = vm.Memory.WriteToAddress(&quotientAddr, &x)
-			if err != nil {
-				return err
-			}
-			err = hinter.WriteToNthStructField(vm, quotient, memory.MemoryValueFromFieldElement(highQuot), 1)
+			err = hinter.WriteUint256ToAddress(vm, quotientAddr, lowQuot, highQuot)
 			if err != nil {
 				return err
 			}
@@ -288,13 +278,7 @@ func newUint256UnsignedDivRemHint(a, div, quotient, remainder hinter.ResOperande
 			if err != nil {
 				return err
 			}
-			x = memory.MemoryValueFromFieldElement(lowRem)
-			err = vm.Memory.WriteToAddress(&remainderAddr, &x)
-			if err != nil {
-				return err
-			}
-			return hinter.WriteToNthStructField(vm, remainder, memory.MemoryValueFromFieldElement(highRem), 1)
-
+			return hinter.WriteUint256ToAddress(vm, remainderAddr, lowRem, highRem)
 		},
 	}
 
