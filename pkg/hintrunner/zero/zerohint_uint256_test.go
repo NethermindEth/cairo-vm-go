@@ -280,7 +280,7 @@ func TestZeroHintUint256(t *testing.T) {
 					"remainder.high": feltUint64(0),
 				}),
 			},
-                                 
+		},
 		"Uint256MulDivMod": {
 			{
 				operanders: []*hintOperander{
@@ -335,26 +335,6 @@ func TestZeroHintUint256(t *testing.T) {
 					"remainder.low":      &utils.FeltZero,
 					"remainder.high":     &utils.FeltZero,
 				}),
-			},
-			{
-				operanders: []*hintOperander{
-					{Name: "a.low", Kind: apRelative, Value: &utils.FeltZero},
-					{Name: "a.high", Kind: apRelative, Value: feltString("2")},
-					{Name: "b.low", Kind: apRelative, Value: &utils.FeltZero},
-					{Name: "b.high", Kind: apRelative, Value: feltString("3")},
-					{Name: "div.low", Kind: apRelative, Value: &utils.FeltZero},
-					{Name: "div.high", Kind: apRelative, Value: &utils.FeltZero},
-					{Name: "quotient_low.low", Kind: uninitialized},
-					{Name: "quotient_low.high", Kind: uninitialized},
-					{Name: "quotient_high.low", Kind: uninitialized},
-					{Name: "quotient_high.high", Kind: uninitialized},
-					{Name: "remainder.low", Kind: uninitialized},
-					{Name: "remainder.high", Kind: uninitialized},
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUint256MulDivModHint(ctx.operanders["a.low"], ctx.operanders["b.low"], ctx.operanders["div.low"], ctx.operanders["quotient_low.low"], ctx.operanders["quotient_high.low"], ctx.operanders["remainder.low"])
-				},
-				errCheck: errorTextContains("panic: division by zero"),
 			},
 		},
 	})

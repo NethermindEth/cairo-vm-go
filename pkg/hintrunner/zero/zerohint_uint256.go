@@ -359,8 +359,6 @@ func createUint256UnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.H
 	}
 	return newUint256UnsignedDivRemHint(a, div, quotient, remainder), nil
 }
-  
-  
 
 func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
@@ -418,13 +416,7 @@ func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hin
 			if err != nil {
 				return err
 			}
-
-			memoryValue := memory.MemoryValueFromFieldElement(lowQuotLow)
-			err = vm.Memory.WriteToAddress(&quotientLowAddr, &memoryValue)
-			if err != nil {
-				return err
-			}
-			err = hinter.WriteToNthStructField(vm, quotientLow, memory.MemoryValueFromFieldElement(lowQuotHigh), 1)
+			err = hinter.WriteUint256ToAddress(vm, quotientLowAddr, lowQuotLow, lowQuotHigh)
 			if err != nil {
 				return err
 			}
@@ -432,14 +424,7 @@ func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hin
 			if err != nil {
 				return err
 			}
-
-			memoryValue = memory.MemoryValueFromFieldElement(highQuotLow)
-			err = vm.Memory.WriteToAddress(&quotientHighAddr, &memoryValue)
-			if err != nil {
-				return err
-			}
-
-			err = hinter.WriteToNthStructField(vm, quotientHigh, memory.MemoryValueFromFieldElement(highQuotHigh), 1)
+			err = hinter.WriteUint256ToAddress(vm, quotientHighAddr, highQuotLow, highQuotHigh)
 			if err != nil {
 				return err
 			}
@@ -447,13 +432,7 @@ func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hin
 			if err != nil {
 				return err
 			}
-			memoryValue = memory.MemoryValueFromFieldElement(lowRem)
-			err = vm.Memory.WriteToAddress(&remainderAddr, &memoryValue)
-			if err != nil {
-				return err
-			}
-			return hinter.WriteToNthStructField(vm, remainder, memory.MemoryValueFromFieldElement(highRem), 1)
-
+			return hinter.WriteUint256ToAddress(vm, remainderAddr, lowRem, highRem)
 		},
 	}
 
