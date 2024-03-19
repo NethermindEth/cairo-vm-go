@@ -34,15 +34,16 @@ const (
 	splitIntAssertRange string = "assert ids.value == 0, 'split_int(): value is out of range.'"
 	splitIntCode        string = "memory[ids.output] = res = (int(ids.value) % PRIME) % ids.base\nassert res < ids.bound, f'split_int(): Limb {res} is out of range.'"
 
+	// sqrt() hint.
+	sqrt string = "from starkware.python.math_utils import isqrt\nvalue = ids.value % PRIME\nassert value < 2 ** 250, f\"value={value} is outside of the range [0, 2**250).\"\nassert 2 ** 250 < PRIME\nids.root = isqrt(value)"
+
 	// ------ Uint256 hints related code ------
 	uint256AddCode    string = "sum_low = ids.a.low + ids.b.low\nids.carry_low = 1 if sum_low >= ids.SHIFT else 0\nsum_high = ids.a.high + ids.b.high + ids.carry_low\nids.carry_high = 1 if sum_high >= ids.SHIFT else 0"
 	uint256AddLowCode string = "sum_low = ids.a.low + ids.b.low\nids.carry_low = 1 if sum_low >= ids.SHIFT else 0"
 	split64Code       string = "ids.low = ids.a & ((1<<64) - 1)\nids.high = ids.a >> 64"
 	uint256SignedNN   string = "memory[ap] = 1 if 0 <= (ids.a.high % PRIME) < 2 ** 127 else 0"
 
-	// sqrt() hints.
-	sqrt string = "from starkware.python.math_utils import isqrt\nvalue = ids.value % PRIME\nassert value < 2 ** 250, f\"value={value} is outside of the range [0, 2**250).\"\nassert 2 ** 250 < PRIME\nids.root = isqrt(value)"
-
+	
 	// ------ Usort hints related code ------
 
 	// ------ Elliptic Curve hints related code ------
