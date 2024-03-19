@@ -255,7 +255,6 @@ func GetConsecutiveValues(vm *VM.VirtualMachine, ref ResOperander, size int16) (
 	return values, nil
 }
 
-
 func WriteToNthStructField(vm *VM.VirtualMachine, addr mem.MemoryAddress, value mem.MemoryValue, field int16) error {
 
 	nAddr, err := addr.AddOffset(field)
