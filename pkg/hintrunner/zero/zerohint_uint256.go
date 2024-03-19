@@ -271,18 +271,20 @@ func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hin
 			a := new(big.Int).Add(new(big.Int).Lsh(&aHighBig, 128), &aLowBig)
 			b := new(big.Int).Add(new(big.Int).Lsh(&bHighBig, 128), &bLowBig)
 			div := new(big.Int).Add(new(big.Int).Lsh(&divHighBig, 128), &divLowBig)
-			quot, rem := new(big.Int).DivMod(new(big.Int).Mul(a, b), div, new(big.Int))
+			fmt.Println("mul", new(big.Int).Mul(a, b), "div", div)
+			quot := new(big.Int).Div(new(big.Int).Mul(a, b), div)
+			rem := new(big.Int).Mod(new(big.Int).Mul(a, b), div)
+			fmt.Println("a: ", *a, " b: ", *b, " div: ", *div, " quot: ", *quot, " rem: ", *rem)
 			mask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
-
 			lowQuotLow := new(fp.Element).SetBigInt(new(big.Int).And(quot, mask))
-			lowQuotHigh := new(fp.Element).SetBigInt(new(big.Int).Rsh(new(big.Int).Rsh(quot, 128), 128))
+			lowQuotHigh := new(fp.Element).SetBigInt(new(big.Int).And(new(big.Int).Rsh(quot, 128), mask))
+			fmt.Println(*new(big.Int).Rsh(quot, 128))
 			highQuotLow := new(fp.Element).SetBigInt(new(big.Int).And(new(big.Int).Rsh(quot, 256), mask))
 			highQuotHigh := new(fp.Element).SetBigInt(new(big.Int).Rsh(quot, 384))
-
+			fmt.Println()
 			lowRem := new(fp.Element).SetBigInt(new(big.Int).And(rem, mask))
 			highRem := new(fp.Element).SetBigInt(new(big.Int).Rsh(rem, 128))
-			fmt.Println(a, b, div, lowQuotLow, lowQuotHigh, highQuotLow, highQuotHigh, lowRem, highRem)
-
+			fmt.Println("mask: ", *mask, " lowQuotLow: ", *lowQuotLow, " lowQuotHigh: ", *lowQuotHigh, " highQuotLow: ", *highQuotLow, " highQuotHigh: ", *highQuotHigh, " lowRem: ", *lowRem, " highRem: ", *highRem)
 			quotientLowAddr, err := quotientLow.GetAddress(vm)
 			if err != nil {
 				return err

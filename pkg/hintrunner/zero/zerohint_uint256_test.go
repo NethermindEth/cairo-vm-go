@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -183,12 +184,12 @@ func TestZeroHintUint256(t *testing.T) {
 			// },
 			{
 				operanders: []*hintOperander{
-					{Name: "a.low", Kind: apRelative, Value: feltUint64(0)},
-					{Name: "a.high", Kind: apRelative, Value: feltUint64(6)},
-					{Name: "b.low", Kind: apRelative, Value: feltUint64(0)},
-					{Name: "b.high", Kind: apRelative, Value: feltUint64(6)},
-					{Name: "div.low", Kind: apRelative, Value: feltUint64(0)},
-					{Name: "div.high", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "a.low", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "a.high", Kind: apRelative, Value: feltString("2")},
+					{Name: "b.low", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "b.high", Kind: apRelative, Value: feltString("3")},
+					{Name: "div.low", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "div.high", Kind: apRelative, Value: feltString("2")},
 					{Name: "quotient_low.low", Kind: uninitialized},
 					{Name: "quotient_low.high", Kind: uninitialized},
 					{Name: "quotient_high.low", Kind: uninitialized},
@@ -200,12 +201,12 @@ func TestZeroHintUint256(t *testing.T) {
 					return newUint256MulDivModHint(ctx.operanders["a.low"], ctx.operanders["b.low"], ctx.operanders["div.low"], ctx.operanders["quotient_low.low"], ctx.operanders["quotient_high.low"], ctx.operanders["remainder.low"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
-					"quotient_low.low":   feltUint64(18),
-					"quotient_low.high":  feltUint64(0),
-					"quotient_high.low":  feltUint64(0),
-					"quotient_high.high": feltUint64(0),
-					"remainder.low":      feltUint64(0),
-					"remainder.high":     feltUint64(0),
+					"quotient_low.low":   &utils.FeltZero,
+					"quotient_low.high":  &utils.FeltZero,
+					"quotient_high.low":  &utils.FeltZero,
+					"quotient_high.high": &utils.FeltZero,
+					"remainder.low":      &utils.FeltZero,
+					"remainder.high":     &utils.FeltZero,
 				}),
 			},
 		},
