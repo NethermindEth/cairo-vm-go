@@ -1,25 +1,24 @@
 package zero
 
 import (
-	"math/big"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func TestZeroHintUint256(t *testing.T) {
 	// Values used in the test cases
 	// 1 << 127
-	felt127 := new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 127))
 
 	runHinterTests(t, map[string][]hintTestCase{
 		"Uint256Add": {
 			{
 				operanders: []*hintOperander{
-					{Name: "a.low", Kind: fpRelative, Value: felt127},
+					{Name: "a.low", Kind: fpRelative, Value: &utils.Felt127},
 					{Name: "a.high", Kind: fpRelative, Value: feltUint64(0)},
-					{Name: "b.low", Kind: apRelative, Value: felt127},
+					{Name: "b.low", Kind: apRelative, Value: &utils.Felt127},
 					{Name: "b.high", Kind: apRelative, Value: feltUint64(0)},
 					{Name: "carry_low", Kind: uninitialized},
 					{Name: "carry_high", Kind: uninitialized},
@@ -34,10 +33,10 @@ func TestZeroHintUint256(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "a.low", Kind: fpRelative, Value: felt127},
-					{Name: "a.high", Kind: fpRelative, Value: felt127},
-					{Name: "b.low", Kind: apRelative, Value: felt127},
-					{Name: "b.high", Kind: apRelative, Value: felt127},
+					{Name: "a.low", Kind: fpRelative, Value: &utils.Felt127},
+					{Name: "a.high", Kind: fpRelative, Value: &utils.Felt127},
+					{Name: "b.low", Kind: apRelative, Value: &utils.Felt127},
+					{Name: "b.high", Kind: apRelative, Value: &utils.Felt127},
 					{Name: "carry_low", Kind: uninitialized},
 					{Name: "carry_high", Kind: uninitialized},
 				},
@@ -52,9 +51,9 @@ func TestZeroHintUint256(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "a.low", Kind: fpRelative, Value: feltUint64(0)},
-					{Name: "a.high", Kind: fpRelative, Value: felt127},
+					{Name: "a.high", Kind: fpRelative, Value: &utils.Felt127},
 					{Name: "b.low", Kind: apRelative, Value: feltUint64(0)},
-					{Name: "b.high", Kind: apRelative, Value: felt127},
+					{Name: "b.high", Kind: apRelative, Value: &utils.Felt127},
 					{Name: "carry_low", Kind: uninitialized},
 					{Name: "carry_high", Kind: uninitialized},
 				},
@@ -68,10 +67,10 @@ func TestZeroHintUint256(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "a.low", Kind: fpRelative, Value: felt127},
+					{Name: "a.low", Kind: fpRelative, Value: &utils.Felt127},
 					{Name: "a.high", Kind: fpRelative, Value: feltUint64(0)},
 					{Name: "b.low", Kind: apRelative, Value: feltUint64(0)},
-					{Name: "b.high", Kind: apRelative, Value: felt127},
+					{Name: "b.high", Kind: apRelative, Value: &utils.Felt127},
 					{Name: "carry_low", Kind: uninitialized},
 					{Name: "carry_high", Kind: uninitialized},
 				},
@@ -103,7 +102,7 @@ func TestZeroHintUint256(t *testing.T) {
 			// `low` is zero
 			{
 				operanders: []*hintOperander{
-					{Name: "a", Kind: fpRelative, Value: felt127},
+					{Name: "a", Kind: fpRelative, Value: &utils.Felt127},
 					{Name: "low", Kind: uninitialized},
 					{Name: "high", Kind: uninitialized},
 				},
@@ -179,8 +178,8 @@ func TestZeroHintUint256(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "n.low", Kind: fpRelative, Value: felt127},
-					{Name: "n.high", Kind: fpRelative, Value: felt127},
+					{Name: "n.low", Kind: fpRelative, Value: &utils.Felt127},
+					{Name: "n.high", Kind: fpRelative, Value: &utils.Felt127},
 					{Name: "root.low", Kind: uninitialized},
 					{Name: "root.high", Kind: uninitialized},
 				},
@@ -197,7 +196,7 @@ func TestZeroHintUint256(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "a.low", Kind: fpRelative, Value: feltUint64(0)},
-					{Name: "a.high", Kind: fpRelative, Value: felt127},
+					{Name: "a.high", Kind: fpRelative, Value: &utils.Felt127},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUint256SignedNNHint(ctx.operanders["a.low"])
@@ -239,9 +238,9 @@ func TestZeroHintUint256(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "a.low", Kind: fpRelative, Value: felt127},
+					{Name: "a.low", Kind: fpRelative, Value: &utils.Felt127},
 					{Name: "a.high", Kind: fpRelative, Value: feltUint64(0)},
-					{Name: "div.low", Kind: fpRelative, Value: felt127},
+					{Name: "div.low", Kind: fpRelative, Value: &utils.Felt127},
 					{Name: "div.high", Kind: fpRelative, Value: feltUint64(0)},
 					{Name: "quotient.low", Kind: uninitialized},
 					{Name: "quotient.high", Kind: uninitialized},
@@ -261,9 +260,9 @@ func TestZeroHintUint256(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "a.low", Kind: fpRelative, Value: feltUint64(5)},
-					{Name: "a.high", Kind: fpRelative, Value: felt127},
+					{Name: "a.high", Kind: fpRelative, Value: &utils.Felt127},
 					{Name: "div.low", Kind: fpRelative, Value: feltUint64(0)},
-					{Name: "div.high", Kind: fpRelative, Value: felt127},
+					{Name: "div.high", Kind: fpRelative, Value: &utils.Felt127},
 					{Name: "quotient.low", Kind: uninitialized},
 					{Name: "quotient.high", Kind: uninitialized},
 					{Name: "remainder.low", Kind: uninitialized},
