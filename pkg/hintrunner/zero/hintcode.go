@@ -47,6 +47,7 @@ const (
 	// ------ Signature hints related code ------
 
 	// ------ Blake Hash hints related code ------
+	blake2sAddUint256BigendCode string = "B = 32\nMASK = 2 ** 32 - 1\nsegments.write_arg(ids.data, [(ids.high >> (B * (3 - i))) & MASK for i in range(4)])\nsegments.write_arg(ids.data + 4, [(ids.low >> (B * (3 - i))) & MASK for i in range(4)])"
 
 	// ------ Keccak hints related code ------
 
