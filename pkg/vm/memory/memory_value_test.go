@@ -124,10 +124,7 @@ func TestMemoryAddressSubMemoryAddressSameSegment(t *testing.T) {
 		SegmentIndex: 2,
 		Offset:       2,
 	})
-	expected := MemoryValueFromMemoryAddress(&MemoryAddress{
-		SegmentIndex: 2,
-		Offset:       8,
-	})
+	expected := MemoryValueFromInt(8)
 
 	err := memVal.Sub(&lhs, &rhs)
 	require.NoError(t, err)
