@@ -40,6 +40,9 @@ const (
 	split64Code       string = "ids.low = ids.a & ((1<<64) - 1)\nids.high = ids.a >> 64"
 	uint256SignedNN   string = "memory[ap] = 1 if 0 <= (ids.a.high % PRIME) < 2 ** 127 else 0"
 
+	// sqrt() hints.
+	sqrt string = "from starkware.python.math_utils import isqrt\nvalue = ids.value % PRIME\nassert value < 2 ** 250, f\"value={value} is outside of the range [0, 2**250).\"\nassert 2 ** 250 < PRIME\nids.root = isqrt(value)"
+
 	// ------ Usort hints related code ------
 
 	// ------ Elliptic Curve hints related code ------

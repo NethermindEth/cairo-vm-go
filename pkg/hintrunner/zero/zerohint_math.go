@@ -3,6 +3,8 @@ package zero
 import (
 	"fmt"
 
+	"github.com/holiman/uint256"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -500,4 +502,62 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 		return nil, err
 	}
 	return newSplitIntHint(output, value, base, bound), nil
+}
+
+func newSqrtHint(output, value, bound hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Sqrt",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> value = ids.value % PRIME
+			//> memory[ids.output] = res = isqrt(value)
+			//> assert res < ids.bound, f'sqrt(): Output {res} is out of range.'
+
+			outputAddr, err := output.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			value, err := hinter.ResolveAsFelt(vm, value)
+			if err != nil {
+				return err
+			}
+
+			bound, err := hinter.ResolveAsFelt(vm, bound)
+			if err != nil {
+				return err
+			}
+
+			// Conversion needed to handle non-square values
+			valueU256 := uint256.Int(value.Bits())
+			valueU256.Sqrt(&valueU256)
+
+			result := fp.Element{}
+			result.SetBytes(valueU256.Bytes())
+
+			if !utils.FeltLe(&result, bound) {
+				return fmt.Errorf("assertion `sqrt(): Output %v is out of range` failed", &result)
+			}
+
+			v := memory.MemoryValueFromFieldElement(&result)
+			return vm.Memory.WriteToAddress(&outputAddr, &v)
+
+		},
+	}
+}
+
+func createSqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+
+	output, err := resolver.GetResOperander("output")
+	if err != nil {
+		return nil, err
+	}
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+	bound, err := resolver.GetResOperander("bound")
+	if err != nil {
+		return nil, err
+	}
+	return newSqrtHint(output, value, bound), nil
 }

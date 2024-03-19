@@ -481,7 +481,7 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorTextContains("assertion `split_int(): Limb 4 is out of range` failed"),
 			},
 		},
-
+		
 		"Assert250bits": {
 			{
 				operanders: []*hintOperander{
@@ -512,7 +512,7 @@ func TestZeroHintMath(t *testing.T) {
 					"high": feltInt64(0),
 				}),
 			},
-
+			
 			{
 				operanders: []*hintOperander{
 					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
@@ -527,7 +527,7 @@ func TestZeroHintMath(t *testing.T) {
 					"high": feltInt64(1023),
 				}),
 			},
-
+			
 			{
 				operanders: []*hintOperander{
 					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
@@ -542,7 +542,7 @@ func TestZeroHintMath(t *testing.T) {
 					"high": feltInt64(1023648380),
 				}),
 			},
-
+			
 			{
 				operanders: []*hintOperander{
 					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
@@ -553,6 +553,59 @@ func TestZeroHintMath(t *testing.T) {
 					return newAssert250bitsHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
 				},
 				errCheck: errorTextContains("outside of the range [0, 2**250)"),
+			},
+		},
+
+		"SqrtHint": {
+			// Sqrt sets output to ⌊√value⌋, the largest integer such that output² ≤ value, and stores that to output.
+			// Asserts output<bound.
+		
+			{
+				operanders: []*hintOperander{
+					{Name: "output", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(25)},
+					{Name: "bound", Kind: fpRelative, Value: feltInt64(6)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSqrtHint(ctx.operanders["output"], ctx.operanders["value"], ctx.operanders["bound"])
+				},
+				check: varValueEquals("output", feltInt64(5)),
+			},
+		
+			{
+				operanders: []*hintOperander{
+					{Name: "output", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(0)},
+					{Name: "bound", Kind: fpRelative, Value: feltInt64(7)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSqrtHint(ctx.operanders["output"], ctx.operanders["value"], ctx.operanders["bound"])
+				},
+				check: varValueEquals("output", feltInt64(0)),
+			},
+		
+			{
+				operanders: []*hintOperander{
+					{Name: "output", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(50)},
+					{Name: "bound", Kind: fpRelative, Value: feltInt64(8)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSqrtHint(ctx.operanders["output"], ctx.operanders["value"], ctx.operanders["bound"])
+				},
+				check: varValueEquals("output", feltInt64(7)),
+			},
+		
+			{
+				operanders: []*hintOperander{
+					{Name: "output", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(100)},
+					{Name: "bound", Kind: fpRelative, Value: feltInt64(9)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSqrtHint(ctx.operanders["output"], ctx.operanders["value"], ctx.operanders["bound"])
+				},
+				errCheck: errorTextContains("assertion `sqrt(): Output 10 is out of range` failed"),
 			},
 		},
 	})
