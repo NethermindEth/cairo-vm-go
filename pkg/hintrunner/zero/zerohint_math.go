@@ -2,6 +2,7 @@ package zero
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -500,4 +501,83 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 		return nil, err
 	}
 	return newSplitIntHint(output, value, base, bound), nil
+}
+
+func newSplitFeltHint(low, high, value hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitFelt",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.math_utils import assert_integer
+			// assert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128
+			// assert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW
+			// assert_integer(ids.value)
+			// ids.low = ids.value & ((1 << 128) - 1)
+			// ids.high = ids.value >> 128
+
+			//> assert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128
+			maxHigh := new(fp.Element).Div(new(fp.Element).SetInt64(-1), &utils.FeltMax128)
+			maxLow := &utils.FeltZero
+
+			//> assert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW
+			leftHandSide := new(fp.Element).SetInt64(-1)
+			rightHandSide := new(fp.Element).Add(new(fp.Element).Mul(maxHigh, &utils.FeltMax128), maxLow)
+			if leftHandSide.Cmp(rightHandSide) != 0 {
+				return fmt.Errorf("assertion `split_felt(): The sum of MAX_HIGH and MAX_LOW does not equal to PRIME - 1` failed")
+			}
+
+			//> assert_integer(ids.value)
+			value, err := hinter.ResolveAsFelt(vm, value)
+			if err != nil {
+				return err
+			}
+
+			var valueBigInt big.Int
+			value.BigInt(&valueBigInt)
+			lowAddr, err := low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			highAddr, err := high.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			//> ids.low = ids.value & ((1 << 128) - 1)
+			felt128 := new(big.Int).Lsh(big.NewInt(1), 128)
+			felt128 = new(big.Int).Sub(felt128, big.NewInt(1))
+			lowBigInt := new(big.Int).And(&valueBigInt, felt128)
+			lowValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(lowBigInt))
+
+			err = vm.Memory.WriteToAddress(&lowAddr, &lowValue)
+			if err != nil {
+				return err
+			}
+			//> ids.high = ids.value >> 128
+			highBigInt := new(big.Int).Rsh(&valueBigInt, 128)
+			highValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(highBigInt))
+
+			return vm.Memory.WriteToAddress(&highAddr, &highValue)
+
+		},
+	}
+}
+
+func createSplitFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	low, err := resolver.GetResOperander("low")
+	if err != nil {
+		return nil, err
+	}
+
+	high, err := resolver.GetResOperander("high")
+	if err != nil {
+		return nil, err
+	}
+
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitFeltHint(low, high, value), nil
 }
