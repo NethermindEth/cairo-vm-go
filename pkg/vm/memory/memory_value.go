@@ -53,44 +53,6 @@ func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) error {
 	return nil
 }
 
-// Subs from a memory address a felt or another memory address in the same segment
-func (address *MemoryAddress) Sub(lhs *MemoryAddress, rhs any) error {
-	// First match segment index
-	address.SegmentIndex = lhs.SegmentIndex
-
-	// Then update offset accordingly
-	switch rhs := rhs.(type) {
-	case uint64:
-		if rhs > lhs.Offset {
-			return errors.New("rhs is greater than lhs offset")
-		}
-		address.Offset = lhs.Offset - rhs
-		return nil
-	case *f.Element:
-		if !rhs.IsUint64() {
-			return fmt.Errorf("rhs field element does not fit in uint64: %s", rhs)
-		}
-		feltRhs64 := rhs.Uint64()
-		if feltRhs64 > lhs.Offset {
-			return fmt.Errorf("rhs %d is greater than lhs offset %d", feltRhs64, lhs.Offset)
-		}
-		address.Offset = lhs.Offset - feltRhs64
-		return nil
-	case *MemoryAddress:
-		if lhs.SegmentIndex != rhs.SegmentIndex {
-			return fmt.Errorf("addresses are in different segments: rhs is in %d, lhs is in %d",
-				rhs.SegmentIndex, lhs.SegmentIndex)
-		}
-		if rhs.Offset > lhs.Offset {
-			return fmt.Errorf("rhs offset %d is greater than lhs offset %d", rhs.Offset, lhs.Offset)
-		}
-		address.Offset = lhs.Offset - rhs.Offset
-		return nil
-	default:
-		return fmt.Errorf("unknown rhs type: %T", rhs)
-	}
-}
-
 func (address *MemoryAddress) Relocate(segmentsOffset []uint64) *f.Element {
 	// no risk overflow because this sizes exists in actual Memory
 	// so if by chance the uint64 addition overflowed, then we have
@@ -259,20 +221,7 @@ func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) error {
 // Subs two memory values if they're in the same segment or the rhs is a Felt.
 func (mv *MemoryValue) Sub(lhs, rhs *MemoryValue) error {
 	if lhs.IsAddress() {
-		asAddr := mv.addrUnsafe()
-		if rhs.IsAddress() {
-			// The result is the offset value, felt-typed.
-			// See #284
-			mv.isFelt = true
-			mv.isAddress = false
-			if err := asAddr.Sub(lhs.addrUnsafe(), rhs.Any()); err != nil {
-				return err
-			}
-			mv.felt.SetUint64(asAddr.Offset)
-			return nil
-		}
-		// This code is executed for felt-typed rhs.
-		return asAddr.Sub(lhs.addrUnsafe(), rhs.Any())
+		return mv.subAddress(lhs.addrUnsafe(), rhs)
 	}
 
 	if rhs.IsAddress() {
@@ -280,6 +229,43 @@ func (mv *MemoryValue) Sub(lhs, rhs *MemoryValue) error {
 	}
 
 	mv.felt.Sub(&lhs.felt, &rhs.felt)
+	return nil
+}
+
+// subAddress subtracts from a memory address a felt or another memory address in the same segment.
+func (mv *MemoryValue) subAddress(lhs *MemoryAddress, rhs *MemoryValue) error {
+	// There are only two supported forms of this operation:
+	// * addr sub addr => offset as felt
+	// * adds sub felt => addr
+
+	if rhs.IsAddress() {
+		// The result is the offset value, felt-typed.
+		// Both addresses need to belong to the same segment.
+		// See #284
+		rhsAddr := rhs.addrUnsafe()
+		if lhs.SegmentIndex != rhsAddr.SegmentIndex {
+			return fmt.Errorf("addresses are in different segments: rhs is in %d, lhs is in %d",
+				rhsAddr.SegmentIndex, lhs.SegmentIndex)
+		}
+		mv.isAddress = false
+		mv.isFelt = true
+		mv.felt.SetUint64(lhs.Offset - rhsAddr.Offset)
+		return nil
+	}
+
+	// rhs is felt, the result is address.
+	if !rhs.felt.IsUint64() {
+		return fmt.Errorf("rhs field element does not fit in uint64: %s", &rhs.felt)
+	}
+	rhs64 := rhs.felt.Uint64()
+	if rhs64 > lhs.Offset {
+		return fmt.Errorf("rhs %d is greater than lhs offset %d", rhs64, lhs.Offset)
+	}
+	mv.isAddress = true
+	mv.isFelt = false
+	addrResult := mv.addrUnsafe()
+	addrResult.SegmentIndex = lhs.SegmentIndex
+	addrResult.Offset = lhs.Offset - rhs64
 	return nil
 }
 
