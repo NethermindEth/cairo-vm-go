@@ -94,6 +94,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSplit64Hinter(resolver)
 	case uint256SignedNNCode:
 		return createUint256SignedNNHinter(resolver)
+	case sqrtCode:
+		return createSqrtHinter(resolver)
 	case splitFeltCode:
 		return createSplitFeltHinter(resolver)
 	case uint256UnsignedDivRemCode:

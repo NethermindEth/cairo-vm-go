@@ -556,6 +556,52 @@ func TestZeroHintMath(t *testing.T) {
 			},
 		},
 
+		"SqrtHint": {
+			// Sqrt sets root to ⌊√value⌋, the largest integer such that root² ≤ value.
+
+			{
+				operanders: []*hintOperander{
+					{Name: "root", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(25)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSqrtHint(ctx.operanders["root"], ctx.operanders["value"])
+				},
+				check: varValueEquals("root", feltInt64(5)),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "root", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSqrtHint(ctx.operanders["root"], ctx.operanders["value"])
+				},
+				check: varValueEquals("root", feltInt64(0)),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "root", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(50)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSqrtHint(ctx.operanders["root"], ctx.operanders["value"])
+				},
+				check: varValueEquals("root", feltInt64(7)),
+			},
+
+			{
+				operanders: []*hintOperander{
+					{Name: "root", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(-128)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSqrtHint(ctx.operanders["root"], ctx.operanders["value"])
+				},
+				errCheck: errorTextContains("outside of the range [0, 2**250)"),
+
 		"SplitFelt": {
 			{
 				operanders: []*hintOperander{

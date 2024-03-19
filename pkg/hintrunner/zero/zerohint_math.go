@@ -2,7 +2,8 @@ package zero
 
 import (
 	"fmt"
-	"math/big"
+
+	"github.com/holiman/uint256"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -503,81 +504,51 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newSplitIntHint(output, value, base, bound), nil
 }
 
-func newSplitFeltHint(low, high, value hinter.ResOperander) hinter.Hinter {
+func newSqrtHint(root, value hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "SplitFelt",
+		Name: "Sqrt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
-			//> from starkware.cairo.common.math_utils import assert_integer
-			// assert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128
-			// assert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW
-			// assert_integer(ids.value)
-			// ids.low = ids.value & ((1 << 128) - 1)
-			// ids.high = ids.value >> 128
+			// value = ids.value % PRIME
+			// assert value < 2 ** 250, f"value={value} is outside of the range [0, 2**250)."
+			// assert 2 ** 250 < PRIME
+			// ids.root = isqrt(value)
 
-			//> assert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128
-			maxHigh := new(fp.Element).Div(new(fp.Element).SetInt64(-1), &utils.FeltMax128)
-			maxLow := &utils.FeltZero
-
-			//> assert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW
-			leftHandSide := new(fp.Element).SetInt64(-1)
-			rightHandSide := new(fp.Element).Add(new(fp.Element).Mul(maxHigh, &utils.FeltMax128), maxLow)
-			if leftHandSide.Cmp(rightHandSide) != 0 {
-				return fmt.Errorf("assertion `split_felt(): The sum of MAX_HIGH and MAX_LOW does not equal to PRIME - 1` failed")
+			rootAddr, err := root.GetAddress(vm)
+			if err != nil {
+				return err
 			}
 
-			//> assert_integer(ids.value)
 			value, err := hinter.ResolveAsFelt(vm, value)
 			if err != nil {
 				return err
 			}
 
-			var valueBigInt big.Int
-			value.BigInt(&valueBigInt)
-			lowAddr, err := low.GetAddress(vm)
-			if err != nil {
-				return err
+			if !utils.FeltLt(value, &utils.FeltUpperBound) {
+				return fmt.Errorf("assertion failed: %v is outside of the range [0, 2**250)", value)
 			}
 
-			highAddr, err := high.GetAddress(vm)
-			if err != nil {
-				return err
-			}
+			// Conversion needed to handle non-square values
+			valueU256 := uint256.Int(value.Bits())
+			valueU256.Sqrt(&valueU256)
 
-			//> ids.low = ids.value & ((1 << 128) - 1)
-			felt128 := new(big.Int).Lsh(big.NewInt(1), 128)
-			felt128 = new(big.Int).Sub(felt128, big.NewInt(1))
-			lowBigInt := new(big.Int).And(&valueBigInt, felt128)
-			lowValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(lowBigInt))
+			result := fp.Element{}
+			result.SetBytes(valueU256.Bytes())
 
-			err = vm.Memory.WriteToAddress(&lowAddr, &lowValue)
-			if err != nil {
-				return err
-			}
-			//> ids.high = ids.value >> 128
-			highBigInt := new(big.Int).Rsh(&valueBigInt, 128)
-			highValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(highBigInt))
-
-			return vm.Memory.WriteToAddress(&highAddr, &highValue)
-
+			v := memory.MemoryValueFromFieldElement(&result)
+			return vm.Memory.WriteToAddress(&rootAddr, &v)
 		},
 	}
 }
 
-func createSplitFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	low, err := resolver.GetResOperander("low")
+func createSqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+
+	root, err := resolver.GetResOperander("root")
 	if err != nil {
 		return nil, err
 	}
-
-	high, err := resolver.GetResOperander("high")
-	if err != nil {
-		return nil, err
-	}
-
 	value, err := resolver.GetResOperander("value")
 	if err != nil {
 		return nil, err
 	}
-
-	return newSplitFeltHint(low, high, value), nil
+	return newSqrtHint(root, value), nil
 }
