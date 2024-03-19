@@ -160,9 +160,9 @@ func TestZeroHintUint256(t *testing.T) {
 				check: allVarValueEquals(map[string]*fp.Element{
 					"root.low":  feltUint64(2),
 					"root.high": feltUint64(0),
-				}),
-			},
-			{
+        }
+       },
+        {
 				operanders: []*hintOperander{
 					{Name: "n.low", Kind: fpRelative, Value: feltInt64(65536)},
 					{Name: "n.high", Kind: fpRelative, Value: feltInt64(0)},
@@ -175,9 +175,9 @@ func TestZeroHintUint256(t *testing.T) {
 				check: allVarValueEquals(map[string]*fp.Element{
 					"root.low":  feltUint64(256),
 					"root.high": feltUint64(0),
-				}),
-			},
-			{
+        }
+       },
+       {
 				operanders: []*hintOperander{
 					{Name: "n.low", Kind: fpRelative, Value: felt127},
 					{Name: "n.high", Kind: fpRelative, Value: felt127},
@@ -190,6 +190,93 @@ func TestZeroHintUint256(t *testing.T) {
 				check: allVarValueEquals(map[string]*fp.Element{
 					"root.low":  feltString("240615969168004511545033772477625056927"),
 					"root.high": feltUint64(0),
+        }
+       },
+    }
+		"Uint256SignedNN": {
+			{
+				operanders: []*hintOperander{
+					{Name: "a.low", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "a.high", Kind: fpRelative, Value: felt127},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint256SignedNNHint(ctx.operanders["a.low"])
+				},
+				check: apValueEquals(feltUint64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "a.low", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "a.high", Kind: fpRelative, Value: feltInt64(1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint256SignedNNHint(ctx.operanders["a.low"])
+				},
+				check: apValueEquals(feltUint64(1)),
+			},
+		},
+		"Uint256UnsignedDivRem": {
+			{
+				operanders: []*hintOperander{
+					{Name: "a.low", Kind: fpRelative, Value: feltUint64(6)},
+					{Name: "a.high", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "div.low", Kind: fpRelative, Value: feltUint64(2)},
+					{Name: "div.high", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "quotient.low", Kind: uninitialized},
+					{Name: "quotient.high", Kind: uninitialized},
+					{Name: "remainder.low", Kind: uninitialized},
+					{Name: "remainder.high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint256UnsignedDivRemHint(ctx.operanders["a.low"], ctx.operanders["div.low"], ctx.operanders["quotient.low"], ctx.operanders["remainder.low"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"quotient.low":   feltUint64(3),
+					"quotient.high":  feltUint64(0),
+					"remainder.low":  feltUint64(0),
+					"remainder.high": feltUint64(0),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "a.low", Kind: fpRelative, Value: felt127},
+					{Name: "a.high", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "div.low", Kind: fpRelative, Value: felt127},
+					{Name: "div.high", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "quotient.low", Kind: uninitialized},
+					{Name: "quotient.high", Kind: uninitialized},
+					{Name: "remainder.low", Kind: uninitialized},
+					{Name: "remainder.high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint256UnsignedDivRemHint(ctx.operanders["a.low"], ctx.operanders["div.low"], ctx.operanders["quotient.low"], ctx.operanders["remainder.low"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"quotient.low":   feltUint64(1),
+					"quotient.high":  feltUint64(0),
+					"remainder.low":  feltUint64(0),
+					"remainder.high": feltUint64(0),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "a.low", Kind: fpRelative, Value: feltUint64(5)},
+					{Name: "a.high", Kind: fpRelative, Value: felt127},
+					{Name: "div.low", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "div.high", Kind: fpRelative, Value: felt127},
+					{Name: "quotient.low", Kind: uninitialized},
+					{Name: "quotient.high", Kind: uninitialized},
+					{Name: "remainder.low", Kind: uninitialized},
+					{Name: "remainder.high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint256UnsignedDivRemHint(ctx.operanders["a.low"], ctx.operanders["div.low"], ctx.operanders["quotient.low"], ctx.operanders["remainder.low"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"quotient.low":   feltUint64(1),
+					"quotient.high":  feltUint64(0),
+					"remainder.low":  feltUint64(5),
+					"remainder.high": feltUint64(0),
 				}),
 			},
 		},

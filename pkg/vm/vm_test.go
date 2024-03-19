@@ -425,14 +425,15 @@ func TestInferOperandSub(t *testing.T) {
 	op1Addr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 1}
 	op0Addr := mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: 2}
 
-	expectedOp0Vaue := mem.MemoryValueFromSegmentAndOffset(3, 8)
+	// Doing an add/sub with two address values results in felt-typed offset result.
+	expectedOp0Value := mem.MemoryValueFromInt(8)
 	inferedRes, err := vm.inferOperand(&instruction, &dstAddr, &op0Addr, &op1Addr)
 	require.NoError(t, err)
 	assert.Equal(t, mem.MemoryValueFromSegmentAndOffset(3, 15), inferedRes)
 
 	op0Value, err := vm.Memory.PeekFromAddress(&op0Addr)
 	require.NoError(t, err)
-	assert.Equal(t, expectedOp0Vaue, op0Value)
+	assert.Equal(t, expectedOp0Value, op0Value)
 }
 
 func TestInferResOp1(t *testing.T) {
