@@ -1,6 +1,7 @@
 package zero
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -8,6 +9,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/holiman/uint256"
 )
 
 func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Element, *fp.Element, error) {
@@ -189,6 +191,60 @@ func createSplit64Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) 
 	}
 
 	return newSplit64Hint(a, low, high), nil
+}
+
+func newUint256SqrtHint(n hinter.ResOperander, root hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Uint256Sqrt",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.python.math_utils import isqrt
+			//n = (ids.n.high << 128) + ids.n.low
+			//root = isqrt(n)
+			//assert 0 <= root < 2 ** 128
+			//ids.root.low = root
+			//ids.root.high = 0
+
+			nLow, nHigh, err := GetUint256AsFelts(vm, n)
+			if err != nil {
+				return err
+			}
+			//> n = (ids.n.high << 128) + ids.n.low
+			valueLowU256 := uint256.Int(nLow.Bits())
+			value := uint256.Int(nHigh.Bits())
+			value.Lsh(&value, 128)
+			value.Add(&value, &valueLowU256)
+
+			//> root = isqrt(n)
+			calculatedUint256Root := uint256.Int{}
+			calculatedUint256Root.Sqrt(&value)
+			calculatedUint256RootBytes := calculatedUint256Root.Bytes()
+			calculatedFeltRoot := fp.Element{}
+			calculatedFeltRoot.SetBytes(calculatedUint256RootBytes)
+			//> assert 0 <= root < 2 ** 128
+			if !utils.FeltIsPositive(&calculatedFeltRoot) {
+				return fmt.Errorf("assertion failed: a = %v is out of range", calculatedUint256Root)
+			}
+			rootAddr, err := root.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			//> ids.root.low = root
+			//> ids.root.high = 0
+			return hinter.WriteUint256ToAddress(vm, rootAddr, &calculatedFeltRoot, &utils.FeltZero)
+		},
+	}
+}
+
+func createUint256SqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	n, err := resolver.GetResOperander("n")
+	if err != nil {
+		return nil, err
+	}
+	root, err := resolver.GetResOperander("root")
+	if err != nil {
+		return nil, err
+	}
+	return newUint256SqrtHint(n, root), nil
 }
 
 func newUint256SignedNNHint(a hinter.ResOperander) hinter.Hinter {

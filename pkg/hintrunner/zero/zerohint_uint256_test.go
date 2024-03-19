@@ -131,6 +131,68 @@ func TestZeroHintUint256(t *testing.T) {
 				}),
 			},
 		},
+		"Uint256Sqrt": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n.low", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "n.high", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "root.low", Kind: uninitialized},
+					{Name: "root.high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint256SqrtHint(ctx.operanders["n.low"], ctx.operanders["root.low"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"root.low":  feltUint64(0),
+					"root.high": feltUint64(0),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n.low", Kind: apRelative, Value: feltInt64(5)},
+					{Name: "n.high", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "root.low", Kind: uninitialized},
+					{Name: "root.high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint256SqrtHint(ctx.operanders["n.low"], ctx.operanders["root.low"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"root.low":  feltUint64(2),
+					"root.high": feltUint64(0),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n.low", Kind: fpRelative, Value: feltInt64(65536)},
+					{Name: "n.high", Kind: fpRelative, Value: feltInt64(0)},
+					{Name: "root.low", Kind: uninitialized},
+					{Name: "root.high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint256SqrtHint(ctx.operanders["n.low"], ctx.operanders["root.low"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"root.low":  feltUint64(256),
+					"root.high": feltUint64(0),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n.low", Kind: fpRelative, Value: felt127},
+					{Name: "n.high", Kind: fpRelative, Value: felt127},
+					{Name: "root.low", Kind: uninitialized},
+					{Name: "root.high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint256SqrtHint(ctx.operanders["n.low"], ctx.operanders["root.low"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"root.low":  feltString("240615969168004511545033772477625056927"),
+					"root.high": feltUint64(0),
+				}),
+			},
+		},
 		"Uint256SignedNN": {
 			{
 				operanders: []*hintOperander{
