@@ -223,3 +223,83 @@ func createUint256SignedNNHinter(resolver hintReferenceResolver) (hinter.Hinter,
 	}
 	return newUint256SignedNNHint(a), nil
 }
+
+func newUint256UnsignedDivRemHint(a, div, quotient, remainder hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Uint256UnsignedDivRem",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> a = (ids.a.high << 128) + ids.a.low
+			//> div = (ids.div.high << 128) + ids.div.low
+			//> quotient, remainder = divmod(a, div)
+			//> ids.quotient.low = quotient & ((1 << 128) - 1)
+			//> ids.quotient.high = quotient >> 128
+			//> ids.remainder.low = remainder & ((1 << 128) - 1)
+			//> ids.remainder.high = remainder >> 128
+			aLow, aHigh, err := GetUint256AsFelts(vm, a)
+			if err != nil {
+				return err
+			}
+			var aLowBig big.Int
+			aLow.BigInt(&aLowBig)
+			var aHighBig big.Int
+			aHigh.BigInt(&aHighBig)
+
+			divLow, divHigh, err := GetUint256AsFelts(vm, div)
+			if err != nil {
+				return err
+			}
+			var divLowBig big.Int
+			divLow.BigInt(&divLowBig)
+			var divHighBig big.Int
+			divHigh.BigInt(&divHighBig)
+
+			aBig := new(big.Int).Add(new(big.Int).Lsh(&aHighBig, 128), &aLowBig)
+			divBig := new(big.Int).Add(new(big.Int).Lsh(&divHighBig, 128), &divLowBig)
+			quotBig := new(big.Int).Div(aBig, divBig)
+			remBig := new(big.Int).Mod(aBig, divBig)
+
+			mask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
+
+			lowQuot := new(fp.Element).SetBigInt(new(big.Int).And(quotBig, mask))
+			highQuot := new(fp.Element).SetBigInt(new(big.Int).Rsh(quotBig, 128))
+
+			lowRem := new(fp.Element).SetBigInt(new(big.Int).And(remBig, mask))
+			highRem := new(fp.Element).SetBigInt(new(big.Int).Rsh(remBig, 128))
+
+			quotientAddr, err := quotient.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			err = hinter.WriteUint256ToAddress(vm, quotientAddr, lowQuot, highQuot)
+			if err != nil {
+				return err
+			}
+			remainderAddr, err := remainder.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			return hinter.WriteUint256ToAddress(vm, remainderAddr, lowRem, highRem)
+		},
+	}
+
+}
+
+func createUint256UnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+	div, err := resolver.GetResOperander("div")
+	if err != nil {
+		return nil, err
+	}
+	quotient, err := resolver.GetResOperander("quotient")
+	if err != nil {
+		return nil, err
+	}
+	remainder, err := resolver.GetResOperander("remainder")
+	if err != nil {
+		return nil, err
+	}
+	return newUint256UnsignedDivRemHint(a, div, quotient, remainder), nil
+}
