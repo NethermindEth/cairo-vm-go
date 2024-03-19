@@ -229,14 +229,8 @@ func newUint256SqrtHint(n hinter.ResOperander, root hinter.ResOperander) hinter.
 				return err
 			}
 			//> ids.root.low = root
-			rootLowValue := memory.MemoryValueFromFieldElement(&calculatedFeltRoot)
-			err = vm.Memory.WriteToAddress(&rootAddr, &rootLowValue)
-			if err != nil {
-				return err
-			}
 			//> ids.root.high = 0
-			rootHighValue := memory.MemoryValueFromFieldElement(&utils.FeltZero)
-			return hinter.WriteToNthStructField(vm, root, rootHighValue, 1)
+			return hinter.WriteUint256ToAddress(vm, rootAddr, &calculatedFeltRoot, &utils.FeltZero)
 		},
 	}
 }
