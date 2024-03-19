@@ -94,7 +94,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSplit64Hinter(resolver)
 	case uint256SignedNN:
 		return createUint256SignedNNHinter(resolver)
-	case sqrt:
+	case sqrtCode:
 		return createSqrtHinter(resolver)
 	default:
 		return nil, fmt.Errorf("Not identified hint")

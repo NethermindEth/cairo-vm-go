@@ -504,15 +504,16 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newSplitIntHint(output, value, base, bound), nil
 }
 
-func newSqrtHint(output, value, bound hinter.ResOperander) hinter.Hinter {
+func newSqrtHint(root, value hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Sqrt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
-			//> value = ids.value % PRIME
-			//> memory[ids.output] = res = isqrt(value)
-			//> assert res < ids.bound, f'sqrt(): Output {res} is out of range.'
+			// value = ids.value % PRIME
+			// assert value < 2 ** 250, f"value={value} is outside of the range [0, 2**250)."
+			// assert 2 ** 250 < PRIME
+			// ids.root = isqrt(value)
 
-			outputAddr, err := output.GetAddress(vm)
+			rootAddr, err := root.GetAddress(vm)
 			if err != nil {
 				return err
 			}
@@ -522,9 +523,8 @@ func newSqrtHint(output, value, bound hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			bound, err := hinter.ResolveAsFelt(vm, bound)
-			if err != nil {
-				return err
+			if !utils.FeltLt(value, &utils.FeltUpperBound) {
+				return fmt.Errorf("assertion failed: %v is outside of the range [0, 2**250)", value)
 			}
 
 			// Conversion needed to handle non-square values
@@ -534,20 +534,15 @@ func newSqrtHint(output, value, bound hinter.ResOperander) hinter.Hinter {
 			result := fp.Element{}
 			result.SetBytes(valueU256.Bytes())
 
-			if !utils.FeltLe(&result, bound) {
-				return fmt.Errorf("assertion `sqrt(): Output %v is out of range` failed", &result)
-			}
-
 			v := memory.MemoryValueFromFieldElement(&result)
-			return vm.Memory.WriteToAddress(&outputAddr, &v)
-
+			return vm.Memory.WriteToAddress(&rootAddr, &v)
 		},
 	}
 }
 
 func createSqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 
-	output, err := resolver.GetResOperander("output")
+	root, err := resolver.GetResOperander("root")
 	if err != nil {
 		return nil, err
 	}
@@ -555,9 +550,5 @@ func createSqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	if err != nil {
 		return nil, err
 	}
-	bound, err := resolver.GetResOperander("bound")
-	if err != nil {
-		return nil, err
-	}
-	return newSqrtHint(output, value, bound), nil
+	return newSqrtHint(root, value), nil
 }
