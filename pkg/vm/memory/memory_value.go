@@ -74,16 +74,23 @@ func (address MemoryAddress) String() string {
 //   - or a pointer to another Memory Cell (a `MemoryAddress`)
 //     both values share the same underlying memory, which is a f.Element
 type MemoryValue struct {
-	felt      f.Element
-	isFelt    bool
-	isAddress bool
+	felt f.Element
+	kind memoryValueKind
 }
+
+type memoryValueKind uint8
+
+const (
+	unknownMemoryValue memoryValueKind = iota
+	feltMemoryValue
+	addrMemoryValue
+)
 
 var UnknownValue = MemoryValue{}
 
 func MemoryValueFromMemoryAddress(address *MemoryAddress) MemoryValue {
 	v := MemoryValue{
-		isAddress: true,
+		kind: addrMemoryValue,
 	}
 	*v.addrUnsafe() = *address
 	return v
@@ -91,8 +98,8 @@ func MemoryValueFromMemoryAddress(address *MemoryAddress) MemoryValue {
 
 func MemoryValueFromFieldElement(felt *f.Element) MemoryValue {
 	return MemoryValue{
-		felt:   *felt,
-		isFelt: true,
+		felt: *felt,
+		kind: feltMemoryValue,
 	}
 }
 
@@ -101,7 +108,7 @@ func MemoryValueFromInt[T constraints.Integer](v T) MemoryValue {
 		return MemoryValueFromUint(uint64(v))
 	}
 
-	value := MemoryValue{isFelt: true}
+	value := MemoryValue{kind: feltMemoryValue}
 	rhs := f.NewElement(uint64(-v))
 	value.felt.Sub(&value.felt, &rhs)
 	return value
@@ -109,8 +116,8 @@ func MemoryValueFromInt[T constraints.Integer](v T) MemoryValue {
 
 func MemoryValueFromUint[T constraints.Unsigned](v T) MemoryValue {
 	return MemoryValue{
-		felt:   f.NewElement(uint64(v)),
-		isFelt: true,
+		felt: f.NewElement(uint64(v)),
+		kind: feltMemoryValue,
 	}
 }
 
@@ -142,54 +149,57 @@ func MemoryValueFromAny(anyType any) (MemoryValue, error) {
 
 func EmptyMemoryValueAsFelt() MemoryValue {
 	return MemoryValue{
-		isFelt: true,
+		kind: feltMemoryValue,
 	}
 }
 
 func EmptyMemoryValueAsAddress() MemoryValue {
 	return MemoryValue{
-		isAddress: true,
+		kind: addrMemoryValue,
 	}
 }
 
 func EmptyMemoryValueAs(address bool) MemoryValue {
+	kind := feltMemoryValue
+	if address {
+		kind = addrMemoryValue
+	}
 	return MemoryValue{
-		isAddress: address,
-		isFelt:    !address,
+		kind: kind,
 	}
 }
 
 func (mv *MemoryValue) MemoryAddress() (*MemoryAddress, error) {
-	if !mv.isAddress {
+	if !mv.IsAddress() {
 		return nil, errors.New("memory value is not an address")
 	}
 	return mv.addrUnsafe(), nil
 }
 
 func (mv *MemoryValue) FieldElement() (*f.Element, error) {
-	if !mv.isFelt {
+	if !mv.IsFelt() {
 		return nil, fmt.Errorf("memory value is not a field element")
 	}
 	return &mv.felt, nil
 }
 
 func (mv *MemoryValue) Any() any {
-	if mv.isAddress {
+	if mv.IsAddress() {
 		return mv.addrUnsafe()
 	}
 	return &mv.felt
 }
 
 func (mv *MemoryValue) IsAddress() bool {
-	return mv.isAddress
+	return mv.kind == addrMemoryValue
 }
 
 func (mv *MemoryValue) IsFelt() bool {
-	return mv.isFelt
+	return mv.kind == feltMemoryValue
 }
 
 func (mv *MemoryValue) Known() bool {
-	return mv.isAddress || mv.isFelt
+	return mv.kind != unknownMemoryValue
 }
 
 func (mv *MemoryValue) Equal(other *MemoryValue) bool {
@@ -247,8 +257,7 @@ func (mv *MemoryValue) subAddress(lhs *MemoryAddress, rhs *MemoryValue) error {
 			return fmt.Errorf("addresses are in different segments: rhs is in %d, lhs is in %d",
 				rhsAddr.SegmentIndex, lhs.SegmentIndex)
 		}
-		mv.isAddress = false
-		mv.isFelt = true
+		mv.kind = feltMemoryValue
 		mv.felt.SetUint64(lhs.Offset - rhsAddr.Offset)
 		return nil
 	}
@@ -261,8 +270,7 @@ func (mv *MemoryValue) subAddress(lhs *MemoryAddress, rhs *MemoryValue) error {
 	if rhs64 > lhs.Offset {
 		return fmt.Errorf("rhs %d is greater than lhs offset %d", rhs64, lhs.Offset)
 	}
-	mv.isAddress = true
-	mv.isFelt = false
+	mv.kind = addrMemoryValue
 	addrResult := mv.addrUnsafe()
 	addrResult.SegmentIndex = lhs.SegmentIndex
 	addrResult.Offset = lhs.Offset - rhs64
