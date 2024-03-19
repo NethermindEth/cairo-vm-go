@@ -194,7 +194,6 @@ func createSplit64Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) 
 }
 
 func newUint256SqrtHint(n hinter.ResOperander, root hinter.ResOperander) hinter.Hinter {
-	// from starkware.python.math_utils import isqrt\nn = (ids.n.high << 128) + ids.n.low\nroot = isqrt(n)\nassert 0 <= root < 2 ** 128\nids.root.low = root\nids.root.high = 0
 	return &GenericZeroHinter{
 		Name: "Uint256Sqrt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -236,7 +235,7 @@ func newUint256SqrtHint(n hinter.ResOperander, root hinter.ResOperander) hinter.
 				return err
 			}
 			//> ids.root.high = 0
-			rootHighValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetInt64(0))
+			rootHighValue := memory.MemoryValueFromFieldElement(&utils.FeltZero)
 			return hinter.WriteToNthStructField(vm, root, rootHighValue, 1)
 		},
 	}
