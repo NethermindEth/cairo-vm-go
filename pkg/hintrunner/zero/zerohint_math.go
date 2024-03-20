@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/holiman/uint256"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -580,4 +582,54 @@ func createSplitFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 	}
 
 	return newSplitFeltHint(low, high, value), nil
+}
+
+func newSqrtHint(root, value hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Sqrt",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.python.math_utils import isqrt
+			// value = ids.value % PRIME
+			// assert value < 2 ** 250, f"value={value} is outside of the range [0, 2**250)."
+			// assert 2 ** 250 < PRIME
+			// ids.root = isqrt(value)
+
+			rootAddr, err := root.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			value, err := hinter.ResolveAsFelt(vm, value)
+			if err != nil {
+				return err
+			}
+
+			if !utils.FeltLt(value, &utils.FeltUpperBound) {
+				return fmt.Errorf("assertion failed: %v is outside of the range [0, 2**250)", value)
+			}
+
+			// Conversion needed to handle non-square values
+			valueU256 := uint256.Int(value.Bits())
+			valueU256.Sqrt(&valueU256)
+
+			result := fp.Element{}
+			result.SetBytes(valueU256.Bytes())
+
+			v := memory.MemoryValueFromFieldElement(&result)
+			return vm.Memory.WriteToAddress(&rootAddr, &v)
+		},
+	}
+}
+
+func createSqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+
+	root, err := resolver.GetResOperander("root")
+	if err != nil {
+		return nil, err
+	}
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+	return newSqrtHint(root, value), nil
 }
