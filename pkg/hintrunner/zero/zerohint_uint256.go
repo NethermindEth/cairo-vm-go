@@ -259,9 +259,8 @@ func newUint256SignedNNHint(a hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 			var v memory.MemoryValue
-			felt127 := new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 127))
 
-			if utils.FeltLt(aHigh, felt127) {
+			if utils.FeltLt(aHigh, &utils.Felt127) {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
