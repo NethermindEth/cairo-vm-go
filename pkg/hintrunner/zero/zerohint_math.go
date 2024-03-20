@@ -2,6 +2,7 @@ package zero
 
 import (
 	"fmt"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
