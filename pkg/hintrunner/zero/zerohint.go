@@ -93,7 +93,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case split64Code:
 		return createSplit64Hinter(resolver)
 	case unsignedDivRemCode:
-		return createUnsignedDivRemCodeHinter(resolver)
+		return createUnsignedDivRemHinter(resolver)
 	default:
 		return nil, fmt.Errorf("Not identified hint")
 	}

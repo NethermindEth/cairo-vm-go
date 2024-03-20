@@ -502,7 +502,7 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newSplitIntHint(output, value, base, bound), nil
 }
 
-func newUnsignedDivRemCodeHinter(value, div, q, r hinter.ResOperander) hinter.Hinter {
+func newUnsignedDivRemHinter(value, div, q, r hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UnsignedDivRem",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -556,7 +556,7 @@ func newUnsignedDivRemCodeHinter(value, div, q, r hinter.ResOperander) hinter.Hi
 	}
 }
 
-func createUnsignedDivRemCodeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+func createUnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	value, err := resolver.GetResOperander("value")
 	if err != nil {
 		return nil, err
@@ -574,5 +574,5 @@ func createUnsignedDivRemCodeHinter(resolver hintReferenceResolver) (hinter.Hint
 		return nil, err
 	}
 
-	return newUnsignedDivRemCodeHinter(value, div, q, r), nil
+	return newUnsignedDivRemHinter(value, div, q, r), nil
 }
