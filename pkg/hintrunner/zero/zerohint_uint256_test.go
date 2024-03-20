@@ -9,9 +9,6 @@ import (
 )
 
 func TestZeroHintUint256(t *testing.T) {
-	// Values used in the test cases
-	// 1 << 127
-
 	runHinterTests(t, map[string][]hintTestCase{
 		"Uint256Add": {
 			{
