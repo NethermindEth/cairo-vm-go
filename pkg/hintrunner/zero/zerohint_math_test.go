@@ -586,5 +586,40 @@ func TestZeroHintMath(t *testing.T) {
 				}),
 			},
 		},
+
+		"SignedDivRem": {
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "div", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+					{Name: "bound", Kind: apRelative, Value: feltString("100000000000000000000000000000000000000")},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+					{Name: "biased_q", Kind: apRelative, Value: feltString("100000000000000000000000000000000000000")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"r":        feltString("100000000000000000000000000000000000000"),
+					"biased_q": feltInt64(0),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "div", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+					{Name: "bound", Kind: apRelative, Value: feltString("100000000000000000000000000000000000000")},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+					{Name: "biased_q", Kind: apRelative, Value: feltString("100000000000000000000000000000000000000")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"r":        feltString("100000000000000000000000000000000000000"),
+					"biased_q": feltInt64(0),
+				}),
+			},
+		},
 	})
 }

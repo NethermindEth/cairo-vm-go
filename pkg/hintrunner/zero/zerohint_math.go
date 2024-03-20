@@ -582,7 +582,7 @@ func createSplitFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 	return newSplitFeltHint(low, high, value), nil
 }
 
-func newSignedDivRemHint(value, div, bound, r hinter.ResOperander) hinter.Hinter {
+func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SignedDivRem",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -596,21 +596,63 @@ func newSignedDivRemHint(value, div, bound, r hinter.ResOperander) hinter.Hinter
 			// assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
 			// ids.biased_q = q + ids.bound
 
+			//> assert_integer(ids.div)
 			divFelt, err := hinter.ResolveAsFelt(vm, div)
 			if err != nil {
 				return err
 			}
-			if utils.FeltLe(divFelt, new(fp.Element).Div(utils.Modulus(), &utils.FeltMax128)) {
-				fmt.Errorf("bound=%v is out of the valid range", boundFelt)
+			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, f'div={hex(ids.div)} is out of the valid range.'
+			prime := new(fp.Element).SetInt64(-1)
+			fmt.Println(prime)
+			if utils.FeltLe(divFelt, new(fp.Element).Div(prime, &utils.FeltMax128)) {
+				return fmt.Errorf("div=%v is out of the valid range", divFelt)
 			}
-			boundFelt, err := hinter.ResolveAsFelt(bound)
+			//> assert_integer(ids.bound)
+			boundFelt, err := hinter.ResolveAsFelt(vm, bound)
 			if err != nil {
 				return err
 			}
+			//> assert ids.bound <= range_check_builtin.bound // 2, f'bound={hex(ids.bound)} is out of the valid range.'
 			felt127 := new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 127))
 			if utils.FeltLe(boundFelt, felt127) {
-				fmt.Errorf("bound=%v is out of the valid range", boundFelt)
+				return fmt.Errorf("bound=%v is out of the valid range", boundFelt)
 			}
+
+			//> int_value = as_int(ids.value, PRIME)
+			valueFelt, err := hinter.ResolveAsFelt(vm, value)
+			if err != nil {
+				return err
+			}
+
+			//> q, ids.r = divmod(int_value, ids.div)
+			var valueBig, divBig big.Int
+			valueFelt.BigInt(&valueBig)
+			divFelt.BigInt(&divBig)
+			qBig, rBig := new(big.Int).DivMod(&valueBig, &divBig, new(big.Int))
+
+			rAddr, err := r.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			rValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(rBig))
+			err = vm.Memory.WriteToAddress(&rAddr, &rValue)
+			if err != nil {
+				return err
+			}
+
+			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
+			if utils.FeltLe(new(fp.Element).SetBigInt(qBig), boundFelt) {
+				return fmt.Errorf("%v / %v = %v is out of the range [%v, %v]", valueFelt, divFelt, qBig, new(fp.Element).Neg(boundFelt), boundFelt)
+			}
+
+			//> ids.biased_q = q + ids.bound
+			biasedQ := new(fp.Element).Add(new(fp.Element).SetBigInt(qBig), boundFelt)
+			biasedQAddr, err := biased_q.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			biasedQValue := memory.MemoryValueFromFieldElement(biasedQ)
+			return vm.Memory.WriteToAddress(&biasedQAddr, &biasedQValue)
 		},
 	}
 }
@@ -632,5 +674,9 @@ func createSignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 	if err != nil {
 		return nil, err
 	}
-	return newSignedDivRemHint(value, div, bound, r), nil
+	biased_q, err := resolver.GetResOperander("biased_q")
+	if err != nil {
+		return nil, err
+	}
+	return newSignedDivRemHint(value, div, bound, r, biased_q), nil
 }
