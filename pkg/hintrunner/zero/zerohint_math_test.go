@@ -560,8 +560,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(100)},
 					{Name: "div", Kind: fpRelative, Value: feltUint64(6)},
-					{Name: "q", Kind: uninitialized},
-					{Name: "r", Kind: uninitialized},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
@@ -575,8 +575,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(450326666)},
 					{Name: "div", Kind: fpRelative, Value: feltUint64(136310839)},
-					{Name: "q", Kind: uninitialized},
-					{Name: "r", Kind: uninitialized},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
@@ -590,8 +590,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(0)},
 					{Name: "div", Kind: fpRelative, Value: feltUint64(10)},
-					{Name: "q", Kind: uninitialized},
-					{Name: "r", Kind: uninitialized},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
@@ -605,8 +605,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(10)},
 					{Name: "div", Kind: fpRelative, Value: feltUint64(0)},
-					{Name: "q", Kind: uninitialized},
-					{Name: "r", Kind: uninitialized},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
@@ -617,8 +617,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(10)},
 					{Name: "div", Kind: fpRelative, Value: feltString("10633823966279327296825105735305134079")},
-					{Name: "q", Kind: uninitialized},
-					{Name: "r", Kind: uninitialized},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
@@ -632,8 +632,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(10)},
 					{Name: "div", Kind: fpRelative, Value: feltString("10633823966279327296825105735305134080")},
-					{Name: "q", Kind: uninitialized},
-					{Name: "r", Kind: uninitialized},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
@@ -647,8 +647,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(10)},
 					{Name: "div", Kind: fpRelative, Value: feltString("10633823966279327296825105735305134081")},
-					{Name: "q", Kind: uninitialized},
-					{Name: "r", Kind: uninitialized},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
