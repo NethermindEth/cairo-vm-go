@@ -602,11 +602,12 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 				return err
 			}
 			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, f'div={hex(ids.div)} is out of the valid range.'
-			prime := new(fp.Element).SetInt64(-1)
-			fmt.Println(prime)
-			if utils.FeltLe(divFelt, new(fp.Element).Div(prime, &utils.FeltMax128)) {
+			upperBound := new(fp.Element).Div(new(fp.Element).SetInt64(-1), &utils.FeltMax128)
+
+			if !utils.FeltLe(divFelt, upperBound) {
 				return fmt.Errorf("div=%v is out of the valid range", divFelt)
 			}
+
 			//> assert_integer(ids.bound)
 			boundFelt, err := hinter.ResolveAsFelt(vm, bound)
 			if err != nil {
@@ -614,10 +615,9 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			}
 			//> assert ids.bound <= range_check_builtin.bound // 2, f'bound={hex(ids.bound)} is out of the valid range.'
 			felt127 := new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 127))
-			if utils.FeltLe(boundFelt, felt127) {
+			if !utils.FeltLe(boundFelt, felt127) {
 				return fmt.Errorf("bound=%v is out of the valid range", boundFelt)
 			}
-
 			//> int_value = as_int(ids.value, PRIME)
 			valueFelt, err := hinter.ResolveAsFelt(vm, value)
 			if err != nil {
@@ -629,24 +629,24 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			valueFelt.BigInt(&valueBig)
 			divFelt.BigInt(&divBig)
 			qBig, rBig := new(big.Int).DivMod(&valueBig, &divBig, new(big.Int))
+			qFelt, rFelt := new(fp.Element).SetBigInt(qBig), new(fp.Element).SetBigInt(rBig)
+			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
+			if !(utils.FeltLt(qFelt, boundFelt) || utils.FeltLe(new(fp.Element).Neg(boundFelt), qFelt)) {
+				return fmt.Errorf("%v / %v = %v is out of the range [-%v, %v]", valueFelt, divFelt, qBig, boundFelt, boundFelt)
+			}
 
 			rAddr, err := r.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			rValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(rBig))
+			rValue := memory.MemoryValueFromFieldElement(rFelt)
 			err = vm.Memory.WriteToAddress(&rAddr, &rValue)
 			if err != nil {
 				return err
 			}
 
-			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
-			if utils.FeltLe(new(fp.Element).SetBigInt(qBig), boundFelt) {
-				return fmt.Errorf("%v / %v = %v is out of the range [%v, %v]", valueFelt, divFelt, qBig, new(fp.Element).Neg(boundFelt), boundFelt)
-			}
-
 			//> ids.biased_q = q + ids.bound
-			biasedQ := new(fp.Element).Add(new(fp.Element).SetBigInt(qBig), boundFelt)
+			biasedQ := new(fp.Element).Add(qFelt, boundFelt)
 			biasedQAddr, err := biased_q.GetAddress(vm)
 			if err != nil {
 				return err
