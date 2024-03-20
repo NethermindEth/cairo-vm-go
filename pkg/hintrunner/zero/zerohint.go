@@ -100,6 +100,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUint256UnsignedDivRemHinter(resolver)
 	case uint256SqrtCode:
 		return createUint256SqrtHinter(resolver)
+	case uint256MulDivModCode:
+		return createUint256MulDivModHinter(resolver)
 	case sqrtCode:
 		return createSqrtHinter(resolver)
 	default:
