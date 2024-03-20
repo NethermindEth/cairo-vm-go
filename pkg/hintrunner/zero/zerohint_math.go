@@ -531,12 +531,14 @@ func newUnsignedDivRemHinter(value, div, q, r hinter.ResOperander) hinter.Hinter
 			}
 
 			// (PRIME // range_check_builtin.bound)
-			divUpperBound := new(big.Int).Div(fp.Modulus(), utils.Uint256Max128.ToBig())
+			// 800000000000011000000000000000000000000000000000000000000000001 // 2**128
+			var divUpperBound big.Int
+			divUpperBound.SetString("8000000000000110000000000000000", 16)
 
 			var divBig big.Int
 			div.BigInt(&divBig)
 
-			if div.IsZero() || divBig.Cmp(divUpperBound) == 1 {
+			if div.IsZero() || divBig.Cmp(&divUpperBound) == 1 {
 				return fmt.Errorf("div=0x%v is out of the valid range.", divBig.Text(16))
 			}
 
@@ -547,11 +549,7 @@ func newUnsignedDivRemHinter(value, div, q, r hinter.ResOperander) hinter.Hinter
 				return err
 			}
 			rValue := memory.MemoryValueFromFieldElement(&r)
-			if err := vm.Memory.WriteToAddress(&rAddr, &rValue); err != nil {
-				return err
-			}
-
-			return nil
+			return vm.Memory.WriteToAddress(&rAddr, &rValue)
 		},
 	}
 }
