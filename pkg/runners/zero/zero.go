@@ -38,7 +38,34 @@ func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, proofmode boo
 	}, nil
 }
 
-// todo(rodro): should we add support for running any function?
+// RunEntryPoint is like Run, but it executes the program starting from the given PC offset.
+// This PC offset is expected to be a start from some function inside the loaded program.
+func (runner *ZeroRunner) RunEntryPoint(pc uint64) error {
+	if runner.runFinished {
+		return errors.New("cannot re-run using the same runner")
+	}
+
+	memory, err := runner.initializeSegments()
+	if err != nil {
+		return err
+	}
+
+	// Builtins are initialized as a part of initializeEntrypoint().
+
+	returnFp := memory.AllocateEmptySegment()
+	mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
+	end, err := runner.initializeEntrypoint(pc, nil, &mvReturnFp, memory)
+	if err != nil {
+		return err
+	}
+
+	if err := runner.RunUntilPc(&end); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (runner *ZeroRunner) Run() error {
 	if runner.runFinished {
 		return errors.New("cannot re-run using the same runner")
@@ -65,14 +92,25 @@ func (runner *ZeroRunner) Run() error {
 	return nil
 }
 
-func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) {
+func (runner *ZeroRunner) initializeSegments() (*mem.Memory, error) {
 	memory := mem.InitializeEmptyMemory()
 	_, err := memory.AllocateSegment(runner.program.Bytecode) // ProgramSegment
+	if err != nil {
+		return nil, err
+	}
+
+	memory.AllocateEmptySegment() // ExecutionSegment
+	return memory, nil
+}
+
+// TODO: unexport it. It's only used inside this file and tests so far.
+// We probably don't want various init API to leak outside (see #237 for more context).
+func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) {
+	memory, err := runner.initializeSegments()
 	if err != nil {
 		return mem.UnknownAddress, err
 	}
 
-	memory.AllocateEmptySegment() // ExecutionSegment
 	if runner.proofmode {
 		initialPCOffset, ok := runner.program.Labels["__start__"]
 		if !ok {
@@ -107,17 +145,16 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) 
 
 	returnFp := memory.AllocateEmptySegment()
 	mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
-	return runner.InitializeEntrypoint("main", nil, &mvReturnFp, memory)
+	mainPCOffset, ok := runner.program.Entrypoints["main"]
+	if !ok {
+		return mem.UnknownAddress, errors.New("can't find an entrypoint for main")
+	}
+	return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory)
 }
 
-func (runner *ZeroRunner) InitializeEntrypoint(
-	funcName string, arguments []*f.Element, returnFp *mem.MemoryValue, memory *mem.Memory,
+func (runner *ZeroRunner) initializeEntrypoint(
+	initialPCOffset uint64, arguments []*f.Element, returnFp *mem.MemoryValue, memory *mem.Memory,
 ) (mem.MemoryAddress, error) {
-	initialPCOffset, ok := runner.program.Entrypoints[funcName]
-	if !ok {
-		return mem.UnknownAddress, fmt.Errorf("unknown entrypoint: %s", funcName)
-	}
-
 	stack := runner.initializeBuiltins(memory)
 	for i := range arguments {
 		stack = append(stack, mem.MemoryValueFromFieldElement(arguments[i]))

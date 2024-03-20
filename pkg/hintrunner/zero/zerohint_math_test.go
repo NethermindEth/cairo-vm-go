@@ -555,6 +555,81 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorTextContains("outside of the range [0, 2**250)"),
 			},
 		},
+
+		"SplitFelt": {
+			{
+				operanders: []*hintOperander{
+					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+					{Name: "value", Kind: apRelative, Value: feltString("100000000000000000000000000000000000000")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitFeltHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"low":  feltString("100000000000000000000000000000000000000"),
+					"high": feltInt64(0),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+					{Name: "value", Kind: apRelative, Value: &utils.FeltMax128},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitFeltHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["value"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"low":  feltInt64(0),
+					"high": feltInt64(1),
+				}),
+			},
+		},
+
+		"SqrtHint": {
+			{
+				operanders: []*hintOperander{
+					{Name: "root", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(25)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSqrtHint(ctx.operanders["root"], ctx.operanders["value"])
+				},
+				check: varValueEquals("root", feltInt64(5)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "root", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSqrtHint(ctx.operanders["root"], ctx.operanders["value"])
+				},
+				check: varValueEquals("root", feltInt64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "root", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(50)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSqrtHint(ctx.operanders["root"], ctx.operanders["value"])
+				},
+				check: varValueEquals("root", feltInt64(7)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "root", Kind: uninitialized},
+					{Name: "value", Kind: fpRelative, Value: feltInt64(-128)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSqrtHint(ctx.operanders["root"], ctx.operanders["value"])
+				},
+				errCheck: errorTextContains("outside of the range [0, 2**250)"),
+			},
+		},
+
 		"UnsignedDivRem": {
 			{
 				operanders: []*hintOperander{
