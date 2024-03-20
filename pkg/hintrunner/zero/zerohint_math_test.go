@@ -629,5 +629,107 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorTextContains("outside of the range [0, 2**250)"),
 			},
 		},
+
+		"UnsignedDivRem": {
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: fpRelative, Value: feltUint64(100)},
+					{Name: "div", Kind: fpRelative, Value: feltUint64(6)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"q": feltInt64(16),
+					"r": feltInt64(4),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: fpRelative, Value: feltUint64(450326666)},
+					{Name: "div", Kind: fpRelative, Value: feltUint64(136310839)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"q": feltInt64(3),
+					"r": feltInt64(41394149),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "div", Kind: fpRelative, Value: feltUint64(10)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"q": feltInt64(0),
+					"r": feltInt64(0),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: fpRelative, Value: feltUint64(10)},
+					{Name: "div", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+				},
+				errCheck: errorTextContains("div=0x0 is out of the valid range."),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: fpRelative, Value: feltUint64(10)},
+					{Name: "div", Kind: fpRelative, Value: feltString("10633823966279327296825105735305134079")},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"q": feltInt64(0),
+					"r": feltInt64(10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: fpRelative, Value: feltUint64(10)},
+					{Name: "div", Kind: fpRelative, Value: feltString("10633823966279327296825105735305134080")},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"q": feltInt64(0),
+					"r": feltInt64(10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: fpRelative, Value: feltUint64(10)},
+					{Name: "div", Kind: fpRelative, Value: feltString("10633823966279327296825105735305134081")},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+				},
+				errCheck: errorTextContains("div=0x8000000000000110000000000000001 is out of the valid range."),
+			},
+		},
 	})
 }
