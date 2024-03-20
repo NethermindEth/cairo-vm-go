@@ -581,3 +581,56 @@ func createSplitFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 
 	return newSplitFeltHint(low, high, value), nil
 }
+
+func newSignedDivRemHint(value, div, bound, r hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SignedDivRem",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.math_utils import as_int, assert_integer
+			// assert_integer(ids.div)
+			// assert 0 < ids.div <= PRIME // range_check_builtin.bound, f'div={hex(ids.div)} is out of the valid range.'
+			// assert_integer(ids.bound)
+			// assert ids.bound <= range_check_builtin.bound // 2, f'bound={hex(ids.bound)} is out of the valid range.'
+			// int_value = as_int(ids.value, PRIME)
+			// q, ids.r = divmod(int_value, ids.div)
+			// assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
+			// ids.biased_q = q + ids.bound
+
+			divFelt, err := hinter.ResolveAsFelt(vm, div)
+			if err != nil {
+				return err
+			}
+			if utils.FeltLe(divFelt, new(fp.Element).Div(utils.Modulus(), &utils.FeltMax128)) {
+				fmt.Errorf("bound=%v is out of the valid range", boundFelt)
+			}
+			boundFelt, err := hinter.ResolveAsFelt(bound)
+			if err != nil {
+				return err
+			}
+			felt127 := new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 127))
+			if utils.FeltLe(boundFelt, felt127) {
+				fmt.Errorf("bound=%v is out of the valid range", boundFelt)
+			}
+		},
+	}
+}
+
+func createSignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+	div, err := resolver.GetResOperander("div")
+	if err != nil {
+		return nil, err
+	}
+	bound, err := resolver.GetResOperander("bound")
+	if err != nil {
+		return nil, err
+	}
+	r, err := resolver.GetResOperander("r")
+	if err != nil {
+		return nil, err
+	}
+	return newSignedDivRemHint(value, div, bound, r), nil
+}
