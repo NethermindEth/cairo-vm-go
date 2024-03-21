@@ -95,34 +95,6 @@ func TestZeroHintBlake(t *testing.T) {
 				}),
 			},
 			{
-				// 0
-				operanders: []*hintOperander{
-					{Name: "high", Kind: fpRelative, Value: feltString("0")},
-					{Name: "low", Kind: fpRelative, Value: feltString("0")},
-					{Name: "data1", Kind: apRelative, Value: addr(100)},
-					{Name: "data2", Kind: apRelative, Value: addr(101)},
-					{Name: "data3", Kind: apRelative, Value: addr(102)},
-					{Name: "data4", Kind: apRelative, Value: addr(103)},
-					{Name: "data5", Kind: apRelative, Value: addr(104)},
-					{Name: "data6", Kind: apRelative, Value: addr(105)},
-					{Name: "data7", Kind: apRelative, Value: addr(106)},
-					{Name: "data8", Kind: apRelative, Value: addr(107)},
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256BigendHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data1"])
-				},
-				check: allVarAddrResolvedValueEquals(map[string]*fp.Element{
-					"data1": feltString("0"),
-					"data2": feltString("0"),
-					"data3": feltString("0"),
-					"data4": feltString("0"),
-					"data5": feltString("0"),
-					"data6": feltString("0"),
-					"data7": feltString("0"),
-					"data8": feltString("0"),
-				}),
-			},
-			{
 				// 689
 				operanders: []*hintOperander{
 					{Name: "high", Kind: fpRelative, Value: feltString("0")},
@@ -204,6 +176,90 @@ func TestZeroHintBlake(t *testing.T) {
 					"data6": feltString("0"),
 					"data7": feltString("0"),
 					"data8": feltString("0"),
+				}),
+			},
+			{
+				// 0 or modulus()
+				operanders: []*hintOperander{
+					{Name: "high", Kind: fpRelative, Value: feltString("0")},
+					{Name: "low", Kind: fpRelative, Value: feltString("0")},
+					{Name: "data1", Kind: apRelative, Value: addr(100)},
+					{Name: "data2", Kind: apRelative, Value: addr(101)},
+					{Name: "data3", Kind: apRelative, Value: addr(102)},
+					{Name: "data4", Kind: apRelative, Value: addr(103)},
+					{Name: "data5", Kind: apRelative, Value: addr(104)},
+					{Name: "data6", Kind: apRelative, Value: addr(105)},
+					{Name: "data7", Kind: apRelative, Value: addr(106)},
+					{Name: "data8", Kind: apRelative, Value: addr(107)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBlake2sAddUint256BigendHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data1"])
+				},
+				check: allVarAddrResolvedValueEquals(map[string]*fp.Element{
+					"data1": feltString("0"),
+					"data2": feltString("0"),
+					"data3": feltString("0"),
+					"data4": feltString("0"),
+					"data5": feltString("0"),
+					"data6": feltString("0"),
+					"data7": feltString("0"),
+					"data8": feltString("0"),
+				}),
+			},
+			{
+				// modulus() - 1
+				operanders: []*hintOperander{
+					{Name: "high", Kind: fpRelative, Value: feltString("10633823966279327296825105735305134080")},
+					{Name: "low", Kind: fpRelative, Value: feltString("0")},
+					{Name: "data1", Kind: apRelative, Value: addr(100)},
+					{Name: "data2", Kind: apRelative, Value: addr(101)},
+					{Name: "data3", Kind: apRelative, Value: addr(102)},
+					{Name: "data4", Kind: apRelative, Value: addr(103)},
+					{Name: "data5", Kind: apRelative, Value: addr(104)},
+					{Name: "data6", Kind: apRelative, Value: addr(105)},
+					{Name: "data7", Kind: apRelative, Value: addr(106)},
+					{Name: "data8", Kind: apRelative, Value: addr(107)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBlake2sAddUint256BigendHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data1"])
+				},
+				check: allVarAddrResolvedValueEquals(map[string]*fp.Element{
+					"data1": feltString("134217728"),
+					"data2": feltString("17"),
+					"data3": feltString("0"),
+					"data4": feltString("0"),
+					"data5": feltString("0"),
+					"data6": feltString("0"),
+					"data7": feltString("0"),
+					"data8": feltString("0"),
+				}),
+			},
+			{
+				// modulus() + 1
+				operanders: []*hintOperander{
+					{Name: "high", Kind: fpRelative, Value: feltString("0")},
+					{Name: "low", Kind: fpRelative, Value: feltString("1")},
+					{Name: "data1", Kind: apRelative, Value: addr(100)},
+					{Name: "data2", Kind: apRelative, Value: addr(101)},
+					{Name: "data3", Kind: apRelative, Value: addr(102)},
+					{Name: "data4", Kind: apRelative, Value: addr(103)},
+					{Name: "data5", Kind: apRelative, Value: addr(104)},
+					{Name: "data6", Kind: apRelative, Value: addr(105)},
+					{Name: "data7", Kind: apRelative, Value: addr(106)},
+					{Name: "data8", Kind: apRelative, Value: addr(107)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBlake2sAddUint256BigendHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data1"])
+				},
+				check: allVarAddrResolvedValueEquals(map[string]*fp.Element{
+					"data1": feltString("0"),
+					"data2": feltString("0"),
+					"data3": feltString("0"),
+					"data4": feltString("0"),
+					"data5": feltString("0"),
+					"data6": feltString("0"),
+					"data7": feltString("0"),
+					"data8": feltString("1"),
 				}),
 			},
 		},
