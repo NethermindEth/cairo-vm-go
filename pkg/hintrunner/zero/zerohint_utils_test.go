@@ -95,6 +95,9 @@ func varAddrResolvedValueEquals(varName string, expected *fp.Element) func(t *te
 			t.Fatal(err)
 		}
 		actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&actualAddress)
+		if err != nil {
+			t.Fatal(err)
+		}
 		if !actualFelt.Equal(expected) {
 			t.Fatalf("%s value mismatch:\nhave: %v\nwant: %v", varName, &actualFelt, expected)
 		}
