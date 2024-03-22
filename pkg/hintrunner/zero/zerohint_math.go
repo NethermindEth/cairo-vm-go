@@ -127,6 +127,10 @@ func newSetAddHint(set, element, indexOutput, presenceStatusOutput hinter.ResOpe
 			// TODO: Add logic to manipulate VM state according to SetAdd semantics
 			return nil
 		},
+		ApplyApTracking: func(vm *VM.VirtualMachine) error {
+			// Placeholder implementation. Adjust logic as necessary.
+			return nil
+		},
 	}
 }
 
