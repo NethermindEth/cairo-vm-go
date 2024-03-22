@@ -41,7 +41,11 @@ func (m *hintReferenceResolver) GetResOperander(name string) (hinter.ResOperande
 		return nil, err
 	}
 	if name == "SetAdd" {
-		return createSetAddHinter(*m)
+		setAddHinter, err := createSetAddHinter(*m)
+		if err != nil {
+			return nil, err
+		}
+		return setAddHinter, nil
 	}
 	op, ok := ref.(hinter.ResOperander)
 	if !ok {
