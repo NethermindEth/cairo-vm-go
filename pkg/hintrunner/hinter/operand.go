@@ -6,6 +6,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -252,4 +253,22 @@ func GetConsecutiveValues(vm *VM.VirtualMachine, ref ResOperander, size int16) (
 	}
 
 	return values, nil
+}
+
+func WriteToNthStructField(vm *VM.VirtualMachine, addr mem.MemoryAddress, value mem.MemoryValue, field int16) error {
+	nAddr, err := addr.AddOffset(field)
+	if err != nil {
+		return err
+	}
+
+	return vm.Memory.WriteToAddress(&nAddr, &value)
+}
+
+func WriteUint256ToAddress(vm *VM.VirtualMachine, addr mem.MemoryAddress, low, high *f.Element) error {
+	lowMemoryValue := memory.MemoryValueFromFieldElement(low)
+	err := vm.Memory.WriteToAddress(&addr, &lowMemoryValue)
+	if err != nil {
+		return err
+	}
+	return WriteToNthStructField(vm, addr, memory.MemoryValueFromFieldElement(high), 1)
 }

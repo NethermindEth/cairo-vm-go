@@ -3,6 +3,7 @@ package zero
 import (
 	"fmt"
 	"math/big"
+	"github.com/holiman/uint256"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -544,9 +545,208 @@ func createPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 		return nil, err
 	}
 	prev_locs, err := resolver.GetResOperander("prev_locs")
+  if err != nil {
+		return nil, err
+	}
+  return newPowHint(locs, prev_locs), nil
+}
+
+func newSplitFeltHint(low, high, value hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitFelt",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.math_utils import assert_integer
+			// assert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128
+			// assert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW
+			// assert_integer(ids.value)
+			// ids.low = ids.value & ((1 << 128) - 1)
+			// ids.high = ids.value >> 128
+
+			//> assert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128
+			maxHigh := new(fp.Element).Div(new(fp.Element).SetInt64(-1), &utils.FeltMax128)
+			maxLow := &utils.FeltZero
+
+			//> assert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW
+			leftHandSide := new(fp.Element).SetInt64(-1)
+			rightHandSide := new(fp.Element).Add(new(fp.Element).Mul(maxHigh, &utils.FeltMax128), maxLow)
+			if leftHandSide.Cmp(rightHandSide) != 0 {
+				return fmt.Errorf("assertion `split_felt(): The sum of MAX_HIGH and MAX_LOW does not equal to PRIME - 1` failed")
+			}
+
+			//> assert_integer(ids.value)
+			value, err := hinter.ResolveAsFelt(vm, value)
+			if err != nil {
+				return err
+			}
+
+			var valueBigInt big.Int
+			value.BigInt(&valueBigInt)
+			lowAddr, err := low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			highAddr, err := high.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			//> ids.low = ids.value & ((1 << 128) - 1)
+			felt128 := new(big.Int).Lsh(big.NewInt(1), 128)
+			felt128 = new(big.Int).Sub(felt128, big.NewInt(1))
+			lowBigInt := new(big.Int).And(&valueBigInt, felt128)
+			lowValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(lowBigInt))
+
+			err = vm.Memory.WriteToAddress(&lowAddr, &lowValue)
+			if err != nil {
+				return err
+			}
+			//> ids.high = ids.value >> 128
+			highBigInt := new(big.Int).Rsh(&valueBigInt, 128)
+			highValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(highBigInt))
+
+			return vm.Memory.WriteToAddress(&highAddr, &highValue)
+
+		},
+	}
+}
+
+func createSplitFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	low, err := resolver.GetResOperander("low")
 	if err != nil {
 		return nil, err
 	}
 
-	return newPowHint(locs, prev_locs), nil
+	high, err := resolver.GetResOperander("high")
+	if err != nil {
+		return nil, err
+	}
+
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitFeltHint(low, high, value), nil
+}
+
+func newSqrtHint(root, value hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Sqrt",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.python.math_utils import isqrt
+			// value = ids.value % PRIME
+			// assert value < 2 ** 250, f"value={value} is outside of the range [0, 2**250)."
+			// assert 2 ** 250 < PRIME
+			// ids.root = isqrt(value)
+
+			rootAddr, err := root.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			value, err := hinter.ResolveAsFelt(vm, value)
+			if err != nil {
+				return err
+			}
+
+			if !utils.FeltLt(value, &utils.FeltUpperBound) {
+				return fmt.Errorf("assertion failed: %v is outside of the range [0, 2**250)", value)
+			}
+
+			// Conversion needed to handle non-square values
+			valueU256 := uint256.Int(value.Bits())
+			valueU256.Sqrt(&valueU256)
+
+			result := fp.Element{}
+			result.SetBytes(valueU256.Bytes())
+
+			v := memory.MemoryValueFromFieldElement(&result)
+			return vm.Memory.WriteToAddress(&rootAddr, &v)
+		},
+	}
+}
+
+func createSqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	root, err := resolver.GetResOperander("root")
+	if err != nil {
+		return nil, err
+	}
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+	return newSqrtHint(root, value), nil
+}
+
+func newUnsignedDivRemHinter(value, div, q, r hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "UnsignedDivRem",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.math_utils import assert_integer
+			//> assert_integer(ids.div)
+			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, \
+			//>     f'div={hex(ids.div)} is out of the valid range.'
+			//> ids.q, ids.r = divmod(ids.value, ids.div)
+
+			value, err := hinter.ResolveAsFelt(vm, value)
+			if err != nil {
+				return err
+			}
+			div, err := hinter.ResolveAsFelt(vm, div)
+			if err != nil {
+				return err
+			}
+
+			qAddr, err := q.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			rAddr, err := r.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			// (PRIME // range_check_builtin.bound)
+			// 800000000000011000000000000000000000000000000000000000000000001 // 2**128
+			var divUpperBound big.Int
+			divUpperBound.SetString("8000000000000110000000000000000", 16)
+
+			var divBig big.Int
+			div.BigInt(&divBig)
+
+			if div.IsZero() || divBig.Cmp(&divUpperBound) == 1 {
+				return fmt.Errorf("div=0x%v is out of the valid range.", divBig.Text(16))
+			}
+
+			q, r := utils.FeltDivRem(value, div)
+
+			qValue := memory.MemoryValueFromFieldElement(&q)
+			if err := vm.Memory.WriteToAddress(&qAddr, &qValue); err != nil {
+				return err
+			}
+			rValue := memory.MemoryValueFromFieldElement(&r)
+			return vm.Memory.WriteToAddress(&rAddr, &rValue)
+		},
+	}
+}
+
+func createUnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+	div, err := resolver.GetResOperander("div")
+	if err != nil {
+		return nil, err
+	}
+	q, err := resolver.GetResOperander("q")
+	if err != nil {
+		return nil, err
+	}
+	r, err := resolver.GetResOperander("r")
+  if err != nil {
+		return nil, err
+	}
+  return newUnsignedDivRemHinter(value, div, q, r), nil
 }
