@@ -37,7 +37,8 @@ type hintTestContext struct {
 // memory locations and/or probe some complicated VM/runner state,
 // a custom lambda can be used.
 type hintTestCase struct {
-	vminit     func(vm *VM.VirtualMachine)
+	vmInit     func(vm *VM.VirtualMachine)
+	ctxInit    func(ctx *hinter.HintRunnerContext)
 	operanders []*hintOperander
 	makeHinter func(ctx *hintTestContext) hinter.Hinter
 
@@ -112,9 +113,13 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 		}
 
 		vm := VM.DefaultVirtualMachine()
+		if tc.vmInit != nil {
+			tc.vmInit(vm)
+		}
+		
 		ctx := &hinter.HintRunnerContext{}
-		if tc.vminit != nil {
-			tc.vminit(vm)
+		if tc.ctxInit != nil {
+			tc.ctxInit(ctx)
 		}
 
 		testCtx := &hintTestContext{

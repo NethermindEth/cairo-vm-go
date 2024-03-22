@@ -16,6 +16,22 @@ type HintRunnerContext struct {
 	ConstantSizeSegment mem.MemoryAddress
 }
 
+func InitializeDefaultContext() *HintRunnerContext {
+	return &HintRunnerContext{
+		DictionaryManager:         DictionaryManager{},
+		SquashedDictionaryManager: SquashedDictionaryManager{},
+		ScopeManager:              *NewScopeManager(make(map[string]any)),
+		ConstantSizeSegment:       mem.UnknownAddress,
+	}
+}
+
+func SetContextWithScope(scope map[string]any) *HintRunnerContext {
+	ctx := HintRunnerContext{
+		ScopeManager: *NewScopeManager(scope),
+	}
+	return &ctx
+}
+
 // ScopeManager handles all operations regarding scopes:
 // - Creating a new scope
 // - Exiting current scope
@@ -25,11 +41,11 @@ type ScopeManager struct {
 	Scopes []map[string]any
 }
 
-func InitializeScopeManager() *ScopeManager {
+func NewScopeManager(globals map[string]any) *ScopeManager {
 	return &ScopeManager{
 		Scopes: []map[string]any {
 			// One scope needed (current execution scope)
-			make(map[string]any),
+			globals,
 		},
 	}
 }

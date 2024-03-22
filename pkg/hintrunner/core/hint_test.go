@@ -993,13 +993,9 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 			RangeCheckPtr: hinter.Deref{Deref: hinter.ApCellRef(0)},
 		}
 
-		ctx := hinter.HintRunnerContext{
-			ScopeManager: *hinter.InitializeScopeManager(),
-		}
-		err := ctx.ScopeManager.AssignVariable("excluded", 0)
-		require.NoError(t, err)
-	
-		err = hint.Execute(vm, &ctx)
+		ctx := hinter.SetContextWithScope(map[string]any{"excluded": 0})
+
+		err := hint.Execute(vm, ctx)
 
 		require.NoError(t, err)
 
@@ -1026,21 +1022,14 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 func TestAssertLeIsFirstArcExcluded(t *testing.T) {
 	vm := VM.DefaultVirtualMachine()
 
-	ctx := hinter.HintRunnerContext{
-		ScopeManager: *hinter.InitializeScopeManager(),
-	}
-	err := ctx.ScopeManager.AssignVariable("excluded", 2)
-	require.NoError(t, err)
-
-
+	ctx := hinter.SetContextWithScope(map[string]any{"excluded": 2})
 	var flag hinter.ApCellRef = 0
 
 	hint := AssertLeIsFirstArcExcluded{
 		SkipExcludeAFlag: flag,
 	}
 
-	err = hint.Execute(vm, &ctx)
-
+	err := hint.Execute(vm, ctx)
 	require.NoError(t, err)
 
 	expected := mem.MemoryValueFromInt(1)
@@ -1055,19 +1044,14 @@ func TestAssertLeIsSecondArcExcluded(t *testing.T) {
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	ctx := hinter.HintRunnerContext{
-		ScopeManager: *hinter.InitializeScopeManager(),
-	}
-	err := ctx.ScopeManager.AssignVariable("excluded", 1)
-	require.NoError(t, err)
-
+	ctx := hinter.SetContextWithScope(map[string]any{"excluded": 1})
 	var flag hinter.ApCellRef = 0
 
 	hint := AssertLeIsSecondArcExcluded{
 		SkipExcludeBMinusA: flag,
 	}
 
-	err = hint.Execute(vm, &ctx)
+	err := hint.Execute(vm, ctx)
 	require.NoError(t, err)
 
 	expected := mem.MemoryValueFromInt(0)

@@ -318,13 +318,7 @@ func BenchmarkAssertLeIsFirstArcExcluded(b *testing.B) {
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	ctx := hinter.HintRunnerContext{
-		ScopeManager: *hinter.InitializeScopeManager(),
-	}
-	if err := ctx.ScopeManager.AssignVariable("excluded", 0); err != nil {
-		b.Error(err)
-	}
-
+	ctx := hinter.SetContextWithScope(map[string]any{"excluded": 0})
 	var skipExcludeAFlag hinter.ApCellRef = 1
 
 	b.ResetTimer()
@@ -334,7 +328,7 @@ func BenchmarkAssertLeIsFirstArcExcluded(b *testing.B) {
 			SkipExcludeAFlag: skipExcludeAFlag,
 		}
 
-		err := hint.Execute(vm, &ctx)
+		err := hint.Execute(vm, ctx)
 		if err != nil {
 			b.Error(err)
 			break
@@ -349,14 +343,7 @@ func BenchmarkAssertLeIsSecondArcExcluded(b *testing.B) {
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	ctx := hinter.HintRunnerContext{
-		ScopeManager: *hinter.InitializeScopeManager(),
-	}
-	if err := ctx.ScopeManager.AssignVariable("excluded", 0); err != nil {
-		b.Error(err)
-	}
-
-
+	ctx := hinter.SetContextWithScope(map[string]any{"excluded": 0})
 	var skipExcludeBMinusA hinter.ApCellRef = 1
 
 	b.ResetTimer()
@@ -366,7 +353,7 @@ func BenchmarkAssertLeIsSecondArcExcluded(b *testing.B) {
 			SkipExcludeBMinusA: skipExcludeBMinusA,
 		}
 
-		err := hint.Execute(vm, &ctx)
+		err := hint.Execute(vm, ctx)
 		if err != nil {
 			b.Error(err)
 			break
@@ -380,14 +367,7 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 	vm := VM.DefaultVirtualMachine()
 
 	rand := utils.DefaultRandGenerator()
-	ctx := hinter.HintRunnerContext{
-		ScopeManager: *hinter.InitializeScopeManager(),
-	}
-	if err := ctx.ScopeManager.AssignVariable("excluded", 0); err != nil {
-		b.Error(err)
-	}
-
-
+	ctx := hinter.SetContextWithScope(map[string]any{"excluded": 0})
 	rangeCheckPtr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
 
 	b.ResetTimer()
@@ -408,7 +388,7 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 			RangeCheckPtr: hinter.Deref{Deref: hinter.ApCellRef(0)},
 		}
 
-		if err := hint.Execute(vm, &ctx); err != nil &&
+		if err := hint.Execute(vm, ctx); err != nil &&
 			!assert.ErrorContains(b, err, "check write: 2**128 <") {
 			b.FailNow()
 		}

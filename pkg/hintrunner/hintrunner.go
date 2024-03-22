@@ -5,7 +5,6 @@ import (
 
 	h "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
 type HintRunner struct {
@@ -19,12 +18,7 @@ func NewHintRunner(hints map[uint64][]h.Hinter) HintRunner {
 	return HintRunner{
 		// Context for certain hints that require it. Each manager is
 		// initialized only when required by the hint
-		context: h.HintRunnerContext{
-			DictionaryManager:         h.DictionaryManager{},
-			SquashedDictionaryManager: h.SquashedDictionaryManager{},
-			ScopeManager:              *h.InitializeScopeManager(),
-			ConstantSizeSegment:       mem.UnknownAddress,
-		},
+		context: *h.InitializeDefaultContext(),
 		hints: hints,
 	}
 }
