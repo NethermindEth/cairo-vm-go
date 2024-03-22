@@ -602,8 +602,8 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 				return err
 			}
 			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, f'div={hex(ids.div)} is out of the valid range.'
-			upperBound := new(fp.Element).Div(new(fp.Element).SetInt64(-1), &utils.FeltMax128)
-
+			upperBoundBig := new(big.Int).Div(fp.Modulus(), new(big.Int).Lsh(big.NewInt(1), 128))
+			upperBound := new(fp.Element).SetBigInt(upperBoundBig)
 			if !utils.FeltLe(divFelt, upperBound) {
 				return fmt.Errorf("div=%v is out of the valid range", divFelt)
 			}
@@ -625,13 +625,14 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			}
 
 			//> q, ids.r = divmod(int_value, ids.div)
-			var valueBig, divBig big.Int
+			var valueBig, divBig, boundBig big.Int
 			valueFelt.BigInt(&valueBig)
 			divFelt.BigInt(&divBig)
+			boundFelt.BigInt(&boundBig)
 			qBig, rBig := new(big.Int).DivMod(&valueBig, &divBig, new(big.Int))
 			qFelt, rFelt := new(fp.Element).SetBigInt(qBig), new(fp.Element).SetBigInt(rBig)
 			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
-			if !(utils.FeltLt(qFelt, boundFelt) || utils.FeltLe(new(fp.Element).Neg(boundFelt), qFelt)) {
+			if new(big.Int).Abs(&boundBig).Cmp(new(big.Int).Abs(qBig)) == -1 {
 				return fmt.Errorf("%v / %v = %v is out of the range [-%v, %v]", valueFelt, divFelt, qBig, boundFelt, boundFelt)
 			}
 
