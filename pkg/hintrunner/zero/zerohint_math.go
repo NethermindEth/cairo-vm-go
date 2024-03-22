@@ -119,6 +119,26 @@ func createAssertNotZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	return newAssertNotZeroHint(value), nil
 }
 
+func createSetAddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	set, err := resolver.GetResOperander("set")
+	if err != nil {
+		return nil, err
+	}
+	element, err := resolver.GetResOperander("element")
+	if err != nil {
+		return nil, err
+	}
+	indexOutput, err := resolver.GetResOperander("indexOutput")
+	if err != nil {
+		return nil, err
+	}
+	presenceStatusOutput, err := resolver.GetResOperander("presenceStatusOutput")
+	if err != nil {
+		return nil, err
+	}
+	return newSetAddHint(set, element, indexOutput, presenceStatusOutput), nil
+}
+
 func newAssertNNHint(a hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "AssertNN",
