@@ -994,10 +994,12 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		}
 
 		ctx := hinter.HintRunnerContext{
-			ExcludedArc: 0,
+			ScopeManager: *hinter.InitializeScopeManager(),
 		}
-
-		err := hint.Execute(vm, &ctx)
+		err := ctx.ScopeManager.AssignVariable("excluded", 0)
+		require.NoError(t, err)
+	
+		err = hint.Execute(vm, &ctx)
 
 		require.NoError(t, err)
 
@@ -1008,13 +1010,16 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		actualRem2 := utils.ReadFrom(vm, 2, 2)
 		actualQuotient2 := utils.ReadFrom(vm, 2, 3)
 		actual1Ptr := utils.ReadFrom(vm, 1, 0)
+		actualExcludedArc, err := ctx.ScopeManager.GetVariableValue("excluded")
+
+		require.NoError(t, err)
 
 		require.Equal(t, tc.expectedRem1, actualRem1)
 		require.Equal(t, tc.expectedQuotient1, actualQuotient1)
 		require.Equal(t, tc.expectedRem2, actualRem2)
 		require.Equal(t, tc.expectedQuotient2, actualQuotient2)
 		require.Equal(t, expectedPtr, actual1Ptr)
-		require.Equal(t, tc.expectedExcludedArc, ctx.ExcludedArc)
+		require.Equal(t, tc.expectedExcludedArc, actualExcludedArc)
 	}
 }
 
@@ -1022,8 +1027,11 @@ func TestAssertLeIsFirstArcExcluded(t *testing.T) {
 	vm := VM.DefaultVirtualMachine()
 
 	ctx := hinter.HintRunnerContext{
-		ExcludedArc: 2,
+		ScopeManager: *hinter.InitializeScopeManager(),
 	}
+	err := ctx.ScopeManager.AssignVariable("excluded", 2)
+	require.NoError(t, err)
+
 
 	var flag hinter.ApCellRef = 0
 
@@ -1031,7 +1039,7 @@ func TestAssertLeIsFirstArcExcluded(t *testing.T) {
 		SkipExcludeAFlag: flag,
 	}
 
-	err := hint.Execute(vm, &ctx)
+	err = hint.Execute(vm, &ctx)
 
 	require.NoError(t, err)
 
@@ -1048,8 +1056,10 @@ func TestAssertLeIsSecondArcExcluded(t *testing.T) {
 	vm.Context.Fp = 0
 
 	ctx := hinter.HintRunnerContext{
-		ExcludedArc: 1,
+		ScopeManager: *hinter.InitializeScopeManager(),
 	}
+	err := ctx.ScopeManager.AssignVariable("excluded", 1)
+	require.NoError(t, err)
 
 	var flag hinter.ApCellRef = 0
 
@@ -1057,14 +1067,11 @@ func TestAssertLeIsSecondArcExcluded(t *testing.T) {
 		SkipExcludeBMinusA: flag,
 	}
 
-	err := hint.Execute(vm, &ctx)
-
+	err = hint.Execute(vm, &ctx)
 	require.NoError(t, err)
 
 	expected := mem.MemoryValueFromInt(0)
-
 	actual := utils.ReadFrom(vm, VM.ExecutionSegment, 0)
-
 	require.Equal(t, expected, actual)
 }
 
@@ -1079,7 +1086,6 @@ func TestRandomEcPoint(t *testing.T) {
 	}
 
 	err := hint.Execute(vm)
-
 	require.NoError(t, err)
 
 	expectedX := mem.MemoryValueFromFieldElement(

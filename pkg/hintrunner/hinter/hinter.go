@@ -185,13 +185,3 @@ func (sdm *SquashedDictionaryManager) PopIndex() (uint64, error) {
 	sdm.KeyToIndices[key] = indices[:len(indices)-1]
 	return index, nil
 }
-
-// Global context to keep track of different results across different
-// hints execution.
-type HintRunnerContext struct {
-	DictionaryManager         DictionaryManager
-	SquashedDictionaryManager SquashedDictionaryManager
-	ExcludedArc               int
-	// points towards free memory of a segment
-	ConstantSizeSegment mem.MemoryAddress
-}

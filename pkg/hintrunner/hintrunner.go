@@ -22,7 +22,7 @@ func NewHintRunner(hints map[uint64][]h.Hinter) HintRunner {
 		context: h.HintRunnerContext{
 			DictionaryManager:         h.DictionaryManager{},
 			SquashedDictionaryManager: h.SquashedDictionaryManager{},
-			ExcludedArc:               0,
+			ScopeManager:              *h.InitializeScopeManager(),
 			ConstantSizeSegment:       mem.UnknownAddress,
 		},
 		hints: hints,

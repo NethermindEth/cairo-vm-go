@@ -1372,7 +1372,7 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 	})
 
 	// Exclude the largest arc after sorting
-	ctx.ExcludedArc = lengthsAndIndices[2].Position
+	ctx.ScopeManager.AssignVariable("excluded", lengthsAndIndices[2].Position)
 
 	rangeCheckPtrMemAddr, err := hinter.ResolveAsAddress(vm, hint.RangeCheckPtr)
 	if err != nil {
@@ -1448,7 +1448,11 @@ func (hint *AssertLeIsFirstArcExcluded) Execute(vm *VM.VirtualMachine, ctx *hint
 	}
 
 	var writeValue mem.MemoryValue
-	if ctx.ExcludedArc != 0 {
+	excluded, err := ctx.ScopeManager.GetVariableValue("excluded")
+	if err != nil {
+		return err
+	}
+	if excluded != 0 {
 		writeValue = mem.MemoryValueFromInt(1)
 	} else {
 		writeValue = mem.MemoryValueFromInt(0)
@@ -1472,7 +1476,11 @@ func (hint *AssertLeIsSecondArcExcluded) Execute(vm *VM.VirtualMachine, ctx *hin
 	}
 
 	var writeValue mem.MemoryValue
-	if ctx.ExcludedArc != 1 {
+	excluded, err := ctx.ScopeManager.GetVariableValue("excluded")
+	if err != nil {
+		return err
+	}
+	if excluded != 1 {
 		writeValue = mem.MemoryValueFromInt(1)
 	} else {
 		writeValue = mem.MemoryValueFromInt(0)

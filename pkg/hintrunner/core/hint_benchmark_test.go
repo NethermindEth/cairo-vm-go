@@ -319,7 +319,10 @@ func BenchmarkAssertLeIsFirstArcExcluded(b *testing.B) {
 	vm.Context.Fp = 0
 
 	ctx := hinter.HintRunnerContext{
-		ExcludedArc: 0,
+		ScopeManager: *hinter.InitializeScopeManager(),
+	}
+	if err := ctx.ScopeManager.AssignVariable("excluded", 0); err != nil {
+		b.Error(err)
 	}
 
 	var skipExcludeAFlag hinter.ApCellRef = 1
@@ -347,8 +350,12 @@ func BenchmarkAssertLeIsSecondArcExcluded(b *testing.B) {
 	vm.Context.Fp = 0
 
 	ctx := hinter.HintRunnerContext{
-		ExcludedArc: 0,
+		ScopeManager: *hinter.InitializeScopeManager(),
 	}
+	if err := ctx.ScopeManager.AssignVariable("excluded", 0); err != nil {
+		b.Error(err)
+	}
+
 
 	var skipExcludeBMinusA hinter.ApCellRef = 1
 
@@ -374,8 +381,12 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 
 	rand := utils.DefaultRandGenerator()
 	ctx := hinter.HintRunnerContext{
-		ExcludedArc: 0,
+		ScopeManager: *hinter.InitializeScopeManager(),
 	}
+	if err := ctx.ScopeManager.AssignVariable("excluded", 0); err != nil {
+		b.Error(err)
+	}
+
 
 	rangeCheckPtr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
 
