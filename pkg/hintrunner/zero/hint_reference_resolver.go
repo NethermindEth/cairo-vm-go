@@ -40,6 +40,9 @@ func (m *hintReferenceResolver) GetResOperander(name string) (hinter.ResOperande
 	if err != nil {
 		return nil, err
 	}
+	if name == "SetAdd" {
+		return createSetAddHinter(m)
+	}
 	op, ok := ref.(hinter.ResOperander)
 	if !ok {
 		return nil, fmt.Errorf("expected %s to be ResOperander (got %T)", name, ref)
