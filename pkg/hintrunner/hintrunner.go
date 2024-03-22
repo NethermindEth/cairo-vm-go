@@ -19,7 +19,7 @@ func NewHintRunner(hints map[uint64][]h.Hinter) HintRunner {
 		// Context for certain hints that require it. Each manager is
 		// initialized only when required by the hint
 		context: *h.InitializeDefaultContext(),
-		hints: hints,
+		hints:   hints,
 	}
 }
 

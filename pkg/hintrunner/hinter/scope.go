@@ -38,12 +38,18 @@ func SetContextWithScope(scope map[string]any) *HintRunnerContext {
 // - Variable declaration and assignment inside a certain scope
 // - Accessing variable values
 type ScopeManager struct {
-	Scopes []map[string]any
+	scopes []map[string]any
+}
+
+func InitializeScopeManager(ctx *HintRunnerContext, scope map[string]any) {
+	if ctx.ScopeManager.scopes == nil {
+		ctx.ScopeManager = *NewScopeManager(scope)
+	}
 }
 
 func NewScopeManager(globals map[string]any) *ScopeManager {
 	return &ScopeManager{
-		Scopes: []map[string]any {
+		scopes: []map[string]any{
 			// One scope needed (current execution scope)
 			globals,
 		},
@@ -51,14 +57,14 @@ func NewScopeManager(globals map[string]any) *ScopeManager {
 }
 
 func (sm *ScopeManager) EnterScope(newScope map[string]any) {
-	sm.Scopes = append(sm.Scopes, newScope)
+	sm.scopes = append(sm.scopes, newScope)
 }
 
 func (sm *ScopeManager) ExitScope() error {
-	if len(sm.Scopes) < 2 {
+	if len(sm.scopes) < 2 {
 		return fmt.Errorf("expected at least one existing scope")
 	}
-	sm.Scopes = sm.Scopes[:(len(sm.Scopes) - 1)]
+	sm.scopes = sm.scopes[:(len(sm.scopes) - 1)]
 	return nil
 }
 
@@ -86,8 +92,8 @@ func (sm *ScopeManager) GetVariableValue(name string) (any, error) {
 }
 
 func (sm *ScopeManager) GetCurrentScope() (*map[string]any, error) {
-	if len(sm.Scopes) == 0 {
+	if len(sm.scopes) == 0 {
 		return nil, fmt.Errorf("expected at least one existing scope")
 	}
-	return &sm.Scopes[len(sm.Scopes) - 1], nil
+	return &sm.scopes[len(sm.scopes)-1], nil
 }

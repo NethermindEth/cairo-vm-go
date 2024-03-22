@@ -116,7 +116,7 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 		if tc.vmInit != nil {
 			tc.vmInit(vm)
 		}
-		
+
 		ctx := &hinter.HintRunnerContext{}
 		if tc.ctxInit != nil {
 			tc.ctxInit(ctx)
