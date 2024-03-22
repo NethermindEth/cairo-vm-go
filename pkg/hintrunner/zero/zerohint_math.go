@@ -119,6 +119,17 @@ func createAssertNotZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	return newAssertNotZeroHint(value), nil
 }
 
+func newSetAddHint(set, element, indexOutput, presenceStatusOutput hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SetAdd",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			// Implementation of SetAdd operation
+			// TODO: Add logic to manipulate VM state according to SetAdd semantics
+			return nil
+		},
+	}
+}
+
 func createSetAddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	set, err := resolver.GetResOperander("set")
 	if err != nil {
