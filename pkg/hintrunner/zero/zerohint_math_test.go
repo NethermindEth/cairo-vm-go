@@ -731,5 +731,74 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorTextContains("div=0x8000000000000110000000000000001 is out of the valid range."),
 			},
 		},
+
+		"IsQuadResidue": {
+			// Test case: x is 0
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltInt64(0)),
+			},
+			// Test case: x is 1
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltInt64(1)),
+			},
+			// Test case: x is a quadratic residue
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(25)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltInt64(5)), // Square root of 25 is 5
+			},
+			// Test case: x is a quadratic residue
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(11)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltInt64(3)), // Square root of 11 ≈ 3.32 ≈ 3
+			},
+			//Test case: x is not a quadratic residue
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(15)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltInt64(2)), // Square root of (15 / 3) ≈ 2.23 ≈ 2
+			},
+			//Test case: x is not a quadratic residue
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(29)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltInt64(3)), // Square root of (29 / 3) ≈ 3.11 ≈ 3
+			},
+		},
 	})
 }

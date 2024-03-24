@@ -705,4 +705,75 @@ func createUnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	}
 
 	return newUnsignedDivRemHinter(value, div, q, r), nil
+
+}
+func newIsQuadResidueHint(x, y hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "IsQuadResidue",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.crypto.signature.signature import FIELD_PRIME
+			//>	from starkware.python.math_utils import div_mod, is_quad_residue, sqrt
+			//>	x = ids.x
+			//>	if is_quad_residue(x, FIELD_PRIME):
+			//>		ids.y = sqrt(x, FIELD_PRIME)
+			//>	else:
+			//>		ids.y = sqrt(div_mod(x, 3, FIELD_PRIME), FIELD_PRIME)
+
+			x, err := hinter.ResolveAsFelt(vm, x)
+			if err != nil {
+				return err
+			}
+
+			yAddr, err := y.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			if x.IsZero() || x.IsOne() {
+				v := memory.MemoryValueFromFieldElement(x)
+				return vm.Memory.WriteToAddress(&yAddr, &v)
+
+			} else if x.Legendre() == 1 { // If x.Legendre() returns 1 i.e x is a quadratic residue (z ≡ x² (mod q))
+				// calculates the square root
+				xU256 := uint256.Int(x.Bits())
+				xU256.Sqrt(&xU256)
+
+				value := fp.Element{}
+				value.SetBytes(xU256.Bytes())
+
+				v := memory.MemoryValueFromFieldElement(&value)
+				if err := vm.Memory.WriteToAddress(&yAddr, &v); err != nil {
+					return err
+				}
+			} else {
+				//calculates the square root of the result of dividing x by 3 or 3 * y_squared = x;
+				xU256 := uint256.Int(x.Bits())
+				divResult := xU256.Div(&xU256, uint256.NewInt(3))
+
+				divResult.Sqrt(divResult)
+
+				value := fp.Element{}
+				value.SetBytes(divResult.Bytes())
+
+				v := memory.MemoryValueFromFieldElement(&value)
+				if err := vm.Memory.WriteToAddress(&yAddr, &v); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	}
+}
+
+func createIsQuadResidueHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+	y, err := resolver.GetResOperander("y")
+	if err != nil {
+		return nil, err
+	}
+
+	return newIsQuadResidueHint(x, y), nil
 }
