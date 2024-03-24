@@ -729,11 +729,7 @@ func newIsQuadResidueHint(x, y hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			if x.IsZero() || x.IsOne() {
-				v := memory.MemoryValueFromFieldElement(x)
-				return vm.Memory.WriteToAddress(&yAddr, &v)
-
-			} else if x.Legendre() == 1 { // If x.Legendre() returns 1 i.e x is a quadratic residue (z ≡ x² (mod q))
+			if x.Legendre() == 1 { // If x.Legendre() returns 1 i.e x is a quadratic residue (z ≡ x² (mod q))
 				// calculates the square root
 				xU256 := uint256.Int(x.Bits())
 				xU256.Sqrt(&xU256)
