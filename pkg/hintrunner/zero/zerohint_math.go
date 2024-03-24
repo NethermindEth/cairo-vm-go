@@ -707,6 +707,7 @@ func createUnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	return newUnsignedDivRemHinter(value, div, q, r), nil
 
 }
+
 func newIsQuadResidueHint(x, y hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsQuadResidue",
