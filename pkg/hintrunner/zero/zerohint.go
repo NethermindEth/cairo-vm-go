@@ -96,6 +96,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUint256SignedNNHinter(resolver)
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256BigendHinter(resolver)
+	case blake2sAddUint256Code:
+		return createBlake2sAddUint256Hinter(resolver)
 	default:
 		return nil, fmt.Errorf("Not identified hint")
 	}
