@@ -1372,7 +1372,10 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 	})
 
 	// Exclude the largest arc after sorting
-	ctx.ScopeManager.AssignVariable("excluded", lengthsAndIndices[2].Position)
+	err = ctx.ScopeManager.AssignVariable("excluded", lengthsAndIndices[2].Position)
+	if err != nil {
+		return err
+	}
 
 	rangeCheckPtrMemAddr, err := hinter.ResolveAsAddress(vm, hint.RangeCheckPtr)
 	if err != nil {
