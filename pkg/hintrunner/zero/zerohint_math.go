@@ -3,6 +3,7 @@ package zero
 import (
 	"fmt"
 	"math/big"
+
 	"github.com/holiman/uint256"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
@@ -504,7 +505,7 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newSplitIntHint(output, value, base, bound), nil
 }
 
-func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
+func newPowHint(locs, prevLocs hinter.CellRefer) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Pow",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -518,11 +519,15 @@ func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
 				exp: felt,
 			} */
 			const expStructOffset = 4
-			locsBitAddress, err := locs.GetAddress(vm)
+			locsBitAddress, err := locs.Get(vm)
 			if err != nil {
 				return err
 			}
-			loopLocals, err := hinter.GetConsecutiveValues(vm, prevLocs, expStructOffset+1)
+			prevLocsBitAddress, err := prevLocs.Get(vm)
+			if err != nil {
+				return err
+			}
+			loopLocals, err := hinter.GetConsecutiveValues(vm, prevLocsBitAddress, expStructOffset+1)
 			if err != nil {
 				return err
 			}
@@ -540,15 +545,15 @@ func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
 }
 
 func createPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	locs, err := resolver.GetResOperander("locs")
+	locs, err := resolver.GetCellRefer("locs")
 	if err != nil {
 		return nil, err
 	}
-	prev_locs, err := resolver.GetResOperander("prev_locs")
-  if err != nil {
+	prev_locs, err := resolver.GetCellRefer("prev_locs")
+	if err != nil {
 		return nil, err
 	}
-  return newPowHint(locs, prev_locs), nil
+	return newPowHint(locs, prev_locs), nil
 }
 
 func newSplitFeltHint(low, high, value hinter.ResOperander) hinter.Hinter {
@@ -745,8 +750,8 @@ func createUnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 		return nil, err
 	}
 	r, err := resolver.GetResOperander("r")
-  if err != nil {
+	if err != nil {
 		return nil, err
 	}
-  return newUnsignedDivRemHinter(value, div, q, r), nil
+	return newUnsignedDivRemHinter(value, div, q, r), nil
 }

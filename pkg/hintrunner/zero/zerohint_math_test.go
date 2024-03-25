@@ -555,7 +555,7 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorTextContains("outside of the range [0, 2**250)"),
 			},
 		},
-      "Pow": {
+		"Pow": {
 			{
 				operanders: []*hintOperander{
 					{Name: "prev_locs.bit", Kind: apRelative, Value: feltInt64(0)},
@@ -570,7 +570,7 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"locs.bit": feltInt64(0),
-          				}),
+				}),
 			},
 			{
 				operanders: []*hintOperander{
@@ -589,7 +589,7 @@ func TestZeroHintMath(t *testing.T) {
 				}),
 			},
 		},
-    "SplitFelt": {
+		"SplitFelt": {
 			{
 				operanders: []*hintOperander{
 					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
@@ -602,7 +602,7 @@ func TestZeroHintMath(t *testing.T) {
 				check: allVarValueEquals(map[string]*fp.Element{
 					"low":  feltString("100000000000000000000000000000000000000"),
 					"high": feltInt64(0),
-          }),
+				}),
 			},
 			{
 				operanders: []*hintOperander{
