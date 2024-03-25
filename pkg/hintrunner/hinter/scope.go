@@ -20,7 +20,7 @@ func InitializeDefaultContext() *HintRunnerContext {
 	return &HintRunnerContext{
 		DictionaryManager:         DictionaryManager{},
 		SquashedDictionaryManager: SquashedDictionaryManager{},
-		ScopeManager:              *NewScopeManager(make(map[string]any)),
+		ScopeManager:              *DefaultNewScopeManager(),
 		ConstantSizeSegment:       mem.UnknownAddress,
 	}
 }
@@ -54,6 +54,10 @@ func NewScopeManager(globals map[string]any) *ScopeManager {
 			globals,
 		},
 	}
+}
+
+func DefaultNewScopeManager() *ScopeManager {
+	return NewScopeManager(make(map[string]any))
 }
 
 func (sm *ScopeManager) EnterScope(newScope map[string]any) {
