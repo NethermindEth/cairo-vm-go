@@ -86,6 +86,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSplitIntAssertRangeHinter(resolver)
 	case splitIntCode:
 		return createSplitIntHinter(resolver)
+	case powCode:
+		return createPowHinter(resolver)
 	case uint256AddCode:
 		return createUint256AddHinter(resolver, false)
 	case uint256AddLowCode:
