@@ -259,9 +259,8 @@ func newUint256SignedNNHint(a hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 			var v memory.MemoryValue
-			felt127 := new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 127))
 
-			if utils.FeltLt(aHigh, felt127) {
+			if utils.FeltLt(aHigh, &utils.Felt127) {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
@@ -358,4 +357,110 @@ func createUint256UnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.H
 		return nil, err
 	}
 	return newUint256UnsignedDivRemHint(a, div, quotient, remainder), nil
+}
+
+func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Uint256MulDivMod",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+
+			//> a = (ids.a.high << 128) + ids.a.low
+			// b = (ids.b.high << 128) + ids.b.low
+			// div = (ids.div.high << 128) + ids.div.low
+			// quotient, remainder = divmod(a * b, div)
+
+			// ids.quotient_low.low = quotient & ((1 << 128) - 1)
+			// ids.quotient_low.high = (quotient >> 128) & ((1 << 128) - 1)
+			// ids.quotient_high.low = (quotient >> 256) & ((1 << 128) - 1)
+			// ids.quotient_high.high = quotient >> 384
+			// ids.remainder.low = remainder & ((1 << 128) - 1)
+			// ids.remainder.high = remainder >> 128
+			aLow, aHigh, err := GetUint256AsFelts(vm, a)
+			if err != nil {
+				return err
+			}
+			var aLowBig big.Int
+			aLow.BigInt(&aLowBig)
+			var aHighBig big.Int
+			aHigh.BigInt(&aHighBig)
+			bLow, bHigh, err := GetUint256AsFelts(vm, b)
+			if err != nil {
+				return err
+			}
+			var bLowBig big.Int
+			bLow.BigInt(&bLowBig)
+			var bHighBig big.Int
+			bHigh.BigInt(&bHighBig)
+			divLow, divHigh, err := GetUint256AsFelts(vm, div)
+			if err != nil {
+				return err
+			}
+			var divLowBig big.Int
+			divLow.BigInt(&divLowBig)
+			var divHighBig big.Int
+			divHigh.BigInt(&divHighBig)
+			a := new(big.Int).Add(new(big.Int).Lsh(&aHighBig, 128), &aLowBig)
+			b := new(big.Int).Add(new(big.Int).Lsh(&bHighBig, 128), &bLowBig)
+			div := new(big.Int).Add(new(big.Int).Lsh(&divHighBig, 128), &divLowBig)
+			quot := new(big.Int).Div(new(big.Int).Mul(a, b), div)
+			rem := new(big.Int).Mod(new(big.Int).Mul(a, b), div)
+			mask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
+			lowQuotLow := new(fp.Element).SetBigInt(new(big.Int).And(quot, mask))
+			lowQuotHigh := new(fp.Element).SetBigInt(new(big.Int).And(new(big.Int).Rsh(quot, 128), mask))
+			highQuotLow := new(fp.Element).SetBigInt(new(big.Int).And(new(big.Int).Rsh(quot, 256), mask))
+			highQuotHigh := new(fp.Element).SetBigInt(new(big.Int).Rsh(quot, 384))
+			lowRem := new(fp.Element).SetBigInt(new(big.Int).And(rem, mask))
+			highRem := new(fp.Element).SetBigInt(new(big.Int).Rsh(rem, 128))
+			quotientLowAddr, err := quotientLow.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			err = hinter.WriteUint256ToAddress(vm, quotientLowAddr, lowQuotLow, lowQuotHigh)
+			if err != nil {
+				return err
+			}
+			quotientHighAddr, err := quotientHigh.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			err = hinter.WriteUint256ToAddress(vm, quotientHighAddr, highQuotLow, highQuotHigh)
+			if err != nil {
+				return err
+			}
+			remainderAddr, err := remainder.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			return hinter.WriteUint256ToAddress(vm, remainderAddr, lowRem, highRem)
+		},
+	}
+
+}
+
+func createUint256MulDivModHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+	div, err := resolver.GetResOperander("div")
+	if err != nil {
+		return nil, err
+	}
+	quotientLow, err := resolver.GetResOperander("quotient_low")
+	if err != nil {
+		return nil, err
+	}
+	quotientHigh, err := resolver.GetResOperander("quotient_high")
+	if err != nil {
+		return nil, err
+	}
+	remainder, err := resolver.GetResOperander("remainder")
+	if err != nil {
+		return nil, err
+	}
+	return newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder), nil
 }
