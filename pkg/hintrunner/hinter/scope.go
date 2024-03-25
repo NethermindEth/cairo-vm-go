@@ -69,7 +69,7 @@ func (sm *ScopeManager) ExitScope() error {
 }
 
 func (sm *ScopeManager) AssignVariable(name string, value any) error {
-	scope, err := sm.GetCurrentScope()
+	scope, err := sm.getCurrentScope()
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (sm *ScopeManager) AssignVariable(name string, value any) error {
 }
 
 func (sm *ScopeManager) GetVariableValue(name string) (any, error) {
-	scope, err := sm.GetCurrentScope()
+	scope, err := sm.getCurrentScope()
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (sm *ScopeManager) GetVariableValue(name string) (any, error) {
 	return nil, fmt.Errorf("variable %s not found in current scope", name)
 }
 
-func (sm *ScopeManager) GetCurrentScope() (*map[string]any, error) {
+func (sm *ScopeManager) getCurrentScope() (*map[string]any, error) {
 	if len(sm.scopes) == 0 {
 		return nil, fmt.Errorf("expected at least one existing scope")
 	}
