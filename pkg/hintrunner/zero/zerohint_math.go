@@ -650,10 +650,10 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			}
 			rValue := memory.MemoryValueFromFieldElement(rFelt)
 			err = vm.Memory.WriteToAddress(&rAddr, &rValue)
-      if err != nil {
+			if err != nil {
 				return err
 			}
-      //> ids.biased_q = q + ids.bound
+			//> ids.biased_q = q + ids.bound
 			biasedQ := new(fp.Element).Add(qFelt, boundFelt)
 			biasedQAddr, err := biased_q.GetAddress(vm)
 			if err != nil {
@@ -666,23 +666,28 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 }
 
 func createSignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-  value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetResOperander("value")
 	if err != nil {
 		return nil, err
 	}
 	div, err := resolver.GetResOperander("div")
 	if err != nil {
 		return nil, err
-  }
-  bound, err := resolver.GetResOperander("bound")
-  if err != nil {
+	}
+	bound, err := resolver.GetResOperander("bound")
+	if err != nil {
 		return nil, err
 	}
 	r, err := resolver.GetResOperander("r")
 	if err != nil {
 		return nil, err
 	}
-  return newUnsignedDivRemHinter(value, div, q, r), nil
+	biased_q, err := resolver.GetResOperander("biased_q")
+	if err != nil {
+		return nil, err
+	}
+	return newSignedDivRemHint(value, div, bound, r, biased_q), nil
+
 }
 
 func newSqrtHint(root, value hinter.ResOperander) hinter.Hinter {
@@ -759,10 +764,10 @@ func newUnsignedDivRemHinter(value, div, q, r hinter.ResOperander) hinter.Hinter
 				return err
 			}
 			rAddr, err := r.GetAddress(vm)
-      if err != nil {
+			if err != nil {
 				return err
 			}
-      			// (PRIME // range_check_builtin.bound)
+			// (PRIME // range_check_builtin.bound)
 			// 800000000000011000000000000000000000000000000000000000000000001 // 2**128
 			var divUpperBound big.Int
 			divUpperBound.SetString("8000000000000110000000000000000", 16)
@@ -787,25 +792,21 @@ func newUnsignedDivRemHinter(value, div, q, r hinter.ResOperander) hinter.Hinter
 }
 
 func createUnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-  value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetResOperander("value")
 	if err != nil {
 		return nil, err
 	}
 	div, err := resolver.GetResOperander("div")
 	if err != nil {
 		return nil, err
-  }
-  q, err := resolver.GetResOperander("q")
-  if err != nil {
+	}
+	q, err := resolver.GetResOperander("q")
+	if err != nil {
 		return nil, err
 	}
 	r, err := resolver.GetResOperander("r")
 	if err != nil {
 		return nil, err
 	}
-  biased_q, err := resolver.GetResOperander("biased_q")
-	if err != nil {
-		return nil, err
-	}
-	return newSignedDivRemHint(value, div, bound, r, biased_q), nil
+	return newUnsignedDivRemHinter(value, div, q, r), nil
 }

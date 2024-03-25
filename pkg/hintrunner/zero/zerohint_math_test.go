@@ -645,6 +645,7 @@ func TestZeroHintMath(t *testing.T) {
 					"biased_q": new(fp.Element).Add(feltString("2"), felt127),
 				}),
 			},
+		},
 		"SqrtHint": {
 			{
 				operanders: []*hintOperander{
