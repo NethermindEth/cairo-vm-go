@@ -505,7 +505,7 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newSplitIntHint(output, value, base, bound), nil
 }
 
-func newPowHint(locs, prevLocs hinter.CellRefer) hinter.Hinter {
+func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Pow",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -519,11 +519,11 @@ func newPowHint(locs, prevLocs hinter.CellRefer) hinter.Hinter {
 				exp: felt,
 			} */
 			const expStructOffset = 4
-			locsBitAddress, err := locs.Get(vm)
+			locsBitAddress, err := locs.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			prevLocsBitAddress, err := prevLocs.Get(vm)
+			prevLocsBitAddress, err := prevLocs.GetAddress(vm)
 			if err != nil {
 				return err
 			}
@@ -553,7 +553,9 @@ func createPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newPowHint(locs, prev_locs), nil
+	locsRes := hinter.Deref{Deref: locs}
+	prevLocsRes := hinter.Deref{Deref: prev_locs}
+	return newPowHint(locsRes, prevLocsRes), nil
 }
 
 func newSplitFeltHint(low, high, value hinter.ResOperander) hinter.Hinter {
