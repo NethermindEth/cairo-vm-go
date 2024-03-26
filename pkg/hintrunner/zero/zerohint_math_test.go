@@ -1,6 +1,7 @@
 package zero
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -11,7 +12,6 @@ import (
 )
 
 func TestZeroHintMath(t *testing.T) {
-	felt127 := new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 127))
 
 	runHinterTests(t, map[string][]hintTestCase{
 		"IsLeFelt": {
@@ -594,19 +594,19 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: apRelative, Value: feltString("0")},
 					{Name: "div", Kind: apRelative, Value: &utils.FeltMax128},
-					{Name: "bound", Kind: apRelative, Value: felt127},
+					{Name: "bound", Kind: apRelative, Value: &utils.Felt127},
 					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
 					{Name: "biased_q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
 				},
-				errCheck: errorTextContains("div="),
+				errCheck: errorTextContains(fmt.Sprintf("div=%v is out of the valid range.", &utils.FeltMax128)),
 			},
 			{
 				operanders: []*hintOperander{
 					{Name: "value", Kind: apRelative, Value: feltString("0")},
-					{Name: "div", Kind: apRelative, Value: feltString("0")},
+					{Name: "div", Kind: apRelative, Value: feltString("1")},
 					{Name: "bound", Kind: apRelative, Value: new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 130))},
 					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
 					{Name: "biased_q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
@@ -614,7 +614,7 @@ func TestZeroHintMath(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
 				},
-				errCheck: errorTextContains("bound="),
+				errCheck: errorTextContains(fmt.Sprintf("bound=%v is out of the valid range", new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 130)))),
 			},
 			{
 				operanders: []*hintOperander{
@@ -633,7 +633,7 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: apRelative, Value: feltString("5")},
 					{Name: "div", Kind: apRelative, Value: feltString("2")},
-					{Name: "bound", Kind: apRelative, Value: felt127},
+					{Name: "bound", Kind: apRelative, Value: &utils.Felt127},
 					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
 					{Name: "biased_q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
@@ -642,7 +642,7 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"r":        feltString("1"),
-					"biased_q": new(fp.Element).Add(feltString("2"), felt127),
+					"biased_q": new(fp.Element).Add(feltString("2"), &utils.Felt127),
 				}),
 			},
 		},

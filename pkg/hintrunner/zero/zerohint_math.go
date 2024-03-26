@@ -610,10 +610,11 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 				return err
 			}
 			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, f'div={hex(ids.div)} is out of the valid range.'
-			upperBoundBig := new(big.Int).Div(fp.Modulus(), new(big.Int).Lsh(big.NewInt(1), 128))
-			upperBound := new(fp.Element).SetBigInt(upperBoundBig)
-			if !utils.FeltLe(divFelt, upperBound) {
-				return fmt.Errorf("div=%v is out of the valid range", divFelt)
+			var upperBoundBig big.Int
+			upperBoundBig.SetString("8000000000000110000000000000000", 16)
+			upperBound := new(fp.Element).SetBigInt(&upperBoundBig)
+			if divFelt.IsZero() || !utils.FeltLe(divFelt, upperBound) {
+				return fmt.Errorf("div=%v is out of the valid range.", divFelt)
 			}
 
 			//> assert_integer(ids.bound)
@@ -622,9 +623,8 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 				return err
 			}
 			//> assert ids.bound <= range_check_builtin.bound // 2, f'bound={hex(ids.bound)} is out of the valid range.'
-			felt127 := new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 127))
-			if !utils.FeltLe(boundFelt, felt127) {
-				return fmt.Errorf("bound=%v is out of the valid range", boundFelt)
+			if !utils.FeltLe(boundFelt, &utils.Felt127) {
+				return fmt.Errorf("bound=%v is out of the valid range.", boundFelt)
 			}
 			//> int_value = as_int(ids.value, PRIME)
 			valueFelt, err := hinter.ResolveAsFelt(vm, value)
@@ -640,7 +640,7 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			qBig, rBig := new(big.Int).DivMod(&valueBig, &divBig, new(big.Int))
 			qFelt, rFelt := new(fp.Element).SetBigInt(qBig), new(fp.Element).SetBigInt(rBig)
 			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
-			if new(big.Int).Abs(&boundBig).Cmp(new(big.Int).Abs(qBig)) == -1 {
+			if new(big.Int).Abs(&boundBig).Cmp(new(big.Int).Abs(qBig)) != 1 {
 				return fmt.Errorf("%v / %v = %v is out of the range [-%v, %v]", valueFelt, divFelt, qBig, boundFelt, boundFelt)
 			}
 
