@@ -18,6 +18,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d1", Kind: apRelative, Value: feltString("0x2ff0384422a3f45ed1229a")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("0x483ada7726a3c4655da4f")},
 				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
@@ -31,6 +34,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d0", Kind: apRelative, Value: feltString("0")},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("0")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("0")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
@@ -46,6 +52,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d1", Kind: apRelative, Value: feltString("0")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("0")},
 				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
@@ -59,6 +68,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d0", Kind: apRelative, Value: feltString("0")},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("0")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
@@ -74,6 +86,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d1", Kind: apRelative, Value: feltString("0")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
@@ -87,6 +102,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("0")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
@@ -102,6 +120,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
@@ -115,6 +136,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("0")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
@@ -130,6 +154,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
@@ -143,6 +170,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d0", Kind: apRelative, Value: feltString("10")},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("100")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("10001")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
