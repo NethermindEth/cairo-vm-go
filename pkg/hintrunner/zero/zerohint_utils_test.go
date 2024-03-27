@@ -91,6 +91,18 @@ func allVarValueEquals(expectedValues map[string]*fp.Element) func(t *testing.T,
 	}
 }
 
+func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		value, err := ctx.runnerContext.ScopeManager.GetVariableValue(varName)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if value != expected {
+			t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
+		}
+	}
+}
+
 func errorTextContains(s string) func(t *testing.T, ctx *hintTestContext, err error) {
 	return func(t *testing.T, ctx *hintTestContext, err error) {
 		if err == nil {
