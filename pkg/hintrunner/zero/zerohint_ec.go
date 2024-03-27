@@ -1,8 +1,11 @@
 package zero
 
 import (
+	"fmt"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"math/big"
 )
@@ -79,4 +82,66 @@ func createEcNegateHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	}
 
 	return newEcNegateHint(point), nil
+}
+
+func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "NondetBigint3V1",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import split
+			//> segments.write_arg(ids.res.address_, split(value))
+
+			address, err := res.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			value, err := ctx.ScopeManager.GetVariableValue("value")
+			if err != nil {
+				return err
+			}
+			valueBig, ok := value.(*big.Int)
+			if !ok {
+				return fmt.Errorf("value: %s is not a *big.Int", value)
+			}
+
+			baseBig, ok := utils.GetEcBaseBig()
+			if !ok {
+				return fmt.Errorf("GetEcBaseBig failed")
+			}
+
+			var splitValueBig big.Int
+			for i := 0; i < 3; i++ {
+				valueBig.DivMod(valueBig, baseBig, &splitValueBig)
+
+				splitValueAddr, err := address.AddOffset(int16(i))
+				if err != nil {
+					return err
+				}
+
+				splitValueFelt := new(fp.Element).SetBigInt(&splitValueBig)
+				splitValueMv := mem.MemoryValueFromFieldElement(splitValueFelt)
+
+				err = vm.Memory.WriteToAddress(&splitValueAddr, &splitValueMv)
+				if err != nil {
+					return err
+				}
+			}
+
+			if valueBig.BitLen() != 0 {
+				return fmt.Errorf("value != 0")
+			}
+
+			return nil
+		},
+	}
+}
+
+func createNondetBigint3V1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	res, err := resolver.GetResOperander("res")
+	if err != nil {
+		return nil, err
+	}
+
+	return newNondetBigint3V1Hint(res), nil
 }

@@ -106,6 +106,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		// EC hints
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)
+	case nondetBigint3V1Code:
+		return createNondetBigint3V1Hinter(resolver)
 	// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)

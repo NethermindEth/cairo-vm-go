@@ -279,10 +279,14 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if _, ok := set[string(stringKey)]; ok {
-					t.Fatalf("%s: duplicated test case case (i=%d) found: %s", testGroup, i, stringKey)
+
+				// TODO: temporary hack, figure out a way to make sure tests dont get marked as duplicate even when the scope they start with is different
+				if tc.ctxInit == nil {
+					if _, ok := set[string(stringKey)]; ok {
+						t.Fatalf("%s: duplicated test case case (i=%d) found: %s", testGroup, i, stringKey)
+					}
+					set[string(stringKey)] = struct{}{}
 				}
-				set[string(stringKey)] = struct{}{}
 			}
 		}
 

@@ -1,6 +1,8 @@
 package zero
 
 import (
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"math/big"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -148,6 +150,96 @@ func TestZeroHintEc(t *testing.T) {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
 				check: varValueInScopeEquals("value", "115792089237316195423511115915312127562362008772591693155831694873530722155557"),
+			},
+		},
+		"NondetBigint3V1": {
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+
+					value, ok := new(big.Int).SetString("7618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
+					if !ok {
+						t.Errorf("Error creating big.Int")
+					}
+
+					err := ctx.ScopeManager.AssignVariable("value", value)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				check: consecutiveVarValueEquals("res", []*fp.Element{feltString("72082201994522260246887440"), feltString("9036023809832564006525928"), feltString("1272654087330362946288670")}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+
+					value, ok := new(big.Int).SetString("3618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
+					if !ok {
+						t.Errorf("Error creating big.Int")
+					}
+
+					err := ctx.ScopeManager.AssignVariable("value", value)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				check: consecutiveVarValueEquals("res", []*fp.Element{feltString("77371252455336262886226960"), feltString("77371252455336267181195263"), feltString("604462909807314034753535")}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+
+					value, ok := new(big.Int).SetString("123456", 10)
+					if !ok {
+						t.Errorf("Error creating big.Int")
+					}
+
+					err := ctx.ScopeManager.AssignVariable("value", value)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				check: consecutiveVarValueEquals("res", []*fp.Element{feltString("123456"), feltString("0"), feltString("0")}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+
+					value, ok := new(big.Int).SetString("0", 10)
+					if !ok {
+						t.Errorf("Error creating big.Int")
+					}
+
+					err := ctx.ScopeManager.AssignVariable("value", value)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				check: consecutiveVarValueEquals("res", []*fp.Element{feltString("0"), feltString("0"), feltString("0")}),
 			},
 		},
 	})

@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
+	"math/big"
 )
 
 //
@@ -46,3 +47,12 @@ var Beta = fp.Element([]uint64{
 	12360725113329547591,
 	88155977965380735,
 })
+
+//
+// EC Constants
+//
+
+func GetEcBaseBig() (*big.Int, bool) {
+	// 2**86
+	return new(big.Int).SetString("77371252455336267181195264", 10)
+}
