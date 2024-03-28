@@ -645,6 +645,22 @@ func TestZeroHintMath(t *testing.T) {
 					"biased_q": new(fp.Element).Add(feltString("2"), &utils.Felt127),
 				}),
 			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: feltString("-3")},
+					{Name: "div", Kind: apRelative, Value: feltString("2")},
+					{Name: "bound", Kind: apRelative, Value: &utils.Felt127},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"r":        feltString("1"),
+					"biased_q": new(fp.Element).Sub(&utils.Felt127, feltString("2")),
+				}),
+			},
 		},
 		"SqrtHint": {
 			{

@@ -629,15 +629,17 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 				return err
 			}
 
-			//> q, ids.r = divmod(int_value, ids.div)
-			var valueBig, divBig, boundBig big.Int
-			valueFelt.BigInt(&valueBig)
+			var divBig, boundBig big.Int
 			divFelt.BigInt(&divBig)
 			boundFelt.BigInt(&boundBig)
-			qBig, rBig := new(big.Int).DivMod(&valueBig, &divBig, new(big.Int))
-			qFelt, rFelt := new(fp.Element).SetBigInt(qBig), new(fp.Element).SetBigInt(rBig)
+
+			// int_value = as_int(ids.value, PRIME)
+			intValueBig := AsInt(*valueFelt)
+			//> q, ids.r = divmod(int_value, ids.div)
+			qBig, rBig := new(big.Int).DivMod(&intValueBig, &divBig, new(big.Int))
+			rFelt := new(fp.Element).SetBigInt(rBig)
 			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
-			if !(new(big.Int).Abs(&boundBig).Cmp(new(big.Int).Abs(qBig)) == 1 || new(big.Int).Abs(qBig).Cmp(new(big.Int).Neg(&boundBig)) == 0) {
+			if !(qBig.Cmp(new(big.Int).Neg(&boundBig)) >= 0 && qBig.Cmp(&boundBig) == -1) {
 				return fmt.Errorf("%v / %v = %v is out of the range [-%v, %v]", valueFelt, divFelt, qBig, boundFelt, boundFelt)
 			}
 
@@ -651,7 +653,8 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 				return err
 			}
 			//> ids.biased_q = q + ids.bound
-			biasedQ := new(fp.Element).Add(qFelt, boundFelt)
+			biasedQBig := new(big.Int).Add(qBig, &boundBig)
+			biasedQ := new(fp.Element).SetBigInt(biasedQBig)
 			biasedQAddr, err := biased_q.GetAddress(vm)
 			if err != nil {
 				return err
