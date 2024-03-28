@@ -68,4 +68,6 @@ const (
 
 	// ------ Other hints related code ------
 	allocSegmentCode string = "memory[ap] = segments.add()"
+	vmEnterScopeCode string = "vm_enter_scope()"
+	vmExitScopeCode  string = "vm_exit_scope()"
 )
