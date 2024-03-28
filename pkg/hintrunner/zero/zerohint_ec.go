@@ -46,26 +46,38 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			var packedSum big.Int
-			packedSum.SetInt64(0)
+			//> def pack(z, prime):
+			//>     """
+			//>     Takes an UnreducedBigInt3 struct which represents a triple of limbs (d0, d1, d2) of field
+			//>     elements and reconstructs the corresponding 256-bit integer (see split()).
+			//>     Note that the limbs do not have to be in the range [0, BASE).
+			//>     prime should be the Cairo field, and it is used to handle negative values of the limbs.
+			//>     """
+			//>     limbs = z.d0, z.d1, z.d2
+			//>     return sum(as_int(limb, prime) * (BASE**i) for i, limb in enumerate(limbs))
+
+			valueBig := big.NewInt(0)
 			primeBig := fp.Modulus()
 
 			for idx, yD := range []*fp.Element{yD0, yD1, yD2} {
 				var yDBig big.Int
 				yD.BigInt(&yDBig)
-				if yDBig.Cmp(new(big.Int).Div(primeBig, new(big.Int).SetUint64(2))) != -1 {
+
+				//> as_int(limb, prime)
+				if yDBig.Cmp(new(big.Int).Div(primeBig, big.NewInt(2))) != -1 {
 					yDBig.Sub(&yDBig, primeBig)
 				}
-				idxBig := big.NewInt(int64(idx))
-				valueToAdd := new(big.Int).Exp(baseBig, idxBig, nil)
-				valueToAdd.Mul(valueToAdd, &yDBig)
-				packedSum.Add(&packedSum, valueToAdd)
+
+				valueToAddBig := new(big.Int).Exp(baseBig, big.NewInt(int64(idx)), nil)
+				valueToAddBig.Mul(valueToAddBig, &yDBig)
+				valueBig.Add(valueBig, valueToAddBig)
 			}
 
-			value := new(big.Int).Neg(&packedSum)
-			value.Mod(value, secPBig)
+			//> value = (-y) % SECP_P
+			valueBig.Neg(valueBig)
+			valueBig.Mod(valueBig, secPBig)
 
-			err = ctx.ScopeManager.AssignVariable("value", value)
+			err = ctx.ScopeManager.AssignVariable("value", valueBig)
 			if err != nil {
 				return err
 			}
