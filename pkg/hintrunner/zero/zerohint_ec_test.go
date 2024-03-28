@@ -24,7 +24,7 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
-				check: varValueInScopeEquals("value", "83121579216557378445487899878180864668798711284981320763518679672151497189239"),
+				check: varValueInScopeEquals("value", bigIntString("83121579216557378445487899878180864668798711284981320763518679672151497189239", 10)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -41,7 +41,7 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
-				check: varValueInScopeEquals("value", "0"),
+				check: varValueInScopeEquals("value", bigIntString("0", 10)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -58,7 +58,7 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
-				check: varValueInScopeEquals("value", "3414743344050354335526669446224970530359681361788439069983729"),
+				check: varValueInScopeEquals("value", bigIntString("3414743344050354335526669446224970530359681361788439069983729", 10)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -75,7 +75,7 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
-				check: varValueInScopeEquals("value", "332307077013822705460080369276551168"),
+				check: varValueInScopeEquals("value", bigIntString("332307077013822705460080369276551168", 10)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -92,7 +92,7 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
-				check: varValueInScopeEquals("value", "25711014748331348032841660844170547741622139443892033895268352"),
+				check: varValueInScopeEquals("value", bigIntString("25711014748331348032841660844170547741622139443892033895268352", 10)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -109,7 +109,7 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
-				check: varValueInScopeEquals("value", "3414743344050354335526669778532047544182386821868808346534897"),
+				check: varValueInScopeEquals("value", bigIntString("3414743344050354335526669778532047544182386821868808346534897", 10)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -126,7 +126,7 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
-				check: varValueInScopeEquals("value", "25711014748331348032841661176477624755444844903972403171819520"),
+				check: varValueInScopeEquals("value", bigIntString("25711014748331348032841661176477624755444844903972403171819520", 10)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -143,7 +143,7 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
-				check: varValueInScopeEquals("value", "29125758092381702368368330290395518271981820805680472965252081"),
+				check: varValueInScopeEquals("value", bigIntString("29125758092381702368368330290395518271981820805680472965252081", 10)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -160,7 +160,7 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
-				check: varValueInScopeEquals("value", "29125758092381702368368330622702595285804526265760842241803249"),
+				check: varValueInScopeEquals("value", bigIntString("29125758092381702368368330622702595285804526265760842241803249", 10)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -177,7 +177,7 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
-				check: varValueInScopeEquals("value", "115792089237316195423511115915312127562362008772591693155831694873530722155557"),
+				check: varValueInScopeEquals("value", bigIntString("115792089237316195423511115915312127562362008772591693155831694873530722155557", 10)),
 			},
 		},
 	})

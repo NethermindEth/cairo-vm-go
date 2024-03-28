@@ -65,7 +65,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			value := new(big.Int).Neg(&packedSum)
 			value.Mod(value, secPBig)
 
-			err = ctx.ScopeManager.AssignVariable("value", value.String())
+			err = ctx.ScopeManager.AssignVariable("value", value)
 			if err != nil {
 				return err
 			}
