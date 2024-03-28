@@ -56,7 +56,7 @@ const (
 	// ------ Elliptic Curve hints related code ------
 
 	// ------ Signature hints related code ------
-
+	verifyECDSASignatureCode string = "ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))"
 	// ------ Blake Hash hints related code ------
 
 	// ------ Keccak hints related code ------
