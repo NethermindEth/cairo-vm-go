@@ -533,11 +533,11 @@ func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			loopLocals, err := hinter.GetConsecutiveValues(vm, prevLocsBitAddress, expStructOffset+1)
+			prevLocsExpAddr, err := vm.Memory.Read(prevLocsBitAddress.SegmentIndex, prevLocsBitAddress.Offset+expStructOffset)
 			if err != nil {
 				return err
 			}
-			prevLocsExp, err := loopLocals[expStructOffset].FieldElement()
+			prevLocsExp, err := prevLocsExpAddr.FieldElement()
 			if err != nil {
 				return err
 			}
