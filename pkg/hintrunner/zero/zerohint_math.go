@@ -610,10 +610,7 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 				return err
 			}
 			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, f'div={hex(ids.div)} is out of the valid range.'
-			var upperBoundBig big.Int
-			upperBoundBig.SetString("8000000000000110000000000000000", 16)
-			upperBound := new(fp.Element).SetBigInt(&upperBoundBig)
-			if divFelt.IsZero() || !utils.FeltLe(divFelt, upperBound) {
+			if divFelt.IsZero() || !utils.FeltLe(divFelt, &utils.PrimeHigh) {
 				return fmt.Errorf("div=%v is out of the valid range.", divFelt)
 			}
 
@@ -640,7 +637,7 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			qBig, rBig := new(big.Int).DivMod(&valueBig, &divBig, new(big.Int))
 			qFelt, rFelt := new(fp.Element).SetBigInt(qBig), new(fp.Element).SetBigInt(rBig)
 			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
-			if new(big.Int).Abs(&boundBig).Cmp(new(big.Int).Abs(qBig)) != 1 {
+			if !(new(big.Int).Abs(&boundBig).Cmp(new(big.Int).Abs(qBig)) == 1 || new(big.Int).Abs(qBig).Cmp(new(big.Int).Neg(&boundBig)) == 0) {
 				return fmt.Errorf("%v / %v = %v is out of the range [-%v, %v]", valueFelt, divFelt, qBig, boundFelt, boundFelt)
 			}
 
@@ -770,7 +767,7 @@ func newUnsignedDivRemHinter(value, div, q, r hinter.ResOperander) hinter.Hinter
 			// (PRIME // range_check_builtin.bound)
 			// 800000000000011000000000000000000000000000000000000000000000001 // 2**128
 			var divUpperBound big.Int
-			divUpperBound.SetString("8000000000000110000000000000000", 16)
+			utils.PrimeHigh.BigInt(&divUpperBound)
 
 			var divBig big.Int
 			div.BigInt(&divBig)
