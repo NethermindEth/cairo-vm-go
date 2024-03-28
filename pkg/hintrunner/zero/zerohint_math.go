@@ -634,13 +634,13 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			boundFelt.BigInt(&boundBig)
 
 			// int_value = as_int(ids.value, PRIME)
-			intValueBig := AsInt(*valueFelt)
+			intValueBig := AsInt(valueFelt)
 			//> q, ids.r = divmod(int_value, ids.div)
 			qBig, rBig := new(big.Int).DivMod(&intValueBig, &divBig, new(big.Int))
 			rFelt := new(fp.Element).SetBigInt(rBig)
 			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
 			if !(qBig.Cmp(new(big.Int).Neg(&boundBig)) >= 0 && qBig.Cmp(&boundBig) == -1) {
-				return fmt.Errorf("%v / %v = %v is out of the range [-%v, %v]", valueFelt, divFelt, qBig, boundFelt, boundFelt)
+				return fmt.Errorf("%v / %v = %v is out of the range [-%v, %v].", valueFelt, divFelt, qBig, boundFelt, boundFelt)
 			}
 
 			rAddr, err := r.GetAddress(vm)

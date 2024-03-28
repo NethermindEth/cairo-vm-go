@@ -606,6 +606,19 @@ func TestZeroHintMath(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "value", Kind: apRelative, Value: feltString("0")},
+					{Name: "div", Kind: apRelative, Value: feltString("0")},
+					{Name: "bound", Kind: apRelative, Value: &utils.Felt127},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
+				},
+				errCheck: errorTextContains(fmt.Sprintf("div=%v is out of the valid range.", feltString("0"))),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: feltString("0")},
 					{Name: "div", Kind: apRelative, Value: feltString("1")},
 					{Name: "bound", Kind: apRelative, Value: new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 130))},
 					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
@@ -618,16 +631,29 @@ func TestZeroHintMath(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "value", Kind: apRelative, Value: feltString("4")},
+					{Name: "value", Kind: apRelative, Value: feltString("-6")},
 					{Name: "div", Kind: apRelative, Value: feltString("2")},
-					{Name: "bound", Kind: apRelative, Value: feltString("1")},
+					{Name: "bound", Kind: apRelative, Value: feltString("2")},
 					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
 					{Name: "biased_q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
 				},
-				errCheck: errorTextContains("is out of the range"),
+				errCheck: errorTextContains(fmt.Sprintf("%v / %v = %v is out of the range [-%v, %v]", feltString("-6"), feltString("2"), feltString("-3"), feltString("2"), feltString("2"))),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: feltString("6")},
+					{Name: "div", Kind: apRelative, Value: feltString("2")},
+					{Name: "bound", Kind: apRelative, Value: feltString("3")},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
+				},
+				errCheck: errorTextContains(fmt.Sprintf("%v / %v = %v is out of the range [-%v, %v].", feltString("6"), feltString("2"), feltString("3"), feltString("3"), feltString("3"))),
 			},
 			{
 				operanders: []*hintOperander{

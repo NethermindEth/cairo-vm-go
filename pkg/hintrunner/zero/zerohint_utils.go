@@ -6,7 +6,7 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func AsInt(valueFelt fp.Element) big.Int {
+func AsInt(valueFelt *fp.Element) big.Int {
 	var valueBig big.Int
 	valueFelt.BigInt(&valueBig)
 	boundBig := new(big.Int).Div(fp.Modulus(), big.NewInt(2))
