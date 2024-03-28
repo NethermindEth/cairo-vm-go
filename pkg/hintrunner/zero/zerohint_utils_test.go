@@ -107,39 +107,10 @@ func consecutiveVarAddrResolvedValueEquals(varName string, expectedValues []*fp.
 	}
 }
 
-func varAddrResolvedValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx *hintTestContext) {
-	return func(t *testing.T, ctx *hintTestContext) {
-		o := ctx.operanders[varName]
-		addr, err := o.GetAddress(ctx.vm)
-		if err != nil {
-			t.Fatal(err)
-		}
-		actualAddress, err := ctx.vm.Memory.ReadFromAddressAsAddress(&addr)
-		if err != nil {
-			t.Fatal(err)
-		}
-		actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&actualAddress)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !actualFelt.Equal(expected) {
-			t.Fatalf("%s value mismatch:\nhave: %v\nwant: %v", varName, &actualFelt, expected)
-		}
-	}
-}
-
 func allVarValueEquals(expectedValues map[string]*fp.Element) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
 		for varName, expected := range expectedValues {
 			varValueEquals(varName, expected)(t, ctx)
-		}
-	}
-}
-
-func allVarAddrResolvedValueEquals(expectedValues map[string]*fp.Element) func(t *testing.T, ctx *hintTestContext) {
-	return func(t *testing.T, ctx *hintTestContext) {
-		for varName, expected := range expectedValues {
-			varAddrResolvedValueEquals(varName, expected)(t, ctx)
 		}
 	}
 }
