@@ -110,24 +110,41 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("GetEcBaseBig failed")
 			}
 
-			var splitValueBig big.Int
-			for i := 0; i < 3; i++ {
-				valueBig.DivMod(valueBig, baseBig, &splitValueBig)
+			//> def split(num: int) -> List[int]:
+			//>     """
+			//?     Takes a 256-bit integer and returns its canonical representation as:
+			//>         d0 + BASE * d1 + BASE**2 * d2,
+			//>     where BASE = 2**86.
+			//>     """
+			//?     a = []
+			//>     for _ in range(3):
+			//>         num, residue = divmod(num, BASE)
+			//>         a.append(residue)
+			//>     assert num == 0
+			//>     return a
+			//>
+			//> segments.write_arg(ids.res.address_, split(value))
 
-				splitValueAddr, err := address.AddOffset(int16(i))
+			var residue big.Int
+			for i := 0; i < 3; i++ {
+				//> num, residue = divmod(num, BASE)
+				valueBig.DivMod(valueBig, baseBig, &residue)
+
+				residueAddr, err := address.AddOffset(int16(i))
 				if err != nil {
 					return err
 				}
 
-				splitValueFelt := new(fp.Element).SetBigInt(&splitValueBig)
-				splitValueMv := mem.MemoryValueFromFieldElement(splitValueFelt)
+				residueFelt := new(fp.Element).SetBigInt(&residue)
+				residueMv := mem.MemoryValueFromFieldElement(residueFelt)
 
-				err = vm.Memory.WriteToAddress(&splitValueAddr, &splitValueMv)
+				err = vm.Memory.WriteToAddress(&residueAddr, &residueMv)
 				if err != nil {
 					return err
 				}
 			}
 
+			//> assert num == 0
 			if valueBig.BitLen() != 0 {
 				return fmt.Errorf("value != 0")
 			}

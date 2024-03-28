@@ -204,10 +204,7 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
 
-					value, ok := new(big.Int).SetString("123456", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
+					value := big.NewInt(123456)
 
 					err := ctx.ScopeManager.AssignVariable("value", value)
 					if err != nil {
@@ -226,10 +223,7 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
 
-					value, ok := new(big.Int).SetString("0", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
+					value := big.NewInt(10)
 
 					err := ctx.ScopeManager.AssignVariable("value", value)
 					if err != nil {
@@ -240,6 +234,25 @@ func TestZeroHintEc(t *testing.T) {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
 				},
 				check: consecutiveVarValueEquals("res", []*fp.Element{feltString("0"), feltString("0"), feltString("0")}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+
+					value := big.NewInt(-10)
+
+					err := ctx.ScopeManager.AssignVariable("value", value)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				errCheck: errorTextContains("value != 0"),
 			},
 		},
 	})
