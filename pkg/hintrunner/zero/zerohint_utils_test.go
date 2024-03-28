@@ -83,7 +83,7 @@ func varValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx
 	}
 }
 
-func varAddrResolvedValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx *hintTestContext) {
+func consecutiveVarAddrResolvedValueEquals(varName string, expectedValues []*fp.Element) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
 		o := ctx.operanders[varName]
 		addr, err := o.GetAddress(ctx.vm)
@@ -94,12 +94,15 @@ func varAddrResolvedValueEquals(varName string, expected *fp.Element) func(t *te
 		if err != nil {
 			t.Fatal(err)
 		}
-		actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&actualAddress)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !actualFelt.Equal(expected) {
-			t.Fatalf("%s value mismatch:\nhave: %v\nwant: %v", varName, &actualFelt, expected)
+		for index, expectedValue := range expectedValues {
+			expectedValueAddr := memory.MemoryAddress{SegmentIndex: actualAddress.SegmentIndex, Offset: actualAddress.Offset + uint64(index)}
+			actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&expectedValueAddr)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !actualFelt.Equal(expectedValue) {
+				t.Fatalf("%s[%v] value mismatch:\nhave: %v\nwant: %v", varName, index, &actualFelt, expectedValue)
+			}
 		}
 	}
 }
@@ -108,14 +111,6 @@ func allVarValueEquals(expectedValues map[string]*fp.Element) func(t *testing.T,
 	return func(t *testing.T, ctx *hintTestContext) {
 		for varName, expected := range expectedValues {
 			varValueEquals(varName, expected)(t, ctx)
-		}
-	}
-}
-
-func allVarAddrResolvedValueEquals(expectedValues map[string]*fp.Element) func(t *testing.T, ctx *hintTestContext) {
-	return func(t *testing.T, ctx *hintTestContext) {
-		for varName, expected := range expectedValues {
-			varAddrResolvedValueEquals(varName, expected)(t, ctx)
 		}
 	}
 }
