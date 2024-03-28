@@ -19,13 +19,15 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			//> # The modulo operation in python always returns a nonnegative number.
 			//> value = (-y) % SECP_P
 
-			// 2**256 - 2**32 - 2**9 - 2**8 - 2**7 - 2**6 - 2**4 - 1
-			var secPBig big.Int
-			secPBig.SetString("115792089237316195423570985008687907853269984665640564039457584007908834671663", 10)
+			secPBig, ok := utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
 
-			// 2**86
-			var baseBig big.Int
-			baseBig.SetString("77371252455336267181195264", 10)
+			baseBig, ok := utils.GetEcBaseBig()
+			if !ok {
+				return fmt.Errorf("GetEcBaseBig failed")
+			}
 
 			pointValues, err := hinter.GetConsecutiveValues(vm, point, int16(6))
 			if err != nil {
@@ -45,27 +47,38 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			var packedSum big.Int
-			packedSum.SetInt64(0)
+			//> def pack(z, prime):
+			//>     """
+			//>     Takes an UnreducedBigInt3 struct which represents a triple of limbs (d0, d1, d2) of field
+			//>     elements and reconstructs the corresponding 256-bit integer (see split()).
+			//>     Note that the limbs do not have to be in the range [0, BASE).
+			//>     prime should be the Cairo field, and it is used to handle negative values of the limbs.
+			//>     """
+			//>     limbs = z.d0, z.d1, z.d2
+			//>     return sum(as_int(limb, prime) * (BASE**i) for i, limb in enumerate(limbs))
+
+			valueBig := big.NewInt(0)
 			primeBig := fp.Modulus()
 
 			for idx, yD := range []*fp.Element{yD0, yD1, yD2} {
 				var yDBig big.Int
 				yD.BigInt(&yDBig)
-				if yDBig.Cmp(new(big.Int).Div(primeBig, new(big.Int).SetUint64(2))) != -1 {
+
+				//> as_int(limb, prime)
+				if yDBig.Cmp(new(big.Int).Div(primeBig, big.NewInt(2))) != -1 {
 					yDBig.Sub(&yDBig, primeBig)
 				}
-				idxBig := new(big.Int).SetInt64(int64(idx))
-				valueToAdd := new(big.Int).Exp(&baseBig, idxBig, nil)
-				valueToAdd.Mul(valueToAdd, &yDBig)
-				packedSum.Add(&packedSum, valueToAdd)
+
+				valueToAddBig := new(big.Int).Exp(baseBig, big.NewInt(int64(idx)), nil)
+				valueToAddBig.Mul(valueToAddBig, &yDBig)
+				valueBig.Add(valueBig, valueToAddBig)
 			}
 
-			value := new(big.Int).Neg(&packedSum)
-			value.Mod(value, &secPBig)
+			//> value = (-y) % SECP_P
+			valueBig.Neg(valueBig)
+			valueBig.Mod(valueBig, secPBig)
 
-			ctx.ScopeManager.EnterScope(map[string]any{})
-			err = ctx.ScopeManager.AssignVariable("value", value.String())
+			err = ctx.ScopeManager.AssignVariable("value", valueBig)
 			if err != nil {
 				return err
 			}
