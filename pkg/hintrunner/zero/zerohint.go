@@ -107,9 +107,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUint256MulDivModHinter(resolver)
 		// Blake hints
 	case blake2sAddUint256BigendCode:
-		return createBlake2sAddUint256BigendHinter(resolver)
+		return createBlake2sAddUint256Hinter(resolver, true)
 	case blake2sAddUint256Code:
-		return createBlake2sAddUint256Hinter(resolver)
+		return createBlake2sAddUint256Hinter(resolver, false)
 		// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)

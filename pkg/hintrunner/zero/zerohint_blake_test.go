@@ -18,7 +18,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256BigendHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], true)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -41,7 +41,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256BigendHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], true)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -64,7 +64,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256BigendHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], true)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -87,7 +87,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256BigendHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], true)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -110,7 +110,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256BigendHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], true)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -133,7 +133,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256BigendHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], true)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -156,7 +156,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256BigendHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], true)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -179,7 +179,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256BigendHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], true)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -202,7 +202,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256BigendHint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], true)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -227,7 +227,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], false)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -250,7 +250,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], false)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -273,7 +273,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], false)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -296,7 +296,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], false)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -319,7 +319,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], false)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -342,7 +342,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], false)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -365,7 +365,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], false)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -388,7 +388,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], false)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
@@ -411,7 +411,7 @@ func TestZeroHintBlake(t *testing.T) {
 					{Name: "data", Kind: apRelative, Value: addr(7)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"])
+					return newBlake2sAddUint256Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["data"], false)
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"data",
