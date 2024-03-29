@@ -595,14 +595,14 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 		Name: "SignedDivRem",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.math_utils import as_int, assert_integer
-			// assert_integer(ids.div)
-			// assert 0 < ids.div <= PRIME // range_check_builtin.bound, f'div={hex(ids.div)} is out of the valid range.'
-			// assert_integer(ids.bound)
-			// assert ids.bound <= range_check_builtin.bound // 2, f'bound={hex(ids.bound)} is out of the valid range.'
-			// int_value = as_int(ids.value, PRIME)
-			// q, ids.r = divmod(int_value, ids.div)
-			// assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
-			// ids.biased_q = q + ids.bound
+			//> assert_integer(ids.div)
+			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, f'div={hex(ids.div)} is out of the valid range.'
+			//> assert_integer(ids.bound)
+			//> assert ids.bound <= range_check_builtin.bound // 2, f'bound={hex(ids.bound)} is out of the valid range.'
+			//> int_value = as_int(ids.value, PRIME)
+			//> q, ids.r = divmod(int_value, ids.div)
+			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
+			//> ids.biased_q = q + ids.bound
 
 			//> assert_integer(ids.div)
 			divFelt, err := hinter.ResolveAsFelt(vm, div)
@@ -628,21 +628,14 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			if err != nil {
 				return err
 			}
+			intValueBig := AsInt(valueFelt)
 
+			//> q, ids.r = divmod(int_value, ids.div)
 			var divBig, boundBig big.Int
 			divFelt.BigInt(&divBig)
 			boundFelt.BigInt(&boundBig)
-
-			// int_value = as_int(ids.value, PRIME)
-			intValueBig := AsInt(valueFelt)
-			//> q, ids.r = divmod(int_value, ids.div)
 			qBig, rBig := new(big.Int).DivMod(&intValueBig, &divBig, new(big.Int))
 			rFelt := new(fp.Element).SetBigInt(rBig)
-			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
-			if !(qBig.Cmp(new(big.Int).Neg(&boundBig)) >= 0 && qBig.Cmp(&boundBig) == -1) {
-				return fmt.Errorf("%v / %v = %v is out of the range [-%v, %v].", valueFelt, divFelt, qBig, boundFelt, boundFelt)
-			}
-
 			rAddr, err := r.GetAddress(vm)
 			if err != nil {
 				return err
@@ -652,6 +645,12 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			if err != nil {
 				return err
 			}
+
+			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
+			if !(qBig.Cmp(new(big.Int).Neg(&boundBig)) >= 0 && qBig.Cmp(&boundBig) == -1) {
+				return fmt.Errorf("%v / %v = %v is out of the range [-%v, %v].", valueFelt, divFelt, qBig, boundFelt, boundFelt)
+			}
+
 			//> ids.biased_q = q + ids.bound
 			biasedQBig := new(big.Int).Add(qBig, &boundBig)
 			biasedQ := new(fp.Element).SetBigInt(biasedQBig)
