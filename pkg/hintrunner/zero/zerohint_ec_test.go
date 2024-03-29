@@ -524,5 +524,40 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
+		"FastEcAddAssignNewX": {
+			{
+				operanders: []*hintOperander{
+					{Name: "slope.d0", Kind: apRelative, Value: feltString("64081873649130491683833713")},
+					{Name: "slope.d1", Kind: apRelative, Value: feltString("34843994309543177837008178")},
+					{Name: "slope.d2", Kind: apRelative, Value: feltString("16548672716077616016846383")},
+					{Name: "point0.x.d0", Kind: apRelative, Value: feltString("51215")},
+					{Name: "point0.x.d1", Kind: apRelative, Value: feltString("36848548548458")},
+					{Name: "point0.x.d2", Kind: apRelative, Value: feltString("634734734")},
+					{Name: "point0.y.d0", Kind: apRelative, Value: feltString("26362")},
+					{Name: "point0.y.d1", Kind: apRelative, Value: feltString("263724839599")},
+					{Name: "point0.y.d2", Kind: apRelative, Value: feltString("901297012")},
+					{Name: "point1.x.d0", Kind: apRelative, Value: feltString("45789")},
+					{Name: "point1.x.d1", Kind: apRelative, Value: feltString("45612238789798")},
+					{Name: "point1.x.d2", Kind: apRelative, Value: feltString("214455666")},
+					{Name: "point1.y.d0", Kind: apRelative, Value: feltString("12457")},
+					{Name: "point1.y.d1", Kind: apRelative, Value: feltString("895645646464")},
+					{Name: "point1.y.d2", Kind: apRelative, Value: feltString("211245645")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"slope": bigIntString("99065496658741969395000079476826955370154683653966841736214499259699304892273", 10),
+					"x0":    bigIntString("3799719333936312867907730225219317480871818784521830610814991", 10),
+					"x1":    bigIntString("1283798249446970358602040710287144628881017552091260500619997", 10),
+					"y0":    bigIntString("5395443952678709065478416501711989224759665054189740766553850", 10),
+					"value": bigIntString("53863685200989733811273896838983614723181733288322685009664997422229669431265", 10),
+					"new_x": bigIntString("53863685200989733811273896838983614723181733288322685009664997422229669431265", 10),
+				}),
+			},
+		},
 	})
 }

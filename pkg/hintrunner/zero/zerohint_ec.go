@@ -3,6 +3,7 @@ package zero
 import (
 	"fmt"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	hintrunnerUtils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -249,4 +250,173 @@ func newFastEcAddAssignNewYHint() hinter.Hinter {
 
 func createFastEcAddAssignNewYHinter() (hinter.Hinter, error) {
 	return newFastEcAddAssignNewYHint(), nil
+}
+
+func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "FastEcAddAssignNewX",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//
+			//> slope = pack(ids.slope, PRIME)
+			//> x0 = pack(ids.point0.x, PRIME)
+			//> x1 = pack(ids.point1.x, PRIME)
+			//> y0 = pack(ids.point0.y, PRIME)
+			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
+
+			primeBig := fp.Modulus()
+
+			slopeValues, err := hinter.GetConsecutiveValues(vm, slope, int16(3))
+			if err != nil {
+				return err
+			}
+			slopeD0, err := slopeValues[0].FieldElement()
+			if err != nil {
+				return err
+			}
+			slopeD1, err := slopeValues[1].FieldElement()
+			if err != nil {
+				return err
+			}
+			slopeD2, err := slopeValues[2].FieldElement()
+			if err != nil {
+				return err
+			}
+
+			point0Values, err := hinter.GetConsecutiveValues(vm, point0, int16(6))
+			if err != nil {
+				return err
+			}
+			point0XD0, err := point0Values[0].FieldElement()
+			if err != nil {
+				return err
+			}
+			point0XD1, err := point0Values[1].FieldElement()
+			if err != nil {
+				return err
+			}
+			point0XD2, err := point0Values[2].FieldElement()
+			if err != nil {
+				return err
+			}
+			point0YD0, err := point0Values[3].FieldElement()
+			if err != nil {
+				return err
+			}
+			point0YD1, err := point0Values[4].FieldElement()
+			if err != nil {
+				return err
+			}
+			point0YD2, err := point0Values[5].FieldElement()
+			if err != nil {
+				return err
+			}
+
+			point1Values, err := hinter.GetConsecutiveValues(vm, point1, int16(6))
+			if err != nil {
+				return err
+			}
+			point1XD0, err := point1Values[0].FieldElement()
+			if err != nil {
+				return err
+			}
+			point1XD1, err := point1Values[1].FieldElement()
+			if err != nil {
+				return err
+			}
+			point1XD2, err := point1Values[2].FieldElement()
+			if err != nil {
+				return err
+			}
+
+			//> slope = pack(ids.slope, PRIME)
+			slopeBig, err := hintrunnerUtils.SecPPacked(slopeD0.BigInt(new(big.Int)), slopeD1.BigInt(new(big.Int)), slopeD2.BigInt(new(big.Int)), primeBig)
+			if err != nil {
+				return err
+			}
+
+			//> x0 = pack(ids.point0.x, PRIME)
+			x0Big, err := hintrunnerUtils.SecPPacked(point0XD0.BigInt(new(big.Int)), point0XD1.BigInt(new(big.Int)), point0XD2.BigInt(new(big.Int)), primeBig)
+			if err != nil {
+				return err
+			}
+
+			//> x1 = pack(ids.point1.x, PRIME)
+			x1Big, err := hintrunnerUtils.SecPPacked(point1XD0.BigInt(new(big.Int)), point1XD1.BigInt(new(big.Int)), point1XD2.BigInt(new(big.Int)), primeBig)
+			if err != nil {
+				return err
+			}
+
+			//> y0 = pack(ids.point0.y, PRIME)
+			y0Big, err := hintrunnerUtils.SecPPacked(point0YD0.BigInt(new(big.Int)), point0YD1.BigInt(new(big.Int)), point0YD2.BigInt(new(big.Int)), primeBig)
+			if err != nil {
+				return err
+			}
+
+			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
+
+			secPBig, ok := utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			new_xBig := new(big.Int)
+			new_xBig.Exp(slopeBig, big.NewInt(2), secPBig)
+			new_xBig.Sub(new_xBig, x0Big)
+			new_xBig.Sub(new_xBig, x1Big)
+			new_xBig.Mod(new_xBig, secPBig)
+
+			valueBig := new(big.Int)
+			valueBig.Set(new_xBig)
+
+			err = ctx.ScopeManager.AssignVariable("slope", slopeBig)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("x0", x0Big)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("x1", x1Big)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("y0", y0Big)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("new_x", new_xBig)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("value", valueBig)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+}
+
+func createFastEcAddAssignNewXHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	slope, err := resolver.GetResOperander("slope")
+	if err != nil {
+		return nil, err
+	}
+	point0, err := resolver.GetResOperander("point0")
+	if err != nil {
+		return nil, err
+	}
+	point1, err := resolver.GetResOperander("point1")
+	if err != nil {
+		return nil, err
+	}
+
+	return newFastEcAddAssignNewXHint(slope, point0, point1), nil
 }

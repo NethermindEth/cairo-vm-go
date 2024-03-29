@@ -110,6 +110,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createNondetBigint3V1Hinter(resolver)
 	case fastEcAddAssignNewYCode:
 		return createFastEcAddAssignNewYHinter()
+	case fastEcAddAssignNewXCode:
+		return createFastEcAddAssignNewXHinter(resolver)
 	// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)
