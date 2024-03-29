@@ -993,11 +993,9 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 			RangeCheckPtr: hinter.Deref{Deref: hinter.ApCellRef(0)},
 		}
 
-		ctx := hinter.HintRunnerContext{
-			ExcludedArc: 0,
-		}
+		ctx := hinter.SetContextWithScope(map[string]any{"excluded": 0})
 
-		err := hint.Execute(vm, &ctx)
+		err := hint.Execute(vm, ctx)
 
 		require.NoError(t, err)
 
@@ -1008,31 +1006,30 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		actualRem2 := utils.ReadFrom(vm, 2, 2)
 		actualQuotient2 := utils.ReadFrom(vm, 2, 3)
 		actual1Ptr := utils.ReadFrom(vm, 1, 0)
+		actualExcludedArc, err := ctx.ScopeManager.GetVariableValue("excluded")
+
+		require.NoError(t, err)
 
 		require.Equal(t, tc.expectedRem1, actualRem1)
 		require.Equal(t, tc.expectedQuotient1, actualQuotient1)
 		require.Equal(t, tc.expectedRem2, actualRem2)
 		require.Equal(t, tc.expectedQuotient2, actualQuotient2)
 		require.Equal(t, expectedPtr, actual1Ptr)
-		require.Equal(t, tc.expectedExcludedArc, ctx.ExcludedArc)
+		require.Equal(t, tc.expectedExcludedArc, actualExcludedArc)
 	}
 }
 
 func TestAssertLeIsFirstArcExcluded(t *testing.T) {
 	vm := VM.DefaultVirtualMachine()
 
-	ctx := hinter.HintRunnerContext{
-		ExcludedArc: 2,
-	}
-
+	ctx := hinter.SetContextWithScope(map[string]any{"excluded": 2})
 	var flag hinter.ApCellRef = 0
 
 	hint := AssertLeIsFirstArcExcluded{
 		SkipExcludeAFlag: flag,
 	}
 
-	err := hint.Execute(vm, &ctx)
-
+	err := hint.Execute(vm, ctx)
 	require.NoError(t, err)
 
 	expected := mem.MemoryValueFromInt(1)
@@ -1047,24 +1044,18 @@ func TestAssertLeIsSecondArcExcluded(t *testing.T) {
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	ctx := hinter.HintRunnerContext{
-		ExcludedArc: 1,
-	}
-
+	ctx := hinter.SetContextWithScope(map[string]any{"excluded": 1})
 	var flag hinter.ApCellRef = 0
 
 	hint := AssertLeIsSecondArcExcluded{
 		SkipExcludeBMinusA: flag,
 	}
 
-	err := hint.Execute(vm, &ctx)
-
+	err := hint.Execute(vm, ctx)
 	require.NoError(t, err)
 
 	expected := mem.MemoryValueFromInt(0)
-
 	actual := utils.ReadFrom(vm, VM.ExecutionSegment, 0)
-
 	require.Equal(t, expected, actual)
 }
 
@@ -1079,7 +1070,6 @@ func TestRandomEcPoint(t *testing.T) {
 	}
 
 	err := hint.Execute(vm)
-
 	require.NoError(t, err)
 
 	expectedX := mem.MemoryValueFromFieldElement(
