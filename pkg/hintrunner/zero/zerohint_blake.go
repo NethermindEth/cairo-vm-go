@@ -43,8 +43,7 @@ func newBlake2sAddUint256BigendHint(low, high, data hinter.ResOperander) hinter.
 				shift := uint(b * (3 - i))
 
 				highResultBig := new(big.Int).Set(&highBig)
-				// TODO: check if this mod is even needed
-				highResultBig.Rsh(highResultBig, shift).And(highResultBig, mask).Mod(highResultBig, fp.Modulus())
+				highResultBig.Rsh(highResultBig, shift).And(highResultBig, mask)
 				highResultFelt := new(fp.Element).SetBigInt(highResultBig)
 				mvHigh := mem.MemoryValueFromFieldElement(highResultFelt)
 				err = vm.Memory.Write(dataPtr.SegmentIndex, dataPtr.Offset+i, &mvHigh)
@@ -53,7 +52,7 @@ func newBlake2sAddUint256BigendHint(low, high, data hinter.ResOperander) hinter.
 				}
 
 				lowResultBig := new(big.Int).Set(&lowBig)
-				lowResultBig.Rsh(lowResultBig, shift).And(lowResultBig, mask).Mod(lowResultBig, fp.Modulus())
+				lowResultBig.Rsh(lowResultBig, shift).And(lowResultBig, mask)
 				lowResultFelt := new(fp.Element).SetBigInt(lowResultBig)
 				mvLow := mem.MemoryValueFromFieldElement(lowResultFelt)
 				err = vm.Memory.Write(dataPtr.SegmentIndex, dataPtr.Offset+i+4, &mvLow)
