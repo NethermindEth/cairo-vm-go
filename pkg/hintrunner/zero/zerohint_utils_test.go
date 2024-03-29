@@ -163,6 +163,14 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 	}
 }
 
+func allVarValueInScopeEquals(expectedValues map[string]any) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		for varName, expected := range expectedValues {
+			varValueInScopeEquals(varName, expected)(t, ctx)
+		}
+	}
+}
+
 func errorTextContains(s string) func(t *testing.T, ctx *hintTestContext, err error) {
 	return func(t *testing.T, ctx *hintTestContext, err error) {
 		if err == nil {

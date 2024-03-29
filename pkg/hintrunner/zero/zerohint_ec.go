@@ -175,3 +175,78 @@ func createNondetBigint3V1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 
 	return newNondetBigint3V1Hint(res), nil
 }
+
+func newFastEcAddAssignNewYHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "FastEcAddAssignNewY",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> value = new_y = (slope * (x0 - new_x) - y0) % SECP_P
+
+			slope, err := ctx.ScopeManager.GetVariableValue("slope")
+			if err != nil {
+				return err
+			}
+			slopeBig, ok := slope.(*big.Int)
+			if !ok {
+				return fmt.Errorf("value: %s is not a *big.Int", slope)
+			}
+
+			x0, err := ctx.ScopeManager.GetVariableValue("x0")
+			if err != nil {
+				return err
+			}
+			x0Big, ok := x0.(*big.Int)
+			if !ok {
+				return fmt.Errorf("value: %s is not a *big.Int", x0)
+			}
+
+			new_x, err := ctx.ScopeManager.GetVariableValue("new_x")
+			if err != nil {
+				return err
+			}
+			new_xBig, ok := new_x.(*big.Int)
+			if !ok {
+				return fmt.Errorf("value: %s is not a *big.Int", new_x)
+			}
+
+			y0, err := ctx.ScopeManager.GetVariableValue("y0")
+			if err != nil {
+				return err
+			}
+			y0Big, ok := y0.(*big.Int)
+			if !ok {
+				return fmt.Errorf("value: %s is not a *big.Int", y0)
+			}
+
+			secPBig, ok := utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			new_yBig := new(big.Int)
+			new_yBig.Sub(x0Big, new_xBig)
+			new_yBig.Mul(new_yBig, slopeBig)
+			new_yBig.Sub(new_yBig, y0Big)
+			new_yBig.Mod(new_yBig, secPBig)
+
+			valueBig := new(big.Int)
+			valueBig.Set(new_yBig)
+
+			err = ctx.ScopeManager.AssignVariable("new_y", new_yBig)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("value", valueBig)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+}
+
+func createFastEcAddAssignNewYHinter() (hinter.Hinter, error) {
+	return newFastEcAddAssignNewYHint(), nil
+}

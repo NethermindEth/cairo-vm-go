@@ -417,5 +417,112 @@ func TestZeroHintEc(t *testing.T) {
 				check: consecutiveVarValueEquals("res", []*fp.Element{feltString("2"), feltString("2"), feltString("0")}),
 			},
 		},
+		"FastEcAddAssignNewY": {
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+
+					slopeBig := big.NewInt(100)
+					x0Big := big.NewInt(20)
+					new_xBig := big.NewInt(10)
+					y0Big := big.NewInt(10)
+
+					err := ctx.ScopeManager.AssignVariable("slope", slopeBig)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+					err = ctx.ScopeManager.AssignVariable("x0", x0Big)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+					err = ctx.ScopeManager.AssignVariable("new_x", new_xBig)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+					err = ctx.ScopeManager.AssignVariable("y0", y0Big)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newFastEcAddAssignNewYHint()
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"new_y": big.NewInt(990),
+					"value": big.NewInt(990),
+				}),
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+
+					slopeBig := big.NewInt(0)
+					x0Big := big.NewInt(20)
+					new_xBig := big.NewInt(10)
+					y0Big := big.NewInt(10)
+
+					err := ctx.ScopeManager.AssignVariable("slope", slopeBig)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+					err = ctx.ScopeManager.AssignVariable("x0", x0Big)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+					err = ctx.ScopeManager.AssignVariable("new_x", new_xBig)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+					err = ctx.ScopeManager.AssignVariable("y0", y0Big)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newFastEcAddAssignNewYHint()
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"new_y": bigIntString("115792089237316195423570985008687907853269984665640564039457584007908834671653", 10),
+					"value": bigIntString("115792089237316195423570985008687907853269984665640564039457584007908834671653", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+
+					slopeBig := bigIntString("115792089237316195423570985008687907853269984665640564039457584007908834671683", 10)
+					x0Big := big.NewInt(200)
+					new_xBig := big.NewInt(199)
+					y0Big := big.NewInt(20)
+
+					err := ctx.ScopeManager.AssignVariable("slope", slopeBig)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+					err = ctx.ScopeManager.AssignVariable("x0", x0Big)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+					err = ctx.ScopeManager.AssignVariable("new_x", new_xBig)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+					err = ctx.ScopeManager.AssignVariable("y0", y0Big)
+					if err != nil {
+						t.Errorf("Error assigning variable value in scope")
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newFastEcAddAssignNewYHint()
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"new_y": big.NewInt(0),
+					"value": big.NewInt(0),
+				}),
+			},
+		},
 	})
 }
