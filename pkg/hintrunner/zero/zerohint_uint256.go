@@ -13,7 +13,12 @@ import (
 )
 
 func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Element, *fp.Element, error) {
-	values, err := hinter.GetConsecutiveValues(vm, ref, int16(2))
+	refAddr, err := ref.GetAddress(vm)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	values, err := hinter.GetConsecutiveValues(vm, refAddr, int16(2))
 	if err != nil {
 		return nil, nil, err
 	}

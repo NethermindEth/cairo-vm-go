@@ -511,6 +511,59 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newSplitIntHint(output, value, base, bound), nil
 }
 
+func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Pow",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.locs.bit = (ids.prev_locs.exp % PRIME) & 1
+			/*> struct LoopLocals {
+				bit: felt,
+				temp0: felt,
+
+				res: felt,
+				base: felt,
+				exp: felt,
+			} */
+			const expStructOffset = 4
+			locsBitAddress, err := locs.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			prevLocsBitAddress, err := prevLocs.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			prevLocsExpAddr, err := vm.Memory.Read(prevLocsBitAddress.SegmentIndex, prevLocsBitAddress.Offset+expStructOffset)
+			if err != nil {
+				return err
+			}
+			prevLocsExp, err := prevLocsExpAddr.FieldElement()
+			if err != nil {
+				return err
+			}
+			var prevLocsExpBig big.Int
+			prevLocsExp.BigInt(&prevLocsExpBig)
+			locsBitBig := new(big.Int).And(&prevLocsExpBig, big.NewInt(1))
+			v := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(locsBitBig))
+			return vm.Memory.WriteToAddress(&locsBitAddress, &v)
+		},
+	}
+}
+
+func createPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	locs, err := resolver.GetCellRefer("locs")
+	if err != nil {
+		return nil, err
+	}
+	prev_locs, err := resolver.GetCellRefer("prev_locs")
+	if err != nil {
+		return nil, err
+	}
+	locsRes := hinter.Deref{Deref: locs}
+	prevLocsRes := hinter.Deref{Deref: prev_locs}
+	return newPowHint(locsRes, prevLocsRes), nil
+}
+
 func newSplitFeltHint(low, high, value hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitFelt",
@@ -628,7 +681,6 @@ func newSqrtHint(root, value hinter.ResOperander) hinter.Hinter {
 }
 
 func createSqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-
 	root, err := resolver.GetResOperander("root")
 	if err != nil {
 		return nil, err
@@ -709,6 +761,5 @@ func createUnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	if err != nil {
 		return nil, err
 	}
-
 	return newUnsignedDivRemHinter(value, div, q, r), nil
 }

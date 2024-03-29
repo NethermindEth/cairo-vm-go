@@ -555,7 +555,40 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorTextContains("outside of the range [0, 2**250)"),
 			},
 		},
-
+		"Pow": {
+			{
+				operanders: []*hintOperander{
+					{Name: "prev_locs.bit", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.temp0", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.res", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.base", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.exp", Kind: apRelative, Value: feltInt64(256)},
+					{Name: "locs.bit", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newPowHint(ctx.operanders["locs.bit"], ctx.operanders["prev_locs.bit"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"locs.bit": feltInt64(0),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "prev_locs.bit", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.temp0", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.res", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.base", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.exp", Kind: apRelative, Value: feltInt64(255)},
+					{Name: "locs.bit", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newPowHint(ctx.operanders["locs.bit"], ctx.operanders["prev_locs.bit"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"locs.bit": feltInt64(1),
+				}),
+			},
+		},
 		"SplitFelt": {
 			{
 				operanders: []*hintOperander{
