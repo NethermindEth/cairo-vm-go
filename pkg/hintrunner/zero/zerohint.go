@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -13,7 +12,7 @@ import (
 // GenericZeroHinter wraps an adhoc Cairo0 inline (pythonic) hint implementation.
 type GenericZeroHinter struct {
 	Name string
-	Op   func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error
+	Op   func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error
 }
 
 func (hint *GenericZeroHinter) String() string {
@@ -52,8 +51,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	}
 
 	switch rawHint.Code {
-	case allocSegmentCode:
-		return CreateAllocSegmentHinter(resolver)
+	// Math hints
 	case isLeFeltCode:
 		return createIsLeFeltHinter(resolver)
 	case assertLtFeltCode:
@@ -66,8 +64,6 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createAssertNotEqualHinter(resolver)
 	case assert250bits:
 		return createAssert250bitsHinter(resolver)
-	case testAssignCode:
-		return createTestAssignHinter(resolver)
 	case assertLeFeltCode:
 		return createAssertLeFeltHinter(resolver)
 	case assertLeFeltExcluded0Code:
@@ -86,18 +82,43 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSplitIntAssertRangeHinter(resolver)
 	case splitIntCode:
 		return createSplitIntHinter(resolver)
+	case powCode:
+		return createPowHinter(resolver)
+	case splitFeltCode:
+		return createSplitFeltHinter(resolver)
+	case sqrtCode:
+		return createSqrtHinter(resolver)
+	case unsignedDivRemCode:
+		return createUnsignedDivRemHinter(resolver)
+		// Uint256 hints
 	case uint256AddCode:
 		return createUint256AddHinter(resolver, false)
 	case uint256AddLowCode:
 		return createUint256AddHinter(resolver, true)
 	case split64Code:
 		return createSplit64Hinter(resolver)
-	case uint256SignedNN:
+	case uint256SignedNNCode:
 		return createUint256SignedNNHinter(resolver)
+	case uint256UnsignedDivRemCode:
+		return createUint256UnsignedDivRemHinter(resolver)
+	case uint256SqrtCode:
+		return createUint256SqrtHinter(resolver)
+	case uint256MulDivModCode:
+		return createUint256MulDivModHinter(resolver)
+		// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256BigendHinter(resolver)
 	case blake2sAddUint256Code:
 		return createBlake2sAddUint256Hinter(resolver)
+		// Other hints
+	case allocSegmentCode:
+		return createAllocSegmentHinter(resolver)
+	case vmEnterScopeCode:
+		return createVMEnterScopeHinter(resolver)
+	case vmExitScopeCode:
+		return createVMExitScopeHinter(resolver)
+	case testAssignCode:
+		return createTestAssignHinter(resolver)
 	default:
 		return nil, fmt.Errorf("Not identified hint")
 	}
@@ -142,10 +163,6 @@ func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 	}
 
 	return resolver, nil
-}
-
-func CreateAllocSegmentHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	return &core.AllocSegment{Dst: hinter.ApCellRef(0)}, nil
 }
 
 func createTestAssignHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {

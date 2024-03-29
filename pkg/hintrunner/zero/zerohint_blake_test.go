@@ -218,7 +218,6 @@ func TestZeroHintBlake(t *testing.T) {
 					}),
 			},
 		},
-
 		"Blake2sAddUint256": {
 			{
 				// 2**256 - 1

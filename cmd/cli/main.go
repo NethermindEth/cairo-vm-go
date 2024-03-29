@@ -14,6 +14,7 @@ import (
 func main() {
 	var proofmode bool
 	var maxsteps uint64
+	var entrypointOffset uint64
 	var traceLocation string
 	var memoryLocation string
 
@@ -42,6 +43,12 @@ func main() {
 						Required:    false,
 						Destination: &maxsteps,
 					},
+					&cli.Uint64Flag{
+						Name:        "entrypoint",
+						Usage:       "a PC offset that will be used as an entry point (by default it executes a main function)",
+						Value:       0,
+						Destination: &entrypointOffset,
+					},
 					&cli.StringFlag{
 						Name:        "tracefile",
 						Usage:       "location to store the relocated trace",
@@ -56,6 +63,9 @@ func main() {
 					},
 				},
 				Action: func(ctx *cli.Context) error {
+					// TODO: move this action's body to a separate function to decrease the
+					// code nesting significantly.
+
 					pathToFile := ctx.Args().Get(0)
 					if pathToFile == "" {
 						return fmt.Errorf("path to cairo file not set")
@@ -86,8 +96,18 @@ func main() {
 						return fmt.Errorf("cannot create runner: %w", err)
 					}
 
-					if err := runner.Run(); err != nil {
-						return fmt.Errorf("runtime error: %w", err)
+					// Run executes main(), RunEntryPoint is used to test contract_class-style entry points.
+					// In theory, calling RunEntryPoint with main's offset should behave identically,
+					// but these functions are implemented differently in both this and cairo-rs VMs
+					// and the difference is quite subtle.
+					if entrypointOffset == 0 {
+						if err := runner.Run(); err != nil {
+							return fmt.Errorf("runtime error: %w", err)
+						}
+					} else {
+						if err := runner.RunEntryPoint(entrypointOffset); err != nil {
+							return fmt.Errorf("runtime error (entrypoint=%d): %w", entrypointOffset, err)
+						}
 					}
 
 					if proofmode {
@@ -112,7 +132,8 @@ func main() {
 					if len(output) > 0 {
 						fmt.Println("Program output:")
 						for _, val := range output {
-							fmt.Printf("\t%s\n", val)
+							// cairo-run v0.11-0.13 pad the output lines with two spaces.
+							fmt.Printf("  %s\n", val)
 						}
 					}
 					return nil
