@@ -270,85 +270,64 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			if err != nil {
 				return err
 			}
-			slopeD0, err := slopeValues[0].FieldElement()
-			if err != nil {
-				return err
-			}
-			slopeD1, err := slopeValues[1].FieldElement()
-			if err != nil {
-				return err
-			}
-			slopeD2, err := slopeValues[2].FieldElement()
-			if err != nil {
-				return err
-			}
-
 			point0Values, err := hinter.GetConsecutiveValues(vm, point0, int16(6))
 			if err != nil {
 				return err
 			}
-			point0XD0, err := point0Values[0].FieldElement()
-			if err != nil {
-				return err
-			}
-			point0XD1, err := point0Values[1].FieldElement()
-			if err != nil {
-				return err
-			}
-			point0XD2, err := point0Values[2].FieldElement()
-			if err != nil {
-				return err
-			}
-			point0YD0, err := point0Values[3].FieldElement()
-			if err != nil {
-				return err
-			}
-			point0YD1, err := point0Values[4].FieldElement()
-			if err != nil {
-				return err
-			}
-			point0YD2, err := point0Values[5].FieldElement()
+			point1Values, err := hinter.GetConsecutiveValues(vm, point1, int16(3))
 			if err != nil {
 				return err
 			}
 
-			point1Values, err := hinter.GetConsecutiveValues(vm, point1, int16(6))
-			if err != nil {
-				return err
-			}
-			point1XD0, err := point1Values[0].FieldElement()
-			if err != nil {
-				return err
-			}
-			point1XD1, err := point1Values[1].FieldElement()
-			if err != nil {
-				return err
-			}
-			point1XD2, err := point1Values[2].FieldElement()
-			if err != nil {
-				return err
+			var slopeValuesBig [3]*big.Int
+			var point0ValuesBig [6]*big.Int
+			var point1ValuesBig [3]*big.Int
+
+			for i := 0; i < 6; i++ {
+				if i < 3 {
+					slopeValue, err := slopeValues[i].FieldElement()
+					if err != nil {
+						return err
+					}
+					slopeValueBig := slopeValue.BigInt(new(big.Int))
+					slopeValuesBig[i] = slopeValueBig
+
+					point1Value, err := point1Values[i].FieldElement()
+					if err != nil {
+						return err
+					}
+					point1ValueBig := point1Value.BigInt(new(big.Int))
+					point1ValuesBig[i] = point1ValueBig
+				}
+
+				point0Value, err := point0Values[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				point0ValueBig := point0Value.BigInt(new(big.Int))
+				point0ValuesBig[i] = point0ValueBig
 			}
 
 			//> slope = pack(ids.slope, PRIME)
-			slopeBig, err := hintrunnerUtils.SecPPacked(slopeD0.BigInt(new(big.Int)), slopeD1.BigInt(new(big.Int)), slopeD2.BigInt(new(big.Int)), primeBig)
+			slopeBig, err := hintrunnerUtils.SecPPacked(slopeValuesBig[0], slopeValuesBig[1], slopeValuesBig[2], primeBig)
 			if err != nil {
 				return err
 			}
 
 			//> x0 = pack(ids.point0.x, PRIME)
-			x0Big, err := hintrunnerUtils.SecPPacked(point0XD0.BigInt(new(big.Int)), point0XD1.BigInt(new(big.Int)), point0XD2.BigInt(new(big.Int)), primeBig)
+			x0Big, err := hintrunnerUtils.SecPPacked(point0ValuesBig[0], point0ValuesBig[1], point0ValuesBig[2], primeBig)
 			if err != nil {
 				return err
 			}
 
 			//> x1 = pack(ids.point1.x, PRIME)
-			x1Big, err := hintrunnerUtils.SecPPacked(point1XD0.BigInt(new(big.Int)), point1XD1.BigInt(new(big.Int)), point1XD2.BigInt(new(big.Int)), primeBig)
+			x1Big, err := hintrunnerUtils.SecPPacked(point1ValuesBig[0], point1ValuesBig[1], point1ValuesBig[2], primeBig)
 			if err != nil {
 				return err
 			}
 
 			//> y0 = pack(ids.point0.y, PRIME)
-			y0Big, err := hintrunnerUtils.SecPPacked(point0YD0.BigInt(new(big.Int)), point0YD1.BigInt(new(big.Int)), point0YD2.BigInt(new(big.Int)), primeBig)
+			y0Big, err := hintrunnerUtils.SecPPacked(point0ValuesBig[3], point0ValuesBig[4], point0ValuesBig[5], primeBig)
 			if err != nil {
 				return err
 			}
