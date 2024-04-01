@@ -1,6 +1,7 @@
 package zero
 
 import (
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"math/big"
 	"testing"
@@ -622,6 +623,69 @@ func TestZeroHintEc(t *testing.T) {
 					"y0":    bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
 					"value": bigIntString("30230181511926491618309110200401529297651013854327841200453332701540948849717", 10),
 					"new_x": bigIntString("30230181511926491618309110200401529297651013854327841200453332701540948849717", 10),
+				}),
+			},
+		},
+		"EcDoubleSlopeV1": {
+			{
+				operanders: []*hintOperander{
+					{Name: "point.x.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point.x.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point.x.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point.y.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point.y.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point.y.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"x":     bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
+					"y":     bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
+					"value": bigIntString("57896044618658054023148353931790401374139058278927353312939393362691054630958", 10),
+					"slope": bigIntString("57896044618658054023148353931790401374139058278927353312939393362691054630958", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "point.x.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.x.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.x.d2", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.y.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.y.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.y.d2", Kind: apRelative, Value: &utils.FeltZero},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
+				},
+				errCheck: errorTextContains("point[1] % p == 0"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "point.x.d0", Kind: apRelative, Value: feltString("51215")},
+					{Name: "point.x.d1", Kind: apRelative, Value: feltString("368485485484584")},
+					{Name: "point.x.d2", Kind: apRelative, Value: feltString("4564564687987")},
+					{Name: "point.y.d0", Kind: apRelative, Value: feltString("26362")},
+					{Name: "point.y.d1", Kind: apRelative, Value: feltString("263724839599")},
+					{Name: "point.y.d2", Kind: apRelative, Value: feltString("1321654896123789784652346")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"x":     bigIntString("27324902462242089002202715756360945650502697953428275540292323343", 10),
+					"y":     bigIntString("7911836854973739773537612350570845963794165335703809150610926758199350552314", 10),
+					"value": bigIntString("8532480558268366897328020348259450788170980412191993744326748439943456131995", 10),
+					"slope": bigIntString("8532480558268366897328020348259450788170980412191993744326748439943456131995", 10),
 				}),
 			},
 		},

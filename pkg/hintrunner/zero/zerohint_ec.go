@@ -377,3 +377,93 @@ func createFastEcAddAssignNewXHinter(resolver hintReferenceResolver) (hinter.Hin
 
 	return newFastEcAddAssignNewXHint(slope, point0, point1), nil
 }
+
+func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcDoubleSlopeV1",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> from starkware.python.math_utils import ec_double_slope
+			//
+			//> # Compute the slope.
+			//> x = pack(ids.point.x, PRIME)
+			//> y = pack(ids.point.y, PRIME)
+			//> value = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)
+
+			primeBig := fp.Modulus()
+
+			pointValues, err := hinter.GetConsecutiveValues(vm, point, int16(6))
+			if err != nil {
+				return err
+			}
+
+			// [x.d0, x.d1, x.d2, y.d0, y.d1, y.d2]
+			var pointValuesBig [6]*big.Int
+			for i := 0; i < 6; i++ {
+				pointValue, err := pointValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				pointValueBig := pointValue.BigInt(new(big.Int))
+				pointValuesBig[i] = pointValueBig
+			}
+
+			//> x = pack(ids.point.x, PRIME)
+			xBig, err := hintrunnerUtils.SecPPacked(pointValuesBig[0], pointValuesBig[1], pointValuesBig[2], primeBig)
+			if err != nil {
+				return err
+			}
+
+			//> y = pack(ids.point.y, PRIME)
+			yBig, err := hintrunnerUtils.SecPPacked(pointValuesBig[3], pointValuesBig[4], pointValuesBig[5], primeBig)
+			if err != nil {
+				return err
+			}
+
+			secPBig, ok := utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			//> value = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)
+			valueBig, err := hintrunnerUtils.EcDoubleSlope(xBig, yBig, big.NewInt(0), secPBig)
+			if err != nil {
+				return err
+			}
+
+			slopeBig := new(big.Int)
+			slopeBig.Set(valueBig)
+
+			err = ctx.ScopeManager.AssignVariable("x", xBig)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("y", yBig)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("value", valueBig)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("slope", slopeBig)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+}
+
+func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	point, err := resolver.GetResOperander("point")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcDoubleSlopeV1Hint(point), nil
+}
