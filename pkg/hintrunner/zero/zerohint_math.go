@@ -736,28 +736,25 @@ func newIsQuadResidueHint(x, y hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			if x.IsZero() || x.IsOne() {
-				value := memory.MemoryValueFromFieldElement(x)
+			var value = memory.MemoryValue{}
 
-				return vm.Memory.WriteToAddress(&yAddr, &value)
+			if x.IsZero() || x.IsOne() {
+				value = memory.MemoryValueFromFieldElement(x)
+
 			} else if x.Legendre() == 1 {
 				// calculates the square root
-				sqrt := new(fp.Element).Sqrt(x)
+				sqrt := x.Sqrt(x)
+
 				if !utils.FeltIsPositive(sqrt) {
 					sqrt.Neg(sqrt)
 				}
-				value := memory.MemoryValueFromFieldElement(sqrt)
-				return vm.Memory.WriteToAddress(&yAddr, &value)
-
+				value = memory.MemoryValueFromFieldElement(sqrt)
 			} else {
-				result := new(fp.Element).Sqrt(new(fp.Element).Div(x, new(fp.Element).SetInt64(3)))
+				result := new(fp.Element).Sqrt(new(fp.Element).Div(x, new(fp.Element).SetUint64(3)))
 
-				value := memory.MemoryValueFromFieldElement(result)
-				if err := vm.Memory.WriteToAddress(&yAddr, &value); err != nil {
-					return err
-				}
+				value = memory.MemoryValueFromFieldElement(result)
 			}
-			return nil
+			return vm.Memory.WriteToAddress(&yAddr, &value)
 		},
 	}
 }
