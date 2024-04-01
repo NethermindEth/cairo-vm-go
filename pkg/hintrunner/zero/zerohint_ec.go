@@ -25,11 +25,6 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
-			baseBig, ok := utils.GetEcBaseBig()
-			if !ok {
-				return fmt.Errorf("GetEcBaseBig failed")
-			}
-
 			pointValues, err := hinter.GetConsecutiveValues(vm, point, int16(6))
 			if err != nil {
 				return err
@@ -48,32 +43,12 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			//> def pack(z, prime):
-			//>     """
-			//>     Takes an UnreducedBigInt3 struct which represents a triple of limbs (d0, d1, d2) of field
-			//>     elements and reconstructs the corresponding 256-bit integer (see split()).
-			//>     Note that the limbs do not have to be in the range [0, BASE).
-			//>     prime should be the Cairo field, and it is used to handle negative values of the limbs.
-			//>     """
-			//>     limbs = z.d0, z.d1, z.d2
-			//>     return sum(as_int(limb, prime) * (BASE**i) for i, limb in enumerate(limbs))
-
-			valueBig := big.NewInt(0)
-			primeBig := fp.Modulus()
-
-			for idx, yD := range []*fp.Element{yD0, yD1, yD2} {
-				var yDBig big.Int
-				yD.BigInt(&yDBig)
-
-				//> as_int(limb, prime)
-				if yDBig.Cmp(new(big.Int).Div(primeBig, big.NewInt(2))) != -1 {
-					yDBig.Sub(&yDBig, primeBig)
-				}
-
-				valueToAddBig := new(big.Int).Exp(baseBig, big.NewInt(int64(idx)), nil)
-				valueToAddBig.Mul(valueToAddBig, &yDBig)
-				valueBig.Add(valueBig, valueToAddBig)
+			//> y = pack(ids.point.y, PRIME) % SECP_P
+			valueBig, err := hintrunnerUtils.SecPPacked(yD0.BigInt(new(big.Int)), yD1.BigInt(new(big.Int)), yD2.BigInt(new(big.Int)), fp.Modulus())
+			if err != nil {
+				return err
 			}
+			valueBig.Mod(valueBig, secPBig)
 
 			//> value = (-y) % SECP_P
 			valueBig.Neg(valueBig)
