@@ -736,30 +736,24 @@ func newIsQuadResidueHint(x, y hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			if x.Legendre() == 1 { // If x.Legendre() returns 1 i.e x is a quadratic residue (z ≡ x² (mod q))
+			if x.IsZero() || x.IsOne() {
+				value := memory.MemoryValueFromFieldElement(x)
+
+				return vm.Memory.WriteToAddress(&yAddr, &value)
+			} else if x.Legendre() == 1 {
 				// calculates the square root
-				xU256 := uint256.Int(x.Bits())
-				xU256.Sqrt(&xU256)
-
-				value := fp.Element{}
-				value.SetBytes(xU256.Bytes())
-
-				v := memory.MemoryValueFromFieldElement(&value)
-				if err := vm.Memory.WriteToAddress(&yAddr, &v); err != nil {
-					return err
+				sqrt := new(fp.Element).Sqrt(x)
+				if !utils.FeltIsPositive(sqrt) {
+					sqrt.Neg(sqrt)
 				}
+				value := memory.MemoryValueFromFieldElement(sqrt)
+				return vm.Memory.WriteToAddress(&yAddr, &value)
+
 			} else {
-				//calculates the square root of the result of dividing x by 3 or 3 * y_squared = x;
-				xU256 := uint256.Int(x.Bits())
-				divResult := xU256.Div(&xU256, uint256.NewInt(3))
+				result := new(fp.Element).Sqrt(new(fp.Element).Div(x, new(fp.Element).SetInt64(3)))
 
-				divResult.Sqrt(divResult)
-
-				value := fp.Element{}
-				value.SetBytes(divResult.Bytes())
-
-				v := memory.MemoryValueFromFieldElement(&value)
-				if err := vm.Memory.WriteToAddress(&yAddr, &v); err != nil {
+				value := memory.MemoryValueFromFieldElement(result)
+				if err := vm.Memory.WriteToAddress(&yAddr, &value); err != nil {
 					return err
 				}
 			}

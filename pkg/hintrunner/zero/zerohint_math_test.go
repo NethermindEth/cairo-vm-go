@@ -755,49 +755,45 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: varValueEquals("y", feltInt64(1)),
 			},
-			// Test case: x is a quadratic residue
 			{
 				operanders: []*hintOperander{
 					{Name: "y", Kind: uninitialized},
-					{Name: "x", Kind: fpRelative, Value: feltInt64(25)},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(9)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
 				},
-				check: varValueEquals("y", feltInt64(5)), // Square root of 25 is 5
+				check: varValueEquals("y", feltInt64(3)),
 			},
-			// Test case: x is a quadratic residue
 			{
 				operanders: []*hintOperander{
 					{Name: "y", Kind: uninitialized},
-					{Name: "x", Kind: fpRelative, Value: feltInt64(11)},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(6)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
 				},
-				check: varValueEquals("y", feltInt64(3)), // Square root of 11 ≈ 3.32 ≈ 3
+				check: varValueEquals("y", feltString("1120755473020101814179135767224264702961552391386192943129361948990833801454")),
 			},
-			//Test case: x is not a quadratic residue
 			{
 				operanders: []*hintOperander{
 					{Name: "y", Kind: uninitialized},
-					{Name: "x", Kind: fpRelative, Value: feltInt64(15)},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(2734590101144995)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
 				},
-				check: varValueEquals("y", feltInt64(2)), // Square root of (15 / 3) ≈ 2.23 ≈ 2
+				check: varValueEquals("y", feltString("1484343478756640997457155271309092907848857951878936388435701743478603286656")),
 			},
-			//Test case: x is not a quadratic residue
 			{
 				operanders: []*hintOperander{
 					{Name: "y", Kind: uninitialized},
-					{Name: "x", Kind: fpRelative, Value: feltInt64(29)},
+					{Name: "x", Kind: fpRelative, Value: feltString("18331747097263127882665172948476")},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
 				},
-				check: varValueEquals("y", feltInt64(3)), // Square root of (29 / 3) ≈ 3.11 ≈ 3
+				check: varValueEquals("y", feltString("901231694271309521437597169210309490360749905397826453224212742014114043398")), // Square root of (29 / 3) ≈ 3.11 ≈ 3
 			},
 		},
 	})
