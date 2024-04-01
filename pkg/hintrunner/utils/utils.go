@@ -37,10 +37,9 @@ func DefaultRandGenerator() *rand.Rand {
 // EC Utils
 //
 
-// def as_int(val, prime):
-//
-//	assert_integer(val)
-//	return val if val < prime // 2 else val - prime
+// > def as_int(val, prime):
+// >	assert_integer(val)
+// >	return val if val < prime // 2 else val - prime
 func AsInt(value *big.Int, prime *big.Int) *big.Int {
 	asIntBig := new(big.Int)
 	primeBy2 := new(big.Int).Div(prime, big.NewInt(2))
@@ -52,10 +51,9 @@ func AsInt(value *big.Int, prime *big.Int) *big.Int {
 	return asIntBig
 }
 
-// def pack(z, prime):
-//
-//	limbs = z.d0, z.d1, z.d2
-//	return sum(as_int(limb, prime) * (BASE**i) for i, limb in enumerate(limbs))
+// > def pack(z, prime):
+// >	limbs = z.d0, z.d1, z.d2
+// >	return sum(as_int(limb, prime) * (BASE**i) for i, limb in enumerate(limbs))
 func SecPPacked(d0, d1, d2, prime *big.Int) (*big.Int, error) {
 	baseBig, ok := utils.GetEcBaseBig()
 	if !ok {
