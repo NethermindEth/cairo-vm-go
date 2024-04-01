@@ -558,6 +558,72 @@ func TestZeroHintEc(t *testing.T) {
 					"new_x": bigIntString("53863685200989733811273896838983614723181733288322685009664997422229669431265", 10),
 				}),
 			},
+			{
+				operanders: []*hintOperander{
+					{Name: "slope.d0", Kind: apRelative, Value: feltString("0")},
+					{Name: "slope.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "slope.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "point0.x.d0", Kind: apRelative, Value: feltString("0")},
+					{Name: "point0.x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "point0.x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "point0.y.d0", Kind: apRelative, Value: feltString("0")},
+					{Name: "point0.y.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "point0.y.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "point1.x.d0", Kind: apRelative, Value: feltString("0")},
+					{Name: "point1.x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "point1.x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "point1.y.d0", Kind: apRelative, Value: feltString("0")},
+					{Name: "point1.y.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "point1.y.d2", Kind: apRelative, Value: feltString("0")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"slope": bigIntString("0", 10),
+					"x0":    bigIntString("0", 10),
+					"x1":    bigIntString("0", 10),
+					"y0":    bigIntString("0", 10),
+					"value": bigIntString("0", 10),
+					"new_x": bigIntString("0", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "slope.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "slope.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "slope.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point0.x.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point0.x.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point0.x.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point0.y.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point0.y.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point0.y.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point1.x.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point1.x.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point1.x.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point1.y.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point1.y.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point1.y.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"slope": bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
+					"x0":    bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
+					"x1":    bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
+					"y0":    bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
+					"value": bigIntString("30230181511926491618309110200401529297651013854327841200453332701540948849717", 10),
+					"new_x": bigIntString("30230181511926491618309110200401529297651013854327841200453332701540948849717", 10),
+				}),
+			},
 		},
 	})
 }

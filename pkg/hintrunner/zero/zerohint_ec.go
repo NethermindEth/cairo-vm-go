@@ -279,8 +279,11 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 				return err
 			}
 
+			// [d0, d1, d2]
 			var slopeValuesBig [3]*big.Int
+			// [x.d0, x.d1, x.d2, y.d0, y.d1, y.d2]
 			var point0ValuesBig [6]*big.Int
+			// [x.d0, x.d1, x.d2]
 			var point1ValuesBig [3]*big.Int
 
 			for i := 0; i < 6; i++ {
