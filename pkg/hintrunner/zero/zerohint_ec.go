@@ -3,7 +3,7 @@ package zero
 import (
 	"fmt"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
+	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -19,14 +19,9 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			//> # The modulo operation in python always returns a nonnegative number.
 			//> value = (-y) % SECP_P
 
-			secPBig, ok := utils.GetSecPBig()
+			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
-			}
-
-			baseBig, ok := utils.GetEcBaseBig()
-			if !ok {
-				return fmt.Errorf("GetEcBaseBig failed")
 			}
 
 			pointValues, err := hinter.GetConsecutiveValues(vm, point, int16(6))
@@ -34,51 +29,31 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			yD0, err := pointValues[3].FieldElement()
-			if err != nil {
-				return err
-			}
-			yD1, err := pointValues[4].FieldElement()
-			if err != nil {
-				return err
-			}
-			yD2, err := pointValues[5].FieldElement()
-			if err != nil {
-				return err
+			// [y.d0, y.d1, y.d2]
+			var pointValuesBig [3]*big.Int
+			for i := 0; i < 3; i++ {
+				pointValue, err := pointValues[i+3].FieldElement()
+				if err != nil {
+					return err
+				}
+				pointValueBig := pointValue.BigInt(new(big.Int))
+				pointValuesBig[i] = pointValueBig
 			}
 
-			//> def pack(z, prime):
-			//>     """
-			//>     Takes an UnreducedBigInt3 struct which represents a triple of limbs (d0, d1, d2) of field
-			//>     elements and reconstructs the corresponding 256-bit integer (see split()).
-			//>     Note that the limbs do not have to be in the range [0, BASE).
-			//>     prime should be the Cairo field, and it is used to handle negative values of the limbs.
-			//>     """
-			//>     limbs = z.d0, z.d1, z.d2
-			//>     return sum(as_int(limb, prime) * (BASE**i) for i, limb in enumerate(limbs))
-
-			valueBig := big.NewInt(0)
 			primeBig := fp.Modulus()
 
-			for idx, yD := range []*fp.Element{yD0, yD1, yD2} {
-				var yDBig big.Int
-				yD.BigInt(&yDBig)
-
-				//> as_int(limb, prime)
-				if yDBig.Cmp(new(big.Int).Div(primeBig, big.NewInt(2))) != -1 {
-					yDBig.Sub(&yDBig, primeBig)
-				}
-
-				valueToAddBig := new(big.Int).Exp(baseBig, big.NewInt(int64(idx)), nil)
-				valueToAddBig.Mul(valueToAddBig, &yDBig)
-				valueBig.Add(valueBig, valueToAddBig)
+			//> y = pack(ids.point.y, PRIME) % SECP_P
+			yBig, err := secp_utils.SecPPacked(pointValuesBig[0], pointValuesBig[1], pointValuesBig[2], primeBig)
+			if err != nil {
+				return err
 			}
+			yBig.Mod(yBig, secPBig)
 
 			//> value = (-y) % SECP_P
-			valueBig.Neg(valueBig)
-			valueBig.Mod(valueBig, secPBig)
+			yBig.Neg(yBig)
+			yBig.Mod(yBig, secPBig)
 
-			err = ctx.ScopeManager.AssignVariable("value", valueBig)
+			err = ctx.ScopeManager.AssignVariable("value", yBig)
 			if err != nil {
 				return err
 			}
@@ -118,48 +93,26 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("value: %s is not a *big.Int", value)
 			}
 
-			baseBig, ok := utils.GetEcBaseBig()
-			if !ok {
-				return fmt.Errorf("GetEcBaseBig failed")
+			//> split(value)
+			values, err := secp_utils.SecPSplit(valueBig)
+			if err != nil {
+				return err
 			}
 
-			//> def split(num: int) -> List[int]:
-			//>     """
-			//?     Takes a 256-bit integer and returns its canonical representation as:
-			//>         d0 + BASE * d1 + BASE**2 * d2,
-			//>     where BASE = 2**86.
-			//>     """
-			//?     a = []
-			//>     for _ in range(3):
-			//>         num, residue = divmod(num, BASE)
-			//>         a.append(residue)
-			//>     assert num == 0
-			//>     return a
-			//>
-			//> segments.write_arg(ids.res.address_, split(value))
-
-			var residue big.Int
+			//> segments.write_arg(ids.res.address_, values)
 			for i := 0; i < 3; i++ {
-				//> num, residue = divmod(num, BASE)
-				valueBig.DivMod(valueBig, baseBig, &residue)
-
-				residueAddr, err := address.AddOffset(int16(i))
+				valueAddr, err := address.AddOffset(int16(i))
 				if err != nil {
 					return err
 				}
 
-				residueFelt := new(fp.Element).SetBigInt(&residue)
-				residueMv := mem.MemoryValueFromFieldElement(residueFelt)
+				valueFelt := new(fp.Element).SetBigInt(values[i])
+				valueMv := mem.MemoryValueFromFieldElement(valueFelt)
 
-				err = vm.Memory.WriteToAddress(&residueAddr, &residueMv)
+				err = vm.Memory.WriteToAddress(&valueAddr, &valueMv)
 				if err != nil {
 					return err
 				}
-			}
-
-			//> assert num == 0
-			if valueBig.BitLen() != 0 {
-				return fmt.Errorf("value != 0")
 			}
 
 			return nil
