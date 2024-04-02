@@ -171,7 +171,7 @@ func newFastEcAddAssignNewYHint() hinter.Hinter {
 				return fmt.Errorf("value: %s is not a *big.Int", y0)
 			}
 
-			secPBig, ok := utils.GetSecPBig()
+			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
 			}
