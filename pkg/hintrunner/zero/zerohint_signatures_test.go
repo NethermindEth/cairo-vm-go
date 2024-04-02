@@ -21,7 +21,7 @@ func TestSignatures(t *testing.T) {
 					ecdsaPtr := ctx.operanders["ecdsaPtr"].(*hinter.DoubleDeref).Deref
 					return newVerifyECDSASignatureHinter(ecdsaPtr, ctx.operanders["signature_r"], ctx.operanders["signature_s"])
 				},
-        errCheck: func(t *testing.T, ctx *hintTestContext, err error) {
+				errCheck: func(t *testing.T, ctx *hintTestContext, err error) {
 					require.NoError(t, err)
 				},
 			},
