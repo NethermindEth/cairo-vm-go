@@ -9,12 +9,22 @@ import (
 	"math/big"
 )
 
-func newBlake2sAddUint256BigendHint(low, high, data hinter.ResOperander) hinter.Hinter {
+func newBlake2sAddUint256Hint(low, high, data hinter.ResOperander, bigend bool) hinter.Hinter {
+	name := "Blake2sAddUint256"
+	if bigend {
+		name += "Bigend"
+	}
 	return &GenericZeroHinter{
-		Name: "Blake2sAddUint256Bigend",
+		Name: name,
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> B = 32
 			//> MASK = 2 ** 32 - 1
+			//
+			//> non-bigend version
+			//> segments.write_arg(ids.data, [(ids.low >> (B * i)) & MASK for i in range(4)])
+			//> segments.write_arg(ids.data + 4, [(ids.high >> (B * i)) & MASK for i in range(4)])
+			//
+			//> bigend version
 			//> segments.write_arg(ids.data, [(ids.high >> (B * (3 - i))) & MASK for i in range(4)])
 			//> segments.write_arg(ids.data + 4, [(ids.low >> (B * (3 - i))) & MASK for i in range(4)])
 
@@ -39,14 +49,25 @@ func newBlake2sAddUint256BigendHint(low, high, data hinter.ResOperander) hinter.
 			const b uint64 = 32
 			mask := new(big.Int).SetUint64(math.MaxUint32)
 
+			var shift uint
+			var highOffset uint64
+			var lowOffset uint64
 			for i := uint64(0); i < 4; i++ {
-				shift := uint(b * (3 - i))
+				if bigend {
+					shift = uint(b * (3 - i))
+					highOffset = dataPtr.Offset + i
+					lowOffset = dataPtr.Offset + i + 4
+				} else {
+					shift = uint(b * i)
+					highOffset = dataPtr.Offset + i + 4
+					lowOffset = dataPtr.Offset + i
+				}
 
 				highResultBig := new(big.Int).Set(&highBig)
 				highResultBig.Rsh(highResultBig, shift).And(highResultBig, mask)
 				highResultFelt := new(fp.Element).SetBigInt(highResultBig)
 				mvHigh := mem.MemoryValueFromFieldElement(highResultFelt)
-				err = vm.Memory.Write(dataPtr.SegmentIndex, dataPtr.Offset+i, &mvHigh)
+				err = vm.Memory.Write(dataPtr.SegmentIndex, highOffset, &mvHigh)
 				if err != nil {
 					return err
 				}
@@ -55,7 +76,7 @@ func newBlake2sAddUint256BigendHint(low, high, data hinter.ResOperander) hinter.
 				lowResultBig.Rsh(lowResultBig, shift).And(lowResultBig, mask)
 				lowResultFelt := new(fp.Element).SetBigInt(lowResultBig)
 				mvLow := mem.MemoryValueFromFieldElement(lowResultFelt)
-				err = vm.Memory.Write(dataPtr.SegmentIndex, dataPtr.Offset+i+4, &mvLow)
+				err = vm.Memory.Write(dataPtr.SegmentIndex, lowOffset, &mvLow)
 				if err != nil {
 					return err
 				}
@@ -66,7 +87,7 @@ func newBlake2sAddUint256BigendHint(low, high, data hinter.ResOperander) hinter.
 	}
 }
 
-func createBlake2sAddUint256BigendHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+func createBlake2sAddUint256Hinter(resolver hintReferenceResolver, bigend bool) (hinter.Hinter, error) {
 	low, err := resolver.GetResOperander("low")
 	if err != nil {
 		return nil, err
@@ -80,5 +101,5 @@ func createBlake2sAddUint256BigendHinter(resolver hintReferenceResolver) (hinter
 		return nil, err
 	}
 
-	return newBlake2sAddUint256BigendHint(low, high, data), nil
+	return newBlake2sAddUint256Hint(low, high, data, bigend), nil
 }
