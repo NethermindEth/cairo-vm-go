@@ -61,12 +61,11 @@ func newImportSecp256R1PHinter() hinter.Hinter {
 			if !ok {
 				return fmt.Errorf("SECP256R1_P not found")
 			}
-			ctx.ScopeManager.AssignVariable("SECP_P", SECP256R1_PBig)
-			return nil
+			return ctx.ScopeManager.AssignVariable("SECP_P", SECP256R1_PBig)
 		},
 	}
 }
 
-func createImportSecp256R1PHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+func createImportSecp256R1PHinter() (hinter.Hinter, error) {
 	return newImportSecp256R1PHinter(), nil
 }
