@@ -57,6 +57,7 @@ const (
 
 	// ------ Signature hints related code ------
 	verifyECDSASignatureCode string = "ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))"
+	importSecp256R1PCode     string = "from starkware.cairo.common.cairo_secp.secp256r1_utils import SECP256R1_P as SECP_P"
 	// ------ Blake Hash hints related code ------
 
 	// ------ Keccak hints related code ------
