@@ -14,7 +14,6 @@ func newVerifyECDSASignatureHinter(ecdsaPtr, signature_r, signature_s hinter.Res
 		Name: "VerifyECDSASignature",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))
-			fmt.Println(ecdsaPtr)
 			ecdsaPtrAddr, err := hinter.ResolveAsAddress(vm, ecdsaPtr)
 			if err != nil {
 				return err
