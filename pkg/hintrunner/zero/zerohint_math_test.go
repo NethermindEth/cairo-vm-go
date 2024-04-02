@@ -785,16 +785,16 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: varValueEquals("y", feltString("1484343478756640997457155271309092907848857951878936388435701743478603286656")),
 			},
-			// {
-			// 	operanders: []*hintOperander{
-			// 		{Name: "y", Kind: uninitialized},
-			// 		{Name: "x", Kind: fpRelative, Value: feltString("762")},
-			// 	},
-			// 	makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-			// 		return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
-			// 	},
-			// 	check: varValueEquals("y", feltString("499871720201872584144410697831663293648567630419347093950560715446969187189")),
-			// },
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltString("762")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltString("3118631068464258629552912085263406811974539584912249606022531340688902833292")),
+			},
 		},
 	})
 }
