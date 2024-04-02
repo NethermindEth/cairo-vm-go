@@ -15,11 +15,12 @@ func GetSecPBig() (*big.Int, bool) {
 	return new(big.Int).SetString("115792089237316195423570985008687907853269984665640564039457584007908834671663", 10)
 }
 
-// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L28
 func SecPPacked(d0, d1, d2, prime *big.Int) (*big.Int, error) {
+	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L28
+
 	baseBig, ok := getBaseBig()
 	if !ok {
-		return nil, fmt.Errorf("GetEcBaseBig failed")
+		return nil, fmt.Errorf("getBaseBig failed")
 	}
 
 	packedBig := new(big.Int)
