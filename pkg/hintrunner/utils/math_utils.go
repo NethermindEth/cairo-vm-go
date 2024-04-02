@@ -8,7 +8,7 @@ import (
 func EcDoubleSlope(pointX, pointY, alpha, p *big.Int) (*big.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/python/math_utils.py#L151
 
-	if new(big.Int).Mod(pointY, p).Sign() == 0 {
+	if new(big.Int).Mod(pointY, p).Cmp(big.NewInt(0)) == 0 {
 		return nil, errors.New("point[1] % p == 0")
 	}
 
@@ -52,7 +52,7 @@ func div_mod(n, m, p *big.Int) (*big.Int, error) {
 func igcdex(a, b *big.Int) (*big.Int, *big.Int, *big.Int) {
 	// https://github.com/sympy/sympy/blob/d91b8ad6d36a59a879cc70e5f4b379da5fdd46ce/sympy/core/intfunc.py#L362
 
-	if a.Sign() == 0 && b.Sign() == 0 {
+	if a.Cmp(big.NewInt(0)) == 0 && b.Cmp(big.NewInt(0)) == 0 {
 		return big.NewInt(0), big.NewInt(1), big.NewInt(0)
 	}
 	g, x, y := gcdext(a, b)
@@ -62,15 +62,15 @@ func igcdex(a, b *big.Int) (*big.Int, *big.Int, *big.Int) {
 func gcdext(a, b *big.Int) (*big.Int, *big.Int, *big.Int) {
 	// https://github.com/sympy/sympy/blob/d91b8ad6d36a59a879cc70e5f4b379da5fdd46ce/sympy/external/ntheory.py#L125
 
-	if a.Sign() == 0 || b.Sign() == 0 {
+	if a.Cmp(big.NewInt(0)) == 0 || b.Cmp(big.NewInt(0)) == 0 {
 		g := new(big.Int)
-		if a.Sign() == 0 {
+		if a.Cmp(big.NewInt(0)) == 0 {
 			g.Abs(b)
 		} else {
 			g.Abs(a)
 		}
 
-		if g.Sign() == 0 {
+		if g.Cmp(big.NewInt(0)) == 0 {
 			return big.NewInt(0), big.NewInt(0), big.NewInt(0)
 		}
 		return g, new(big.Int).Div(a, g), new(big.Int).Div(b, g)
