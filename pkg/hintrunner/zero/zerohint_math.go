@@ -8,6 +8,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	math_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -643,6 +644,105 @@ func createSplitFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 	return newSplitFeltHint(low, high, value), nil
 }
 
+func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SignedDivRem",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.math_utils import as_int, assert_integer
+			//> assert_integer(ids.div)
+			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, f'div={hex(ids.div)} is out of the valid range.'
+			//> assert_integer(ids.bound)
+			//> assert ids.bound <= range_check_builtin.bound // 2, f'bound={hex(ids.bound)} is out of the valid range.'
+			//> int_value = as_int(ids.value, PRIME)
+			//> q, ids.r = divmod(int_value, ids.div)
+			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
+			//> ids.biased_q = q + ids.bound
+
+			//> assert_integer(ids.div)
+			divFelt, err := hinter.ResolveAsFelt(vm, div)
+			if err != nil {
+				return err
+			}
+			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, f'div={hex(ids.div)} is out of the valid range.'
+			if divFelt.IsZero() || !utils.FeltLe(divFelt, &utils.PrimeHigh) {
+				return fmt.Errorf("div=%v is out of the valid range.", divFelt)
+			}
+
+			//> assert_integer(ids.bound)
+			boundFelt, err := hinter.ResolveAsFelt(vm, bound)
+			if err != nil {
+				return err
+			}
+			//> assert ids.bound <= range_check_builtin.bound // 2, f'bound={hex(ids.bound)} is out of the valid range.'
+			if !utils.FeltLe(boundFelt, &utils.Felt127) {
+				return fmt.Errorf("bound=%v is out of the valid range.", boundFelt)
+			}
+			//> int_value = as_int(ids.value, PRIME)
+			valueFelt, err := hinter.ResolveAsFelt(vm, value)
+			if err != nil {
+				return err
+			}
+			intValueBig := math_utils.AsInt(valueFelt)
+
+			//> q, ids.r = divmod(int_value, ids.div)
+			var divBig, boundBig big.Int
+			divFelt.BigInt(&divBig)
+			boundFelt.BigInt(&boundBig)
+			qBig, rBig := new(big.Int).DivMod(intValueBig, &divBig, new(big.Int))
+			rFelt := new(fp.Element).SetBigInt(rBig)
+			rAddr, err := r.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			rValue := memory.MemoryValueFromFieldElement(rFelt)
+			err = vm.Memory.WriteToAddress(&rAddr, &rValue)
+			if err != nil {
+				return err
+			}
+
+			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
+			if !(qBig.Cmp(new(big.Int).Neg(&boundBig)) >= 0 && qBig.Cmp(&boundBig) == -1) {
+				return fmt.Errorf("%v / %v = %v is out of the range [-%v, %v].", valueFelt, divFelt, qBig, boundFelt, boundFelt)
+			}
+
+			//> ids.biased_q = q + ids.bound
+			biasedQBig := new(big.Int).Add(qBig, &boundBig)
+			biasedQ := new(fp.Element).SetBigInt(biasedQBig)
+			biasedQAddr, err := biased_q.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			biasedQValue := memory.MemoryValueFromFieldElement(biasedQ)
+			return vm.Memory.WriteToAddress(&biasedQAddr, &biasedQValue)
+		},
+	}
+}
+
+func createSignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+	div, err := resolver.GetResOperander("div")
+	if err != nil {
+		return nil, err
+	}
+	bound, err := resolver.GetResOperander("bound")
+	if err != nil {
+		return nil, err
+	}
+	r, err := resolver.GetResOperander("r")
+	if err != nil {
+		return nil, err
+	}
+	biased_q, err := resolver.GetResOperander("biased_q")
+	if err != nil {
+		return nil, err
+	}
+	return newSignedDivRemHint(value, div, bound, r, biased_q), nil
+
+}
+
 func newSqrtHint(root, value hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Sqrt",
@@ -719,11 +819,10 @@ func newUnsignedDivRemHinter(value, div, q, r hinter.ResOperander) hinter.Hinter
 			if err != nil {
 				return err
 			}
-
 			// (PRIME // range_check_builtin.bound)
 			// 800000000000011000000000000000000000000000000000000000000000001 // 2**128
 			var divUpperBound big.Int
-			divUpperBound.SetString("8000000000000110000000000000000", 16)
+			utils.PrimeHigh.BigInt(&divUpperBound)
 
 			var divBig big.Int
 			div.BigInt(&divBig)
