@@ -8,6 +8,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	math_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -681,13 +682,13 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			if err != nil {
 				return err
 			}
-			intValueBig := AsInt(valueFelt)
+			intValueBig := math_utils.AsInt(valueFelt)
 
 			//> q, ids.r = divmod(int_value, ids.div)
 			var divBig, boundBig big.Int
 			divFelt.BigInt(&divBig)
 			boundFelt.BigInt(&boundBig)
-			qBig, rBig := new(big.Int).DivMod(&intValueBig, &divBig, new(big.Int))
+			qBig, rBig := new(big.Int).DivMod(intValueBig, &divBig, new(big.Int))
 			rFelt := new(fp.Element).SetBigInt(rBig)
 			rAddr, err := r.GetAddress(vm)
 			if err != nil {
