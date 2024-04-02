@@ -5,6 +5,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSignatures(t *testing.T) {
@@ -17,9 +18,12 @@ func TestSignatures(t *testing.T) {
 					{Name: "signature_s", Kind: apRelative, Value: feltString("598673427589502599949712887611119751108407514580626464031881322743364689811")},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newVerifyECDSASignatureHinter(ctx.operanders["ecdsaPtr"], ctx.operanders["signature_r"], ctx.operanders["signature_s"])
+					ecdsaPtr := ctx.operanders["ecdsaPtr"].(*hinter.DoubleDeref).Deref
+					return newVerifyECDSASignatureHinter(ecdsaPtr, ctx.operanders["signature_r"], ctx.operanders["signature_s"])
 				},
-				errCheck: errorTextContains("outside of the range [0, 2**250)"),
+        errCheck: func(t *testing.T, ctx *hintTestContext, err error) {
+					require.NoError(t, err)
+				},
 			},
 		},
 		"ImportSecp256R1P": {
