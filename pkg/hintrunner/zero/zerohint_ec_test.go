@@ -264,7 +264,7 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
 				},
-				errCheck: errorTextContains("value != 0"),
+				errCheck: errorTextContains("num != 0"),
 			},
 			{
 				operanders: []*hintOperander{
