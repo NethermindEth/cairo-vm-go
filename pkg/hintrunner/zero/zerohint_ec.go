@@ -444,12 +444,7 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("slope", slopeBig)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return ctx.ScopeManager.AssignVariable("slope", slopeBig)
 		},
 	}
 }
