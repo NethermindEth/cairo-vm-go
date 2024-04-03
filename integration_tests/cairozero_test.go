@@ -282,8 +282,7 @@ func TestECDSA(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, _, err = runVm(compiledOutput)
-	//Note: This fails because no addSiganture hint
-	require.Error(t, err)
+	require.NoError(t, err)
 
 	clean("./builtin_tests/")
 }
