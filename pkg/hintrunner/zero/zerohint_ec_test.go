@@ -629,6 +629,7 @@ func TestZeroHintEc(t *testing.T) {
 		"EcDoubleSlopeV1": {
 			{
 				operanders: []*hintOperander{
+					// SecPBig: 2**256 - 2**32 - 2**9 - 2**8 - 2**7 - 2**6 - 2**4 - 1
 					{Name: "point.x.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
 					{Name: "point.x.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
 					{Name: "point.x.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
@@ -668,6 +669,7 @@ func TestZeroHintEc(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
+					// values are random
 					{Name: "point.x.d0", Kind: apRelative, Value: feltString("51215")},
 					{Name: "point.x.d1", Kind: apRelative, Value: feltString("368485485484584")},
 					{Name: "point.x.d2", Kind: apRelative, Value: feltString("4564564687987")},
