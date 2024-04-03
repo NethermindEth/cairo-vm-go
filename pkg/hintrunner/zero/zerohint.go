@@ -107,7 +107,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case verifyECDSASignatureCode:
 		return createVerifyECDSASignatureHinter(resolver)
 	case getPointFromXCode:
-		return getPointFromXCode(resolver)
+		return createGetPointFromXHinter(resolver)
 	// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)
