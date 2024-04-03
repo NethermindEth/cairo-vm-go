@@ -82,6 +82,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSplitIntAssertRangeHinter(resolver)
 	case splitIntCode:
 		return createSplitIntHinter(resolver)
+	case signedDivRemCode:
+		return createSignedDivRemHinter(resolver)
+	case powCode:
+		return createPowHinter(resolver)
 	case splitFeltCode:
 		return createSplitFeltHinter(resolver)
 	case sqrtCode:
@@ -106,7 +110,12 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		// EC hints
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)
-	// Other hints
+		// Blake hints
+	case blake2sAddUint256BigendCode:
+		return createBlake2sAddUint256Hinter(resolver, true)
+	case blake2sAddUint256Code:
+		return createBlake2sAddUint256Hinter(resolver, false)
+		// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)
 	case vmEnterScopeCode:

@@ -47,6 +47,18 @@ func (m *hintReferenceResolver) GetResOperander(name string) (hinter.ResOperande
 	return op, nil
 }
 
+func (m *hintReferenceResolver) GetCellRefer(name string) (hinter.CellRefer, error) {
+	ref, err := m.GetReference(name)
+	if err != nil {
+		return nil, err
+	}
+	op, ok := ref.(hinter.CellRefer)
+	if !ok {
+		return nil, fmt.Errorf("expected %s to be CellRefer (got %T)", name, ref)
+	}
+	return op, nil
+}
+
 // shortSymbolName turns a full symbol name like "a.b.c" into just "c".
 func shortSymbolName(name string) string {
 	i := strings.LastIndexByte(name, '.')

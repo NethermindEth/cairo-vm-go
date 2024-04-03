@@ -6,7 +6,6 @@ import (
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	"math/big"
 )
 
 func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
@@ -23,26 +22,28 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
-			pointValues, err := hinter.GetConsecutiveValues(vm, point, int16(6))
+			pointAddr, err := point.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			pointValues, err := hinter.GetConsecutiveValues(vm, pointAddr, int16(6))
 			if err != nil {
 				return err
 			}
 
 			// [y.d0, y.d1, y.d2]
-			var pointValuesBig [3]*big.Int
+			var yValues [3]*fp.Element
 			for i := 0; i < 3; i++ {
-				pointValue, err := pointValues[i+3].FieldElement()
+				yValue, err := pointValues[i+3].FieldElement()
 				if err != nil {
 					return err
 				}
-				pointValueBig := pointValue.BigInt(new(big.Int))
-				pointValuesBig[i] = pointValueBig
+				yValues[i] = yValue
 			}
 
-			primeBig := fp.Modulus()
-
 			//> y = pack(ids.point.y, PRIME) % SECP_P
-			yBig, err := secp_utils.SecPPacked(pointValuesBig[0], pointValuesBig[1], pointValuesBig[2], primeBig)
+			yBig, err := secp_utils.SecPPacked(yValues)
 			if err != nil {
 				return err
 			}
@@ -52,12 +53,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			yBig.Neg(yBig)
 			yBig.Mod(yBig, secPBig)
 
-			err = ctx.ScopeManager.AssignVariable("value", yBig)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return ctx.ScopeManager.AssignVariable("value", yBig)
 		},
 	}
 }
