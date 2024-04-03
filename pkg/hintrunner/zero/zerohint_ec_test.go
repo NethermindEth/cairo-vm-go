@@ -688,6 +688,80 @@ func TestZeroHintEc(t *testing.T) {
 					"slope": bigIntString("8532480558268366897328020348259450788170980412191993744326748439943456131995", 10),
 				}),
 			},
+			{
+				operanders: []*hintOperander{
+					// 2**256 - 10
+					{Name: "point.x.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007913129639926")},
+					// 2**256 - 10000
+					{Name: "point.x.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007913129629936")},
+					// 2**256 - 100000
+					{Name: "point.x.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007913129539936")},
+					// 2**256 - 68950
+					{Name: "point.y.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007913129570986")},
+					// 2**256 - 4545646
+					{Name: "point.y.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007913125094290")},
+					// 2**256 - 123124564
+					{Name: "point.y.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007913006515372")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"x":     bigIntString("-20441714640463444415550039378657358828977094550744838897976998602531359063761497108760225884244327111888086237226", 10),
+					"y":     bigIntString("-20441714640463444415550039378657358828977094550744839634440263239133543719985711427903485175980925446193542139254", 10),
+					"value": bigIntString("12124034331835072072286217393751993577217461936002714368452167712954852501083", 10),
+					"slope": bigIntString("12124034331835072072286217393751993577217461936002714368452167712954852501083", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					// 2**80
+					{Name: "point.x.d0", Kind: apRelative, Value: feltString("1208925819614629174706176")},
+					{Name: "point.x.d1", Kind: apRelative, Value: feltString("1208925819614629174706176")},
+					{Name: "point.x.d2", Kind: apRelative, Value: feltString("1208925819614629174706176")},
+					// 2**40
+					{Name: "point.y.d0", Kind: apRelative, Value: feltString("1099511627776")},
+					{Name: "point.y.d1", Kind: apRelative, Value: feltString("1099511627776")},
+					{Name: "point.y.d2", Kind: apRelative, Value: feltString("1099511627776")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"x":     bigIntString("7237005577332262213973186656579099030007160806638365755234031873103428059136", 10),
+					"y":     bigIntString("6582018229284824168619876815299993750165559328377972410848116736", 10),
+					"value": bigIntString("154266052248863066452028362858593603519505739480817180031844352", 10),
+					"slope": bigIntString("154266052248863066452028362858593603519505739480817180031844352", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "point.x.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.x.d1", Kind: apRelative, Value: &utils.FeltOne},
+					{Name: "point.x.d2", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "point.y.d0", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "point.y.d1", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "point.y.d2", Kind: apRelative, Value: feltUint64(5)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"x":     bigIntString("11972621413014756705924586226983042952357666573254656", 10),
+					"y":     bigIntString("29931553532536891764811465683514486063898567204929539", 10),
+					"value": bigIntString("35023503208535022533116513151423452638642669107476233313413226008091253006355", 10),
+					"slope": bigIntString("35023503208535022533116513151423452638642669107476233313413226008091253006355", 10),
+				}),
+			},
 		},
 	})
 }
