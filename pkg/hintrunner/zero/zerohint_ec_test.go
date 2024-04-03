@@ -12,6 +12,7 @@ func TestZeroHintEc(t *testing.T) {
 		"EcNegate": {
 			{
 				operanders: []*hintOperander{
+					// random values
 					{Name: "x.d0", Kind: apRelative, Value: feltString("0xe28d959f2815b16f81798")},
 					{Name: "x.d1", Kind: apRelative, Value: feltString("0xa573a1c2c1c0a6ff36cb7")},
 					{Name: "x.d2", Kind: apRelative, Value: feltString("0x79be667ef9dcbbac55a06")},
@@ -46,6 +47,7 @@ func TestZeroHintEc(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
+					// GetSecPBig() % fp.Modulus()
 					{Name: "x.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
@@ -64,6 +66,7 @@ func TestZeroHintEc(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
+					// GetSecPBig() % fp.Modulus()
 					{Name: "x.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d0", Kind: apRelative, Value: &utils.FeltZero},
@@ -85,6 +88,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d1", Kind: apRelative, Value: &utils.FeltZero},
+					// GetSecPBig() % fp.Modulus()
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
@@ -100,6 +104,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
+					// GetSecPBig() % fp.Modulus()
 					{Name: "y.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: &utils.FeltZero},
@@ -118,6 +123,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d0", Kind: apRelative, Value: &utils.FeltZero},
+					// GetSecPBig() % fp.Modulus()
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 				},
@@ -134,6 +140,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
+					// GetSecPBig() % fp.Modulus()
 					{Name: "y.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
@@ -151,6 +158,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
+					// GetSecPBig() % fp.Modulus()
 					{Name: "y.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
