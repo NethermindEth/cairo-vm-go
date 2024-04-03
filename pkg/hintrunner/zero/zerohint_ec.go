@@ -24,26 +24,28 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
-			pointValues, err := hinter.GetConsecutiveValues(vm, point, int16(6))
+			pointAddr, err := point.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			pointValues, err := hinter.GetConsecutiveValues(vm, pointAddr, int16(6))
 			if err != nil {
 				return err
 			}
 
 			// [y.d0, y.d1, y.d2]
-			var pointValuesBig [3]*big.Int
+			var yValues [3]*fp.Element
 			for i := 0; i < 3; i++ {
-				pointValue, err := pointValues[i+3].FieldElement()
+				yValue, err := pointValues[i+3].FieldElement()
 				if err != nil {
 					return err
 				}
-				pointValueBig := pointValue.BigInt(new(big.Int))
-				pointValuesBig[i] = pointValueBig
+				yValues[i] = yValue
 			}
 
-			primeBig := fp.Modulus()
-
 			//> y = pack(ids.point.y, PRIME) % SECP_P
-			yBig, err := secp_utils.SecPPacked(pointValuesBig[0], pointValuesBig[1], pointValuesBig[2], primeBig)
+			yBig, err := secp_utils.SecPPacked(yValues)
 			if err != nil {
 				return err
 			}
@@ -53,12 +55,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			yBig.Neg(yBig)
 			yBig.Mod(yBig, secPBig)
 
-			err = ctx.ScopeManager.AssignVariable("value", yBig)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return ctx.ScopeManager.AssignVariable("value", yBig)
 		},
 	}
 }
@@ -216,73 +213,90 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			//> y0 = pack(ids.point0.y, PRIME)
 			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
 
-			primeBig := fp.Modulus()
+			slopeAddr, err := slope.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			slopeMemoryValues, err := hinter.GetConsecutiveValues(vm, slopeAddr, int16(3))
+			if err != nil {
+				return err
+			}
 
-			slopeValues, err := hinter.GetConsecutiveValues(vm, slope, int16(3))
+			point0Addr, err := point0.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			point0Values, err := hinter.GetConsecutiveValues(vm, point0, int16(6))
+			point0MemoryValues, err := hinter.GetConsecutiveValues(vm, point0Addr, int16(6))
 			if err != nil {
 				return err
 			}
-			point1Values, err := hinter.GetConsecutiveValues(vm, point1, int16(3))
+
+			point1Addr, err := point1.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			point1MemoryValues, err := hinter.GetConsecutiveValues(vm, point1Addr, int16(3))
 			if err != nil {
 				return err
 			}
 
 			// [d0, d1, d2]
-			var slopeValuesBig [3]*big.Int
-			// [x.d0, x.d1, x.d2, y.d0, y.d1, y.d2]
-			var point0ValuesBig [6]*big.Int
+			var slopeValues [3]*fp.Element
 			// [x.d0, x.d1, x.d2]
-			var point1ValuesBig [3]*big.Int
+			var point0XValues [3]*fp.Element
+			// [y.d0, y.d1, y.d2]
+			var point0YValues [3]*fp.Element
+			// [x.d0, x.d1, x.d2]
+			var point1XValues [3]*fp.Element
 
 			for i := 0; i < 6; i++ {
 				if i < 3 {
-					slopeValue, err := slopeValues[i].FieldElement()
+					slopeValue, err := slopeMemoryValues[i].FieldElement()
 					if err != nil {
 						return err
 					}
-					slopeValueBig := slopeValue.BigInt(new(big.Int))
-					slopeValuesBig[i] = slopeValueBig
+					slopeValues[i] = slopeValue
 
-					point1Value, err := point1Values[i].FieldElement()
+					point0XValue, err := point0MemoryValues[i].FieldElement()
 					if err != nil {
 						return err
 					}
-					point1ValueBig := point1Value.BigInt(new(big.Int))
-					point1ValuesBig[i] = point1ValueBig
-				}
+					point0XValues[i] = point0XValue
 
-				point0Value, err := point0Values[i].FieldElement()
-				if err != nil {
-					return err
+					point1XValue, err := point1MemoryValues[i].FieldElement()
+					if err != nil {
+						return err
+					}
+					point1XValues[i] = point1XValue
+				} else {
+					point0YValue, err := point0MemoryValues[i].FieldElement()
+					if err != nil {
+						return err
+					}
+					point0YValues[i-3] = point0YValue
 				}
-				point0ValueBig := point0Value.BigInt(new(big.Int))
-				point0ValuesBig[i] = point0ValueBig
 			}
 
 			//> slope = pack(ids.slope, PRIME)
-			slopeBig, err := secp_utils.SecPPacked(slopeValuesBig[0], slopeValuesBig[1], slopeValuesBig[2], primeBig)
+			slopeBig, err := secp_utils.SecPPacked(slopeValues)
 			if err != nil {
 				return err
 			}
 
 			//> x0 = pack(ids.point0.x, PRIME)
-			x0Big, err := secp_utils.SecPPacked(point0ValuesBig[0], point0ValuesBig[1], point0ValuesBig[2], primeBig)
+			x0Big, err := secp_utils.SecPPacked(point0XValues)
 			if err != nil {
 				return err
 			}
 
 			//> x1 = pack(ids.point1.x, PRIME)
-			x1Big, err := secp_utils.SecPPacked(point1ValuesBig[0], point1ValuesBig[1], point1ValuesBig[2], primeBig)
+			x1Big, err := secp_utils.SecPPacked(point1XValues)
 			if err != nil {
 				return err
 			}
 
 			//> y0 = pack(ids.point0.y, PRIME)
-			y0Big, err := secp_utils.SecPPacked(point0ValuesBig[3], point0ValuesBig[4], point0ValuesBig[5], primeBig)
+			y0Big, err := secp_utils.SecPPacked(point0YValues)
 			if err != nil {
 				return err
 			}
@@ -328,12 +342,7 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("value", valueBig)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return ctx.ScopeManager.AssignVariable("value", valueBig)
 		},
 	}
 }
@@ -367,32 +376,41 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			//> y = pack(ids.point.y, PRIME)
 			//> value = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)
 
-			primeBig := fp.Modulus()
-
-			pointValues, err := hinter.GetConsecutiveValues(vm, point, int16(6))
+			pointAddr, err := point.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			pointMemoryValues, err := hinter.GetConsecutiveValues(vm, pointAddr, int16(6))
 			if err != nil {
 				return err
 			}
 
-			// [x.d0, x.d1, x.d2, y.d0, y.d1, y.d2]
-			var pointValuesBig [6]*big.Int
+			// [x.d0, x.d1, x.d2]
+			var pointXValues [3]*fp.Element
+			// [y.d0, y.d1, y.d2]
+			var pointYValues [3]*fp.Element
+
 			for i := 0; i < 6; i++ {
-				pointValue, err := pointValues[i].FieldElement()
+				pointValue, err := pointMemoryValues[i].FieldElement()
 				if err != nil {
 					return err
 				}
-				pointValueBig := pointValue.BigInt(new(big.Int))
-				pointValuesBig[i] = pointValueBig
+
+				if i < 3 {
+					pointXValues[i] = pointValue
+				} else {
+					pointYValues[i-3] = pointValue
+				}
 			}
 
 			//> x = pack(ids.point.x, PRIME)
-			xBig, err := secp_utils.SecPPacked(pointValuesBig[0], pointValuesBig[1], pointValuesBig[2], primeBig)
+			xBig, err := secp_utils.SecPPacked(pointXValues)
 			if err != nil {
 				return err
 			}
 
 			//> y = pack(ids.point.y, PRIME)
-			yBig, err := secp_utils.SecPPacked(pointValuesBig[3], pointValuesBig[4], pointValuesBig[5], primeBig)
+			yBig, err := secp_utils.SecPPacked(pointYValues)
 			if err != nil {
 				return err
 			}
