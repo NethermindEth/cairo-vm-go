@@ -528,6 +528,7 @@ func TestZeroHintEc(t *testing.T) {
 		"FastEcAddAssignNewX": {
 			{
 				operanders: []*hintOperander{
+					// random values
 					{Name: "slope.d0", Kind: apRelative, Value: feltString("64081873649130491683833713")},
 					{Name: "slope.d1", Kind: apRelative, Value: feltString("34843994309543177837008178")},
 					{Name: "slope.d2", Kind: apRelative, Value: feltString("16548672716077616016846383")},
@@ -594,6 +595,7 @@ func TestZeroHintEc(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
+					// GetSecPBig()
 					{Name: "slope.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
 					{Name: "slope.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
 					{Name: "slope.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
