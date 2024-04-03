@@ -187,12 +187,7 @@ func newFastEcAddAssignNewYHint() hinter.Hinter {
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("value", valueBig)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return ctx.ScopeManager.AssignVariable("value", valueBig)
 		},
 	}
 }
