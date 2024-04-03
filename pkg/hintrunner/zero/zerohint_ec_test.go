@@ -494,6 +494,7 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
 
+					// GetSecPBig() + 20
 					slopeBig := bigIntString("115792089237316195423570985008687907853269984665640564039457584007908834671683", 10)
 					x0Big := big.NewInt(200)
 					new_xBig := big.NewInt(199)
