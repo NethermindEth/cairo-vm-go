@@ -2,6 +2,7 @@ package zero
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
@@ -129,40 +130,21 @@ func newFastEcAddAssignNewYHint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> value = new_y = (slope * (x0 - new_x) - y0) % SECP_P
 
-			slope, err := ctx.ScopeManager.GetVariableValue("slope")
+			slopeBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("slope")
 			if err != nil {
 				return err
 			}
-			slopeBig, ok := slope.(*big.Int)
-			if !ok {
-				return fmt.Errorf("value: %s is not a *big.Int", slope)
-			}
-
-			x0, err := ctx.ScopeManager.GetVariableValue("x0")
+			x0Big, err := ctx.ScopeManager.GetVariableValueAsBigInt("x0")
 			if err != nil {
 				return err
 			}
-			x0Big, ok := x0.(*big.Int)
-			if !ok {
-				return fmt.Errorf("value: %s is not a *big.Int", x0)
-			}
-
-			new_x, err := ctx.ScopeManager.GetVariableValue("new_x")
+			new_xBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("new_x")
 			if err != nil {
 				return err
 			}
-			new_xBig, ok := new_x.(*big.Int)
-			if !ok {
-				return fmt.Errorf("value: %s is not a *big.Int", new_x)
-			}
-
-			y0, err := ctx.ScopeManager.GetVariableValue("y0")
+			y0Big, err := ctx.ScopeManager.GetVariableValueAsBigInt("y0")
 			if err != nil {
 				return err
-			}
-			y0Big, ok := y0.(*big.Int)
-			if !ok {
-				return fmt.Errorf("value: %s is not a *big.Int", y0)
 			}
 
 			secPBig, ok := secp_utils.GetSecPBig()
