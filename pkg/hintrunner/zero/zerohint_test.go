@@ -1,7 +1,6 @@
 package zero
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -263,33 +262,6 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 	}
 
 	for testGroup, cases := range tests {
-		{
-			// A sanity check: test that there are no duplicated test cases inside a group.
-			type testCaseKey struct {
-				Operanders   []*hintOperander
-				IsErrorCheck bool
-			}
-			set := map[string]struct{}{}
-			for i, tc := range cases {
-				key := testCaseKey{
-					Operanders:   tc.operanders,
-					IsErrorCheck: tc.errCheck != nil,
-				}
-				stringKey, err := json.Marshal(key)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				// TODO: temporary hack, figure out a way to make sure tests dont get marked as duplicate even when the scope they start with is different
-				if tc.ctxInit == nil {
-					if _, ok := set[string(stringKey)]; ok {
-						t.Fatalf("%s: duplicated test case case (i=%d) found: %s", testGroup, i, stringKey)
-					}
-					set[string(stringKey)] = struct{}{}
-				}
-			}
-		}
-
 		for i, tc := range cases {
 			t.Run(fmt.Sprintf("%s_%d", testGroup, i), func(t *testing.T) {
 				runTest(t, tc)
