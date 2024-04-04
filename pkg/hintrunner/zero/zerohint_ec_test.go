@@ -405,18 +405,18 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "slope.d0", Kind: apRelative, Value: feltString("64081873649130491683833713")},
 					{Name: "slope.d1", Kind: apRelative, Value: feltString("34843994309543177837008178")},
 					{Name: "slope.d2", Kind: apRelative, Value: feltString("16548672716077616016846383")},
-					{Name: "point0.x.d0", Kind: apRelative, Value: feltString("51215")},
-					{Name: "point0.x.d1", Kind: apRelative, Value: feltString("36848548548458")},
-					{Name: "point0.x.d2", Kind: apRelative, Value: feltString("634734734")},
-					{Name: "point0.y.d0", Kind: apRelative, Value: feltString("26362")},
-					{Name: "point0.y.d1", Kind: apRelative, Value: feltString("263724839599")},
-					{Name: "point0.y.d2", Kind: apRelative, Value: feltString("901297012")},
-					{Name: "point1.x.d0", Kind: apRelative, Value: feltString("45789")},
-					{Name: "point1.x.d1", Kind: apRelative, Value: feltString("45612238789798")},
-					{Name: "point1.x.d2", Kind: apRelative, Value: feltString("214455666")},
-					{Name: "point1.y.d0", Kind: apRelative, Value: feltString("12457")},
-					{Name: "point1.y.d1", Kind: apRelative, Value: feltString("895645646464")},
-					{Name: "point1.y.d2", Kind: apRelative, Value: feltString("211245645")},
+					{Name: "point0.x.d0", Kind: apRelative, Value: feltUint64(51215)},
+					{Name: "point0.x.d1", Kind: apRelative, Value: feltUint64(36848548548458)},
+					{Name: "point0.x.d2", Kind: apRelative, Value: feltUint64(634734734)},
+					{Name: "point0.y.d0", Kind: apRelative, Value: feltUint64(26362)},
+					{Name: "point0.y.d1", Kind: apRelative, Value: feltUint64(263724839599)},
+					{Name: "point0.y.d2", Kind: apRelative, Value: feltUint64(901297012)},
+					{Name: "point1.x.d0", Kind: apRelative, Value: feltUint64(45789)},
+					{Name: "point1.x.d1", Kind: apRelative, Value: feltUint64(45612238789798)},
+					{Name: "point1.x.d2", Kind: apRelative, Value: feltUint64(214455666)},
+					{Name: "point1.y.d0", Kind: apRelative, Value: feltUint64(12457)},
+					{Name: "point1.y.d1", Kind: apRelative, Value: feltUint64(895645646464)},
+					{Name: "point1.y.d2", Kind: apRelative, Value: feltUint64(211245645)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
@@ -545,11 +545,11 @@ func TestZeroHintEc(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					// values are random
-					{Name: "point.x.d0", Kind: apRelative, Value: feltString("51215")},
-					{Name: "point.x.d1", Kind: apRelative, Value: feltString("368485485484584")},
-					{Name: "point.x.d2", Kind: apRelative, Value: feltString("4564564687987")},
-					{Name: "point.y.d0", Kind: apRelative, Value: feltString("26362")},
-					{Name: "point.y.d1", Kind: apRelative, Value: feltString("263724839599")},
+					{Name: "point.x.d0", Kind: apRelative, Value: feltUint64(51215)},
+					{Name: "point.x.d1", Kind: apRelative, Value: feltUint64(368485485484584)},
+					{Name: "point.x.d2", Kind: apRelative, Value: feltUint64(4564564687987)},
+					{Name: "point.y.d0", Kind: apRelative, Value: feltUint64(26362)},
+					{Name: "point.y.d1", Kind: apRelative, Value: feltUint64(263724839599)},
 					{Name: "point.y.d2", Kind: apRelative, Value: feltString("1321654896123789784652346")},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
@@ -600,9 +600,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point.x.d1", Kind: apRelative, Value: feltString("1208925819614629174706176")},
 					{Name: "point.x.d2", Kind: apRelative, Value: feltString("1208925819614629174706176")},
 					// 2**40
-					{Name: "point.y.d0", Kind: apRelative, Value: feltString("1099511627776")},
-					{Name: "point.y.d1", Kind: apRelative, Value: feltString("1099511627776")},
-					{Name: "point.y.d2", Kind: apRelative, Value: feltString("1099511627776")},
+					{Name: "point.y.d0", Kind: apRelative, Value: feltUint64(1099511627776)},
+					{Name: "point.y.d1", Kind: apRelative, Value: feltUint64(1099511627776)},
+					{Name: "point.y.d2", Kind: apRelative, Value: feltUint64(1099511627776)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
