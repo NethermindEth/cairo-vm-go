@@ -223,32 +223,32 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			// [x.d0, x.d1, x.d2]
 			var point1XValues [3]*fp.Element
 
-			for i := 0; i < 6; i++ {
-				if i < 3 {
-					slopeValue, err := slopeMemoryValues[i].FieldElement()
-					if err != nil {
-						return err
-					}
-					slopeValues[i] = slopeValue
-
-					point0XValue, err := point0MemoryValues[i].FieldElement()
-					if err != nil {
-						return err
-					}
-					point0XValues[i] = point0XValue
-
-					point1XValue, err := point1MemoryValues[i].FieldElement()
-					if err != nil {
-						return err
-					}
-					point1XValues[i] = point1XValue
-				} else {
-					point0YValue, err := point0MemoryValues[i].FieldElement()
-					if err != nil {
-						return err
-					}
-					point0YValues[i-3] = point0YValue
+			for i := 0; i < 3; i++ {
+				slopeValue, err := slopeMemoryValues[i].FieldElement()
+				if err != nil {
+					return err
 				}
+				slopeValues[i] = slopeValue
+
+				point0XValue, err := point0MemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				point0XValues[i] = point0XValue
+
+				point1XValue, err := point1MemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				point1XValues[i] = point1XValue
+			}
+
+			for i := 3; i < 6; i++ {
+				point0YValue, err := point0MemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				point0YValues[i-3] = point0YValue
 			}
 
 			//> slope = pack(ids.slope, PRIME)
