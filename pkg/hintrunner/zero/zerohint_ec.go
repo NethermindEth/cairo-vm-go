@@ -7,7 +7,6 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	"math/big"
 )
 
 func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
@@ -81,13 +80,9 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			value, err := ctx.ScopeManager.GetVariableValue("value")
+			valueBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("value")
 			if err != nil {
 				return err
-			}
-			valueBig, ok := value.(*big.Int)
-			if !ok {
-				return fmt.Errorf("value: %s is not a *big.Int", value)
 			}
 
 			//> split(value)
