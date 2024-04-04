@@ -2,6 +2,7 @@ package zero
 
 import (
 	"fmt"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -28,23 +29,24 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			pointValues, err := hinter.GetConsecutiveValues(vm, pointAddr, int16(6))
+			pointMemoryValues, err := hinter.GetConsecutiveValues(vm, pointAddr, int16(6))
 			if err != nil {
 				return err
 			}
 
 			// [y.d0, y.d1, y.d2]
-			var yValues [3]*fp.Element
+			var pointYValues [3]*fp.Element
+
 			for i := 0; i < 3; i++ {
-				yValue, err := pointValues[i+3].FieldElement()
+				pointYValue, err := pointMemoryValues[i+3].FieldElement()
 				if err != nil {
 					return err
 				}
-				yValues[i] = yValue
+				pointYValues[i] = pointYValue
 			}
 
 			//> y = pack(ids.point.y, PRIME) % SECP_P
-			yBig, err := secp_utils.SecPPacked(yValues)
+			yBig, err := secp_utils.SecPPacked(pointYValues)
 			if err != nil {
 				return err
 			}
