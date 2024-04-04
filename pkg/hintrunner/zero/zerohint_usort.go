@@ -5,7 +5,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 )
 
-func createUsortEnterScopeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+func newUsortEnterScopeHinter() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortEnterScope",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -20,5 +20,9 @@ func createUsortEnterScopeHinter(resolver hintReferenceResolver) (hinter.Hinter,
 
 			return nil
 		},
-	}, nil
+	}
+}
+
+func createUsortEnterScopeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	return newUsortEnterScopeHinter(), nil
 }
