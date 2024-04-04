@@ -190,11 +190,7 @@ func TestZeroHintEc(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// GetSecPBig() % fp.Modulus() but with first digit 3 replaced with 7
-					value, ok := new(big.Int).SetString("7618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
+					value := bigIntString("7618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
 					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -208,11 +204,7 @@ func TestZeroHintEc(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// GetSecPBig() % fp.Modulus()
-					value, ok := new(big.Int).SetString("3618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
+					value := bigIntString("3618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
 					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -250,11 +242,7 @@ func TestZeroHintEc(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// 2**86 - 1
-					value, ok := new(big.Int).SetString("77371252455336267181195263", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
+					value := bigIntString("77371252455336267181195263", 10)
 					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -268,11 +256,7 @@ func TestZeroHintEc(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// 2**86
-					value, ok := new(big.Int).SetString("77371252455336267181195264", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
+					value := bigIntString("77371252455336267181195264", 10)
 					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -286,11 +270,7 @@ func TestZeroHintEc(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// 2**86 + 1
-					value, ok := new(big.Int).SetString("77371252455336267181195265", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
+					value := bigIntString("77371252455336267181195265", 10)
 					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -316,11 +296,7 @@ func TestZeroHintEc(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// (2**86 - 1) * 2
-					value, ok := new(big.Int).SetString("154742504910672534362390526", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
+					value := bigIntString("154742504910672534362390526", 10)
 					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -334,11 +310,7 @@ func TestZeroHintEc(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// 2**86 * 2
-					value, ok := new(big.Int).SetString("154742504910672534362390528", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
+					value := bigIntString("154742504910672534362390528", 10)
 					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -352,11 +324,7 @@ func TestZeroHintEc(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// (2**86 + 1) * 2
-					value, ok := new(big.Int).SetString("154742504910672534362390530", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
+					value := bigIntString("154742504910672534362390530", 10)
 					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
