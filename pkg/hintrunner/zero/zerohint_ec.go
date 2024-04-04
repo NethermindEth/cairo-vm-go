@@ -161,12 +161,7 @@ func newFastEcAddAssignNewYHint() hinter.Hinter {
 			valueBig := new(big.Int)
 			valueBig.Set(new_yBig)
 
-			err = ctx.ScopeManager.AssignVariable("new_y", new_yBig)
-			if err != nil {
-				return err
-			}
-
-			return ctx.ScopeManager.AssignVariable("value", valueBig)
+			return ctx.ScopeManager.AssignVariables(map[string]any{"new_y": new_yBig, "value": valueBig})
 		},
 	}
 }
