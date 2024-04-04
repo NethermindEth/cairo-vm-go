@@ -2,12 +2,13 @@ package zero
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	"math/big"
 )
 
 func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
@@ -29,23 +30,24 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			pointValues, err := hinter.GetConsecutiveValues(vm, pointAddr, int16(6))
+			pointMemoryValues, err := hinter.GetConsecutiveValues(vm, pointAddr, int16(6))
 			if err != nil {
 				return err
 			}
 
 			// [y.d0, y.d1, y.d2]
-			var yValues [3]*fp.Element
+			var pointYValues [3]*fp.Element
+
 			for i := 0; i < 3; i++ {
-				yValue, err := pointValues[i+3].FieldElement()
+				pointYValue, err := pointMemoryValues[i+3].FieldElement()
 				if err != nil {
 					return err
 				}
-				yValues[i] = yValue
+				pointYValues[i] = pointYValue
 			}
 
 			//> y = pack(ids.point.y, PRIME) % SECP_P
-			yBig, err := secp_utils.SecPPacked(yValues)
+			yBig, err := secp_utils.SecPPacked(pointYValues)
 			if err != nil {
 				return err
 			}
@@ -81,13 +83,9 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			value, err := ctx.ScopeManager.GetVariableValue("value")
+			valueBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("value")
 			if err != nil {
 				return err
-			}
-			valueBig, ok := value.(*big.Int)
-			if !ok {
-				return fmt.Errorf("value: %s is not a *big.Int", value)
 			}
 
 			//> split(value)
@@ -132,40 +130,21 @@ func newFastEcAddAssignNewYHint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> value = new_y = (slope * (x0 - new_x) - y0) % SECP_P
 
-			slope, err := ctx.ScopeManager.GetVariableValue("slope")
+			slopeBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("slope")
 			if err != nil {
 				return err
 			}
-			slopeBig, ok := slope.(*big.Int)
-			if !ok {
-				return fmt.Errorf("value: %s is not a *big.Int", slope)
-			}
-
-			x0, err := ctx.ScopeManager.GetVariableValue("x0")
+			x0Big, err := ctx.ScopeManager.GetVariableValueAsBigInt("x0")
 			if err != nil {
 				return err
 			}
-			x0Big, ok := x0.(*big.Int)
-			if !ok {
-				return fmt.Errorf("value: %s is not a *big.Int", x0)
-			}
-
-			new_x, err := ctx.ScopeManager.GetVariableValue("new_x")
+			new_xBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("new_x")
 			if err != nil {
 				return err
 			}
-			new_xBig, ok := new_x.(*big.Int)
-			if !ok {
-				return fmt.Errorf("value: %s is not a *big.Int", new_x)
-			}
-
-			y0, err := ctx.ScopeManager.GetVariableValue("y0")
+			y0Big, err := ctx.ScopeManager.GetVariableValueAsBigInt("y0")
 			if err != nil {
 				return err
-			}
-			y0Big, ok := y0.(*big.Int)
-			if !ok {
-				return fmt.Errorf("value: %s is not a *big.Int", y0)
 			}
 
 			secPBig, ok := secp_utils.GetSecPBig()
@@ -182,17 +161,7 @@ func newFastEcAddAssignNewYHint() hinter.Hinter {
 			valueBig := new(big.Int)
 			valueBig.Set(new_yBig)
 
-			err = ctx.ScopeManager.AssignVariable("new_y", new_yBig)
-			if err != nil {
-				return err
-			}
-
-			err = ctx.ScopeManager.AssignVariable("value", valueBig)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return ctx.ScopeManager.AssignVariables(map[string]any{"new_y": new_yBig, "value": valueBig})
 		},
 	}
 }
@@ -249,32 +218,32 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			// [x.d0, x.d1, x.d2]
 			var point1XValues [3]*fp.Element
 
-			for i := 0; i < 6; i++ {
-				if i < 3 {
-					slopeValue, err := slopeMemoryValues[i].FieldElement()
-					if err != nil {
-						return err
-					}
-					slopeValues[i] = slopeValue
-
-					point0XValue, err := point0MemoryValues[i].FieldElement()
-					if err != nil {
-						return err
-					}
-					point0XValues[i] = point0XValue
-
-					point1XValue, err := point1MemoryValues[i].FieldElement()
-					if err != nil {
-						return err
-					}
-					point1XValues[i] = point1XValue
-				} else {
-					point0YValue, err := point0MemoryValues[i].FieldElement()
-					if err != nil {
-						return err
-					}
-					point0YValues[i-3] = point0YValue
+			for i := 0; i < 3; i++ {
+				slopeValue, err := slopeMemoryValues[i].FieldElement()
+				if err != nil {
+					return err
 				}
+				slopeValues[i] = slopeValue
+
+				point0XValue, err := point0MemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				point0XValues[i] = point0XValue
+
+				point1XValue, err := point1MemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				point1XValues[i] = point1XValue
+			}
+
+			for i := 3; i < 6; i++ {
+				point0YValue, err := point0MemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				point0YValues[i-3] = point0YValue
 			}
 
 			//> slope = pack(ids.slope, PRIME)
@@ -317,32 +286,7 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			valueBig := new(big.Int)
 			valueBig.Set(new_xBig)
 
-			err = ctx.ScopeManager.AssignVariable("slope", slopeBig)
-			if err != nil {
-				return err
-			}
-
-			err = ctx.ScopeManager.AssignVariable("x0", x0Big)
-			if err != nil {
-				return err
-			}
-
-			err = ctx.ScopeManager.AssignVariable("x1", x1Big)
-			if err != nil {
-				return err
-			}
-
-			err = ctx.ScopeManager.AssignVariable("y0", y0Big)
-			if err != nil {
-				return err
-			}
-
-			err = ctx.ScopeManager.AssignVariable("new_x", new_xBig)
-			if err != nil {
-				return err
-			}
-
-			return ctx.ScopeManager.AssignVariable("value", valueBig)
+			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeBig, "x0": x0Big, "x1": x1Big, "y0": y0Big, "new_x": new_xBig, "value": valueBig})
 		},
 	}
 }
