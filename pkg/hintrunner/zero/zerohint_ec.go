@@ -334,17 +334,19 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			// [y.d0, y.d1, y.d2]
 			var pointYValues [3]*fp.Element
 
-			for i := 0; i < 6; i++ {
+			for i := 0; i < 3; i++ {
 				pointValue, err := pointMemoryValues[i].FieldElement()
 				if err != nil {
 					return err
 				}
-
-				if i < 3 {
-					pointXValues[i] = pointValue
-				} else {
-					pointYValues[i-3] = pointValue
+				pointXValues[i] = pointValue
+			}
+			for i := 3; i < 6; i++ {
+				pointValue, err := pointMemoryValues[i].FieldElement()
+				if err != nil {
+					return err
 				}
+				pointYValues[i-3] = pointValue
 			}
 
 			//> x = pack(ids.point.x, PRIME)
@@ -373,22 +375,7 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			slopeBig := new(big.Int)
 			slopeBig.Set(valueBig)
 
-			err = ctx.ScopeManager.AssignVariable("x", xBig)
-			if err != nil {
-				return err
-			}
-
-			err = ctx.ScopeManager.AssignVariable("y", yBig)
-			if err != nil {
-				return err
-			}
-
-			err = ctx.ScopeManager.AssignVariable("value", valueBig)
-			if err != nil {
-				return err
-			}
-
-			return ctx.ScopeManager.AssignVariable("slope", slopeBig)
+			return ctx.ScopeManager.AssignVariables(map[string]any{"x": xBig, "y": yBig, "value": valueBig, "slope": slopeBig})
 		},
 	}
 }
