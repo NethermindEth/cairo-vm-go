@@ -291,32 +291,7 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			valueBig := new(big.Int)
 			valueBig.Set(new_xBig)
 
-			err = ctx.ScopeManager.AssignVariable("slope", slopeBig)
-			if err != nil {
-				return err
-			}
-
-			err = ctx.ScopeManager.AssignVariable("x0", x0Big)
-			if err != nil {
-				return err
-			}
-
-			err = ctx.ScopeManager.AssignVariable("x1", x1Big)
-			if err != nil {
-				return err
-			}
-
-			err = ctx.ScopeManager.AssignVariable("y0", y0Big)
-			if err != nil {
-				return err
-			}
-
-			err = ctx.ScopeManager.AssignVariable("new_x", new_xBig)
-			if err != nil {
-				return err
-			}
-
-			return ctx.ScopeManager.AssignVariable("value", valueBig)
+			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeBig, "x0": x0Big, "x1": x1Big, "y0": y0Big, "new_x": new_xBig, "value": valueBig})
 		},
 	}
 }
