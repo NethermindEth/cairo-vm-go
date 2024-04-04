@@ -1,12 +1,12 @@
 package zero
 
 import (
-	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
-	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"math/big"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func TestZeroHintEc(t *testing.T) {
@@ -14,6 +14,7 @@ func TestZeroHintEc(t *testing.T) {
 		"EcNegate": {
 			{
 				operanders: []*hintOperander{
+					// random values
 					{Name: "x.d0", Kind: apRelative, Value: feltString("0xe28d959f2815b16f81798")},
 					{Name: "x.d1", Kind: apRelative, Value: feltString("0xa573a1c2c1c0a6ff36cb7")},
 					{Name: "x.d2", Kind: apRelative, Value: feltString("0x79be667ef9dcbbac55a06")},
@@ -48,6 +49,7 @@ func TestZeroHintEc(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
+					// GetSecPBig() % fp.Modulus()
 					{Name: "x.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
@@ -66,6 +68,7 @@ func TestZeroHintEc(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
+					// GetSecPBig() % fp.Modulus()
 					{Name: "x.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d0", Kind: apRelative, Value: &utils.FeltZero},
@@ -87,6 +90,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d1", Kind: apRelative, Value: &utils.FeltZero},
+					// GetSecPBig() % fp.Modulus()
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
@@ -102,6 +106,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
+					// GetSecPBig() % fp.Modulus()
 					{Name: "y.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: &utils.FeltZero},
@@ -120,6 +125,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d0", Kind: apRelative, Value: &utils.FeltZero},
+					// GetSecPBig() % fp.Modulus()
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 				},
@@ -136,6 +142,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
+					// GetSecPBig() % fp.Modulus()
 					{Name: "y.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
@@ -153,6 +160,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
+					// GetSecPBig() % fp.Modulus()
 					{Name: "y.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
@@ -189,17 +197,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-
-					value, ok := new(big.Int).SetString("7618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
-					err := ctx.ScopeManager.AssignVariable("value", value)
-					if err != nil {
-						t.Errorf("Error assigning variable value in scope")
-					}
+					// GetSecPBig() % fp.Modulus() but with first digit 3 replaced with 7
+					value := bigIntString("7618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -211,17 +211,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-
-					value, ok := new(big.Int).SetString("3618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
-					err := ctx.ScopeManager.AssignVariable("value", value)
-					if err != nil {
-						t.Errorf("Error assigning variable value in scope")
-					}
+					// GetSecPBig() % fp.Modulus()
+					value := bigIntString("3618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -233,14 +225,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-
-					value := big.NewInt(123456)
-
-					err := ctx.ScopeManager.AssignVariable("value", value)
-					if err != nil {
-						t.Errorf("Error assigning variable value in scope")
-					}
+					ctx.ScopeManager.EnterScope(map[string]any{"value": big.NewInt(123456)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -252,14 +237,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-
-					value := big.NewInt(-123456)
-
-					err := ctx.ScopeManager.AssignVariable("value", value)
-					if err != nil {
-						t.Errorf("Error assigning variable value in scope")
-					}
+					ctx.ScopeManager.EnterScope(map[string]any{"value": big.NewInt(-123456)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -271,17 +249,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-
-					value, ok := new(big.Int).SetString("77371252455336267181195263", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
-					err := ctx.ScopeManager.AssignVariable("value", value)
-					if err != nil {
-						t.Errorf("Error assigning variable value in scope")
-					}
+					// 2**86 - 1
+					value := bigIntString("77371252455336267181195263", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -293,17 +263,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-
-					value, ok := new(big.Int).SetString("77371252455336267181195264", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
-					err := ctx.ScopeManager.AssignVariable("value", value)
-					if err != nil {
-						t.Errorf("Error assigning variable value in scope")
-					}
+					// 2**86
+					value := bigIntString("77371252455336267181195264", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -315,17 +277,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-
-					value, ok := new(big.Int).SetString("77371252455336267181195265", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
-					err := ctx.ScopeManager.AssignVariable("value", value)
-					if err != nil {
-						t.Errorf("Error assigning variable value in scope")
-					}
+					// 2**86 + 1
+					value := bigIntString("77371252455336267181195265", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -337,14 +291,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-
-					value := big.NewInt(0)
-
-					err := ctx.ScopeManager.AssignVariable("value", value)
-					if err != nil {
-						t.Errorf("Error assigning variable value in scope")
-					}
+					ctx.ScopeManager.EnterScope(map[string]any{"value": big.NewInt(0)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -356,17 +303,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-
-					value, ok := new(big.Int).SetString("154742504910672534362390526", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
-					err := ctx.ScopeManager.AssignVariable("value", value)
-					if err != nil {
-						t.Errorf("Error assigning variable value in scope")
-					}
+					// (2**86 - 1) * 2
+					value := bigIntString("154742504910672534362390526", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -378,17 +317,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-
-					value, ok := new(big.Int).SetString("154742504910672534362390528", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
-					err := ctx.ScopeManager.AssignVariable("value", value)
-					if err != nil {
-						t.Errorf("Error assigning variable value in scope")
-					}
+					// 2**86 * 2
+					value := bigIntString("154742504910672534362390528", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -400,17 +331,9 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-
-					value, ok := new(big.Int).SetString("154742504910672534362390530", 10)
-					if !ok {
-						t.Errorf("Error creating big.Int")
-					}
-
-					err := ctx.ScopeManager.AssignVariable("value", value)
-					if err != nil {
-						t.Errorf("Error assigning variable value in scope")
-					}
+					// (2**86 + 1) * 2
+					value := bigIntString("154742504910672534362390530", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
