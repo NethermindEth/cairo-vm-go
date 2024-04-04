@@ -6,7 +6,6 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
-	utils "github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -81,23 +80,21 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			secpBig, _ := secp_utils.GetSecPBig()
 
 			//> x_cube_int = pack(ids.x_cube, PRIME) % SECP_P
-			xCubeValuesBig := make([]*big.Int, 3)
-			var xCubeValue *fp.Element
+			var xCubeValues [3]*fp.Element
 			for i := 0; i < 3; i++ {
-				xCubeValue, err = xCubeMemoryValues[i].FieldElement()
+				xCubeValues[i], err = xCubeMemoryValues[i].FieldElement()
 				if err != nil {
 					return err
 				}
-				xCubeValuesBig[i] = xCubeValue.BigInt(new(big.Int))
 			}
-			xCubeIntBig, err := secp_utils.SecPPacked(xCubeValuesBig[0], xCubeValuesBig[1], xCubeValuesBig[2])
+			xCubeIntBig, err := secp_utils.SecPPacked(xCubeValues)
 			if err != nil {
 				return err
 			}
 			xCubeIntBig.Mod(xCubeIntBig, secpBig)
 
 			//> y_square_int = (x_cube_int + ids.BETA) % SECP_P
-			ySquareIntBig := new(big.Int).Add(xCubeIntBig, utils.Beta.BigInt(new(big.Int)))
+			ySquareIntBig := new(big.Int).Add(xCubeIntBig, secp_utils.GetBetaBig())
 			ySquareIntBig.Mod(ySquareIntBig, secpBig)
 
 			//> y = pow(y_square_int, (SECP_P + 1) // 4, SECP_P)
@@ -114,7 +111,8 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			} else {
 				value.Mod(value.Neg(y), secpBig)
 			}
-			return nil
+			ctx.ScopeManager.EnterScope(make(map[string]any))
+			return ctx.ScopeManager.AssignVariable("value", value)
 		},
 	}
 }
