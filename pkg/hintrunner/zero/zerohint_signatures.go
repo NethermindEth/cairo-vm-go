@@ -111,7 +111,6 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			} else {
 				value.Mod(value.Neg(y), secpBig)
 			}
-			ctx.ScopeManager.EnterScope(make(map[string]any))
 			return ctx.ScopeManager.AssignVariable("value", value)
 		},
 	}
