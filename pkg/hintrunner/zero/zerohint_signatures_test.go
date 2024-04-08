@@ -77,5 +77,60 @@ func TestSignatures(t *testing.T) {
 				check: varValueInScopeEquals("value", bigIntString("64330220386510520462271671435567806262107470356169873352512014089172394266548")),
 			},
 		},
+		"DivModNSafeDivHint": {
+			{
+				// zero quotient
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+					ctx.ScopeManager.AssignVariable("res", bigIntString("0"))
+					ctx.ScopeManager.AssignVariable("a", bigIntString("0"))
+					ctx.ScopeManager.AssignVariable("b", bigIntString("0"))
+					ctx.ScopeManager.AssignVariable("N", bigIntString("1"))
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDivModSafeDivHinter()
+				},
+				check: varListInScopeEquals(map[string]any{
+					"value": bigIntString("0"),
+					"k":     bigIntString("0"),
+				}),
+			},
+			{
+				// negative quotient
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+					ctx.ScopeManager.AssignVariable("res", bigIntString("1"))
+					ctx.ScopeManager.AssignVariable("a", bigIntString("2"))
+					ctx.ScopeManager.AssignVariable("b", bigIntString("1"))
+					ctx.ScopeManager.AssignVariable("N", bigIntString("1"))
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDivModSafeDivHinter()
+				},
+				check: varListInScopeEquals(map[string]any{
+					"value": bigIntString("-1"),
+					"k":     bigIntString("-1"),
+				})},
+			{
+				// positive quotient
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+					ctx.ScopeManager.AssignVariable("res", bigIntString("10"))
+					ctx.ScopeManager.AssignVariable("a", bigIntString("20"))
+					ctx.ScopeManager.AssignVariable("b", bigIntString("30"))
+					ctx.ScopeManager.AssignVariable("N", bigIntString("2"))
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDivModSafeDivHinter()
+				},
+				check: varListInScopeEquals(map[string]any{
+					"value": bigIntString("140"),
+					"k":     bigIntString("140"),
+				}),
+			},
+		},
 	})
 }

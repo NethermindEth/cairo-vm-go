@@ -5,7 +5,7 @@ import (
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
+	utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -77,7 +77,7 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-			secpBig, _ := secp_utils.GetSecPBig()
+			secpBig, _ := utils.GetSecPBig()
 
 			//> x_cube_int = pack(ids.x_cube, PRIME) % SECP_P
 			var xCubeValues [3]*fp.Element
@@ -87,14 +87,14 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 					return err
 				}
 			}
-			xCubeIntBig, err := secp_utils.SecPPacked(xCubeValues)
+			xCubeIntBig, err := utils.SecPPacked(xCubeValues)
 			if err != nil {
 				return err
 			}
 			xCubeIntBig.Mod(xCubeIntBig, secpBig)
 
 			//> y_square_int = (x_cube_int + ids.BETA) % SECP_P
-			ySquareIntBig := new(big.Int).Add(xCubeIntBig, secp_utils.GetBetaBig())
+			ySquareIntBig := new(big.Int).Add(xCubeIntBig, utils.GetBetaBig())
 			ySquareIntBig.Mod(ySquareIntBig, secpBig)
 
 			//> y = pow(y_square_int, (SECP_P + 1) // 4, SECP_P)
@@ -126,4 +126,44 @@ func createGetPointFromXHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 		return nil, err
 	}
 	return newGetPointFromXHinter(xCube, v), nil
+}
+
+func newDivModSafeDivHinter() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DivModSafeDivHinter",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> value = k = safe_div(res * b - a, N)
+
+			res, err := ctx.ScopeManager.GetVariableValueAsBigInt("res")
+			if err != nil {
+				return err
+			}
+			a, err := ctx.ScopeManager.GetVariableValueAsBigInt("a")
+			if err != nil {
+				return err
+			}
+			b, err := ctx.ScopeManager.GetVariableValueAsBigInt("b")
+			if err != nil {
+				return err
+			}
+			N, err := ctx.ScopeManager.GetVariableValueAsBigInt("N")
+			if err != nil {
+				return err
+			}
+			divisor := new(big.Int).Sub(new(big.Int).Mul(res, b), a)
+			value, err := utils.SafeDiv(divisor, N)
+			if err != nil {
+				return err
+			}
+			err = ctx.ScopeManager.AssignVariable("k", value)
+			if err != nil {
+				return err
+			}
+			return ctx.ScopeManager.AssignVariable("value", value)
+		},
+	}
+}
+
+func createDivModSafeDivHinter() (hinter.Hinter, error) {
+	return newDivModSafeDivHinter(), nil
 }

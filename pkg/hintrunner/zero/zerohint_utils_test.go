@@ -142,3 +142,11 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 		}
 	}
 }
+
+func varListInScopeEquals(expectedValues map[string]any) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		for varName, expected := range expectedValues {
+			varValueInScopeEquals(varName, expected)(t, ctx)
+		}
+	}
+}

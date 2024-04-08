@@ -39,3 +39,8 @@ func SecPPacked(limbs [3]*fp.Element) (*big.Int, error) {
 func GetBetaBig() *big.Int {
 	return big.NewInt(7)
 }
+
+func GetNBig() *big.Int {
+	NBig, _ := new(big.Int).SetString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16)
+	return NBig
+}
