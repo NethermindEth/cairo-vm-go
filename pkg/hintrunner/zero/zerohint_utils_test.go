@@ -202,30 +202,3 @@ func errorIsNil(t *testing.T, ctx *hintTestContext, err error) {
 		t.Fatalf("expected a nil error, got: %v", err)
 	}
 }
-
-func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx *hintTestContext) {
-	return func(t *testing.T, ctx *hintTestContext) {
-		value, err := ctx.runnerContext.ScopeManager.GetVariableValue(varName)
-		if err != nil {
-			t.Fatal(err)
-		}
-		switch expected.(type) {
-		case *big.Int:
-			{
-				valueBig := value.(*big.Int)
-				expectedBig := expected.(*big.Int)
-				if valueBig.Cmp(expectedBig) != 0 {
-					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
-				}
-			}
-		case *fp.Element:
-			{
-				valueFelt := value.(*fp.Element)
-				expectedFelt := expected.(*fp.Element)
-				if valueFelt.Cmp(expectedFelt) != 0 {
-					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
-				}
-			}
-		}
-	}
-}
