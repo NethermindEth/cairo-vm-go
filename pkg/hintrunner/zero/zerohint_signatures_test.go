@@ -101,10 +101,22 @@ func TestSignatures(t *testing.T) {
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
-					ctx.ScopeManager.AssignVariable("res", bigIntString("1"))
-					ctx.ScopeManager.AssignVariable("a", bigIntString("2"))
-					ctx.ScopeManager.AssignVariable("b", bigIntString("1"))
-					ctx.ScopeManager.AssignVariable("N", bigIntString("1"))
+					err := ctx.ScopeManager.AssignVariable("res", bigIntString("1"))
+					if err != nil {
+						t.Fatal(err)
+					}
+					err = ctx.ScopeManager.AssignVariable("a", bigIntString("2"))
+					if err != nil {
+						t.Fatal(err)
+					}
+					err = ctx.ScopeManager.AssignVariable("b", bigIntString("1"))
+					if err != nil {
+						t.Fatal(err)
+					}
+					err = ctx.ScopeManager.AssignVariable("N", bigIntString("1"))
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDivModSafeDivHinter()
