@@ -2,9 +2,11 @@ package zero
 
 import (
 	"fmt"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -66,4 +68,57 @@ func createEcNegateHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	}
 
 	return newEcNegateHint(point), nil
+}
+
+func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "NondetBigint3V1",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import split
+			//> segments.write_arg(ids.res.address_, split(value))
+
+			address, err := res.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			valueBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("value")
+			if err != nil {
+				return err
+			}
+
+			//> split(value)
+			values, err := secp_utils.SecPSplit(valueBig)
+			if err != nil {
+				return err
+			}
+
+			//> segments.write_arg(ids.res.address_, values)
+			for i := 0; i < 3; i++ {
+				valueAddr, err := address.AddOffset(int16(i))
+				if err != nil {
+					return err
+				}
+
+				valueFelt := new(fp.Element).SetBigInt(values[i])
+				valueMv := mem.MemoryValueFromFieldElement(valueFelt)
+
+				err = vm.Memory.WriteToAddress(&valueAddr, &valueMv)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	}
+}
+
+func createNondetBigint3V1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	res, err := resolver.GetResOperander("res")
+	if err != nil {
+		return nil, err
+	}
+
+	return newNondetBigint3V1Hint(res), nil
 }

@@ -1,10 +1,12 @@
 package zero
 
 import (
-	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
+	"math/big"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func TestZeroHintEc(t *testing.T) {
@@ -187,6 +189,156 @@ func TestZeroHintEc(t *testing.T) {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("115792089237316195423511115915312127562362008772591693155831694873530722155557", 10)),
+			},
+		},
+		"NondetBigint3V1": {
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					// GetSecPBig() % fp.Modulus() but with first digit 3 replaced with 7
+					value := bigIntString("7618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				check: consecutiveVarValueEquals("res", []*fp.Element{feltString("72082201994522260246887440"), feltString("9036023809832564006525928"), feltString("1272654087330362946288670")}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					// GetSecPBig() % fp.Modulus()
+					value := bigIntString("3618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				check: consecutiveVarValueEquals("res", []*fp.Element{feltString("77371252455336262886226960"), feltString("77371252455336267181195263"), feltString("604462909807314034753535")}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{"value": big.NewInt(123456)})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				check: consecutiveVarValueEquals("res", []*fp.Element{feltString("123456"), &utils.FeltZero, &utils.FeltZero}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{"value": big.NewInt(-123456)})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				errCheck: errorTextContains("num != 0"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					// 2**86 - 1
+					value := bigIntString("77371252455336267181195263", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				check: consecutiveVarValueEquals("res", []*fp.Element{feltString("77371252455336267181195263"), &utils.FeltZero, &utils.FeltZero}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					// 2**86
+					value := bigIntString("77371252455336267181195264", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				check: consecutiveVarValueEquals("res", []*fp.Element{&utils.FeltZero, &utils.FeltOne, &utils.FeltZero}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					// 2**86 + 1
+					value := bigIntString("77371252455336267181195265", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				check: consecutiveVarValueEquals("res", []*fp.Element{&utils.FeltOne, &utils.FeltOne, &utils.FeltZero}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{"value": big.NewInt(0)})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				check: consecutiveVarValueEquals("res", []*fp.Element{&utils.FeltZero, &utils.FeltZero, &utils.FeltZero}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					// (2**86 - 1) * 2
+					value := bigIntString("154742504910672534362390526", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				check: consecutiveVarValueEquals("res", []*fp.Element{feltString("77371252455336267181195262"), &utils.FeltOne, &utils.FeltZero}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					// 2**86 * 2
+					value := bigIntString("154742504910672534362390528", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				check: consecutiveVarValueEquals("res", []*fp.Element{&utils.FeltZero, feltString("2"), &utils.FeltZero}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "res", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					// (2**86 + 1) * 2
+					value := bigIntString("154742504910672534362390530", 10)
+					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetBigint3V1Hint(ctx.operanders["res"])
+				},
+				check: consecutiveVarValueEquals("res", []*fp.Element{feltString("2"), feltString("2"), &utils.FeltZero}),
 			},
 		},
 	})
