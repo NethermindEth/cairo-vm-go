@@ -17,7 +17,7 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "c", Kind: apRelative, Value: feltUint64(0)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newCairoKeccakFinalizeHint(ctx.operanders["a"], ctx.operanders["b"])
+					return newCairoKeccakFinalizeHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["c"])
 				},
 				check: apValueEquals(feltUint64(0)),
 			},
