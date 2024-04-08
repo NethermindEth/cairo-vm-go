@@ -55,6 +55,16 @@ func (sm *ScopeManager) AssignVariable(name string, value any) error {
 	return nil
 }
 
+func (sm *ScopeManager) AssignVariables(values map[string]any) error {
+	for name, value := range values {
+		err := sm.AssignVariable(name, value)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (sm *ScopeManager) GetVariableValue(name string) (any, error) {
 	scope, err := sm.getCurrentScope()
 	if err != nil {
