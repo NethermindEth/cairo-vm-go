@@ -83,10 +83,22 @@ func TestSignatures(t *testing.T) {
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
-					ctx.ScopeManager.AssignVariable("res", bigIntString("0"))
-					ctx.ScopeManager.AssignVariable("a", bigIntString("0"))
-					ctx.ScopeManager.AssignVariable("b", bigIntString("0"))
-					ctx.ScopeManager.AssignVariable("N", bigIntString("1"))
+					err := ctx.ScopeManager.AssignVariable("res", bigIntString("0"))
+					if err != nil {
+						t.Fatal(err)
+					}
+					err = ctx.ScopeManager.AssignVariable("a", bigIntString("0"))
+					if err != nil {
+						t.Fatal(err)
+					}
+					err = ctx.ScopeManager.AssignVariable("b", bigIntString("0"))
+					if err != nil {
+						t.Fatal(err)
+					}
+					err = ctx.ScopeManager.AssignVariable("N", bigIntString("1"))
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDivModSafeDivHinter()
@@ -130,10 +142,22 @@ func TestSignatures(t *testing.T) {
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
-					ctx.ScopeManager.AssignVariable("res", bigIntString("10"))
-					ctx.ScopeManager.AssignVariable("a", bigIntString("20"))
-					ctx.ScopeManager.AssignVariable("b", bigIntString("30"))
-					ctx.ScopeManager.AssignVariable("N", bigIntString("2"))
+					err := ctx.ScopeManager.AssignVariable("res", bigIntString("10"))
+					if err != nil {
+						t.Fatal(err)
+					}
+					err = ctx.ScopeManager.AssignVariable("a", bigIntString("20"))
+					if err != nil {
+						t.Fatal(err)
+					}
+					err = ctx.ScopeManager.AssignVariable("b", bigIntString("30"))
+					if err != nil {
+						t.Fatal(err)
+					}
+					err = ctx.ScopeManager.AssignVariable("N", bigIntString("2"))
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDivModSafeDivHinter()
