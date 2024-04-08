@@ -2,6 +2,7 @@ package zero
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
@@ -56,7 +57,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			yBig.Neg(yBig)
 			yBig.Mod(yBig, secPBig)
 
-			return ctx.ScopeManager.AssignVariable("value", yBig)
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": yBig, "SECP_P": secPBig})
 		},
 	}
 }
@@ -121,4 +122,54 @@ func createNondetBigint3V1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 	}
 
 	return newNondetBigint3V1Hint(res), nil
+}
+
+func newFastEcAddAssignNewYHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "FastEcAddAssignNewY",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> value = new_y = (slope * (x0 - new_x) - y0) % SECP_P
+
+			slopeBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("slope")
+			if err != nil {
+				return err
+			}
+			x0Big, err := ctx.ScopeManager.GetVariableValueAsBigInt("x0")
+			if err != nil {
+				return err
+			}
+			new_xBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("new_x")
+			if err != nil {
+				return err
+			}
+			y0Big, err := ctx.ScopeManager.GetVariableValueAsBigInt("y0")
+			if err != nil {
+				return err
+			}
+			secPBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("SECP_P")
+			if err != nil {
+				return err
+			}
+
+			new_yBig := new(big.Int)
+			new_yBig.Sub(x0Big, new_xBig)
+			new_yBig.Mul(new_yBig, slopeBig)
+			new_yBig.Sub(new_yBig, y0Big)
+			new_yBig.Mod(new_yBig, secPBig)
+
+			valueBig := new(big.Int)
+			valueBig.Set(new_yBig)
+
+			err = ctx.ScopeManager.AssignVariable("new_y", new_yBig)
+			if err != nil {
+				return err
+			}
+
+			return ctx.ScopeManager.AssignVariable("value", valueBig)
+		},
+	}
+}
+
+func createFastEcAddAssignNewYHinter() (hinter.Hinter, error) {
+	return newFastEcAddAssignNewYHint(), nil
 }

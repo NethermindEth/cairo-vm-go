@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -339,6 +340,66 @@ func TestZeroHintEc(t *testing.T) {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
 				},
 				check: consecutiveVarValueEquals("res", []*fp.Element{feltString("2"), feltString("2"), &utils.FeltZero}),
+			},
+		},
+		"FastEcAddAssignNewY": {
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					slopeBig := big.NewInt(100)
+					x0Big := big.NewInt(20)
+					new_xBig := big.NewInt(10)
+					y0Big := big.NewInt(10)
+					secPBig, _ := secp_utils.GetSecPBig()
+
+					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newFastEcAddAssignNewYHint()
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"new_y": big.NewInt(990),
+					"value": big.NewInt(990),
+				}),
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					slopeBig := big.NewInt(0)
+					x0Big := big.NewInt(20)
+					new_xBig := big.NewInt(10)
+					y0Big := big.NewInt(10)
+					secPBig, _ := secp_utils.GetSecPBig()
+
+					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newFastEcAddAssignNewYHint()
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"new_y": bigIntString("115792089237316195423570985008687907853269984665640564039457584007908834671653", 10),
+					"value": bigIntString("115792089237316195423570985008687907853269984665640564039457584007908834671653", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					// GetSecPBig() + 20
+					slopeBig := bigIntString("115792089237316195423570985008687907853269984665640564039457584007908834671683", 10)
+					x0Big := big.NewInt(200)
+					new_xBig := big.NewInt(199)
+					y0Big := big.NewInt(20)
+					secPBig, _ := secp_utils.GetSecPBig()
+
+					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newFastEcAddAssignNewYHint()
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"new_y": big.NewInt(0),
+					"value": big.NewInt(0),
+				}),
 			},
 		},
 	})
