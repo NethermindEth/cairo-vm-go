@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -349,8 +350,9 @@ func TestZeroHintEc(t *testing.T) {
 					x0Big := big.NewInt(20)
 					new_xBig := big.NewInt(10)
 					y0Big := big.NewInt(10)
+					secPBig, _ := secp_utils.GetSecPBig()
 
-					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big})
+					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
@@ -367,8 +369,9 @@ func TestZeroHintEc(t *testing.T) {
 					x0Big := big.NewInt(20)
 					new_xBig := big.NewInt(10)
 					y0Big := big.NewInt(10)
+					secPBig, _ := secp_utils.GetSecPBig()
 
-					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big})
+					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
@@ -386,8 +389,9 @@ func TestZeroHintEc(t *testing.T) {
 					x0Big := big.NewInt(200)
 					new_xBig := big.NewInt(199)
 					y0Big := big.NewInt(20)
+					secPBig, _ := secp_utils.GetSecPBig()
 
-					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big})
+					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()

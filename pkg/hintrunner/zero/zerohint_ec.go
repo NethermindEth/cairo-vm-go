@@ -57,7 +57,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			yBig.Neg(yBig)
 			yBig.Mod(yBig, secPBig)
 
-			return ctx.ScopeManager.AssignVariable("value", yBig)
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": yBig, "SECP_P": secPBig})
 		},
 	}
 }
@@ -146,10 +146,9 @@ func newFastEcAddAssignNewYHint() hinter.Hinter {
 			if err != nil {
 				return err
 			}
-
-			secPBig, ok := secp_utils.GetSecPBig()
-			if !ok {
-				return fmt.Errorf("GetSecPBig failed")
+			secPBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("SECP_P")
+			if err != nil {
+				return err
 			}
 
 			new_yBig := new(big.Int)
