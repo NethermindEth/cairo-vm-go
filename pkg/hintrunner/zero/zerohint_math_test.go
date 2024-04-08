@@ -1,6 +1,8 @@
 package zero
 
 import (
+	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -10,6 +12,7 @@ import (
 )
 
 func TestZeroHintMath(t *testing.T) {
+
 	runHinterTests(t, map[string][]hintTestCase{
 		"IsLeFelt": {
 			{
@@ -555,7 +558,40 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorTextContains("outside of the range [0, 2**250)"),
 			},
 		},
-
+		"Pow": {
+			{
+				operanders: []*hintOperander{
+					{Name: "prev_locs.bit", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.temp0", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.res", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.base", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.exp", Kind: apRelative, Value: feltInt64(256)},
+					{Name: "locs.bit", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newPowHint(ctx.operanders["locs.bit"], ctx.operanders["prev_locs.bit"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"locs.bit": feltInt64(0),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "prev_locs.bit", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.temp0", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.res", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.base", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "prev_locs.exp", Kind: apRelative, Value: feltInt64(255)},
+					{Name: "locs.bit", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newPowHint(ctx.operanders["locs.bit"], ctx.operanders["prev_locs.bit"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"locs.bit": feltInt64(1),
+				}),
+			},
+		},
 		"SplitFelt": {
 			{
 				operanders: []*hintOperander{
@@ -586,7 +622,105 @@ func TestZeroHintMath(t *testing.T) {
 				}),
 			},
 		},
-
+		"SignedDivRem": {
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "div", Kind: apRelative, Value: &utils.FeltMax128},
+					{Name: "bound", Kind: apRelative, Value: &utils.Felt127},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
+				},
+				errCheck: errorTextContains(fmt.Sprintf("div=%v is out of the valid range.", &utils.FeltMax128)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "div", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "bound", Kind: apRelative, Value: &utils.Felt127},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
+				},
+				errCheck: errorTextContains(fmt.Sprintf("div=%v is out of the valid range.", &utils.FeltZero)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "div", Kind: apRelative, Value: &utils.FeltOne},
+					{Name: "bound", Kind: apRelative, Value: new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 130))},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
+				},
+				errCheck: errorTextContains(fmt.Sprintf("bound=%v is out of the valid range", new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 130)))),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: feltInt64(-6)},
+					{Name: "div", Kind: apRelative, Value: feltInt64(2)},
+					{Name: "bound", Kind: apRelative, Value: feltInt64(2)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
+				},
+				errCheck: errorTextContains(fmt.Sprintf("%v / %v = %v is out of the range [-%v, %v]", feltInt64(-6), feltInt64(2), feltInt64(-3), feltInt64(2), feltInt64(2))),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: feltInt64(6)},
+					{Name: "div", Kind: apRelative, Value: feltInt64(2)},
+					{Name: "bound", Kind: apRelative, Value: feltInt64(3)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
+				},
+				errCheck: errorTextContains(fmt.Sprintf("%v / %v = %v is out of the range [-%v, %v].", feltInt64(6), feltInt64(2), feltInt64(3), feltInt64(3), feltInt64(3))),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: feltInt64(5)},
+					{Name: "div", Kind: apRelative, Value: feltInt64(2)},
+					{Name: "bound", Kind: apRelative, Value: &utils.Felt127},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"r":        &utils.FeltOne,
+					"biased_q": new(fp.Element).Add(feltInt64(2), &utils.Felt127),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: apRelative, Value: feltInt64(-3)},
+					{Name: "div", Kind: apRelative, Value: feltInt64(2)},
+					{Name: "bound", Kind: apRelative, Value: &utils.Felt127},
+					{Name: "r", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"r":        &utils.FeltOne,
+					"biased_q": new(fp.Element).Sub(&utils.Felt127, feltInt64(2)),
+				}),
+			},
+		},
 		"SqrtHint": {
 			{
 				operanders: []*hintOperander{

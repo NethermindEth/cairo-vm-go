@@ -1,6 +1,8 @@
 package zero
 
 import (
+	"fmt"
+
 	"math/big"
 	"testing"
 
@@ -41,6 +43,14 @@ func addrBuiltin(builtin starknet.Builtin, offset uint64) *builtinReference {
 		builtin: builtin,
 		offset:  offset,
 	}
+}
+
+func bigIntString(s string, base int) *big.Int {
+	valueBig, ok := new(big.Int).SetString(s, base)
+	if !ok {
+		panic(fmt.Errorf("string: %v base: %d to big.Int conversion failed", s, base))
+	}
+	return valueBig
 }
 
 func feltString(s string) *fp.Element {
@@ -93,10 +103,97 @@ func varValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx
 	}
 }
 
+func consecutiveVarAddrResolvedValueEquals(varName string, expectedValues []*fp.Element) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		o := ctx.operanders[varName]
+		addr, err := o.GetAddress(ctx.vm)
+		require.NoError(t, err)
+		actualAddress, err := ctx.vm.Memory.ReadFromAddressAsAddress(&addr)
+		require.NoError(t, err)
+
+		for index, expectedValue := range expectedValues {
+			expectedValueAddr := memory.MemoryAddress{SegmentIndex: actualAddress.SegmentIndex, Offset: actualAddress.Offset + uint64(index)}
+			actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&expectedValueAddr)
+			require.NoError(t, err)
+			require.Equal(t, &actualFelt, expectedValue, "%s[%v] value mismatch:\nhave: %v\nwant: %v", varName, index, &actualFelt, expectedValue)
+		}
+	}
+}
+
 func allVarValueEquals(expectedValues map[string]*fp.Element) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
 		for varName, expected := range expectedValues {
 			varValueEquals(varName, expected)(t, ctx)
+		}
+	}
+}
+
+func consecutiveVarValueEquals(varName string, expectedValues []*fp.Element) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		o := ctx.operanders[varName]
+		addr, err := o.GetAddress(ctx.vm)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for idx := 0; idx < len(expectedValues); idx++ {
+			offsetAddress, err := addr.AddOffset(int16(idx))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&offsetAddress)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expectedFelt := expectedValues[idx]
+
+			if !actualFelt.Equal(expectedFelt) {
+				t.Fatalf("%s value mismatch at %s:\nhave: %v\nwant: %v", varName, offsetAddress, &actualFelt, expectedFelt)
+			}
+		}
+	}
+}
+
+func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		value, err := ctx.runnerContext.ScopeManager.GetVariableValue(varName)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		switch expected.(type) {
+		case *big.Int:
+			{
+				valueBig := value.(*big.Int)
+				expectedBig := expected.(*big.Int)
+				if valueBig.Cmp(expectedBig) != 0 {
+					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
+				}
+			}
+		case *fp.Element:
+			{
+				valueFelt := value.(*fp.Element)
+				expectedFelt := expected.(*fp.Element)
+				if valueFelt.Cmp(expectedFelt) != 0 {
+					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
+				}
+			}
+		default:
+			{
+				if value != expected {
+					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
+				}
+			}
+		}
+	}
+}
+
+func allVarValueInScopeEquals(expectedValues map[string]any) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		for varName, expected := range expectedValues {
+			varValueInScopeEquals(varName, expected)(t, ctx)
 		}
 	}
 }
