@@ -49,7 +49,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	if err != nil {
 		return nil, err
 	}
-	
+
 	switch rawHint.Code {
 	// Math hints
 	case isLeFeltCode:
