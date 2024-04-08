@@ -160,16 +160,149 @@ func newFastEcAddAssignNewYHint() hinter.Hinter {
 			valueBig := new(big.Int)
 			valueBig.Set(new_yBig)
 
-			err = ctx.ScopeManager.AssignVariable("new_y", new_yBig)
-			if err != nil {
-				return err
-			}
-
-			return ctx.ScopeManager.AssignVariable("value", valueBig)
+			return ctx.ScopeManager.AssignVariables(map[string]any{"new_y": new_yBig, "value": valueBig})
 		},
 	}
 }
 
 func createFastEcAddAssignNewYHinter() (hinter.Hinter, error) {
 	return newFastEcAddAssignNewYHint(), nil
+}
+
+func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "FastEcAddAssignNewX",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//
+			//> slope = pack(ids.slope, PRIME)
+			//> x0 = pack(ids.point0.x, PRIME)
+			//> x1 = pack(ids.point1.x, PRIME)
+			//> y0 = pack(ids.point0.y, PRIME)
+			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
+
+			slopeAddr, err := slope.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			slopeMemoryValues, err := hinter.GetConsecutiveValues(vm, slopeAddr, int16(3))
+			if err != nil {
+				return err
+			}
+
+			point0Addr, err := point0.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			point0MemoryValues, err := hinter.GetConsecutiveValues(vm, point0Addr, int16(6))
+			if err != nil {
+				return err
+			}
+
+			point1Addr, err := point1.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			point1MemoryValues, err := hinter.GetConsecutiveValues(vm, point1Addr, int16(3))
+			if err != nil {
+				return err
+			}
+
+			// [d0, d1, d2]
+			var slopeValues [3]*fp.Element
+			// [x.d0, x.d1, x.d2]
+			var point0XValues [3]*fp.Element
+			// [y.d0, y.d1, y.d2]
+			var point0YValues [3]*fp.Element
+			// [x.d0, x.d1, x.d2]
+			var point1XValues [3]*fp.Element
+
+			for i := 0; i < 3; i++ {
+				slopeValue, err := slopeMemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				slopeValues[i] = slopeValue
+
+				point0XValue, err := point0MemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				point0XValues[i] = point0XValue
+
+				point1XValue, err := point1MemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				point1XValues[i] = point1XValue
+			}
+
+			for i := 3; i < 6; i++ {
+				point0YValue, err := point0MemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				point0YValues[i-3] = point0YValue
+			}
+
+			//> slope = pack(ids.slope, PRIME)
+			slopeBig, err := secp_utils.SecPPacked(slopeValues)
+			if err != nil {
+				return err
+			}
+
+			//> x0 = pack(ids.point0.x, PRIME)
+			x0Big, err := secp_utils.SecPPacked(point0XValues)
+			if err != nil {
+				return err
+			}
+
+			//> x1 = pack(ids.point1.x, PRIME)
+			x1Big, err := secp_utils.SecPPacked(point1XValues)
+			if err != nil {
+				return err
+			}
+
+			//> y0 = pack(ids.point0.y, PRIME)
+			y0Big, err := secp_utils.SecPPacked(point0YValues)
+			if err != nil {
+				return err
+			}
+
+			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
+
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			new_xBig := new(big.Int)
+			new_xBig.Exp(slopeBig, big.NewInt(2), secPBig)
+			new_xBig.Sub(new_xBig, x0Big)
+			new_xBig.Sub(new_xBig, x1Big)
+			new_xBig.Mod(new_xBig, secPBig)
+
+			valueBig := new(big.Int)
+			valueBig.Set(new_xBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeBig, "x0": x0Big, "x1": x1Big, "y0": y0Big, "new_x": new_xBig, "value": valueBig})
+		},
+	}
+}
+
+func createFastEcAddAssignNewXHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	slope, err := resolver.GetResOperander("slope")
+	if err != nil {
+		return nil, err
+	}
+	point0, err := resolver.GetResOperander("point0")
+	if err != nil {
+		return nil, err
+	}
+	point1, err := resolver.GetResOperander("point1")
+	if err != nil {
+		return nil, err
+	}
+
+	return newFastEcAddAssignNewXHint(slope, point0, point1), nil
 }
