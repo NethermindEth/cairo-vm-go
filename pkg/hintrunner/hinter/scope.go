@@ -2,6 +2,7 @@ package hinter
 
 import (
 	"fmt"
+	"math/big"
 )
 
 // ScopeManager handles all operations regarding scopes:
@@ -54,6 +55,16 @@ func (sm *ScopeManager) AssignVariable(name string, value any) error {
 	return nil
 }
 
+func (sm *ScopeManager) AssignVariables(values map[string]any) error {
+	for name, value := range values {
+		err := sm.AssignVariable(name, value)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (sm *ScopeManager) GetVariableValue(name string) (any, error) {
 	scope, err := sm.getCurrentScope()
 	if err != nil {
@@ -65,6 +76,20 @@ func (sm *ScopeManager) GetVariableValue(name string) (any, error) {
 	}
 
 	return nil, fmt.Errorf("variable %s not found in current scope", name)
+}
+
+func (sm *ScopeManager) GetVariableValueAsBigInt(name string) (*big.Int, error) {
+	value, err := sm.GetVariableValue(name)
+	if err != nil {
+		return nil, err
+	}
+
+	valueBig, ok := value.(*big.Int)
+	if !ok {
+		return nil, fmt.Errorf("value: %s is not a *big.Int", value)
+	}
+
+	return valueBig, nil
 }
 
 func (sm *ScopeManager) getCurrentScope() (*map[string]any, error) {
