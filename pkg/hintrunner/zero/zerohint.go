@@ -49,7 +49,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	if err != nil {
 		return nil, err
 	}
-
+	
 	switch rawHint.Code {
 	// Math hints
 	case isLeFeltCode:
@@ -118,6 +118,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createFastEcAddAssignNewXHinter(resolver)
 	case ecDoubleSlopeV1Code:
 		return createEcDoubleSlopeV1Hinter(resolver)
+		// Signature hints
+	case divModNPackedDivmodV1Code:
+		return createDivModNPackedDivmodV1Hinter(resolver)
 		// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)

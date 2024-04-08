@@ -31,7 +31,7 @@ func TestDivMod(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, err := div_mod(tt.n, tt.m, tt.p)
+			actual, err := Div_mod(tt.n, tt.m, tt.p)
 
 			if err != nil {
 				if err.Error() != tt.expectedErrMsg {

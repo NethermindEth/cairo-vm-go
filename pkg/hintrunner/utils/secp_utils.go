@@ -2,8 +2,9 @@ package utils
 
 import (
 	"fmt"
-	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"math/big"
+
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func getBaseBig() (*big.Int, bool) {
@@ -16,12 +17,17 @@ func GetSecPBig() (*big.Int, bool) {
 	return new(big.Int).SetString("115792089237316195423570985008687907853269984665640564039457584007908834671663", 10)
 }
 
+func GetN() (*big.Int, bool) {
+	// 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
+	return new(big.Int).SetString("115792089237316195423570985008687907852837564279074904382605163141518161494337", 10)
+}
+
 func SecPPacked(limbs [3]*fp.Element) (*big.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L28
 
 	baseBig, ok := getBaseBig()
 	if !ok {
-		return nil, fmt.Errorf("getBaseBig failed")
+		return nil, fmt.Errorf("GetBaseBig failed")
 	}
 
 	packedBig := new(big.Int)
@@ -42,7 +48,7 @@ func SecPSplit(num *big.Int) ([]*big.Int, error) {
 
 	baseBig, ok := getBaseBig()
 	if !ok {
-		return nil, fmt.Errorf("getBaseBig failed")
+		return nil, fmt.Errorf("GetBaseBig failed")
 	}
 
 	var residue big.Int

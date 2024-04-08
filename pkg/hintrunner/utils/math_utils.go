@@ -25,7 +25,7 @@ func EcDoubleSlope(point [2]*big.Int, alpha, p *big.Int) (*big.Int, error) {
 	m := big.NewInt(2)
 	m.Mul(m, pointY)
 
-	return div_mod(n, m, p)
+	return Div_mod(n, m, p)
 }
 
 func AsInt(valueFelt *fp.Element) *big.Int {
@@ -42,7 +42,7 @@ func AsInt(valueFelt *fp.Element) *big.Int {
 	return new(big.Int).Sub(&valueBig, fp.Modulus())
 }
 
-func div_mod(n, m, p *big.Int) (*big.Int, error) {
+func Div_mod(n, m, p *big.Int) (*big.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/python/math_utils.py#L26
 
 	a, _, c := igcdex(m, p)
