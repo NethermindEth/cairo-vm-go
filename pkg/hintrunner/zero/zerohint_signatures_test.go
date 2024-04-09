@@ -6,7 +6,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
-  
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -43,7 +43,7 @@ func TestSignatures(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
 				},
-				check: varValueInScopeEquals("value", bigIntString("64828261740814840065360381756190772627110652128289340260788836867053167272156")),
+				check: varValueInScopeEquals("value", bigIntString("64828261740814840065360381756190772627110652128289340260788836867053167272156", 10)),
 			},
 			// if v % 2 != y % 2:
 			{
@@ -59,7 +59,7 @@ func TestSignatures(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
 				},
-				check: varValueInScopeEquals("value", bigIntString("3754707778961574900176639079436749683878498834289427635045629810524611907876")),
+				check: varValueInScopeEquals("value", bigIntString("3754707778961574900176639079436749683878498834289427635045629810524611907876", 10)),
 			},
 			// values are 2**86 BASE
 			{
@@ -75,7 +75,7 @@ func TestSignatures(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
 				},
-				check: varValueInScopeEquals("value", bigIntString("64330220386510520462271671435567806262107470356169873352512014089172394266548")),
+				check: varValueInScopeEquals("value", bigIntString("64330220386510520462271671435567806262107470356169873352512014089172394266548", 10)),
 			},
 		},
 		"DivModNSafeDivHint": {
@@ -84,19 +84,19 @@ func TestSignatures(t *testing.T) {
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
-					err := ctx.ScopeManager.AssignVariable("res", bigIntString("0"))
+					err := ctx.ScopeManager.AssignVariable("res", bigIntString("0", 10))
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = ctx.ScopeManager.AssignVariable("a", bigIntString("0"))
+					err = ctx.ScopeManager.AssignVariable("a", bigIntString("0", 10))
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = ctx.ScopeManager.AssignVariable("b", bigIntString("0"))
+					err = ctx.ScopeManager.AssignVariable("b", bigIntString("0", 10))
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = ctx.ScopeManager.AssignVariable("N", bigIntString("1"))
+					err = ctx.ScopeManager.AssignVariable("N", bigIntString("1", 10))
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -105,8 +105,8 @@ func TestSignatures(t *testing.T) {
 					return newDivModSafeDivHinter()
 				},
 				check: varListInScopeEquals(map[string]any{
-					"value": bigIntString("0"),
-					"k":     bigIntString("0"),
+					"value": bigIntString("0", 10),
+					"k":     bigIntString("0", 10),
 				}),
 			},
 			{
@@ -114,19 +114,19 @@ func TestSignatures(t *testing.T) {
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
-					err := ctx.ScopeManager.AssignVariable("res", bigIntString("1"))
+					err := ctx.ScopeManager.AssignVariable("res", bigIntString("1", 10))
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = ctx.ScopeManager.AssignVariable("a", bigIntString("2"))
+					err = ctx.ScopeManager.AssignVariable("a", bigIntString("2", 10))
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = ctx.ScopeManager.AssignVariable("b", bigIntString("1"))
+					err = ctx.ScopeManager.AssignVariable("b", bigIntString("1", 10))
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = ctx.ScopeManager.AssignVariable("N", bigIntString("1"))
+					err = ctx.ScopeManager.AssignVariable("N", bigIntString("1", 10))
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -135,27 +135,27 @@ func TestSignatures(t *testing.T) {
 					return newDivModSafeDivHinter()
 				},
 				check: varListInScopeEquals(map[string]any{
-					"value": bigIntString("-1"),
-					"k":     bigIntString("-1"),
+					"value": bigIntString("-1", 10),
+					"k":     bigIntString("-1", 10),
 				})},
 			{
 				// positive quotient
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
-					err := ctx.ScopeManager.AssignVariable("res", bigIntString("10"))
+					err := ctx.ScopeManager.AssignVariable("res", bigIntString("10", 10))
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = ctx.ScopeManager.AssignVariable("a", bigIntString("20"))
+					err = ctx.ScopeManager.AssignVariable("a", bigIntString("20", 10))
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = ctx.ScopeManager.AssignVariable("b", bigIntString("30"))
+					err = ctx.ScopeManager.AssignVariable("b", bigIntString("30", 10))
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = ctx.ScopeManager.AssignVariable("N", bigIntString("2"))
+					err = ctx.ScopeManager.AssignVariable("N", bigIntString("2", 10))
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -164,8 +164,8 @@ func TestSignatures(t *testing.T) {
 					return newDivModSafeDivHinter()
 				},
 				check: varListInScopeEquals(map[string]any{
-					"value": bigIntString("140"),
-					"k":     bigIntString("140"),
+					"value": bigIntString("140", 10),
+					"k":     bigIntString("140", 10),
 				}),
 			},
 		},

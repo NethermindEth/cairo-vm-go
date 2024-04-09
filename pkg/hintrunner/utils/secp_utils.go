@@ -2,7 +2,7 @@ package utils
 
 import (
 	"fmt"
-  
+
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"math/big"
 )
