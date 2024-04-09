@@ -84,19 +84,12 @@ func TestSignatures(t *testing.T) {
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
-					err := ctx.ScopeManager.AssignVariable("res", bigIntString("0", 10))
-					if err != nil {
-						t.Fatal(err)
-					}
-					err = ctx.ScopeManager.AssignVariable("a", bigIntString("0", 10))
-					if err != nil {
-						t.Fatal(err)
-					}
-					err = ctx.ScopeManager.AssignVariable("b", bigIntString("0", 10))
-					if err != nil {
-						t.Fatal(err)
-					}
-					err = ctx.ScopeManager.AssignVariable("N", bigIntString("1", 10))
+					err := ctx.ScopeManager.AssignVariables(map[string]any{
+						"res": bigIntString("0", 10),
+						"a":   bigIntString("0", 10),
+						"b":   bigIntString("0", 10),
+						"N":   bigIntString("1", 10),
+					})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -114,19 +107,12 @@ func TestSignatures(t *testing.T) {
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
-					err := ctx.ScopeManager.AssignVariable("res", bigIntString("1", 10))
-					if err != nil {
-						t.Fatal(err)
-					}
-					err = ctx.ScopeManager.AssignVariable("a", bigIntString("2", 10))
-					if err != nil {
-						t.Fatal(err)
-					}
-					err = ctx.ScopeManager.AssignVariable("b", bigIntString("1", 10))
-					if err != nil {
-						t.Fatal(err)
-					}
-					err = ctx.ScopeManager.AssignVariable("N", bigIntString("1", 10))
+					err := ctx.ScopeManager.AssignVariables(map[string]any{
+						"res": bigIntString("1", 10),
+						"a":   bigIntString("2", 10),
+						"b":   bigIntString("1", 10),
+						"N":   bigIntString("1", 10),
+					})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -143,19 +129,12 @@ func TestSignatures(t *testing.T) {
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
-					err := ctx.ScopeManager.AssignVariable("res", bigIntString("10", 10))
-					if err != nil {
-						t.Fatal(err)
-					}
-					err = ctx.ScopeManager.AssignVariable("a", bigIntString("20", 10))
-					if err != nil {
-						t.Fatal(err)
-					}
-					err = ctx.ScopeManager.AssignVariable("b", bigIntString("30", 10))
-					if err != nil {
-						t.Fatal(err)
-					}
-					err = ctx.ScopeManager.AssignVariable("N", bigIntString("2", 10))
+					err := ctx.ScopeManager.AssignVariables(map[string]any{
+						"res": bigIntString("10", 10),
+						"a":   bigIntString("20", 10),
+						"b":   bigIntString("30", 10),
+						"N":   bigIntString("2", 10),
+					})
 					if err != nil {
 						t.Fatal(err)
 					}

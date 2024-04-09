@@ -159,7 +159,8 @@ func newDivModSafeDivHinter() hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			err = ctx.ScopeManager.AssignVariable("k", value)
+			k := new(big.Int).Set(value)
+			err = ctx.ScopeManager.AssignVariable("k", k)
 			if err != nil {
 				return err
 			}
