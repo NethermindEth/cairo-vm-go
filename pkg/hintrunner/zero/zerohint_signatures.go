@@ -66,8 +66,13 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			//>	 value = y
 			//> else:
 			//>	 value = (-y) % SECP_P
+			xCubeAddr, err := xCube.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			fmt.Println("test")
 
-			xCubeMemoryValues, err := hinter.GetConsecutiveValues(vm, xCube, 3)
+			xCubeMemoryValues, err := hinter.GetConsecutiveValues(vm, xCubeAddr, 3)
 			if err != nil {
 				return err
 			}
