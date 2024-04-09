@@ -117,7 +117,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createBlake2sAddUint256Hinter(resolver, false)
 		// Usort hints
 	case usortEnterScopeCode:
-		return createUsortEnterScopeHinter(resolver)
+		return createUsortEnterScopeHinter()
 		// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)
