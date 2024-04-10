@@ -400,13 +400,11 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
 			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
-			// Computes the slope = (y2 - y1) / (x2 - x1) mod prime.
 			modValue := new(big.Int).Sub(x0Big, x1Big)
 			modValue.Mod(modValue, secPBig)
 
