@@ -414,7 +414,10 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("%s is multiple of cairo Prime", modValue.Text(10))
 			}
 
+			// Compute the difference of y-coordinates
 			n := new(big.Int).Sub(y1Big, y0Big)
+
+			// Compute the difference of x-coordinates
 			m := new(big.Int).Sub(x1Big, x0Big)
 
 			// directly computes the remainder: z = n * m_inv (mod prime).
