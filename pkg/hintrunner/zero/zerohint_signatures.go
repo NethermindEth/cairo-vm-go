@@ -70,7 +70,6 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			fmt.Println("test")
 
 			xCubeMemoryValues, err := hinter.GetConsecutiveValues(vm, xCubeAddr, 3)
 			if err != nil {
