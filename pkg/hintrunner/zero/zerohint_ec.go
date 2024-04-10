@@ -306,3 +306,138 @@ func createFastEcAddAssignNewXHinter(resolver hintReferenceResolver) (hinter.Hin
 
 	return newFastEcAddAssignNewXHint(slope, point0, point1), nil
 }
+
+func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "ComputeSlopeV1",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> from starkware.python.math_utils import line_slope
+
+			//> # Compute the slope.
+			//> x0 = pack(ids.point0.x, PRIME)
+			//> y0 = pack(ids.point0.y, PRIME)
+			//> x1 = pack(ids.point1.x, PRIME)
+			//> y1 = pack(ids.point1.y, PRIME)
+			//> value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
+
+			point0Addr, err := point0.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			point0MemoryValues, err := hinter.GetConsecutiveValues(vm, point0Addr, int16(6))
+			if err != nil {
+				return err
+			}
+
+			point1Addr, err := point1.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			point1MemoryValues, err := hinter.GetConsecutiveValues(vm, point1Addr, int16(6))
+			if err != nil {
+				return err
+			}
+
+			// [x.d0, x.d1, x.d2]
+			var point0XValues [3]*fp.Element
+			// [y.d0, y.d1, y.d2]
+			var point0YValues [3]*fp.Element
+			// [x.d0, x.d1, x.d2]
+			var point1XValues [3]*fp.Element
+			// [y.d0, y.d1, y.d2]
+			var point1YValues [3]*fp.Element
+
+			for i := 0; i < 3; i++ {
+				point0XValue, err := point0MemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				point0XValues[i] = point0XValue
+
+				point1XValue, err := point1MemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				point1XValues[i] = point1XValue
+			}
+
+			for i := 3; i < 6; i++ {
+				point0YValue, err := point0MemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				point0YValues[i-3] = point0YValue
+
+				point1YValue, err := point1MemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				point1YValues[i-3] = point1YValue
+			}
+
+			//> x0 = pack(ids.point0.x, PRIME)
+			x0Big, err := secp_utils.SecPPacked(point0XValues)
+			if err != nil {
+				return err
+			}
+
+			//> x1 = pack(ids.point1.x, PRIME)
+			x1Big, err := secp_utils.SecPPacked(point1XValues)
+			if err != nil {
+				return err
+			}
+
+			//> y0 = pack(ids.point0.y, PRIME)
+			y0Big, err := secp_utils.SecPPacked(point0YValues)
+			if err != nil {
+				return err
+			}
+
+			//> y1 = pack(ids.point0.y, PRIME)
+			y1Big, err := secp_utils.SecPPacked(point1YValues)
+			if err != nil {
+				return err
+			}
+
+			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			// Computes the slope = (y2 - y1) / (x2 - x1) mod prime.
+			modValue := new(big.Int).Sub(x0Big, x1Big)
+			modValue.Mod(modValue, secPBig)
+
+			if modValue.Cmp(big.NewInt(0)) == 0 {
+				return fmt.Errorf("%s is multiple of cairo Prime", modValue.Text(10))
+			}
+
+			n := new(big.Int).Sub(y1Big, y0Big)
+			m := new(big.Int).Sub(x1Big, x0Big)
+
+			// directly computes the remainder: z = n * m_inv (mod prime).
+			m_inv := new(big.Int).ModInverse(m, secPBig)
+
+			value := new(big.Int).Mul(n, m_inv)
+			value.Mod(value, secPBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": value, "slope": value})
+		},
+	}
+}
+
+func createComputeSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	point0, err := resolver.GetResOperander("point0")
+	if err != nil {
+		return nil, err
+	}
+
+	point1, err := resolver.GetResOperander("point1")
+	if err != nil {
+		return nil, err
+	}
+
+	return newComputeSlopeV1Hint(point0, point1), nil
+}

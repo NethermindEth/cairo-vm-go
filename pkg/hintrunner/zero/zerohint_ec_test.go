@@ -505,5 +505,62 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
+		"ComputeSlopeV1": {
+			{
+				operanders: []*hintOperander{
+					{Name: "point0.x.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point0.x.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point0.x.d2", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point0.y.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point0.y.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point0.y.d2", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point1.x.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point1.x.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point1.x.d2", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point1.y.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point1.y.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point1.y.d2", Kind: apRelative, Value: &utils.FeltZero},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newComputeSlopeV1Hint(ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
+				},
+				errCheck: errorTextContains("0 is multiple of cairo Prime"),
+			},
+			{
+				operanders: []*hintOperander{
+					// random values
+					{Name: "point0.x.d0", Kind: apRelative, Value: feltString("134")},
+					{Name: "point0.x.d1", Kind: apRelative, Value: feltString("5123")},
+					{Name: "point0.x.d2", Kind: apRelative, Value: feltString("140")},
+					{Name: "point0.y.d0", Kind: apRelative, Value: feltString("1232")},
+					{Name: "point0.y.d1", Kind: apRelative, Value: feltString("4652")},
+					{Name: "point0.y.d2", Kind: apRelative, Value: feltString("720")},
+					{Name: "point1.x.d0", Kind: apRelative, Value: feltString("156")},
+					{Name: "point1.x.d1", Kind: apRelative, Value: feltString("6545")},
+					{Name: "point1.x.d2", Kind: apRelative, Value: feltString("100010")},
+					{Name: "point1.y.d0", Kind: apRelative, Value: feltString("1123")},
+					{Name: "point1.y.d1", Kind: apRelative, Value: feltString("1325")},
+					{Name: "point1.y.d2", Kind: apRelative, Value: feltString("910")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
+
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+
+					return newComputeSlopeV1Hint(ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
+				},
+				// Printing the value of point0.x.d0
+
+				check: allVarValueInScopeEquals(map[string]any{
+					"slope": bigIntString("41419765295989780131385135514529906223027172305400087935755859001910844026631", 10),
+					"value": bigIntString("41419765295989780131385135514529906223027172305400087935755859001910844026631", 10),
+				}),
+				//fmt.Printf("Name: %s, Age: %d\n", slope, value)
+			},
+		},
 	})
 }
