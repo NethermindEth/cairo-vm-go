@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 )
@@ -59,7 +59,7 @@ func newImportSecp256R1PHinter() hinter.Hinter {
 			//> from starkware.cairo.common.cairo_secp.secp256r1_utils import SECP256R1_P as SECP_P
 			SECP256R1_PBig, ok := utils.GetSecp256R1_P()
 			if !ok {
-				return fmt.Errorf("SECP256R1_P not found")
+				return fmt.Errorf("SECP256R1_P failed.")
 			}
 			return ctx.ScopeManager.AssignVariable("SECP_P", SECP256R1_PBig)
 		},

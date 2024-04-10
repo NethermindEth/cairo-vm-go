@@ -30,7 +30,7 @@ func TestSignatures(t *testing.T) {
 			{
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
+					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newImportSecp256R1PHinter()
