@@ -129,6 +129,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		// Keccak hints
 	case cairoKeccakFinalize:
 		return createCairoKeccakFinalizeHinter(resolver)
+		// Usort hints
+	case usortEnterScopeCode:
+		return createUsortEnterScopeHinter()
 		// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)
