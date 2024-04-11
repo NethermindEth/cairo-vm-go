@@ -58,6 +58,15 @@ func (dm *DictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddr
 	return newDictAddr
 }
 
+func (dm *DictionaryManager) NewDictionaryWithData(vm *VM.VirtualMachine, data *map[f.Element]*mem.MemoryValue) mem.MemoryAddress {
+	newDictAddr := vm.Memory.AllocateEmptySegment()
+	dm.dictionaries[newDictAddr.SegmentIndex] = Dictionary{
+		data: *data,
+		idx:  uint64(len(dm.dictionaries)),
+	}
+	return newDictAddr
+}
+
 // Given a memory address, it looks for the right dictionary using the segment index. If no
 // segment is associated with the given segment index, it errors
 func (dm *DictionaryManager) GetDictionary(dictAddr *mem.MemoryAddress) (Dictionary, error) {

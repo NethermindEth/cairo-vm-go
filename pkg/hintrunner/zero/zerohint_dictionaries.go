@@ -1,8 +1,12 @@
 package zero
 
 import (
+	"fmt"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func newDictNewHint() hinter.Hinter {
@@ -16,7 +20,31 @@ func newDictNewHint() hinter.Hinter {
 			//> memory[ap] = __dict_manager.new_dict(segments, initial_dict)
 			//> del initial_dict
 
-			return nil
+			//> if '__dict_manager' not in globals():
+			//>   from starkware.cairo.common.dict import DictManager
+			//>   __dict_manager = DictManager()
+			hinter.InitializeDictionaryManager(ctx)
+
+			initialDictValue, err := ctx.ScopeManager.GetVariableValue("initial_dict")
+			if err != nil {
+				return err
+			}
+			initialDict, ok := initialDictValue.(map[fp.Element]*mem.MemoryValue)
+			if !ok {
+				return fmt.Errorf("value: %s is not a *map[f.Element]*mem.MemoryValue", initialDictValue)
+			}
+
+			//> memory[ap] = __dict_manager.new_dict(segments, initial_dict)
+			newDictAddr := ctx.DictionaryManager.NewDictionaryWithData(vm, &initialDict)
+			newDictAddrMv := mem.MemoryValueFromMemoryAddress(&newDictAddr)
+			apAddr := vm.Context.AddressAp()
+			err = vm.Memory.WriteToAddress(&apAddr, &newDictAddrMv)
+			if err != nil {
+				return err
+			}
+
+			//> del initial_dict
+			return ctx.ScopeManager.DeleteVariable("initial_dict")
 		},
 	}
 }
