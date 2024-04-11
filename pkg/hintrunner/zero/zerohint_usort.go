@@ -8,7 +8,7 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func newUsortEnterScopeHint() hinter.Hinter {
+func newUsortEnterScopeHinter() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortEnterScope",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -27,7 +27,7 @@ func newUsortEnterScopeHint() hinter.Hinter {
 }
 
 func createUsortEnterScopeHinter() (hinter.Hinter, error) {
-	return newUsortEnterScopeHint(), nil
+	return newUsortEnterScopeHinter(), nil
 }
 
 func newUsortVerifyMultiplicityAssertHinter() hinter.Hinter {
@@ -56,5 +56,5 @@ func newUsortVerifyMultiplicityAssertHinter() hinter.Hinter {
 }
 
 func createUsortVerifyMultiplicityAssertHinter() (hinter.Hinter, error) {
-	return newUsortEnterScopeHint(), nil
+	return newUsortEnterScopeHinter(), nil
 }

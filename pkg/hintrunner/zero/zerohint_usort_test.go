@@ -17,7 +17,7 @@ func TestZeroHintUsort(t *testing.T) {
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortEnterScopeHint()
+					return newUsortEnterScopeHinter()
 				},
 				check: varValueInScopeEquals("__usort_max_size", feltUint64(1)),
 			},
