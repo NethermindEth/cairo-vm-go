@@ -75,6 +75,7 @@ const (
 	// ------ Keccak hints related code ------
 
 	// ------ Dictionaries hints related code ------
+	dictNewCode string = "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n\nmemory[ap] = __dict_manager.new_dict(segments, initial_dict)\ndel initial_dict"
 
 	// ------ Other hints related code ------
 	allocSegmentCode string = "memory[ap] = segments.add()"

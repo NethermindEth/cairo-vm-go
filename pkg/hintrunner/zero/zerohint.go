@@ -107,7 +107,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUint256SqrtHinter(resolver)
 	case uint256MulDivModCode:
 		return createUint256MulDivModHinter(resolver)
-	// Signature hints
+		// Signature hints
 	case verifyECDSASignatureCode:
 		return createVerifyECDSASignatureHinter(resolver)
 	case importSecp256R1PCode:
@@ -129,6 +129,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		// Usort hints
 	case usortEnterScopeCode:
 		return createUsortEnterScopeHinter()
+		// Dictionary hints
+	case dictNewCode:
+		return createDictNewHinter()
 		// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)
