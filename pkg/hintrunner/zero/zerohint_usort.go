@@ -1,8 +1,11 @@
 package zero
 
 import (
+	"fmt"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func newUsortEnterScopeHint() hinter.Hinter {
@@ -24,5 +27,34 @@ func newUsortEnterScopeHint() hinter.Hinter {
 }
 
 func createUsortEnterScopeHinter() (hinter.Hinter, error) {
+	return newUsortEnterScopeHint(), nil
+}
+
+func newUsortVerifyMultiplicityAssertHinter() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "UsortVerifyMultiplicityAssert",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			// assert len(positions) == 0
+			positions_interface, err := ctx.ScopeManager.GetVariableValue("positions")
+
+			if err != nil {
+				return err
+			}
+
+			positions, ok := positions_interface.([]*fp.Element)
+			if !ok {
+				return fmt.Errorf("casting positions into an array failed")
+			}
+
+			if len(positions) != 0 {
+				return fmt.Errorf("assertion `len(positions) == 0` failed")
+			}
+
+			return nil
+		},
+	}
+}
+
+func createUsortVerifyMultiplicityAssertHinter() (hinter.Hinter, error) {
 	return newUsortEnterScopeHint(), nil
 }

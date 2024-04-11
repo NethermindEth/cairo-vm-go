@@ -56,7 +56,8 @@ const (
 	uint256MulDivModCode      string = "a = (ids.a.high << 128) + ids.a.low/n b = (ids.b.high << 128) + ids.b.low/n div = (ids.div.high << 128) + ids.div.low/n quotient, remainder = divmod(a * b, div)/n ids.quotient_low.low = quotient & ((1 << 128) - 1)/n ids.quotient_low.high = (quotient >> 128) & ((1 << 128) - 1)/n ids.quotient_high.low = (quotient >> 256) & ((1 << 128) - 1)/n ids.quotient_high.high = quotient >> 384/n ids.remainder.low = remainder & ((1 << 128) - 1)/n ids.remainder.high = remainder >> 128"
 
 	// ------ Usort hints related code ------
-	usortEnterScopeCode string = "vm_enter_scope(dict(__usort_max_size = globals().get('__usort_max_size')))"
+	usortEnterScopeCode               string = "vm_enter_scope(dict(__usort_max_size = globals().get('__usort_max_size')))"
+	usortVerifyMultiplicityAssertCode string = "assert len(positions) == 0"
 
 	// ------ Elliptic Curve hints related code ------
 	ecNegateCode            string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\ny = pack(ids.point.y, PRIME) % SECP_P\n# The modulo operation in python always returns a nonnegative number.\nvalue = (-y) % SECP_P"

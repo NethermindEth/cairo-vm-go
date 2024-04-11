@@ -129,6 +129,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		// Usort hints
 	case usortEnterScopeCode:
 		return createUsortEnterScopeHinter()
+	case usortVerifyMultiplicityAssertCode:
+		return createUsortVerifyMultiplicityAssertHinter()
 		// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)
