@@ -35,13 +35,13 @@ func newUsortVerifyMultiplicityAssertHinter() hinter.Hinter {
 		Name: "UsortVerifyMultiplicityAssert",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			// assert len(positions) == 0
-			positions_interface, err := ctx.ScopeManager.GetVariableValue("positions")
+			positionsInterface, err := ctx.ScopeManager.GetVariableValue("positions")
 
 			if err != nil {
 				return err
 			}
 
-			positions, ok := positions_interface.([]*fp.Element)
+			positions, ok := positionsInterface.([]*fp.Element)
 			if !ok {
 				return fmt.Errorf("casting positions into an array failed")
 			}

@@ -47,12 +47,12 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					print("AAAAAA")
-					positions_interface, err := ctx.runnerContext.ScopeManager.GetVariableValue("positions")
+					positionsInterface, err := ctx.runnerContext.ScopeManager.GetVariableValue("positions")
 					if err != nil {
 						t.Fatal(err)
 					}
 
-					positions, ok := positions_interface.([]*fp.Element)
+					positions, ok := positionsInterface.([]*fp.Element)
 					if !ok {
 						t.Fatal("casting positions into an array failed")
 					}
