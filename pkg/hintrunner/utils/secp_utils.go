@@ -63,3 +63,8 @@ func SecPSplit(num *big.Int) ([]*big.Int, error) {
 
 	return split, nil
 }
+
+func GetSecp256R1_P() (*big.Int, bool) {
+	// 2**256 - 2**224 + 2**192 + 2**96 - 1
+	return new(big.Int).SetString("115792089210356248762697446949407573530086143415290314195533631308867097853951", 10)
+}
