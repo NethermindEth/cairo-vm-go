@@ -23,16 +23,14 @@ func newDictNewHint() hinter.Hinter {
 			//> if '__dict_manager' not in globals():
 			//>   from starkware.cairo.common.dict import DictManager
 			//>   __dict_manager = DictManager()
-			var dictionaryManager hinter.DictionaryManager
-			dictionaryManagerValue, err := ctx.ScopeManager.GetVariableValue("__dict_manager")
-			if err != nil {
-				dictionaryManager = hinter.NewDictionaryManager()
+			dictionaryManager, ok := ctx.ScopeManager.GetDictionaryManager()
+			if !ok {
+				newDictionaryManager := hinter.NewDictionaryManager()
+				dictionaryManager = &newDictionaryManager
 				err := ctx.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
 				if err != nil {
 					return err
 				}
-			} else {
-				dictionaryManager = dictionaryManagerValue.(hinter.DictionaryManager)
 			}
 
 			initialDictValue, err := ctx.ScopeManager.GetVariableValue("initial_dict")

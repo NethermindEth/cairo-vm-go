@@ -47,7 +47,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					if err != nil {
 						t.Fatalf("__dict_manager missing")
 					}
-					dictionaryManager := dictionaryManagerValue.(hinter.DictionaryManager)
+					dictionaryManager := dictionaryManagerValue.(*hinter.DictionaryManager)
 					dictionary, err := dictionaryManager.GetDictionary(&dictAddr)
 					if err != nil {
 						t.Fatalf("error fetching dictionary from address at ap")
