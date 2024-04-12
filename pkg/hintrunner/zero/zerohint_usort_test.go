@@ -46,7 +46,6 @@ func TestZeroHintUsort(t *testing.T) {
 					return newUsortVerifyMultiplicityAssertHinter()
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					print("AAAAAA")
 					positionsInterface, err := ctx.runnerContext.ScopeManager.GetVariableValue("positions")
 					if err != nil {
 						t.Fatal(err)
