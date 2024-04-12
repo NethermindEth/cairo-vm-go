@@ -44,6 +44,9 @@ func TestZeroHintDictionaries(t *testing.T) {
 					}
 
 					dictionaryManagerValue, err := ctx.runnerContext.ScopeManager.GetVariableValue("__dict_manager")
+					if err != nil {
+						t.Fatalf("__dict_manager missing")
+					}
 					dictionaryManager := dictionaryManagerValue.(hinter.DictionaryManager)
 					dictionary, err := dictionaryManager.GetDictionary(&dictAddr)
 					if err != nil {
