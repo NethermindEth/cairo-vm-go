@@ -245,7 +245,6 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 				}
 			}
 		}
-		fmt.Println("testCtx.operanders", testCtx.operanders)
 		h := tc.makeHinter(testCtx)
 
 		err := h.Execute(vm, ctx)

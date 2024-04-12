@@ -65,7 +65,6 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 			if err != nil {
 				return err
 			}
-
 			inputLen, err := hinter.ResolveAsUint64(vm, input_len)
 			if err != nil {
 				return err
@@ -78,68 +77,81 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 					return fmt.Errorf("usort() can only be used with input_len<=%d.\n Got: input_len=%d", usortMaxSize, inputLenBig)
 				}
 			}
-			positionsDict := make(map[*fp.Element][]uint64, inputLen)
-
-			var val fp.Element
+			positionsDict := make(map[fp.Element][]uint64, inputLen)
 			for i := int16(0); i < int16(inputLen); i++ {
 				inputPtr, err := inputPtr.AddOffset(i)
 				if err != nil {
 					return err
 				}
-				val, err = vm.Memory.ReadFromAddressAsElement(&inputPtr)
+				val, err := vm.Memory.ReadFromAddressAsElement(&inputPtr)
 				if err != nil {
 					return err
 				}
-
-				positionsDict[&val] = append(positionsDict[&val], uint64(i))
+				positionsDict[val] = append(positionsDict[val], uint64(i))
 			}
 
-			outputArray := make([]*fp.Element, 0, len(positionsDict))
+			outputArray := make([]fp.Element, 0, len(positionsDict))
 			for key := range positionsDict {
 				outputArray = append(outputArray, key)
 			}
 			sort.Sort(utils.SortFelt(outputArray))
 
-			outputLenAddr, err := hinter.ResolveAsAddress(vm, output_len)
+			outputLenAddr, err := output_len.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			mv := memory.MemoryValueFromFieldElement(new(fp.Element).SetUint64(uint64(len(outputArray))))
-			err = vm.Memory.WriteToAddress(outputLenAddr, &mv)
+			outputLenMV := memory.MemoryValueFromFieldElement(new(fp.Element).SetUint64(uint64(len(outputArray))))
+			err = vm.Memory.WriteToAddress(&outputLenAddr, &outputLenMV)
 			if err != nil {
 				return err
 			}
-			outputSegmentBaseAddr, err := vm.Memory.AllocateSegment(outputArray)
+			outputSegmentBaseAddr := vm.Memory.AllocateEmptySegment()
+			outputAddr, err := output.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			outputAddr, err := hinter.ResolveAsAddress(vm, output)
+			outputSegmentBaseAddrMV := memory.MemoryValueFromMemoryAddress(&outputSegmentBaseAddr)
+			err = vm.Memory.WriteToAddress(&outputAddr, &outputSegmentBaseAddrMV)
+			for i, v := range outputArray {
+				outputSegmentWriteArgsPtr, err := outputSegmentBaseAddr.AddOffset(int16(i))
+				if err != nil {
+					return err
+				}
+				outputElementMV := memory.MemoryValueFromFieldElement(&v)
+				err = vm.Memory.WriteToAddress(&outputSegmentWriteArgsPtr, &outputElementMV)
+				if err != nil {
+					return err
+				}
+			}
 			if err != nil {
 				return err
 			}
-			valueMv := memory.MemoryValueFromMemoryAddress(&outputSegmentBaseAddr)
-			err = vm.Memory.WriteToAddress(outputAddr, &valueMv)
+			multiplicitiesArray := make([]*fp.Element, 0, len(outputArray))
+			for _, v := range outputArray {
+				multiplicitiesArray = append(multiplicitiesArray, new(fp.Element).SetUint64(uint64(len(positionsDict[v]))))
+			}
+			multiplicitesSegmentBaseAddr := vm.Memory.AllocateEmptySegment()
+			multiplicitiesAddr, err := multiplicities.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			multiplicitiesArray := make([]*fp.Element, len(outputArray))
-			for _, v := range positionsDict {
-				multiplicitiesArray = append(multiplicitiesArray, new(fp.Element).SetUint64(uint64(len(v))))
-			}
-			multiplicitesSegmentBaseAddr, err := vm.Memory.AllocateSegment(multiplicitiesArray)
+			multiplicitesSegmentBaseAddrMV := memory.MemoryValueFromMemoryAddress(&multiplicitesSegmentBaseAddr)
+			err = vm.Memory.WriteToAddress(&multiplicitiesAddr, &multiplicitesSegmentBaseAddrMV)
 			if err != nil {
 				return err
 			}
-			multiplicitiesAddr, err := hinter.ResolveAsAddress(vm, multiplicities)
-			if err != nil {
-				return err
+			for i, v := range multiplicitiesArray {
+				multiplicitesSegmentWriteArgsPtr, err := multiplicitesSegmentBaseAddr.AddOffset(int16(i))
+				if err != nil {
+					return err
+				}
+				multiplicitiesElementMV := memory.MemoryValueFromFieldElement(v)
+				err = vm.Memory.WriteToAddress(&multiplicitesSegmentWriteArgsPtr, &multiplicitiesElementMV)
+				if err != nil {
+					return err
+				}
 			}
-			valueMv = memory.MemoryValueFromMemoryAddress(&multiplicitesSegmentBaseAddr)
-			err = vm.Memory.WriteToAddress(multiplicitiesAddr, &valueMv)
-			if err != nil {
-				return err
-			}
-			return err
+			return nil
 		},
 	}
 }
