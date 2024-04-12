@@ -107,17 +107,30 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUint256SqrtHinter(resolver)
 	case uint256MulDivModCode:
 		return createUint256MulDivModHinter(resolver)
+	// Signature hints
+	case verifyECDSASignatureCode:
+		return createVerifyECDSASignatureHinter(resolver)
+	case importSecp256R1PCode:
+		return createImportSecp256R1PHinter()
+	case verifyZeroCode:
+		return createVerifyZeroHinter(resolver)
 		// EC hints
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)
-		// Signature hints
-	case verifyZeroCode:
-		return createVerifyZeroHinter(resolver)
+	case nondetBigint3V1Code:
+		return createNondetBigint3V1Hinter(resolver)
+	case fastEcAddAssignNewYCode:
+		return createFastEcAddAssignNewYHinter()
+	case fastEcAddAssignNewXCode:
+		return createFastEcAddAssignNewXHinter(resolver)
 		// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
 	case blake2sAddUint256Code:
 		return createBlake2sAddUint256Hinter(resolver, false)
+		// Usort hints
+	case usortEnterScopeCode:
+		return createUsortEnterScopeHinter()
 		// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)

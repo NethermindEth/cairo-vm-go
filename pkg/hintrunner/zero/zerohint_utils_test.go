@@ -118,6 +118,34 @@ func allVarValueEquals(expectedValues map[string]*fp.Element) func(t *testing.T,
 	}
 }
 
+func consecutiveVarValueEquals(varName string, expectedValues []*fp.Element) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		o := ctx.operanders[varName]
+		addr, err := o.GetAddress(ctx.vm)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for idx := 0; idx < len(expectedValues); idx++ {
+			offsetAddress, err := addr.AddOffset(int16(idx))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&offsetAddress)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expectedFelt := expectedValues[idx]
+
+			if !actualFelt.Equal(expectedFelt) {
+				t.Fatalf("%s value mismatch at %s:\nhave: %v\nwant: %v", varName, offsetAddress, &actualFelt, expectedFelt)
+			}
+		}
+	}
+}
+
 func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
 		value, err := ctx.runnerContext.ScopeManager.GetVariableValue(varName)
@@ -148,6 +176,14 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
 			}
+		}
+	}
+}
+
+func allVarValueInScopeEquals(expectedValues map[string]any) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		for varName, expected := range expectedValues {
+			varValueInScopeEquals(varName, expected)(t, ctx)
 		}
 	}
 }
