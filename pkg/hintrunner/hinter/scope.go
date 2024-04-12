@@ -109,11 +109,11 @@ func (sm *ScopeManager) getCurrentScope() (*map[string]any, error) {
 	return &sm.scopes[len(sm.scopes)-1], nil
 }
 
-func (sm *ScopeManager) GetDictionaryManager() (*DictionaryManager, bool) {
+func (sm *ScopeManager) GetDictionaryManager() (DictionaryManager, bool) {
 	dictionaryManagerValue, err := sm.GetVariableValue("__dict_manager")
 	if err != nil {
-		return nil, false
+		return DictionaryManager{}, false
 	}
-	dictionaryManager, ok := dictionaryManagerValue.(*DictionaryManager)
+	dictionaryManager, ok := dictionaryManagerValue.(DictionaryManager)
 	return dictionaryManager, ok
 }

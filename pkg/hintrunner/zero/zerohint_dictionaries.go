@@ -26,7 +26,7 @@ func newDictNewHint() hinter.Hinter {
 			dictionaryManager, ok := ctx.ScopeManager.GetDictionaryManager()
 			if !ok {
 				newDictionaryManager := hinter.NewDictionaryManager()
-				dictionaryManager = &newDictionaryManager
+				dictionaryManager = newDictionaryManager
 				err := ctx.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
 				if err != nil {
 					return err
