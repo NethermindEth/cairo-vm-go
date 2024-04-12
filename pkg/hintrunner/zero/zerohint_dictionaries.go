@@ -23,7 +23,17 @@ func newDictNewHint() hinter.Hinter {
 			//> if '__dict_manager' not in globals():
 			//>   from starkware.cairo.common.dict import DictManager
 			//>   __dict_manager = DictManager()
-			hinter.InitializeDictionaryManager(ctx)
+			var dictionaryManager hinter.DictionaryManager
+			dictionaryManagerValue, err := ctx.ScopeManager.GetVariableValue("__dict_manager")
+			if err != nil {
+				dictionaryManager = hinter.NewDictionaryManager()
+				err := ctx.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
+				if err != nil {
+					return err
+				}
+			} else {
+				dictionaryManager = dictionaryManagerValue.(hinter.DictionaryManager)
+			}
 
 			initialDictValue, err := ctx.ScopeManager.GetVariableValue("initial_dict")
 			if err != nil {
@@ -35,7 +45,7 @@ func newDictNewHint() hinter.Hinter {
 			}
 
 			//> memory[ap] = __dict_manager.new_dict(segments, initial_dict)
-			newDictAddr := ctx.DictionaryManager.NewDictionaryWithData(vm, &initialDict)
+			newDictAddr := dictionaryManager.NewDictionaryWithData(vm, &initialDict)
 			newDictAddrMv := mem.MemoryValueFromMemoryAddress(&newDictAddr)
 			apAddr := vm.Context.AddressAp()
 			err = vm.Memory.WriteToAddress(&apAddr, &newDictAddrMv)

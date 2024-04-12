@@ -43,7 +43,9 @@ func TestZeroHintDictionaries(t *testing.T) {
 						t.Fatalf("incorrect apValue: %s expected %s", dictAddr.String(), "2:0")
 					}
 
-					dictionary, err := ctx.runnerContext.DictionaryManager.GetDictionary(&dictAddr)
+					dictionaryManagerValue, err := ctx.runnerContext.ScopeManager.GetVariableValue("__dict_manager")
+					dictionaryManager := dictionaryManagerValue.(hinter.DictionaryManager)
+					dictionary, err := dictionaryManager.GetDictionary(&dictAddr)
 					if err != nil {
 						t.Fatalf("error fetching dictionary from address at ap")
 					}
