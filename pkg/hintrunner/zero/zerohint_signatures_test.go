@@ -75,8 +75,8 @@ func TestSignatures(t *testing.T) {
 					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("64330220386510520462271671435567806262107470356169873352512014089172394266548", 10)),
-      },
-    },
+			},
+		},
 		"ImportSecp256R1P": {
 			{
 				operanders: []*hintOperander{},
