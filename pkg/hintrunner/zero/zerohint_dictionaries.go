@@ -43,7 +43,7 @@ func newDictNewHint() hinter.Hinter {
 			}
 
 			//> memory[ap] = __dict_manager.new_dict(segments, initial_dict)
-			newDictAddr := dictionaryManager.NewDictionaryWithData(vm, &initialDict)
+			newDictAddr := dictionaryManager.NewDictionaryWithData(vm, initialDict)
 			newDictAddrMv := mem.MemoryValueFromMemoryAddress(&newDictAddr)
 			apAddr := vm.Context.AddressAp()
 			err = vm.Memory.WriteToAddress(&apAddr, &newDictAddrMv)

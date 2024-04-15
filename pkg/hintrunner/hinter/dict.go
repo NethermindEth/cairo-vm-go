@@ -64,10 +64,10 @@ func (dm *DictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddr
 	return newDictAddr
 }
 
-func (dm *DictionaryManager) NewDictionaryWithData(vm *VM.VirtualMachine, data *map[f.Element]*mem.MemoryValue) mem.MemoryAddress {
+func (dm *DictionaryManager) NewDictionaryWithData(vm *VM.VirtualMachine, data map[f.Element]*mem.MemoryValue) mem.MemoryAddress {
 	newDictAddr := vm.Memory.AllocateEmptySegment()
 	dm.dictionaries[newDictAddr.SegmentIndex] = Dictionary{
-		data: *data,
+		data: data,
 		idx:  uint64(len(dm.dictionaries)),
 	}
 	return newDictAddr
