@@ -75,6 +75,18 @@ func TestSignatures(t *testing.T) {
 					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("64330220386510520462271671435567806262107470356169873352512014089172394266548", 10)),
+      },
+    },
+		"ImportSecp256R1P": {
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newImportSecp256R1PHinter()
+				},
+				check: varValueInScopeEquals("SECP_P", bigIntString("115792089210356248762697446949407573530086143415290314195533631308867097853951", 10)),
 			},
 		},
 	})
