@@ -548,18 +548,14 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
 				},
-
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 
 					return newComputeSlopeV1Hint(ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
 				},
-				// Printing the value of point0.x.d0
-
 				check: allVarValueInScopeEquals(map[string]any{
 					"slope": bigIntString("41419765295989780131385135514529906223027172305400087935755859001910844026631", 10),
 					"value": bigIntString("41419765295989780131385135514529906223027172305400087935755859001910844026631", 10),
 				}),
-				//fmt.Printf("Name: %s, Age: %d\n", slope, value)
 			},
 		},
 	})
