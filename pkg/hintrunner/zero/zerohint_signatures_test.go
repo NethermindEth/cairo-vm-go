@@ -146,8 +146,8 @@ func TestSignatures(t *testing.T) {
 					"value": bigIntString("140", 10),
 					"k":     bigIntString("140", 10),
 				}),
-      },
-    },
+			},
+		},
 		"ImportSecp256R1P": {
 			{
 				operanders: []*hintOperander{},
