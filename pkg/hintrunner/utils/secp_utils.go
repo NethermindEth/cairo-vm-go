@@ -5,7 +5,11 @@ import (
 
 	"math/big"
 
+	
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	// "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	// VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	// mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
 func getBaseBig() (big.Int, bool) {
