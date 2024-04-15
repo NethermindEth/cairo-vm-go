@@ -146,6 +146,18 @@ func TestSignatures(t *testing.T) {
 					"value": bigIntString("140", 10),
 					"k":     bigIntString("140", 10),
 				}),
+      },
+    },
+		"ImportSecp256R1P": {
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newImportSecp256R1PHinter()
+				},
+				check: varValueInScopeEquals("SECP_P", bigIntString("115792089210356248762697446949407573530086143415290314195533631308867097853951", 10)),
 			},
 		},
 	})
