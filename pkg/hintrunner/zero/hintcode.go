@@ -67,6 +67,7 @@ const (
 
 	// ------ Signature hints related code ------
 	verifyECDSASignatureCode string = "ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))"
+	getPointFromXCode        string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\nx_cube_int = pack(ids.x_cube, PRIME) % SECP_P\ny_square_int = (x_cube_int + ids.BETA) % SECP_P\ny = pow(y_square_int, (SECP_P + 1) // 4, SECP_P)\nif ids.v % 2 == y % 2:\nvalue = y\nelse:\nvalue = (-y) % SECP_P"
 	importSecp256R1PCode     string = "from starkware.cairo.common.cairo_secp.secp256r1_utils import SECP256R1_P as SECP_P"
 	verifyZeroCode           string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\nq, r = divmod(pack(ids.val, PRIME), SECP_P)\nassert r == 0, f\"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}.\"\nids.q = q % PRIME"
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,6 +25,56 @@ func TestSignatures(t *testing.T) {
 				errCheck: func(t *testing.T, ctx *hintTestContext, err error) {
 					require.NoError(t, err)
 				},
+			},
+		},
+		"GetPointFromX": {
+			{
+				//> if v % 2 == y % 2
+				operanders: []*hintOperander{
+					{Name: "xCube.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "xCube.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "xCube.d2", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "v", Kind: apRelative, Value: &utils.FeltZero},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
+				},
+				check: varValueInScopeEquals("value", bigIntString("64828261740814840065360381756190772627110652128289340260788836867053167272156", 10)),
+			},
+			// if v % 2 != y % 2:
+			{
+				operanders: []*hintOperander{
+					{Name: "xCube.d0", Kind: apRelative, Value: &utils.FeltOne},
+					{Name: "xCube.d1", Kind: apRelative, Value: &utils.FeltOne},
+					{Name: "xCube.d2", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "v", Kind: apRelative, Value: &utils.FeltZero},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
+				},
+				check: varValueInScopeEquals("value", bigIntString("3754707778961574900176639079436749683878498834289427635045629810524611907876", 10)),
+			},
+			// values are 2**86 BASE
+			{
+				operanders: []*hintOperander{
+					{Name: "xCube.d0", Kind: apRelative, Value: feltString("77371252455336267181195264")},
+					{Name: "xCube.d1", Kind: apRelative, Value: feltString("77371252455336267181195264")},
+					{Name: "xCube.d2", Kind: apRelative, Value: feltString("77371252455336267181195264")},
+					{Name: "v", Kind: apRelative, Value: feltString("77371252455336267181195264")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
+				},
+				check: varValueInScopeEquals("value", bigIntString("64330220386510520462271671435567806262107470356169873352512014089172394266548", 10)),
 			},
 		},
 		"ImportSecp256R1P": {
