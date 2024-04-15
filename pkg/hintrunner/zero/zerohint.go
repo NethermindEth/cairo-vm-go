@@ -112,6 +112,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createVerifyECDSASignatureHinter(resolver)
 	case importSecp256R1PCode:
 		return createImportSecp256R1PHinter()
+	case verifyZeroCode:
+		return createVerifyZeroHinter(resolver)
 		// EC hints
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)
