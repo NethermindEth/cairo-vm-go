@@ -366,7 +366,7 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> value = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)
-			valueBig, err := secp_utils.EcDoubleSlope([2]*big.Int{&xBig, &yBig}, big.NewInt(0), &secPBig)
+			valueBig, err := secp_utils.EcDoubleSlope(&xBig, &yBig, big.NewInt(0), &secPBig)
 			if err != nil {
 				return err
 			}

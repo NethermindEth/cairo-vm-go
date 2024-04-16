@@ -7,11 +7,8 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func EcDoubleSlope(point [2]*big.Int, alpha, p *big.Int) (big.Int, error) {
+func EcDoubleSlope(pointX, pointY, alpha, p *big.Int) (big.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/python/math_utils.py#L151
-
-	pointX := point[0]
-	pointY := point[1]
 
 	if new(big.Int).Mod(pointY, p).Cmp(big.NewInt(0)) == 0 {
 		return *big.NewInt(0), errors.New("point[1] % p == 0")
