@@ -38,6 +38,10 @@ func SecPPacked(limbs [3]*fp.Element) (big.Int, error) {
 	return *packedBig, nil
 }
 
+func GetBetaBig() *big.Int {
+	return big.NewInt(7)
+}
+
 func SecPSplit(num *big.Int) ([]big.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L14
 
