@@ -76,6 +76,8 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 				if inputLenBig.Cmp(usortMaxSize) > 0 {
 					return fmt.Errorf("usort() can only be used with input_len<=%d.\n Got: input_len=%d", usortMaxSize, inputLenBig)
 				}
+			} else {
+				return err
 			}
 			positionsDict := make(map[fp.Element][]uint64, inputLen)
 			for i := int16(0); i < int16(inputLen); i++ {
