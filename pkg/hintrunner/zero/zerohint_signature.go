@@ -174,7 +174,8 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			xCubeIntBig.Mod(&xCubeIntBig, &secpBig)
 
 			//> y_square_int = (x_cube_int + ids.BETA) % SECP_P
-			ySquareIntBig := new(big.Int).Add(&xCubeIntBig, secp_utils.GetBetaBig())
+			betaBig := secp_utils.GetBetaBig()
+			ySquareIntBig := new(big.Int).Add(&xCubeIntBig, &betaBig)
 			ySquareIntBig.Mod(ySquareIntBig, &secpBig)
 
 			//> y = pow(y_square_int, (SECP_P + 1) // 4, SECP_P)

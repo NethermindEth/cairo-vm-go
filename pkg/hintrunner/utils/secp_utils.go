@@ -21,13 +21,13 @@ func GetSecPBig() (big.Int, bool) {
 
 func SecPPacked(limbs [3]*fp.Element) (big.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L28
-	packedBig := new(big.Int)
 
 	baseBig, ok := getBaseBig()
 	if !ok {
-		return *packedBig, fmt.Errorf("getBaseBig failed")
+		return *big.NewInt(0), fmt.Errorf("getBaseBig failed")
 	}
 
+	packedBig := new(big.Int)
 	for idx, limb := range limbs {
 		limbBig := AsInt(limb)
 		valueToAddBig := new(big.Int).Exp(&baseBig, big.NewInt(int64(idx)), nil)
@@ -38,8 +38,8 @@ func SecPPacked(limbs [3]*fp.Element) (big.Int, error) {
 	return *packedBig, nil
 }
 
-func GetBetaBig() *big.Int {
-	return big.NewInt(7)
+func GetBetaBig() big.Int {
+	return *big.NewInt(7)
 }
 
 func SecPSplit(num *big.Int) ([]big.Int, error) {
