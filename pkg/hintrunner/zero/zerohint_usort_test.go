@@ -38,29 +38,14 @@ func TestZeroHintUsort(t *testing.T) {
 			},
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{
+					hinter.InitializeScopeManager(ctx, map[string]any{
 						"positions": []*fp.Element{},
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityAssertHinter()
 				},
-				check: func(t *testing.T, ctx *hintTestContext) {
-					positionsInterface, err := ctx.runnerContext.ScopeManager.GetVariableValue("positions")
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					positions, ok := positionsInterface.([]*fp.Element)
-					if !ok {
-						t.Fatal("casting positions into an array failed")
-					}
-
-					if len(positions) != 0 {
-						t.Fatal("assertion `len(positions) == 0` failed")
-					}
-
-				},
+				errCheck: errorIsNil,
 			},
 		},
 	})
