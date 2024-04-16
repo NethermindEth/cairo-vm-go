@@ -61,7 +61,7 @@ func newImportSecp256R1PHinter() hinter.Hinter {
 			if !ok {
 				return fmt.Errorf("SECP256R1_P failed.")
 			}
-			return ctx.ScopeManager.AssignVariable("SECP_P", SECP256R1_PBig)
+			return ctx.ScopeManager.AssignVariable("SECP_P", &SECP256R1_PBig)
 		},
 	}
 }

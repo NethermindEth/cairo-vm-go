@@ -51,13 +51,13 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			yBig.Mod(yBig, secPBig)
+			yBig.Mod(&yBig, &secPBig)
 
 			//> value = (-y) % SECP_P
-			yBig.Neg(yBig)
-			yBig.Mod(yBig, secPBig)
+			yBig.Neg(&yBig)
+			yBig.Mod(&yBig, &secPBig)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"value": yBig, "SECP_P": secPBig})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &yBig, "SECP_P": &secPBig})
 		},
 	}
 }
@@ -101,7 +101,7 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 					return err
 				}
 
-				valueFelt := new(fp.Element).SetBigInt(values[i])
+				valueFelt := new(fp.Element).SetBigInt(&values[i])
 				valueMv := mem.MemoryValueFromFieldElement(valueFelt)
 
 				err = vm.Memory.WriteToAddress(&valueAddr, &valueMv)
@@ -277,15 +277,15 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			}
 
 			new_xBig := new(big.Int)
-			new_xBig.Exp(slopeBig, big.NewInt(2), secPBig)
-			new_xBig.Sub(new_xBig, x0Big)
-			new_xBig.Sub(new_xBig, x1Big)
-			new_xBig.Mod(new_xBig, secPBig)
+			new_xBig.Exp(&slopeBig, big.NewInt(2), &secPBig)
+			new_xBig.Sub(new_xBig, &x0Big)
+			new_xBig.Sub(new_xBig, &x1Big)
+			new_xBig.Mod(new_xBig, &secPBig)
 
 			valueBig := new(big.Int)
 			valueBig.Set(new_xBig)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeBig, "x0": x0Big, "x1": x1Big, "y0": y0Big, "new_x": new_xBig, "value": valueBig})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": &slopeBig, "x0": &x0Big, "x1": &x1Big, "y0": &y0Big, "new_x": new_xBig, "value": valueBig})
 		},
 	}
 }
@@ -366,7 +366,7 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> value = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)
-			valueBig, err := secp_utils.EcDoubleSlope([2]*big.Int{xBig, yBig}, big.NewInt(0), secPBig)
+			valueBig, err := secp_utils.EcDoubleSlope([2]*big.Int{&xBig, &yBig}, big.NewInt(0), &secPBig)
 			if err != nil {
 				return err
 			}
@@ -374,7 +374,7 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			slopeBig := new(big.Int)
 			slopeBig.Set(valueBig)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"x": xBig, "y": yBig, "value": valueBig, "slope": slopeBig})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"x": &xBig, "y": &yBig, "value": valueBig, "slope": slopeBig})
 		},
 	}
 }

@@ -352,7 +352,7 @@ func TestZeroHintEc(t *testing.T) {
 					y0Big := big.NewInt(10)
 					secPBig, _ := secp_utils.GetSecPBig()
 
-					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
+					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
@@ -371,7 +371,7 @@ func TestZeroHintEc(t *testing.T) {
 					y0Big := big.NewInt(10)
 					secPBig, _ := secp_utils.GetSecPBig()
 
-					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
+					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
@@ -391,7 +391,7 @@ func TestZeroHintEc(t *testing.T) {
 					y0Big := big.NewInt(20)
 					secPBig, _ := secp_utils.GetSecPBig()
 
-					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
+					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
