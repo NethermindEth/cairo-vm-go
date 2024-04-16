@@ -371,10 +371,9 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			slopeBig := new(big.Int)
-			slopeBig.Set(valueBig)
+			slopeBig := new(big.Int).Set(&valueBig)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"x": &xBig, "y": &yBig, "value": valueBig, "slope": slopeBig})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"x": &xBig, "y": &yBig, "value": &valueBig, "slope": slopeBig})
 		},
 	}
 }

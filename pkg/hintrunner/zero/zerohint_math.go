@@ -688,7 +688,7 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			var divBig, boundBig big.Int
 			divFelt.BigInt(&divBig)
 			boundFelt.BigInt(&boundBig)
-			qBig, rBig := new(big.Int).DivMod(intValueBig, &divBig, new(big.Int))
+			qBig, rBig := new(big.Int).DivMod(&intValueBig, &divBig, new(big.Int))
 			rFelt := new(fp.Element).SetBigInt(rBig)
 			rAddr, err := r.GetAddress(vm)
 			if err != nil {

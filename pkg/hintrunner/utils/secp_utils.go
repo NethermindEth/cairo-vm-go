@@ -31,7 +31,7 @@ func SecPPacked(limbs [3]*fp.Element) (big.Int, error) {
 	for idx, limb := range limbs {
 		limbBig := AsInt(limb)
 		valueToAddBig := new(big.Int).Exp(&baseBig, big.NewInt(int64(idx)), nil)
-		valueToAddBig.Mul(valueToAddBig, limbBig)
+		valueToAddBig.Mul(valueToAddBig, &limbBig)
 		packedBig.Add(packedBig, valueToAddBig)
 	}
 
