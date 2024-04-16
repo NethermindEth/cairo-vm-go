@@ -98,7 +98,8 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			xCubeIntBig.Mod(xCubeIntBig, secpBig)
 
 			//> y_square_int = (x_cube_int + ids.BETA) % SECP_P
-			ySquareIntBig := new(big.Int).Add(xCubeIntBig, utils.GetBetaBig())
+			betaBig := utils.GetBetaBig()
+			ySquareIntBig := new(big.Int).Add(xCubeIntBig, &betaBig)
 			ySquareIntBig.Mod(ySquareIntBig, secpBig)
 
 			//> y = pow(y_square_int, (SECP_P + 1) // 4, SECP_P)
@@ -159,12 +160,12 @@ func newDivModSafeDivHinter() hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			k := new(big.Int).Set(value)
+			k := new(big.Int).Set(&value)
 			err = ctx.ScopeManager.AssignVariable("k", k)
 			if err != nil {
 				return err
 			}
-			return ctx.ScopeManager.AssignVariable("value", value)
+			return ctx.ScopeManager.AssignVariable("value", &value)
 		},
 	}
 }
@@ -182,7 +183,7 @@ func newImportSecp256R1PHinter() hinter.Hinter {
 			if !ok {
 				return fmt.Errorf("SECP256R1_P failed.")
 			}
-			return ctx.ScopeManager.AssignVariable("SECP_P", SECP256R1_PBig)
+			return ctx.ScopeManager.AssignVariable("SECP_P", &SECP256R1_PBig)
 		},
 	}
 }

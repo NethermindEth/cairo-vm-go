@@ -45,8 +45,8 @@ func TestSignatures(t *testing.T) {
 				},
 				check: varValueInScopeEquals("value", bigIntString("64828261740814840065360381756190772627110652128289340260788836867053167272156", 10)),
 			},
-			// if v % 2 != y % 2:
 			{
+				// if v % 2 != y % 2:
 				operanders: []*hintOperander{
 					{Name: "xCube.d0", Kind: apRelative, Value: &utils.FeltOne},
 					{Name: "xCube.d1", Kind: apRelative, Value: &utils.FeltOne},
@@ -61,8 +61,8 @@ func TestSignatures(t *testing.T) {
 				},
 				check: varValueInScopeEquals("value", bigIntString("3754707778961574900176639079436749683878498834289427635045629810524611907876", 10)),
 			},
-			// values are 2**86 BASE
 			{
+				// values are 2**86 BASE
 				operanders: []*hintOperander{
 					{Name: "xCube.d0", Kind: apRelative, Value: feltString("77371252455336267181195264")},
 					{Name: "xCube.d1", Kind: apRelative, Value: feltString("77371252455336267181195264")},
@@ -123,7 +123,8 @@ func TestSignatures(t *testing.T) {
 				check: varListInScopeEquals(map[string]any{
 					"value": bigIntString("-1", 10),
 					"k":     bigIntString("-1", 10),
-				})},
+				}),
+			},
 			{
 				// positive quotient
 				operanders: []*hintOperander{},
