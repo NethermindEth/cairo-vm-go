@@ -56,10 +56,14 @@ func newUsortVerifyHinter(value hinter.ResOperander) hinter.Hinter {
 			positions := positionsDict[value]
 			utils.Reverse(positions)
 
-			ctx.ScopeManager.AssignVariables(map[string]any{
+			err = ctx.ScopeManager.AssignVariables(map[string]any{
 				"last_pos":  0,
 				"positions": positions,
 			})
+
+			if err != nil {
+				return err
+			}
 
 			return nil
 		},
