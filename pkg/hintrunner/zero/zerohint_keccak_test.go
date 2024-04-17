@@ -14,6 +14,7 @@ func TestZeroHintKeccak(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: feltUint64(0)},
 					{Name: "b", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "c", Kind: apRelative, Value: feltUint64(0)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newCairoKeccakFinalizeHint(ctx.operanders["a"], ctx.operanders["b"])
