@@ -52,6 +52,7 @@ func SecPSplit(num *uint256.Int) ([]*uint256.Int, error) {
 	var residue uint256.Int
 	for i := 0; i < 3; i++ {
 		num.DivMod(num, &baseUint256, &residue)
+		fmt.Println((residue))
 		split[i] = uint256.NewInt(0).Set(&residue)
 	}
 
