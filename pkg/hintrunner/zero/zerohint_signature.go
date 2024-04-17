@@ -54,7 +54,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 
 			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
 			if rUint256.Cmp(uint256.NewInt(0)) != 0 {
-				return fmt.Errorf("verify_zero: Invalid input (%v, %v, %v).", valValues[0], valValues[1], valValues[2])
+				return fmt.Errorf("verify_zero: Invalid input (%v, %v, %v)", valValues[0], valValues[1], valValues[2])
 			}
 
 			//> ids.q = q % PRIME
