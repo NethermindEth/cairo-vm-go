@@ -20,10 +20,10 @@ func getBaseUint256() uint256.Int {
 func GetSecPUint256() uint256.Int {
 	// 2**256 - 2**32 - 2**9 - 2**8 - 2**7 - 2**6 - 2**4 - 1
 	return uint256.Int{
-		0xFFFFFFFFFFFFFFFF,
-		0xFFFFFFFFFFFFFFFF,
-		0xFFFFFFFFFFFFFFFF,
 		0xFFFFFFFEFFFFFC2F,
+		0xFFFFFFFFFFFFFFFF,
+		0xFFFFFFFFFFFFFFFF,
+		0xFFFFFFFFFFFFFFFF,
 	}
 }
 
@@ -70,9 +70,9 @@ func SecPSplit(num *uint256.Int) ([]*uint256.Int, error) {
 func GetSecp256R1_P() uint256.Int {
 	// 2**256 - 2**224 + 2**192 + 2**96 - 1
 	return uint256.Int{
-		0xFFFFFFFF00000001,
-		0x0000000000000000,
-		0x00000000FFFFFFFF,
 		0xFFFFFFFFFFFFFFFF,
+		0x00000000FFFFFFFF,
+		0x0000000000000000,
+		0xFFFFFFFF00000001,
 	}
 }
