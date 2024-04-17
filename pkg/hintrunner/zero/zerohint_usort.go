@@ -61,7 +61,7 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 			//> 		ids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])
 
 			//> 		input_ptr = ids.input
-			inputPtr, err := hinter.ResolveAsAddress(vm, input)
+			inputBasePtr, err := hinter.ResolveAsAddress(vm, input)
 			if err != nil {
 				return err
 			}
@@ -80,21 +80,24 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 				return err
 			}
 			positionsDict := make(map[fp.Element][]uint64, inputLen)
-			for i := int16(0); i < int16(inputLen); i++ {
-				inputPtr, err := inputPtr.AddOffset(i)
-				if err != nil {
-					return err
-				}
-				val, err := vm.Memory.ReadFromAddressAsElement(&inputPtr)
+			inputBasePtrCopy := *inputBasePtr
+			for i := uint64(0); i < inputLen; i++ {
+				val, err := vm.Memory.ReadFromAddressAsElement(&inputBasePtrCopy)
 				if err != nil {
 					return err
 				}
 				positionsDict[val] = append(positionsDict[val], uint64(i))
+				inputBasePtrCopy, err = inputBasePtrCopy.AddOffset(1)
+				if err != nil {
+					return err
+				}
 			}
 
-			outputArray := make([]fp.Element, 0, len(positionsDict))
+			outputArray := make([]fp.Element, len(positionsDict))
+			iterator := 0
 			for key := range positionsDict {
-				outputArray = append(outputArray, key)
+				outputArray[iterator] = key
+				iterator++
 			}
 			sort.Sort(utils.SortFelt(outputArray))
 
@@ -128,9 +131,9 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 			if err != nil {
 				return err
 			}
-			multiplicitiesArray := make([]*fp.Element, 0, len(outputArray))
-			for _, v := range outputArray {
-				multiplicitiesArray = append(multiplicitiesArray, new(fp.Element).SetUint64(uint64(len(positionsDict[v]))))
+			multiplicitiesArray := make([]*fp.Element, len(outputArray))
+			for i, v := range outputArray {
+				multiplicitiesArray[i] = new(fp.Element).SetUint64(uint64(len(positionsDict[v])))
 			}
 			multiplicitesSegmentBaseAddr := vm.Memory.AllocateEmptySegment()
 			multiplicitiesAddr, err := multiplicities.GetAddress(vm)

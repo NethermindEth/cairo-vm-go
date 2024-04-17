@@ -107,7 +107,6 @@ func varAddrResolvedValueEquals(varName string, expected *fp.Element) func(t *te
 func consecutiveVarAddrResolvedValueEquals(varName string, expectedValues []*fp.Element) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
 		o := ctx.operanders[varName]
-		fmt.Println("varName", varName, "expectedValues", expectedValues)
 		addr, err := o.GetAddress(ctx.vm)
 		require.NoError(t, err)
 		actualAddress, err := ctx.vm.Memory.ReadFromAddressAsAddress(&addr)
@@ -115,7 +114,6 @@ func consecutiveVarAddrResolvedValueEquals(varName string, expectedValues []*fp.
 		for index, expectedValue := range expectedValues {
 			expectedValueAddr := memory.MemoryAddress{SegmentIndex: actualAddress.SegmentIndex, Offset: actualAddress.Offset + uint64(index)}
 			actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&expectedValueAddr)
-			fmt.Println("actualFelt", &actualFelt, "expectedValue", expectedValue, "expectedValueAddr", expectedValueAddr, "actualAddress", actualAddress, "index", index)
 			require.NoError(t, err)
 			require.Equal(t, &actualFelt, expectedValue, "%s[%v] value mismatch:\nhave: %v\nwant: %v", varName, index, &actualFelt, expectedValue)
 		}
