@@ -1,5 +1,4 @@
 package zero
-package uint256
 
 import (
 	"fmt"

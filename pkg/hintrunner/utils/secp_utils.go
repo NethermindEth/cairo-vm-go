@@ -1,5 +1,4 @@
 package utils
-package uint256
 
 import (
 	"fmt"
