@@ -3,12 +3,11 @@ package uint256
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func getBaseBig() uint256.Int {
+func getBaseUint256() uint256.Int {
 	// 2**86
 	return uint256.Int{
 		0,
@@ -18,7 +17,7 @@ func getBaseBig() uint256.Int {
 	}
 }
 
-func GetSecPBig() uint256.Int {
+func GetSecPUint256() uint256.Int {
 	// 2**256 - 2**32 - 2**9 - 2**8 - 2**7 - 2**6 - 2**4 - 1
 	return uint256.Int{
 		0xFFFFFFFFFFFFFFFF,
@@ -27,46 +26,46 @@ func GetSecPBig() uint256.Int {
 		0xFFFFFFFEFFFFFC2F,
 	}}
 
-func SecPPacked(limbs [3]*fp.Element) (*big.Int, error) {
+func SecPPacked(limbs [3]*fp.Element) (*uint256.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L28
 
-	baseBig, ok := getBaseBig()
+	baseUint256, ok := getBaseUint256()
 	if !ok {
-		return nil, fmt.Errorf("getBaseBig failed")
+		return nil, fmt.Errorf("getBaseUint256 failed")
 	}
 
-	packedBig := new(big.Int)
+	packedUint256 := uint256.NewInt(0)
 	for idx, limb := range limbs {
-		limbBig := AsInt(limb)
-		valueToAddBig := new(big.Int).Exp(baseBig, big.NewInt(int64(idx)), nil)
-		valueToAddBig.Mul(valueToAddBig, limbBig)
-		packedBig.Add(packedBig, valueToAddBig)
+		limbUint256 := uint256.NewInt(AsInt(limb))
+		valueToAddUint256 := uint256.NewInt(0).Exp(baseUint256, uint256.NewInt(int64(idx)), nil)
+		valueToAddUint256.Mul(valueToAddUint256, limbUint256)
+		packedUint256.Add(packedUint256, valueToAddUint256)
 	}
 
-	return packedBig, nil
+	return packedUint256, nil
 }
 
-func GetBetaBig() uint256.Int {
+func GetBetaUint256() uint256.Int {
 	return uint256.NewInt(7)
 }
 
-func SecPSplit(num *big.Int) ([]*big.Int, error) {
+func SecPSplit(num *uint256.Int) ([]*uint256.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L14
 
-	split := make([]*big.Int, 3)
+	split := make([]*uint256.Int, 3)
 
-	baseBig, ok := getBaseBig()
+	baseUint256, ok := getBaseUint256()
 	if !ok {
-		return nil, fmt.Errorf("getBaseBig failed")
+		return nil, fmt.Errorf("getBaseUint256 failed")
 	}
 
-	var residue big.Int
+	var residue uint256.Int
 	for i := 0; i < 3; i++ {
-		num.DivMod(num, baseBig, &residue)
-		split[i] = new(big.Int).Set(&residue)
+		num.DivMod(num, baseUint256, &residue)
+		split[i] = uint256.NewInt(0).Set(&residue)
 	}
 
-	if num.Cmp(big.NewInt(0)) != 0 {
+	if num.Cmp(uint256.NewInt(0)) != 0 {
 		return nil, fmt.Errorf("num != 0")
 	}
 
