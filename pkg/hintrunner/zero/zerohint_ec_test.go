@@ -1,4 +1,5 @@
 package zero
+package uint256
 
 import (
 	"math/big"
@@ -50,7 +51,7 @@ func TestZeroHintEc(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					// GetSecPBig() % fp.Modulus()
+					// GetSecPUint256() % fp.Modulus()
 					{Name: "x.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
@@ -69,7 +70,7 @@ func TestZeroHintEc(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
-					// GetSecPBig() % fp.Modulus()
+					// GetSecPUint256() % fp.Modulus()
 					{Name: "x.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d0", Kind: apRelative, Value: &utils.FeltZero},
@@ -91,7 +92,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d1", Kind: apRelative, Value: &utils.FeltZero},
-					// GetSecPBig() % fp.Modulus()
+					// GetSecPUint256() % fp.Modulus()
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
@@ -107,7 +108,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
-					// GetSecPBig() % fp.Modulus()
+					// GetSecPUint256() % fp.Modulus()
 					{Name: "y.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: &utils.FeltZero},
@@ -126,7 +127,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d0", Kind: apRelative, Value: &utils.FeltZero},
-					// GetSecPBig() % fp.Modulus()
+					// GetSecPUint256() % fp.Modulus()
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 				},
@@ -143,7 +144,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
-					// GetSecPBig() % fp.Modulus()
+					// GetSecPUint256() % fp.Modulus()
 					{Name: "y.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
@@ -161,7 +162,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
-					// GetSecPBig() % fp.Modulus()
+					// GetSecPUint256() % fp.Modulus()
 					{Name: "y.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
@@ -198,7 +199,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					// GetSecPBig() % fp.Modulus() but with first digit 3 replaced with 7
+					// GetSecPUint256() % fp.Modulus() but with first digit 3 replaced with 7
 					value := bigIntString("7618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
 					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
@@ -212,7 +213,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					// GetSecPBig() % fp.Modulus()
+					// GetSecPUint256() % fp.Modulus()
 					value := bigIntString("3618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
 					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
 				},
@@ -350,7 +351,7 @@ func TestZeroHintEc(t *testing.T) {
 					x0Big := big.NewInt(20)
 					new_xBig := big.NewInt(10)
 					y0Big := big.NewInt(10)
-					secPBig, _ := secp_utils.GetSecPBig()
+					secPBig, _ := uint256.ToBig(secp_utils.GetSecPUint256())
 
 					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
 				},
@@ -369,7 +370,7 @@ func TestZeroHintEc(t *testing.T) {
 					x0Big := big.NewInt(20)
 					new_xBig := big.NewInt(10)
 					y0Big := big.NewInt(10)
-					secPBig, _ := secp_utils.GetSecPBig()
+					secPBig, _ := uint256.ToBig(secp_utils.GetSecPUint256())
 
 					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
 				},
@@ -384,12 +385,12 @@ func TestZeroHintEc(t *testing.T) {
 			{
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					// GetSecPBig() + 20
+					// GetSecPUint256() + 20
 					slopeBig := bigIntString("115792089237316195423570985008687907853269984665640564039457584007908834671683", 10)
 					x0Big := big.NewInt(200)
 					new_xBig := big.NewInt(199)
 					y0Big := big.NewInt(20)
-					secPBig, _ := secp_utils.GetSecPBig()
+					secPBig, _ := uint256.ToBig(secp_utils.GetSecPUint256())
 
 					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
 				},
@@ -472,7 +473,7 @@ func TestZeroHintEc(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					// GetSecPBig()
+					// GetSecPUint256()
 					{Name: "slope.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
 					{Name: "slope.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
 					{Name: "slope.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},

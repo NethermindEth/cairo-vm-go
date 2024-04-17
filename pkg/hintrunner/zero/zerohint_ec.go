@@ -1,4 +1,5 @@
 package zero
+package uint256
 
 import (
 	"fmt"
@@ -20,9 +21,9 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			//> # The modulo operation in python always returns a nonnegative number.
 			//> value = (-y) % SECP_P
 
-			secPBig, ok := secp_utils.GetSecPBig()
+			secPUint256, ok := secp_utils.GetSecPUint256()
 			if !ok {
-				return fmt.Errorf("GetSecPBig failed")
+				return fmt.Errorf("GetSecPUint256 failed")
 			}
 
 			pointAddr, err := point.GetAddress(vm)
@@ -47,17 +48,17 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> y = pack(ids.point.y, PRIME) % SECP_P
-			yBig, err := secp_utils.SecPPacked(pointYValues)
+			yUint256, err := secp_utils.SecPPacked(pointYValues)
 			if err != nil {
 				return err
 			}
-			yBig.Mod(yBig, secPBig)
+			yUint256.Mod(yUint256, secPUint256)
 
 			//> value = (-y) % SECP_P
-			yBig.Neg(yBig)
-			yBig.Mod(yBig, secPBig)
+			yUint256.Neg(yUint256)
+			yUint256.Mod(yUint256, secPUint256)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"value": yBig, "SECP_P": secPBig})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": yUint256, "SECP_P": secPUint256})
 		},
 	}
 }
@@ -88,8 +89,10 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
+			valueUint256 := uint256.FromBig(valueBig)
+
 			//> split(value)
-			values, err := secp_utils.SecPSplit(valueBig)
+			values, err := secp_utils.SecPSplit(valueUint256)
 			if err != nil {
 				return err
 			}
@@ -246,46 +249,46 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			}
 
 			//> slope = pack(ids.slope, PRIME)
-			slopeBig, err := secp_utils.SecPPacked(slopeValues)
+			slopeUint256, err := secp_utils.SecPPacked(slopeValues)
 			if err != nil {
 				return err
 			}
 
 			//> x0 = pack(ids.point0.x, PRIME)
-			x0Big, err := secp_utils.SecPPacked(point0XValues)
+			x0Uint256, err := secp_utils.SecPPacked(point0XValues)
 			if err != nil {
 				return err
 			}
 
 			//> x1 = pack(ids.point1.x, PRIME)
-			x1Big, err := secp_utils.SecPPacked(point1XValues)
+			x1Uint256, err := secp_utils.SecPPacked(point1XValues)
 			if err != nil {
 				return err
 			}
 
 			//> y0 = pack(ids.point0.y, PRIME)
-			y0Big, err := secp_utils.SecPPacked(point0YValues)
+			y0Uint256, err := secp_utils.SecPPacked(point0YValues)
 			if err != nil {
 				return err
 			}
 
 			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
 
-			secPBig, ok := secp_utils.GetSecPBig()
+			secPUint256, ok := secp_utils.GetSecPUint256()
 			if !ok {
-				return fmt.Errorf("GetSecPBig failed")
+				return fmt.Errorf("GetSecPUint256 failed")
 			}
 
-			new_xBig := new(big.Int)
-			new_xBig.Exp(slopeBig, big.NewInt(2), secPBig)
-			new_xBig.Sub(new_xBig, x0Big)
-			new_xBig.Sub(new_xBig, x1Big)
-			new_xBig.Mod(new_xBig, secPBig)
+			new_xUint256 := uint256.NewInt(0)
+			new_xUint256.Exp(slopeUint256, uint256.NewInt(2), secPUint256)
+			new_xUint256.Sub(new_xUint256, x0Uint256)
+			new_xUint256.Sub(new_xUint256, x1Uint256)
+			new_xUint256.Mod(new_xUint256, secPUint256)
 
-			valueBig := new(big.Int)
-			valueBig.Set(new_xBig)
+			valueUint256 := uint256.NewInt(0)
+			valueUint256.Set(new_xUint256)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeBig, "x0": x0Big, "x1": x1Big, "y0": y0Big, "new_x": new_xBig, "value": valueBig})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeUint256, "x0": x0Uint256, "x1": x1Uint256, "y0": y0Uint256, "new_x": new_xUint256, "value": valueUint256})
 		},
 	}
 }

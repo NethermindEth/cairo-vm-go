@@ -1,4 +1,5 @@
 package zero
+package uint256
 
 import (
 	"fmt"
@@ -81,7 +82,7 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-			secpBig, _ := secp_utils.GetSecPBig()
+			secpUint256, _ := secp_utils.GetSecPUint256()
 
 			//> x_cube_int = pack(ids.x_cube, PRIME) % SECP_P
 			var xCubeValues [3]*fp.Element
@@ -91,30 +92,32 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 					return err
 				}
 			}
-			xCubeIntBig, err := secp_utils.SecPPacked(xCubeValues)
+			xCubeUint256, err := secp_utils.SecPPacked(xCubeValues)
 			if err != nil {
 				return err
 			}
-			xCubeIntBig.Mod(xCubeIntBig, secpBig)
+			xCubeUint256.Mod(xCubeUint256, secpUint256)
 
 			//> y_square_int = (x_cube_int + ids.BETA) % SECP_P
-			ySquareIntBig := new(big.Int).Add(xCubeIntBig, secp_utils.GetBetaBig())
-			ySquareIntBig.Mod(ySquareIntBig, secpBig)
+			ySquareUint256 := uint256.NewInt(0).Add(xCubeUint256, secp_utils.GetBetaBig())
+			ySquareUint256.Mod(ySquareUint256, secpUint256)
 
 			//> y = pow(y_square_int, (SECP_P + 1) // 4, SECP_P)
-			exponent := new(big.Int).Div(new(big.Int).Add(secpBig, big.NewInt(1)), big.NewInt(4))
-			y := new(big.Int).Exp(ySquareIntBig, exponent, secpBig)
+			exponent := uint256.NewInt(0).Div(uint256.NewInt(0).Add(secpUint256, uint256.NewInt(1)), uint256.NewInt(4))
+			y := uint256.NewInt(0).Exp(ySquareUint256, exponent, secpUint256)
+			yBig := uint256.ToBig(y)
 			vBig := v.BigInt(new(big.Int))
+			secpBig := uint256.ToBig(secpUint256)
 
 			//> if ids.v % 2 == y % 2:
 			//>	 value = y
 			//> else:
 			//>	 value = (-y) % SECP_P
 			value := new(big.Int)
-			if vBig.Bit(0) == y.Bit(0) {
+			if vBig.Bit(0) == yBig.Bit(0) {
 				value.Set(y)
 			} else {
-				value.Mod(value.Neg(y), secpBig)
+				value.Mod(value.Neg(yBig), secpBig)
 			}
 			return ctx.ScopeManager.AssignVariable("value", value)
 		},

@@ -1,4 +1,5 @@
 package zero
+package uint256
 
 import (
 	"fmt"
@@ -21,9 +22,9 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			//> ids.q = q % PRIME
 
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-			secPBig, ok := secp_utils.GetSecPBig()
+			secPUint256 ok := secp_utils.GetSecPUint256()
 			if !ok {
-				return fmt.Errorf("GetSecPBig failed")
+				return fmt.Errorf("GetSecPUint256 failed")
 			}
 
 			valAddr, err := val.GetAddress(vm)
@@ -52,16 +53,18 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			qBig, rBig := new(big.Int), new(big.Int)
-			qBig.DivMod(packedValue, secPBig, rBig)
+			qUint256, rUint256 := uint256.NewInt(0), uint256.NewInt(0)
+			qUint256.DivMod(packedValue, secPUint256, rUint256)
 
 			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
-			if rBig.Cmp(big.NewInt(0)) != 0 {
+			if rUint256.Cmp(uint256.NewInt(0)) != 0 {
 				return fmt.Errorf("verify_zero: Invalid input (%v, %v, %v).", valValues[0], valValues[1], valValues[2])
 			}
 
 			//> ids.q = q % PRIME
-			qBig.Mod(qBig, fp.Modulus())
+			fpModulusUint256 := uint256.FromBig(fp.Modulus())
+			qUint256.Mod(qUint256, fpModulusUint256)
+			qBig := uint256.ToBig(qUint256)
 			qFelt := new(fp.Element).SetBigInt(qBig)
 			qAddr, err := q.GetAddress(vm)
 			if err != nil {
