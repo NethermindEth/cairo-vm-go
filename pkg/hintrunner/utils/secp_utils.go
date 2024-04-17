@@ -9,22 +9,17 @@ import (
 
 func getBaseUint256() uint256.Int {
 	// 2**86
-	return uint256.Int{
-		0,
-		0x400000,
-		0,
-		0,
-	}
+	result, _ := uint256.FromHex("0x4000000000000000000000")
+
+	return *result
 }
 
 func GetSecPUint256() uint256.Int {
 	// 2**256 - 2**32 - 2**9 - 2**8 - 2**7 - 2**6 - 2**4 - 1
-	return uint256.Int{
-		0xFFFFFFFEFFFFFC2F,
-		0xFFFFFFFFFFFFFFFF,
-		0xFFFFFFFFFFFFFFFF,
-		0xFFFFFFFFFFFFFFFF,
-	}
+	result, _ := uint256.FromHex("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F")
+
+	return *result
+
 }
 
 func SecPPacked(limbs [3]*fp.Element) (*uint256.Int, error) {
@@ -69,10 +64,7 @@ func SecPSplit(num *uint256.Int) ([]*uint256.Int, error) {
 
 func GetSecp256R1_P() uint256.Int {
 	// 2**256 - 2**224 + 2**192 + 2**96 - 1
-	return uint256.Int{
-		0xFFFFFFFFFFFFFFFF,
-		0x00000000FFFFFFFF,
-		0x0000000000000000,
-		0xFFFFFFFF00000001,
-	}
+	result, _ := uint256.FromHex("0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF")
+
+	return *result
 }
