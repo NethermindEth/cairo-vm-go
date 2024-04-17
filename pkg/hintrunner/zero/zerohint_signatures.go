@@ -9,6 +9,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/holiman/uint256"
 )
 
 func newVerifyECDSASignatureHinter(ecdsaPtr, signature_r, signature_s hinter.ResOperander) hinter.Hinter {
@@ -81,7 +82,7 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-			secpUint256, _ := secp_utils.GetSecPUint256()
+			secpUint256 := secp_utils.GetSecPUint256()
 
 			//> x_cube_int = pack(ids.x_cube, PRIME) % SECP_P
 			var xCubeValues [3]*fp.Element
@@ -95,18 +96,18 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			xCubeUint256.Mod(xCubeUint256, secpUint256)
+			xCubeUint256.Mod(xCubeUint256, &secpUint256)
 
 			//> y_square_int = (x_cube_int + ids.BETA) % SECP_P
-			ySquareUint256 := uint256.NewInt(0).Add(xCubeUint256, secp_utils.GetBetaBig())
-			ySquareUint256.Mod(ySquareUint256, secpUint256)
+			beta := secp_utils.GetBetaUint256()
+			ySquareUint256 := uint256.NewInt(0).Add(xCubeUint256, &beta)
+			ySquareUint256.Mod(ySquareUint256, &secpUint256)
 
 			//> y = pow(y_square_int, (SECP_P + 1) // 4, SECP_P)
-			exponent := uint256.NewInt(0).Div(uint256.NewInt(0).Add(secpUint256, uint256.NewInt(1)), uint256.NewInt(4))
-			y := uint256.NewInt(0).Exp(ySquareUint256, exponent, secpUint256)
-			yBig := uint256.ToBig(y)
+			exponent := uint256.NewInt(0).Div(uint256.NewInt(0).Add(&secpUint256, uint256.NewInt(1)), uint256.NewInt(4))
+			yBig := new(big.Int).Exp(ySquareUint256.ToBig(), exponent.ToBig(), secpUint256.ToBig())
 			vBig := v.BigInt(new(big.Int))
-			secpBig := uint256.ToBig(secpUint256)
+			secpBig := secpUint256.ToBig()
 
 			//> if ids.v % 2 == y % 2:
 			//>	 value = y
@@ -114,7 +115,7 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			//>	 value = (-y) % SECP_P
 			value := new(big.Int)
 			if vBig.Bit(0) == yBig.Bit(0) {
-				value.Set(y)
+				value.Set(yBig)
 			} else {
 				value.Mod(value.Neg(yBig), secpBig)
 			}
@@ -140,10 +141,8 @@ func newImportSecp256R1PHinter() hinter.Hinter {
 		Name: "Secp256R1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp256r1_utils import SECP256R1_P as SECP_P
-			SECP256R1_PBig, ok := secp_utils.GetSecp256R1_P()
-			if !ok {
-				return fmt.Errorf("SECP256R1_P failed.")
-			}
+			SECP256R1_PBig := secp_utils.GetSecp256R1_P()
+
 			return ctx.ScopeManager.AssignVariable("SECP_P", SECP256R1_PBig)
 		},
 	}

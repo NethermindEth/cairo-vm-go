@@ -2,13 +2,13 @@ package zero
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/holiman/uint256"
 )
 
 func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
@@ -21,10 +21,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			//> ids.q = q % PRIME
 
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-			secPUint256 ok := secp_utils.GetSecPUint256()
-			if !ok {
-				return fmt.Errorf("GetSecPUint256 failed")
-			}
+			secPUint256 := secp_utils.GetSecPUint256()
 
 			valAddr, err := val.GetAddress(vm)
 			if err != nil {
@@ -53,7 +50,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 			qUint256, rUint256 := uint256.NewInt(0), uint256.NewInt(0)
-			qUint256.DivMod(packedValue, secPUint256, rUint256)
+			qUint256.DivMod(packedValue, &secPUint256, rUint256)
 
 			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
 			if rUint256.Cmp(uint256.NewInt(0)) != 0 {
@@ -61,9 +58,9 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> ids.q = q % PRIME
-			fpModulusUint256 := uint256.FromBig(fp.Modulus())
+			fpModulusUint256, _ := uint256.FromBig(fp.Modulus())
 			qUint256.Mod(qUint256, fpModulusUint256)
-			qBig := uint256.ToBig(qUint256)
+			qBig := qUint256.ToBig()
 			qFelt := new(fp.Element).SetBigInt(qBig)
 			qAddr, err := q.GetAddress(vm)
 			if err != nil {

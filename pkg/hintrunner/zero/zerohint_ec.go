@@ -1,7 +1,6 @@
 package zero
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -9,6 +8,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/holiman/uint256"
 )
 
 func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
@@ -20,10 +20,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			//> # The modulo operation in python always returns a nonnegative number.
 			//> value = (-y) % SECP_P
 
-			secPUint256, ok := secp_utils.GetSecPUint256()
-			if !ok {
-				return fmt.Errorf("GetSecPUint256 failed")
-			}
+			secPUint256 := secp_utils.GetSecPUint256()
 
 			pointAddr, err := point.GetAddress(vm)
 			if err != nil {
@@ -51,11 +48,11 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			yUint256.Mod(yUint256, secPUint256)
+			yUint256.Mod(yUint256, &secPUint256)
 
 			//> value = (-y) % SECP_P
 			yUint256.Neg(yUint256)
-			yUint256.Mod(yUint256, secPUint256)
+			yUint256.Mod(yUint256, &secPUint256)
 
 			return ctx.ScopeManager.AssignVariables(map[string]any{"value": yUint256, "SECP_P": secPUint256})
 		},
@@ -88,7 +85,7 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			valueUint256 := uint256.FromBig(valueBig)
+			valueUint256, _ := uint256.FromBig(valueBig)
 
 			//> split(value)
 			values, err := secp_utils.SecPSplit(valueUint256)
@@ -103,7 +100,7 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 					return err
 				}
 
-				valueFelt := new(fp.Element).SetBigInt(values[i])
+				valueFelt := new(fp.Element).SetBigInt(values[i].ToBig())
 				valueMv := mem.MemoryValueFromFieldElement(valueFelt)
 
 				err = vm.Memory.WriteToAddress(&valueAddr, &valueMv)
@@ -273,21 +270,18 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 
 			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
 
-			secPUint256, ok := secp_utils.GetSecPUint256()
-			if !ok {
-				return fmt.Errorf("GetSecPUint256 failed")
-			}
+			secPUint256 := secp_utils.GetSecPUint256()
 
-			new_xUint256 := uint256.NewInt(0)
-			new_xUint256.Exp(slopeUint256, uint256.NewInt(2), secPUint256)
-			new_xUint256.Sub(new_xUint256, x0Uint256)
-			new_xUint256.Sub(new_xUint256, x1Uint256)
-			new_xUint256.Mod(new_xUint256, secPUint256)
+			new_xBig := new(big.Int)
+			new_xBig.Exp(slopeUint256.ToBig(), big.NewInt(2), secPUint256.ToBig())
+			new_xBig.Sub(new_xBig, x0Uint256.ToBig())
+			new_xBig.Sub(new_xBig, x1Uint256.ToBig())
+			new_xBig.Mod(new_xBig, secPUint256.ToBig())
 
-			valueUint256 := uint256.NewInt(0)
-			valueUint256.Set(new_xUint256)
+			valueBig := new(big.Int)
+			valueBig.Set(new_xBig)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeUint256, "x0": x0Uint256, "x1": x1Uint256, "y0": y0Uint256, "new_x": new_xUint256, "value": valueUint256})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeUint256.ToBig(), "x0": x0Uint256.ToBig(), "x1": x1Uint256.ToBig(), "y0": y0Uint256.ToBig(), "new_x": new_xBig, "value": valueBig})
 		},
 	}
 }

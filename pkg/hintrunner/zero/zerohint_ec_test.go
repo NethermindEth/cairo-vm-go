@@ -350,7 +350,8 @@ func TestZeroHintEc(t *testing.T) {
 					x0Big := big.NewInt(20)
 					new_xBig := big.NewInt(10)
 					y0Big := big.NewInt(10)
-					secPBig, _ := uint256.ToBig(secp_utils.GetSecPUint256())
+					secPBigPointer := secp_utils.GetSecPUint256()
+					secPBig := (&secPBigPointer).ToBig()
 
 					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
 				},
@@ -369,7 +370,8 @@ func TestZeroHintEc(t *testing.T) {
 					x0Big := big.NewInt(20)
 					new_xBig := big.NewInt(10)
 					y0Big := big.NewInt(10)
-					secPBig, _ := uint256.ToBig(secp_utils.GetSecPUint256())
+					secPBigPointer := secp_utils.GetSecPUint256()
+					secPBig := (&secPBigPointer).ToBig()
 
 					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
 				},
@@ -389,7 +391,8 @@ func TestZeroHintEc(t *testing.T) {
 					x0Big := big.NewInt(200)
 					new_xBig := big.NewInt(199)
 					y0Big := big.NewInt(20)
-					secPBig, _ := uint256.ToBig(secp_utils.GetSecPUint256())
+					secPBigPointer := secp_utils.GetSecPUint256()
+					secPBig := (&secPBigPointer).ToBig()
 
 					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
 				},

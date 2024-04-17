@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/holiman/uint256"
 )
 
 func getBaseUint256() uint256.Int {
@@ -23,20 +24,18 @@ func GetSecPUint256() uint256.Int {
 		0xFFFFFFFFFFFFFFFF,
 		0xFFFFFFFFFFFFFFFF,
 		0xFFFFFFFEFFFFFC2F,
-	}}
+	}
+}
 
 func SecPPacked(limbs [3]*fp.Element) (*uint256.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L28
 
-	baseUint256, ok := getBaseUint256()
-	if !ok {
-		return nil, fmt.Errorf("getBaseUint256 failed")
-	}
+	baseUint256 := getBaseUint256()
 
 	packedUint256 := uint256.NewInt(0)
 	for idx, limb := range limbs {
-		limbUint256 := uint256.NewInt(AsInt(limb))
-		valueToAddUint256 := uint256.NewInt(0).Exp(baseUint256, uint256.NewInt(int64(idx)), nil)
+		limbUint256, _ := uint256.FromBig(AsInt(limb))
+		valueToAddUint256 := uint256.NewInt(0).Exp(&baseUint256, uint256.NewInt(uint64(idx)))
 		valueToAddUint256.Mul(valueToAddUint256, limbUint256)
 		packedUint256.Add(packedUint256, valueToAddUint256)
 	}
@@ -45,7 +44,7 @@ func SecPPacked(limbs [3]*fp.Element) (*uint256.Int, error) {
 }
 
 func GetBetaUint256() uint256.Int {
-	return uint256.NewInt(7)
+	return *uint256.NewInt(7)
 }
 
 func SecPSplit(num *uint256.Int) ([]*uint256.Int, error) {
@@ -53,14 +52,11 @@ func SecPSplit(num *uint256.Int) ([]*uint256.Int, error) {
 
 	split := make([]*uint256.Int, 3)
 
-	baseUint256, ok := getBaseUint256()
-	if !ok {
-		return nil, fmt.Errorf("getBaseUint256 failed")
-	}
+	baseUint256 := getBaseUint256()
 
 	var residue uint256.Int
 	for i := 0; i < 3; i++ {
-		num.DivMod(num, baseUint256, &residue)
+		num.DivMod(num, &baseUint256, &residue)
 		split[i] = uint256.NewInt(0).Set(&residue)
 	}
 
