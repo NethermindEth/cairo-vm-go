@@ -44,7 +44,13 @@ func SecPPacked(limbs [3]*fp.Element) (uint256.Int, error) {
 }
 
 func GetBetaUint256() uint256.Int {
-	return *uint256.NewInt(7)
+	return uint256.Int{
+		0x7,
+		0,
+		0,
+		0,
+	}
+
 }
 
 func SecPSplit(num *uint256.Int) ([]uint256.Int, error) {
@@ -57,8 +63,7 @@ func SecPSplit(num *uint256.Int) ([]uint256.Int, error) {
 	for i := 0; i < 3; i++ {
 		var residue uint256.Int
 		num.DivMod(num, &baseUint256, &residue)
-		item := uint256.NewInt(0).Set(&residue)
-		split[i] = *item
+		split[i] = residue
 	}
 
 	if num.Cmp(uint256.NewInt(0)) != 0 {
