@@ -7,10 +7,10 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func EcDoubleSlope(pointX, pointY, alpha, p *big.Int) (big.Int, error) {
+func EcDoubleSlope(pointX, pointY, alpha, prime *big.Int) (big.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/python/math_utils.py#L151
 
-	if new(big.Int).Mod(pointY, p).Cmp(big.NewInt(0)) == 0 {
+	if new(big.Int).Mod(pointY, prime).Cmp(big.NewInt(0)) == 0 {
 		return *big.NewInt(0), errors.New("point[1] % p == 0")
 	}
 
@@ -22,7 +22,7 @@ func EcDoubleSlope(pointX, pointY, alpha, p *big.Int) (big.Int, error) {
 	m := big.NewInt(2)
 	m.Mul(m, pointY)
 
-	return divmod(n, m, p)
+	return divmod(n, m, prime)
 }
 
 func AsInt(valueFelt *fp.Element) big.Int {
@@ -105,5 +105,5 @@ func sign(n *big.Int) (int, big.Int) {
 	if n.Sign() < 0 {
 		return -1, *new(big.Int).Abs(n)
 	}
-	return 1, *new(big.Int).Set(n)
+	return 1, *n
 }
