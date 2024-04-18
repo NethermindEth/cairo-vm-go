@@ -105,5 +105,5 @@ func sign(n *big.Int) (int, big.Int) {
 	if n.Sign() < 0 {
 		return -1, *new(big.Int).Abs(n)
 	}
-	return 1, *n
+	return 1, *new(big.Int).Set(n)
 }
