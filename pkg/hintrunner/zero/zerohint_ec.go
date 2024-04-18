@@ -48,13 +48,19 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			yUint256.Mod(yUint256, &secPUint256)
+
+			yBig := yUint256.ToBig()
+			secPBig := secPUint256.ToBig()
 
 			//> value = (-y) % SECP_P
-			yUint256.Neg(yUint256)
-			yUint256.Mod(yUint256, &secPUint256)
+			yBig.Neg(yBig)
+			yBig.Mod(yBig, secPBig)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"value": yUint256.ToBig(), "SECP_P": secPUint256.ToBig()})
+			// //> value = (-y) % SECP_P
+			// yUint256.Neg(yUint256)
+			// yUint256.Mod(yUint256, &secPUint256)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": yBig, "SECP_P": secPBig})
 		},
 	}
 }

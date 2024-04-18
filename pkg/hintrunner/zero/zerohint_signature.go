@@ -50,7 +50,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 			qUint256, rUint256 := uint256.NewInt(0), uint256.NewInt(0)
-			qUint256.DivMod(packedValue, &secPUint256, rUint256)
+			qUint256.DivMod(&packedValue, &secPUint256, rUint256)
 
 			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
 			if rUint256.Cmp(uint256.NewInt(0)) != 0 {

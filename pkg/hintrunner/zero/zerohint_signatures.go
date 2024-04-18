@@ -96,11 +96,11 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			xCubeUint256.Mod(xCubeUint256, &secpUint256)
+			xCubeUint256.Mod(&xCubeUint256, &secpUint256)
 
 			//> y_square_int = (x_cube_int + ids.BETA) % SECP_P
 			beta := secp_utils.GetBetaUint256()
-			ySquareUint256 := uint256.NewInt(0).Add(xCubeUint256, &beta)
+			ySquareUint256 := uint256.NewInt(0).Add(&xCubeUint256, &beta)
 			ySquareUint256.Mod(ySquareUint256, &secpUint256)
 
 			//> y = pow(y_square_int, (SECP_P + 1) // 4, SECP_P)
