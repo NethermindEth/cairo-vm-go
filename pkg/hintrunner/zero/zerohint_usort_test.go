@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func TestZeroHintUsort(t *testing.T) {
@@ -26,8 +25,8 @@ func TestZeroHintUsort(t *testing.T) {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
-						"positions": []*fp.Element{
-							feltUint64(1),
+						"positions": []uint64{
+							1,
 						},
 					})
 				},
@@ -39,7 +38,7 @@ func TestZeroHintUsort(t *testing.T) {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					hinter.InitializeScopeManager(ctx, map[string]any{
-						"positions": []*fp.Element{},
+						"positions": []uint64{},
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {

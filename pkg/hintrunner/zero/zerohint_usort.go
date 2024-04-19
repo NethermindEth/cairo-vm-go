@@ -5,7 +5,6 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func newUsortEnterScopeHinter() hinter.Hinter {
@@ -41,7 +40,7 @@ func newUsortVerifyMultiplicityAssertHinter() hinter.Hinter {
 				return err
 			}
 
-			positions, ok := positionsInterface.([]*fp.Element)
+			positions, ok := positionsInterface.([]uint64)
 			if !ok {
 				return fmt.Errorf("casting positions into an array failed")
 			}
