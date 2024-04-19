@@ -6,6 +6,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -44,8 +45,8 @@ func TestSignatures(t *testing.T) {
 				},
 				check: varValueInScopeEquals("value", bigIntString("64828261740814840065360381756190772627110652128289340260788836867053167272156", 10)),
 			},
-			// if v % 2 != y % 2:
 			{
+				// if v % 2 != y % 2:
 				operanders: []*hintOperander{
 					{Name: "xCube.d0", Kind: apRelative, Value: &utils.FeltOne},
 					{Name: "xCube.d1", Kind: apRelative, Value: &utils.FeltOne},
@@ -76,6 +77,77 @@ func TestSignatures(t *testing.T) {
 			// 	},
 			// 	check: varValueInScopeEquals("value", bigIntString("64330220386510520462271671435567806262107470356169873352512014089172394266548", 10)),
 			// },
+		},
+		"DivModNSafeDivHint": {
+			{
+				// zero quotient
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{
+						"res": bigIntString("0", 10),
+						"a":   bigIntString("0", 10),
+						"b":   bigIntString("0", 10),
+						"N":   bigIntString("1", 10),
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDivModSafeDivHinter()
+				},
+				check: varListInScopeEquals(map[string]any{
+					"value": bigIntString("0", 10),
+					"k":     bigIntString("0", 10),
+				}),
+			},
+			{
+				// negative quotient
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{
+						"res": bigIntString("1", 10),
+						"a":   bigIntString("2", 10),
+						"b":   bigIntString("1", 10),
+						"N":   bigIntString("1", 10),
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDivModSafeDivHinter()
+				},
+				check: varListInScopeEquals(map[string]any{
+					"value": bigIntString("-1", 10),
+					"k":     bigIntString("-1", 10),
+				}),
+			},
+			{
+				// positive quotient
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{
+						"res": bigIntString("10", 10),
+						"a":   bigIntString("20", 10),
+						"b":   bigIntString("30", 10),
+						"N":   bigIntString("2", 10),
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDivModSafeDivHinter()
+				},
+				check: varListInScopeEquals(map[string]any{
+					"value": bigIntString("140", 10),
+					"k":     bigIntString("140", 10),
+				}),
+			},
 		},
 		"ImportSecp256R1P": {
 			{

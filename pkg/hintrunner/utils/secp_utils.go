@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
@@ -52,6 +53,11 @@ func GetBetaUint256() uint256.Int {
 		0,
 	}
 
+func GetNBig() big.Int {
+	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L9
+
+	NBig, _ := new(big.Int).SetString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16)
+	return *NBig
 }
 
 func SecPSplit(num *uint256.Int) ([]uint256.Int, error) {
