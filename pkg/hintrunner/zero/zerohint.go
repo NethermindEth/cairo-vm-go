@@ -82,6 +82,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSplitIntAssertRangeHinter(resolver)
 	case splitIntCode:
 		return createSplitIntHinter(resolver)
+	case signedDivRemCode:
+		return createSignedDivRemHinter(resolver)
+	case powCode:
+		return createPowHinter(resolver)
 	case splitFeltCode:
 		return createSplitFeltHinter(resolver)
 	case sqrtCode:
@@ -105,6 +109,36 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUint256SqrtHinter(resolver)
 	case uint256MulDivModCode:
 		return createUint256MulDivModHinter(resolver)
+	// Signature hints
+	case verifyECDSASignatureCode:
+		return createVerifyECDSASignatureHinter(resolver)
+	case getPointFromXCode:
+		return createGetPointFromXHinter(resolver)
+	case divModNSafeDivCode:
+		return createDivModSafeDivHinter()
+	case importSecp256R1PCode:
+		return createImportSecp256R1PHinter()
+	case verifyZeroCode:
+		return createVerifyZeroHinter(resolver)
+		// EC hints
+	case ecNegateCode:
+		return createEcNegateHinter(resolver)
+	case nondetBigint3V1Code:
+		return createNondetBigint3V1Hinter(resolver)
+	case fastEcAddAssignNewYCode:
+		return createFastEcAddAssignNewYHinter()
+	case fastEcAddAssignNewXCode:
+		return createFastEcAddAssignNewXHinter(resolver)
+	case ecDoubleSlopeV1Code:
+		return createEcDoubleSlopeV1Hinter(resolver)
+		// Blake hints
+	case blake2sAddUint256BigendCode:
+		return createBlake2sAddUint256Hinter(resolver, true)
+	case blake2sAddUint256Code:
+		return createBlake2sAddUint256Hinter(resolver, false)
+		// Usort hints
+	case usortEnterScopeCode:
+		return createUsortEnterScopeHinter()
 		// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)
