@@ -13,6 +13,9 @@ func newUsortEnterScopeHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortEnterScope",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> last_pos = 0
+			//> positions = positions_dict[ids.value][::-1]
+
 			usortMaxSize, err := ctx.ScopeManager.GetVariableValue("__usort_max_size")
 			if err != nil {
 				return err
@@ -41,19 +44,19 @@ func newUsortVerifyHinter(value hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			positionsDict, ok := positionsDictInterface.(map[uint64][]*fp.Element)
+			positionsDict, ok := positionsDictInterface.(map[fp.Element][]uint64)
 
 			if !ok {
 				return fmt.Errorf("casting positions_dict into an dictionary failed")
 			}
 
-			value, err := hinter.ResolveAsUint64(vm, value)
+			value, err := hinter.ResolveAsFelt(vm, value)
 
 			if err != nil {
 				return err
 			}
 
-			positions := positionsDict[value]
+			positions := positionsDict[*value]
 			utils.Reverse(positions)
 
 			err = ctx.ScopeManager.AssignVariables(map[string]any{

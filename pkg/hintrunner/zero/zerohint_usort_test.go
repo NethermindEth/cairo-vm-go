@@ -27,8 +27,8 @@ func TestZeroHintUsort(t *testing.T) {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					hinter.InitializeScopeManager(ctx, map[string]any{
-						"positions_dict": map[uint64][]*fp.Element{
-							0: {feltUint64(1), feltUint64(2), feltUint64(3)},
+						"positions_dict": map[fp.Element][]uint64{
+							*feltUint64(0): {1, 2, 3},
 						},
 					})
 				},
@@ -42,7 +42,7 @@ func TestZeroHintUsort(t *testing.T) {
 					positions, err := ctx.runnerContext.ScopeManager.GetVariableValue("positions")
 					require.NoError(t, err)
 
-					require.Equal(t, []*fp.Element{feltUint64(3), feltUint64(2), feltUint64(1)}, positions)
+					require.Equal(t, []uint64{3, 2, 1}, positions)
 
 					lastPos, err := ctx.runnerContext.ScopeManager.GetVariableValue("last_pos")
 					require.NoError(t, err)
@@ -51,11 +51,11 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				// check: allVarValueInScopeEquals(map[string]any{
 				// 	"last_pos":  0,
-				// 	"positions": []*fp.Element{feltUint64(3), feltUint64(2), feltUint64(1)},
+				// 	"positions": []uint64{3, 2, 1},
 				// }),
 				// check: allVarValueInScopeEquals(map[string]any{
 				// 	"last_pos":  0,
-				// 	"positions": [...]*fp.Element{feltUint64(3), feltUint64(2), feltUint64(1)},
+				// 	"positions": [...]uint64{3, 2, 1},
 				// }),
 			},
 		},
