@@ -52,6 +52,7 @@ func GetBetaUint256() uint256.Int {
 		0,
 		0,
 	}
+}
 
 func GetNBig() big.Int {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L9
