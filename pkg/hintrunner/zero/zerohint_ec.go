@@ -91,10 +91,10 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			valueUint256, _ := uint256.FromBig(valueBig)
+			value, _ := uint256.FromBig(valueBig)
 
 			//> split(value)
-			values, err := secp_utils.SecPSplit(valueUint256)
+			values, err := secp_utils.SecPSplit(value)
 			if err != nil {
 				return err
 			}
@@ -135,37 +135,37 @@ func newFastEcAddAssignNewYHint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> value = new_y = (slope * (x0 - new_x) - y0) % SECP_P
 
-			slopeBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("slope")
+			slope, err := ctx.ScopeManager.GetVariableValueAsBigInt("slope")
 			if err != nil {
 				return err
 			}
-			x0Big, err := ctx.ScopeManager.GetVariableValueAsBigInt("x0")
+			x0, err := ctx.ScopeManager.GetVariableValueAsBigInt("x0")
 			if err != nil {
 				return err
 			}
-			new_xBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("new_x")
+			new_x, err := ctx.ScopeManager.GetVariableValueAsBigInt("new_x")
 			if err != nil {
 				return err
 			}
-			y0Big, err := ctx.ScopeManager.GetVariableValueAsBigInt("y0")
+			y0, err := ctx.ScopeManager.GetVariableValueAsBigInt("y0")
 			if err != nil {
 				return err
 			}
-			secPBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("SECP_P")
+			secP, err := ctx.ScopeManager.GetVariableValueAsBigInt("SECP_P")
 			if err != nil {
 				return err
 			}
 
-			new_yBig := new(big.Int)
-			new_yBig.Sub(x0Big, new_xBig)
-			new_yBig.Mul(new_yBig, slopeBig)
-			new_yBig.Sub(new_yBig, y0Big)
-			new_yBig.Mod(new_yBig, secPBig)
+			new_y := new(big.Int)
+			new_y.Sub(x0, new_x)
+			new_y.Mul(new_y, slope)
+			new_y.Sub(new_y, y0)
+			new_y.Mod(new_y, secP)
 
 			valueBig := new(big.Int)
-			valueBig.Set(new_yBig)
+			valueBig.Set(new_y)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"new_y": new_yBig, "value": valueBig})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"new_y": new_y, "value": valueBig})
 		},
 	}
 }
@@ -278,16 +278,16 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 
 			secPUint256 := secp_utils.GetSecPUint256()
 
-			new_xBig := new(big.Int)
-			new_xBig.Exp(slopeUint256.ToBig(), big.NewInt(2), secPUint256.ToBig())
-			new_xBig.Sub(new_xBig, x0Uint256.ToBig())
-			new_xBig.Sub(new_xBig, x1Uint256.ToBig())
-			new_xBig.Mod(new_xBig, secPUint256.ToBig())
+			new_x := new(big.Int)
+			new_x.Exp(slopeUint256.ToBig(), big.NewInt(2), secPUint256.ToBig())
+			new_x.Sub(new_x, x0Uint256.ToBig())
+			new_x.Sub(new_x, x1Uint256.ToBig())
+			new_x.Mod(new_x, secPUint256.ToBig())
 
-			valueBig := new(big.Int)
-			valueBig.Set(new_xBig)
+			value := new(big.Int)
+			value.Set(new_x)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeUint256.ToBig(), "x0": x0Uint256.ToBig(), "x1": x1Uint256.ToBig(), "y0": y0Uint256.ToBig(), "new_x": new_xBig, "value": valueBig})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeUint256.ToBig(), "x0": x0Uint256.ToBig(), "x1": x1Uint256.ToBig(), "y0": y0Uint256.ToBig(), "new_x": new_x, "value": value})
 		},
 	}
 }
