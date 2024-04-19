@@ -58,8 +58,8 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> ids.q = q % PRIME
-			fpModulusUint256, _ := uint256.FromBig(fp.Modulus())
-			qUint256.Mod(qUint256, fpModulusUint256)
+			fpModulus, _ := uint256.FromBig(fp.Modulus())
+			qUint256.Mod(qUint256, fpModulus)
 			qBig := qUint256.ToBig()
 			qFelt := new(fp.Element).SetBigInt(qBig)
 			qAddr, err := q.GetAddress(vm)

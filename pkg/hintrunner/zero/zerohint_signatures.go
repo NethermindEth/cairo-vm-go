@@ -105,19 +105,19 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 
 			//> y = pow(y_square_int, (SECP_P + 1) // 4, SECP_P)
 			exponent := uint256.NewInt(0).Div(uint256.NewInt(0).Add(&secpUint256, uint256.NewInt(1)), uint256.NewInt(4))
-			yBig := new(big.Int).Exp(ySquareUint256.ToBig(), exponent.ToBig(), secpUint256.ToBig())
+			y := new(big.Int).Exp(ySquareUint256.ToBig(), exponent.ToBig(), secpUint256.ToBig())
 			vBig := v.BigInt(new(big.Int))
-			secpBig := secpUint256.ToBig()
+			secp := secpUint256.ToBig()
 
 			//> if ids.v % 2 == y % 2:
 			//>	 value = y
 			//> else:
 			//>	 value = (-y) % SECP_P
 			value := new(big.Int)
-			if vBig.Bit(0) == yBig.Bit(0) {
-				value.Set(yBig)
+			if vBig.Bit(0) == y.Bit(0) {
+				value.Set(y)
 			} else {
-				value.Mod(value.Neg(yBig), secpBig)
+				value.Mod(value.Neg(y), secp)
 			}
 			return ctx.ScopeManager.AssignVariable("value", value)
 		},

@@ -30,17 +30,18 @@ func GetSecPUint256() uint256.Int {
 func SecPPacked(limbs [3]*fp.Element) (uint256.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L28
 
-	baseUint256 := getBaseUint256()
+	base := getBaseUint256()
 
-	packedUint256 := uint256.NewInt(0)
+	packed := uint256.NewInt(0)
 	for idx, limb := range limbs {
-		limbUint256, _ := uint256.FromBig(AsInt(limb))
-		valueToAddUint256 := uint256.NewInt(0).Exp(&baseUint256, uint256.NewInt(uint64(int64(idx))))
-		valueToAddUint256.Mul(valueToAddUint256, limbUint256)
-		packedUint256.Add(packedUint256, valueToAddUint256)
+		limbBytes := limb.Bytes()
+		limbUint256 := new(uint256.Int).SetBytes(limbBytes[:])
+		valueToAdd := uint256.NewInt(0).Exp(&base, uint256.NewInt(uint64(int64(idx))))
+		valueToAdd.Mul(valueToAdd, limbUint256)
+		packed.Add(packed, valueToAdd)
 	}
 
-	return *packedUint256, nil
+	return *packed, nil
 }
 
 func GetBetaUint256() uint256.Int {
