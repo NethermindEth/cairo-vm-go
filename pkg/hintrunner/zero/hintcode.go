@@ -75,7 +75,14 @@ const (
 	blake2sAddUint256Code       string = "B = 32\nMASK = 2 ** 32 - 1\nsegments.write_arg(ids.data, [(ids.low >> (B * i)) & MASK for i in range(4)])\nsegments.write_arg(ids.data + 4, [(ids.high >> (B * i)) & MASK for i in range(4)])"
 
 	// ------ Keccak hints related code ------
-
+	cairoKeccakFinalizeCode string = `# Add dummy pairs of input and output.
+	_keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)
+	_block_size = int(ids.BLOCK_SIZE)
+	assert 0 <= _keccak_state_size_felts < 100
+	assert 0 <= _block_size < 10
+	inp = [0] * _keccak_state_size_felts
+	padding = (inp + keccak_func(inp)) * _block_size
+	segments.write_arg(ids.keccak_ptr_end, padding)`
 	// ------ Dictionaries hints related code ------
 
 	// ------ Other hints related code ------
