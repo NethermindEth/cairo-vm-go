@@ -41,7 +41,7 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 		Name: "AssertLtFelt",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> 	from collections import defaultdict
-
+			//>
 			//> 		input_ptr = ids.input
 			//> 		input_len = int(ids.input_len)
 			//> 		if __usort_max_size is not None:
@@ -49,17 +49,17 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 			//> 				f"usort() can only be used with input_len<={__usort_max_size}. "
 			//> 				f"Got: input_len={input_len}."
 			//> 			)
-
+			//>
 			//> 		positions_dict = defaultdict(list)
 			//> 		for i in range(input_len):
 			//> 			val = memory[input_ptr + i]
 			//> 			positions_dict[val].append(i)
-
+			//>
 			//> 		output = sorted(positions_dict.keys())
 			//> 		ids.output_len = len(output)
 			//> 		ids.output = segments.gen_arg(output)
 			//> 		ids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])
-
+			//>
 			//> 		input_ptr = ids.input
 			inputBasePtr, err := hinter.ResolveAsAddress(vm, input)
 			if err != nil {
@@ -72,12 +72,11 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 
 			inputLenBig := new(big.Int).SetUint64(inputLen)
 			usortMaxSize, err := ctx.ScopeManager.GetVariableValueAsBigInt("__usort_max_size")
-			if err == nil {
-				if inputLenBig.Cmp(usortMaxSize) > 0 {
-					return fmt.Errorf("usort() can only be used with input_len<=%d.\n Got: input_len=%d", usortMaxSize, inputLenBig)
-				}
-			} else {
+			if err != nil {
 				return err
+			}
+			if inputLenBig.Cmp(usortMaxSize) > 0 {
+				return fmt.Errorf("usort() can only be used with input_len<=%d.\n Got: input_len=%d", usortMaxSize, inputLenBig)
 			}
 			positionsDict := make(map[fp.Element][]uint64, inputLen)
 			inputBasePtrCopy := *inputBasePtr
