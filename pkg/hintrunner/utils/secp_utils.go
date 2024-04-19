@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+
 	"math/big"
 
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -29,15 +30,22 @@ func SecPPacked(limbs [3]*fp.Element) (*big.Int, error) {
 	for idx, limb := range limbs {
 		limbBig := AsInt(limb)
 		valueToAddBig := new(big.Int).Exp(baseBig, big.NewInt(int64(idx)), nil)
-		valueToAddBig.Mul(valueToAddBig, limbBig)
+		valueToAddBig.Mul(valueToAddBig, &limbBig)
 		packedBig.Add(packedBig, valueToAddBig)
 	}
 
 	return packedBig, nil
 }
 
-func GetBetaBig() *big.Int {
-	return big.NewInt(7)
+func GetBetaBig() big.Int {
+	return *big.NewInt(7)
+}
+
+func GetNBig() big.Int {
+	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L9
+
+	NBig, _ := new(big.Int).SetString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16)
+	return *NBig
 }
 
 func SecPSplit(num *big.Int) ([]*big.Int, error) {
@@ -63,7 +71,8 @@ func SecPSplit(num *big.Int) ([]*big.Int, error) {
 	return split, nil
 }
 
-func GetSecp256R1_P() (*big.Int, bool) {
+func GetSecp256R1_P() (big.Int, bool) {
 	// 2**256 - 2**224 + 2**192 + 2**96 - 1
-	return new(big.Int).SetString("115792089210356248762697446949407573530086143415290314195533631308867097853951", 10)
+	secp256r1_p, ok := new(big.Int).SetString("115792089210356248762697446949407573530086143415290314195533631308867097853951", 10)
+	return *secp256r1_p, ok
 }

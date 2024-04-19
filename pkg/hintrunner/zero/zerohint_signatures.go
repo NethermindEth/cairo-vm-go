@@ -98,7 +98,8 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			xCubeIntBig.Mod(xCubeIntBig, secpBig)
 
 			//> y_square_int = (x_cube_int + ids.BETA) % SECP_P
-			ySquareIntBig := new(big.Int).Add(xCubeIntBig, secp_utils.GetBetaBig())
+			betaBig := secp_utils.GetBetaBig()
+			ySquareIntBig := new(big.Int).Add(xCubeIntBig, &betaBig)
 			ySquareIntBig.Mod(ySquareIntBig, secpBig)
 
 			//> y = pow(y_square_int, (SECP_P + 1) // 4, SECP_P)
@@ -133,6 +134,47 @@ func createGetPointFromXHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	return newGetPointFromXHinter(xCube, v), nil
 }
 
+func newDivModSafeDivHinter() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DivModSafeDivHinter",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> value = k = safe_div(res * b - a, N)
+
+			res, err := ctx.ScopeManager.GetVariableValueAsBigInt("res")
+			if err != nil {
+				return err
+			}
+			a, err := ctx.ScopeManager.GetVariableValueAsBigInt("a")
+			if err != nil {
+				return err
+			}
+			b, err := ctx.ScopeManager.GetVariableValueAsBigInt("b")
+			if err != nil {
+				return err
+			}
+			N, err := ctx.ScopeManager.GetVariableValueAsBigInt("N")
+			if err != nil {
+				return err
+			}
+			divisor := new(big.Int).Sub(new(big.Int).Mul(res, b), a)
+			value, err := secp_utils.SafeDiv(divisor, N)
+			if err != nil {
+				return err
+			}
+			k := new(big.Int).Set(&value)
+			err = ctx.ScopeManager.AssignVariable("k", k)
+			if err != nil {
+				return err
+			}
+			return ctx.ScopeManager.AssignVariable("value", &value)
+		},
+	}
+}
+
+func createDivModSafeDivHinter() (hinter.Hinter, error) {
+	return newDivModSafeDivHinter(), nil
+}
+
 func newImportSecp256R1PHinter() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Secp256R1",
@@ -142,7 +184,7 @@ func newImportSecp256R1PHinter() hinter.Hinter {
 			if !ok {
 				return fmt.Errorf("SECP256R1_P failed.")
 			}
-			return ctx.ScopeManager.AssignVariable("SECP_P", SECP256R1_PBig)
+			return ctx.ScopeManager.AssignVariable("SECP_P", &SECP256R1_PBig)
 		},
 	}
 }
