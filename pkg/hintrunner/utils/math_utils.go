@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -106,4 +107,14 @@ func sign(n *big.Int) (int, big.Int) {
 		return -1, *new(big.Int).Abs(n)
 	}
 	return 1, *new(big.Int).Set(n)
+}
+
+func SafeDiv(x, y *big.Int) (big.Int, error) {
+	if y.Cmp(big.NewInt(0)) == 0 {
+		return *big.NewInt(0), fmt.Errorf("Division by zero.")
+	}
+	if new(big.Int).Mod(x, y).Cmp(big.NewInt(0)) != 0 {
+		return *big.NewInt(0), fmt.Errorf("%v is not divisible by %v.", x, y)
+	}
+	return *new(big.Int).Div(x, y), nil
 }
