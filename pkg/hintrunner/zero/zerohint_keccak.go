@@ -34,7 +34,6 @@ func newCairoKeccakFinalizeHint(keccakStateSizeFeltsResOperander, blockSizeResOp
 				return err
 			}
 			if blockSize >= 10 {
-
 				return fmt.Errorf("assert 0 <= _block_size < 10.")
 			}
 
@@ -52,13 +51,12 @@ func newCairoKeccakFinalizeHint(keccakStateSizeFeltsResOperander, blockSizeResOp
 			}
 			keccakPtrEndCopy := *keccakPtrEnd
 			for i := 0; i < len(result); i++ {
-				multiplicitesSegmentWriteArgsPtr, err := keccakPtrEndCopy.AddOffset(int16(i))
+				resultMV := memory.MemoryValueFromUint(result[i])
+				err = vm.Memory.WriteToAddress(&keccakPtrEndCopy, &resultMV)
 				if err != nil {
 					return err
 				}
-				resultMV := memory.MemoryValueFromUint(result[i])
-				fmt.Println(resultMV, multiplicitesSegmentWriteArgsPtr)
-				err = vm.Memory.WriteToAddress(&multiplicitesSegmentWriteArgsPtr, &resultMV)
+				keccakPtrEndCopy, err = keccakPtrEndCopy.AddOffset(int16(1))
 				if err != nil {
 					return err
 				}
