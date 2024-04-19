@@ -56,7 +56,7 @@ func newCairoKeccakFinalizeHint(keccakStateSizeFeltsResOperander, blockSizeResOp
 				if err != nil {
 					return err
 				}
-				keccakPtrEndCopy, err = keccakPtrEndCopy.AddOffset(int16(1))
+				keccakPtrEndCopy, err = keccakPtrEndCopy.AddOffset(1)
 				if err != nil {
 					return err
 				}
