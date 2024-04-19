@@ -5,7 +5,7 @@ import (
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
+	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -81,7 +81,7 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-			secpBig, _ := utils.GetSecPBig()
+			secpBig, _ := secp_utils.GetSecPBig()
 
 			//> x_cube_int = pack(ids.x_cube, PRIME) % SECP_P
 			var xCubeValues [3]*fp.Element
@@ -91,19 +91,20 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 					return err
 				}
 			}
-			xCubeIntBig, err := utils.SecPPacked(xCubeValues)
+			xCubeIntBig, err := secp_utils.SecPPacked(xCubeValues)
 			if err != nil {
 				return err
 			}
 			xCubeIntBig.Mod(xCubeIntBig, secpBig)
 
 			//> y_square_int = (x_cube_int + ids.BETA) % SECP_P
-			betaBig := utils.GetBetaBig()
-			ySquareIntBig := new(big.Int).Add(xCubeIntBig, &betaBig)
+      betaBig := utils.GetBetaBig()
+			ySquareIntBig := new(big.Int).Add(xCubeIntBig, betaBig)
 			ySquareIntBig.Mod(ySquareIntBig, secpBig)
 
 			//> y = pow(y_square_int, (SECP_P + 1) // 4, SECP_P)
-			y := new(big.Int).Exp(ySquareIntBig, new(big.Int).Div(new(big.Int).Add(secpBig, big.NewInt(1)), big.NewInt(4)), secpBig)
+			exponent := new(big.Int).Div(new(big.Int).Add(secpBig, big.NewInt(1)), big.NewInt(4))
+			y := new(big.Int).Exp(ySquareIntBig, exponent, secpBig)
 			vBig := v.BigInt(new(big.Int))
 
 			//> if ids.v % 2 == y % 2:
@@ -179,7 +180,7 @@ func newImportSecp256R1PHinter() hinter.Hinter {
 		Name: "Secp256R1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp256r1_utils import SECP256R1_P as SECP_P
-			SECP256R1_PBig, ok := utils.GetSecp256R1_P()
+			SECP256R1_PBig, ok := secp_utils.GetSecp256R1_P()
 			if !ok {
 				return fmt.Errorf("SECP256R1_P failed.")
 			}
