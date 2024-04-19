@@ -891,13 +891,14 @@ func newIsQuadResidueHint(x, y hinter.ResOperander) hinter.Hinter {
 			if x.IsZero() || x.IsOne() {
 				value = memory.MemoryValueFromFieldElement(x)
 
-			} else if x.Legendre() == 1 {
-				// calculates the square root
-				sqrt := x.Sqrt(x)
-				value = memory.MemoryValueFromFieldElement(sqrt)
-
 			} else {
-				result := x.Sqrt(new(fp.Element).Div(x, new(fp.Element).SetUint64(3)))
+				var result *fp.Element
+
+				if x.Legendre() == 1 {
+					result = x.Sqrt(x)
+				} else {
+					result = x.Sqrt(new(fp.Element).Div(x, new(fp.Element).SetUint64(3)))
+				}
 				value = memory.MemoryValueFromFieldElement(result)
 			}
 			return vm.Memory.WriteToAddress(&yAddr, &value)
