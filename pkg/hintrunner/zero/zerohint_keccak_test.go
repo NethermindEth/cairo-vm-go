@@ -96,6 +96,24 @@ func TestZeroHintKeccak(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "data", Kind: apRelative, Value: addr(5)},
+					{Name: "data.0", Kind: apRelative, Value: feltUint64(65537)},
+					{Name: "length", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "high", Kind: uninitialized},
+					{Name: "low", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{
+						"__keccak_max_size": uint64(100),
+					})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
+				},
+				errCheck: errorTextContains(fmt.Sprintf("word %v is out range 0 <= word < 2 ** %d", feltUint64(65537), 8)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "data", Kind: apRelative, Value: addr(5)},
 					{Name: "data.0", Kind: apRelative, Value: feltUint64(1)},
 					{Name: "data.1", Kind: apRelative, Value: feltUint64(2)},
 					{Name: "data.2", Kind: apRelative, Value: feltUint64(3)},

@@ -132,7 +132,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 					nBytes = 16
 				}
 				if uint64(word.BitLen()) >= 8*nBytes {
-					return fmt.Errorf("assert 0 <= word < 2 ** (8 * n_bytes)")
+					return fmt.Errorf("word %v is out range 0 <= word < 2 ** %d", &word, 8*nBytes)
 				}
 				wordBytes := word.Bytes20()
 				keccakInput = append(keccakInput, wordBytes[20-int(nBytes):]...)
