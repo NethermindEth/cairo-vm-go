@@ -1,6 +1,7 @@
 package zero
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -71,6 +72,49 @@ func TestZeroHintKeccak(t *testing.T) {
 						testValuesFelt[i] = feltUint64(v)
 					}
 					consecutiveVarAddrResolvedValueEquals("keccak_ptr_end", testValuesFelt)(t, ctx)
+				},
+			},
+		},
+		"newUnsafeKeccak": {
+			{
+				operanders: []*hintOperander{
+					{Name: "data", Kind: uninitialized},
+					{Name: "length", Kind: apRelative, Value: feltUint64(101)},
+					{Name: "high", Kind: uninitialized},
+					{Name: "low", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{
+						"__keccak_max_size": uint64(100),
+					})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
+				},
+				errCheck: errorTextContains(fmt.Sprintf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d.", 100, 101)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "data", Kind: apRelative, Value: addr(5)},
+					{Name: "data.0", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "data.1", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "data.2", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "data.3", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "length", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "high", Kind: uninitialized},
+					{Name: "low", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{
+						"__keccak_max_size": uint64(100),
+					})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					varValueEquals("high", feltString("108955721224378455455648573289483395612"))(t, ctx)
+					varValueEquals("low", feltString("253531040214470063354971884479696309631"))(t, ctx)
 				},
 			},
 		},

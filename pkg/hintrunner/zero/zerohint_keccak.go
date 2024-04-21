@@ -7,11 +7,14 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/holiman/uint256"
+	"golang.org/x/crypto/sha3"
 )
 
 func newCairoKeccakFinalizeHint(keccakStateSizeFeltsResOperander, blockSizeResOperander, keccakPtrEndResOperander hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "IsLeFelt",
+		Name: "CairoKeccakFinalize",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> _keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)
 			//> _block_size = int(ids.BLOCK_SIZE)
@@ -80,4 +83,107 @@ func createCairoKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hin
 		return nil, err
 	}
 	return newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd), nil
+}
+
+func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "CairoKeccakFinalize",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//>	from eth_hash.auto import keccak
+			//>	data, length = ids.data, ids.length
+			//>	if '__keccak_max_size' in globals():
+			//>		assert length <= __keccak_max_size, \
+			//>			f'unsafe_keccak() can only be used with length<={__keccak_max_size}. ' \
+			//>			f'Got: length={length}.'
+			//>	keccak_input = bytearray()
+			//>	for word_i, byte_i in enumerate(range(0, length, 16)):
+			//>		word = memory[data + word_i]
+			//>		n_bytes = min(16, length - byte_i)
+			//>		assert 0 <= word < 2 ** (8 * n_bytes)
+			//>		keccak_input += word.to_bytes(n_bytes, 'big')
+			//>	hashed = keccak(keccak_input)
+			//>	ids.high = int.from_bytes(hashed[:16], 'big')
+			//>	ids.low = int.from_bytes(hashed[16:32], 'big')
+
+			lengthVal, err := hinter.ResolveAsUint64(vm, length)
+			if err != nil {
+				return err
+			}
+			keccakMaxSize, err := ctx.ScopeManager.GetVariableValueAsUint64("__keccak_max_size")
+			if err == nil {
+				if lengthVal > keccakMaxSize {
+					return fmt.Errorf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d.", keccakMaxSize, lengthVal)
+				}
+			}
+			dataPtr, err := hinter.ResolveAsAddress(vm, data)
+			if err != nil {
+				return err
+			}
+			dataPtrCopy := *dataPtr
+			keccakInput := make([]byte, 0)
+			for i := uint64(0); i < lengthVal; i += 16 {
+				wordFelt, err := vm.Memory.ReadAsElement(dataPtrCopy.SegmentIndex, dataPtrCopy.Offset)
+				if err != nil {
+					return err
+				}
+				word := uint256.Int(wordFelt.Bits())
+				nBytes := uint64(16)
+				if lengthVal-i < 16 {
+					nBytes = lengthVal - i
+				}
+				upperBound := uint256.NewInt(1)
+				upperBound.Lsh(upperBound, uint(8*nBytes))
+				if word.Cmp(upperBound) >= 0 {
+					return fmt.Errorf("assert 0 <= word < 2 ** (8 * n_bytes)")
+				}
+				wordBytes := word.Bytes20()
+				keccakInput = append(keccakInput, wordBytes[len(wordBytes)-int(nBytes):]...)
+				dataPtrCopy, err = dataPtrCopy.AddOffset(1)
+				if err != nil {
+					return err
+				}
+			}
+			hash := sha3.NewLegacyKeccak256()
+			hash.Write(keccakInput)
+			hashedBytes := hash.Sum(nil)
+			hashedHigh := new(fp.Element).SetBytes(hashedBytes[:15])
+			hashedLow := new(fp.Element).SetBytes(hashedBytes[16:32])
+			highAddr, err := high.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			hashedHighMV := memory.MemoryValueFromFieldElement(hashedHigh)
+			err = vm.Memory.WriteToAddress(&highAddr, &hashedHighMV)
+			if err != nil {
+				return err
+			}
+
+			lowAddr, err := low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			hashedLowMV := memory.MemoryValueFromFieldElement(hashedLow)
+			return vm.Memory.WriteToAddress(&lowAddr, &hashedLowMV)
+		},
+	}
+}
+
+func createUnsafeKeccakHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	data, err := resolver.GetResOperander("data")
+	if err != nil {
+		return nil, err
+	}
+	length, err := resolver.GetResOperander("length")
+	if err != nil {
+		return nil, err
+	}
+	high, err := resolver.GetResOperander("high")
+	if err != nil {
+		return nil, err
+	}
+	low, err := resolver.GetResOperander("low")
+	if err != nil {
+		return nil, err
+	}
+	return newUnsafeKeccakHint(data, length, high, low), nil
 }
