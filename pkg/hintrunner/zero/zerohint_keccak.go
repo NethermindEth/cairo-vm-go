@@ -127,17 +127,15 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 					return err
 				}
 				word := uint256.Int(wordFelt.Bits())
-				nBytes := uint64(16)
-				if lengthVal-i < 16 {
-					nBytes = lengthVal - i
+				nBytes := lengthVal - i
+				if lengthVal-i > 16 {
+					nBytes = 16
 				}
-				upperBound := uint256.NewInt(1)
-				upperBound.Lsh(upperBound, uint(8*nBytes))
-				if word.Cmp(upperBound) >= 0 {
+				if uint64(word.BitLen()) >= 8*nBytes {
 					return fmt.Errorf("assert 0 <= word < 2 ** (8 * n_bytes)")
 				}
 				wordBytes := word.Bytes20()
-				keccakInput = append(keccakInput, wordBytes[len(wordBytes)-int(nBytes):]...)
+				keccakInput = append(keccakInput, wordBytes[20-int(nBytes):]...)
 				dataPtrCopy, err = dataPtrCopy.AddOffset(1)
 				if err != nil {
 					return err
@@ -146,7 +144,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 			hash := sha3.NewLegacyKeccak256()
 			hash.Write(keccakInput)
 			hashedBytes := hash.Sum(nil)
-			hashedHigh := new(fp.Element).SetBytes(hashedBytes[:15])
+			hashedHigh := new(fp.Element).SetBytes(hashedBytes[:16])
 			hashedLow := new(fp.Element).SetBytes(hashedBytes[16:32])
 			highAddr, err := high.GetAddress(vm)
 			if err != nil {
