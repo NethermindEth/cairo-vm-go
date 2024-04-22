@@ -142,6 +142,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createDefaultDictNewHinter(resolver)
 	case dictReadCode:
 		return createDictReadHinter(resolver)
+	case dictWriteCode:
+		return createDictWriteHinter(resolver)
 		// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)

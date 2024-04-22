@@ -72,5 +72,31 @@ func TestZeroHintDictionaries(t *testing.T) {
 				check: varValueEquals("value", feltUint64(12345)),
 			},
 		},
+		"DictWrite": {
+			{
+				operanders: []*hintOperander{
+					{Name: "key", Kind: apRelative, Value: feltUint64(100)},
+					{Name: "new_value", Kind: apRelative, Value: feltUint64(9999)},
+					{Name: "dict_ptr", Kind: apRelative, Value: addrWithSegment(2, 0)},
+					{Name: "dict_ptr.prev_value", Kind: apRelative, Value: addrWithSegment(2, 1)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeDictionaryManager(ctx)
+					hinter.InitializeScopeManager(ctx, map[string]any{
+						"__dict_manager": ctx.DictionaryManager,
+					})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					defaultValueMv := memory.MemoryValueFromInt(12345)
+					ctx.runnerContext.DictionaryManager.NewDefaultDictionary(ctx.vm, &defaultValueMv)
+					return newDictWriteHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["new_value"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"dict_ptr.prev_value",
+					[]*fp.Element{
+						feltString("12345"),
+					}),
+			},
+		},
 	})
 }

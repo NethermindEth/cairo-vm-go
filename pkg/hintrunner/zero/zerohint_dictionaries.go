@@ -111,3 +111,79 @@ func createDictReadHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	}
 	return newDictReadHint(dictPtr, key, value), nil
 }
+
+func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DictWrite",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+			//> ids.dict_ptr.prev_value = dict_tracker.data[ids.key]
+			//> dict_tracker.data[ids.key] = ids.new_value
+
+			//> dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)
+			dictPtrAddr, err := hinter.ResolveAsAddress(vm, dictPtr)
+			if err != nil {
+				return err
+			}
+			dictionaryManager, ok := ctx.ScopeManager.GetDictionaryManager()
+			if !ok {
+				return fmt.Errorf("__dict_manager not in scope")
+			}
+			dictionary, err := dictionaryManager.GetDictionary(dictPtrAddr)
+			if err != nil {
+				return err
+			}
+
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+			dictionary.IncrementFreeOffset(3)
+
+			key, err := hinter.ResolveAsFelt(vm, key)
+			if err != nil {
+				return err
+			}
+
+			//> ids.dict_ptr.prev_value = dict_tracker.data[ids.key]
+			//> # dict_ptr porints to a DictAccess
+			//> struct DictAccess {
+			//> 	key: felt,
+			//> 	prev_value: felt,
+			//> 	new_value: felt,
+			//> }
+			prevKeyValue, err := dictionary.At(key)
+			if err != nil {
+				return err
+			}
+			err = hinter.WriteToNthStructField(vm, *dictPtrAddr, *prevKeyValue, 1)
+			if err != nil {
+				return err
+			}
+
+			//> dict_tracker.data[ids.key] = ids.new_value
+			newValue, err := hinter.ResolveAsFelt(vm, newValue)
+			if err != nil {
+				return err
+			}
+			newValueMv := mem.MemoryValueFromFieldElement(newValue)
+			dictionary.Set(key, &newValueMv)
+
+			return nil
+		},
+	}
+}
+
+func createDictWriteHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	dictPtr, err := resolver.GetResOperander("dict_ptr")
+	if err != nil {
+		return nil, err
+	}
+	key, err := resolver.GetResOperander("key")
+	if err != nil {
+		return nil, err
+	}
+	newValue, err := resolver.GetResOperander("new_value")
+	if err != nil {
+		return nil, err
+	}
+	return newDictWriteHint(dictPtr, key, newValue), nil
+}
