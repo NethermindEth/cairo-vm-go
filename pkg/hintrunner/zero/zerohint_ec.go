@@ -1,7 +1,6 @@
 package zero
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -348,31 +347,31 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> x = pack(ids.point.x, PRIME)
-			xBig, err := secp_utils.SecPPacked(pointXValues)
+			xUint256, err := secp_utils.SecPPacked(pointXValues)
 			if err != nil {
 				return err
 			}
 
 			//> y = pack(ids.point.y, PRIME)
-			yBig, err := secp_utils.SecPPacked(pointYValues)
+			yUint256, err := secp_utils.SecPPacked(pointYValues)
 			if err != nil {
 				return err
 			}
 
-			secPBig, ok := secp_utils.GetSecPBig()
-			if !ok {
-				return fmt.Errorf("GetSecPBig failed")
-			}
+			secPUint256 := secp_utils.GetSecPUint256()
+			secP := secPUint256.ToBig()
+			x := xUint256.ToBig()
+			y := yUint256.ToBig()
 
 			//> value = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)
-			valueBig, err := secp_utils.EcDoubleSlope(&xBig, &yBig, big.NewInt(0), &secPBig)
+			valueBig, err := secp_utils.EcDoubleSlope(x, y, big.NewInt(0), secP)
 			if err != nil {
 				return err
 			}
 
 			slopeBig := new(big.Int).Set(&valueBig)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"x": &xBig, "y": &yBig, "value": &valueBig, "slope": slopeBig})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"x": x, "y": y, "value": &valueBig, "slope": slopeBig})
 		},
 	}
 }
