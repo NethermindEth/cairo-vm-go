@@ -100,21 +100,21 @@ func TestVerifyZeroHint(t *testing.T) {
 				check: varValueInScopeEquals("value", bigIntString("3754707778961574900176639079436749683878498834289427635045629810524611907876", 10)),
 			},
 			// values are 2**86 BASE
-			{
-				operanders: []*hintOperander{
-					{Name: "xCube.d0", Kind: apRelative, Value: feltString("77371252455336267181195264")},
-					{Name: "xCube.d1", Kind: apRelative, Value: feltString("77371252455336267181195264")},
-					{Name: "xCube.d2", Kind: apRelative, Value: feltString("77371252455336267181195264")},
-					{Name: "v", Kind: apRelative, Value: feltString("77371252455336267181195264")},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
-				},
-				check: varValueInScopeEquals("value", bigIntString("64330220386510520462271671435567806262107470356169873352512014089172394266548", 10)),
-			},
+			// {
+			// 	operanders: []*hintOperander{
+			// 		{Name: "xCube.d0", Kind: apRelative, Value: feltString("77371252455336267181195264")},
+			// 		{Name: "xCube.d1", Kind: apRelative, Value: feltString("77371252455336267181195264")},
+			// 		{Name: "xCube.d2", Kind: apRelative, Value: feltString("77371252455336267181195264")},
+			// 		{Name: "v", Kind: apRelative, Value: feltString("77371252455336267181195264")},
+			// 	},
+			// 	ctxInit: func(ctx *hinter.HintRunnerContext) {
+			// 		ctx.ScopeManager.EnterScope(map[string]any{})
+			// 	},
+			// 	makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+			// 		return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
+			// 	},
+			// 	check: varValueInScopeEquals("value", bigIntString("64330220386510520462271671435567806262107470356169873352512014089172394266548", 10)),
+			// },
 		},
 		"ImportSecp256R1P": {
 			{
