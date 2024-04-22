@@ -185,3 +185,89 @@ func createUnsafeKeccakHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 	}
 	return newUnsafeKeccakHint(data, length, high, low), nil
 }
+
+func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "UnsafeKeccakFinalize",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from eth_hash.auto import keccak
+			//> keccak_input = bytearray()
+			//> n_elms = ids.keccak_state.end_ptr - ids.keccak_state.start_ptr
+			//> for word in memory.get_range(ids.keccak_state.start_ptr, n_elms):
+			//>     keccak_input += word.to_bytes(16, 'big')
+			//> hashed = keccak(keccak_input)
+			//> ids.high = int.from_bytes(hashed[:16], 'big')
+			//> ids.low = int.from_bytes(hashed[16:32], 'big')
+			keccakStateAddr, err := keccakState.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			keccakStateMemoryValues, err := hinter.GetConsecutiveValues(vm, keccakStateAddr, 2)
+			if err != nil {
+				return err
+			}
+			startPtr, err := keccakStateMemoryValues[0].MemoryAddress()
+			if err != nil {
+				return err
+			}
+			endPtr, err := keccakStateMemoryValues[1].MemoryAddress()
+			if err != nil {
+				return err
+			}
+			nElems, err := endPtr.SubAddress(startPtr)
+			if err != nil {
+				return err
+			}
+			keccakInput := make([]byte, 0)
+			memoryValuesInRange, err := hinter.GetConsecutiveValues(vm, *startPtr, int16(nElems))
+			if err != nil {
+				return err
+			}
+			for _, mv := range memoryValuesInRange {
+				wordFelt, err := mv.FieldElement()
+				if err != nil {
+					return err
+				}
+				word := uint256.Int(wordFelt.Bits())
+				wordBytes := word.Bytes20()
+				keccakInput = append(keccakInput, wordBytes[4:]...)
+			}
+			hash := sha3.NewLegacyKeccak256()
+			hash.Write(keccakInput)
+			hashedBytes := hash.Sum(nil)
+			hashedHigh := new(fp.Element).SetBytes(hashedBytes[:16])
+			hashedLow := new(fp.Element).SetBytes(hashedBytes[16:32])
+			highAddr, err := high.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			hashedHighMV := memory.MemoryValueFromFieldElement(hashedHigh)
+			err = vm.Memory.WriteToAddress(&highAddr, &hashedHighMV)
+			if err != nil {
+				return err
+			}
+			lowAddr, err := low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			hashedLowMV := memory.MemoryValueFromFieldElement(hashedLow)
+			return vm.Memory.WriteToAddress(&lowAddr, &hashedLowMV)
+		},
+	}
+}
+
+func createUnsafeKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	keccak_state, err := resolver.GetResOperander("keccak_state")
+	if err != nil {
+		return nil, err
+	}
+	high, err := resolver.GetResOperander("high")
+	if err != nil {
+		return nil, err
+	}
+	low, err := resolver.GetResOperander("low")
+	if err != nil {
+		return nil, err
+	}
+	return newUnsafeKeccakFinalizeHint(keccak_state, high, low), nil
+}

@@ -38,7 +38,18 @@ func (address *MemoryAddress) AddOffset(offset int16) (MemoryAddress, error) {
 		SegmentIndex: address.SegmentIndex,
 		Offset:       newOffset,
 	}, nil
+}
 
+func (address *MemoryAddress) SubAddress(other *MemoryAddress) (uint64, error) {
+	if address.SegmentIndex != other.SegmentIndex {
+		return 0, fmt.Errorf("cannot subtract addresses from different segments: %d != %d",
+			address.SegmentIndex, other.SegmentIndex)
+	}
+	if address.Offset < other.Offset {
+		return 0, fmt.Errorf("cannot subtract addresses: %d < %d",
+			address.Offset, other.Offset)
+	}
+	return address.Offset - other.Offset, nil
 }
 
 // Adds a memory address and a field element
