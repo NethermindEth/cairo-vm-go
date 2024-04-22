@@ -34,8 +34,8 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			defaultValuerMv := mem.MemoryValueFromFieldElement(defaultValue)
-			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, &defaultValuerMv)
+			defaultValueMv := mem.MemoryValueFromFieldElement(defaultValue)
+			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, &defaultValueMv)
 			newDefaultDictionaryAddrMv := mem.MemoryValueFromMemoryAddress(&newDefaultDictionaryAddr)
 			apAddr := vm.Context.AddressAp()
 			return vm.Memory.WriteToAddress(&apAddr, &newDefaultDictionaryAddrMv)
