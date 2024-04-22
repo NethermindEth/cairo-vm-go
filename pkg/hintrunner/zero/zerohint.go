@@ -139,7 +139,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUsortEnterScopeHinter()
 		// Dictionary hints
 	case defaultDictNewCode:
-		return createDefaultDictNewHinter()
+		return createDefaultDictNewHinter(resolver)
 		// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)
