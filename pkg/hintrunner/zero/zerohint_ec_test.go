@@ -353,7 +353,7 @@ func TestZeroHintEc(t *testing.T) {
 					secPBigPointer := secp_utils.GetSecPUint256()
 					secPBig := (&secPBigPointer).ToBig()
 
-					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
+					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
@@ -373,7 +373,7 @@ func TestZeroHintEc(t *testing.T) {
 					secPBigPointer := secp_utils.GetSecPUint256()
 					secPBig := (&secPBigPointer).ToBig()
 
-					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
+					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
@@ -394,7 +394,7 @@ func TestZeroHintEc(t *testing.T) {
 					secPBigPointer := secp_utils.GetSecPUint256()
 					secPBig := (&secPBigPointer).ToBig()
 
-					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": secPBig})
+					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
@@ -412,18 +412,18 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "slope.d0", Kind: apRelative, Value: feltString("64081873649130491683833713")},
 					{Name: "slope.d1", Kind: apRelative, Value: feltString("34843994309543177837008178")},
 					{Name: "slope.d2", Kind: apRelative, Value: feltString("16548672716077616016846383")},
-					{Name: "point0.x.d0", Kind: apRelative, Value: feltString("51215")},
-					{Name: "point0.x.d1", Kind: apRelative, Value: feltString("36848548548458")},
-					{Name: "point0.x.d2", Kind: apRelative, Value: feltString("634734734")},
-					{Name: "point0.y.d0", Kind: apRelative, Value: feltString("26362")},
-					{Name: "point0.y.d1", Kind: apRelative, Value: feltString("263724839599")},
-					{Name: "point0.y.d2", Kind: apRelative, Value: feltString("901297012")},
-					{Name: "point1.x.d0", Kind: apRelative, Value: feltString("45789")},
-					{Name: "point1.x.d1", Kind: apRelative, Value: feltString("45612238789798")},
-					{Name: "point1.x.d2", Kind: apRelative, Value: feltString("214455666")},
-					{Name: "point1.y.d0", Kind: apRelative, Value: feltString("12457")},
-					{Name: "point1.y.d1", Kind: apRelative, Value: feltString("895645646464")},
-					{Name: "point1.y.d2", Kind: apRelative, Value: feltString("211245645")},
+					{Name: "point0.x.d0", Kind: apRelative, Value: feltUint64(51215)},
+					{Name: "point0.x.d1", Kind: apRelative, Value: feltUint64(36848548548458)},
+					{Name: "point0.x.d2", Kind: apRelative, Value: feltUint64(634734734)},
+					{Name: "point0.y.d0", Kind: apRelative, Value: feltUint64(26362)},
+					{Name: "point0.y.d1", Kind: apRelative, Value: feltUint64(263724839599)},
+					{Name: "point0.y.d2", Kind: apRelative, Value: feltUint64(901297012)},
+					{Name: "point1.x.d0", Kind: apRelative, Value: feltUint64(45789)},
+					{Name: "point1.x.d1", Kind: apRelative, Value: feltUint64(45612238789798)},
+					{Name: "point1.x.d2", Kind: apRelative, Value: feltUint64(214455666)},
+					{Name: "point1.y.d0", Kind: apRelative, Value: feltUint64(12457)},
+					{Name: "point1.y.d1", Kind: apRelative, Value: feltUint64(895645646464)},
+					{Name: "point1.y.d2", Kind: apRelative, Value: feltUint64(211245645)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
@@ -507,6 +507,94 @@ func TestZeroHintEc(t *testing.T) {
 			// 		"new_x": bigIntString("30230181511926491618309110200401529297651013854327841200453332701540948849717", 10),
 			// 	}),
 			// },
+		},
+		"EcDoubleSlopeV1": {
+			{
+				operanders: []*hintOperander{
+					{Name: "point.x.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.x.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.x.d2", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.y.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.y.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.y.d2", Kind: apRelative, Value: &utils.FeltZero},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
+				},
+				errCheck: errorTextContains("point[1] % p == 0"),
+			},
+			{
+				operanders: []*hintOperander{
+					// values are random
+					{Name: "point.x.d0", Kind: apRelative, Value: feltUint64(51215)},
+					{Name: "point.x.d1", Kind: apRelative, Value: feltUint64(368485485484584)},
+					{Name: "point.x.d2", Kind: apRelative, Value: feltUint64(4564564687987)},
+					{Name: "point.y.d0", Kind: apRelative, Value: feltUint64(26362)},
+					{Name: "point.y.d1", Kind: apRelative, Value: feltUint64(263724839599)},
+					{Name: "point.y.d2", Kind: apRelative, Value: feltString("1321654896123789784652346")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"x":     bigIntString("27324902462242089002202715756360945650502697953428275540292323343", 10),
+					"y":     bigIntString("7911836854973739773537612350570845963794165335703809150610926758199350552314", 10),
+					"value": bigIntString("8532480558268366897328020348259450788170980412191993744326748439943456131995", 10),
+					"slope": bigIntString("8532480558268366897328020348259450788170980412191993744326748439943456131995", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					// 2**80
+					{Name: "point.x.d0", Kind: apRelative, Value: feltString("1208925819614629174706176")},
+					{Name: "point.x.d1", Kind: apRelative, Value: feltString("1208925819614629174706176")},
+					{Name: "point.x.d2", Kind: apRelative, Value: feltString("1208925819614629174706176")},
+					// 2**40
+					{Name: "point.y.d0", Kind: apRelative, Value: feltUint64(1099511627776)},
+					{Name: "point.y.d1", Kind: apRelative, Value: feltUint64(1099511627776)},
+					{Name: "point.y.d2", Kind: apRelative, Value: feltUint64(1099511627776)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"x":     bigIntString("7237005577332262213973186656579099030007160806638365755234031873103428059136", 10),
+					"y":     bigIntString("6582018229284824168619876815299993750165559328377972410848116736", 10),
+					"value": bigIntString("154266052248863066452028362858593603519505739480817180031844352", 10),
+					"slope": bigIntString("154266052248863066452028362858593603519505739480817180031844352", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "point.x.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.x.d1", Kind: apRelative, Value: &utils.FeltOne},
+					{Name: "point.x.d2", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "point.y.d0", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "point.y.d1", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "point.y.d2", Kind: apRelative, Value: feltUint64(5)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"x":     bigIntString("11972621413014756705924586226983042952357666573254656", 10),
+					"y":     bigIntString("29931553532536891764811465683514486063898567204929539", 10),
+					"value": bigIntString("35023503208535022533116513151423452638642669107476233313413226008091253006355", 10),
+					"slope": bigIntString("35023503208535022533116513151423452638642669107476233313413226008091253006355", 10),
+				}),
+			},
 		},
 	})
 }
