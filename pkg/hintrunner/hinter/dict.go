@@ -16,6 +16,8 @@ type Dictionary struct {
 	idx uint64
 	// Default value for key not present in the dictionary
 	defaultValue *mem.MemoryValue
+	// first free offset in memory segment of dictionary
+	freeOffset uint64
 }
 
 // Gets the memory value at certain key
@@ -39,6 +41,11 @@ func (d *Dictionary) InitNumber() uint64 {
 	return d.idx
 }
 
+// Given a incrementBy value, it increments the freeOffset field of dictionary by it
+func (d *Dictionary) IncrementFreeOffset(freeOffset uint64) {
+	d.freeOffset += freeOffset
+}
+
 // Used to manage dictionaries creation
 type DictionaryManager struct {
 	// a map that links a segment index to a dictionary
@@ -60,6 +67,7 @@ func (dm *DictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddr
 		data:         make(map[f.Element]*mem.MemoryValue),
 		idx:          uint64(len(dm.dictionaries)),
 		defaultValue: nil,
+		freeOffset:   0,
 	}
 	return newDictAddr
 }
@@ -74,6 +82,7 @@ func (dm *DictionaryManager) NewDefaultDictionary(vm *VM.VirtualMachine, default
 		data:         make(map[f.Element]*mem.MemoryValue),
 		idx:          uint64(len(dm.dictionaries)),
 		defaultValue: defaultValue,
+		freeOffset:   0,
 	}
 	return newDefaultDictAddr
 }
