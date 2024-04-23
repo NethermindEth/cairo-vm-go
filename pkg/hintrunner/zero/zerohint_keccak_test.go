@@ -11,7 +11,7 @@ import (
 func TestZeroHintKeccak(t *testing.T) {
 
 	runHinterTests(t, map[string][]hintTestCase{
-		"newCairoKeccakFinalize": {
+		"CairoKeccakFinalize": {
 			{
 				operanders: []*hintOperander{
 					{Name: "KECCAK_STATE_SIZE_FELTS", Kind: apRelative, Value: feltUint64(100)},
@@ -75,7 +75,7 @@ func TestZeroHintKeccak(t *testing.T) {
 				},
 			},
 		},
-		"newUnsafeKeccak": {
+		"UnsafeKeccak": {
 			{
 				operanders: []*hintOperander{
 					{Name: "data", Kind: uninitialized},
@@ -133,6 +133,44 @@ func TestZeroHintKeccak(t *testing.T) {
 				check: func(t *testing.T, ctx *hintTestContext) {
 					varValueEquals("high", feltString("108955721224378455455648573289483395612"))(t, ctx)
 					varValueEquals("low", feltString("253531040214470063354971884479696309631"))(t, ctx)
+				},
+			},
+		},
+		"UnsafeKeccakFinalize": {
+			{
+				// random values
+				operanders: []*hintOperander{
+					{Name: "keccak_state.start_ptr", Kind: apRelative, Value: addr(6)},
+					{Name: "keccak_state.end_ptr", Kind: apRelative, Value: addr(10)},
+					{Name: "keccak_state.0", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "keccak_state.1", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "keccak_state.2", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "keccak_state.3", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "high", Kind: uninitialized},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsafeKeccakFinalizeHint(ctx.operanders["keccak_state.start_ptr"], ctx.operanders["high"], ctx.operanders["low"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					varValueEquals("high", feltString("83237039305559461909708573162245910191"))(t, ctx)
+					varValueEquals("low", feltString("136371816236323410535574079355476245456"))(t, ctx)
+				},
+			},
+			{
+				// end - start is 0
+				operanders: []*hintOperander{
+					{Name: "keccak_state.start_ptr", Kind: apRelative, Value: addr(6)},
+					{Name: "keccak_state.end_ptr", Kind: apRelative, Value: addr(6)},
+					{Name: "high", Kind: uninitialized},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsafeKeccakFinalizeHint(ctx.operanders["keccak_state.start_ptr"], ctx.operanders["high"], ctx.operanders["low"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					varValueEquals("high", feltString("262949717399590921288928019264691438528"))(t, ctx)
+					varValueEquals("low", feltString("304396909071904405792975023732328604784"))(t, ctx)
 				},
 			},
 		},

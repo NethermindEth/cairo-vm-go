@@ -189,7 +189,7 @@ func createUnsafeKeccakHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UnsafeKeccakFinalize",
-		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> from eth_hash.auto import keccak
 			//> keccak_input = bytearray()
 			//> n_elms = ids.keccak_state.end_ptr - ids.keccak_state.start_ptr
