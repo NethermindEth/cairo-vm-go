@@ -10,7 +10,7 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func KeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter {
+func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter {
 	name := "KeccakWriteArgs"
 	return &GenericZeroHinter{
 		Name: name,
@@ -105,5 +105,5 @@ func createKeccakWriteArgsHinter(resolver hintReferenceResolver) (hinter.Hinter,
 		return nil, err
 	}
 
-	return KeccakWriteArgsHint(inputs, low, high), nil
+	return newKeccakWriteArgsHint(inputs, low, high), nil
 }
