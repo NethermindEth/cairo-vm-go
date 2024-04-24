@@ -11,7 +11,7 @@ func TestZeroHintKeccak(t *testing.T) {
 		"newKeccakWriteArgs": {
 			{
 				operanders: []*hintOperander{
-					{Name: "inputs", Kind: apRelative, Value: addr(0)},
+					{Name: "inputs", Kind: apRelative, Value: addr(7)},
 					{Name: "low", Kind: fpRelative, Value: feltUint64(1)},
 					{Name: "high", Kind: fpRelative, Value: feltUint64(1)},
 				},
