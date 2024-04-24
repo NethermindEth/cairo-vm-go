@@ -2,12 +2,12 @@ package zero
 
 import (
 	"math"
-	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/holiman/uint256"
 )
 
 func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter {
@@ -33,37 +33,36 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter
 				return err
 			}
 
-			var lowBig big.Int
-			var highBig big.Int
-			low.BigInt(&lowBig)
-			high.BigInt(&highBig)
+			var lowUint256 uint256.Int = uint256.Int(low.Bits())
+			var highUint256 uint256.Int = uint256.Int(high.Bits())
 
-			var maxUint64Big big.Int
-			maxUint64Big = *maxUint64Big.SetUint64(math.MaxUint64)
+			var maxUint64 uint256.Int = *uint256.NewInt(math.MaxUint64)
 
-			lowResultBig := new(big.Int).Set(&lowBig)
-			lowResultBigLow := *lowResultBig
-			lowResultBigLow.And(&lowResultBigLow, &maxUint64Big)
-			lowResultFeltLow := new(fp.Element).SetBigInt(&lowResultBigLow)
-			mvLowLow := mem.MemoryValueFromFieldElement(lowResultFeltLow)
+			lowResultUint256Low := lowUint256
+			lowResultUint256Low.And(&maxUint64, &lowResultUint256Low)
+			lowResulBytes32Low := lowResultUint256Low.Bytes32()
+			lowResultFeltLow, _ := fp.BigEndian.Element(&lowResulBytes32Low)
+			mvLowLow := mem.MemoryValueFromFieldElement(&lowResultFeltLow)
 
-			lowResultBigHigh := *lowResultBig
-			lowResultBigHigh.Rsh(&lowResultBigHigh, 64)
-			lowResultBigHigh.And(&lowResultBigHigh, &maxUint64Big)
-			lowResultFeltHigh := new(fp.Element).SetBigInt(&lowResultBigHigh)
-			mvLowHigh := mem.MemoryValueFromFieldElement(lowResultFeltHigh)
+			lowResultUint256High := lowUint256
+			lowResultUint256High.Rsh(&lowResultUint256High, 64)
+			lowResultUint256High.And(&lowResultUint256High, &maxUint64)
+			lowResulBytes32High := lowResultUint256High.Bytes32()
+			lowResultFeltHigh, _ := fp.BigEndian.Element(&lowResulBytes32High)
+			mvLowHigh := mem.MemoryValueFromFieldElement(&lowResultFeltHigh)
 
-			highResultBig := new(big.Int).Set(&highBig)
-			highResultBigLow := *highResultBig
-			highResultBigLow.And(&highResultBigLow, &maxUint64Big)
-			highResultFeltLow := new(fp.Element).SetBigInt(&highResultBigLow)
-			mvHighLow := mem.MemoryValueFromFieldElement(highResultFeltLow)
+			highResultUint256Low := highUint256
+			highResultUint256Low.And(&maxUint64, &highResultUint256Low)
+			highResulBytes32Low := highResultUint256Low.Bytes32()
+			highResultFeltLow, _ := fp.BigEndian.Element(&highResulBytes32Low)
+			mvHighLow := mem.MemoryValueFromFieldElement(&highResultFeltLow)
 
-			highResulBigHigh := *highResultBig
-			highResulBigHigh.Rsh(&highResulBigHigh, 64)
-			highResulBigHigh.And(&highResulBigHigh, &maxUint64Big)
-			highResultFeltHigh := new(fp.Element).SetBigInt(&highResulBigHigh)
-			mvHighHigh := mem.MemoryValueFromFieldElement(highResultFeltHigh)
+			highResultUint256High := highUint256
+			highResultUint256High.Rsh(&highResultUint256High, 64)
+			highResultUint256High.And(&maxUint64, &highResultUint256High)
+			highResulBytes32High := highResultUint256High.Bytes32()
+			highResultFeltHigh, _ := fp.BigEndian.Element(&highResulBytes32High)
+			mvHighHigh := mem.MemoryValueFromFieldElement(&highResultFeltHigh)
 
 			err = vm.Memory.Write(inputsPtr.SegmentIndex, inputsPtr.Offset, &mvLowLow)
 			if err != nil {
