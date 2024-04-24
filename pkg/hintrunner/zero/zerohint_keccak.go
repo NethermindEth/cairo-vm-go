@@ -38,9 +38,8 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter
 			low.BigInt(&lowBig)
 			high.BigInt(&highBig)
 
-			var maxUint64 uint64 = math.MaxUint64
 			var maxUint64Big big.Int
-			maxUint64Big = *maxUint64Big.SetUint64(maxUint64)
+			maxUint64Big = *maxUint64Big.SetUint64(math.MaxUint64)
 
 			lowResultBig := new(big.Int).Set(&lowBig)
 			lowResultBigLow := lowResultBig
