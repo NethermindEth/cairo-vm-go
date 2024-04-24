@@ -6,6 +6,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -108,7 +109,7 @@ func createUsortVerifyHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	return newUsortVerifyHinter(value), nil
 }
 
-func newUsortVerifyMultiplicityBodyHint() hinter.Hinter {
+func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortVerifyMultiplicityBody",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -127,9 +128,27 @@ func newUsortVerifyMultiplicityBodyHint() hinter.Hinter {
 			}
 
 			current_pos := utils.Pop(&positions)
+			last_pos := current_pos + 1
+
+			// Calculate `next_item_index` memory value
+			newNextItemIndexValue := current_pos - last_pos
+			newNextItemIndexMemoryValue := memory.MemoryValueFromInt(newNextItemIndexValue)
+
+			// Save `next_item_index` value in address
+			addrNextItemIndex, err := nextItemIndex.GetAddress(vm)
+			if err != nil {
+				return fmt.Errorf("getting address of next_item_index failed: %w", err)
+			}
+
+			err = vm.Memory.WriteToAddress(&addrNextItemIndex, &newNextItemIndexMemoryValue)
+			if err != nil {
+				return fmt.Errorf("writing next_item_index value to memory failed: %w", err)
+			}
+
+			// Save `current_pos` and `last_pos` values in scope variables
 			err = ctx.ScopeManager.AssignVariables(map[string]any{
 				"current_pos": current_pos,
-				"last_pos":    current_pos + 1,
+				"last_pos":    last_pos,
 			})
 
 			if err != nil {
@@ -141,6 +160,11 @@ func newUsortVerifyMultiplicityBodyHint() hinter.Hinter {
 	}
 }
 
-func createUsortVerifyMultiplicityBodyHinter() (hinter.Hinter, error) {
-	return newUsortVerifyMultiplicityBodyHint(), nil
+func createUsortVerifyMultiplicityBodyHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	nextItemIndex, err := resolver.GetResOperander("next_item_index")
+	if err != nil {
+		return nil, err
+	}
+
+	return newUsortVerifyMultiplicityBodyHint(nextItemIndex), nil
 }
