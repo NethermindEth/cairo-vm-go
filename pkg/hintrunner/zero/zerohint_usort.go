@@ -116,9 +116,14 @@ func newUsortVerifyMultiplicityBodyHint() hinter.Hinter {
 			//> ids.next_item_index = current_pos - last_pos
 			//> last_pos = current_pos + 1
 
-			_, err := ctx.ScopeManager.GetVariableValue("positions")
+			positionsInterface, err := ctx.ScopeManager.GetVariableValue("positions")
 			if err != nil {
 				return fmt.Errorf("getting positions from scope failed: %w", err)
+			}
+
+			_, ok := positionsInterface.([]uint64)
+			if !ok {
+				return fmt.Errorf("casting positions into an array of uint64 failed: %w", err)
 			}
 
 			return nil

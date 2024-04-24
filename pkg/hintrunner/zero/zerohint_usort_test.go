@@ -84,6 +84,17 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				errCheck: errorTextContains("getting positions from scope failed"),
 			},
+			{
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{
+						"positions": []string{"1", "2", "3"},
+					})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUsortVerifyMultiplicityBodyHint()
+				},
+				errCheck: errorTextContains("casting positions into an array of uint64 failed"),
+			},
 		},
 	})
 }
