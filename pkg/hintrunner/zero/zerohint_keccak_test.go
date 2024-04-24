@@ -154,6 +154,42 @@ func TestZeroHintKeccak(t *testing.T) {
 						feltUint64(1),
 					}),
 			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: apRelative, Value: addr(7)},
+					{Name: "low", Kind: fpRelative, Value: feltString("18446744073709551617")},
+					{Name: "high", Kind: fpRelative, Value: feltString("18446744073709551617")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newKeccakWriteArgsHint(ctx.operanders["inputs"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"inputs",
+					[]*fp.Element{
+						feltUint64(1),
+						feltUint64(1),
+						feltUint64(1),
+						feltUint64(1),
+					}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: apRelative, Value: addr(7)},
+					{Name: "low", Kind: fpRelative, Value: feltString("340282366920938463463374607431768211455")},
+					{Name: "high", Kind: fpRelative, Value: feltString("340282366920938463463374607431768211455")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newKeccakWriteArgsHint(ctx.operanders["inputs"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"inputs",
+					[]*fp.Element{
+						feltUint64(18446744073709551615),
+						feltUint64(18446744073709551615),
+						feltUint64(18446744073709551615),
+						feltUint64(18446744073709551615),
+					}),
+			},
 		},
 	})
 }
