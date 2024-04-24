@@ -106,6 +106,17 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				errCheck: errorTextContains("casting positions into an array of uint64 failed"),
 			},
+			{
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{
+						"positions": []uint64{1, 2, 3},
+					})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUsortVerifyMultiplicityBodyHint()
+				},
+				check: varValueInScopeEquals("current_pos", feltUint64(3)),
+			},
 		},
 	})
 }

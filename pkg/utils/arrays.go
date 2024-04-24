@@ -5,3 +5,9 @@ func Reverse[T any](a []T) {
 		a[i], a[j] = a[j], a[i]
 	}
 }
+
+func Pop[T any](a *[]T) T {
+	v := (*a)[len(*a)-1]
+	*a = (*a)[:len(*a)-1]
+	return v
+}

@@ -121,9 +121,18 @@ func newUsortVerifyMultiplicityBodyHint() hinter.Hinter {
 				return fmt.Errorf("getting positions from scope failed: %w", err)
 			}
 
-			_, ok := positionsInterface.([]uint64)
+			positions, ok := positionsInterface.([]uint64)
 			if !ok {
 				return fmt.Errorf("casting positions into an array of uint64 failed: %w", err)
+			}
+
+			current_pos := utils.Pop(&positions)
+			err = ctx.ScopeManager.AssignVariables(map[string]any{
+				"current_pos": current_pos,
+			})
+
+			if err != nil {
+				return fmt.Errorf("assigning variables failed: %w", err)
 			}
 
 			return nil
