@@ -1,7 +1,6 @@
 package zero
 
 import (
-	"fmt"
 	"math"
 	"math/big"
 
@@ -48,15 +47,11 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter
 			lowResultFeltLow := new(fp.Element).SetBigInt(&lowResultBigLow)
 			mvLowLow := mem.MemoryValueFromFieldElement(lowResultFeltLow)
 
-			fmt.Println(mvLowLow)
-
 			lowResultBigHigh := *lowResultBig
 			lowResultBigHigh.Rsh(&lowResultBigHigh, 64)
 			lowResultBigHigh.And(&lowResultBigHigh, &maxUint64Big)
 			lowResultFeltHigh := new(fp.Element).SetBigInt(&lowResultBigHigh)
 			mvLowHigh := mem.MemoryValueFromFieldElement(lowResultFeltHigh)
-
-			fmt.Println(mvLowHigh)
 
 			highResultBig := new(big.Int).Set(&highBig)
 			highResultBigLow := *highResultBig
@@ -64,15 +59,11 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter
 			highResultFeltLow := new(fp.Element).SetBigInt(&highResultBigLow)
 			mvHighLow := mem.MemoryValueFromFieldElement(highResultFeltLow)
 
-			fmt.Println(mvHighLow)
-
 			highResulBigHigh := *highResultBig
 			highResulBigHigh.Rsh(&highResulBigHigh, 64)
 			highResulBigHigh.And(&highResulBigHigh, &maxUint64Big)
 			highResultFeltHigh := new(fp.Element).SetBigInt(&highResulBigHigh)
 			mvHighHigh := mem.MemoryValueFromFieldElement(highResultFeltHigh)
-
-			fmt.Println(mvHighHigh)
 
 			err = vm.Memory.Write(inputsPtr.SegmentIndex, inputsPtr.Offset, &mvLowLow)
 			if err != nil {
@@ -89,12 +80,7 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter
 				return err
 			}
 
-			err = vm.Memory.Write(inputsPtr.SegmentIndex, inputsPtr.Offset+3, &mvHighHigh)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return vm.Memory.Write(inputsPtr.SegmentIndex, inputsPtr.Offset+3, &mvHighHigh)
 		},
 	}
 }
