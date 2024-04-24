@@ -115,6 +115,12 @@ func newUsortVerifyMultiplicityBodyHint() hinter.Hinter {
 			//> current_pos = positions.pop()
 			//> ids.next_item_index = current_pos - last_pos
 			//> last_pos = current_pos + 1
+
+			_, err := ctx.ScopeManager.GetVariableValue("positions")
+			if err != nil {
+				return fmt.Errorf("getting positions from scope failed: %w", err)
+			}
+
 			return nil
 		},
 	}

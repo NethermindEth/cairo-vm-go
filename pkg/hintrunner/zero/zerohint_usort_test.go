@@ -82,7 +82,7 @@ func TestZeroHintUsort(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityBodyHint()
 				},
-				check: func(t *testing.T, ctx *hintTestContext) {},
+				errCheck: errorTextContains("getting positions from scope failed"),
 			},
 		},
 	})
