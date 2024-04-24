@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func TestZeroHintKeccak(t *testing.T) {
@@ -18,7 +19,15 @@ func TestZeroHintKeccak(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newKeccakWriteArgsHint(ctx.operanders["inputs"], ctx.operanders["low"], ctx.operanders["high"])
 				},
-				check: valueAtAddressEquals("inputs", feltString("1"))},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"inputs",
+					[]*fp.Element{
+						feltString("1"),
+						feltString("0"),
+						feltString("1"),
+						feltString("0"),
+					}),
+			},
 		},
 	})
 }
