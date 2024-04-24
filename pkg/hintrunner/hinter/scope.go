@@ -3,6 +3,8 @@ package hinter
 import (
 	"fmt"
 	"math/big"
+
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 // ScopeManager handles all operations regarding scopes:
@@ -10,19 +12,37 @@ import (
 // - Exiting current scope
 // - Variable declaration and assignment inside a certain scope
 // - Accessing variable values
-type ScopeManager struct {
-	scopes []map[string]any
+
+type ScopeValue struct {
+	Type        int
+	FeltValue   *fp.Element
+	BigIntValue *big.Int
 }
 
-func InitializeScopeManager(ctx *HintRunnerContext, scope map[string]any) {
+type ScopeMap map[string]ScopeValue
+
+type ScopeValueType int
+
+const (
+	TypeNone = iota
+	TypeFeltValue
+	TypeBigInt
+)
+
+type ScopeManager struct {
+	scopes []ScopeMap
+}
+
+func InitializeScopeManager(ctx *HintRunnerContext, scope ScopeMap) {
 	if ctx.ScopeManager.scopes == nil {
 		ctx.ScopeManager = *NewScopeManager(scope)
 	}
 }
 
-func NewScopeManager(globals map[string]any) *ScopeManager {
+func NewScopeManager(globals ScopeMap) *ScopeManager {
+
 	return &ScopeManager{
-		scopes: []map[string]any{
+		scopes: []ScopeMap{
 			// One scope needed (current execution scope)
 			globals,
 		},
@@ -30,10 +50,11 @@ func NewScopeManager(globals map[string]any) *ScopeManager {
 }
 
 func DefaultNewScopeManager() *ScopeManager {
-	return NewScopeManager(make(map[string]any))
+	return NewScopeManager(make(ScopeMap))
 }
 
-func (sm *ScopeManager) EnterScope(newScope map[string]any) {
+func (sm *ScopeManager) EnterScope(newScope ScopeMap) {
+
 	sm.scopes = append(sm.scopes, newScope)
 }
 
@@ -45,7 +66,7 @@ func (sm *ScopeManager) ExitScope() error {
 	return nil
 }
 
-func (sm *ScopeManager) AssignVariable(name string, value any) error {
+func (sm *ScopeManager) AssignVariable(name string, value ScopeValue) error {
 	scope, err := sm.getCurrentScope()
 	if err != nil {
 		return err
@@ -55,7 +76,7 @@ func (sm *ScopeManager) AssignVariable(name string, value any) error {
 	return nil
 }
 
-func (sm *ScopeManager) AssignVariables(values map[string]any) error {
+func (sm *ScopeManager) AssignVariables(values ScopeMap) error {
 	for name, value := range values {
 		err := sm.AssignVariable(name, value)
 		if err != nil {
@@ -65,14 +86,14 @@ func (sm *ScopeManager) AssignVariables(values map[string]any) error {
 	return nil
 }
 
-func (sm *ScopeManager) GetVariableValue(name string) (any, error) {
+func (sm *ScopeManager) GetVariableValue(name string) (*ScopeValue, error) {
 	scope, err := sm.getCurrentScope()
 	if err != nil {
 		return nil, err
 	}
 
 	if value, ok := (*scope)[name]; ok {
-		return value, nil
+		return &value, nil
 	}
 
 	return nil, fmt.Errorf("variable %s not found in current scope", name)
@@ -84,17 +105,25 @@ func (sm *ScopeManager) GetVariableValueAsBigInt(name string) (*big.Int, error) 
 		return nil, err
 	}
 
-	valueBig, ok := value.(*big.Int)
-	if !ok {
-		return nil, fmt.Errorf("value: %s is not a *big.Int", value)
-	}
+	// valueBig, ok := value.(*big.Int)
+	// if !ok {
+	// 	return nil, fmt.Errorf("value: %s is not a *big.Int", value)
+	// }
 
-	return valueBig, nil
+	return value.BigIntValue, nil
 }
 
-func (sm *ScopeManager) getCurrentScope() (*map[string]any, error) {
+func (sm *ScopeManager) getCurrentScope() (*ScopeMap, error) {
 	if len(sm.scopes) == 0 {
 		return nil, fmt.Errorf("expected at least one existing scope")
 	}
 	return &sm.scopes[len(sm.scopes)-1], nil
+}
+
+func BigIntScopeValue(value *big.Int) *ScopeValue {
+	return &ScopeValue{Type: TypeBigInt, BigIntValue: value}
+}
+
+func FeltValueScopeValue(value *fp.Element) *ScopeValue {
+	return &ScopeValue{Type: TypeFeltValue, FeltValue: value}
 }

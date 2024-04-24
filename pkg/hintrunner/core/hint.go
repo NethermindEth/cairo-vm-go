@@ -1372,7 +1372,8 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 	})
 
 	// Exclude the largest arc after sorting
-	err = ctx.ScopeManager.AssignVariable("excluded", lengthsAndIndices[2].Position)
+	// err = ctx.ScopeManager.AssignVariable("excluded", lengthsAndIndices[2].Position)
+	err = ctx.ScopeManager.AssignVariable("excluded", *hinter.BigIntScopeValue(big.NewInt(int64(lengthsAndIndices[2].Position))))
 	if err != nil {
 		return err
 	}
@@ -1455,7 +1456,7 @@ func (hint *AssertLeIsFirstArcExcluded) Execute(vm *VM.VirtualMachine, ctx *hint
 	if err != nil {
 		return err
 	}
-	if excluded != 0 {
+	if excluded.BigIntValue.Int64() != 0 {
 		writeValue = mem.MemoryValueFromInt(1)
 	} else {
 		writeValue = mem.MemoryValueFromInt(0)
@@ -1483,7 +1484,7 @@ func (hint *AssertLeIsSecondArcExcluded) Execute(vm *VM.VirtualMachine, ctx *hin
 	if err != nil {
 		return err
 	}
-	if excluded != 1 {
+	if excluded.BigIntValue.Int64() != 1 {
 		writeValue = mem.MemoryValueFromInt(1)
 	} else {
 		writeValue = mem.MemoryValueFromInt(0)

@@ -14,7 +14,7 @@ func createVMEnterScopeHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 	return &GenericZeroHinter{
 		Name: "VMEnterScope",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			ctx.ScopeManager.EnterScope(make(map[string]any))
+			ctx.ScopeManager.EnterScope(make(hinter.ScopeMap))
 			return nil
 		},
 	}, nil

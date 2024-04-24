@@ -76,7 +76,7 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "v", Kind: apRelative, Value: &utils.FeltZero},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
@@ -92,7 +92,7 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "v", Kind: apRelative, Value: &utils.FeltZero},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
@@ -108,7 +108,7 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "v", Kind: apRelative, Value: feltString("77371252455336267181195264")},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
@@ -120,7 +120,7 @@ func TestVerifyZeroHint(t *testing.T) {
 			{
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
+					hinter.InitializeScopeManager(ctx, hinter.ScopeMap{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newImportSecp256R1PHinter()
@@ -133,12 +133,12 @@ func TestVerifyZeroHint(t *testing.T) {
 				// zero quotient
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-					err := ctx.ScopeManager.AssignVariables(map[string]any{
-						"res": bigIntString("0", 10),
-						"a":   bigIntString("0", 10),
-						"b":   bigIntString("0", 10),
-						"N":   bigIntString("1", 10),
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{})
+					err := ctx.ScopeManager.AssignVariables(hinter.ScopeMap{
+						"res": *hinter.BigIntScopeValue(bigIntString("0", 10)),
+						"a":   *hinter.BigIntScopeValue(bigIntString("0", 10)),
+						"b":   *hinter.BigIntScopeValue(bigIntString("0", 10)),
+						"N":   *hinter.BigIntScopeValue(bigIntString("1", 10)),
 					})
 					if err != nil {
 						t.Fatal(err)
@@ -156,12 +156,12 @@ func TestVerifyZeroHint(t *testing.T) {
 				// negative quotient
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-					err := ctx.ScopeManager.AssignVariables(map[string]any{
-						"res": bigIntString("1", 10),
-						"a":   bigIntString("2", 10),
-						"b":   bigIntString("1", 10),
-						"N":   bigIntString("1", 10),
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{})
+					err := ctx.ScopeManager.AssignVariables(hinter.ScopeMap{
+						"res": *hinter.BigIntScopeValue(bigIntString("1", 10)),
+						"a":   *hinter.BigIntScopeValue(bigIntString("2", 10)),
+						"b":   *hinter.BigIntScopeValue(bigIntString("1", 10)),
+						"N":   *hinter.BigIntScopeValue(bigIntString("1", 10)),
 					})
 					if err != nil {
 						t.Fatal(err)
@@ -179,12 +179,12 @@ func TestVerifyZeroHint(t *testing.T) {
 				// positive quotient
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-					err := ctx.ScopeManager.AssignVariables(map[string]any{
-						"res": bigIntString("10", 10),
-						"a":   bigIntString("20", 10),
-						"b":   bigIntString("30", 10),
-						"N":   bigIntString("2", 10),
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{})
+					err := ctx.ScopeManager.AssignVariables(hinter.ScopeMap{
+						"res": *hinter.BigIntScopeValue(bigIntString("10", 10)),
+						"a":   *hinter.BigIntScopeValue(bigIntString("20", 10)),
+						"b":   *hinter.BigIntScopeValue(bigIntString("30", 10)),
+						"N":   *hinter.BigIntScopeValue(bigIntString("2", 10)),
 					})
 					if err != nil {
 						t.Fatal(err)

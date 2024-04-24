@@ -1,6 +1,7 @@
 package hinter
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,19 +11,19 @@ func TestScope(t *testing.T) {
 	sm := DefaultNewScopeManager()
 
 	// Assing variable n and get its current value
-	err := sm.AssignVariable("n", 3)
+	err := sm.AssignVariable("n", *BigIntScopeValue(big.NewInt(3)))
 	require.NoError(t, err)
 
 	n, err := sm.GetVariableValue("n")
 	require.NoError(t, err)
-	require.Equal(t, 3, n)
+	require.Equal(t, 3, int(n.BigIntValue.Int64()))
 
 	// Creating new scope with another value for variable n
 	// This variable should shadow the one in the previous scope
-	sm.EnterScope(map[string]any{"n": 5})
+	sm.EnterScope(ScopeMap{"n": *BigIntScopeValue(big.NewInt(5))})
 	n, err = sm.GetVariableValue("n")
 	require.NoError(t, err)
-	require.Equal(t, 5, n)
+	require.Equal(t, 5, int(n.BigIntValue.Int64()))
 
 	// Try to get the value of a variable that has not been defined
 	_, err = sm.GetVariableValue("x")
@@ -33,7 +34,7 @@ func TestScope(t *testing.T) {
 	require.NoError(t, err)
 	n, err = sm.GetVariableValue("n")
 	require.NoError(t, err)
-	require.Equal(t, 3, n)
+	require.Equal(t, 3, int(n.BigIntValue.Int64()))
 
 	// Try exiting main scope should error out
 	err = sm.ExitScope()

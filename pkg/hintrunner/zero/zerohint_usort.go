@@ -14,8 +14,8 @@ func newUsortEnterScopeHint() hinter.Hinter {
 				return err
 			}
 
-			ctx.ScopeManager.EnterScope(map[string]any{
-				"__usort_max_size": usortMaxSize,
+			ctx.ScopeManager.EnterScope(hinter.ScopeMap{
+				"__usort_max_size": *usortMaxSize,
 			})
 
 			return nil

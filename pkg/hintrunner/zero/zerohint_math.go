@@ -309,7 +309,7 @@ func createAssertLeFeltExcluded2Hinter(resolver hintReferenceResolver) (hinter.H
 				return err
 			}
 
-			if excluded != 2 {
+			if excluded.BigIntValue.Int64() != 2 {
 				return fmt.Errorf("assertion `excluded == 2` failed")
 			}
 

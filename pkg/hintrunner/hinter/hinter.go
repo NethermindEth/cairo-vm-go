@@ -32,7 +32,7 @@ func InitializeDefaultContext() *HintRunnerContext {
 	}
 }
 
-func SetContextWithScope(scope map[string]any) *HintRunnerContext {
+func SetContextWithScope(scope ScopeMap) *HintRunnerContext {
 	ctx := HintRunnerContext{
 		ScopeManager: *NewScopeManager(scope),
 	}
