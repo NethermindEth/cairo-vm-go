@@ -129,6 +129,7 @@ func newUsortVerifyMultiplicityBodyHint() hinter.Hinter {
 			current_pos := utils.Pop(&positions)
 			err = ctx.ScopeManager.AssignVariables(map[string]any{
 				"current_pos": current_pos,
+				"last_pos":    current_pos + 1,
 			})
 
 			if err != nil {

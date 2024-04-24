@@ -117,6 +117,17 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				check: varValueInScopeEquals("current_pos", feltUint64(3)),
 			},
+			{
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{
+						"positions": []uint64{1, 2, 3},
+					})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUsortVerifyMultiplicityBodyHint()
+				},
+				check: varValueInScopeEquals("last_pos", feltUint64(4)),
+			},
 		},
 	})
 }
