@@ -28,7 +28,7 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter
 				return err
 			}
 
-			inputsAddress, err := hinter.ResolveAsAddress(vm, inputs)
+			inputsPtr, err := hinter.ResolveAsAddress(vm, inputs)
 			if err != nil {
 				return err
 			}
@@ -63,22 +63,22 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter
 			highResultFeltHigh := new(fp.Element).SetBigInt(highResulBigHigh)
 			mvHighHigh := mem.MemoryValueFromFieldElement(highResultFeltHigh)
 
-			err = vm.Memory.Write(inputsAddress.SegmentIndex, 0, &mvLowHigh)
+			err = vm.Memory.Write(inputsPtr.SegmentIndex, inputsPtr.Offset, &mvLowLow)
 			if err != nil {
 				return err
 			}
 
-			err = vm.Memory.Write(inputsAddress.SegmentIndex, 1, &mvLowLow)
+			err = vm.Memory.Write(inputsPtr.SegmentIndex, inputsPtr.Offset+1, &mvLowHigh)
 			if err != nil {
 				return err
 			}
 
-			err = vm.Memory.Write(inputsAddress.SegmentIndex, 2, &mvHighHigh)
+			err = vm.Memory.Write(inputsPtr.SegmentIndex, inputsPtr.Offset+2, &mvHighLow)
 			if err != nil {
 				return err
 			}
 
-			err = vm.Memory.Write(inputsAddress.SegmentIndex, 3, &mvHighLow)
+			err = vm.Memory.Write(inputsPtr.SegmentIndex, inputsPtr.Offset+3, &mvHighHigh)
 			if err != nil {
 				return err
 			}
