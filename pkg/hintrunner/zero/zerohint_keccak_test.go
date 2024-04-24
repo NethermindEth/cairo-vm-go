@@ -17,9 +17,6 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "low", Kind: apRelative, Value: feltString("0")},
 					{Name: "high", Kind: apRelative, Value: feltString("0")},
 				},
-				// ctxInit: func(ctx *hinter.HintRunnerContext) {
-				// 	ctx.ScopeManager.EnterScope(map[string]any{})
-				// },
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newKeccakWriteArgsHint(ctx.operanders["inputs"], ctx.operanders["low"], ctx.operanders["high"])
 				},
