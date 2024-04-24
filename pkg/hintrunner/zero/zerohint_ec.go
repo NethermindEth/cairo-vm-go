@@ -386,3 +386,114 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 
 	return newEcDoubleSlopeV1Hint(point), nil
 }
+
+
+func newEcDoubleAssignNewXV1(slope, point hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcDoubleAssignNewXV1",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+
+			//> slope = pack(ids.slope, PRIME)
+			//> x = pack(ids.point.x, PRIME)
+			//> y = pack(ids.point.y, PRIME)
+
+			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
+
+			slopeAddr, err := slope.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			slopeMemoryValues, err := hinter.GetConsecutiveValues(vm, slopeAddr, int16(3))
+			if err != nil {
+				return err
+			}
+
+			pointAddr, err := point.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			pointMemoryValues, err := hinter.GetConsecutiveValues(vm, pointAddr, int16(6))
+			if err != nil {
+				return err
+			}
+
+			// [d0, d1, d2]
+			var slopeValues [3]*fp.Element
+			// [x.d0, x.d1, x.d2]
+			var pointXValues [3]*fp.Element
+			// [y.d0, y.d1, y.d2]
+			var pointYValues [3]*fp.Element
+
+			for i := 0; i < 3; i++ {
+				slopeValue, err := slopeMemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				slopeValues[i] = slopeValue
+
+				pointXValue, err := pointMemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				pointXValues[i] = pointXValue
+			}
+
+			for i := 3; i < 6; i++ {
+				pointYValue, err := pointMemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				pointYValues[i-3] = pointYValue
+			}
+
+			//> slope = pack(ids.slope, PRIME)
+			slopeBig, err := secp_utils.SecPPacked(slopeValues)
+			if err != nil {
+				return err
+			}
+
+			//> x = pack(ids.point.x, PRIME)
+			xBig, err := secp_utils.SecPPacked(pointXValues)
+			if err != nil {
+				return err
+			}
+
+			//> y = pack(ids.point.y, PRIME)
+			yBig, err := secp_utils.SecPPacked(pointYValues)
+			if err != nil {
+				return err
+			}
+
+			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			new_xBig := new(big.Int)
+			new_xBig.Exp(&slopeBig, big.NewInt(2), &secPBig)
+			new_xBig.Sub(new_xBig, big.NewInt(2))
+			new_xBig.Mul(new_xBig, &xBig)
+			new_xBig.Mod(new_xBig, &secPBig)
+
+			valueBig := new(big.Int)
+			valueBig.Set(new_xBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": &slopeBig, "x": &xBig, "y": &yBig, "new_x": new_xBig, "value": valueBig})
+		},
+	}
+}
+
+func createEcDoubleAssignNewXV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	slope, err := resolver.GetResOperander("slope")
+	if err != nil {
+		return nil, err
+	}
+	point, err := resolver.GetResOperander("point")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcDoubleAssignNewXV1(slope, point), nil
+}
