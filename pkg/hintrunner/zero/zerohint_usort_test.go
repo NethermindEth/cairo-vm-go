@@ -79,6 +79,17 @@ func TestZeroHintUsort(t *testing.T) {
 		},
 		"UsortVerifyMultiplicityBody": {
 			{
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					// Having empty scopes in scope manager will cause an error
+					empty_scope_manager := hinter.ScopeManager{}
+					ctx.ScopeManager = empty_scope_manager
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUsortVerifyMultiplicityBodyHint()
+				},
+				errCheck: errorTextContains("expected at least one existing scope"),
+			},
+			{
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityBodyHint()
 				},
