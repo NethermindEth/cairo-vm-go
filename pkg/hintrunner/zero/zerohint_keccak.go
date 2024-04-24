@@ -1,6 +1,7 @@
 package zero
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 
@@ -42,26 +43,36 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter
 			maxUint64Big = *maxUint64Big.SetUint64(math.MaxUint64)
 
 			lowResultBig := new(big.Int).Set(&lowBig)
-			lowResultBigLow := lowResultBig
-			lowResultBigLow.And(lowResultBigLow, &maxUint64Big)
-			lowResultFeltLow := new(fp.Element).SetBigInt(lowResultBigLow)
+			lowResultBigLow := *lowResultBig
+			lowResultBigLow.And(&lowResultBigLow, &maxUint64Big)
+			lowResultFeltLow := new(fp.Element).SetBigInt(&lowResultBigLow)
 			mvLowLow := mem.MemoryValueFromFieldElement(lowResultFeltLow)
 
-			lowResultBigHigh := lowResultBig
-			lowResultBigHigh.Rsh(lowResultBigHigh, 64)
-			lowResultFeltHigh := new(fp.Element).SetBigInt(lowResultBigHigh)
+			fmt.Println(mvLowLow)
+
+			lowResultBigHigh := *lowResultBig
+			lowResultBigHigh.Rsh(&lowResultBigHigh, 64)
+			lowResultBigHigh.And(&lowResultBigHigh, &maxUint64Big)
+			lowResultFeltHigh := new(fp.Element).SetBigInt(&lowResultBigHigh)
 			mvLowHigh := mem.MemoryValueFromFieldElement(lowResultFeltHigh)
 
-			highResultBig := new(big.Int).Set(&lowBig)
-			highResultBigLow := highResultBig
-			highResultBigLow.And(highResultBigLow, &maxUint64Big)
-			highResultFeltLow := new(fp.Element).SetBigInt(highResultBigLow)
+			fmt.Println(mvLowHigh)
+
+			highResultBig := new(big.Int).Set(&highBig)
+			highResultBigLow := *highResultBig
+			highResultBigLow.And(&highResultBigLow, &maxUint64Big)
+			highResultFeltLow := new(fp.Element).SetBigInt(&highResultBigLow)
 			mvHighLow := mem.MemoryValueFromFieldElement(highResultFeltLow)
 
-			highResulBigHigh := highResultBig
-			highResulBigHigh.Rsh(highResulBigHigh, 64)
-			highResultFeltHigh := new(fp.Element).SetBigInt(highResulBigHigh)
+			fmt.Println(mvHighLow)
+
+			highResulBigHigh := *highResultBig
+			highResulBigHigh.Rsh(&highResulBigHigh, 64)
+			highResulBigHigh.And(&highResulBigHigh, &maxUint64Big)
+			highResultFeltHigh := new(fp.Element).SetBigInt(&highResulBigHigh)
 			mvHighHigh := mem.MemoryValueFromFieldElement(highResultFeltHigh)
+
+			fmt.Println(mvHighHigh)
 
 			err = vm.Memory.Write(inputsPtr.SegmentIndex, inputsPtr.Offset, &mvLowLow)
 			if err != nil {
