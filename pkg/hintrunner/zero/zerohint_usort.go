@@ -107,3 +107,19 @@ func createUsortVerifyHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 
 	return newUsortVerifyHinter(value), nil
 }
+
+func newUsortVerifyMultiplicityBodyHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "UsortVerifyMultiplicityBody",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> current_pos = positions.pop()
+			//> ids.next_item_index = current_pos - last_pos
+			//> last_pos = current_pos + 1
+			return nil
+		},
+	}
+}
+
+func createUsortVerifyMultiplicityBodyHinter() (hinter.Hinter, error) {
+	return newUsortVerifyMultiplicityBodyHint(), nil
+}

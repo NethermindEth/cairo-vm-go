@@ -77,5 +77,13 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 			},
 		},
+		"UsortVerifyMultiplicityBody": {
+			{
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUsortVerifyMultiplicityBodyHint()
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {},
+			},
+		},
 	})
 }
