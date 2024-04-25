@@ -15,7 +15,7 @@ func newUsortEnterScopeHint() hinter.Hinter {
 			}
 
 			ctx.ScopeManager.EnterScope(hinter.ScopeMap{
-				"__usort_max_size": hinter.SetFeltScopeValue(*usortMaxSize),
+				"__usort_max_size": hinter.SetFeltScopeValue(usortMaxSize),
 			})
 
 			return nil

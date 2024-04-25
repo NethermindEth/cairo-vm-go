@@ -86,35 +86,35 @@ func (sm *ScopeManager) AssignVariables(values ScopeMap) error {
 	return nil
 }
 
-func (sm *ScopeManager) GetScopeValue(name string) (*ScopeValue, error) {
+func (sm *ScopeManager) GetScopeValue(name string) (ScopeValue, error) {
 	scope, err := sm.getCurrentScope()
 	if err != nil {
-		return nil, err
+		return ScopeValue{}, err
 	}
 
 	if value, ok := (*scope)[name]; ok {
-		return &value, nil
+		return value, nil
 	}
 
-	return nil, fmt.Errorf("variable %s not found in current scope", name)
+	return ScopeValue{}, fmt.Errorf("variable %s not found in current scope", name)
 }
 
-func (sm *ScopeManager) GetVariableValueAsFelt(name string) (*fp.Element, error) {
+func (sm *ScopeManager) GetVariableValueAsFelt(name string) (fp.Element, error) {
 	value, err := sm.GetScopeValue(name)
 	if err != nil {
-		return nil, err
+		return fp.Element{}, err
 	}
 
-	return &value.Felt, nil
+	return value.Felt, nil
 }
 
-func (sm *ScopeManager) GetVariableValueAsBigInt(name string) (*big.Int, error) {
+func (sm *ScopeManager) GetVariableValueAsBigInt(name string) (big.Int, error) {
 	value, err := sm.GetScopeValue(name)
 	if err != nil {
-		return nil, err
+		return big.Int{}, err
 	}
 
-	return &value.BigInt, nil
+	return value.BigInt, nil
 }
 
 func (sm *ScopeManager) getCurrentScope() (*ScopeMap, error) {

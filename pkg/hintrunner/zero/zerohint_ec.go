@@ -57,7 +57,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			yBig.Neg(&yBig)
 			yBig.Mod(&yBig, &secPBig)
 
-			return ctx.ScopeManager.AssignVariables(hinter.ScopeMap{"value": hinter.SetBigIntScopeValue(*&yBig), "SECP_P": hinter.SetBigIntScopeValue(*&secPBig)})
+			return ctx.ScopeManager.AssignVariables(hinter.ScopeMap{"value": hinter.SetBigIntScopeValue(yBig), "SECP_P": hinter.SetBigIntScopeValue(secPBig)})
 		},
 	}
 }
@@ -89,7 +89,7 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> split(value)
-			values, err := secp_utils.SecPSplit(valueBig)
+			values, err := secp_utils.SecPSplit(&valueBig)
 			if err != nil {
 				return err
 			}
@@ -152,10 +152,10 @@ func newFastEcAddAssignNewYHint() hinter.Hinter {
 			}
 
 			new_yBig := new(big.Int)
-			new_yBig.Sub(x0Big, new_xBig)
-			new_yBig.Mul(new_yBig, slopeBig)
-			new_yBig.Sub(new_yBig, y0Big)
-			new_yBig.Mod(new_yBig, secPBig)
+			new_yBig.Sub(&x0Big, &new_xBig)
+			new_yBig.Mul(new_yBig, &slopeBig)
+			new_yBig.Sub(new_yBig, &y0Big)
+			new_yBig.Mod(new_yBig, &secPBig)
 
 			valueBig := new(big.Int)
 			valueBig.Set(new_yBig)
@@ -285,8 +285,8 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			valueBig := new(big.Int)
 			valueBig.Set(new_xBig)
 
-			return ctx.ScopeManager.AssignVariables(hinter.ScopeMap{"slope": hinter.SetBigIntScopeValue(*&slopeBig), "x0": hinter.SetBigIntScopeValue(*&x0Big),
-				"x1": hinter.SetBigIntScopeValue(*&x1Big), "y0": hinter.SetBigIntScopeValue(*&y0Big), "new_x": hinter.SetBigIntScopeValue(*new_xBig),
+			return ctx.ScopeManager.AssignVariables(hinter.ScopeMap{"slope": hinter.SetBigIntScopeValue(slopeBig), "x0": hinter.SetBigIntScopeValue(x0Big),
+				"x1": hinter.SetBigIntScopeValue(x1Big), "y0": hinter.SetBigIntScopeValue(y0Big), "new_x": hinter.SetBigIntScopeValue(*new_xBig),
 				"value": hinter.SetBigIntScopeValue(*valueBig)})
 		},
 	}
@@ -375,8 +375,8 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 
 			slopeBig := new(big.Int).Set(&valueBig)
 
-			return ctx.ScopeManager.AssignVariables(hinter.ScopeMap{"x": hinter.SetBigIntScopeValue(*&xBig), "y": hinter.SetBigIntScopeValue(*&yBig),
-				"value": hinter.SetBigIntScopeValue(*&valueBig), "slope": hinter.SetBigIntScopeValue(*slopeBig)})
+			return ctx.ScopeManager.AssignVariables(hinter.ScopeMap{"x": hinter.SetBigIntScopeValue(xBig), "y": hinter.SetBigIntScopeValue(yBig),
+				"value": hinter.SetBigIntScopeValue(valueBig), "slope": hinter.SetBigIntScopeValue(*slopeBig)})
 		},
 	}
 }

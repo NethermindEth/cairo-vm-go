@@ -353,7 +353,7 @@ func TestZeroHintEc(t *testing.T) {
 					secPBig, _ := secp_utils.GetSecPBig()
 
 					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"slope": hinter.SetBigIntScopeValue(*slopeBig), "x0": hinter.SetBigIntScopeValue(*x0Big),
-						"new_x": hinter.SetBigIntScopeValue(*new_xBig), "y0": hinter.SetBigIntScopeValue(*y0Big), "SECP_P": hinter.SetBigIntScopeValue(*&secPBig)})
+						"new_x": hinter.SetBigIntScopeValue(*new_xBig), "y0": hinter.SetBigIntScopeValue(*y0Big), "SECP_P": hinter.SetBigIntScopeValue(secPBig)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
@@ -373,7 +373,7 @@ func TestZeroHintEc(t *testing.T) {
 					secPBig, _ := secp_utils.GetSecPBig()
 
 					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"slope": hinter.SetBigIntScopeValue(*slopeBig), "x0": hinter.SetBigIntScopeValue(*x0Big),
-						"new_x": hinter.SetBigIntScopeValue(*new_xBig), "y0": hinter.SetBigIntScopeValue(*y0Big), "SECP_P": hinter.SetBigIntScopeValue(*&secPBig)})
+						"new_x": hinter.SetBigIntScopeValue(*new_xBig), "y0": hinter.SetBigIntScopeValue(*y0Big), "SECP_P": hinter.SetBigIntScopeValue(secPBig)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
@@ -394,7 +394,7 @@ func TestZeroHintEc(t *testing.T) {
 					secPBig, _ := secp_utils.GetSecPBig()
 
 					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"slope": hinter.SetBigIntScopeValue(*slopeBig), "x0": hinter.SetBigIntScopeValue(*x0Big),
-						"new_x": hinter.SetBigIntScopeValue(*new_xBig), "y0": hinter.SetBigIntScopeValue(*y0Big), "SECP_P": hinter.SetBigIntScopeValue(*&secPBig)})
+						"new_x": hinter.SetBigIntScopeValue(*new_xBig), "y0": hinter.SetBigIntScopeValue(*y0Big), "SECP_P": hinter.SetBigIntScopeValue(secPBig)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()

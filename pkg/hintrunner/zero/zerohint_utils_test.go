@@ -154,26 +154,24 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 			t.Fatal(err)
 		}
 
-		switch expected.(type) {
+		switch expected := expected.(type) {
 		case *big.Int:
 			{
 				valueBig := value.BigInt
-				expectedBig := expected.(*big.Int)
-				if valueBig.Cmp(expectedBig) != 0 {
+				if valueBig.Cmp(expected) != 0 {
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
 			}
 		case *fp.Element:
 			{
 				valueFelt := value.Felt
-				expectedFelt := expected.(*fp.Element)
-				if valueFelt.Cmp(expectedFelt) != 0 {
+				if valueFelt.Cmp(expected) != 0 {
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
 			}
 		default:
 			{
-				if value != expected {
+				if &value != expected {
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
 			}

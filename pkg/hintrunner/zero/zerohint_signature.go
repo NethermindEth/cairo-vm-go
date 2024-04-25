@@ -219,7 +219,7 @@ func newImportSecp256R1PHinter() hinter.Hinter {
 			if !ok {
 				return fmt.Errorf("SECP256R1_P failed.")
 			}
-			return ctx.ScopeManager.AssignVariable("SECP_P", hinter.SetBigIntScopeValue(*&SECP256R1_PBig))
+			return ctx.ScopeManager.AssignVariable("SECP_P", hinter.SetBigIntScopeValue(SECP256R1_PBig))
 		},
 	}
 }
@@ -250,8 +250,8 @@ func newDivModSafeDivHinter() hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			divisor := new(big.Int).Sub(new(big.Int).Mul(res, b), a)
-			value, err := secp_utils.SafeDiv(divisor, N)
+			divisor := new(big.Int).Sub(new(big.Int).Mul(&res, &b), &a)
+			value, err := secp_utils.SafeDiv(divisor, &N)
 			if err != nil {
 				return err
 			}
@@ -260,7 +260,7 @@ func newDivModSafeDivHinter() hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			return ctx.ScopeManager.AssignVariable("value", hinter.SetBigIntScopeValue(*&value))
+			return ctx.ScopeManager.AssignVariable("value", hinter.SetBigIntScopeValue(value))
 		},
 	}
 }
@@ -338,7 +338,7 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			}
 			valueBig := new(big.Int).Set(&resBig)
 
-			return ctx.ScopeManager.AssignVariables(hinter.ScopeMap{"res": hinter.SetBigIntScopeValue(*&resBig), "value": hinter.SetBigIntScopeValue(*valueBig)})
+			return ctx.ScopeManager.AssignVariables(hinter.ScopeMap{"res": hinter.SetBigIntScopeValue(resBig), "value": hinter.SetBigIntScopeValue(*valueBig)})
 		},
 	}
 }
