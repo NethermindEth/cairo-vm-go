@@ -8,5 +8,15 @@ func main() {
     assert val1 = 123;
     let (local val2: felt) = dict_read{dict_ptr=my_dict}(key=2);
     assert val2 = 123;
+    dict_write{dict_ptr=my_dict}(key=1, new_value=512);
+    let (local val3: felt) = dict_read{dict_ptr=my_dict}(key=1);
+    assert val3 = 512;
+    let (local val4: felt) = dict_read{dict_ptr=my_dict}(key=2);
+    assert val4 = 123;
+    dict_write{dict_ptr=my_dict}(key=1, new_value=1024);
+    let (local val5: felt) = dict_read{dict_ptr=my_dict}(key=1);
+    assert val5 = 1024;
+    let (local val6: felt) = dict_read{dict_ptr=my_dict}(key=2);
+    assert val6 = 123;
     return ();
 }
