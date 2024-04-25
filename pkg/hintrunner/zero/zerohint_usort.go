@@ -125,7 +125,11 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
-			current_pos := utils.Pop(&positions)
+			current_pos, err := utils.Pop(&positions)
+			if err != nil {
+				return err
+			}
+
 			last_pos := current_pos + 1
 
 			// Calculate `next_item_index` memory value
