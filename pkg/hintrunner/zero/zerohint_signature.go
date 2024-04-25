@@ -338,7 +338,7 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			}
 			valueBig := new(big.Int).Set(&resBig)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"res": &resBig, "value": valueBig})
+			return ctx.ScopeManager.AssignVariables(hinter.ScopeMap{"res": hinter.SetBigIntScopeValue(*&resBig), "value": hinter.SetBigIntScopeValue(*valueBig)})
 		},
 	}
 }
