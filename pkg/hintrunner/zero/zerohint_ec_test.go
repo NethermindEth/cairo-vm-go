@@ -614,8 +614,8 @@ func TestZeroHintEc(t *testing.T) {
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"slope": bigIntString("0", 10),
-					"x":    bigIntString("0", 10),
-					"y":    bigIntString("0", 10),
+					"x":     bigIntString("0", 10),
+					"y":     bigIntString("0", 10),
 					"value": bigIntString("0", 10),
 					"new_x": bigIntString("0", 10),
 				}),
@@ -675,4 +675,3 @@ func TestZeroHintEc(t *testing.T) {
 		},
 	})
 }
-

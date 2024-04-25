@@ -387,7 +387,6 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newEcDoubleSlopeV1Hint(point), nil
 }
 
-
 func newEcDoubleAssignNewXV1(slope, point hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcDoubleAssignNewXV1",
