@@ -49,14 +49,6 @@ func TestZeroHintUsort(t *testing.T) {
 
 					require.Equal(t, 0, lastPos)
 				},
-				// check: allVarValueInScopeEquals(map[string]any{
-				// 	"last_pos":  0,
-				// 	"positions": []uint64{3, 2, 1},
-				// }),
-				// check: allVarValueInScopeEquals(map[string]any{
-				// 	"last_pos":  0,
-				// 	"positions": [...]uint64{3, 2, 1},
-				// }),
 			},
 		},
 	})
