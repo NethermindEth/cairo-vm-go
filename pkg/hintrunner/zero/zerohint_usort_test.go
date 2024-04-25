@@ -90,6 +90,7 @@ func TestZeroHintUsort(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
 						"positions": []string{"1", "2", "3"},
+						"last_pos":  0,
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -106,6 +107,7 @@ func TestZeroHintUsort(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
 						"positions": []uint64{1, 2, 3},
+						"last_pos":  0,
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -123,13 +125,14 @@ func TestZeroHintUsort(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
 						"positions": []uint64{1, 2, 3},
+						"last_pos":  1,
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
-					"next_item_index": feltInt64(-1),
+					"next_item_index": feltInt64(2),
 				}),
 			},
 		},
