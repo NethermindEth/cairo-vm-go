@@ -20,6 +20,12 @@ func GetSecPBig() (big.Int, bool) {
 	return *secP, ok
 }
 
+func GetN() (big.Int, bool) {
+	// 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
+	n, ok := new(big.Int).SetString("115792089237316195423570985008687907852837564279074904382605163141518161494337", 10)
+	return *n, ok
+}
+
 func SecPPacked(limbs [3]*fp.Element) (big.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L28
 
@@ -43,13 +49,6 @@ func GetBetaBig() big.Int {
 	return *big.NewInt(7)
 }
 
-func GetNBig() big.Int {
-	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L9
-
-	NBig, _ := new(big.Int).SetString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16)
-	return *NBig
-}
-
 func SecPSplit(num *big.Int) ([]big.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L14
 
@@ -57,7 +56,7 @@ func SecPSplit(num *big.Int) ([]big.Int, error) {
 
 	baseBig, ok := getBaseBig()
 	if !ok {
-		return nil, fmt.Errorf("getBaseBig failed")
+		return nil, fmt.Errorf("GetBaseBig failed")
 	}
 
 	var residue big.Int
