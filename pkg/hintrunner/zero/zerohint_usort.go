@@ -33,7 +33,7 @@ func newUsortVerifyMultiplicityAssertHinter() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortVerifyMultiplicityAssert",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			// assert len(positions) == 0
+			//> assert len(positions) == 0
 			positionsInterface, err := ctx.ScopeManager.GetVariableValue("positions")
 
 			if err != nil {
