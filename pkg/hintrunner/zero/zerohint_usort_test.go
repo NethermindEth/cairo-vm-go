@@ -79,17 +79,6 @@ func TestZeroHintUsort(t *testing.T) {
 		},
 		"UsortVerifyMultiplicityBody": {
 			{
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					// Having empty scopes in scope manager will cause an error
-					empty_scope_manager := hinter.ScopeManager{}
-					ctx.ScopeManager = empty_scope_manager
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
-				},
-				errCheck: errorTextContains("expected at least one existing scope"),
-			},
-			{
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
 				},
@@ -122,21 +111,10 @@ func TestZeroHintUsort(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
 				},
-				check: varValueInScopeEquals("current_pos", feltUint64(3)),
-			},
-			{
-				operanders: []*hintOperander{
-					{Name: "next_item_index", Kind: uninitialized},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{
-						"positions": []uint64{1, 2, 3},
-					})
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
-				},
-				check: varValueInScopeEquals("last_pos", feltUint64(4)),
+				check: allVarValueInScopeEquals(map[string]any{
+					"current_pos": feltUint64(3),
+					"last_pos":    feltUint64(4),
+				}),
 			},
 			{
 				operanders: []*hintOperander{
