@@ -93,7 +93,9 @@ func TestZeroHintUsort(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
 				},
-				errCheck: errorTextContains("getting positions from scope failed"),
+				errCheck: func(t *testing.T, ctx *hintTestContext, err error) {
+					require.NotNil(t, err)
+				},
 			},
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
@@ -104,7 +106,9 @@ func TestZeroHintUsort(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
 				},
-				errCheck: errorTextContains("casting positions into an array of uint64 failed"),
+				errCheck: func(t *testing.T, ctx *hintTestContext, err error) {
+					require.NotNil(t, err)
+				},
 			},
 			{
 				operanders: []*hintOperander{

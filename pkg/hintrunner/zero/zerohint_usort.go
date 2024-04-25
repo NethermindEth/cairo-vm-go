@@ -1,8 +1,6 @@
 package zero
 
 import (
-	"fmt"
-
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -119,12 +117,12 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 
 			positionsInterface, err := ctx.ScopeManager.GetVariableValue("positions")
 			if err != nil {
-				return fmt.Errorf("getting positions from scope failed: %w", err)
+				return err
 			}
 
 			positions, ok := positionsInterface.([]uint64)
 			if !ok {
-				return fmt.Errorf("casting positions into an array of uint64 failed: %w", err)
+				return err
 			}
 
 			current_pos := utils.Pop(&positions)
@@ -137,12 +135,12 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 			// Save `next_item_index` value in address
 			addrNextItemIndex, err := nextItemIndex.GetAddress(vm)
 			if err != nil {
-				return fmt.Errorf("getting address of next_item_index failed: %w", err)
+				return err
 			}
 
 			err = vm.Memory.WriteToAddress(&addrNextItemIndex, &newNextItemIndexMemoryValue)
 			if err != nil {
-				return fmt.Errorf("writing next_item_index value to memory failed: %w", err)
+				return err
 			}
 
 			// Save `current_pos` and `last_pos` values in scope variables
@@ -151,11 +149,7 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				"last_pos":    last_pos,
 			})
 
-			if err != nil {
-				return fmt.Errorf("assigning variables failed: %w", err)
-			}
-
-			return nil
+			return err
 		},
 	}
 }
