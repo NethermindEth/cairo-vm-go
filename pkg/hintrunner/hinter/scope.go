@@ -14,9 +14,9 @@ import (
 // - Accessing variable values
 
 type ScopeValue struct {
-	Type        int
-	FeltValue   *fp.Element
-	BigIntValue *big.Int
+	Type   int
+	Felt   fp.Element
+	BigInt big.Int
 }
 
 type ScopeMap map[string]ScopeValue
@@ -25,7 +25,7 @@ type ScopeValueType int
 
 const (
 	TypeNone = iota
-	TypeFeltValue
+	TypeFelt
 	TypeBigInt
 )
 
@@ -86,7 +86,7 @@ func (sm *ScopeManager) AssignVariables(values ScopeMap) error {
 	return nil
 }
 
-func (sm *ScopeManager) GetVariableValue(name string) (*ScopeValue, error) {
+func (sm *ScopeManager) GetScopeValue(name string) (*ScopeValue, error) {
 	scope, err := sm.getCurrentScope()
 	if err != nil {
 		return nil, err
@@ -99,18 +99,22 @@ func (sm *ScopeManager) GetVariableValue(name string) (*ScopeValue, error) {
 	return nil, fmt.Errorf("variable %s not found in current scope", name)
 }
 
-func (sm *ScopeManager) GetVariableValueAsBigInt(name string) (*big.Int, error) {
-	value, err := sm.GetVariableValue(name)
+func (sm *ScopeManager) GetVariableValueAsFelt(name string) (*fp.Element, error) {
+	value, err := sm.GetScopeValue(name)
 	if err != nil {
 		return nil, err
 	}
 
-	// valueBig, ok := value.(*big.Int)
-	// if !ok {
-	// 	return nil, fmt.Errorf("value: %s is not a *big.Int", value)
-	// }
+	return &value.Felt, nil
+}
 
-	return value.BigIntValue, nil
+func (sm *ScopeManager) GetVariableValueAsBigInt(name string) (*big.Int, error) {
+	value, err := sm.GetScopeValue(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &value.BigInt, nil
 }
 
 func (sm *ScopeManager) getCurrentScope() (*ScopeMap, error) {
@@ -120,10 +124,10 @@ func (sm *ScopeManager) getCurrentScope() (*ScopeMap, error) {
 	return &sm.scopes[len(sm.scopes)-1], nil
 }
 
-func BigIntScopeValue(value *big.Int) *ScopeValue {
-	return &ScopeValue{Type: TypeBigInt, BigIntValue: value}
+func SetBigIntScopeValue(value big.Int) ScopeValue {
+	return ScopeValue{Type: TypeBigInt, BigInt: value}
 }
 
-func FeltValueScopeValue(value *fp.Element) *ScopeValue {
-	return &ScopeValue{Type: TypeFeltValue, FeltValue: value}
+func SetFeltScopeValue(value fp.Element) ScopeValue {
+	return ScopeValue{Type: TypeFelt, Felt: value}
 }

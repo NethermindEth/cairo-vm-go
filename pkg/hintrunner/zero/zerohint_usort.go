@@ -9,7 +9,7 @@ func newUsortEnterScopeHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortEnterScope",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			usortMaxSize, err := ctx.ScopeManager.GetVariableValue("__usort_max_size")
+			usortMaxSize, err := ctx.ScopeManager.GetScopeValue("__usort_max_size")
 			if err != nil {
 				return err
 			}

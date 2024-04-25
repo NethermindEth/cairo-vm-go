@@ -193,7 +193,7 @@ func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
 			} else {
 				value.Mod(value.Neg(y), &secpBig)
 			}
-			return ctx.ScopeManager.AssignVariable("value", *hinter.BigIntScopeValue(value))
+			return ctx.ScopeManager.AssignVariable("value", hinter.SetBigIntScopeValue(*value))
 		},
 	}
 }
@@ -219,7 +219,7 @@ func newImportSecp256R1PHinter() hinter.Hinter {
 			if !ok {
 				return fmt.Errorf("SECP256R1_P failed.")
 			}
-			return ctx.ScopeManager.AssignVariable("SECP_P", *hinter.BigIntScopeValue(&SECP256R1_PBig))
+			return ctx.ScopeManager.AssignVariable("SECP_P", hinter.SetBigIntScopeValue(*&SECP256R1_PBig))
 		},
 	}
 }
@@ -256,11 +256,11 @@ func newDivModSafeDivHinter() hinter.Hinter {
 				return err
 			}
 			k := new(big.Int).Set(&value)
-			err = ctx.ScopeManager.AssignVariable("k", *hinter.BigIntScopeValue(k))
+			err = ctx.ScopeManager.AssignVariable("k", hinter.SetBigIntScopeValue(*k))
 			if err != nil {
 				return err
 			}
-			return ctx.ScopeManager.AssignVariable("value", *hinter.BigIntScopeValue(&value))
+			return ctx.ScopeManager.AssignVariable("value", hinter.SetBigIntScopeValue(*&value))
 		},
 	}
 }

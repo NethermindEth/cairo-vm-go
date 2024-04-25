@@ -304,12 +304,12 @@ func createAssertLeFeltExcluded2Hinter(resolver hintReferenceResolver) (hinter.H
 	h := &GenericZeroHinter{
 		Name: "AssertLeFeltExcluded2",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			excluded, err := ctx.ScopeManager.GetVariableValue("excluded")
+			excluded, err := ctx.ScopeManager.GetScopeValue("excluded")
 			if err != nil {
 				return err
 			}
 
-			if excluded.BigIntValue.Int64() != 2 {
+			if excluded.BigInt.Int64() != 2 {
 				return fmt.Errorf("assertion `excluded == 2` failed")
 			}
 

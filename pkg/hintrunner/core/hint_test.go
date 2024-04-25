@@ -993,7 +993,7 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 			RangeCheckPtr: hinter.Deref{Deref: hinter.ApCellRef(0)},
 		}
 
-		ctx := hinter.SetContextWithScope(hinter.ScopeMap{"excluded": *hinter.BigIntScopeValue(big.NewInt(0))})
+		ctx := hinter.SetContextWithScope(hinter.ScopeMap{"excluded": hinter.SetBigIntScopeValue(*big.NewInt(0))})
 
 		err := hint.Execute(vm, ctx)
 
@@ -1006,7 +1006,7 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		actualRem2 := utils.ReadFrom(vm, 2, 2)
 		actualQuotient2 := utils.ReadFrom(vm, 2, 3)
 		actual1Ptr := utils.ReadFrom(vm, 1, 0)
-		actualExcludedArc, err := ctx.ScopeManager.GetVariableValue("excluded")
+		actualExcludedArc, err := ctx.ScopeManager.GetScopeValue("excluded")
 
 		require.NoError(t, err)
 
@@ -1015,14 +1015,14 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		require.Equal(t, tc.expectedRem2, actualRem2)
 		require.Equal(t, tc.expectedQuotient2, actualQuotient2)
 		require.Equal(t, expectedPtr, actual1Ptr)
-		require.Equal(t, tc.expectedExcludedArc, int(actualExcludedArc.BigIntValue.Int64()))
+		require.Equal(t, tc.expectedExcludedArc, int(actualExcludedArc.BigInt.Int64()))
 	}
 }
 
 func TestAssertLeIsFirstArcExcluded(t *testing.T) {
 	vm := VM.DefaultVirtualMachine()
 
-	ctx := hinter.SetContextWithScope(hinter.ScopeMap{"excluded": *hinter.BigIntScopeValue(big.NewInt(2))})
+	ctx := hinter.SetContextWithScope(hinter.ScopeMap{"excluded": hinter.SetBigIntScopeValue(*big.NewInt(2))})
 	var flag hinter.ApCellRef = 0
 
 	hint := AssertLeIsFirstArcExcluded{
@@ -1044,7 +1044,7 @@ func TestAssertLeIsSecondArcExcluded(t *testing.T) {
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	ctx := hinter.SetContextWithScope(hinter.ScopeMap{"excluded": *hinter.BigIntScopeValue(big.NewInt(1))})
+	ctx := hinter.SetContextWithScope(hinter.ScopeMap{"excluded": hinter.SetBigIntScopeValue(*big.NewInt(1))})
 	var flag hinter.ApCellRef = 0
 
 	hint := AssertLeIsSecondArcExcluded{

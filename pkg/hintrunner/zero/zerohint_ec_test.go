@@ -200,7 +200,7 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// GetSecPBig() % fp.Modulus() but with first digit 3 replaced with 7
 					value := bigIntString("7618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
-					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": *hinter.BigIntScopeValue(value)})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": hinter.SetBigIntScopeValue(*value)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -214,7 +214,7 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// GetSecPBig() % fp.Modulus()
 					value := bigIntString("3618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
-					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": *hinter.BigIntScopeValue(value)})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": hinter.SetBigIntScopeValue(*value)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -226,7 +226,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": *hinter.BigIntScopeValue(big.NewInt(123456))})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": hinter.SetBigIntScopeValue(*big.NewInt(123456))})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -238,7 +238,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": *hinter.BigIntScopeValue(big.NewInt(-123456))})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": hinter.SetBigIntScopeValue(*big.NewInt(-123456))})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -252,7 +252,7 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// 2**86 - 1
 					value := bigIntString("77371252455336267181195263", 10)
-					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": *hinter.BigIntScopeValue(value)})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": hinter.SetBigIntScopeValue(*value)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -266,7 +266,7 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// 2**86
 					value := bigIntString("77371252455336267181195264", 10)
-					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": *hinter.BigIntScopeValue(value)})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": hinter.SetBigIntScopeValue(*value)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -280,7 +280,7 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// 2**86 + 1
 					value := bigIntString("77371252455336267181195265", 10)
-					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": *hinter.BigIntScopeValue(value)})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": hinter.SetBigIntScopeValue(*value)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -292,7 +292,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": *hinter.BigIntScopeValue(big.NewInt(0))})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": hinter.SetBigIntScopeValue(*big.NewInt(0))})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -306,7 +306,7 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// (2**86 - 1) * 2
 					value := bigIntString("154742504910672534362390526", 10)
-					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": *hinter.BigIntScopeValue(value)})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": hinter.SetBigIntScopeValue(*value)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -320,7 +320,7 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// 2**86 * 2
 					value := bigIntString("154742504910672534362390528", 10)
-					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": *hinter.BigIntScopeValue(value)})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": hinter.SetBigIntScopeValue(*value)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -334,7 +334,7 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// (2**86 + 1) * 2
 					value := bigIntString("154742504910672534362390530", 10)
-					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": *hinter.BigIntScopeValue(value)})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"value": hinter.SetBigIntScopeValue(*value)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -352,8 +352,8 @@ func TestZeroHintEc(t *testing.T) {
 					y0Big := big.NewInt(10)
 					secPBig, _ := secp_utils.GetSecPBig()
 
-					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"slope": *hinter.BigIntScopeValue(slopeBig), "x0": *hinter.BigIntScopeValue(x0Big),
-						"new_x": *hinter.BigIntScopeValue(new_xBig), "y0": *hinter.BigIntScopeValue(y0Big), "SECP_P": *hinter.BigIntScopeValue(&secPBig)})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"slope": hinter.SetBigIntScopeValue(*slopeBig), "x0": hinter.SetBigIntScopeValue(*x0Big),
+						"new_x": hinter.SetBigIntScopeValue(*new_xBig), "y0": hinter.SetBigIntScopeValue(*y0Big), "SECP_P": hinter.SetBigIntScopeValue(*&secPBig)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
@@ -372,8 +372,8 @@ func TestZeroHintEc(t *testing.T) {
 					y0Big := big.NewInt(10)
 					secPBig, _ := secp_utils.GetSecPBig()
 
-					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"slope": *hinter.BigIntScopeValue(slopeBig), "x0": *hinter.BigIntScopeValue(x0Big),
-						"new_x": *hinter.BigIntScopeValue(new_xBig), "y0": *hinter.BigIntScopeValue(y0Big), "SECP_P": *hinter.BigIntScopeValue(&secPBig)})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"slope": hinter.SetBigIntScopeValue(*slopeBig), "x0": hinter.SetBigIntScopeValue(*x0Big),
+						"new_x": hinter.SetBigIntScopeValue(*new_xBig), "y0": hinter.SetBigIntScopeValue(*y0Big), "SECP_P": hinter.SetBigIntScopeValue(*&secPBig)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
@@ -393,8 +393,8 @@ func TestZeroHintEc(t *testing.T) {
 					y0Big := big.NewInt(20)
 					secPBig, _ := secp_utils.GetSecPBig()
 
-					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"slope": *hinter.BigIntScopeValue(slopeBig), "x0": *hinter.BigIntScopeValue(x0Big),
-						"new_x": *hinter.BigIntScopeValue(new_xBig), "y0": *hinter.BigIntScopeValue(y0Big), "SECP_P": *hinter.BigIntScopeValue(&secPBig)})
+					ctx.ScopeManager.EnterScope(hinter.ScopeMap{"slope": hinter.SetBigIntScopeValue(*slopeBig), "x0": hinter.SetBigIntScopeValue(*x0Big),
+						"new_x": hinter.SetBigIntScopeValue(*new_xBig), "y0": hinter.SetBigIntScopeValue(*y0Big), "SECP_P": hinter.SetBigIntScopeValue(*&secPBig)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()

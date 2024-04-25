@@ -135,10 +135,10 @@ func TestVerifyZeroHint(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(hinter.ScopeMap{})
 					err := ctx.ScopeManager.AssignVariables(hinter.ScopeMap{
-						"res": *hinter.BigIntScopeValue(bigIntString("0", 10)),
-						"a":   *hinter.BigIntScopeValue(bigIntString("0", 10)),
-						"b":   *hinter.BigIntScopeValue(bigIntString("0", 10)),
-						"N":   *hinter.BigIntScopeValue(bigIntString("1", 10)),
+						"res": hinter.SetBigIntScopeValue(*bigIntString("0", 10)),
+						"a":   hinter.SetBigIntScopeValue(*bigIntString("0", 10)),
+						"b":   hinter.SetBigIntScopeValue(*bigIntString("0", 10)),
+						"N":   hinter.SetBigIntScopeValue(*bigIntString("1", 10)),
 					})
 					if err != nil {
 						t.Fatal(err)
@@ -158,10 +158,10 @@ func TestVerifyZeroHint(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(hinter.ScopeMap{})
 					err := ctx.ScopeManager.AssignVariables(hinter.ScopeMap{
-						"res": *hinter.BigIntScopeValue(bigIntString("1", 10)),
-						"a":   *hinter.BigIntScopeValue(bigIntString("2", 10)),
-						"b":   *hinter.BigIntScopeValue(bigIntString("1", 10)),
-						"N":   *hinter.BigIntScopeValue(bigIntString("1", 10)),
+						"res": hinter.SetBigIntScopeValue(*bigIntString("1", 10)),
+						"a":   hinter.SetBigIntScopeValue(*bigIntString("2", 10)),
+						"b":   hinter.SetBigIntScopeValue(*bigIntString("1", 10)),
+						"N":   hinter.SetBigIntScopeValue(*bigIntString("1", 10)),
 					})
 					if err != nil {
 						t.Fatal(err)
@@ -181,10 +181,10 @@ func TestVerifyZeroHint(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(hinter.ScopeMap{})
 					err := ctx.ScopeManager.AssignVariables(hinter.ScopeMap{
-						"res": *hinter.BigIntScopeValue(bigIntString("10", 10)),
-						"a":   *hinter.BigIntScopeValue(bigIntString("20", 10)),
-						"b":   *hinter.BigIntScopeValue(bigIntString("30", 10)),
-						"N":   *hinter.BigIntScopeValue(bigIntString("2", 10)),
+						"res": hinter.SetBigIntScopeValue(*bigIntString("10", 10)),
+						"a":   hinter.SetBigIntScopeValue(*bigIntString("20", 10)),
+						"b":   hinter.SetBigIntScopeValue(*bigIntString("30", 10)),
+						"N":   hinter.SetBigIntScopeValue(*bigIntString("2", 10)),
 					})
 					if err != nil {
 						t.Fatal(err)

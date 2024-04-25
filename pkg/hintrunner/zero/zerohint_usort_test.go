@@ -12,7 +12,7 @@ func TestZeroHintUsort(t *testing.T) {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(hinter.ScopeMap{
-						"__usort_max_size": *hinter.FeltValueScopeValue(feltUint64(1)),
+						"__usort_max_size": hinter.SetFeltScopeValue(*feltUint64(1)),
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
