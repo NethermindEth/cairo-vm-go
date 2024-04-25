@@ -436,14 +436,12 @@ func newEcDoubleAssignNewXV1(slope, point hinter.ResOperander) hinter.Hinter {
 					return err
 				}
 				pointXValues[i] = pointXValue
-			}
 
-			for i := 3; i < 6; i++ {
-				pointYValue, err := pointMemoryValues[i].FieldElement()
+				pointYValue, err := pointMemoryValues[i+3].FieldElement()
 				if err != nil {
 					return err
 				}
-				pointYValues[i-3] = pointYValue
+				pointYValues[i] = pointYValue
 			}
 
 			//> slope = pack(ids.slope, PRIME)
