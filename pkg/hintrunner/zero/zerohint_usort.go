@@ -137,7 +137,7 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 
 			// Calculate `next_item_index` memory value
 			newNextItemIndexValue := current_pos - last_pos
-			newNextItemIndexMemoryValue := memory.MemoryValueFromInt(newNextItemIndexValue)
+			newNextItemIndexMemoryValue := memory.MemoryValueFromUint(newNextItemIndexValue)
 
 			// Save `next_item_index` value in address
 			addrNextItemIndex, err := nextItemIndex.GetAddress(vm)

@@ -132,7 +132,7 @@ func TestZeroHintUsort(t *testing.T) {
 					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
-					"next_item_index": feltInt64(1),
+					"next_item_index": feltUint64(1),
 				}),
 			},
 		},
