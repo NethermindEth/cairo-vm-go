@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -78,6 +77,7 @@ func TestZeroHintUsort(t *testing.T) {
 			},
 		},
 		"UsortVerifyMultiplicityBody": {
+			// Tests when no variables (positions, last_pos) are in the scope.
 			{
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
@@ -86,6 +86,7 @@ func TestZeroHintUsort(t *testing.T) {
 					require.NotNil(t, err)
 				},
 			},
+			// Tests when the positions interface cannot be casted to an array of uint64.
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
@@ -100,24 +101,7 @@ func TestZeroHintUsort(t *testing.T) {
 					require.NotNil(t, err)
 				},
 			},
-			{
-				operanders: []*hintOperander{
-					{Name: "next_item_index", Kind: uninitialized},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{
-						"positions": []uint64{6, 4, 2},
-						"last_pos":  0,
-					})
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
-				},
-				check: allVarValueInScopeEquals(map[string]any{
-					"current_pos": feltUint64(2),
-					"last_pos":    feltUint64(3),
-				}),
-			},
+			// Tests when we can calculate new memory and variable values.
 			{
 				operanders: []*hintOperander{
 					{Name: "next_item_index", Kind: uninitialized},
@@ -131,9 +115,14 @@ func TestZeroHintUsort(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
 				},
-				check: allVarValueEquals(map[string]*fp.Element{
-					"next_item_index": feltUint64(1),
-				}),
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueInScopeEquals(map[string]any{
+						"current_pos": feltUint64(2),
+						"last_pos":    feltUint64(3),
+					})(t, ctx)
+
+					varValueEquals("next_item_index", feltUint64(1))(t, ctx)
+				},
 			},
 		},
 	})
