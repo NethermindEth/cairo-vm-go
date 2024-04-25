@@ -1006,7 +1006,7 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		actualRem2 := utils.ReadFrom(vm, 2, 2)
 		actualQuotient2 := utils.ReadFrom(vm, 2, 3)
 		actual1Ptr := utils.ReadFrom(vm, 1, 0)
-		actualExcludedArc, err := ctx.ScopeManager.GetScopeValue("excluded")
+		actualExcludedArc, err := ctx.ScopeManager.GetVariableValueAsBigInt("excluded")
 
 		require.NoError(t, err)
 
@@ -1015,7 +1015,7 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		require.Equal(t, tc.expectedRem2, actualRem2)
 		require.Equal(t, tc.expectedQuotient2, actualQuotient2)
 		require.Equal(t, expectedPtr, actual1Ptr)
-		require.Equal(t, tc.expectedExcludedArc, int(actualExcludedArc.BigInt.Int64()))
+		require.Equal(t, tc.expectedExcludedArc, int(actualExcludedArc.Int64()))
 	}
 }
 
