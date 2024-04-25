@@ -112,10 +112,14 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createVerifyECDSASignatureHinter(resolver)
 	case getPointFromXCode:
 		return createGetPointFromXHinter(resolver)
+	case divModNSafeDivCode:
+		return createDivModSafeDivHinter()
 	case importSecp256R1PCode:
 		return createImportSecp256R1PHinter()
 	case verifyZeroCode:
 		return createVerifyZeroHinter(resolver)
+	case divModNPackedDivmodV1Code:
+		return createDivModNPackedDivmodV1Hinter(resolver)
 		// EC hints
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)
@@ -127,9 +131,6 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createFastEcAddAssignNewXHinter(resolver)
 	case ecDoubleSlopeV1Code:
 		return createEcDoubleSlopeV1Hinter(resolver)
-		// Signature hints
-	case divModNPackedDivmodV1Code:
-		return createDivModNPackedDivmodV1Hinter(resolver)
 		// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)

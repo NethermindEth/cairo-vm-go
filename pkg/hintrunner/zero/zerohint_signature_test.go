@@ -129,6 +129,77 @@ func TestVerifyZeroHint(t *testing.T) {
 				check: varValueInScopeEquals("SECP_P", bigIntString("115792089210356248762697446949407573530086143415290314195533631308867097853951", 10)),
 			},
 		},
+		"DivModNSafeDivHint": {
+			{
+				// zero quotient
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{
+						"res": bigIntString("0", 10),
+						"a":   bigIntString("0", 10),
+						"b":   bigIntString("0", 10),
+						"N":   bigIntString("1", 10),
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDivModSafeDivHinter()
+				},
+				check: varListInScopeEquals(map[string]any{
+					"value": bigIntString("0", 10),
+					"k":     bigIntString("0", 10),
+				}),
+			},
+			{
+				// negative quotient
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{
+						"res": bigIntString("1", 10),
+						"a":   bigIntString("2", 10),
+						"b":   bigIntString("1", 10),
+						"N":   bigIntString("1", 10),
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDivModSafeDivHinter()
+				},
+				check: varListInScopeEquals(map[string]any{
+					"value": bigIntString("-1", 10),
+					"k":     bigIntString("-1", 10),
+				}),
+			},
+			{
+				// positive quotient
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{
+						"res": bigIntString("10", 10),
+						"a":   bigIntString("20", 10),
+						"b":   bigIntString("30", 10),
+						"N":   bigIntString("2", 10),
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDivModSafeDivHinter()
+				},
+				check: varListInScopeEquals(map[string]any{
+					"value": bigIntString("140", 10),
+					"k":     bigIntString("140", 10),
+				}),
+			},
+		},
 		"DivModNPackedDivmodV1": {
 			{
 				operanders: []*hintOperander{

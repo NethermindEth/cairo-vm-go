@@ -228,6 +228,47 @@ func createImportSecp256R1PHinter() (hinter.Hinter, error) {
 	return newImportSecp256R1PHinter(), nil
 }
 
+func newDivModSafeDivHinter() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DivModSafeDivHinter",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> value = k = safe_div(res * b - a, N)
+
+			res, err := ctx.ScopeManager.GetVariableValueAsBigInt("res")
+			if err != nil {
+				return err
+			}
+			a, err := ctx.ScopeManager.GetVariableValueAsBigInt("a")
+			if err != nil {
+				return err
+			}
+			b, err := ctx.ScopeManager.GetVariableValueAsBigInt("b")
+			if err != nil {
+				return err
+			}
+			N, err := ctx.ScopeManager.GetVariableValueAsBigInt("N")
+			if err != nil {
+				return err
+			}
+			divisor := new(big.Int).Sub(new(big.Int).Mul(res, b), a)
+			value, err := secp_utils.SafeDiv(divisor, N)
+			if err != nil {
+				return err
+			}
+			k := new(big.Int).Set(&value)
+			err = ctx.ScopeManager.AssignVariable("k", k)
+			if err != nil {
+				return err
+			}
+			return ctx.ScopeManager.AssignVariable("value", &value)
+		},
+	}
+}
+
+func createDivModSafeDivHinter() (hinter.Hinter, error) {
+	return newDivModSafeDivHinter(), nil
+}
+
 func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DivModNPackedDivmodV1",
