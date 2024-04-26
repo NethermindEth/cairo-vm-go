@@ -134,13 +134,16 @@ func newBlockPermutationHint(keccakStateSizeFelts, keccakPtr hinter.ResOperander
 				return fmt.Errorf("keccakStateSize %v is out range 0 <= keccakStateSize < 100", &keccakStateSize)
 			}
 
-			var inputPointer = keccakWritePtr
+			var readAddr = *keccakWritePtr
 			var offset int16 = int16(keccakStateSize)
 			var negOffset int16 = -offset
 
-			inputPointer.AddOffset(negOffset)
+			readAddr, err = readAddr.AddOffset(negOffset)
+			if err != nil {
+				return err
+			}
 
-			inputValuesInRange, err := hinter.GetConsecutiveValues(vm, *inputPointer, int16(keccakStateSize))
+			inputValuesInRange, err := hinter.GetConsecutiveValues(vm, readAddr, int16(keccakStateSize))
 			if err != nil {
 				return err
 			}
