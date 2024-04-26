@@ -388,13 +388,13 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newEcDoubleSlopeV1Hint(point), nil
 }
 
-func reduceV1(x hinter.ResOperander) hinter.Hinter{
+func newReduceV1Hinter(x hinter.ResOperander) hinter.Hinter{
 	return &GenericZeroHinter{
 		Name:"reduceV1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			// from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> x = pack(ids.x, PRIME) % SECP_P
 
-			// x = pack(ids.x, PRIME) % SECP_P
 			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok{
 				return fmt.Errorf("GetSecPBig failed")
@@ -421,15 +421,15 @@ func reduceV1(x hinter.ResOperander) hinter.Hinter{
                 return err
             }
 			xBig.Mod(&xBig, &secPBig)
-			return ctx.ScopeManager.AssignVariable("value", xBig)
+			return ctx.ScopeManager.AssignVariable("x", xBig)
 		},
 	}
 }
 
-func createReduceV1(resolver hintReferenceResolver)(hinter.Hinter, error){
-	point, err := resolver.GetResOperander("point")
+func createReduceV1Hinter(resolver hintReferenceResolver)(hinter.Hinter, error){
+	x, err := resolver.GetResOperander("x")
 	if err != nil {
 		return nil, err
 	}
-	return reduceV1(point), nil
+	return newReduceV1Hinter(x), nil
 }
