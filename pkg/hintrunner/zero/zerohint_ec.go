@@ -9,7 +9,6 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	
 )
 
 func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {

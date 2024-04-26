@@ -593,5 +593,50 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
-	})
+		"ReduceV1" :{
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newReduceV1Hinter(ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("x.d0", feltString("0")),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("3618502788666131213697322783095070105623107215331596699973092056135872020481")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newReduceV1Hinter(ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("x.d0", feltInt64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("3618502788666131213697322783095070105623107215331596699973092056135872020481")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newReduceV1Hinter(ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("x.d0", feltInt64(0)),
+			},
+		},
+		},
+	)
 }

@@ -132,7 +132,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case ecDoubleSlopeV1Code:
 		return createEcDoubleSlopeV1Hinter(resolver)
 	case reduceV1Code:
-		return createReduceV1(resolver)
+		return createReduceV1Hinter(resolver)
 		// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
