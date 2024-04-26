@@ -9,6 +9,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	
 )
 
 func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
@@ -385,4 +386,50 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 	}
 
 	return newEcDoubleSlopeV1Hint(point), nil
+}
+
+func reduceV1(x hinter.ResOperander) hinter.Hinter{
+	return &GenericZeroHinter{
+		Name:"reduceV1",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			// from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+
+			// x = pack(ids.x, PRIME) % SECP_P
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok{
+				return fmt.Errorf("GetSecPBig failed")
+			}
+			xAddr, err := x.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			xMemoryValues, err := hinter.GetConsecutiveValues(vm, xAddr, int16(3))
+            if err != nil {
+                return err
+            }
+			var xValues [3]*fp.Element
+            for i := 0; i < 3; i++ {
+                xValue, err := xMemoryValues[i].FieldElement()
+                if err != nil {
+                    return err
+                }
+                xValues[i] = xValue
+            }
+			xBig, err := secp_utils.SecPPacked(xValues)
+            if err != nil {
+                return err
+            }
+			xBig.Mod(&xBig, &secPBig)
+			return ctx.ScopeManager.AssignVariable("value", xBig)
+		},
+	}
+}
+
+func createReduceV1(resolver hintReferenceResolver)(hinter.Hinter, error){
+	point, err := resolver.GetResOperander("point")
+	if err != nil {
+		return nil, err
+	}
+	return reduceV1(point), nil
 }
