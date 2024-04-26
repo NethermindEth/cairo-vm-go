@@ -13,8 +13,7 @@ func newUsortEnterScopeHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortEnterScope",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> last_pos = 0
-			//> positions = positions_dict[ids.value][::-1]
+			//> vm_enter_scope(dict(__usort_max_size = globals().get('__usort_max_size')))
 
 			usortMaxSize, err := ctx.ScopeManager.GetVariableValue("__usort_max_size")
 			if err != nil {
@@ -38,6 +37,9 @@ func newUsortVerifyHinter(value hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortVerify",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> last_pos = 0
+			//> positions = positions_dict[ids.value][::-1]
+
 			positionsDictInterface, err := ctx.ScopeManager.GetVariableValue("positions_dict")
 
 			if err != nil {
