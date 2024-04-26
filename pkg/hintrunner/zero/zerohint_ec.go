@@ -387,7 +387,7 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newEcDoubleSlopeV1Hint(point), nil
 }
 
-func newEcDoubleAssignNewXV1(slope, point hinter.ResOperander) hinter.Hinter {
+func newEcDoubleAssignNewXV1Hint(slope, point hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcDoubleAssignNewXV1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -495,5 +495,5 @@ func createEcDoubleAssignNewXV1Hinter(resolver hintReferenceResolver) (hinter.Hi
 		return nil, err
 	}
 
-	return newEcDoubleAssignNewXV1(slope, point), nil
+	return newEcDoubleAssignNewXV1Hint(slope, point), nil
 }
