@@ -6,6 +6,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -128,45 +129,52 @@ func newBlockPermutationHint(keccakStateSizeFelts, keccakPtr hinter.ResOperander
 				return err
 			}
 
-			keccakPtrUint64, err := hinter.ResolveAsUint64(vm, keccakPtr)
-			if err != nil {
-				return err
-			}
-
+			// why does the need contains this check? keccakStateSize is a constant: 25
 			if keccakStateSize >= 100 {
 				return fmt.Errorf("keccakStateSize %v is out range 0 <= keccakStateSize < 100", &keccakStateSize)
 			}
 
-			inputValuesU64 := keccakPtrUint64 - keccakStateSize
-			inputValues := memory.MemoryValueFromUint(inputValuesU64)
-			inputValuesAddr, err := inputValues.MemoryAddress()
+			var inputPointer = keccakWritePtr
+			var offset int16 = int16(keccakStateSize)
+			var negOffset int16 = -offset
+
+			inputPointer.AddOffset(negOffset)
+
+			inputValuesInRange, err := hinter.GetConsecutiveValues(vm, *inputPointer, int16(keccakStateSize))
 			if err != nil {
 				return err
 			}
 
-			inputValuesInRange, err := hinter.GetConsecutiveValues(vm, *inputValuesAddr, int16(keccakStateSize))
-			if err != nil {
-				return err
+			var keccakInput []uint64
+
+			for _, valueMemoryValue := range inputValuesInRange {
+				valueFelt, err := valueMemoryValue.FieldElement()
+				if err != nil {
+					return err
+				}
+				valueUint256 := uint256.Int(valueFelt.Bits())
+				valueUint64 := valueUint256.Uint64()
+				keccakInput = append(keccakInput, valueUint64)
 			}
 
-			// keccakInput := make([]byte, 0)
+			var input [25]uint64
 
-			// for _, valueMemoryValue := range inputValuesInRange {
-			// 	valueFelt, err := valueMemoryValue.FieldElement()
-			// 	if err != nil {
-			// 		return err
-			// 	}
-			// 	valueUint256 := uint256.Int(valueFelt.Bits())
-			// 	valueBytes := valueUint256.Bytes20()
-			// 	keccakInput = append(keccakInput, valueBytes[4:]...)
-			// }
+			for i := 0; i < 25; i++ {
+				input[i] = keccakInput[i]
+			}
+			builtins.KeccakF1600(&input)
 
-			// // // // // // output_values = keccak_func(memory.get_range(ids.keccak_ptr - _keccak_state_size_felts, _keccak_state_size_felts))
+			for i := 0; i < 25; i++ {
+				inputValue := memory.MemoryValueFromUint(input[i])
+				memoryOffset := uint64(i)
 
-			// var input [25]uint64
-			// builtins.KeccakF1600(keccakInput)
+				err = vm.Memory.Write(keccakWritePtr.SegmentIndex, keccakWritePtr.Offset+memoryOffset, &inputValue)
+				if err != nil {
+					return err
+				}
+			}
 
-			return vm.Memory.Write(keccakWritePtr.SegmentIndex, keccakWritePtr.Offset, &mvHighLow)
+			return nil
 		},
 	}
 }
