@@ -610,7 +610,7 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newEcDoubleAssignNewXV1(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
+					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"slope": bigIntString("0", 10),
@@ -637,7 +637,7 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newEcDoubleAssignNewXV1(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
+					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"x":     bigIntString("46003884165973832456933262296354598115596485770084020998681742081", 10),
@@ -663,7 +663,7 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newEcDoubleAssignNewXV1(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
+					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"x":     bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
