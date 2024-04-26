@@ -136,7 +136,7 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 			}
 
 			// Calculate `next_item_index` memory value
-			newNextItemIndexValue := current_pos - last_pos
+			newNextItemIndexValue := current_pos - last_pos.(uint64)
 			newNextItemIndexMemoryValue := memory.MemoryValueFromUint(newNextItemIndexValue)
 
 			// Save `next_item_index` value in address
@@ -151,12 +151,10 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 			}
 
 			// Save `current_pos` and `last_pos` values in scope variables
-			err = ctx.ScopeManager.AssignVariables(map[string]any{
+			return ctx.ScopeManager.AssignVariables(map[string]any{
 				"current_pos": current_pos,
 				"last_pos":    current_pos + 1,
 			})
-
-			return err
 		},
 	}
 }

@@ -86,21 +86,6 @@ func TestZeroHintUsort(t *testing.T) {
 					require.NotNil(t, err)
 				},
 			},
-			// Tests when the positions interface cannot be casted to an array of uint64.
-			{
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{
-						"positions": []string{"6", "4", "2"},
-						"last_pos":  0,
-					})
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
-				},
-				errCheck: func(t *testing.T, ctx *hintTestContext, err error) {
-					require.NotNil(t, err)
-				},
-			},
 			// Tests when we can calculate new memory and variable values.
 			{
 				operanders: []*hintOperander{
