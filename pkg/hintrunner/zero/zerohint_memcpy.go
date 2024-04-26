@@ -15,6 +15,10 @@ func newMemcpyEnterScopeHinter(len hinter.ResOperander) hinter.Hinter {
 		Name: "MemcpyEnterScope",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//>  vm_enter_scope({'n': ids.len})
+			len, err := hinter.ResolveAsFelt(vm, len)
+			if err != nil {
+				return err
+			}
 			ctx.ScopeManager.EnterScope(map[string]any{"n": len})
 			return nil
 		},
