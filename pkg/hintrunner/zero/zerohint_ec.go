@@ -468,12 +468,11 @@ func newEcDoubleAssignNewXV1Hint(slope, point hinter.ResOperander) hinter.Hinter
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
-			
 			multRes := new(big.Int)
 			multRes.Mul(big.NewInt(2), &xBig)
 
 			new_xBig := new(big.Int)
-			new_xBig.Exp(&slopeBig, big.NewInt(2), &secPBig)	
+			new_xBig.Exp(&slopeBig, big.NewInt(2), &secPBig)
 			new_xBig.Sub(new_xBig, multRes)
 			new_xBig.Mod(new_xBig, &secPBig)
 
