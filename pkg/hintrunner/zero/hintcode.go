@@ -84,7 +84,7 @@ const (
 	// ------ Dictionaries hints related code ------
 
 	// ------ Other hints related code ------
-	allocSegmentCode string = "memory[ap] = segments.add()"
-	memcpyEnterScope string = "vm_enter_scope({'n': ids.len})"
-	vmExitScopeCode  string = "vm_exit_scope()"
+	allocSegmentCode     string = "memory[ap] = segments.add()"
+	memcpyEnterScopeCode string = "vm_enter_scope({'n': ids.len})"
+	vmExitScopeCode      string = "vm_exit_scope()"
 )
