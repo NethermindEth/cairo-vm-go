@@ -37,7 +37,7 @@ func newMemcpyContinueCopyingHinter(output hinter.ResOperander) hinter.Hinter {
 			} else {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			}
-			return vm.Memory.WriteToAddress(&continue_copying, &v)
+			return vm.Memory.WriteToAddress(&continueCopyingAddr, &v)
 		},
 	}
 }
