@@ -1,12 +1,14 @@
 package zero
 
 import (
+	"math"
+	"math/big"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	"math"
-	"math/big"
 )
 
 func newBlake2sAddUint256Hint(low, high, data hinter.ResOperander, bigend bool) hinter.Hinter {
@@ -102,4 +104,104 @@ func createBlake2sAddUint256Hinter(resolver hintReferenceResolver, bigend bool) 
 	}
 
 	return newBlake2sAddUint256Hint(low, high, data, bigend), nil
+}
+
+// \\# Add dummy pairs of input and output.
+//
+//	\\from starkware.cairo.common.cairo_blake2s.blake2s_utils import IV, blake2s_compress
+//	\\
+//	\\_n_packed_instances = int(ids.N_PACKED_INSTANCES)
+//	\\assert 0 <= _n_packed_instances < 20
+//	\\_blake2s_input_chunk_size_felts = int(ids.INPUT_BLOCK_FELTS)
+//	\\assert 0 <= _blake2s_input_chunk_size_felts < 100
+//	\\
+//	\\message = [0] * _blake2s_input_chunk_size_felts
+//	\\modified_iv = [IV[0] ^ 0x01010020] + IV[1:]
+//	\\output = blake2s_compress(
+//	\\    message=message,
+//	\\    h=modified_iv,
+//	\\    t0=0,
+//	\\    t1=0,
+//	\\    f0=0xffffffff,
+//	\\    f1=0,
+//	\\)
+//	\\padding = (modified_iv + message + [0, 0xffffffff] + output) * (_n_packed_instances - 1)
+//	\\segments.write_arg(ids.blake2s_ptr_end, padding)
+//
+// ;
+func newBlake2sFinalizeHint(blake2s_ptr_end, N_PACKED_INSTANCES, message hinter.ResOperander) hinter.Hinter {
+	name := "Blake2sFinalize"
+	return &GenericZeroHinter{
+		Name: name,
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_blake2s.blake2s_utils import IV, blake2s_compress
+			//> _n_packed_instances = int(ids.N_PACKED_INSTANCES)
+			//> assert 0 <= _n_packed_instances < 20
+			//> _blake2s_input_chunk_size_felts = int(ids.INPUT_BLOCK_FELTS)
+			//> assert 0 <= _blake2s_input_chunk_size_felts < 100
+			//>
+			//> message = [0] * _blake2s_input_chunk_size_felts
+			//> modified_iv = [IV[0] ^ 0x01010020] + IV[1:]
+			//> output = blake2s_compress(
+			//>     message=message,
+			//>     h=modified_iv,
+			//>     t0=0,
+			//>     t1=0,
+			//>     f0=0xffffffff,
+			//>     f1=0,
+			//> )
+			//> padding = (modified_iv + message + [0, 0xffffffff] + output) * (_n_packed_instances - 1)
+			//> segments.write_arg(ids.blake2s_ptr_end, padding)
+
+			blake2s_ptr_end, err := hinter.ResolveAsAddress(vm, blake2s_ptr_end)
+			if err != nil {
+				return err
+			}
+			N_PACKED_INSTANCES, err := hinter.ResolveAsFelt(vm, N_PACKED_INSTANCES)
+			if err != nil {
+				return err
+			}
+			if err != nil {
+				return err
+			}
+			var message [16]uint32
+			modifiedIv := utils.IV()
+			modifiedIv[0] = modifiedIv[0] ^ 0x01010020
+			output := utils.Blake2sCompress(modifiedIv, message, 0, 0, 0xffffffff, 0)
+			padding := modifiedIv[:]
+			padding = append(padding, message[:]...)
+			padding = append(padding, 0, 0xffffffff)
+			padding = append(padding, output[:]...)
+			fullPadding := padding
+			for i := uint32(1); i < uint32(N_PACKED_INSTANCES.Uint64()); i++ {
+				fullPadding = append(fullPadding, padding...)
+			}
+			for i, val := range fullPadding {
+				mv := mem.MemoryValueFromInt(val)
+				err = vm.Memory.Write(blake2s_ptr_end.SegmentIndex, blake2s_ptr_end.Offset+uint64(i), &mv)
+				if err != nil {
+					return err
+				}
+			}
+			return err
+		},
+	}
+
+}
+
+func createBlake2sFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	blake2s_ptr_end, err := resolver.GetResOperander("blake2s_ptr_end")
+	if err != nil {
+		return nil, err
+	}
+	N_PACKED_INSTANCES, err := resolver.GetResOperander("N_PACKED_INSTANCES")
+	if err != nil {
+		return nil, err
+	}
+	message, err := resolver.GetResOperander("message")
+	if err != nil {
+		return nil, err
+	}
+
+	return newBlake2sFinalizeHint(blake2s_ptr_end, N_PACKED_INSTANCES, message), nil
 }

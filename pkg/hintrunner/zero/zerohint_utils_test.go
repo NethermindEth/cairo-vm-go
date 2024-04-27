@@ -101,7 +101,6 @@ func consecutiveVarAddrResolvedValueEquals(varName string, expectedValues []*fp.
 		require.NoError(t, err)
 		actualAddress, err := ctx.vm.Memory.ReadFromAddressAsAddress(&addr)
 		require.NoError(t, err)
-
 		for index, expectedValue := range expectedValues {
 			expectedValueAddr := memory.MemoryAddress{SegmentIndex: actualAddress.SegmentIndex, Offset: actualAddress.Offset + uint64(index)}
 			actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&expectedValueAddr)
