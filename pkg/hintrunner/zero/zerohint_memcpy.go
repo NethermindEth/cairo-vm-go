@@ -33,9 +33,9 @@ func newMemcpyContinueCopyingHint(output hinter.ResOperander) hinter.Hinter {
 
 			var v memory.MemoryValue
 			if n.(uint64) > 0 {
-				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
-			} else {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
 			}
 
 			return vm.Memory.WriteToAddress(&continueCopyingAddr, &v)
