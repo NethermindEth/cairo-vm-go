@@ -18,8 +18,8 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter
 	return &GenericZeroHinter{
 		Name: name,
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
-			// segments.write_arg(ids.inputs, [ids.low % 2 ** 64, ids.low // 2 ** 64])
-			// segments.write_arg(ids.inputs + 2, [ids.high % 2 ** 64, ids.high // 2 ** 64])
+			//> segments.write_arg(ids.inputs, [ids.low % 2 ** 64, ids.low // 2 ** 64])
+			//> segments.write_arg(ids.inputs + 2, [ids.high % 2 ** 64, ids.high // 2 ** 64])
 
 			low, err := hinter.ResolveAsFelt(vm, low)
 			if err != nil {
@@ -111,13 +111,13 @@ func newBlockPermutationHint(keccakStateSizeFelts, keccakPtr hinter.ResOperander
 	return &GenericZeroHinter{
 		Name: name,
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
-			// from starkware.cairo.common.keccak_utils.keccak_utils import keccak_func
-			// _keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)
-			// assert 0 <= _keccak_state_size_felts < 100
-
-			// output_values = keccak_func(memory.get_range(
-			// 	ids.keccak_ptr - _keccak_state_size_felts, _keccak_state_size_felts))
-			// segments.write_arg(ids.keccak_ptr, output_values)
+			//> from starkware.cairo.common.keccak_utils.keccak_utils import keccak_func
+			//> _keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)
+			//> assert 0 <= _keccak_state_size_felts < 100
+			//
+			//> output_values = keccak_func(memory.get_range(
+			//> 	ids.keccak_ptr - _keccak_state_size_felts, _keccak_state_size_felts))
+			//> segments.write_arg(ids.keccak_ptr, output_values)
 
 			keccakStateSize, err := hinter.ResolveAsUint64(vm, keccakStateSizeFelts)
 			if err != nil {
@@ -129,7 +129,6 @@ func newBlockPermutationHint(keccakStateSizeFelts, keccakPtr hinter.ResOperander
 				return err
 			}
 
-			// why does the need contains this check? keccakStateSize is a constant: 25
 			if keccakStateSize >= 100 {
 				return fmt.Errorf("keccakStateSize %v is out range 0 <= keccakStateSize < 100", &keccakStateSize)
 			}
