@@ -10,7 +10,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 )
 
-func newMemcpyContinueCopyingHinter(n, dst hinter.ResOperander) hinter.Hinter {
+func newMemcpyContinueCopyingHinter(output hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "MemcpyContinueCopying",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -43,15 +43,11 @@ func newMemcpyContinueCopyingHinter(n, dst hinter.ResOperander) hinter.Hinter {
 }
 
 func createMemcpyContinueCopyingHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	 n, err := resolver.GetResOperander("n")
+	output, err := resolver.GetResOperander("continue_copying")
 	if err != nil {
 		return nil, err
 	}
-	output, err := resolver.GetResOperander("output")
-	if err != nil {
-		return nil, err
-	}
-	return newMemcpyContinueCopyingHinter(n, output), nil
+	return newMemcpyContinueCopyingHinter(output), nil
 }
 
 
