@@ -14,19 +14,19 @@ func newMemcpyContinueCopyingHinter(output hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "MemcpyContinueCopying",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//n -= 1
-			//ids.continue_copying = 1 if n > 0 else 0
+			//> n -= 1
+			//> ids.continue_copying = 1 if n > 0 else 0
 			var lhs fp.Element
 
-			// n-=1
+			//> n-=1
 			n, err := ctx.ScopeManager.GetVariableValue("n")
 			if err != nil {
 				return err
 			}
 			ctx.ScopeManager.AssignVariable("n", lhs.Sub(n.(*fp.Element), &utils.FeltOne))
 
-			// ids.continue_copying = 1 if n > 0 else 0
-			continue_copying, err := dst.GetAddress(vm)
+			//> ids.continue_copying = 1 if n > 0 else 0
+			continueCopyingAddr, err := output.GetAddress(vm)
 			if err != nil {
 				return err
 			}
