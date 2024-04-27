@@ -32,10 +32,10 @@ func newMemcpyContinueCopyingHinter(output hinter.ResOperander) hinter.Hinter {
 			}
 
 			var v memory.MemoryValue
-			if !utils.FeltIsPositive(n.(*fp.Element)) {
-				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
-			} else {
+			if !utils.FeltLt(&utils.FeltZero, n) {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			} else {
+				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			}
 			return vm.Memory.WriteToAddress(&continue_copying, &v)
 		},
