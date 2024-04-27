@@ -23,6 +23,7 @@ func newMemcpyContinueCopyingHinter(output hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			ctx.ScopeManager.AssignVariable("n", lhs.Sub(n.(*fp.Element), &utils.FeltOne))
 
 			//> ids.continue_copying = 1 if n > 0 else 0
@@ -49,7 +50,6 @@ func createMemcpyContinueCopyingHinter(resolver hintReferenceResolver) (hinter.H
 	}
 	return newMemcpyContinueCopyingHinter(output), nil
 }
-
 
 func createAllocSegmentHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	return &core.AllocSegment{Dst: hinter.ApCellRef(0)}, nil
