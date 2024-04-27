@@ -16,7 +16,6 @@ func newMemcpyContinueCopyingHint(output hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> n -= 1
 			//> ids.continue_copying = 1 if n > 0 else 0
-			var lhs fp.Element
 
 			//> n-=1
 			n, err := ctx.ScopeManager.GetVariableValue("n")
@@ -24,7 +23,7 @@ func newMemcpyContinueCopyingHint(output hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			ctx.ScopeManager.AssignVariable("n", lhs.Sub(n.(*fp.Element), &utils.FeltOne))
+			ctx.ScopeManager.AssignVariable("n", n.(uint64)-1)
 
 			//> ids.continue_copying = 1 if n > 0 else 0
 			continueCopyingAddr, err := output.GetAddress(vm)
@@ -33,11 +32,12 @@ func newMemcpyContinueCopyingHint(output hinter.ResOperander) hinter.Hinter {
 			}
 
 			var v memory.MemoryValue
-			if utils.FeltLt(&utils.FeltZero, n) {
-				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			if n.(uint64) > 0 {
+				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
 			} else {
-					v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			}
+
 			return vm.Memory.WriteToAddress(&continueCopyingAddr, &v)
 		},
 	}
