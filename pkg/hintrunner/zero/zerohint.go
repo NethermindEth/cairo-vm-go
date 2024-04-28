@@ -145,7 +145,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case vmExitScopeCode:
 		return createVMExitScopeHinter(resolver)
 	case searchSortedLowerCode:
-		return createSearchSortedLowerHinter(resolver) // hola
+		return createSearchSortedLowerHinter(resolver)
 	case testAssignCode:
 		return createTestAssignHinter(resolver)
 	default:
