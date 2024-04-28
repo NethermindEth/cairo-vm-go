@@ -5,7 +5,6 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 )
@@ -23,7 +22,8 @@ func newMemcpyContinueCopyingHint(output hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			ctx.ScopeManager.AssignVariable("n", n.(uint64)-1)
+			n = n.(uint64) - 1
+			ctx.ScopeManager.AssignVariable("n", n)
 
 			//> ids.continue_copying = 1 if n > 0 else 0
 			continueCopyingAddr, err := output.GetAddress(vm)
