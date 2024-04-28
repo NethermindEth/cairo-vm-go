@@ -93,8 +93,9 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
-						"positions": []uint64{6, 4, 2},
-						"last_pos":  1,
+						"positions":   []int{8, 6, 4},
+						"current_pos": 2,
+						"last_pos":    1,
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -102,11 +103,11 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					allVarValueInScopeEquals(map[string]any{
-						"current_pos": feltUint64(2),
-						"last_pos":    feltUint64(3),
+						"current_pos": 4,
+						"last_pos":    3,
 					})(t, ctx)
 
-					varValueEquals("next_item_index", feltUint64(1))(t, ctx)
+					varValueEquals("next_item_index", feltInt64(1))(t, ctx)
 				},
 			},
 		},

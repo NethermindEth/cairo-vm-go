@@ -120,13 +120,23 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
-			positions, ok := positionsInterface.([]uint64)
+			positions, ok := positionsInterface.([]int)
 			if !ok {
 				return err
 			}
 
-			current_pos, err := utils.Pop(&positions)
+			new_current_pos, err := utils.Pop(&positions)
 			if err != nil {
+				return err
+			}
+
+			current_pos, err := ctx.ScopeManager.GetVariableValue("current_pos")
+			if err != nil {
+				return err
+			}
+
+			current_pos_int, ok := current_pos.(int)
+			if !ok {
 				return err
 			}
 
@@ -136,8 +146,8 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 			}
 
 			// Calculate `next_item_index` memory value
-			newNextItemIndexValue := current_pos - last_pos.(uint64)
-			newNextItemIndexMemoryValue := memory.MemoryValueFromUint(newNextItemIndexValue)
+			newNextItemIndexValue := current_pos_int - last_pos.(int)
+			newNextItemIndexMemoryValue := memory.MemoryValueFromInt(newNextItemIndexValue)
 
 			// Save `next_item_index` value in address
 			addrNextItemIndex, err := nextItemIndex.GetAddress(vm)
@@ -152,8 +162,8 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 
 			// Save `current_pos` and `last_pos` values in scope variables
 			return ctx.ScopeManager.AssignVariables(map[string]any{
-				"current_pos": current_pos,
-				"last_pos":    current_pos + 1,
+				"current_pos": new_current_pos,
+				"last_pos":    current_pos_int + 1,
 			})
 		},
 	}
