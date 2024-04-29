@@ -9,7 +9,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 )
 
-func newMemcpyContinueCopyingHint(output hinter.ResOperander) hinter.Hinter {
+func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "MemcpyContinueCopying",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -26,7 +26,7 @@ func newMemcpyContinueCopyingHint(output hinter.ResOperander) hinter.Hinter {
 			ctx.ScopeManager.AssignVariable("n", n)
 
 			//> ids.continue_copying = 1 if n > 0 else 0
-			continueCopyingAddr, err := output.GetAddress(vm)
+			continueCopyingAddr, err := continueCopying.GetAddress(vm)
 			if err != nil {
 				return err
 			}
@@ -44,11 +44,11 @@ func newMemcpyContinueCopyingHint(output hinter.ResOperander) hinter.Hinter {
 }
 
 func createMemcpyContinueCopyingHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	output, err := resolver.GetResOperander("continue_copying")
+	continueCopying, err := resolver.GetResOperander("continue_copying")
 	if err != nil {
 		return nil, err
 	}
-	return newMemcpyContinueCopyingHint(output), nil
+	return newMemcpyContinueCopyingHint(continueCopying), nil
 }
 
 func createAllocSegmentHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
