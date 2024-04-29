@@ -33,14 +33,14 @@ func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hi
 				return err
 			}
 
-			var v memory.MemoryValue
+			var continueCopyingMv memory.MemoryValue
 			if n.(uint64) > 0 {
-				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+				continueCopyingMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
-				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+				continueCopyingMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
 			}
 
-			return vm.Memory.WriteToAddress(&continueCopyingAddr, &v)
+			return vm.Memory.WriteToAddress(&continueCopyingAddr, &continueCopyingMv)
 		},
 	}
 }
