@@ -27,7 +27,6 @@ func EcDoubleSlope(pointX, pointY, alpha, prime *big.Int) (big.Int, error) {
 }
 
 func LineSlope(point_aX, point_aY, point_bX, point_bY, prime *big.Int) (big.Int, error) {
-	// belongs to the line_slope method
 	modValue := new(big.Int).Mod(new(big.Int).Sub(point_aX, point_aY), prime)
 
 	if modValue.Cmp(big.NewInt(0)) == 0 {
