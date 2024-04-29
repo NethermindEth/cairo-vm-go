@@ -75,7 +75,6 @@ These hints provide additional information on managing resources like memory and
 
 The first hint will ensure the program has *`10`* memory pages to execute the first loop that stores *`10`* integers on the stack.
 The second hint will ensure the program does not use more memory than necessary.
-
 ### DEBUGGING HINTS
 They aid in troubleshooting and debugging Cairo programs. They identify and diagnose issues in the program. It debugs errors related to memory access and manipulation. Debugging hints are deleted from the program once the debugging is complete.
 
