@@ -26,6 +26,23 @@ func EcDoubleSlope(pointX, pointY, alpha, prime *big.Int) (big.Int, error) {
 	return Divmod(n, m, prime)
 }
 
+func LineSlope(point_aX, point_aY, point_bX, point_bY, prime *big.Int) (big.Int, error) {
+	// belongs to the line_slope method
+	modValue := new(big.Int).Mod(new(big.Int).Sub(point_aX, point_aY), prime)
+
+	if modValue.Cmp(big.NewInt(0)) == 0 {
+		return *big.NewInt(0), errors.New("the slope of the line is invalid")
+	}
+
+	// Compute the difference of y-coordinates
+	n := new(big.Int).Sub(point_bX, point_bY)
+
+	// Compute the difference of x-coordinates
+	m := new(big.Int).Sub(point_aX, point_aY)
+
+	return Divmod(n, m, prime)
+}
+
 func AsInt(valueFelt *fp.Element) big.Int {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/math_utils.py#L8
 
