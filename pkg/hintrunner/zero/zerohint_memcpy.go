@@ -23,7 +23,9 @@ func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hi
 			}
 
 			n = n.(uint64) - 1
-			ctx.ScopeManager.AssignVariable("n", n)
+			if err := ctx.ScopeManager.AssignVariable("n", n); err != nil {
+				return err
+			}
 
 			//> ids.continue_copying = 1 if n > 0 else 0
 			continueCopyingAddr, err := continueCopying.GetAddress(vm)
