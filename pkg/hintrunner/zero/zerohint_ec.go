@@ -485,7 +485,7 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
-			//> value = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)
+			// value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
 			slopeBig, err := secp_utils.LineSlope(&x0Big, &x1Big, &y0Big, &y1Big, &secPBig)
 			if err != nil {
 				return err
