@@ -978,6 +978,11 @@ func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunne
 		return fmt.Errorf("get first key: %w", err)
 	}
 
+	err = ctx.ScopeManager.AssignVariable("keys", ctx.SquashedDictionaryManager.Keys)
+	if err != nil {
+		return err
+	}
+
 	mv := mem.MemoryValueFromFieldElement(&firstKey)
 	return vm.Memory.WriteToAddress(&firstKeyAddr, &mv)
 }

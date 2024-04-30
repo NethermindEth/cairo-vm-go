@@ -142,6 +142,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		// Usort hints
 	case usortEnterScopeCode:
 		return createUsortEnterScopeHinter()
+		// Dictionaries hints
+	case squashDictInnerNextKey:
+		return createSquashDictInnerNextKeyHinter()
 		// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)
