@@ -10,6 +10,16 @@ func createAllocSegmentHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 	return &core.AllocSegment{Dst: hinter.ApCellRef(0)}, nil
 }
 
+func createVMEnterScopeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	return &GenericZeroHinter{
+		Name: "VMEnterScope",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			ctx.ScopeManager.EnterScope(make(map[string]any))
+			return nil
+		},
+	}, nil
+}
+
 func newMemcpyEnterScopeHint(len hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "MemcpyEnterScope",
