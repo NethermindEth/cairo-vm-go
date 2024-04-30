@@ -1,6 +1,7 @@
 package zero
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 
@@ -106,8 +107,6 @@ func createBlake2sAddUint256Hinter(resolver hintReferenceResolver, bigend bool) 
 	return newBlake2sAddUint256Hint(low, high, data, bigend), nil
 }
 
-// \\# Add dummy pairs of input and output.
-//
 //	\\from starkware.cairo.common.cairo_blake2s.blake2s_utils import IV, blake2s_compress
 //	\\
 //	\\_n_packed_instances = int(ids.N_PACKED_INSTANCES)
@@ -129,7 +128,7 @@ func createBlake2sAddUint256Hinter(resolver hintReferenceResolver, bigend bool) 
 //	\\segments.write_arg(ids.blake2s_ptr_end, padding)
 //
 // ;
-func newBlake2sFinalizeHint(blake2s_ptr_end, N_PACKED_INSTANCES, message hinter.ResOperander) hinter.Hinter {
+func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, message hinter.ResOperander) hinter.Hinter {
 	name := "Blake2sFinalize"
 	return &GenericZeroHinter{
 		Name: name,
@@ -153,17 +152,21 @@ func newBlake2sFinalizeHint(blake2s_ptr_end, N_PACKED_INSTANCES, message hinter.
 			//> padding = (modified_iv + message + [0, 0xffffffff] + output) * (_n_packed_instances - 1)
 			//> segments.write_arg(ids.blake2s_ptr_end, padding)
 
-			blake2s_ptr_end, err := hinter.ResolveAsAddress(vm, blake2s_ptr_end)
+			blake2sPtrEnd, err := hinter.ResolveAsAddress(vm, blake2sPtrEnd)
 			if err != nil {
 				return err
 			}
-			N_PACKED_INSTANCES, err := hinter.ResolveAsFelt(vm, N_PACKED_INSTANCES)
+			nPackedInstancesElement, err := hinter.ResolveAsFelt(vm, nPackedInstances)
 			if err != nil {
 				return err
 			}
-			if err != nil {
-				return err
+			nPackedInstances := nPackedInstancesElement.Uint64()
+
+			// assert 0 <= _n_packed_instances < 20
+			if nPackedInstances < 0 || nPackedInstances >= 20 {
+				return fmt.Errorf("n_packed_instances should be in range [0, 20), got %d", nPackedInstances)
 			}
+
 			var message [16]uint32
 			modifiedIv := utils.IV()
 			modifiedIv[0] = modifiedIv[0] ^ 0x01010020
@@ -173,12 +176,12 @@ func newBlake2sFinalizeHint(blake2s_ptr_end, N_PACKED_INSTANCES, message hinter.
 			padding = append(padding, 0, 0xffffffff)
 			padding = append(padding, output[:]...)
 			fullPadding := padding
-			for i := uint32(1); i < uint32(N_PACKED_INSTANCES.Uint64()); i++ {
+			for i := uint32(1); i < uint32(nPackedInstances.Uint64()); i++ {
 				fullPadding = append(fullPadding, padding...)
 			}
 			for i, val := range fullPadding {
 				mv := mem.MemoryValueFromInt(val)
-				err = vm.Memory.Write(blake2s_ptr_end.SegmentIndex, blake2s_ptr_end.Offset+uint64(i), &mv)
+				err = vm.Memory.Write(blake2sPtrEnd.SegmentIndex, blake2sPtrEnd.Offset+uint64(i), &mv)
 				if err != nil {
 					return err
 				}
@@ -190,11 +193,11 @@ func newBlake2sFinalizeHint(blake2s_ptr_end, N_PACKED_INSTANCES, message hinter.
 }
 
 func createBlake2sFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	blake2s_ptr_end, err := resolver.GetResOperander("blake2s_ptr_end")
+	blake2sPtrEnd, err := resolver.GetResOperander("blake2s_ptr_end")
 	if err != nil {
 		return nil, err
 	}
-	N_PACKED_INSTANCES, err := resolver.GetResOperander("N_PACKED_INSTANCES")
+	nPackedInstances, err := resolver.GetResOperander("N_PACKED_INSTANCES")
 	if err != nil {
 		return nil, err
 	}
@@ -203,5 +206,5 @@ func createBlake2sFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter,
 		return nil, err
 	}
 
-	return newBlake2sFinalizeHint(blake2s_ptr_end, N_PACKED_INSTANCES, message), nil
+	return newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, message), nil
 }
