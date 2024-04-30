@@ -12,8 +12,8 @@ func IV() [8]uint32 {
 		0x5BE0CD19}
 }
 
-func SIGMA() [10][16]uint32 {
-	return [10][16]uint32{
+func SIGMA() [10][16]uint8 {
+	return [10][16]uint8{
 		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
 		{14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3},
 		{11, 8, 12, 0, 5, 2, 15, 13, 10, 14, 3, 6, 7, 1, 9, 4},
@@ -43,7 +43,7 @@ func mix(a uint32, b uint32, c uint32, d uint32, m0 uint32, m1 uint32) (uint32, 
 	return a, b, c, d
 }
 
-func blakeRound(state []uint32, message [16]uint32, sigma [16]uint32) []uint32 {
+func blakeRound(state []uint32, message [16]uint32, sigma [16]uint8) []uint32 {
 	state[0], state[4], state[8], state[12] = mix(
 		state[0],
 		state[4],
