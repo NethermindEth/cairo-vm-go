@@ -128,7 +128,7 @@ func createBlake2sAddUint256Hinter(resolver hintReferenceResolver, bigend bool) 
 //	\\segments.write_arg(ids.blake2s_ptr_end, padding)
 //
 // ;
-func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, message hinter.ResOperander) hinter.Hinter {
+func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt hinter.ResOperander) hinter.Hinter {
 	name := "Blake2sFinalize"
 	return &GenericZeroHinter{
 		Name: name,
@@ -163,11 +163,22 @@ func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, message hinter.ResO
 			nPackedInstances := nPackedInstancesElement.Uint64()
 
 			// assert 0 <= _n_packed_instances < 20
-			if nPackedInstances < 0 || nPackedInstances >= 20 {
+			if nPackedInstances >= 20 {
 				return fmt.Errorf("n_packed_instances should be in range [0, 20), got %d", nPackedInstances)
 			}
 
-			var message [16]uint32
+			inputBlockFeltElement, err := hinter.ResolveAsFelt(vm, inputBlockFelt)
+			if err != nil {
+				return err
+			}
+
+			inputBlockFelt := inputBlockFeltElement.Uint64()
+
+			if inputBlockFelt >= 100 {
+				return fmt.Errorf("inputBlockFelt should be in range [0, 100), got %d", inputBlockFelt)
+			}
+
+			message := make([]uint32, inputBlockFelt)
 			modifiedIv := utils.IV()
 			modifiedIv[0] = modifiedIv[0] ^ 0x01010020
 			output := utils.Blake2sCompress(modifiedIv, message, 0, 0, 0xffffffff, 0)
@@ -176,7 +187,7 @@ func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, message hinter.ResO
 			padding = append(padding, 0, 0xffffffff)
 			padding = append(padding, output[:]...)
 			fullPadding := padding
-			for i := uint32(1); i < uint32(nPackedInstances.Uint64()); i++ {
+			for i := uint32(1); i < uint32(nPackedInstances); i++ {
 				fullPadding = append(fullPadding, padding...)
 			}
 			for i, val := range fullPadding {
@@ -201,7 +212,7 @@ func createBlake2sFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter,
 	if err != nil {
 		return nil, err
 	}
-	message, err := resolver.GetResOperander("message")
+	message, err := resolver.GetResOperander("INPUT_BLOCK_FELTS")
 	if err != nil {
 		return nil, err
 	}

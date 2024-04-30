@@ -43,7 +43,7 @@ func mix(a uint32, b uint32, c uint32, d uint32, m0 uint32, m1 uint32) (uint32, 
 	return a, b, c, d
 }
 
-func blakeRound(state []uint32, message [16]uint32, sigma [16]uint8) []uint32 {
+func blakeRound(state []uint32, message []uint32, sigma [16]uint8) []uint32 {
 	state[0], state[4], state[8], state[12] = mix(
 		state[0],
 		state[4],
@@ -111,7 +111,7 @@ func blakeRound(state []uint32, message [16]uint32, sigma [16]uint8) []uint32 {
 	return state
 }
 
-func Blake2sCompress(h [8]uint32, message [16]uint32, t0 uint32, t1 uint32, f0 uint32, f1 uint32) []uint32 {
+func Blake2sCompress(h [8]uint32, message []uint32, t0 uint32, t1 uint32, f0 uint32, f1 uint32) []uint32 {
 	iv := IV()
 
 	state := make([]uint32, 0, 16)
