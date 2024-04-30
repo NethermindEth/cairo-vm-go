@@ -61,20 +61,22 @@ func createSearchSortedLowerHinter(resolver hintReferenceResolver) (hinter.Hinte
 func newSearchSortedLowerHint(array_ptr, elm_size, n_elms, key, index hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SearchSortedLower",
-		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 
 			//> array_ptr = ids.array_ptr
-			array_ptr, err := hinter.ResolveAsFelt(vm, array_ptr)
+			array_ptr, err := hinter.ResolveAsAddress(vm, array_ptr)
 			if err != nil {
 				return err
 			}
 
 			//> elm_size = ids.elm_size
 			elm_size, err := hinter.ResolveAsFelt(vm, elm_size)
-
+			if err != nil {
+				return err
+			}
 			//> assert isinstance(elm_size, int) and elm_size > 0, \
 			//> 	f'Invalid value for elm_size. Got: {elm_size}.'
-			if err != nil && utils.FeltLt(&utils.FeltZero, elm_size) {
+			if elm_size.IsZero() {
 				return fmt.Errorf("Invalid value for elm_size. Got: %v.", elm_size)
 			}
 
@@ -82,19 +84,31 @@ func newSearchSortedLowerHint(array_ptr, elm_size, n_elms, key, index hinter.Res
 			//> assert isinstance(n_elms, int) and n_elms >= 0, \
 			//> 	f'Invalid value for n_elms. Got: {n_elms}.'
 			n_elms, err := hinter.ResolveAsFelt(vm, n_elms)
-			if err != nil && utils.FeltLt(&utils.FeltZero, n_elms) {
+
+			if err != nil {
+				return err
+			}
+			if n_elms.IsZero() {
 				return fmt.Errorf("Invalid value for n_elms. Got: %v.", n_elms)
 			}
 
-			var __find_element_max_size *fp.Element
-			// TODO: How to do this --> if __find_element_max_size is a variable?
+			elementMaxSize, err := ctx.ScopeManager.GetVariableValue("__find_element_max_size")
+			if err != nil {
+				return err
+			}
+
+			elementMaxSizeFelt, ok := elementMaxSize.(*fp.Element)
+			if !ok {
+				return err
+			}
+
 			//> if '__find_element_max_size' in globals():
 			//> 	assert n_elms <= __find_element_max_size, \
 			//> 		f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \
 			//> 		f'Got: n_elms={n_elms}.'
 
-			if !utils.FeltLe(n_elms, __find_element_max_size) {
-				return fmt.Errorf("find_element() can only be used with n_elms<=%v. Got: n_elms=%v.", __find_element_max_size, n_elms)
+			if !utils.FeltLe(n_elms, elementMaxSizeFelt) {
+				return fmt.Errorf("find_element() can only be used with n_elms<=%v. Got: n_elms=%v.", elementMaxSizeFelt, n_elms)
 			}
 
 			key, err := hinter.ResolveAsFelt(vm, key)
@@ -106,15 +120,22 @@ func newSearchSortedLowerHint(array_ptr, elm_size, n_elms, key, index hinter.Res
 			if err != nil {
 				return err
 			}
-			//> for i in range(n_elms):
-			//> 	if memory[array_ptr + elm_size * i] >= ids.key:
-			//> 		ids.index = i
-			//> 		break
-			for i := uint64(0); i < n_elms.Uint64(); i++ {
-				v := memory.MemoryValueFromFieldElement(utils.Felt127.Add(array_ptr, elm_size))
-				e, _ := v.FieldElement()
 
-				if utils.FeltLt(key, e) {
+			//> for i in range(n_elms):
+			for i := uint64(0); i < n_elms.Uint64(); i++ {
+				array_ptr.AddOffset(int16(elm_size.Uint64()) * int16(i))
+				arrayPtrValue := memory.MemoryValueFromMemoryAddress(array_ptr)
+				arrayValue, err := arrayPtrValue.FieldElement()
+
+				if err != nil {
+					return err
+				}
+
+				fe := arrayValue
+				//> 	if memory[array_ptr + elm_size * i] >= ids.key:
+				if utils.FeltLt(key, fe) {
+					//> 		ids.index = i
+					//> 		break
 					indexValue := memory.MemoryValueFromFieldElement((new(fp.Element).SetInt64(int64(i))))
 					return vm.Memory.WriteToAddress(&indexAddr, &indexValue)
 				}
