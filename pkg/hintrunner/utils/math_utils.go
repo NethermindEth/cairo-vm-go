@@ -27,6 +27,8 @@ func EcDoubleSlope(pointX, pointY, alpha, prime *big.Int) (big.Int, error) {
 }
 
 func LineSlope(point_aX, point_aY, point_bX, point_bY, prime *big.Int) (big.Int, error) {
+	// https://github.com/lambdaclass/cairo-vm_in_go/blob/31c3628bc10ebc1628685b3cdfa72d0e938b533e/pkg/builtins/ec_op.go#L258
+
 	modValue := new(big.Int).Mod(new(big.Int).Sub(point_aX, point_aY), prime)
 
 	if modValue.Cmp(big.NewInt(0)) == 0 {
