@@ -187,12 +187,16 @@ func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt hint
 			padding = append(padding, 0, 0xffffffff)
 			padding = append(padding, output[:]...)
 			fullPadding := padding
-			for i := uint32(1); i < uint32(nPackedInstances); i++ {
+			for i := uint8(1); i < uint8(nPackedInstances); i++ {
 				fullPadding = append(fullPadding, padding...)
 			}
 			for i, val := range fullPadding {
 				mv := mem.MemoryValueFromInt(val)
-				err = vm.Memory.Write(blake2sPtrEnd.SegmentIndex, blake2sPtrEnd.Offset+uint64(i), &mv)
+				memWithOffset, err := blake2sPtrEnd.AddOffset(int16(i))
+				if err != nil {
+					return err
+				}
+				err = vm.Memory.Write(blake2sPtrEnd.SegmentIndex, memWithOffset.Offset, &mv)
 				if err != nil {
 					return err
 				}
