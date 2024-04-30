@@ -1,6 +1,8 @@
 package zero
 
 import (
+	"fmt"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -122,7 +124,7 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 
 			positions, ok := positionsInterface.([]int)
 			if !ok {
-				return err
+				return fmt.Errorf("cannot cast positionsInterface to []int")
 			}
 
 			new_current_pos, err := utils.Pop(&positions)
@@ -137,7 +139,7 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 
 			current_pos_int, ok := current_pos.(int)
 			if !ok {
-				return err
+				return fmt.Errorf("cannot cast current_pos to int")
 			}
 
 			last_pos, err := ctx.ScopeManager.GetVariableValue("last_pos")
