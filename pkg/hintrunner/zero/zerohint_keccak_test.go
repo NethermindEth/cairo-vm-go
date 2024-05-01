@@ -9,7 +9,7 @@ import (
 
 func TestZeroHintKeccak(t *testing.T) {
 	runHinterTests(t, map[string][]hintTestCase{
-		"newKeccakWriteArgs": {
+		"KeccakWriteArgs": {
 			{
 				operanders: []*hintOperander{
 					{Name: "inputs", Kind: apRelative, Value: addr(7)},
@@ -189,6 +189,18 @@ func TestZeroHintKeccak(t *testing.T) {
 						feltUint64(10),
 						feltUint64(10),
 					}),
+			},
+		},
+		"BlockPermutation": {
+			{
+				operanders: []*hintOperander{
+					{Name: "KECCAK_STATE_SIZE_FELTS", Kind: apRelative, Value: feltUint64(25)},
+					{Name: "keccak_ptr", Kind: fpRelative, Value: addr(32)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBlockPermutationHint(ctx.operanders["KECCAK_STATE_SIZE_FELTS"], ctx.operanders["keccak_ptr"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {},
 			},
 		},
 	})
