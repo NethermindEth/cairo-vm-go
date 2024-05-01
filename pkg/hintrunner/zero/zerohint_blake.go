@@ -178,7 +178,7 @@ func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt hint
 			message := make([]uint32, inputBlockFelt)
 			modifiedIv := utils.IV()
 			modifiedIv[0] = modifiedIv[0] ^ 0x01010020
-			output := utils.Blake2sCompress(modifiedIv, message, 0, 0, 0xffffffff, 0)
+			output := utils.Blake2sCompress(message, modifiedIv, 0, 0, 0xffffffff, 0)
 			padding := modifiedIv[:]
 			padding = append(padding, message[:]...)
 			padding = append(padding, 0, 0xffffffff)
