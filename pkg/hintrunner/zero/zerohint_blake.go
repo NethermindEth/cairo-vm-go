@@ -156,23 +156,20 @@ func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt hint
 			if err != nil {
 				return err
 			}
-			nPackedInstancesElement, err := hinter.ResolveAsFelt(vm, nPackedInstances)
+			nPackedInstances, err := hinter.ResolveAsUint64(vm, nPackedInstances)
 			if err != nil {
 				return err
 			}
-			nPackedInstances := nPackedInstancesElement.Uint64()
 
 			// assert 0 <= _n_packed_instances < 20
 			if nPackedInstances >= 20 {
 				return fmt.Errorf("n_packed_instances should be in range [0, 20), got %d", nPackedInstances)
 			}
 
-			inputBlockFeltElement, err := hinter.ResolveAsFelt(vm, inputBlockFelt)
+			inputBlockFelt, err := hinter.ResolveAsUint64(vm, inputBlockFelt)
 			if err != nil {
 				return err
 			}
-
-			inputBlockFelt := inputBlockFeltElement.Uint64()
 
 			if inputBlockFelt >= 100 {
 				return fmt.Errorf("inputBlockFelt should be in range [0, 100), got %d", inputBlockFelt)
@@ -196,15 +193,14 @@ func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt hint
 				if err != nil {
 					return err
 				}
-				err = vm.Memory.Write(blake2sPtrEnd.SegmentIndex, memWithOffset.Offset, &mv)
+				err = vm.Memory.WriteToAddress(&memWithOffset, &mv)
 				if err != nil {
 					return err
 				}
 			}
-			return err
+			return nil
 		},
 	}
-
 }
 
 func createBlake2sFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
@@ -216,10 +212,10 @@ func createBlake2sFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter,
 	if err != nil {
 		return nil, err
 	}
-	message, err := resolver.GetResOperander("INPUT_BLOCK_FELTS")
+	inputBlockFelt, err := resolver.GetResOperander("INPUT_BLOCK_FELTS")
 	if err != nil {
 		return nil, err
 	}
 
-	return newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, message), nil
+	return newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt), nil
 }
