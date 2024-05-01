@@ -147,6 +147,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createAllocSegmentHinter(resolver)
 	case vmEnterScopeCode:
 		return createVMEnterScopeHinter(resolver)
+	case memcpyEnterScopeCode:
+		return createMemcpyEnterScopeHinter(resolver)
 	case vmExitScopeCode:
 		return createVMExitScopeHinter(resolver)
 	case testAssignCode:
