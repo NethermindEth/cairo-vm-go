@@ -593,6 +593,88 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
+		"EcDoubleAssignNewXV1": {
+			{
+				operanders: []*hintOperander{
+					{Name: "slope.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "slope.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "slope.d2", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.x.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.x.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.x.d2", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.y.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.y.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "point.y.d2", Kind: apRelative, Value: &utils.FeltZero},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"slope": bigIntString("0", 10),
+					"x":     bigIntString("0", 10),
+					"y":     bigIntString("0", 10),
+					"value": bigIntString("0", 10),
+					"new_x": bigIntString("0", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					// random values
+					{Name: "slope.d0", Kind: apRelative, Value: feltString("75893937474639987141425142")},
+					{Name: "slope.d1", Kind: apRelative, Value: feltString("99484727364721283590428239")},
+					{Name: "slope.d2", Kind: apRelative, Value: feltString("89273748821013318302045802")},
+					{Name: "point.x.d0", Kind: apRelative, Value: feltUint64(84737)},
+					{Name: "point.x.d1", Kind: apRelative, Value: feltUint64(823758498371235)},
+					{Name: "point.x.d2", Kind: apRelative, Value: feltUint64(7684847382874)},
+					{Name: "point.y.d0", Kind: apRelative, Value: feltUint64(3244612)},
+					{Name: "point.y.d1", Kind: apRelative, Value: feltUint64(83478234123)},
+					{Name: "point.y.d2", Kind: apRelative, Value: feltString("6837128718738732781737")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"x":     bigIntString("46003884165973832456933262296354598115596485770084020998681742081", 10),
+					"y":     bigIntString("40929176850754749976490215751286880883172677177113744707710685171812500036", 10),
+					"value": bigIntString("112687466468745171568302397569403892765553175022602416609657454443897975462107", 10),
+					"slope": bigIntString("534420398377282472759697724574779677488837473675614769635757753630086524221430", 10),
+					"new_x": bigIntString("112687466468745171568302397569403892765553175022602416609657454443897975462107", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					// GetSecPBig()
+					{Name: "slope.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "slope.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "slope.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point.x.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point.x.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point.x.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point.y.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point.y.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+					{Name: "point.y.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					hinter.InitializeScopeManager(ctx, map[string]any{})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"x":     bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
+					"y":     bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
+					"value": bigIntString("30230181511926491618309110200401529297651013854327841200453332701540948849717", 10),
+					"slope": bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
+					"new_x": bigIntString("30230181511926491618309110200401529297651013854327841200453332701540948849717", 10),
+				}),
+			},
+		},
 		"ComputeSlopeV1": {
 			{
 				operanders: []*hintOperander{
