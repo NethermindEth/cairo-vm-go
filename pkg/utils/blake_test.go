@@ -92,7 +92,35 @@ func TestMix(t *testing.T) {
 	}
 }
 
-func TestBlake2sComppress(t *testing.T) {
+func TestBlakeRound(t *testing.T) {
+	// Define the input state, message, and sigma
+	state := []uint32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	message := []uint32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	sigma := [16]uint8{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
+
+	// Define the expected output state
+	expectedState := []uint32{
+		0x5849469, 0x4e638e4e, 0xe6efc8fd, 0x34221068,
+		0x34a1b145, 0xaf561afd, 0xe0191700, 0x15eb82f4,
+		0x9858384d, 0xb056d8f3, 0xfb0876f4, 0x3bf38c28,
+		0xa5058931, 0xaba547ee, 0xfb61cd56, 0x16cab86a,
+	}
+	// Call the blakeRound function
+	result := blakeRound(state, message, sigma)
+
+	// Compare the result with the expected output
+	if len(result) != len(expectedState) {
+		t.Errorf("Unexpected length of result. Got %d, expected %d", len(result), len(expectedState))
+	}
+
+	for i := 0; i < len(result); i++ {
+		if result[i] != expectedState[i] {
+			t.Errorf("Mismatch at index %d. Got %x, expected %x", i, result[i], expectedState[i])
+		}
+	}
+}
+
+func TestBlake2sCompress(t *testing.T) {
 	testCases := []struct {
 		name           string
 		message        []uint32
