@@ -86,6 +86,7 @@ const (
 	keccakWriteArgs string = "segments.write_arg(ids.inputs, [ids.low % 2 ** 64, ids.low // 2 ** 64])\nsegments.write_arg(ids.inputs + 2, [ids.high % 2 ** 64, ids.high // 2 ** 64])"
 
 	// ------ Dictionaries hints related code ------
+	squashDictInnerAssertLenKeys string = "assert len(keys) == 0"
 
 	// ------ Other hints related code ------
 	allocSegmentCode     string = "memory[ap] = segments.add()"
