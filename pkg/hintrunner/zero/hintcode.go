@@ -57,6 +57,7 @@ const (
 
 	// ------ Usort hints related code ------
 	usortEnterScopeCode string = "vm_enter_scope(dict(__usort_max_size = globals().get('__usort_max_size')))"
+	usortVerifyCode     string = "last_pos = 0\npositions = positions_dict[ids.value][::-1]"
 
 	// ------ Elliptic Curve hints related code ------
 	ecNegateCode            string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\ny = pack(ids.point.y, PRIME) % SECP_P\n# The modulo operation in python always returns a nonnegative number.\nvalue = (-y) % SECP_P"
@@ -64,6 +65,7 @@ const (
 	fastEcAddAssignNewYCode string = "value = new_y = (slope * (x0 - new_x) - y0) % SECP_P"
 	fastEcAddAssignNewXCode string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\nslope = pack(ids.slope, PRIME)\nx0 = pack(ids.point0.x, PRIME)\nx1 = pack(ids.point1.x, PRIME)\ny0 = pack(ids.point0.y, PRIME)\n\nvalue = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P"
 	ecDoubleSlopeV1Code     string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\nfrom starkware.python.math_utils import ec_double_slope\n\n# Compute the slope.\nx = pack(ids.point.x, PRIME)\ny = pack(ids.point.y, PRIME)\nvalue = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)"
+	ecDoubleAssignNewXV1    string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\nslope = pack(ids.slope, PRIME)\nx = pack(ids.point.x, PRIME)\ny = pack(ids.point.y, PRIME)\n\nvalue = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P"
 
 	// ------ Signature hints related code ------
 	verifyECDSASignatureCode  string = "ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))"
@@ -84,8 +86,10 @@ const (
 	// ------ Dictionaries hints related code ------
 
 	// ------ Other hints related code ------
+
 	allocSegmentCode      string = "memory[ap] = segments.add()"
+  memcpyEnterScopeCode string = "vm_enter_scope({'n': ids.len})"
+  searchSortedLowerCode string = "array_ptr = ids.array_ptr\nelm_size = ids.elm_size\nassert isinstance(elm_size, int) and elm_size > 0, \\n    f'Invalid value for elm_size. Got: {elm_size}.'\n\nn_elms = ids.n_elms\nassert isinstance(n_elms, int) and n_elms >= 0, \\n    f'Invalid value for n_elms. Got: {n_elms}.'\nif '__find_element_max_size' in globals():\n    assert n_elms <= __find_element_max_size, \\n    f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \\n    f'Got: n_elms={n_elms}.'\n\nfor i in range(n_elms):\nif memory[array_ptr + elm_size * i] >= ids.key:\n    ids.index = i\n    break\nelse:\n    ids.index = n_elms"
 	vmEnterScopeCode      string = "vm_enter_scope()"
 	vmExitScopeCode       string = "vm_exit_scope()"
-	searchSortedLowerCode string = "array_ptr = ids.array_ptr\nelm_size = ids.elm_size\nassert isinstance(elm_size, int) and elm_size > 0, \\n    f'Invalid value for elm_size. Got: {elm_size}.'\n\nn_elms = ids.n_elms\nassert isinstance(n_elms, int) and n_elms >= 0, \\n    f'Invalid value for n_elms. Got: {n_elms}.'\nif '__find_element_max_size' in globals():\n    assert n_elms <= __find_element_max_size, \\n    f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \\n    f'Got: n_elms={n_elms}.'\n\nfor i in range(n_elms):\nif memory[array_ptr + elm_size * i] >= ids.key:\n    ids.index = i\n    break\nelse:\n    ids.index = n_elms"
 )

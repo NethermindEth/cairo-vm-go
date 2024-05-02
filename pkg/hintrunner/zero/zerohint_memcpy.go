@@ -25,6 +25,29 @@ func createVMEnterScopeHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 	}, nil
 }
 
+func newMemcpyEnterScopeHint(len hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "MemcpyEnterScope",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//>  vm_enter_scope({'n': ids.len})
+			len, err := hinter.ResolveAsFelt(vm, len)
+			if err != nil {
+				return err
+			}
+			ctx.ScopeManager.EnterScope(map[string]any{"n": len})
+			return nil
+		},
+	}
+}
+
+func createMemcpyEnterScopeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	len, err := resolver.GetResOperander("len")
+	if err != nil {
+		return nil, err
+	}
+	return newMemcpyEnterScopeHint(len), nil
+}
+
 func createVMExitScopeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	return &GenericZeroHinter{
 		Name: "VMExitScope",
