@@ -92,6 +92,8 @@ func TestMix(t *testing.T) {
 	}
 }
 
+// Result from CairoVM's blake2s implementation in Rust by Lambdaclass
+// https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=987596d755c09f8803a097d29594f92c
 func TestBlakeRound(t *testing.T) {
 	// Define the input state, message, and sigma
 	state := []uint32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
