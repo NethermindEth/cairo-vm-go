@@ -1,6 +1,7 @@
 package zero
 
 import (
+	"math"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -11,8 +12,11 @@ func TestZeroHintOthers(t *testing.T) {
 		"SearchSortedLower": {
 			{
 				operanders: []*hintOperander{
-					{Name: "arrayPtr", Kind: apRelative, Value: addr(0)},
+					{Name: "arrayPtr", Kind: apRelative, Value: addr(5)},
 					{Name: "elmSize", Kind: fpRelative, Value: feltInt64(0)},
+					{Name: "nElms", Kind: uninitialized},
+					{Name: "index", Kind: uninitialized},
+					{Name: "key", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSearchSortedLowerHint(
@@ -27,9 +31,11 @@ func TestZeroHintOthers(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "arrayPtr", Kind: apRelative, Value: addr(0)},
+					{Name: "arrayPtr", Kind: apRelative, Value: addr(5)},
 					{Name: "elmSize", Kind: fpRelative, Value: feltInt64(4)},
 					{Name: "nElms", Kind: fpRelative, Value: feltInt64(0)},
+					{Name: "index", Kind: uninitialized},
+					{Name: "key", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSearchSortedLowerHint(
@@ -47,6 +53,8 @@ func TestZeroHintOthers(t *testing.T) {
 					{Name: "arrayPtr", Kind: apRelative, Value: addr(0)},
 					{Name: "elmSize", Kind: fpRelative, Value: feltInt64(4)},
 					{Name: "nElms", Kind: fpRelative, Value: feltInt64(4)},
+					{Name: "index", Kind: fpRelative, Value: feltInt64(2)},
+					{Name: "key", Kind: fpRelative, Value: feltInt64(2)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSearchSortedLowerHint(
@@ -61,14 +69,15 @@ func TestZeroHintOthers(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
+					{Name: "array.el0", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "array.el1", Kind: apRelative, Value: feltInt64(1)},
+					{Name: "array.el2", Kind: apRelative, Value: feltInt64(2)},
+					{Name: "array.el3", Kind: apRelative, Value: feltInt64(3)},
 					{Name: "arrayPtr", Kind: apRelative, Value: addr(0)},
 					{Name: "elmSize", Kind: fpRelative, Value: feltInt64(4)},
 					{Name: "nElms", Kind: fpRelative, Value: feltInt64(8)},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					// make __find_element_max_size exist in scope
-					maxElementSize := feltInt64(2)
-					ctx.ScopeManager.EnterScope(map[string]any{"__find_element_max_size": maxElementSize})
+					{Name: "index", Kind: fpRelative, Value: feltInt64(2)},
+					{Name: "key", Kind: fpRelative, Value: feltInt64(2)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSearchSortedLowerHint(
@@ -84,14 +93,19 @@ func TestZeroHintOthers(t *testing.T) {
 
 			{
 				operanders: []*hintOperander{
+					{Name: "array.el0", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "array.el1", Kind: apRelative, Value: feltInt64(1)},
+					{Name: "array.el2", Kind: apRelative, Value: feltInt64(2)},
+					{Name: "array.el3", Kind: apRelative, Value: feltInt64(3)},
 					{Name: "arrayPtr", Kind: apRelative, Value: addr(0)},
 					{Name: "elmSize", Kind: fpRelative, Value: feltInt64(4)},
-					{Name: "nElms", Kind: fpRelative, Value: feltInt64(4)},
+					{Name: "nElms", Kind: fpRelative, Value: feltInt64(9)},
+					{Name: "index", Kind: fpRelative, Value: feltInt64(3)},
+					{Name: "key", Kind: fpRelative, Value: feltInt64(0)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// make __find_element_max_size exist in scope
-					maxElementSize := feltInt64(8)
-					ctx.ScopeManager.EnterScope(map[string]any{"__find_element_max_size": maxElementSize})
+					ctx.ScopeManager.EnterScope(map[string]any{"__find_element_max_size": math.Pow(2, 20)})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSearchSortedLowerHint(
