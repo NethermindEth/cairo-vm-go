@@ -195,7 +195,7 @@ func TestZeroHintKeccak(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "KECCAK_STATE_SIZE_FELTS", Kind: apRelative, Value: feltUint64(25)},
-					{Name: "keccak_ptr", Kind: fpRelative, Value: addr(32)},
+					{Name: "keccak_ptr", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newBlockPermutationHint(ctx.operanders["KECCAK_STATE_SIZE_FELTS"], ctx.operanders["keccak_ptr"])
