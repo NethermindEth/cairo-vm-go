@@ -9,7 +9,7 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func newUsortEnterScopeHint() hinter.Hinter {
+func newUsortEnterScopeHinter() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortEnterScope",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -30,7 +30,36 @@ func newUsortEnterScopeHint() hinter.Hinter {
 }
 
 func createUsortEnterScopeHinter() (hinter.Hinter, error) {
-	return newUsortEnterScopeHint(), nil
+	return newUsortEnterScopeHinter(), nil
+}
+
+func newUsortVerifyMultiplicityAssertHinter() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "UsortVerifyMultiplicityAssert",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> assert len(positions) == 0
+			positionsInterface, err := ctx.ScopeManager.GetVariableValue("positions")
+
+			if err != nil {
+				return err
+			}
+
+			positions, ok := positionsInterface.([]uint64)
+			if !ok {
+				return fmt.Errorf("casting positions into an array failed")
+			}
+
+			if len(positions) != 0 {
+				return fmt.Errorf("assertion `len(positions) == 0` failed")
+			}
+
+			return nil
+		},
+	}
+}
+
+func createUsortVerifyMultiplicityAssertHinter() (hinter.Hinter, error) {
+	return newUsortEnterScopeHinter(), nil
 }
 
 func newUsortVerifyHinter(value hinter.ResOperander) hinter.Hinter {
