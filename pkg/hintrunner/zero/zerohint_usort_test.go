@@ -26,11 +26,10 @@ func TestZeroHintUsort(t *testing.T) {
 		"UsortVerifyMultiplicityAssert": {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{
-						"positions": []uint64{
-							1,
-						},
-					})
+					err := ctx.ScopeManager.AssignVariable("positions", []uint64{1})
+					if err != nil {
+						panic(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityAssertHinter()
@@ -39,9 +38,10 @@ func TestZeroHintUsort(t *testing.T) {
 			},
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
-						"positions": []uint64{},
-					})
+					err := ctx.ScopeManager.AssignVariable("positions", []uint64{})
+					if err != nil {
+						panic(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityAssertHinter()
@@ -52,11 +52,12 @@ func TestZeroHintUsort(t *testing.T) {
 		"UsortVerify": {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
-						"positions_dict": map[fp.Element][]uint64{
-							*feltUint64(0): {1, 2, 3},
-						},
+					err := ctx.ScopeManager.AssignVariable("positions_dict", map[fp.Element][]uint64{
+						*feltUint64(0): {1, 2, 3},
 					})
+					if err != nil {
+						panic(err)
+					}
 				},
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(0)},
