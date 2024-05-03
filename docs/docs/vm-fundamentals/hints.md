@@ -138,7 +138,7 @@ During the proof generation process, the prover uses hints to generate additiona
 The key is the implementation of relevant and accurate hints that assist the prover or sequencers in their respective tasks.
 
 Example:
-The 'random' instruction generates a random number, which can be different each time of instruction execution. The verifier cannot implement these instructions, as it would require access to nondeterministic information, which would beat the purpose of the zero-knowledge proof.
+The *'random'* instruction generates a random number, which can be different each time of instruction execution. The verifier cannot implement these instructions, as it would require access to nondeterministic information, which would beat the purpose of the zero-knowledge proof.
 To solve this problem, Cairo uses hints to instruct the prover on how to handle nondeterministic instructions. The prover will execute the nondeterministic instructions and provide the verifier with enough information to check whether or not the program is accurate without revealing any sensitive information.
 Example:
 Let's consider a Cairo function that calculates the factorial of a given input *`n`*:
@@ -156,11 +156,9 @@ In this code, the hint *@public* indicates that the *`n`* factorial should be pu
 The provers/sequencers will utilize the hint to generate a proof or sequence of instructions for the function to ensure maximum optimization. The verifier will check that the generated proof or sequence of instructions has correctly calculated the factorial of the input *`n`* or any other specification is satisfied.
 
 ## IMPLEMENTATING HINTS IN CAIRO VIRTUAL MACHINE
-
-IMPLEMENTING HINTS IN CAIRO VIRTUAL MACHINE
-      
+     
  In Cairo Virtual Machine, hints are accepted and recognized by its code. 
-Hints are implemented using the *`%{....%}`* syntax, which allows you to insert Python code that is only executed by the prover. When implementing hints, the *variable naming convention* should be considered. The method to handle specific hints should be outlined like this *create<hintName>Hinter*. Hints should be grouped by functionality in Cairo programs. The structure returned should implement the interface. Implementing the hint means you have to write code in Go that has the same behavior as the code of the hint in Python. Unit tests are added to check if the behavior of your code is correct.
+Hints are implemented using the *%{...%}* syntax, which allows you to insert Python code that is only executed by the prover. When implementing hints, the *'variable naming convention'* should be considered. The method to handle specific hints should be outlined like this; *'create hintName Hinter'*. Hints should be grouped by functionality in Cairo programs. The structure returned should implement the interface. Implementing the hint means you have to write code in Go that has the same behavior as the code of the hint in Python. Unit tests are added to check if the behavior of your code is correct.
 
 Examples of how to implement a hint in cairo:
 
