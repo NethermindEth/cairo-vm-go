@@ -154,7 +154,7 @@ Let's consider a Cairo function that calculates the factorial of a given input *
 In this code, the hint *@public* indicates that the *`n`* factorial should be publicly available in the Cairo program.
 The provers/sequencers will utilize the hint to generate a proof or sequence of instructions for the function to ensure maximum optimization. The verifier will check that the generated proof or sequence of instructions has correctly calculated the factorial of the input *`n`* or any other specification is satisfied.
 
-## IMPLEMENTATING HINTS IN CAIRO VIRTUAL MACHINE
+## IMPLEMENTING HINTS IN CAIRO VIRTUAL MACHINE
      
  In Cairo Virtual Machine, hints are accepted and recognized by its code. 
 Hints are implemented using the *%{...%}* syntax, which allows you to insert Python code that is only executed by the prover. When implementing hints, the *'variable naming convention'* should be considered. The method to handle specific hints should be outlined like this; *'create hintName Hinter'*. Hints should be grouped by functionality in Cairo programs. The structure returned should implement the interface. Implementing the hint means you have to write code in Go that has the same behavior as the code of the hint in Python. Unit tests are added to check if the behavior of your code is correct.
