@@ -52,10 +52,9 @@ func TestZeroHintUsort(t *testing.T) {
 		"UsortVerify": {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
-						"positions_dict": map[fp.Element][]uint64{
-							*feltUint64(0): {1, 2, 3},
-						},
+					// Since the default scope is already initialized, we simply assign new variables as needed
+					ctx.ScopeManager.AssignVariable("positions_dict", map[fp.Element][]uint64{
+						*feltUint64(0): {1, 2, 3},
 					})
 				},
 				operanders: []*hintOperander{
@@ -67,15 +66,15 @@ func TestZeroHintUsort(t *testing.T) {
 				check: func(t *testing.T, ctx *hintTestContext) {
 					positions, err := ctx.runnerContext.ScopeManager.GetVariableValue("positions")
 					require.NoError(t, err)
-
+		
 					require.Equal(t, []uint64{3, 2, 1}, positions)
-
+		
 					lastPos, err := ctx.runnerContext.ScopeManager.GetVariableValue("last_pos")
 					require.NoError(t, err)
-
+		
 					require.Equal(t, 0, lastPos)
 				},
 			},
 		},
-	})
-}
+	}) // end of runHinterTests
+} // end of TestZeroHintUsort function
