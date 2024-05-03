@@ -160,7 +160,7 @@ The provers/sequencers will utilize the hint to generate a proof or sequence of 
 IMPLEMENTING HINTS IN CAIRO VIRTUAL MACHINE
       
  In Cairo Virtual Machine, hints are accepted and recognized by its code. 
-Hints are implemented using the `%{....%}` syntax, which allows you to insert Python code that is only executed by the prover. When implementing hints, the 'variable naming convention' should be considered. The method to handle specific hints should be outlined like this `create<hintName>Hinter`. Hints should be grouped by functionality in Cairo programs. The structure returned should implement the interface. Implementing the hint means you have to write code in Go that has the same behavior as the code of the hint in Python. Unit tests are added to check if the behavior of your code is correct.
+Hints are implemented using the *`%{....%}`* syntax, which allows you to insert Python code that is only executed by the prover. When implementing hints, the *variable naming convention* should be considered. The method to handle specific hints should be outlined like this *`create<hintName>Hinter`*. Hints should be grouped by functionality in Cairo programs. The structure returned should implement the interface. Implementing the hint means you have to write code in Go that has the same behavior as the code of the hint in Python. Unit tests are added to check if the behavior of your code is correct.
 
 Examples of how to implement a hint in cairo:
 
