@@ -23,12 +23,13 @@ func TestZeroHintUsort(t *testing.T) {
 				check: varValueInScopeEquals("__usort_max_size", feltUint64(1)),
 			},
 		},
-
 		"UsortVerifyMultiplicityAssert": {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					// Assign a non-empty array to the "positions" variable to simulate an error condition
-					ctx.ScopeManager.AssignVariable("positions", []uint64{1})
+					err := ctx.ScopeManager.AssignVariable("positions", []uint64{1})
+					if err != nil {
+						panic(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityAssertHinter()
@@ -37,8 +38,10 @@ func TestZeroHintUsort(t *testing.T) {
 			},
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					// Assign an empty array to the "positions" variable for a scenario where no error should occur
-					ctx.ScopeManager.AssignVariable("positions", []uint64{})
+					err := ctx.ScopeManager.AssignVariable("positions", []uint64{})
+					if err != nil {
+						panic(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityAssertHinter()
@@ -46,14 +49,15 @@ func TestZeroHintUsort(t *testing.T) {
 				errCheck: errorIsNil,
 			},
 		},
-
 		"UsortVerify": {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					// Since the default scope is already initialized, we simply assign new variables as needed
-					ctx.ScopeManager.AssignVariable("positions_dict", map[fp.Element][]uint64{
+					err := ctx.ScopeManager.AssignVariable("positions_dict", map[fp.Element][]uint64{
 						*feltUint64(0): {1, 2, 3},
 					})
+					if err != nil {
+						panic(err)
+					}
 				},
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(0)},
@@ -74,5 +78,5 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 			},
 		},
-	}) // end of runHinterTests
-} // end of TestZeroHintUsort function
+	})
+}
