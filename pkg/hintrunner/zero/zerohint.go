@@ -131,6 +131,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createFastEcAddAssignNewXHinter(resolver)
 	case ecDoubleSlopeV1Code:
 		return createEcDoubleSlopeV1Hinter(resolver)
+	case computeSlopeV1Code:
+		return createComputeSlopeV1Hinter(resolver)
+	case ecDoubleAssignNewXV1:
+		return createEcDoubleAssignNewXV1Hinter(resolver)
 		// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
@@ -142,11 +146,20 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		// Usort hints
 	case usortEnterScopeCode:
 		return createUsortEnterScopeHinter()
+	case usortVerifyMultiplicityAssertCode:
+		return createUsortVerifyMultiplicityAssertHinter()
+	case usortVerifyCode:
+		return createUsortVerifyHinter(resolver)
+		// Dictionaries hints
+	case squashDictInnerAssertLenKeys:
+		return createSquashDictInnerAssertLenKeysHinter()
 		// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)
 	case vmEnterScopeCode:
 		return createVMEnterScopeHinter(resolver)
+	case memcpyEnterScopeCode:
+		return createMemcpyEnterScopeHinter(resolver)
 	case vmExitScopeCode:
 		return createVMExitScopeHinter(resolver)
 	case testAssignCode:
