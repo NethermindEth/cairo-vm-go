@@ -12,78 +12,72 @@ This section provides an overview of the builtins functions available in the Cai
 
 Builtins are predefined optimized low-level execution units which are added to the Cairo CPU board to perform predefined computations which are expensive to perform in Cairo.
 
-Imagine the Cairo VM as a powerful computer. Regular Cairo instructions are like the basic building blocks the computer can understand to perform calculations, but for some complex tasks, these building blocks can be slow to put together. Builtins are like special hardware additions to the CPU that allow the computer to perform specific tasks much faster. Just like a computer with a powerful graphics card runs games smoother, builtins help write efficient Cairo programs.
-
 ### Builtins and Cairo memory
 
-**Builtins act as special extensions to the Cairo VM's memory, enforcing specific rules on designated areas.** 
+Communication between the CPU and built-in functionalities occurs via memory-mapped I/O. Each builtin is allocated a contiguous memory region and enforces specific constraints on the data residing within that area. The Pedersen builtin is a good example to explain this.
 
-Imagine the VM memory as a filing cabinet, builtins are like add-on modules that create special folders within the cabinet and each builtin gets its own folder and dictates the rules for what can be stored there. For instance, a "range-check" builtin might create a folder where all values must be between 0 and a very large number.
+Pedersen builtin establishes that:
 
-**Communication between the CPU and builtins happens entirely through this memory.** 
+```
+[p + 2] = hash([p + 0], [p + 1])
+[p + 5] = hash([p + 3], [p + 4])
+[p + 8] = hash([p + 6], [p + 7])
+```
 
-The CPU doesn't directly call builtins, instead, it treats the builtins memory folder like a special device to use a builtin. A function gets a pointer to the builtins folder as an argument, the function then reads or writes data to specific cells within the folder, following the rules set by the builtin. This method is similar to how external devices interact with a computer, they don't talk directly to the CPU but use the memory space for communication.
+The Cairo code may read or write from this memory cells to “invoke” the builtin. The following code verifies that `hash(x, y) == z`
 
-**Adding builtins doesn't require modifying the CPU itself.** 
+```
+// Write the value of x to [p + 0].
+x=[p]; // Write the value of y to [p + 1].
+y=[p + 1]; // The builtin makes that [p + 2] == hash([p + 0], [p + 1]).
+z=[p + 2];
+```
 
-Both the CPU and builtins share the same memory space, making them efficient tools. Additionally, each function using a builtin receives a pointer and is responsible for returning a pointer to the next unused cell within the builtin's memory area. This ensures proper management of space allocated for each builtin instance.
+Cairo memory immutability requires a careful usage of builtin instances because memory locations like `[p + 0]`, `[p + 1]`, and `[p + 2]` are used for a single hash computation, they cannot be reused for subsequent calculations and needs to tracking an unused memory location pointer (`hash_ptr`).
 
-### General types of builtins in Cairo VM
+By convention, the functions that utilizing builtins receive a pointer to the unused memory location as an argument and return an updated pointer reflecting the next available memory slot. For example:
 
-- **Mathematical builtins.**
-    
-    These perform various mathematical operations, potentially faster than using regular Cairo instructions. Examples include addition, subtraction, multiplication, bitwise operations (AND, OR, XOR, etc.), and some even handle more complex operations like modular exponentiation.
-    
-- **Cryptographic builtins.**
-    
-    These handle cryptographic functions used in zk-STARK proofs. Examples include functions for hashing (like Keccak) and various elliptic curve cryptography operations. Some examples are:
-    
-    **→ Keccak hashing:**
-    
-    This builtin performs the Keccak hash function, a one-way function that creates a unique and fixed-size output from any input data. It's used to compress data and ensure its integrity in zk-STARK proofs.
-    
-    **→ Scalar multiplication:**
-    
-    This builtin performs point multiplication on elliptic curves, a fundamental operation in elliptic curve cryptography (ECC). ECC is used for secure communication and signature verification in zk-STARKs.
-    
-- **Memory management builtins.**
-    
-    These help manage memory allocation and deallocation within a Cairo program. This can be crucial for optimizing memory usage. Some examples are:
-    
-    **→ Memory allocation:**
-    
-    This builtin allocates a specific amount of memory within the Cairo VM for a program to use. This ensures the program doesn't try to access non-existent memory locations.
-    
-    **→ Memory deallocation:**
-    
-    This builtin frees up memory that is no longer needed by a program. This prevents memory leaks and optimizes memory usage for subsequent computations.
-    
-- **Comparison builtins.**
-    
-    These allow for comparisons between values, like checking if one value is greater than another. Some examples are:
-    
-    **→ Equal to:**
-    
-    This builtin checks if two felt values are identical. This is useful for conditional statements within a program.
-    
-    **→ Greater than:**
-    
-    This builtin checks if one felt value is greater than another. This allows for branching logic based on the relative size of values.
-    
+```
+func hash2(hash_ptr: felt*, x, y) -> (hash_ptr: felt*, z: felt) {
+  // Invoke the hash function.
+  x = [hash_ptr];
+  y = [hash_ptr + 1];
+  // Update pointer (increment by 3) and return result.
+  return (hash_ptr=hash_ptr + 3, z=[hash_ptr + 2]);
+}
+```
 
-### Specific builtins in Cairo VM
+On the other hand, Starkware Cairo library provides typed references for improved readability. Here's the code rewritten with `HashBuiltin` type like this example:
+
+```
+from starkware.cairo.common.cairo_builtins import HashBuiltin
+
+func hash2(hash_ptr: HashBuiltin*, x, y) -> (hash_ptr: HashBuiltin*, z: felt) {
+  let hash = hash_ptr;
+  // Invoke the hash function using typed access.
+  hash.x = x;
+  hash.y = y;
+  // Update pointer and return result.
+  return (hash_ptr=hash_ptr + HashBuiltin.SIZE, z=hash.result);
+}
+```
+
+### Some specific builtins in Cairo VM
 
 - **output**
     
     The output builtin, accessed with a pointer to type felt, is used for writing program outputs.
     
     ```rust
-    // Function to add two numbers and write the sum to the output
-    func add(a felt, b felt) -> (felt) {
-      let sum = a + b
-      // Use the output builtin to write the sum to the program's output
-      output(sum)
-      return sum
+    %builtins output 
+    //allows the program to write this output to a designated memory location.
+    from starkware.cairo.common.serialize import serialize_word
+    func main{output_ptr: felt*}() { 
+    //the output here indicate that parameter is a pointer to a memory location of 
+    //type felt*. The location is used to store the program output 
+        serialize_word(1234);
+        serialize_word(4321);
+        return ();
     }
     ```
     
@@ -150,83 +144,3 @@ Both the CPU and builtins share the same memory space, making them efficient too
       return result
     }
     ```
-    
-
-### How bulitins perform complex operations at the cost of extra constraints when proving
-
-While built-in functions offer convenience and efficiency, they may introduce constraints or limitations during testing and verification processes that are primarily related to security, correctness, and resource management. Since built-in functions often handle critical operations such as cryptographic hashing or signature verification, it's essential to ensure their correctness and robustness under various scenarios.
-
-Let's delve into how built-in functions achieve this and the constraints they impose.
-
-- **Constraints on Resource Usage.**
-    
-    Built-in functions often consume computational resources, such as CPU cycles and memory, to perform computations or execute algorithms. Efficient utilization of computational resources is essential for smart contracts to ensure timely execution and minimize transaction costs. However, excessive computational resource consumption can lead to performance degradation or denial-of-service vulnerabilities, where malicious actors exploit resource-intensive operations to disrupt contract execution.
-    
-    - **Testing Strategies for Resource Management.**
-        
-        To address resource usage constraints effectively, developers can employ various testing strategies focused on resource management:
-        
-        - **Stress Testing.**
-            
-            Stress testing involves subjecting the system to extreme workload conditions to evaluate its performance and resilience under high resource utilization. By pushing the system to its limits, stress tests help identify potential failure points or scalability limitations and enable developers to optimize resource management strategies accordingly.
-            
-        - **Resource Profiling.**
-            
-            Resource profiling involves analyzing the resource consumption patterns of built-in functions to identify areas for optimization. By profiling memory usage, CPU utilization, and other resource metrics, developers can pinpoint inefficiencies in resource management and prioritize optimization efforts to improve overall system performance.
-            
-        - **Benchmarking.**
-            
-            Benchmarking compares the performance of built-in functions against established benchmarks or performance targets to gauge their efficiency and effectiveness. By benchmarking resource usage metrics such as memory footprint and execution time, developers can assess the relative performance of different implementations and identify opportunities for optimization.
-            
-- **Constraints on Security.**
-    
-    Security is paramount in smart contract development, particularly in blockchain environments where transactions are irreversible and funds are at stake. Built-in functions must be thoroughly tested to identify and mitigate security vulnerabilities, such as integer overflow/underflow, reentrancy attacks, or unintended access control issues. Testing for security vulnerabilities often involves techniques like fuzz testing, static analysis, and formal verification to ensure robustness against potential attacks.
-    
-    - **Types of Security Constraints.**
-        - **Integer Overflow/Underflow.**
-            
-            Built-in functions that involve arithmetic operations must guard against integer overflow and underflow vulnerabilities. These vulnerabilities occur when the result of an arithmetic operation exceeds the maximum or minimum representable value for the data type, potentially leading to unintended behavior or manipulation of contract state. 
-            
-        - **Reentrancy Attacks.**
-            
-            Reentrancy attacks exploit the asynchronous nature of smart contract execution to manipulate contract state in unintended ways. This vulnerability arises when a contract interacts with external contracts or sends funds before completing its internal state changes, allowing an attacker to re-enter the contract and perform additional operations before the previous ones are finalized. 
-            
-        - **Access Control Issues**: Built-in functions that govern access control within smart contracts must enforce permissions rigorously to prevent unauthorized actions or privilege escalation. Security vulnerabilities may arise if access control mechanisms are improperly implemented or bypassed, allowing unauthorized users to modify contract state or execute privileged operations.
-    - **Testing Strategies for Security**
-        - **Fuzz Testing.**
-            
-            Fuzz testing involves generating a large volume of random or invalid inputs to uncover security vulnerabilities, including those related to built-in functions. By subjecting built-in functions to diverse input conditions, fuzz testing helps identify potential edge cases and corner cases that may trigger security vulnerabilities, such as buffer overflows or unexpected behavior.
-            
-        - **Static Analysis.**
-            
-            Static analysis tools analyze the source code of smart contracts to identify potential security vulnerabilities, including those related to built-in functions. These tools can detect common coding patterns associated with security vulnerabilities, such as unchecked external calls or improper input validation, helping developers identify and mitigate risks before deployment.
-            
-        - **Formal Verification.**
-            
-            Formal verification techniques provide mathematical assurance of the correctness and security properties of built-in functions by rigorously analyzing their behavior against formal specifications or security properties. By employing techniques such as theorem proving or model checking, formal verification can help ensure that built-in functions adhere to security best practices and mitigate potential vulnerabilities.
-            
-- **Constraints on Compatibility**
-    
-     Smart contracts often interact with other contracts or external systems, requiring compatibility with specific interfaces or protocols. Built-in functions must adhere to these compatibility constraints to ensure seamless integration with other components of the blockchain ecosystem. Testing for compatibility involves verifying that built-in functions comply with relevant standards and specifications, such as ERC (Ethereum Request for Comment) proposals for Ethereum-based contracts.
-    
-    - **Interoperability Requirements.**
-        
-        Smart contracts frequently interact with other contracts, decentralized applications (dApps), or external systems, necessitating compatibility with various interfaces, protocols, and standards. Built-in functions must adhere to these interoperability requirements to ensure smooth communication and collaboration within the blockchain ecosystem. Incompatibilities can lead to functionality errors, data inconsistencies, or even contract failures.
-        
-    - **Compatibility Testing Strategies.**
-        - **Conformance Testing.**
-            
-            Conformance testing verifies that built-in functions adhere to relevant standards and specifications, such as ERC proposals for Ethereum-based contracts. Test cases are designed to validate compliance with specific interface definitions, parameter formats, and behavior expectations outlined in the standards. By ensuring conformance to established standards, compatibility with existing infrastructure and ecosystem components is maintained.
-            
-        - **Integration Testing.**
-            
-            Integration testing evaluates the interaction between built-in functions and other components of the blockchain ecosystem, including external contracts, dApps, or oracle services. Test scenarios simulate real-world usage scenarios to assess compatibility, data exchange, and interoperability. By validating seamless integration with diverse ecosystem components, integration testing ensures that built-in functions perform reliably across different environments.
-            
-        - **Protocol Compatibility Testing.**
-            
-            Protocol compatibility testing assesses the compatibility of built-in functions with underlying blockchain protocols and network upgrades. Test cases evaluate functionality, performance, and data integrity under various protocol versions or network configurations. By ensuring compatibility with evolving blockchain protocols, built-in functions remain compatible with future platform upgrades and enhancements.
-            
-
-### Conclusion
-
-Builtins in Cairo are predefined optimized low-level execution units that perform specific computations more efficiently. They act as special extensions to the Cairo VM's memory and do not require modifications to the CPU. Builtins include mathematical, cryptographic, memory management, and comparison types. They can perform complex operations but may introduce constraints during testing and verification processes related to resource usage, security, and compatibility. Developers can employ various testing strategies to manage these constraints effectively, ensuring the robustness and efficiency of Cairo programs.
