@@ -4,8 +4,7 @@ sidebar_position: 3
 
 # Hint
   ## HINTS  IN CAIRO VIRTUAL MACHINE
-Hints in Cairo are pieces of Python code only seen and executed by the prover and are not included in the bytecode. They instruct the prover on how to handle nondeterministic instructions. These nondeterministic instructions are programs that have different outcomes at execution.
-    
+Hints in Cairo are pieces of Python code only seen and executed by the prover and are not included in the bytecode. They instruct the prover on how to handle nondeterministic instructions. These nondeterministic instructions are programs that have different outcomes at execution.   
 Hints are guides that developers can provide to the Cairo virtual machine to optimize execution or provide additional information about the program. These hints help improve performance or help the VM make better decisions during the execution of programs. 
 
 ## TYPES OF HINTS IN CARIO VIRTUAL MACHINE
