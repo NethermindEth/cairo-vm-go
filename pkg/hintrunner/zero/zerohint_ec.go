@@ -21,7 +21,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcNegate",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, p<ack
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 			//> y = pack(ids.point.y, PRIME) % SECP_P
 			//> # The modulo operation in python always returns a nonnegative number.
 			//> value = (-y) % SECP_P
