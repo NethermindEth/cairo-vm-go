@@ -23,14 +23,12 @@ func TestZeroHintUsort(t *testing.T) {
 				check: varValueInScopeEquals("__usort_max_size", feltUint64(1)),
 			},
 		},
+
 		"UsortVerifyMultiplicityAssert": {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{
-						"positions": []uint64{
-							1,
-						},
-					})
+					// Assign a non-empty array to the "positions" variable to simulate an error condition
+					ctx.ScopeManager.AssignVariable("positions", []uint64{1})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityAssertHinter()
@@ -39,9 +37,8 @@ func TestZeroHintUsort(t *testing.T) {
 			},
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
-						"positions": []uint64{},
-					})
+					// Assign an empty array to the "positions" variable for a scenario where no error should occur
+					ctx.ScopeManager.AssignVariable("positions", []uint64{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortVerifyMultiplicityAssertHinter()
@@ -49,6 +46,7 @@ func TestZeroHintUsort(t *testing.T) {
 				errCheck: errorIsNil,
 			},
 		},
+
 		"UsortVerify": {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
@@ -66,12 +64,12 @@ func TestZeroHintUsort(t *testing.T) {
 				check: func(t *testing.T, ctx *hintTestContext) {
 					positions, err := ctx.runnerContext.ScopeManager.GetVariableValue("positions")
 					require.NoError(t, err)
-		
+
 					require.Equal(t, []uint64{3, 2, 1}, positions)
-		
+
 					lastPos, err := ctx.runnerContext.ScopeManager.GetVariableValue("last_pos")
 					require.NoError(t, err)
-		
+
 					require.Equal(t, 0, lastPos)
 				},
 			},
