@@ -593,7 +593,7 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
-		"ReduceV1" :{
+		"ReduceV1": {
 			{
 				operanders: []*hintOperander{
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
@@ -604,13 +604,13 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newReduceV1Hinter(ctx.operanders["x.d0"])
+					return newReduceV1Hint(ctx.operanders["x.d0"])
 				},
-				check: varValueEquals("x.d0", feltString("0")),
+				check: varValueInScopeEquals("value", bigIntString("0", 10)),
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "x.d0", Kind: apRelative, Value: feltString("3618502788666131213697322783095070105623107215331596699973092056135872020481")},
+					{Name: "x.d0", Kind: apRelative, Value: feltString("3618502788666131213697322783095070105623107215331596699973092056135872020482")},
 					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
 					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
 				},
@@ -618,13 +618,13 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newReduceV1Hinter(ctx.operanders["x.d0"])
+					return newReduceV1Hint(ctx.operanders["x.d0"])
 				},
-				check: varValueEquals("x.d0", feltInt64(0)),
+				check: varValueInScopeEquals("value", bigIntString("1", 10)),
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "x.d0", Kind: apRelative, Value: feltString("3618502788666131213697322783095070105623107215331596699973092056135872020481")},
+					{Name: "x.d0", Kind: apRelative, Value: feltString("10")},
 					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
 					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
 				},
@@ -632,11 +632,11 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newReduceV1Hinter(ctx.operanders["x.d0"])
+					return newReduceV1Hint(ctx.operanders["x.d0"])
 				},
-				check: varValueEquals("x.d0", feltInt64(0)),
+				check: varValueInScopeEquals("value", bigIntString("10", 10)),
 			},
 		},
-		},
+	},
 	)
 }

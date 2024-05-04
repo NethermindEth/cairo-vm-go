@@ -387,15 +387,15 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newEcDoubleSlopeV1Hint(point), nil
 }
 
-func newReduceV1Hinter(x hinter.ResOperander) hinter.Hinter{
+func newReduceV1Hint(x hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name:"reduceV1",
+		Name: "reduceV1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-			//> x = pack(ids.x, PRIME) % SECP_P
+			//> value = pack(ids.x, PRIME) % SECP_P
 
 			secPBig, ok := secp_utils.GetSecPBig()
-			if !ok{
+			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 			xAddr, err := x.GetAddress(vm)
@@ -404,31 +404,32 @@ func newReduceV1Hinter(x hinter.ResOperander) hinter.Hinter{
 			}
 
 			xMemoryValues, err := hinter.GetConsecutiveValues(vm, xAddr, int16(3))
-            if err != nil {
-                return err
-            }
+			if err != nil {
+				return err
+			}
 			var xValues [3]*fp.Element
-            for i := 0; i < 3; i++ {
-                xValue, err := xMemoryValues[i].FieldElement()
-                if err != nil {
-                    return err
-                }
-                xValues[i] = xValue
-            }
+			for i := 0; i < 3; i++ {
+				xValue, err := xMemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				xValues[i] = xValue
+			}
 			xBig, err := secp_utils.SecPPacked(xValues)
-            if err != nil {
-                return err
-            }
+			if err != nil {
+				return err
+			}
 			xBig.Mod(&xBig, &secPBig)
-			return ctx.ScopeManager.AssignVariable("x", xBig)
+			valueBigIntPtr := new(big.Int).Set(&xBig)
+			return ctx.ScopeManager.AssignVariable("value", valueBigIntPtr)
 		},
 	}
 }
 
-func createReduceV1Hinter(resolver hintReferenceResolver)(hinter.Hinter, error){
+func createReduceV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	x, err := resolver.GetResOperander("x")
 	if err != nil {
 		return nil, err
 	}
-	return newReduceV1Hinter(x), nil
+	return newReduceV1Hint(x), nil
 }
