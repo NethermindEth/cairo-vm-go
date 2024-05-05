@@ -122,9 +122,9 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
-			positions, ok := positionsInterface.([]int)
+			positions, ok := positionsInterface.([]int64)
 			if !ok {
-				return fmt.Errorf("cannot cast positionsInterface to []int")
+				return fmt.Errorf("cannot cast positionsInterface to []int64")
 			}
 
 			newCurrentPos, err := utils.Pop(&positions)
@@ -137,9 +137,9 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
-			currentPosInt, ok := currentPos.(int)
+			currentPosInt, ok := currentPos.(int64)
 			if !ok {
-				return fmt.Errorf("cannot cast current_pos to int")
+				return fmt.Errorf("cannot cast current_pos to int64")
 			}
 
 			lastPos, err := ctx.ScopeManager.GetVariableValue("last_pos")
@@ -147,8 +147,13 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
+			lastPosInt, ok := lastPos.(int64)
+			if !ok {
+				return fmt.Errorf("cannot cast last_pos to int64")
+			}
+
 			// Calculate `next_item_index` memory value
-			newNextItemIndexValue := currentPosInt - lastPos.(int)
+			newNextItemIndexValue := currentPosInt - lastPosInt
 			newNextItemIndexMemoryValue := memory.MemoryValueFromInt(newNextItemIndexValue)
 
 			// Save `next_item_index` value in address
@@ -165,7 +170,7 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 			// Save `current_pos` and `last_pos` values in scope variables
 			return ctx.ScopeManager.AssignVariables(map[string]any{
 				"current_pos": newCurrentPos,
-				"last_pos":    currentPosInt + 1,
+				"last_pos":    int64(currentPosInt + 1),
 			})
 		},
 	}
