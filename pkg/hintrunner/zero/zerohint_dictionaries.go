@@ -144,7 +144,7 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 			}
 
 			//> ids.dict_ptr.prev_value = dict_tracker.data[ids.key]
-			//> # dict_ptr porints to a DictAccess
+			//> # dict_ptr points to a DictAccess
 			//> struct DictAccess {
 			//> 	key: felt,
 			//> 	prev_value: felt,
@@ -186,4 +186,94 @@ func createDictWriteHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 		return nil, err
 	}
 	return newDictWriteHint(dictPtr, key, newValue), nil
+}
+
+func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DictUpdate",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> # Verify dict pointer and prev value.
+			//> dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)
+			//> current_value = dict_tracker.data[ids.key]
+			//> assert current_value == ids.prev_value, \
+			//>     f'Wrong previous value in dict. Got {ids.prev_value}, expected {current_value}.'
+			//>
+			//> # Update value.
+			//> dict_tracker.data[ids.key] = ids.new_value
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+
+			//> dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)
+			dictPtrAddr, err := hinter.ResolveAsAddress(vm, dictPtr)
+			if err != nil {
+				return err
+			}
+			dictionaryManager, ok := ctx.ScopeManager.GetDictionaryManager()
+			if !ok {
+				return fmt.Errorf("__dict_manager not in scope")
+			}
+			dictionary, err := dictionaryManager.GetDictionary(dictPtrAddr)
+			if err != nil {
+				return err
+			}
+
+			key, err := hinter.ResolveAsFelt(vm, key)
+			if err != nil {
+				return err
+			}
+
+			//> current_value = dict_tracker.data[ids.key]
+			currentValueMv, err := dictionary.At(key)
+			if err != nil {
+				return err
+			}
+			currentValue, err := currentValueMv.FieldElement()
+			if err != nil {
+				return err
+			}
+
+			//> assert current_value == ids.prev_value, \
+			//>     f'Wrong previous value in dict. Got {ids.prev_value}, expected {current_value}.'
+			prevValue, err := hinter.ResolveAsFelt(vm, prevValue)
+			if err != nil {
+				return err
+			}
+			if !currentValue.Equal(prevValue) {
+				return fmt.Errorf("Wrong previous value in dict. Got %s, expected %s.", prevValue, currentValue)
+			}
+
+			//> # Update value.
+			//> dict_tracker.data[ids.key] = ids.new_value
+			newValue, err := hinter.ResolveAsFelt(vm, newValue)
+			if err != nil {
+				return err
+			}
+			newValueMv := mem.MemoryValueFromFieldElement(newValue)
+			dictionary.Set(key, &newValueMv)
+
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+			dictionary.IncrementFreeOffset(3)
+
+			return nil
+		},
+	}
+}
+
+func createDictUpdateHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	dictPtr, err := resolver.GetResOperander("dict_ptr")
+	if err != nil {
+		return nil, err
+	}
+	key, err := resolver.GetResOperander("key")
+	if err != nil {
+		return nil, err
+	}
+	newValue, err := resolver.GetResOperander("new_value")
+	if err != nil {
+		return nil, err
+	}
+	prevValue, err := resolver.GetResOperander("prev_value")
+	if err != nil {
+		return nil, err
+	}
+	return newDictUpdateHint(dictPtr, key, newValue, prevValue), nil
 }
