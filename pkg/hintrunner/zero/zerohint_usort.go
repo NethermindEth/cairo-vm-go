@@ -6,6 +6,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -106,4 +107,80 @@ func createUsortVerifyHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	}
 
 	return newUsortVerifyHinter(value), nil
+}
+
+func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "UsortVerifyMultiplicityBody",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> current_pos = positions.pop()
+			//> ids.next_item_index = current_pos - last_pos
+			//> last_pos = current_pos + 1
+
+			positionsInterface, err := ctx.ScopeManager.GetVariableValue("positions")
+			if err != nil {
+				return err
+			}
+
+			positions, ok := positionsInterface.([]int64)
+			if !ok {
+				return fmt.Errorf("cannot cast positionsInterface to []int64")
+			}
+
+			newCurrentPos, err := utils.Pop(&positions)
+			if err != nil {
+				return err
+			}
+
+			currentPos, err := ctx.ScopeManager.GetVariableValue("current_pos")
+			if err != nil {
+				return err
+			}
+
+			currentPosInt, ok := currentPos.(int64)
+			if !ok {
+				return fmt.Errorf("cannot cast current_pos to int64")
+			}
+
+			lastPos, err := ctx.ScopeManager.GetVariableValue("last_pos")
+			if err != nil {
+				return err
+			}
+
+			lastPosInt, ok := lastPos.(int64)
+			if !ok {
+				return fmt.Errorf("cannot cast last_pos to int64")
+			}
+
+			// Calculate `next_item_index` memory value
+			newNextItemIndexValue := currentPosInt - lastPosInt
+			newNextItemIndexMemoryValue := memory.MemoryValueFromInt(newNextItemIndexValue)
+
+			// Save `next_item_index` value in address
+			addrNextItemIndex, err := nextItemIndex.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			err = vm.Memory.WriteToAddress(&addrNextItemIndex, &newNextItemIndexMemoryValue)
+			if err != nil {
+				return err
+			}
+
+			// Save `current_pos` and `last_pos` values in scope variables
+			return ctx.ScopeManager.AssignVariables(map[string]any{
+				"current_pos": newCurrentPos,
+				"last_pos":    int64(currentPosInt + 1),
+			})
+		},
+	}
+}
+
+func createUsortVerifyMultiplicityBodyHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	nextItemIndex, err := resolver.GetResOperander("next_item_index")
+	if err != nil {
+		return nil, err
+	}
+
+	return newUsortVerifyMultiplicityBodyHint(nextItemIndex), nil
 }
