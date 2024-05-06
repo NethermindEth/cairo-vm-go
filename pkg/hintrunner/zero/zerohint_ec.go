@@ -538,6 +538,13 @@ func createEcDoubleAssignNewXV1Hinter(resolver hintReferenceResolver) (hinter.Hi
 	return newEcDoubleAssignNewXV1Hint(slope, point), nil
 }
 
+// ComputeSlopeV1Hint hint computes the slope between two points on an elliptic curve.
+//
+// `newComputeSlopeV1Hint` takes 2 operanders as arguments
+// `point0` is the first point on an elliptic curve to operate on
+// `point1` is the second point on an elliptic curve to operate on
+//
+// `newComputeSlopeV1Hint` assigns the `slope` result as `value` in the current scope
 func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "ComputeSlopeV1",
@@ -644,7 +651,7 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 
 			value := new(big.Int).Set(&slopeBig)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"value": value, "slope": value})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": value})
 		},
 	}
 }
