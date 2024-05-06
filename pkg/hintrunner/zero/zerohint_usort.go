@@ -135,7 +135,7 @@ func createUsortVerifyHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 // `newUsortVerifyMultiplicityBodyHint` takes one operander as argument
 // `nextItemIndex` is the value at the given position in the lsit
 //
-// `newUsortVerifyMultiplicityBodyHint` assigns `current_pos` and `last_pos` in the current scope
+// `newUsortVerifyMultiplicityBodyHint` assigns `last_pos` in the current scope
 func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortVerifyMultiplicityBody",
@@ -159,6 +159,7 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
+			// TODO : This doesn't make sense as currentPos is the value just before
 			currentPos, err := ctx.ScopeManager.GetVariableValue("current_pos")
 			if err != nil {
 				return err
@@ -194,6 +195,7 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
+			// TODO : Only last_pos should be assigned in current scope
 			// Save `current_pos` and `last_pos` values in scope variables
 			return ctx.ScopeManager.AssignVariables(map[string]any{
 				"current_pos": newCurrentPos,
