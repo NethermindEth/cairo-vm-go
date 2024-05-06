@@ -99,7 +99,7 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 			}
 			//> assert isinstance(elm_size, int) and elm_size > 0, \
 			//> 	f'Invalid value for elm_size. Got: {elm_size}.'
-			if !elmSize.IsZero() {
+			if utils.FeltLe(elmSize, &utils.FeltZero) {
 				return fmt.Errorf("Invalid value for elm_size. Got: %v.", elmSize)
 			}
 
@@ -111,7 +111,8 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 			if err != nil {
 				return err
 			}
-			if !nElms.IsZero() {
+
+			if utils.FeltLe(nElms, &utils.FeltZero) {
 				return fmt.Errorf("Invalid value for n_elms. Got: %v.", nElms)
 			}
 
