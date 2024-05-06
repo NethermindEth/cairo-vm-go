@@ -10,7 +10,13 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func newUsortEnterScopeHinter() hinter.Hinter {
+// UsortEnterScopeHinter hint enters a new scope with `__usort_max_size` value
+//
+// `newUsortEnterScopeHinter` doesn't take any operander as argument
+//
+// `newUsortEnterScopeHinter` gets from the current scope `__usort_max_size` value
+// And enters a new scope with this same value
+func newUsortEnterScopeHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortEnterScope",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -31,10 +37,17 @@ func newUsortEnterScopeHinter() hinter.Hinter {
 }
 
 func createUsortEnterScopeHinter() (hinter.Hinter, error) {
-	return newUsortEnterScopeHinter(), nil
+	return newUsortEnterScopeHint(), nil
 }
 
-func newUsortVerifyMultiplicityAssertHinter() hinter.Hinter {
+// UsortVerifyMultiplicityAssert hint asserts that all occurrences of a specific value
+// have been accounted for in the verification process
+//
+// `newUsortVerifyMultiplicityAssertHint` doesn't take any operander as argument
+//
+// `newUsortVerifyMultiplicityAssertHint` checks that the "positions" variable in scope
+// doesn't contain any value
+func newUsortVerifyMultiplicityAssertHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortVerifyMultiplicityAssert",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -60,10 +73,17 @@ func newUsortVerifyMultiplicityAssertHinter() hinter.Hinter {
 }
 
 func createUsortVerifyMultiplicityAssertHinter() (hinter.Hinter, error) {
-	return newUsortEnterScopeHinter(), nil
+	return newUsortEnterScopeHint(), nil
 }
 
-func newUsortVerifyHinter(value hinter.ResOperander) hinter.Hinter {
+// UsortVerify hint prepares for verifying the multiplicity of a specific value
+// in the sorted output by reversing its positions list
+//
+// `newUsortVerifyHint` takes one operander as argument
+// `value` is the value at the given position in the lsit
+//
+// `newUsortVerifyHint` assigns `last_pos` and `positions` in the current scope
+func newUsortVerifyHint(value hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortVerify",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -106,9 +126,16 @@ func createUsortVerifyHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 		return nil, err
 	}
 
-	return newUsortVerifyHinter(value), nil
+	return newUsortVerifyHint(value), nil
 }
 
+// UsortVerifyMultiplicityBodyHint hint processes each position of a specific value
+// in the sorted output, updating indices for verification.
+//
+// `newUsortVerifyMultiplicityBodyHint` takes one operander as argument
+// `nextItemIndex` is the value at the given position in the lsit
+//
+// `newUsortVerifyMultiplicityBodyHint` assigns `current_pos` and `last_pos` in the current scope
 func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortVerifyMultiplicityBody",
