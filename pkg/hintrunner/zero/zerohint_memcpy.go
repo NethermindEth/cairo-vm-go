@@ -120,17 +120,15 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 			//> 		f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \
 			//> 		f'Got: n_elms={n_elms}.'
 			elementMaxSize, err := ctx.ScopeManager.GetVariableValue("__find_element_max_size")
-			if err != nil {
-				return err
-			}
+			if err == nil {
+				elementMaxSizeFelt, ok := elementMaxSize.(*fp.Element)
+				if !ok {
+					return fmt.Errorf("failed obtaining the variable: __find_element_max_size")
+				}
 
-			elementMaxSizeFelt, ok := elementMaxSize.(*fp.Element)
-			if !ok {
-				return fmt.Errorf("failed obtaining the variable: __find_element_max_size")
-			}
-
-			if !utils.FeltLe(nElms, elementMaxSizeFelt) {
-				return fmt.Errorf("find_element() can only be used with n_elms<=%v. Got: n_elms=%v.", elementMaxSizeFelt, nElms)
+				if !utils.FeltLe(nElms, elementMaxSizeFelt) {
+					return fmt.Errorf("find_element() can only be used with n_elms<=%v. Got: n_elms=%v.", elementMaxSizeFelt, nElms)
+				}
 			}
 
 			key, err := hinter.ResolveAsFelt(vm, key)
@@ -149,7 +147,10 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 
 			//> for i in range(n_elms):
 			for i := uint64(0); i < nElemsRange; i++ {
-				arrayPtrValue := memory.MemoryValueFromMemoryAddress(arrayPtr)
+				arrayPtrValue, err := vm.Memory.ReadFromAddress(arrayPtr)
+				if err != nil {
+					return err
+				}
 				arrayValue, err := arrayPtrValue.FieldElement()
 				if err != nil {
 					return err
@@ -163,7 +164,11 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 					return vm.Memory.WriteToAddress(&indexAddr, &indexValue)
 				}
 				// This adds elmsSize
-				arrayPtr.AddOffset(elmSizeInt16)
+				*arrayPtr, err = arrayPtr.AddOffset(elmSizeInt16)
+				if err != nil {
+					return err
+				}
+
 			}
 
 			//> else:
