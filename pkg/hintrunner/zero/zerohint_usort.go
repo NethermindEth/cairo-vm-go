@@ -10,11 +10,11 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-// UsortEnterScopeHinter hint enters a new scope with `__usort_max_size` value
+// UsortEnterScope hint enters a new scope with `__usort_max_size` value
 //
-// `newUsortEnterScopeHinter` doesn't take any operander as argument
+// `newUsortEnterScopeHint` doesn't take any operander as argument
 //
-// `newUsortEnterScopeHinter` gets from the current scope `__usort_max_size`
+// `newUsortEnterScopeHint` gets from the current scope `__usort_max_size`
 // value and enters a new scope with this same value
 func newUsortEnterScopeHint() hinter.Hinter {
 	return &GenericZeroHinter{
@@ -132,7 +132,7 @@ func createUsortVerifyHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	return newUsortVerifyHint(value), nil
 }
 
-// UsortVerifyMultiplicityBodyHint hint processes each position of a specific value
+// UsortVerifyMultiplicityBody hint processes each position of a specific value
 // in the input (array of fields), updating indices for verification
 //
 // `newUsortVerifyMultiplicityBodyHint` takes one operander as argument
