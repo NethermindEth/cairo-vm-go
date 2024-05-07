@@ -36,7 +36,7 @@ func createUsortBodyHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 	return newUsortBodyHint(input, input_len, output, output_len, multiplicities), nil
 }
 
-func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinter.ResOperander) hinter.Hinter {
+func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "AssertLtFelt",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -65,7 +65,7 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 			if err != nil {
 				return err
 			}
-			inputLen, err := hinter.ResolveAsUint64(vm, input_len)
+			inputLenValue, err := hinter.ResolveAsUint64(vm, inputLen)
 			if err != nil {
 				return err
 			}
@@ -74,18 +74,17 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 				return err
 			}
 			usortMaxSize := usortMaxSizeInterface.(uint64)
-			if inputLen > usortMaxSize {
-				return fmt.Errorf("usort() can only be used with input_len<=%d.\n Got: input_len=%d", usortMaxSize, inputLen)
+			if inputLenValue > usortMaxSize {
+				return fmt.Errorf("usort() can only be used with input_len<=%d.\n Got: input_len=%d", usortMaxSize, inputLenValue)
 			}
-			positionsDict := make(map[fp.Element][]uint64, inputLen)
-			inputBasePtrCopy := *inputBasePtr
-			for i := uint64(0); i < inputLen; i++ {
-				val, err := vm.Memory.ReadFromAddressAsElement(&inputBasePtrCopy)
+			positionsDict := make(map[fp.Element][]uint64, inputLenValue)
+			for i := uint64(0); i < inputLenValue; i++ {
+				val, err := vm.Memory.ReadFromAddressAsElement(inputBasePtr)
 				if err != nil {
 					return err
 				}
 				positionsDict[val] = append(positionsDict[val], uint64(i))
-				inputBasePtrCopy, err = inputBasePtrCopy.AddOffset(1)
+				*inputBasePtr, err = inputBasePtr.AddOffset(1)
 				if err != nil {
 					return err
 				}
@@ -99,7 +98,7 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 			}
 			sort.Sort(usortUtils.SortFelt(outputArray))
 
-			outputLenAddr, err := output_len.GetAddress(vm)
+			outputLenAddr, err := outputLen.GetAddress(vm)
 			if err != nil {
 				return err
 			}
@@ -115,6 +114,9 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 			}
 			outputSegmentBaseAddrMV := memory.MemoryValueFromMemoryAddress(&outputSegmentBaseAddr)
 			err = vm.Memory.WriteToAddress(&outputAddr, &outputSegmentBaseAddrMV)
+			if err != nil {
+				return err
+			}
 			for i, v := range outputArray {
 				outputSegmentWriteArgsPtr, err := outputSegmentBaseAddr.AddOffset(int16(i))
 				if err != nil {
@@ -125,9 +127,6 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 				if err != nil {
 					return err
 				}
-			}
-			if err != nil {
-				return err
 			}
 			multiplicitiesArray := make([]*fp.Element, len(outputArray))
 			for i, v := range outputArray {
