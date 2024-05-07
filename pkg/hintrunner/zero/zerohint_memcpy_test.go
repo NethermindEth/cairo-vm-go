@@ -14,9 +14,6 @@ func TestZeroHintMemcpy(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "len", Kind: apRelative, Value: feltUint64(1)},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newMemcpyEnterScopeHint(ctx.operanders["len"])
 				},
