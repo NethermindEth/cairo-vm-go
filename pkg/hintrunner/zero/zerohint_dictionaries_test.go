@@ -15,7 +15,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					err := ctx.ScopeManager.AssignVariable("keys", []fp.Element{})
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -28,7 +28,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					err := ctx.ScopeManager.AssignVariable("keys", []fp.Element{*feltUint64(1), *feltUint64(2)})
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {

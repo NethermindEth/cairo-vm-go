@@ -172,7 +172,7 @@ func TestZeroHintEc(t *testing.T) {
 					value := bigIntString("7618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
 					err := ctx.ScopeManager.AssignVariable("value", value)
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -189,7 +189,7 @@ func TestZeroHintEc(t *testing.T) {
 					value := bigIntString("3618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
 					err := ctx.ScopeManager.AssignVariable("value", value)
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -204,7 +204,7 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					err := ctx.ScopeManager.AssignVariable("value", big.NewInt(123456))
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -219,7 +219,7 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					err := ctx.ScopeManager.AssignVariable("value", big.NewInt(-123456))
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -236,7 +236,7 @@ func TestZeroHintEc(t *testing.T) {
 					value := bigIntString("77371252455336267181195263", 10)
 					err := ctx.ScopeManager.AssignVariable("value", value)
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -253,7 +253,7 @@ func TestZeroHintEc(t *testing.T) {
 					value := bigIntString("77371252455336267181195264", 10)
 					err := ctx.ScopeManager.AssignVariable("value", value)
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -270,7 +270,7 @@ func TestZeroHintEc(t *testing.T) {
 					value := bigIntString("77371252455336267181195265", 10)
 					err := ctx.ScopeManager.AssignVariable("value", value)
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -285,7 +285,7 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					err := ctx.ScopeManager.AssignVariable("value", big.NewInt(0))
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -302,7 +302,7 @@ func TestZeroHintEc(t *testing.T) {
 					value := bigIntString("154742504910672534362390526", 10)
 					err := ctx.ScopeManager.AssignVariable("value", value)
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -319,7 +319,7 @@ func TestZeroHintEc(t *testing.T) {
 					value := bigIntString("154742504910672534362390528", 10)
 					err := ctx.ScopeManager.AssignVariable("value", value)
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -336,7 +336,7 @@ func TestZeroHintEc(t *testing.T) {
 					value := bigIntString("154742504910672534362390530", 10)
 					err := ctx.ScopeManager.AssignVariable("value", value)
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -357,7 +357,7 @@ func TestZeroHintEc(t *testing.T) {
 
 					err := ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -379,7 +379,7 @@ func TestZeroHintEc(t *testing.T) {
 
 					err := ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
