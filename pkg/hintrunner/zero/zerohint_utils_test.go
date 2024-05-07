@@ -2,6 +2,7 @@ package zero
 
 import (
 	"fmt"
+
 	"math/big"
 	"testing"
 
@@ -210,5 +211,13 @@ func errorTextContains(s string) func(t *testing.T, ctx *hintTestContext, err er
 func errorIsNil(t *testing.T, ctx *hintTestContext, err error) {
 	if err != nil {
 		t.Fatalf("expected a nil error, got: %v", err)
+	}
+}
+
+func varListInScopeEquals(expectedValues map[string]any) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		for varName, expected := range expectedValues {
+			varValueInScopeEquals(varName, expected)(t, ctx)
+		}
 	}
 }
