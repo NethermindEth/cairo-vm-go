@@ -402,7 +402,7 @@ func TestZeroHintEc(t *testing.T) {
 
 					err := ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
