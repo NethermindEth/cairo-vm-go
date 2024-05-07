@@ -30,7 +30,7 @@ func TestZeroHintUsort(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					err := ctx.ScopeManager.AssignVariable("positions", []uint64{1})
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -42,7 +42,7 @@ func TestZeroHintUsort(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					err := ctx.ScopeManager.AssignVariable("positions", []uint64{})
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -58,7 +58,7 @@ func TestZeroHintUsort(t *testing.T) {
 						*feltUint64(0): {1, 2, 3},
 					})
 					if err != nil {
-						panic(err)
+						t.Fatal(err)
 					}
 				},
 				operanders: []*hintOperander{

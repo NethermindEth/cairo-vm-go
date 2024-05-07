@@ -23,9 +23,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d1", Kind: apRelative, Value: feltString("0x2ff0384422a3f45ed1229a")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("0x483ada7726a3c4655da4f")},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
@@ -39,9 +36,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d2", Kind: apRelative, Value: &utils.FeltZero},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
@@ -58,9 +52,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d2", Kind: apRelative, Value: &utils.FeltZero},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
@@ -75,9 +66,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: &utils.FeltZero},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
@@ -94,9 +82,6 @@ func TestZeroHintEc(t *testing.T) {
 					// GetSecPBig() % fp.Modulus()
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
@@ -111,9 +96,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: &utils.FeltZero},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
@@ -130,9 +112,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
@@ -147,9 +126,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d0", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
@@ -166,9 +142,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d1", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("3618502788666127798953978732740734578953660990361066340291730267696802036752")},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
@@ -182,9 +155,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "y.d0", Kind: apRelative, Value: feltString("10")},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("100")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("10001")},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcNegateHint(ctx.operanders["x.d0"])
@@ -200,7 +170,10 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// GetSecPBig() % fp.Modulus() but with first digit 3 replaced with 7
 					value := bigIntString("7618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
-					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+					err := ctx.ScopeManager.AssignVariable("value", value)
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -214,7 +187,10 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// GetSecPBig() % fp.Modulus()
 					value := bigIntString("3618502788666127798953978732740734578953660990361066340291730267696802036752", 10)
-					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+					err := ctx.ScopeManager.AssignVariable("value", value)
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -226,7 +202,10 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{"value": big.NewInt(123456)})
+					err := ctx.ScopeManager.AssignVariable("value", big.NewInt(123456))
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -238,7 +217,10 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{"value": big.NewInt(-123456)})
+					err := ctx.ScopeManager.AssignVariable("value", big.NewInt(-123456))
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -252,7 +234,10 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// 2**86 - 1
 					value := bigIntString("77371252455336267181195263", 10)
-					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+					err := ctx.ScopeManager.AssignVariable("value", value)
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -266,7 +251,10 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// 2**86
 					value := bigIntString("77371252455336267181195264", 10)
-					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+					err := ctx.ScopeManager.AssignVariable("value", value)
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -280,7 +268,10 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// 2**86 + 1
 					value := bigIntString("77371252455336267181195265", 10)
-					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+					err := ctx.ScopeManager.AssignVariable("value", value)
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -292,7 +283,10 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "res", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{"value": big.NewInt(0)})
+					err := ctx.ScopeManager.AssignVariable("value", big.NewInt(0))
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -306,7 +300,10 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// (2**86 - 1) * 2
 					value := bigIntString("154742504910672534362390526", 10)
-					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+					err := ctx.ScopeManager.AssignVariable("value", value)
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -320,7 +317,10 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// 2**86 * 2
 					value := bigIntString("154742504910672534362390528", 10)
-					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+					err := ctx.ScopeManager.AssignVariable("value", value)
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -334,7 +334,10 @@ func TestZeroHintEc(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					// (2**86 + 1) * 2
 					value := bigIntString("154742504910672534362390530", 10)
-					ctx.ScopeManager.EnterScope(map[string]any{"value": value})
+					err := ctx.ScopeManager.AssignVariable("value", value)
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newNondetBigint3V1Hint(ctx.operanders["res"])
@@ -352,7 +355,10 @@ func TestZeroHintEc(t *testing.T) {
 					y0Big := big.NewInt(10)
 					secPBig, _ := secp_utils.GetSecPBig()
 
-					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
@@ -371,7 +377,10 @@ func TestZeroHintEc(t *testing.T) {
 					y0Big := big.NewInt(10)
 					secPBig, _ := secp_utils.GetSecPBig()
 
-					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
@@ -391,7 +400,10 @@ func TestZeroHintEc(t *testing.T) {
 					y0Big := big.NewInt(20)
 					secPBig, _ := secp_utils.GetSecPBig()
 
-					ctx.ScopeManager.EnterScope(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"slope": slopeBig, "x0": x0Big, "new_x": new_xBig, "y0": y0Big, "SECP_P": &secPBig})
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewYHint()
@@ -422,9 +434,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point1.y.d1", Kind: apRelative, Value: feltUint64(895645646464)},
 					{Name: "point1.y.d2", Kind: apRelative, Value: feltUint64(211245645)},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
 				},
@@ -454,9 +463,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point1.y.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "point1.y.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "point1.y.d2", Kind: apRelative, Value: &utils.FeltZero},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
@@ -489,9 +495,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point1.y.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
 					{Name: "point1.y.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
 				},
@@ -515,9 +518,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point.y.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "point.y.d2", Kind: apRelative, Value: &utils.FeltZero},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
 				},
@@ -532,9 +532,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point.y.d0", Kind: apRelative, Value: feltUint64(26362)},
 					{Name: "point.y.d1", Kind: apRelative, Value: feltUint64(263724839599)},
 					{Name: "point.y.d2", Kind: apRelative, Value: feltString("1321654896123789784652346")},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
@@ -557,9 +554,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point.y.d1", Kind: apRelative, Value: feltUint64(1099511627776)},
 					{Name: "point.y.d2", Kind: apRelative, Value: feltUint64(1099511627776)},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
 				},
@@ -578,9 +572,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point.y.d0", Kind: apRelative, Value: feltUint64(3)},
 					{Name: "point.y.d1", Kind: apRelative, Value: feltUint64(4)},
 					{Name: "point.y.d2", Kind: apRelative, Value: feltUint64(5)},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
@@ -606,9 +597,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point.y.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "point.y.d2", Kind: apRelative, Value: &utils.FeltZero},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
 				},
@@ -633,9 +621,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point.y.d1", Kind: apRelative, Value: feltUint64(83478234123)},
 					{Name: "point.y.d2", Kind: apRelative, Value: feltString("6837128718738732781737")},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
 				},
@@ -659,9 +644,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point.y.d0", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
 					{Name: "point.y.d1", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
 					{Name: "point.y.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
@@ -691,9 +673,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point1.y.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "point1.y.d2", Kind: apRelative, Value: &utils.FeltZero},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newComputeSlopeV1Hint(ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
 				},
@@ -714,9 +693,6 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point1.y.d0", Kind: apRelative, Value: feltInt64(1123)},
 					{Name: "point1.y.d1", Kind: apRelative, Value: feltInt64(1325)},
 					{Name: "point1.y.d2", Kind: apRelative, Value: feltInt64(910)},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 
