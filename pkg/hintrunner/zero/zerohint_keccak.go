@@ -13,9 +13,9 @@ import (
 // KeccakWriteArgs hint writes Keccak function arguments in memory
 //
 // `newKeccakWriteArgsHint` takes 3 operanders as arguments
-// `inputs` is the address in memory where to write Keccak arguments
-// `low` is the low part of the `uint256` argument for the Keccac function
-// `high` is the high part of the `uint256` argument for the Keccac function
+//   - `inputs` is the address in memory where to write Keccak arguments
+//   - `low` is the low part of the `uint256` argument for the Keccac function
+//   - `high` is the high part of the `uint256` argument for the Keccac function
 //
 // The `low` and `high` parts are splitted in 64-bit integers
 // Ultimately, the result is written into 4 memory cells

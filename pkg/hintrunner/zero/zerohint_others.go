@@ -6,7 +6,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 )
 
-// // AllocSegment hint adds a new segment to the Cairo VM memory
+// AllocSegment hint adds a new segment to the Cairo VM memory
 func createAllocSegmentHinter() (hinter.Hinter, error) {
 	return &core.AllocSegment{Dst: hinter.ApCellRef(0)}, nil
 }
@@ -35,7 +35,7 @@ func createVMExitScopeHinter() (hinter.Hinter, error) {
 // MemcpyEnterScopeHint hint enters a new scope for the memory copy operation with a specified length
 //
 // `newMemcpyEnterScopeHint` takes 1 operander as argument
-// `len` is the length value that is added in the new scope
+//   - `len` is the length value that is added in the new scope
 func newMemcpyEnterScopeHint(len hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "MemcpyEnterScope",
