@@ -15,17 +15,27 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+// IsLeFelt hint determines if one value is less than or
+// equal to another within a finite field
+//
+// `newIsLeFeltHint` takes 2 operanders as arguments
+//   - `a` and `b` are the values that will be compared
+//
+// `newIsLeFeltHint` writes to `[ap]` the result of the comparison
+// i.e, 1 if `a % PRIME <= b % PRIME`, 0 otherwise
 func newIsLeFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsLeFelt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> memory[ap] = 0 if (ids.a % PRIME) <= (ids.b % PRIME) else 1
+
 			apAddr := vm.Context.AddressAp()
 
 			a, err := hinter.ResolveAsFelt(vm, a)
 			if err != nil {
 				return err
 			}
+
 			b, err := hinter.ResolveAsFelt(vm, b)
 			if err != nil {
 				return err
@@ -37,6 +47,7 @@ func newIsLeFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 			} else {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			}
+
 			return vm.Memory.WriteToAddress(&apAddr, &v)
 		},
 	}
@@ -47,13 +58,23 @@ func createIsLeFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	if err != nil {
 		return nil, err
 	}
+
 	b, err := resolver.GetResOperander("b")
 	if err != nil {
 		return nil, err
 	}
+
 	return newIsLeFeltHint(a, b), nil
 }
 
+// AssertLtFelt hint asserts that one value is strictly
+// less than another within a finite field
+//
+// `newAssertLtFeltHint` takes 2 operanders as arguments
+//   - `a` and `b` are the values that will be compared
+//
+// `newAssertLtFeltHint` returns an error if `a` is not
+// strictly less than `b` within a finite field
 func newAssertLtFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "AssertLtFelt",
@@ -63,10 +84,12 @@ func newAssertLtFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 			//> assert_integer(ids.b)
 			//> assert (ids.a % PRIME) < (ids.b % PRIME),
 			//>        f'a = {ids.a % PRIME} is not less than b = {ids.b % PRIME}.'
+
 			a, err := hinter.ResolveAsFelt(vm, a)
 			if err != nil {
 				return err
 			}
+
 			b, err := hinter.ResolveAsFelt(vm, b)
 			if err != nil {
 				return err
@@ -75,6 +98,7 @@ func newAssertLtFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 			if !utils.FeltLt(a, b) {
 				return fmt.Errorf("a = %v is not less than b = %v", a, b)
 			}
+
 			return nil
 		},
 	}
@@ -85,13 +109,21 @@ func createAssertLtFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 	if err != nil {
 		return nil, err
 	}
+
 	b, err := resolver.GetResOperander("b")
 	if err != nil {
 		return nil, err
 	}
+
 	return newAssertLtFeltHint(a, b), nil
 }
 
+// AssertNotZero hint asserts that a value is not zero
+//
+// `newAssertNotZeroHint` takes 1 operander as argument
+//   - `value` is the value that will be compared to 0
+//
+// `newAssertNotZeroHint` returns an error if `value` is zero
 func newAssertNotZeroHint(value hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "AssertNotZero",
@@ -99,6 +131,7 @@ func newAssertNotZeroHint(value hinter.ResOperander) hinter.Hinter {
 			//> from starkware.cairo.common.math_utils import assert_integer
 			//> assert_integer(ids.value)
 			//> assert ids.value % PRIME != 0, f'assert_not_zero failed: {ids.value} = 0.'
+
 			value, err := hinter.ResolveAsFelt(vm, value)
 			if err != nil {
 				return err
@@ -107,6 +140,7 @@ func newAssertNotZeroHint(value hinter.ResOperander) hinter.Hinter {
 			if value.IsZero() {
 				return fmt.Errorf("assertion failed: value is zero")
 			}
+
 			return nil
 		},
 	}
@@ -117,9 +151,18 @@ func createAssertNotZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	if err != nil {
 		return nil, err
 	}
+
 	return newAssertNotZeroHint(value), nil
 }
 
+// AssertNN hint asserts that a given value is non-negative
+// within a specified range
+//
+// `newAssertNNHint` takes 1 operander as argument
+//   - `a` is the value that will be evaluated
+//
+// `newAssertNNHint` returns an error if `value` is negative
+// within a specified range
 func newAssertNNHint(a hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "AssertNN",
@@ -127,6 +170,7 @@ func newAssertNNHint(a hinter.ResOperander) hinter.Hinter {
 			//> from starkware.cairo.common.math_utils import assert_integer
 			//> assert_integer(ids.a)
 			//> assert 0 <= ids.a % PRIME < range_check_builtin.bound, f'a = {ids.a} is out of range.'
+
 			a, err := hinter.ResolveAsFelt(vm, a)
 			if err != nil {
 				return err
@@ -135,6 +179,7 @@ func newAssertNNHint(a hinter.ResOperander) hinter.Hinter {
 			if !utils.FeltIsPositive(a) {
 				return fmt.Errorf("assertion failed: a = %v is out of range", a)
 			}
+
 			return nil
 		},
 	}
@@ -145,9 +190,16 @@ func createAssertNNHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	if err != nil {
 		return nil, err
 	}
+
 	return newAssertNNHint(a), nil
 }
 
+// AssertNotEqual hint asserts that two given values are not equal
+//
+// `newAssertNotEqualHint` takes 2 operanders as arguments
+//   - `a` and `b` are the values that will be compared
+//
+// `newAssertNotEqualHint` returns an error if `a` and `b` are not equal
 func newAssertNotEqualHint(a, b hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "AssertNotEqual",
@@ -165,6 +217,7 @@ func newAssertNotEqualHint(a, b hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			b, err := b.Resolve(vm)
 			if err != nil {
 				return err
@@ -179,6 +232,7 @@ func newAssertNotEqualHint(a, b hinter.ResOperander) hinter.Hinter {
 			if a.Equal(&b) {
 				return fmt.Errorf("assertion failed: %v = %v", a, b)
 			}
+
 			return nil
 		},
 	}
@@ -189,13 +243,24 @@ func createAssertNotEqualHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	if err != nil {
 		return nil, err
 	}
+
 	b, err := resolver.GetResOperander("b")
 	if err != nil {
 		return nil, err
 	}
+
 	return newAssertNotEqualHint(a, b), nil
 }
 
+// Assert250bits hint asserts that a value is within the range of 250 bits
+//
+// `newAssert250bitsHint` takes 3 operanders as arguments
+//   - `value` is the value that will be evaluated
+//   - `low` and `high` are the variables that will store the quotient and
+//     remainder of the modular division of `value` by 2**128
+//
+// `newAssert250bitsHint` writes the quotient and the remainder of the modular
+// division of `value` by 2**128 at `low` and `high` addresses in memory, respectively
 func newAssert250bitsHint(low, high, value hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Assert250bits",
@@ -214,6 +279,7 @@ func newAssert250bitsHint(low, high, value hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			if !utils.FeltLt(value, &utils.FeltUpperBound) {
 				return fmt.Errorf("assertion failed: %v is outside of the range [0, 2**250)", value)
 			}
@@ -222,6 +288,7 @@ func newAssert250bitsHint(low, high, value hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			highAddr, err := high.GetAddress(vm)
 			if err != nil {
 				return err
@@ -234,6 +301,7 @@ func newAssert250bitsHint(low, high, value hinter.ResOperander) hinter.Hinter {
 			if err := vm.Memory.WriteToAddress(&highAddr, &divValue); err != nil {
 				return err
 			}
+
 			remValue := memory.MemoryValueFromFieldElement(&rem)
 			if err := vm.Memory.WriteToAddress(&lowAddr, &remValue); err != nil {
 				return err
@@ -254,17 +322,26 @@ func createAssert250bitsHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	if err != nil {
 		return nil, err
 	}
+
 	high, err := resolver.GetResOperander("high")
 	if err != nil {
 		return nil, err
 	}
+
 	value, err := resolver.GetResOperander("value")
 	if err != nil {
 		return nil, err
 	}
+
 	return newAssert250bitsHint(low, high, value), nil
 }
 
+// AsserLeFelt hint assert that one value is less than or equal to another
+// within a finite field
+//
+// `newAssertLeFeltHint` takes 3 operanders as arguments
+//   - `a` and `b` is the values that will be evaluated
+//   - `rangeCheckPtr` is a pointer to the range-check builtin
 func newAssertLeFeltHint(a, b, rangeCheckPtr hinter.ResOperander) hinter.Hinter {
 	return &core.AssertLeFindSmallArc{
 		A:             a,
@@ -278,29 +355,36 @@ func createAssertLeFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 	if err != nil {
 		return nil, err
 	}
+
 	b, err := resolver.GetResOperander("b")
 	if err != nil {
 		return nil, err
 	}
+
 	rangeCheckPtr, err := resolver.GetResOperander("range_check_ptr")
 	if err != nil {
 		return nil, err
 	}
+
 	return newAssertLeFeltHint(a, b, rangeCheckPtr), nil
 }
 
-func createAssertLeFeltExcluded0Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+// AssertLeFeltExcluded0 hint is a custom assertion related to `AssertLeFelt` hint
+func createAssertLeFeltExcluded0Hinter() (hinter.Hinter, error) {
 	return &core.AssertLeIsFirstArcExcluded{SkipExcludeAFlag: hinter.ApCellRef(0)}, nil
 }
 
-func createAssertLeFeltExcluded1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+// AssertLeFeltExcluded1 hint is a custom assertion related to `AssertLeFelt` hint
+func createAssertLeFeltExcluded1Hinter() (hinter.Hinter, error) {
 	return &core.AssertLeIsSecondArcExcluded{SkipExcludeBMinusA: hinter.ApCellRef(0)}, nil
 }
 
-func createAssertLeFeltExcluded2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	// This hint is Cairo0-specific.
-	// It only does a python-scoped variable named "excluded" assert.
-	// We store that variable inside a hinter context.
+// AssertLeFeltExcluded2 hint is a custom assertion related to `AssertLeFelt` hint
+func createAssertLeFeltExcluded2Hinter() (hinter.Hinter, error) {
+	// This hint is Cairo0-specific
+	// It only does a python-scoped variable named "excluded" assert
+	// We store that variable inside a hinter context
+
 	h := &GenericZeroHinter{
 		Name: "AssertLeFeltExcluded2",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -316,21 +400,31 @@ func createAssertLeFeltExcluded2Hinter(resolver hintReferenceResolver) (hinter.H
 			return nil
 		},
 	}
+
 	return h, nil
 }
 
+// IsNN hint checks if a value is non-negative within a specific range
+//
+// `newIsNNHint` takes 1 operander as argument
+//   - `a` is the value that will be evaluated
+//
+// `newIsNNHint` writes 0 or 1 to memory at `[ap]` address, depending on
+// whether `a` is positive or negative, respectively
 func newIsNNHint(a hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsNN",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
-			apAddr := vm.Context.AddressAp()
 			//> memory[ap] = 0 if 0 <= (ids.a % PRIME) < range_check_builtin.bound else 1
+
+			apAddr := vm.Context.AddressAp()
 
 			// a is already modulo PRIME, no need to adjust it.
 			a, err := hinter.ResolveAsFelt(vm, a)
 			if err != nil {
 				return err
 			}
+
 			// range_check_builtin.bound is utils.FeltMax128 (1 << 128).
 			var v memory.MemoryValue
 			if utils.FeltIsPositive(a) {
@@ -338,6 +432,7 @@ func newIsNNHint(a hinter.ResOperander) hinter.Hinter {
 			} else {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			}
+
 			return vm.Memory.WriteToAddress(&apAddr, &v)
 		},
 	}
@@ -348,6 +443,7 @@ func createIsNNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return newIsNNHint(a), nil
 }
 
