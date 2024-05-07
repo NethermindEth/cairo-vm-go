@@ -1,11 +1,13 @@
 package zero
 
 import (
-	"math"
 	"fmt"
+	"math"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
@@ -24,10 +26,10 @@ func newCairoKeccakFinalizeHint(keccakStateSizeFeltsResOperander, blockSizeResOp
 			//> segments.write_arg(ids.keccak_ptr_end, padding)
 
 			keccakStateSizeFelts, err := hinter.ResolveAsUint64(vm, keccakStateSizeFeltsResOperander)
-      if err != nil {
+			if err != nil {
 				return err
 			}
-      			if keccakStateSizeFelts >= 100 {
+			if keccakStateSizeFelts >= 100 {
 				return fmt.Errorf("assert 0 <= _keccak_state_size_felts < 100.")
 			}
 			blockSize, err := hinter.ResolveAsUint64(vm, blockSizeResOperander)
@@ -95,7 +97,7 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter
 			if err != nil {
 				return err
 			}
-      
+
 			high, err := hinter.ResolveAsFelt(vm, high)
 			if err != nil {
 				return err

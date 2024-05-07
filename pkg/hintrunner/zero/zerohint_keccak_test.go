@@ -71,6 +71,8 @@ func TestZeroHintKeccak(t *testing.T) {
 					}
 					consecutiveVarAddrResolvedValueEquals("keccak_ptr_end", testValuesFelt)(t, ctx)
 				},
+			},
+		},
 		"newKeccakWriteArgs": {
 			{
 				operanders: []*hintOperander{
