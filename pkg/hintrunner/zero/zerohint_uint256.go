@@ -16,9 +16,9 @@ import (
 // two `uint256` variables and checks for overflow
 //
 // `newUint256AddHint` takes 4 operanders as arguments
-// `a` and `b` are the two `uint256` variables
-// `carryLow` and `carryHigh` represent the potential extra bit that needs to be carried
-// if the sum of the `low` or `high` parts exceeds 2**128 - 1
+//   - `a` and `b` are the two `uint256` variables that will be added
+//   - `carryLow` and `carryHigh` represent the potential extra bit that needs to be carried
+//     if the sum of the `low` or `high` parts exceeds 2**128 - 1
 //
 // Uint256AddLow hint only computes the sum of the `low` parts of
 // two `uint256` variables and checks for overflow
@@ -124,8 +124,8 @@ func createUint256AddHinter(resolver hintReferenceResolver, low bool) (hinter.Hi
 // Split64 hint Splits a `uint256` variable into its lower64 bits and the higher remaining bits
 //
 // `newSplit64Hint` takes 3 operanders as arguments
-// `a` is the `uint256` variable that will be splitted
-// `low` and `high` represent  the `low` 64 bits and the `high` 192 bits of the `uint256` variable
+//   - `a` is the `uint256` variable that will be splitted
+//   - `low` and `high` represent the `low` 64 bits and the `high` 192 bits of the `uint256` variable
 func newSplit64Hint(a, low, high hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Split64",
@@ -190,11 +190,11 @@ func createSplit64Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) 
 }
 
 // Uint256Sqrt hint computes the square root of a given value, ensuring
-// it falls within a specific range, i.e., 0 <= result < 2 ** 128
+// it falls within a specific range, i.e., `0 <= result < 2 ** 128`
 //
 // `newUint256SqrtHint` takes 2 operanders as arguments
-// `n` represents the `uint256` variable for which we will calculate the square root
-// `root` is the variable that will store in memory the result of the hint
+//   - `n` represents the `uint256` variable for which we will calculate the square root
+//   - `root` is the variable that will store the result of the hint in memory
 func newUint256SqrtHint(n, root hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint256Sqrt",
@@ -253,10 +253,11 @@ func createUint256SqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	return newUint256SqrtHint(n, root), nil
 }
 
-// Uint256SignedNN hint checks if a `uint256` variable is non-negative when considered as a signed number
+// Uint256SignedNN hint checks if a `uint256` variable is non-negative
+// when considered as a signed number
 //
 // `newUint256SignedNNHint` takes 1 operander as argument
-// `a` represents the `uint256` variable that will be checked
+//   - `a` represents the `uint256` variable that will be checked
 func newUint256SignedNNHint(a hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint256SignedNN",
@@ -296,10 +297,10 @@ func createUint256SignedNNHinter(resolver hintReferenceResolver) (hinter.Hinter,
 // on `uint256` variables, combining the `high` and `low` parts of the dividend and divisor
 //
 // `newUint256UnsignedDivRemHint` takes 4 operanders as arguments
-// `a` is the `uint256` variable that will be divided
-// `div` is the `uint256` variable that will divide `a`
-// `quotient` is the quotient of the Euclidean division of `a` by `div`
-// `remainder` is the remainder of the Euclidean division of `a` by `div`
+//   - `a` is the `uint256` variable that will be divided
+//   - `div` is the `uint256` variable that will divide `a`
+//   - `quotient` is the quotient of the Euclidean division of `a` by `div`
+//   - `remainder` is the remainder of the Euclidean division of `a` by `div`
 func newUint256UnsignedDivRemHint(a, div, quotient, remainder hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint256UnsignedDivRem",
@@ -393,10 +394,10 @@ func createUint256UnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.H
 // by another `uint256` variable, and computes the quotient and the remainder
 //
 // `newUint256MulDivModHint` takes 6 operanders as arguments
-// `a` and `b` are the `uint256` variables that will be multiplied
-// `div` is the `uint256` variable that will divide the result of `a * b`
-// `quotient` is the quotient of the Euclidean division of `a * b` by `div`
-// `remainder` is the remainder of the Euclidean division of `a * b` by `div`
+//   - `a` and `b` are the `uint256` variables that will be multiplied
+//   - `div` is the `uint256` variable that will divide the result of `a * b`
+//   - `quotient` is the quotient of the Euclidean division of `a * b` by `div`
+//   - `remainder` is the remainder of the Euclidean division of `a * b` by `div`
 func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint256MulDivMod",
