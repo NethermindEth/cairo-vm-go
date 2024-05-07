@@ -8,7 +8,7 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-// SquashDictInnerAssertLenKeysHint hint asserts that the length
+// SquashDictInnerAssertLenKeys hint asserts that the length
 // of the `keys` descending list is zero during the squashing process
 //
 // `newSquashDictInnerAssertLenKeysHint` doesn't take any operander as argument

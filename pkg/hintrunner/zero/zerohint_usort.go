@@ -40,7 +40,7 @@ func createUsortEnterScopeHinter() (hinter.Hinter, error) {
 	return newUsortEnterScopeHint(), nil
 }
 
-// UsortVerifyMultiplicityAssert hint checks that the "positions" variable in scope
+// UsortVerifyMultiplicityAssert hint checks that the `positions` variable in scope
 // doesn't contain any value
 //
 // `newUsortVerifyMultiplicityAssertHint` doesn't take any operander as argument
