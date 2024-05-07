@@ -35,7 +35,7 @@ func TestVerifyZeroHint(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newVerifyZeroHint(ctx.operanders["val.d0"], ctx.operanders["q"])
 				},
-				errCheck: errorTextContains("verify_zero: Invalid input (1, 1, 1)."),
+				errCheck: errorTextContains("verify_zero: Invalid input (1, 1, 1)"),
 			},
 			{
 				operanders: []*hintOperander{
