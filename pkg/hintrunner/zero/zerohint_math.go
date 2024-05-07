@@ -447,16 +447,27 @@ func createIsNNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	return newIsNNHint(a), nil
 }
 
+// IsNNOutOfRange hint checks if the negation of a value minus one
+// is non-negative within a specific range
+//
+// `newIsNNOutOfRangeHint` takes 1 operander as argument
+//   - `a` is the value that will be evaluated
+//
+// `newIsNNOutOfRangeHint` writes 0 or 1 to memory at `[ap]` address, depending on
+// whether the negation of `a` minus one is positive or negative, respectively
 func newIsNNOutOfRangeHint(a hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsNNOutOfRange",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
-			apAddr := vm.Context.AddressAp()
 			//> memory[ap] = 0 if 0 <= ((-ids.a - 1) % PRIME) < range_check_builtin.bound else 1
+
+			apAddr := vm.Context.AddressAp()
+
 			a, err := hinter.ResolveAsFelt(vm, a)
 			if err != nil {
 				return err
 			}
+
 			var lhs fp.Element
 			lhs.Sub(&utils.FeltZero, a) //> -ids.a
 			lhs.Sub(&lhs, &utils.FeltOne)
@@ -466,6 +477,7 @@ func newIsNNOutOfRangeHint(a hinter.ResOperander) hinter.Hinter {
 			} else {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			}
+
 			return vm.Memory.WriteToAddress(&apAddr, &v)
 		},
 	}
@@ -479,9 +491,19 @@ func createIsNNOutOfRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	if err != nil {
 		return nil, err
 	}
+
 	return newIsNNOutOfRangeHint(a), nil
 }
 
+// IsPositive hint checks if a value is positive within
+// a specific range and prime context
+//
+// `newIsPositiveHint` takes 2 operanders as arguments
+//   - `value` is the value that will be evaluated
+//   - `dst` is the address where to write the result in memmory
+//
+// `newIsPositiveHint` writes 1 or 0 to `dest` address, depending on
+// whether `value` is positive or negative in the context, respectively
 func newIsPositiveHint(value, dst hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsPositive",
@@ -506,6 +528,7 @@ func newIsPositiveHint(value, dst hinter.ResOperander) hinter.Hinter {
 			} else {
 				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
 			}
+
 			return vm.Memory.WriteToAddress(&isPositiveAddr, &v)
 		},
 	}
@@ -516,13 +539,22 @@ func createIsPositiveHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	if err != nil {
 		return nil, err
 	}
+
 	output, err := resolver.GetResOperander("output")
 	if err != nil {
 		return nil, err
 	}
+
 	return newIsPositiveHint(value, output), nil
 }
 
+// SplitIntAssertRange hint asserts that the value to split in `SplitInt`
+// function is zero once there are no more limbs to create
+//
+// `newSplitIntAssertRangeHint` takes 1 operander as argument
+//   - `value` is the value that will be evaluated
+//
+// `newSplitIntAssertRangeHint` returns an error if `value` is not zero
 func newSplitIntAssertRangeHint(value hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitIntAssertRange",
@@ -533,6 +565,7 @@ func newSplitIntAssertRangeHint(value hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			if !value.IsZero() {
 				return fmt.Errorf("assertion `split_int(): value is out of range` failed")
 			}
@@ -547,9 +580,21 @@ func createSplitIntAssertRangeHinter(resolver hintReferenceResolver) (hinter.Hin
 	if err != nil {
 		return nil, err
 	}
+
 	return newSplitIntAssertRangeHint(value), nil
 }
 
+// SplitIntHint hint splits an integer in limbs based on a base
+// and asserts that each limb is within a certain range
+//
+// `newSplitIntHint` takes 4 operanders as arguments
+//   - `output` is the location in memory where to write the result
+//   - `value` is the value to split
+//   - `base` is the base used to split the value in limbs
+//   - `bound` represents the maximum value for each limb
+//
+// `newSplitIntHint` is recursively called when splitting an integer
+// and writes to the `output` memory address the calculated limb
 func newSplitIntHint(output, value, base, bound hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitIntHint",
@@ -583,6 +628,7 @@ func newSplitIntHint(output, value, base, bound hinter.ResOperander) hinter.Hint
 			}
 
 			v := memory.MemoryValueFromFieldElement(&result)
+
 			return vm.Memory.WriteToAddress(&outputAddr, &v)
 		},
 	}
@@ -593,21 +639,34 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	if err != nil {
 		return nil, err
 	}
+
 	value, err := resolver.GetResOperander("value")
 	if err != nil {
 		return nil, err
 	}
+
 	base, err := resolver.GetResOperander("base")
 	if err != nil {
 		return nil, err
 	}
+
 	bound, err := resolver.GetResOperander("bound")
 	if err != nil {
 		return nil, err
 	}
+
 	return newSplitIntHint(output, value, base, bound), nil
 }
 
+// Pow hint calculates the least significant bit of the exponent
+// of a number within a prime field
+//
+// `newPowHint` takes 2 operanders as arguments
+//   - `locs` is the variable that will store the result
+//   - `prevLocs` is the the variable used to calculate the exponent
+//
+// `newPowHint` writes to the memory address of `locs` variable the value of the least
+// significant bit of the exponent of `prevLocs` variable module a prime field
 func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Pow",
@@ -621,27 +680,33 @@ func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
 				base: felt,
 				exp: felt,
 			} */
+
 			const expStructOffset = 4
 			locsBitAddress, err := locs.GetAddress(vm)
 			if err != nil {
 				return err
 			}
+
 			prevLocsBitAddress, err := prevLocs.GetAddress(vm)
 			if err != nil {
 				return err
 			}
+
 			prevLocsExpAddr, err := vm.Memory.Read(prevLocsBitAddress.SegmentIndex, prevLocsBitAddress.Offset+expStructOffset)
 			if err != nil {
 				return err
 			}
+
 			prevLocsExp, err := prevLocsExpAddr.FieldElement()
 			if err != nil {
 				return err
 			}
+
 			var prevLocsExpBig big.Int
 			prevLocsExp.BigInt(&prevLocsExpBig)
 			locsBitBig := new(big.Int).And(&prevLocsExpBig, big.NewInt(1))
 			v := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(locsBitBig))
+
 			return vm.Memory.WriteToAddress(&locsBitAddress, &v)
 		},
 	}
@@ -652,15 +717,26 @@ func createPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	prev_locs, err := resolver.GetCellRefer("prev_locs")
 	if err != nil {
 		return nil, err
 	}
+
 	locsRes := hinter.Deref{Deref: locs}
 	prevLocsRes := hinter.Deref{Deref: prev_locs}
+
 	return newPowHint(locsRes, prevLocsRes), nil
 }
 
+// SplitFelt hint splits a finite field element into high and low components
+//
+// `newSplitFeltHint` takes 3 operanders as arguments
+//   - `low` and `high` are the variables that will store the low and high components
+//   - `value` is the variable to split
+//
+// `newSplitFeltHint` writes the low and high components in the `low` and `high`
+// memory address, respectively
 func newSplitFeltHint(low, high, value hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitFelt",
@@ -711,6 +787,7 @@ func newSplitFeltHint(low, high, value hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			//> ids.high = ids.value >> 128
 			highBigInt := new(big.Int).Rsh(&valueBigInt, 128)
 			highValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(highBigInt))
@@ -740,6 +817,17 @@ func createSplitFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 	return newSplitFeltHint(low, high, value), nil
 }
 
+// SignedDivRem hint computes a signed division and modulus operation on a given value,
+// ensuring the quotient is within a specified range
+//
+// `newSignedDivRemHint` takes 5 operanders as arguments
+//   - `value` is the dividende of the operation
+//   - `div` is the divisor of the operation
+//   - `bound` is the upper limit of the specified range
+//   - `r` is the variable that will store the remainder of the modular division
+//   - `biased_q` is the variable that will store the quotient of the modular division
+//
+// `newSignedDivRemHint` writes `r` and `biased_q` values to their respective memory address
 func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SignedDivRem",
@@ -759,9 +847,10 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			if err != nil {
 				return err
 			}
+
 			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, f'div={hex(ids.div)} is out of the valid range.'
 			if divFelt.IsZero() || !utils.FeltLe(divFelt, &utils.PrimeHigh) {
-				return fmt.Errorf("div=%v is out of the valid range.", divFelt)
+				return fmt.Errorf("div=%v is out of the valid range", divFelt)
 			}
 
 			//> assert_integer(ids.bound)
@@ -769,15 +858,18 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			if err != nil {
 				return err
 			}
+
 			//> assert ids.bound <= range_check_builtin.bound // 2, f'bound={hex(ids.bound)} is out of the valid range.'
 			if !utils.FeltLe(boundFelt, &utils.Felt127) {
-				return fmt.Errorf("bound=%v is out of the valid range.", boundFelt)
+				return fmt.Errorf("bound=%v is out of the valid range", boundFelt)
 			}
+
 			//> int_value = as_int(ids.value, PRIME)
 			valueFelt, err := hinter.ResolveAsFelt(vm, value)
 			if err != nil {
 				return err
 			}
+
 			intValueBig := math_utils.AsInt(valueFelt)
 
 			//> q, ids.r = divmod(int_value, ids.div)
@@ -798,7 +890,7 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 
 			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
 			if !(qBig.Cmp(new(big.Int).Neg(&boundBig)) >= 0 && qBig.Cmp(&boundBig) == -1) {
-				return fmt.Errorf("%v / %v = %v is out of the range [-%v, %v].", valueFelt, divFelt, qBig, boundFelt, boundFelt)
+				return fmt.Errorf("%v / %v = %v is out of the range [-%v, %v]", valueFelt, divFelt, qBig, boundFelt, boundFelt)
 			}
 
 			//> ids.biased_q = q + ids.bound
@@ -819,26 +911,38 @@ func createSignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 	if err != nil {
 		return nil, err
 	}
+
 	div, err := resolver.GetResOperander("div")
 	if err != nil {
 		return nil, err
 	}
+
 	bound, err := resolver.GetResOperander("bound")
 	if err != nil {
 		return nil, err
 	}
+
 	r, err := resolver.GetResOperander("r")
 	if err != nil {
 		return nil, err
 	}
+
 	biased_q, err := resolver.GetResOperander("biased_q")
 	if err != nil {
 		return nil, err
 	}
-	return newSignedDivRemHint(value, div, bound, r, biased_q), nil
 
+	return newSignedDivRemHint(value, div, bound, r, biased_q), nil
 }
 
+// Sqrt hint computes the square root of a given value,
+// ensuring it falls within a specific range
+//
+// `newSqrtHint` takes 2 operanders as arguments
+//   - `root` is the variable that will store the result
+//   - `value` is the variable to operate on
+//
+// `newSqrtHint` writes the result of the hint at `root` address in memory
 func newSqrtHint(root, value hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Sqrt",
@@ -871,6 +975,7 @@ func newSqrtHint(root, value hinter.ResOperander) hinter.Hinter {
 			result.SetBytes(valueU256.Bytes())
 
 			v := memory.MemoryValueFromFieldElement(&result)
+
 			return vm.Memory.WriteToAddress(&rootAddr, &v)
 		},
 	}
@@ -881,14 +986,27 @@ func createSqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	value, err := resolver.GetResOperander("value")
 	if err != nil {
 		return nil, err
 	}
+
 	return newSqrtHint(root, value), nil
 }
 
-func newUnsignedDivRemHinter(value, div, q, r hinter.ResOperander) hinter.Hinter {
+// UnsignedDivRem hint computes an unsigned division and modulus
+// operation on a given dividend and divisor
+//
+// `newUnsignedDivRemHinter` takes 4 operanders as arguments
+//   - `value` is the dividend of the operation
+//   - `div` is the divisor of the operation
+//   - `q` is the variable that will store the quotient of the modular division
+//   - `r` is the variable that will store the remainder of the modular division
+//
+// `newUnsignedDivRemHinter` writes `q` and `r` values to their respective memory address
+
+func newUnsignedDivRemHint(value, div, q, r hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UnsignedDivRem",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -902,6 +1020,7 @@ func newUnsignedDivRemHinter(value, div, q, r hinter.ResOperander) hinter.Hinter
 			if err != nil {
 				return err
 			}
+
 			div, err := hinter.ResolveAsFelt(vm, div)
 			if err != nil {
 				return err
@@ -911,10 +1030,12 @@ func newUnsignedDivRemHinter(value, div, q, r hinter.ResOperander) hinter.Hinter
 			if err != nil {
 				return err
 			}
+
 			rAddr, err := r.GetAddress(vm)
 			if err != nil {
 				return err
 			}
+
 			// (PRIME // range_check_builtin.bound)
 			// 800000000000011000000000000000000000000000000000000000000000001 // 2**128
 			var divUpperBound big.Int
@@ -924,7 +1045,7 @@ func newUnsignedDivRemHinter(value, div, q, r hinter.ResOperander) hinter.Hinter
 			div.BigInt(&divBig)
 
 			if div.IsZero() || divBig.Cmp(&divUpperBound) == 1 {
-				return fmt.Errorf("div=0x%v is out of the valid range.", divBig.Text(16))
+				return fmt.Errorf("div=0x%v is out of the valid range", divBig.Text(16))
 			}
 
 			q, r := utils.FeltDivRem(value, div)
@@ -933,7 +1054,9 @@ func newUnsignedDivRemHinter(value, div, q, r hinter.ResOperander) hinter.Hinter
 			if err := vm.Memory.WriteToAddress(&qAddr, &qValue); err != nil {
 				return err
 			}
+
 			rValue := memory.MemoryValueFromFieldElement(&r)
+
 			return vm.Memory.WriteToAddress(&rAddr, &rValue)
 		},
 	}
@@ -944,17 +1067,21 @@ func createUnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	if err != nil {
 		return nil, err
 	}
+
 	div, err := resolver.GetResOperander("div")
 	if err != nil {
 		return nil, err
 	}
+
 	q, err := resolver.GetResOperander("q")
 	if err != nil {
 		return nil, err
 	}
+
 	r, err := resolver.GetResOperander("r")
 	if err != nil {
 		return nil, err
 	}
-	return newUnsignedDivRemHinter(value, div, q, r), nil
+
+	return newUnsignedDivRemHint(value, div, q, r), nil
 }
