@@ -79,5 +79,40 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 			},
 		},
+		"UsortVerifyMultiplicityBody": {
+			// Tests when no variables (positions, last_pos) are in the scope.
+			{
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
+				},
+				errCheck: func(t *testing.T, ctx *hintTestContext, err error) {
+					require.NotNil(t, err)
+				},
+			},
+			// Tests when we can calculate new memory and variable values.
+			{
+				operanders: []*hintOperander{
+					{Name: "next_item_index", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{
+						"positions":   []int64{8, 6, 4},
+						"current_pos": int64(2),
+						"last_pos":    int64(1),
+					})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueInScopeEquals(map[string]any{
+						"current_pos": int64(4),
+						"last_pos":    int64(3),
+					})(t, ctx)
+
+					varValueEquals("next_item_index", feltInt64(1))(t, ctx)
+				},
+			},
+		},
 	})
 }
