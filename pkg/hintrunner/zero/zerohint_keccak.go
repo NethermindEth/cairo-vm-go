@@ -8,10 +8,9 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
-	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func newCairoKeccakFinalizeHint(keccakStateSizeFeltsResOperander, blockSizeResOperander, keccakPtrEndResOperander hinter.ResOperander) hinter.Hinter {
@@ -88,7 +87,7 @@ func createCairoKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hin
 
 func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "CairoKeccakFinalize",
+		Name: "UnsafeKeccak",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//>	from eth_hash.auto import keccak
 			//>	data, length = ids.data, ids.length
@@ -111,25 +110,26 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 				return err
 			}
 			keccakMaxSize, err := ctx.ScopeManager.GetVariableValueAsUint64("__keccak_max_size")
-			if err == nil {
-				if lengthVal > keccakMaxSize {
-					return fmt.Errorf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d.", keccakMaxSize, lengthVal)
-				}
+			if err != nil {
+				return err
+			}
+			if lengthVal > keccakMaxSize {
+				return fmt.Errorf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d.", keccakMaxSize, lengthVal)
 			}
 			dataPtr, err := hinter.ResolveAsAddress(vm, data)
 			if err != nil {
 				return err
 			}
-			dataPtrCopy := *dataPtr
+
 			keccakInput := make([]byte, 0)
 			for i := uint64(0); i < lengthVal; i += 16 {
-				wordFelt, err := vm.Memory.ReadAsElement(dataPtrCopy.SegmentIndex, dataPtrCopy.Offset)
+				wordFelt, err := vm.Memory.ReadAsElement(dataPtr.SegmentIndex, dataPtr.Offset)
 				if err != nil {
 					return err
 				}
 				word := uint256.Int(wordFelt.Bits())
 				nBytes := lengthVal - i
-				if lengthVal-i > 16 {
+				if nBytes > 16 {
 					nBytes = 16
 				}
 				if uint64(word.BitLen()) >= 8*nBytes {
@@ -137,7 +137,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 				}
 				wordBytes := word.Bytes20()
 				keccakInput = append(keccakInput, wordBytes[20-int(nBytes):]...)
-				dataPtrCopy, err = dataPtrCopy.AddOffset(1)
+				*dataPtr, err = dataPtr.AddOffset(1)
 				if err != nil {
 					return err
 				}
@@ -153,7 +153,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 			}
 			hashedHighMV := memory.MemoryValueFromFieldElement(hashedHigh)
 			err = vm.Memory.WriteToAddress(&highAddr, &hashedHighMV)
-      if err != nil {
+			if err != nil {
 				return err
 			}
 			lowAddr, err := low.GetAddress(vm)
@@ -185,7 +185,7 @@ func createUnsafeKeccakHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 	}
 	return newUnsafeKeccakHint(data, length, high, low), nil
 }
-      
+
 func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter {
 	name := "KeccakWriteArgs"
 	return &GenericZeroHinter{
@@ -218,27 +218,27 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter
 			lowResultUint256Low.And(&maxUint64, &lowResultUint256Low)
 			lowResulBytes32Low := lowResultUint256Low.Bytes32()
 			lowResultFeltLow, _ := fp.BigEndian.Element(&lowResulBytes32Low)
-			mvLowLow := mem.MemoryValueFromFieldElement(&lowResultFeltLow)
+			mvLowLow := memory.MemoryValueFromFieldElement(&lowResultFeltLow)
 
 			lowResultUint256High := lowUint256
 			lowResultUint256High.Rsh(&lowResultUint256High, 64)
 			lowResultUint256High.And(&lowResultUint256High, &maxUint64)
 			lowResulBytes32High := lowResultUint256High.Bytes32()
 			lowResultFeltHigh, _ := fp.BigEndian.Element(&lowResulBytes32High)
-			mvLowHigh := mem.MemoryValueFromFieldElement(&lowResultFeltHigh)
+			mvLowHigh := memory.MemoryValueFromFieldElement(&lowResultFeltHigh)
 
 			highResultUint256Low := highUint256
 			highResultUint256Low.And(&maxUint64, &highResultUint256Low)
 			highResulBytes32Low := highResultUint256Low.Bytes32()
 			highResultFeltLow, _ := fp.BigEndian.Element(&highResulBytes32Low)
-			mvHighLow := mem.MemoryValueFromFieldElement(&highResultFeltLow)
+			mvHighLow := memory.MemoryValueFromFieldElement(&highResultFeltLow)
 
 			highResultUint256High := highUint256
 			highResultUint256High.Rsh(&highResultUint256High, 64)
 			highResultUint256High.And(&maxUint64, &highResultUint256High)
 			highResulBytes32High := highResultUint256High.Bytes32()
 			highResultFeltHigh, _ := fp.BigEndian.Element(&highResulBytes32High)
-			mvHighHigh := mem.MemoryValueFromFieldElement(&highResultFeltHigh)
+			mvHighHigh := memory.MemoryValueFromFieldElement(&highResultFeltHigh)
 
 			err = vm.Memory.Write(inputsPtr.SegmentIndex, inputsPtr.Offset, &mvLowLow)
 			if err != nil {
@@ -246,7 +246,7 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter
 			}
 
 			err = vm.Memory.Write(inputsPtr.SegmentIndex, inputsPtr.Offset+1, &mvLowHigh)
-      if err != nil {
+			if err != nil {
 				return err
 			}
 			err = vm.Memory.Write(inputsPtr.SegmentIndex, inputsPtr.Offset+2, &mvHighLow)

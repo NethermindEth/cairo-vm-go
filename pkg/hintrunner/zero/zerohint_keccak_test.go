@@ -83,9 +83,11 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "low", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
-						"__keccak_max_size": uint64(100),
-					})
+					ctx.ScopeManager.EnterScope(
+						map[string]any{
+							"__keccak_max_size": uint64(100),
+						},
+					)
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
@@ -101,9 +103,11 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "low", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
-						"__keccak_max_size": uint64(100),
-					})
+					ctx.ScopeManager.EnterScope(
+						map[string]any{
+							"__keccak_max_size": uint64(100),
+						},
+					)
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
@@ -122,9 +126,11 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "low", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
-						"__keccak_max_size": uint64(100),
-					})
+					ctx.ScopeManager.EnterScope(
+						map[string]any{
+							"__keccak_max_size": uint64(100),
+						},
+					)
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
@@ -133,6 +139,47 @@ func TestZeroHintKeccak(t *testing.T) {
 					varValueEquals("high", feltString("108955721224378455455648573289483395612"))(t, ctx)
 					varValueEquals("low", feltString("253531040214470063354971884479696309631"))(t, ctx)
 				},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "data", Kind: apRelative, Value: addr(5)},
+					{Name: "data.0", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "data.1", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "data.2", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "data.3", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "data.4", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "data.5", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "data.6", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "data.7", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "data.8", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "data.9", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "data.10", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "data.11", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "data.12", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "data.13", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "data.14", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "data.15", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "data.16", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "length", Kind: apRelative, Value: feltUint64(17)},
+					{Name: "high", Kind: uninitialized},
+					{Name: "low", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(
+						map[string]any{
+							"__keccak_max_size": uint64(100),
+						},
+					)
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					varValueEquals("high", feltString("108955721224378455455648573289483395612"))(t, ctx)
+					varValueEquals("low", feltString("253531040214470063354971884479696309631"))(t, ctx)
+				},
+			},
+		},
 		"newKeccakWriteArgs": {
 			{
 				operanders: []*hintOperander{
