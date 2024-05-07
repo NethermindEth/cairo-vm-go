@@ -77,10 +77,10 @@ func createUsortVerifyMultiplicityAssertHinter() (hinter.Hinter, error) {
 }
 
 // UsortVerify hint prepares for verifying the presence of duplicates of
-// a specific value in the input (array of fields)
+// a specific value in the sorted output (array of fields)
 //
 // `newUsortVerifyHint` takes one operander as argument
-//   - `value` is the value at the given position in the input
+//   - `value` is the value at the given position in the output
 //
 // `last_pos` is set to zero
 // `positions` is set to the reversed order list associated with `ids.value`
@@ -132,13 +132,14 @@ func createUsortVerifyHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	return newUsortVerifyHint(value), nil
 }
 
-// UsortVerifyMultiplicityBody hint processes each position of a specific value
-// in the input (array of fields), updating indices for verification
+// UsortVerifyMultiplicityBody hint extracts a specific value
+// of the sorted output with `pop`, updating indices for the verification
+// of the next value
 //
 // `newUsortVerifyMultiplicityBodyHint` takes one operander as argument
 //   - `nextItemIndex` is the index of the next item
 //
-// `next_item_index` is set to `current_pos - last_pos`
+// `next_item_index` is set to `current_pos - last_pos` for the next iteration
 // `newUsortVerifyMultiplicityBodyHint` assigns `last_pos` in the current scope
 func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
