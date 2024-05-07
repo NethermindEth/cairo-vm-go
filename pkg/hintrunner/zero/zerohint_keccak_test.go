@@ -9,7 +9,6 @@ import (
 )
 
 func TestZeroHintKeccak(t *testing.T) {
-
 	runHinterTests(t, map[string][]hintTestCase{
 		"CairoKeccakFinalize": {
 			{
@@ -84,9 +83,11 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "low", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
-						"__keccak_max_size": uint64(100),
-					})
+					ctx.ScopeManager.EnterScope(
+						map[string]any{
+							"__keccak_max_size": uint64(100),
+						},
+					)
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
@@ -102,9 +103,11 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "low", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
-						"__keccak_max_size": uint64(100),
-					})
+					ctx.ScopeManager.EnterScope(
+						map[string]any{
+							"__keccak_max_size": uint64(100),
+						},
+					)
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
@@ -123,9 +126,11 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "low", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
-						"__keccak_max_size": uint64(100),
-					})
+					ctx.ScopeManager.EnterScope(
+						map[string]any{
+							"__keccak_max_size": uint64(100),
+						},
+					)
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
@@ -134,6 +139,227 @@ func TestZeroHintKeccak(t *testing.T) {
 					varValueEquals("high", feltString("108955721224378455455648573289483395612"))(t, ctx)
 					varValueEquals("low", feltString("253531040214470063354971884479696309631"))(t, ctx)
 				},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "data", Kind: apRelative, Value: addr(5)},
+					{Name: "data.0", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "data.1", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "data.2", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "data.3", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "data.4", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "data.5", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "data.6", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "data.7", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "data.8", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "data.9", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "data.10", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "data.11", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "data.12", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "data.13", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "data.14", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "data.15", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "data.16", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "length", Kind: apRelative, Value: feltUint64(17)},
+					{Name: "high", Kind: uninitialized},
+					{Name: "low", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(
+						map[string]any{
+							"__keccak_max_size": uint64(100),
+						},
+					)
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					varValueEquals("high", feltString("56771159036737573629468716613812266635"))(t, ctx)
+					varValueEquals("low", feltString("227059976118866674457558706455644375132"))(t, ctx)
+				},
+			},
+		},
+		"newKeccakWriteArgs": {
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: apRelative, Value: addr(7)},
+					{Name: "low", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "high", Kind: fpRelative, Value: feltUint64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newKeccakWriteArgsHint(ctx.operanders["inputs"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"inputs",
+					[]*fp.Element{
+						feltString("0"),
+						feltString("0"),
+						feltString("0"),
+						feltString("0"),
+					}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: apRelative, Value: addr(7)},
+					{Name: "low", Kind: fpRelative, Value: feltUint64(1)},
+					{Name: "high", Kind: fpRelative, Value: feltUint64(1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newKeccakWriteArgsHint(ctx.operanders["inputs"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"inputs",
+					[]*fp.Element{
+						feltString("1"),
+						feltString("0"),
+						feltString("1"),
+						feltString("0"),
+					}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: apRelative, Value: addr(7)},
+					{Name: "low", Kind: fpRelative, Value: feltUint64(1)},
+					{Name: "high", Kind: fpRelative, Value: feltUint64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newKeccakWriteArgsHint(ctx.operanders["inputs"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"inputs",
+					[]*fp.Element{
+						feltString("1"),
+						feltString("0"),
+						feltString("0"),
+						feltString("0"),
+					}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: apRelative, Value: addr(7)},
+					{Name: "low", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "high", Kind: fpRelative, Value: feltUint64(1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newKeccakWriteArgsHint(ctx.operanders["inputs"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"inputs",
+					[]*fp.Element{
+						feltString("0"),
+						feltString("0"),
+						feltString("1"),
+						feltString("0"),
+					}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: apRelative, Value: addr(7)},
+					{Name: "low", Kind: fpRelative, Value: feltString("18446744073709551615")},
+					{Name: "high", Kind: fpRelative, Value: feltString("18446744073709551615")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newKeccakWriteArgsHint(ctx.operanders["inputs"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"inputs",
+					[]*fp.Element{
+						feltUint64(18446744073709551615),
+						feltUint64(0),
+						feltUint64(18446744073709551615),
+						feltUint64(0),
+					}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: apRelative, Value: addr(7)},
+					{Name: "low", Kind: fpRelative, Value: feltString("18446744073709551616")},
+					{Name: "high", Kind: fpRelative, Value: feltString("18446744073709551616")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newKeccakWriteArgsHint(ctx.operanders["inputs"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"inputs",
+					[]*fp.Element{
+						feltUint64(0),
+						feltUint64(1),
+						feltUint64(0),
+						feltUint64(1),
+					}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: apRelative, Value: addr(7)},
+					{Name: "low", Kind: fpRelative, Value: feltString("18446744073709551618")},
+					{Name: "high", Kind: fpRelative, Value: feltString("18446744073709551618")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newKeccakWriteArgsHint(ctx.operanders["inputs"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"inputs",
+					[]*fp.Element{
+						feltUint64(2),
+						feltUint64(1),
+						feltUint64(2),
+						feltUint64(1),
+					}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: apRelative, Value: addr(7)},
+					{Name: "low", Kind: fpRelative, Value: feltString("340282366920938463463374607431768211455")},
+					{Name: "high", Kind: fpRelative, Value: feltString("340282366920938463463374607431768211455")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newKeccakWriteArgsHint(ctx.operanders["inputs"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"inputs",
+					[]*fp.Element{
+						feltUint64(18446744073709551615),
+						feltUint64(18446744073709551615),
+						feltUint64(18446744073709551615),
+						feltUint64(18446744073709551615),
+					}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: apRelative, Value: addr(7)},
+					{Name: "low", Kind: fpRelative, Value: feltString("340282366920938463463374607431768211455")},
+					{Name: "high", Kind: fpRelative, Value: feltString("18446744073709551626")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newKeccakWriteArgsHint(ctx.operanders["inputs"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"inputs",
+					[]*fp.Element{
+						feltUint64(18446744073709551615),
+						feltUint64(18446744073709551615),
+						feltUint64(10),
+						feltUint64(1),
+					}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: apRelative, Value: addr(7)},
+					{Name: "low", Kind: fpRelative, Value: feltString("368934881474191032340")},
+					{Name: "high", Kind: fpRelative, Value: feltString("184467440737095516170")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newKeccakWriteArgsHint(ctx.operanders["inputs"], ctx.operanders["low"], ctx.operanders["high"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"inputs",
+					[]*fp.Element{
+						feltUint64(20),
+						feltUint64(20),
+						feltUint64(10),
+						feltUint64(10),
+					}),
 			},
 		},
 		"UnsafeKeccakFinalize": {
