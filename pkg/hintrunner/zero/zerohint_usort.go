@@ -14,8 +14,8 @@ import (
 //
 // `newUsortEnterScopeHinter` doesn't take any operander as argument
 //
-// `newUsortEnterScopeHinter` gets from the current scope `__usort_max_size` value
-// And enters a new scope with this same value
+// `newUsortEnterScopeHinter` gets from the current scope `__usort_max_size`
+// value and enters a new scope with this same value
 func newUsortEnterScopeHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortEnterScope",
@@ -40,13 +40,13 @@ func createUsortEnterScopeHinter() (hinter.Hinter, error) {
 	return newUsortEnterScopeHint(), nil
 }
 
-// UsortVerifyMultiplicityAssert hint asserts that all occurrences of a specific value
-// have been accounted for in the verification process
+// UsortVerifyMultiplicityAssert hint checks that the "positions" variable in scope
+// doesn't contain any value
 //
 // `newUsortVerifyMultiplicityAssertHint` doesn't take any operander as argument
 //
-// `newUsortVerifyMultiplicityAssertHint` checks that the "positions" variable in scope
-// doesn't contain any value
+// This hint is used when sorting an array of field elements while removing duplicates
+// in `usort` Cairo function
 func newUsortVerifyMultiplicityAssertHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortVerifyMultiplicityAssert",
@@ -76,12 +76,15 @@ func createUsortVerifyMultiplicityAssertHinter() (hinter.Hinter, error) {
 	return newUsortEnterScopeHint(), nil
 }
 
-// UsortVerify hint prepares for verifying the multiplicity of a specific value
-// in the sorted output by reversing its positions list
+// UsortVerify hint prepares for verifying the presence of duplicates of
+// a specific value in the input (array of fields)
 //
 // `newUsortVerifyHint` takes one operander as argument
-// `value` is the value at the given position in the lsit
+//   - `value` is the value at the given position in the input
 //
+// `last_pos` is set to zero
+// `positions` is set to the reversed order list associated with `ids.value`
+// key in `positions_dict`
 // `newUsortVerifyHint` assigns `last_pos` and `positions` in the current scope
 func newUsortVerifyHint(value hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
@@ -130,11 +133,12 @@ func createUsortVerifyHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 }
 
 // UsortVerifyMultiplicityBodyHint hint processes each position of a specific value
-// in the sorted output, updating indices for verification.
+// in the input (array of fields), updating indices for verification
 //
 // `newUsortVerifyMultiplicityBodyHint` takes one operander as argument
-// `nextItemIndex` is the value at the given position in the lsit
+//   - `nextItemIndex` is the index of the next item
 //
+// `next_item_index` is set to `current_pos - last_pos`
 // `newUsortVerifyMultiplicityBodyHint` assigns `last_pos` in the current scope
 func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{

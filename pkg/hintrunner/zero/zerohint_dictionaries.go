@@ -8,12 +8,10 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-// SquashDictInnerAssertLenKeysHint hint asserts the length of the `keys`
-// descending list during the squashing process.
+// SquashDictInnerAssertLenKeysHint hint asserts that the length
+// of the `keys` descending list is zero during the squashing process
 //
 // `newSquashDictInnerAssertLenKeysHint` doesn't take any operander as argument
-//
-// `newSquashDictInnerAssertLenKeysHint` asserts that `keys` length is zero
 func newSquashDictInnerAssertLenKeysHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SquashDictInnerAssertLenKeys",
