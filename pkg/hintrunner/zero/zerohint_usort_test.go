@@ -130,7 +130,7 @@ func TestZeroHintUsort(t *testing.T) {
 					return newUsortBodyHint(ctx.operanders["input"], ctx.operanders["input_length"], ctx.operanders["output"], ctx.operanders["output_length"], ctx.operanders["multiplicites"])
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
+					ctx.ScopeManager.EnterScope(map[string]any{
 						"__usort_max_size": new(big.Int).SetUint64(10),
 					})
 				},
@@ -152,7 +152,7 @@ func TestZeroHintUsort(t *testing.T) {
 					return newUsortBodyHint(ctx.operanders["input"], ctx.operanders["input_length"], ctx.operanders["output"], ctx.operanders["output_length"], ctx.operanders["multiplicities"])
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
+					ctx.ScopeManager.EnterScope(map[string]any{
 						"__usort_max_size": new(big.Int).SetUint64(100),
 					})
 				},
@@ -188,7 +188,7 @@ func TestZeroHintUsort(t *testing.T) {
 					return newUsortBodyHint(ctx.operanders["input"], ctx.operanders["input_length"], ctx.operanders["output"], ctx.operanders["output_length"], ctx.operanders["multiplicities"])
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
+					ctx.ScopeManager.EnterScope(map[string]any{
 						"__usort_max_size": new(big.Int).SetUint64(100),
 					})
 				},
@@ -229,7 +229,7 @@ func TestZeroHintUsort(t *testing.T) {
 					return newUsortBodyHint(ctx.operanders["input"], ctx.operanders["input_length"], ctx.operanders["output"], ctx.operanders["output_length"], ctx.operanders["multiplicities"])
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
+					ctx.ScopeManager.EnterScope(map[string]any{
 						"__usort_max_size": new(big.Int).SetUint64(100),
 					})
 				},
@@ -266,7 +266,7 @@ func TestZeroHintUsort(t *testing.T) {
 					return newUsortBodyHint(ctx.operanders["input"], ctx.operanders["input_length"], ctx.operanders["output"], ctx.operanders["output_length"], ctx.operanders["multiplicities"])
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
+					ctx.ScopeManager.EnterScope(map[string]any{
 						"__usort_max_size": new(big.Int).SetUint64(100),
 					})
 				},
