@@ -10,6 +10,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,8 +20,14 @@ func TestCairoZeroFiles(t *testing.T) {
 	testFiles, err := os.ReadDir(root)
 	require.NoError(t, err)
 
+	// Get the filter value from the environment variable
 	// filter is for debugging purposes
-	filter := ""
+	err = godotenv.Load("./.env")
+	if err != nil {
+		t.Errorf("Error loading .env file: %v", err)
+	}
+
+	filter := os.Getenv("INTEGRATION_TESTS_FILTER")
 
 	for _, dirEntry := range testFiles {
 		if dirEntry.IsDir() || isGeneratedFile(dirEntry.Name()) {
