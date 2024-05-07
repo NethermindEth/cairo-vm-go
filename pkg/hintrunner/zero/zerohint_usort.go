@@ -14,8 +14,8 @@ import (
 //
 // `newUsortEnterScopeHint` doesn't take any operander as argument
 //
-// `newUsortEnterScopeHint` gets from the current scope `__usort_max_size`
-// value and enters a new scope with this same value
+// `newUsortEnterScopeHint` gets `__usort_max_size` value from the current
+// scope and enters a new scope with this same value
 func newUsortEnterScopeHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortEnterScope",
