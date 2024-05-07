@@ -164,7 +164,8 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
-			// TODO : This doesn't make sense as currentPos is the value just before
+			// TODO : This is not correct, `newCurrentPos` should be used
+			// and there is not `current_pos` variable to retrieve in scope
 			currentPos, err := ctx.ScopeManager.GetVariableValue("current_pos")
 			if err != nil {
 				return err
