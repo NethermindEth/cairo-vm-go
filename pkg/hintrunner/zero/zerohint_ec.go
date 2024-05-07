@@ -14,7 +14,7 @@ import (
 // EcNegate hint negates the y-coordinate of a point on an elliptic curve modulo SECP_P
 //
 // `newEcNegateHint` takes 1 operander as argument
-// `point` is the point on an elliptic curve to operate on
+//   - `point` is the point on an elliptic curve to operate on
 //
 // `newEcNegateHint` assigns the result as `value` in the current scope
 func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
@@ -80,7 +80,7 @@ func createEcNegateHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 // NondetBigint3V1 hint writes a value to a specified segment of memory
 //
 // `newNondetBigint3V1Hint` takes 1 operander as argument
-// `res` is the location in memory where to write the result
+//   - `res` is the location in memory where to write the result
 //
 // `newNondetBigint3V1Hint` uses `SecPSplit` to split the value in 3 felts and writes the result in memory
 func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
@@ -191,8 +191,8 @@ func createFastEcAddAssignNewYHinter() (hinter.Hinter, error) {
 // FastEcAddAssignNewX hint computes a new x-coordinate for fast elliptic curve addition
 //
 // `newFastEcAddAssignNewXHint` takes 3 operanders as arguments
-// `slope` is the slope of the line connecting `point0` and `point1`
-// `point0` and `point1` are 2 points on an elliptic curve
+//   - `slope` is the slope of the line connecting `point0` and `point1`
+//   - `point0` and `point1` are 2 points on an elliptic curve
 //
 // `newFastEcAddAssignNewXHint` assigns the new x-coordinate as `value` in the current scope
 // It also assigns `slope`, `x0`, `y0` and `new_x` in the current scope
@@ -338,7 +338,7 @@ func createFastEcAddAssignNewXHinter(resolver hintReferenceResolver) (hinter.Hin
 // EcDoubleSlopeV1 hint computes the slope for doubling a point on an elliptic curve
 //
 // `newEcDoubleSlopeV1Hint` takes 1 operander as argument
-// `point` is the point on an elliptic curve to operate on
+//   - `point` is the point on an elliptic curve to operate on
 //
 // `newEcDoubleSlopeV1Hint` assigns the `slope` result as `value` in the current scope
 func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
@@ -422,8 +422,8 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 // EcDoubleAssignNewXV1 hint computes a new x-coordinate for a point being doubled on an elliptic curve
 //
 // `newEcDoubleAssignNewXV1Hint` takes 2 operanders as arguments
-// `slope` is the slope for doubling a point, computed with EcDoubleSlopeV1 hint
-// `point` is the point on an elliptic curve to operate on
+//   - `slope` is the slope for doubling a point, computed with EcDoubleSlopeV1 hint
+//   - `point` is the point on an elliptic curve to operate on
 //
 // `newEcDoubleAssignNewXV1Hint` assigns the `new_x` result as `value` in the current scope
 // It also assigns `slope`, `x`, `y` and `new_x` in the current scope
@@ -541,8 +541,8 @@ func createEcDoubleAssignNewXV1Hinter(resolver hintReferenceResolver) (hinter.Hi
 // ComputeSlopeV1Hint hint computes the slope between two points on an elliptic curve
 //
 // `newComputeSlopeV1Hint` takes 2 operanders as arguments
-// `point0` is the first point on an elliptic curve to operate on
-// `point1` is the second point on an elliptic curve to operate on
+//   - `point0` is the first point on an elliptic curve to operate on
+//   - `point1` is the second point on an elliptic curve to operate on
 //
 // `newComputeSlopeV1Hint` assigns the `slope` result as `value` in the current scope
 func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {

@@ -157,13 +157,13 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSquashDictInnerAssertLenKeysHinter()
 		// Other hints
 	case allocSegmentCode:
-		return createAllocSegmentHinter(resolver)
+		return createAllocSegmentHinter()
 	case vmEnterScopeCode:
-		return createVMEnterScopeHinter(resolver)
+		return createVMEnterScopeHinter()
 	case memcpyEnterScopeCode:
 		return createMemcpyEnterScopeHinter(resolver)
 	case vmExitScopeCode:
-		return createVMExitScopeHinter(resolver)
+		return createVMExitScopeHinter()
 	case testAssignCode:
 		return createTestAssignHinter(resolver)
 	default:
