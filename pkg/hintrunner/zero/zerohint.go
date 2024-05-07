@@ -112,10 +112,14 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createVerifyECDSASignatureHinter(resolver)
 	case getPointFromXCode:
 		return createGetPointFromXHinter(resolver)
+	case divModNSafeDivCode:
+		return createDivModSafeDivHinter()
 	case importSecp256R1PCode:
 		return createImportSecp256R1PHinter()
 	case verifyZeroCode:
 		return createVerifyZeroHinter(resolver)
+	case divModNPackedDivmodV1Code:
+		return createDivModNPackedDivmodV1Hinter(resolver)
 		// EC hints
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)
@@ -125,24 +129,43 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createFastEcAddAssignNewYHinter()
 	case fastEcAddAssignNewXCode:
 		return createFastEcAddAssignNewXHinter(resolver)
+	case ecDoubleSlopeV1Code:
+		return createEcDoubleSlopeV1Hinter(resolver)
+	case computeSlopeV1Code:
+		return createComputeSlopeV1Hinter(resolver)
+	case ecDoubleAssignNewXV1:
+		return createEcDoubleAssignNewXV1Hinter(resolver)
 		// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
 	case blake2sAddUint256Code:
 		return createBlake2sAddUint256Hinter(resolver, false)
-		// Usort hints
-	case usortEnterScopeCode:
-		return createUsortEnterScopeHinter()
 		// Keccak hints
+	case keccakWriteArgs:
+		return createKeccakWriteArgsHinter(resolver)
 	case cairoKeccakFinalizeCode:
 		return createCairoKeccakFinalizeHinter(resolver)
 	case unsafeKeccakCode:
 		return createUnsafeKeccakHinter(resolver)
+		// Usort hints
+	case usortEnterScopeCode:
+		return createUsortEnterScopeHinter()
+	case usortVerifyMultiplicityAssertCode:
+		return createUsortVerifyMultiplicityAssertHinter()
+	case usortVerifyCode:
+		return createUsortVerifyHinter(resolver)
+	case usortVerifyMultiplicityBodyCode:
+		return createUsortVerifyMultiplicityBodyHinter(resolver)
+		// Dictionaries hints
+	case squashDictInnerAssertLenKeys:
+		return createSquashDictInnerAssertLenKeysHinter()
 		// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter(resolver)
 	case vmEnterScopeCode:
 		return createVMEnterScopeHinter(resolver)
+	case memcpyEnterScopeCode:
+		return createMemcpyEnterScopeHinter(resolver)
 	case vmExitScopeCode:
 		return createVMExitScopeHinter(resolver)
 	case testAssignCode:

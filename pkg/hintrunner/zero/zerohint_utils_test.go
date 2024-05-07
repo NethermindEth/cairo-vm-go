@@ -202,3 +202,11 @@ func errorIsNil(t *testing.T, ctx *hintTestContext, err error) {
 		t.Fatalf("expected a nil error, got: %v", err)
 	}
 }
+
+func varListInScopeEquals(expectedValues map[string]any) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		for varName, expected := range expectedValues {
+			varValueInScopeEquals(varName, expected)(t, ctx)
+		}
+	}
+}
