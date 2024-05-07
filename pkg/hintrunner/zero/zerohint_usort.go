@@ -2,7 +2,6 @@ package zero
 
 import (
 	"fmt"
-	"math/big"
 	"sort"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -70,14 +69,13 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 			if err != nil {
 				return err
 			}
-
-			inputLenBig := new(big.Int).SetUint64(inputLen)
-			usortMaxSize, err := ctx.ScopeManager.GetVariableValueAsBigInt("__usort_max_size")
+			usortMaxSizeInterface, err := ctx.ScopeManager.GetVariableValue("__usort_max_size")
 			if err != nil {
 				return err
 			}
-			if inputLenBig.Cmp(usortMaxSize) > 0 {
-				return fmt.Errorf("usort() can only be used with input_len<=%d.\n Got: input_len=%d", usortMaxSize, inputLenBig)
+			usortMaxSize := usortMaxSizeInterface.(uint64)
+			if inputLen > usortMaxSize {
+				return fmt.Errorf("usort() can only be used with input_len<=%d.\n Got: input_len=%d", usortMaxSize, inputLen)
 			}
 			positionsDict := make(map[fp.Element][]uint64, inputLen)
 			inputBasePtrCopy := *inputBasePtr
@@ -166,7 +164,6 @@ func newUsortEnterScopeHinter() hinter.Hinter {
 		Name: "UsortEnterScope",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> vm_enter_scope(dict(__usort_max_size = globals().get('__usort_max_size')))
-
 			usortMaxSize, err := ctx.ScopeManager.GetVariableValue("__usort_max_size")
 			if err != nil {
 				return err

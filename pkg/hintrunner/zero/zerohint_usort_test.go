@@ -2,7 +2,6 @@ package zero
 
 import (
 	"fmt"
-	"math/big"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -17,13 +16,13 @@ func TestZeroHintUsort(t *testing.T) {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
-						"__usort_max_size": feltUint64(1),
+						"__usort_max_size": uint8(1),
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortEnterScopeHinter()
 				},
-				check: varValueInScopeEquals("__usort_max_size", feltUint64(1)),
+				check: varValueInScopeEquals("__usort_max_size", uint8(1)),
 			},
 		},
 		"UsortVerifyMultiplicityAssert": {
@@ -131,7 +130,7 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
-						"__usort_max_size": new(big.Int).SetUint64(10),
+						"__usort_max_size": uint64(10),
 					})
 				},
 				errCheck: errorTextContains(fmt.Sprintf("usort() can only be used with input_len<=%d.\n Got: input_len=%d", 10, 20)),
@@ -153,7 +152,7 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
-						"__usort_max_size": new(big.Int).SetUint64(100),
+						"__usort_max_size": uint64(100),
 					})
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
@@ -189,7 +188,7 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
-						"__usort_max_size": new(big.Int).SetUint64(100),
+						"__usort_max_size": uint64(100),
 					})
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
@@ -230,7 +229,7 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
-						"__usort_max_size": new(big.Int).SetUint64(100),
+						"__usort_max_size": uint64(100),
 					})
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
@@ -267,7 +266,7 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
-						"__usort_max_size": new(big.Int).SetUint64(100),
+						"__usort_max_size": uint64(100),
 					})
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {

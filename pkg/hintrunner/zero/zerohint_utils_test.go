@@ -181,6 +181,14 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
 			}
+		case uint:
+			{
+				valueFelt := value.(uint)
+				expectedFelt := expected.(uint)
+				if valueFelt != expectedFelt {
+					t.Fatalf("%s scope value mismatch:\nhave: %d\nwant: %d", varName, value, expected)
+				}
+			}
 		default:
 			{
 				if value != expected {
