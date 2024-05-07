@@ -1,9 +1,12 @@
 package zero
 
 import (
+	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
 )
@@ -113,7 +116,7 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 			},
 		},
-    "UsortBody": {
+		"UsortBody": {
 			{
 				// input length greater then allowed size
 				operanders: []*hintOperander{
@@ -127,8 +130,9 @@ func TestZeroHintUsort(t *testing.T) {
 					return newUsortBodyHint(ctx.operanders["input"], ctx.operanders["input_length"], ctx.operanders["output"], ctx.operanders["output_length"], ctx.operanders["multiplicites"])
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-					ctx.ScopeManager.AssignVariable("__usort_max_size", new(big.Int).SetUint64(10))
+					hinter.InitializeScopeManager(ctx, map[string]any{
+						"__usort_max_size": new(big.Int).SetUint64(10),
+					})
 				},
 				errCheck: errorTextContains(fmt.Sprintf("usort() can only be used with input_len<=%d.\n Got: input_len=%d", 10, 20)),
 			},
@@ -148,8 +152,9 @@ func TestZeroHintUsort(t *testing.T) {
 					return newUsortBodyHint(ctx.operanders["input"], ctx.operanders["input_length"], ctx.operanders["output"], ctx.operanders["output_length"], ctx.operanders["multiplicities"])
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-					ctx.ScopeManager.AssignVariable("__usort_max_size", new(big.Int).SetUint64(100))
+					hinter.InitializeScopeManager(ctx, map[string]any{
+						"__usort_max_size": new(big.Int).SetUint64(100),
+					})
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					varAddrResolvedValueEquals("output_length", feltUint64(3))(t, ctx)
@@ -183,8 +188,9 @@ func TestZeroHintUsort(t *testing.T) {
 					return newUsortBodyHint(ctx.operanders["input"], ctx.operanders["input_length"], ctx.operanders["output"], ctx.operanders["output_length"], ctx.operanders["multiplicities"])
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-					ctx.ScopeManager.AssignVariable("__usort_max_size", new(big.Int).SetUint64(100))
+					hinter.InitializeScopeManager(ctx, map[string]any{
+						"__usort_max_size": new(big.Int).SetUint64(100),
+					})
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					varAddrResolvedValueEquals("output_length", feltUint64(3))(t, ctx)
@@ -223,8 +229,9 @@ func TestZeroHintUsort(t *testing.T) {
 					return newUsortBodyHint(ctx.operanders["input"], ctx.operanders["input_length"], ctx.operanders["output"], ctx.operanders["output_length"], ctx.operanders["multiplicities"])
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-					ctx.ScopeManager.AssignVariable("__usort_max_size", new(big.Int).SetUint64(100))
+					hinter.InitializeScopeManager(ctx, map[string]any{
+						"__usort_max_size": new(big.Int).SetUint64(100),
+					})
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					varAddrResolvedValueEquals("output_length", feltUint64(6))(t, ctx)
@@ -259,15 +266,16 @@ func TestZeroHintUsort(t *testing.T) {
 					return newUsortBodyHint(ctx.operanders["input"], ctx.operanders["input_length"], ctx.operanders["output"], ctx.operanders["output_length"], ctx.operanders["multiplicities"])
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-					ctx.ScopeManager.AssignVariable("__usort_max_size", new(big.Int).SetUint64(100))
+					hinter.InitializeScopeManager(ctx, map[string]any{
+						"__usort_max_size": new(big.Int).SetUint64(100),
+					})
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					varAddrResolvedValueEquals("output_length", feltUint64(0))(t, ctx)
 					consecutiveVarAddrResolvedValueEquals("output", []*fp.Element{})(t, ctx)
 					consecutiveVarAddrResolvedValueEquals("multiplicities", []*fp.Element{})(t, ctx)
-        }
-      }
-    }
+				},
+			},
+		},
 	})
 }

@@ -6,8 +6,7 @@ import (
 	"sort"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
-
+	usortUtils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -100,7 +99,7 @@ func newUsortBodyHint(input, input_len, output, output_len, multiplicities hinte
 				outputArray[iterator] = key
 				iterator++
 			}
-			sort.Sort(utils.SortFelt(outputArray))
+			sort.Sort(usortUtils.SortFelt(outputArray))
 
 			outputLenAddr, err := output_len.GetAddress(vm)
 			if err != nil {
