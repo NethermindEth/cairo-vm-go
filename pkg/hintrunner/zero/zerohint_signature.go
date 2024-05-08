@@ -98,7 +98,7 @@ func createVerifyZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	return newVerifyZeroHint(val, q), nil
 }
 
-// VerifyECDSASignature hint adds an ECDSA signature to a given address
+// VerifyECDSASignature hint writes an ECDSA signature to a given address
 //
 // `newVerifyECDSASignatureHint` takes 3 operanders as arguments
 //   - `ecdsaPtr` is the pointer variable that stores the address
@@ -152,11 +152,12 @@ func createVerifyECDSASignatureHinter(resolver hintReferenceResolver) (hinter.Hi
 	return newVerifyECDSASignatureHint(ecdsaPtr, signature_r, signature_s), nil
 }
 
-// GetPointFromX hint calculates a point on an elliptic curve given a x-coordinate
+// GetPointFromX hint calculates the y-coordinate of a point
+// on an elliptic curve for a given x-coordinate
 //
 // `newGetPointFromXHint` takes 2 operanders as arguments
 //   - `xCube` is the x-coordinate value used to calculate the point
-//   - `v` is ?
+//   - `v` is the parity of `y`, it should be either 1 or 0
 //
 // `newGetPointFromXHint` assigns the y-coordinate as `value` in the current scope
 func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
