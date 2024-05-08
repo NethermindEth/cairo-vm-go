@@ -140,9 +140,6 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createBlake2sAddUint256Hinter(resolver, true)
 	case blake2sAddUint256Code:
 		return createBlake2sAddUint256Hinter(resolver, false)
-		// Usort hints
-	case usortBodyCode:
-		return createUsortBodyHinter(resolver)
 		// Keccak hints
 	case keccakWriteArgs:
 		return createKeccakWriteArgsHinter(resolver)
@@ -155,6 +152,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUsortVerifyHinter(resolver)
 	case usortVerifyMultiplicityBodyCode:
 		return createUsortVerifyMultiplicityBodyHinter(resolver)
+	case usortBodyCode:
+		return createUsortBodyHinter(resolver)
 		// Dictionaries hints
 	case squashDictInnerAssertLenKeys:
 		return createSquashDictInnerAssertLenKeysHinter()

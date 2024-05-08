@@ -38,7 +38,7 @@ func createUsortBodyHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 
 func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "AssertLtFelt",
+		Name: "UsortBody",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> 	from collections import defaultdict
 			//>

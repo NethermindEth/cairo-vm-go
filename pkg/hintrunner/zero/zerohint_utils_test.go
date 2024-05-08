@@ -163,7 +163,6 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		switch expected.(type) {
 		case *big.Int:
 			{
@@ -181,10 +180,10 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
 			}
-		case uint:
+		case uint64:
 			{
-				valueFelt := value.(uint)
-				expectedFelt := expected.(uint)
+				valueFelt := value.(uint64)
+				expectedFelt := expected.(uint64)
 				if valueFelt != expectedFelt {
 					t.Fatalf("%s scope value mismatch:\nhave: %d\nwant: %d", varName, value, expected)
 				}

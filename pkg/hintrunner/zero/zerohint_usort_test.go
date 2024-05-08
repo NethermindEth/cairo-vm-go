@@ -16,13 +16,13 @@ func TestZeroHintUsort(t *testing.T) {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
-						"__usort_max_size": uint8(1),
+						"__usort_max_size": uint64(1),
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUsortEnterScopeHinter()
 				},
-				check: varValueInScopeEquals("__usort_max_size", uint8(1)),
+				check: varValueInScopeEquals("__usort_max_size", uint64(1)),
 			},
 		},
 		"UsortVerifyMultiplicityAssert": {
@@ -140,8 +140,8 @@ func TestZeroHintUsort(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "input", Kind: apRelative, Value: addr(5)},
 					{Name: "input.el0", Kind: apRelative, Value: feltUint64(2)},
-					{Name: "input.el2", Kind: apRelative, Value: feltUint64(3)},
-					{Name: "input.el3", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "input.el1", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "input.el2", Kind: apRelative, Value: feltUint64(1)},
 					{Name: "input_length", Kind: apRelative, Value: feltUint64(3)},
 					{Name: "output", Kind: uninitialized},
 					{Name: "output_length", Kind: uninitialized},
@@ -174,10 +174,10 @@ func TestZeroHintUsort(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "input", Kind: apRelative, Value: addr(5)},
 					{Name: "input.el0", Kind: apRelative, Value: feltUint64(3)},
-					{Name: "input.el2", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "input.el1", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "input.el2", Kind: apRelative, Value: feltUint64(1)},
 					{Name: "input.el3", Kind: apRelative, Value: feltUint64(1)},
-					{Name: "input.el3", Kind: apRelative, Value: feltUint64(1)},
-					{Name: "input.el3", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "input.el4", Kind: apRelative, Value: feltUint64(1)},
 					{Name: "input_length", Kind: apRelative, Value: feltUint64(5)},
 					{Name: "output", Kind: uninitialized},
 					{Name: "output_length", Kind: uninitialized},
