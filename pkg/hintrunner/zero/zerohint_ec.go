@@ -36,7 +36,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			pointMemoryValues, err := hinter.GetConsecutiveValues(vm, pointAddr, int16(6))
+			pointMemoryValues, err := mem.InitializeEmptyMemory().GetConsecutiveValues(pointAddr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -161,7 +161,7 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			if err != nil {
 				return err
 			}
-			slopeMemoryValues, err := hinter.GetConsecutiveValues(vm, slopeAddr, int16(3))
+			slopeMemoryValues, err := mem.InitializeEmptyMemory().GetConsecutiveValues(slopeAddr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -170,7 +170,7 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			if err != nil {
 				return err
 			}
-			point0MemoryValues, err := hinter.GetConsecutiveValues(vm, point0Addr, int16(6))
+			point0MemoryValues, err := mem.InitializeEmptyMemory().GetConsecutiveValues(point0Addr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -179,7 +179,7 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			if err != nil {
 				return err
 			}
-			point1MemoryValues, err := hinter.GetConsecutiveValues(vm, point1Addr, int16(3))
+			point1MemoryValues, err := mem.InitializeEmptyMemory().GetConsecutiveValues(point1Addr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -353,7 +353,7 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			pointMemoryValues, err := hinter.GetConsecutiveValues(vm, pointAddr, int16(6))
+			pointMemoryValues, err := mem.InitializeEmptyMemory().GetConsecutiveValues(pointAddr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -487,7 +487,7 @@ func newEcDoubleAssignNewXV1Hint(slope, point hinter.ResOperander) hinter.Hinter
 			if err != nil {
 				return err
 			}
-			slopeMemoryValues, err := hinter.GetConsecutiveValues(vm, slopeAddr, int16(3))
+			slopeMemoryValues, err := mem.InitializeEmptyMemory().GetConsecutiveValues(slopeAddr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -496,7 +496,7 @@ func newEcDoubleAssignNewXV1Hint(slope, point hinter.ResOperander) hinter.Hinter
 			if err != nil {
 				return err
 			}
-			pointMemoryValues, err := hinter.GetConsecutiveValues(vm, pointAddr, int16(6))
+			pointMemoryValues, err := mem.InitializeEmptyMemory().GetConsecutiveValues(pointAddr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -654,7 +654,7 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			point0MemoryValues, err := hinter.GetConsecutiveValues(vm, point0Addr, int16(6))
+			point0MemoryValues, err := mem.InitializeEmptyMemory().GetConsecutiveValues(point0Addr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -663,7 +663,7 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			point1MemoryValues, err := hinter.GetConsecutiveValues(vm, point1Addr, int16(6))
+			point1MemoryValues, err := mem.InitializeEmptyMemory().GetConsecutiveValues(point1Addr, int16(6))
 			if err != nil {
 				return err
 			}
