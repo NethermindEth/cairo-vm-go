@@ -9,11 +9,14 @@ import (
 
 func TestZeroHintDictionaries(t *testing.T) {
 	runHinterTests(t, map[string][]hintTestCase{
-		"SquashDictInnerAssertKeys": {
+		"SquashDictInnerAssertLenKeys": {
 			{
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{"keys": []fp.Element{}})
+					err := ctx.ScopeManager.AssignVariable("keys", []fp.Element{})
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSquashDictInnerAssertLenKeysHint()
@@ -23,7 +26,10 @@ func TestZeroHintDictionaries(t *testing.T) {
 			{
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{"keys": []fp.Element{*feltUint64(1), *feltUint64(2)}})
+					err := ctx.ScopeManager.AssignVariable("keys", []fp.Element{*feltUint64(1), *feltUint64(2)})
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSquashDictInnerAssertLenKeysHint()
