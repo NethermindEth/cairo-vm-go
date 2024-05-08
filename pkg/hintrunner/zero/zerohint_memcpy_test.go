@@ -17,7 +17,7 @@ func TestMemcPyHint(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
 					err := ctx.ScopeManager.AssignVariables(map[string]any{
-						"n": uint64(1),
+						"n": &utils.FeltOne,
 					})
 					if err != nil {
 						t.Fatal(err)
@@ -35,7 +35,7 @@ func TestMemcPyHint(t *testing.T) {
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{})
 					err := ctx.ScopeManager.AssignVariables(map[string]any{
-						"n": uint64(5),
+						"n": feltString("5"),
 					})
 					if err != nil {
 						t.Fatal(err)

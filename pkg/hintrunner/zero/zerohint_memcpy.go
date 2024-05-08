@@ -7,6 +7,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hinter {
@@ -22,8 +23,10 @@ func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hi
 				return err
 			}
 
-			n = n.(uint64) - 1
-			if err := ctx.ScopeManager.AssignVariable("n", n); err != nil {
+			felt := new(f.Element)
+			felt = felt.Sub(n.(*f.Element), &utils.FeltOne)
+
+			if err := ctx.ScopeManager.AssignVariable("n", felt); err != nil {
 				return err
 			}
 
@@ -34,7 +37,7 @@ func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hi
 			}
 
 			var continueCopyingMv memory.MemoryValue
-			if n.(uint64) > 0 {
+			if utils.FeltLt(&utils.FeltZero, felt) {
 				continueCopyingMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
 				continueCopyingMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
