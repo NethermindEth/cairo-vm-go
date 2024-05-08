@@ -157,7 +157,7 @@ func createVerifyECDSASignatureHinter(resolver hintReferenceResolver) (hinter.Hi
 //
 // `newGetPointFromXHint` takes 2 operanders as arguments
 //   - `xCube` is the x-coordinate value used to calculate the point
-//   - `v` is the parity of `y`, it should be either 1 or 0
+//   - `v` is the parity of the `y` result, it should be either 0 or 1
 //
 // `newGetPointFromXHint` assigns the y-coordinate as `value` in the current scope
 func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
