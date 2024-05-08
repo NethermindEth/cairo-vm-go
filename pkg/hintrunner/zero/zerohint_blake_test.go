@@ -1,6 +1,7 @@
 package zero
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -504,7 +505,7 @@ func TestZeroHintBlake(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newBlake2sFinalizeHint(ctx.operanders["blake2s_ptr_end"], ctx.operanders["N_PACKED_INSTANCES"], ctx.operanders["INPUT_BLOCK_FELTS"])
 				},
-				errCheck: errorTextContains("in range [0, 20), got 20"),
+				errCheck: errorTextContains(fmt.Sprintf("in range %s, got %s", "[0, 20)", "20")),
 			},
 		},
 		"Blake2sFinalize check assert INPUT_BLOCK_FELTS": {
@@ -517,7 +518,7 @@ func TestZeroHintBlake(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newBlake2sFinalizeHint(ctx.operanders["blake2s_ptr_end"], ctx.operanders["N_PACKED_INSTANCES"], ctx.operanders["INPUT_BLOCK_FELTS"])
 				},
-				errCheck: errorTextContains("in range [0, 100), got 200"),
+				errCheck: errorTextContains(fmt.Sprintf("in range %s, got %s", "[0, 100)", "200")),
 			},
 		},
 	})

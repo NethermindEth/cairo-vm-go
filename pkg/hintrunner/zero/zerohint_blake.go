@@ -145,16 +145,16 @@ func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt hint
 				return fmt.Errorf("n_packed_instances should be in range [0, 20), got %d", nPackedInstances)
 			}
 
-			inputBlockFelt, err := hinter.ResolveAsUint64(vm, inputBlockFelt)
+			blake2sInputChunkSizeFelts, err := hinter.ResolveAsUint64(vm, inputBlockFelt)
 			if err != nil {
 				return err
 			}
 
-			if inputBlockFelt >= 100 {
-				return fmt.Errorf("inputBlockFelt should be in range [0, 100), got %d", inputBlockFelt)
+			if blake2sInputChunkSizeFelts >= 100 {
+				return fmt.Errorf("inputBlockFelt should be in range [0, 100), got %d", blake2sInputChunkSizeFelts)
 			}
 
-			message := make([]uint32, inputBlockFelt)
+			message := make([]uint32, blake2sInputChunkSizeFelts)
 			modifiedIv := utils.IV()
 			modifiedIv[0] = modifiedIv[0] ^ 0x01010020
 			output := utils.Blake2sCompress(message, modifiedIv, 0, 0, 0xffffffff, 0)
@@ -162,8 +162,8 @@ func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt hint
 			padding = append(padding, message[:]...)
 			padding = append(padding, 0, 0xffffffff)
 			padding = append(padding, output[:]...)
-			fullPadding := padding
-			for i := uint8(1); i < uint8(nPackedInstances); i++ {
+			fullPadding := []uint32{}
+			for i := uint64(0); i < nPackedInstances-1; i++ {
 				fullPadding = append(fullPadding, padding...)
 			}
 			for i, val := range fullPadding {
