@@ -156,7 +156,7 @@ func createAssertNotZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 }
 
 // AssertNN hint asserts that a given value is non-negative
-// within a specified range
+// within the range `0  <= value % PRIME < range-check builtin bound`
 //
 // `newAssertNNHint` takes 1 operander as argument
 //   - `a` is the value that will be evaluated
@@ -404,7 +404,8 @@ func createAssertLeFeltExcluded2Hinter() (hinter.Hinter, error) {
 	return h, nil
 }
 
-// IsNN hint checks if a value is non-negative within a specific range
+// IsNN hint checks if a value is non-negative within the range
+// `0  <= value % PRIME < range-check builtin bound`
 //
 // `newIsNNHint` takes 1 operander as argument
 //   - `a` is the value that will be evaluated
