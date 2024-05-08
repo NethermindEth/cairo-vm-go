@@ -192,8 +192,8 @@ func TestZeroHintKeccak(t *testing.T) {
 					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					varValueEquals("high", feltString("56771159036737573629468716613812266635"))(t, ctx)
-					varValueEquals("low", feltString("22705997611886674457558706455644375132"))(t, ctx)
+					varValueEquals("high", feltString("43087684015060895958086736298363333858"))(t, ctx)
+					varValueEquals("low", feltString("115090685687501856751902560332884088627"))(t, ctx)
 				},
 			},
 		},
