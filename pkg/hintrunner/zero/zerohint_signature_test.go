@@ -76,9 +76,6 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "xCube.d2", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "v", Kind: apRelative, Value: &utils.FeltZero},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
 				},
@@ -91,9 +88,6 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "xCube.d1", Kind: apRelative, Value: &utils.FeltOne},
 					{Name: "xCube.d2", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "v", Kind: apRelative, Value: &utils.FeltZero},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
@@ -108,9 +102,6 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "xCube.d2", Kind: apRelative, Value: feltString("77371252455336267181195264")},
 					{Name: "v", Kind: apRelative, Value: feltString("77371252455336267181195264")},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
 				},
@@ -120,9 +111,6 @@ func TestVerifyZeroHint(t *testing.T) {
 		"ImportSecp256R1P": {
 			{
 				operanders: []*hintOperander{},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newImportSecp256R1PHinter()
 				},
@@ -134,7 +122,6 @@ func TestVerifyZeroHint(t *testing.T) {
 				// zero quotient
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
 					err := ctx.ScopeManager.AssignVariables(map[string]any{
 						"res": bigIntString("0", 10),
 						"a":   bigIntString("0", 10),
@@ -157,7 +144,6 @@ func TestVerifyZeroHint(t *testing.T) {
 				// negative quotient
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
 					err := ctx.ScopeManager.AssignVariables(map[string]any{
 						"res": bigIntString("1", 10),
 						"a":   bigIntString("2", 10),
@@ -180,7 +166,6 @@ func TestVerifyZeroHint(t *testing.T) {
 				// positive quotient
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
 					err := ctx.ScopeManager.AssignVariables(map[string]any{
 						"res": bigIntString("10", 10),
 						"a":   bigIntString("20", 10),
@@ -210,9 +195,6 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "b.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "b.d2", Kind: apRelative, Value: &utils.FeltZero},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDivModNPackedDivmodV1Hint(ctx.operanders["a.d0"], ctx.operanders["b.d0"])
 				},
@@ -226,9 +208,6 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "b.d0", Kind: apRelative, Value: &utils.FeltOne},
 					{Name: "b.d1", Kind: apRelative, Value: &utils.FeltOne},
 					{Name: "b.d2", Kind: apRelative, Value: &utils.FeltOne},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDivModNPackedDivmodV1Hint(ctx.operanders["a.d0"], ctx.operanders["b.d0"])
@@ -248,9 +227,6 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "b.d1", Kind: apRelative, Value: feltString("77371252455336267181195263")},
 					{Name: "b.d2", Kind: apRelative, Value: feltString("19342813113834066795298815")},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDivModNPackedDivmodV1Hint(ctx.operanders["a.d0"], ctx.operanders["b.d0"])
 				},
@@ -268,9 +244,6 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "b.d0", Kind: apRelative, Value: feltString("741")},
 					{Name: "b.d1", Kind: apRelative, Value: feltString("17")},
 					{Name: "b.d2", Kind: apRelative, Value: feltString("670")},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDivModNPackedDivmodV1Hint(ctx.operanders["a.d0"], ctx.operanders["b.d0"])
