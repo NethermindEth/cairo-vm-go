@@ -27,7 +27,9 @@ func TestCairoZeroFiles(t *testing.T) {
 		t.Errorf("Error loading .env file: %v", err)
 	}
 
-	filter := os.Getenv("INTEGRATION_TESTS_FILTER")
+	filtersRaw := os.Getenv("INTEGRATION_TESTS_FILTERS")
+	filtersRaw = strings.TrimSpace(filtersRaw)
+	filters := strings.Split(filtersRaw, ",")
 
 	for _, dirEntry := range testFiles {
 		if dirEntry.IsDir() || isGeneratedFile(dirEntry.Name()) {
@@ -36,9 +38,21 @@ func TestCairoZeroFiles(t *testing.T) {
 
 		path := filepath.Join(root, dirEntry.Name())
 
-		if !strings.Contains(path, filter) {
+		matched := false
+		if len(filters) == 0 {
+			matched = true
+		} else {
+			for _, filter := range filters {
+				if strings.Contains(dirEntry.Name(), strings.TrimSpace(filter)) {
+					matched = true
+					break
+				}
+			}
+		}
+		if !matched {
 			continue
 		}
+
 		t.Logf("testing: %s\n", path)
 
 		compiledOutput, err := compileZeroCode(path)
