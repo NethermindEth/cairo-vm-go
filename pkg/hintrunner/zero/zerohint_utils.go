@@ -7,8 +7,8 @@ import (
 )
 
 // GetUint256AsFelts helper function reads two consecutive memory cells,
-// the first one containing the low part of the `uint256` and the second one
-// containing the high part of the `uint256`
+// the first one containing the low part of the `uint256` variable and
+// the second one containing the high part of the `uint256` variable
 //
 // The low and high parts previously extracted from memory are then
 // converted to field elements and returned
