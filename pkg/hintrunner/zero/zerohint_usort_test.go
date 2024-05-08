@@ -20,7 +20,7 @@ func TestZeroHintUsort(t *testing.T) {
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortEnterScopeHinter()
+					return newUsortEnterScopeHint()
 				},
 				check: varValueInScopeEquals("__usort_max_size", uint64(1)),
 			},
@@ -34,7 +34,7 @@ func TestZeroHintUsort(t *testing.T) {
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortVerifyMultiplicityAssertHinter()
+					return newUsortVerifyMultiplicityAssertHint()
 				},
 				errCheck: errorTextContains("assertion `len(positions) == 0` failed"),
 			},
@@ -46,7 +46,7 @@ func TestZeroHintUsort(t *testing.T) {
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortVerifyMultiplicityAssertHinter()
+					return newUsortVerifyMultiplicityAssertHint()
 				},
 				errCheck: errorIsNil,
 			},
@@ -65,7 +65,7 @@ func TestZeroHintUsort(t *testing.T) {
 					{Name: "value", Kind: fpRelative, Value: feltUint64(0)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortVerifyHinter(ctx.operanders["value"])
+					return newUsortVerifyHint(ctx.operanders["value"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					positions, err := ctx.runnerContext.ScopeManager.GetVariableValue("positions")
