@@ -585,7 +585,7 @@ func createEcDoubleAssignNewXV1Hinter(resolver hintReferenceResolver) (hinter.Hi
 	return newEcDoubleAssignNewXV1Hint(slope, point), nil
 }
 
-// ComputeSlopeV1Hint hint computes the slope between two points on an elliptic curve
+// ComputeSlopeV1 hint computes the slope between two points on an elliptic curve
 //
 // `newComputeSlopeV1Hint` takes 2 operanders as arguments
 //   - `point0` is the first point on an elliptic curve to operate on

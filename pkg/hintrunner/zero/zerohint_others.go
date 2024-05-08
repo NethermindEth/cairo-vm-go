@@ -32,7 +32,7 @@ func createVMExitScopeHinter() (hinter.Hinter, error) {
 	}, nil
 }
 
-// MemcpyEnterScopeHint hint enters a new scope for the memory copy operation with a specified length
+// MemcpyEnterScope hint enters a new scope for the memory copy operation with a specified length
 //
 // `newMemcpyEnterScopeHint` takes 1 operander as argument
 //   - `len` is the length value that is added in the new scope
