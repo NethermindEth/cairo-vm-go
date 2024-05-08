@@ -35,7 +35,7 @@ func TestVerifyZeroHint(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newVerifyZeroHint(ctx.operanders["val.d0"], ctx.operanders["q"])
 				},
-				errCheck: errorTextContains("verify_zero: Invalid input (1, 1, 1)."),
+				errCheck: errorTextContains("verify_zero: Invalid input (1, 1, 1)"),
 			},
 			{
 				operanders: []*hintOperander{
@@ -60,7 +60,7 @@ func TestVerifyZeroHint(t *testing.T) {
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					ecdsaPtr := ctx.operanders["ecdsaPtr"].(*hinter.DoubleDeref).Deref
-					return newVerifyECDSASignatureHinter(ecdsaPtr, ctx.operanders["signature_r"], ctx.operanders["signature_s"])
+					return newVerifyECDSASignatureHint(ecdsaPtr, ctx.operanders["signature_r"], ctx.operanders["signature_s"])
 				},
 				errCheck: func(t *testing.T, ctx *hintTestContext, err error) {
 					require.NoError(t, err)
@@ -76,11 +76,8 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "xCube.d2", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "v", Kind: apRelative, Value: &utils.FeltZero},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
+					return newGetPointFromXHint(ctx.operanders["xCube.d0"], ctx.operanders["v"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("64828261740814840065360381756190772627110652128289340260788836867053167272156", 10)),
 			},
@@ -92,11 +89,8 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "xCube.d2", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "v", Kind: apRelative, Value: &utils.FeltZero},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
+					return newGetPointFromXHint(ctx.operanders["xCube.d0"], ctx.operanders["v"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("3754707778961574900176639079436749683878498834289427635045629810524611907876", 10)),
 			},
@@ -108,11 +102,8 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "xCube.d2", Kind: apRelative, Value: feltString("77371252455336267181195264")},
 					{Name: "v", Kind: apRelative, Value: feltString("77371252455336267181195264")},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newGetPointFromXHinter(ctx.operanders["xCube.d0"], ctx.operanders["v"])
+					return newGetPointFromXHint(ctx.operanders["xCube.d0"], ctx.operanders["v"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("64330220386510520462271671435567806262107470356169873352512014089172394266548", 10)),
 			},
@@ -120,21 +111,17 @@ func TestVerifyZeroHint(t *testing.T) {
 		"ImportSecp256R1P": {
 			{
 				operanders: []*hintOperander{},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newImportSecp256R1PHinter()
+					return newImportSecp256R1PHint()
 				},
 				check: varValueInScopeEquals("SECP_P", bigIntString("115792089210356248762697446949407573530086143415290314195533631308867097853951", 10)),
 			},
 		},
-		"DivModNSafeDivHint": {
+		"DivModNSafeDiv": {
 			{
 				// zero quotient
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
 					err := ctx.ScopeManager.AssignVariables(map[string]any{
 						"res": bigIntString("0", 10),
 						"a":   bigIntString("0", 10),
@@ -146,18 +133,16 @@ func TestVerifyZeroHint(t *testing.T) {
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newDivModSafeDivHinter()
+					return newDivModSafeDivHint()
 				},
 				check: varListInScopeEquals(map[string]any{
 					"value": bigIntString("0", 10),
-					"k":     bigIntString("0", 10),
 				}),
 			},
 			{
 				// negative quotient
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
 					err := ctx.ScopeManager.AssignVariables(map[string]any{
 						"res": bigIntString("1", 10),
 						"a":   bigIntString("2", 10),
@@ -169,18 +154,16 @@ func TestVerifyZeroHint(t *testing.T) {
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newDivModSafeDivHinter()
+					return newDivModSafeDivHint()
 				},
 				check: varListInScopeEquals(map[string]any{
 					"value": bigIntString("-1", 10),
-					"k":     bigIntString("-1", 10),
 				}),
 			},
 			{
 				// positive quotient
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
 					err := ctx.ScopeManager.AssignVariables(map[string]any{
 						"res": bigIntString("10", 10),
 						"a":   bigIntString("20", 10),
@@ -192,11 +175,10 @@ func TestVerifyZeroHint(t *testing.T) {
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newDivModSafeDivHinter()
+					return newDivModSafeDivHint()
 				},
 				check: varListInScopeEquals(map[string]any{
 					"value": bigIntString("140", 10),
-					"k":     bigIntString("140", 10),
 				}),
 			},
 		},
@@ -209,9 +191,6 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "b.d0", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "b.d1", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "b.d2", Kind: apRelative, Value: &utils.FeltZero},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDivModNPackedDivmodV1Hint(ctx.operanders["a.d0"], ctx.operanders["b.d0"])
@@ -227,14 +206,10 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "b.d1", Kind: apRelative, Value: &utils.FeltOne},
 					{Name: "b.d2", Kind: apRelative, Value: &utils.FeltOne},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDivModNPackedDivmodV1Hint(ctx.operanders["a.d0"], ctx.operanders["b.d0"])
 				},
 				check: allVarValueInScopeEquals(map[string]any{
-					"res":   big.NewInt(1),
 					"value": big.NewInt(1),
 				}),
 			},
@@ -248,14 +223,10 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "b.d1", Kind: apRelative, Value: feltString("77371252455336267181195263")},
 					{Name: "b.d2", Kind: apRelative, Value: feltString("19342813113834066795298815")},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDivModNPackedDivmodV1Hint(ctx.operanders["a.d0"], ctx.operanders["b.d0"])
 				},
 				check: allVarValueInScopeEquals(map[string]any{
-					"res":   big.NewInt(1),
 					"value": big.NewInt(1),
 				}),
 			},
@@ -269,14 +240,10 @@ func TestVerifyZeroHint(t *testing.T) {
 					{Name: "b.d1", Kind: apRelative, Value: feltString("17")},
 					{Name: "b.d2", Kind: apRelative, Value: feltString("670")},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDivModNPackedDivmodV1Hint(ctx.operanders["a.d0"], ctx.operanders["b.d0"])
 				},
 				check: allVarValueInScopeEquals(map[string]any{
-					"res":   bigIntString("62733347149736974538461843763852691885676254208529184638286052021917647089374", 10),
 					"value": bigIntString("62733347149736974538461843763852691885676254208529184638286052021917647089374", 10),
 				}),
 			},

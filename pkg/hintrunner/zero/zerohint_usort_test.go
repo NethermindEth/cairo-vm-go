@@ -13,12 +13,13 @@ func TestZeroHintUsort(t *testing.T) {
 		"UsortEnterScope": {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{
-						"__usort_max_size": feltUint64(1),
-					})
+					err := ctx.ScopeManager.AssignVariable("__usort_max_size", feltUint64(1))
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortEnterScopeHinter()
+					return newUsortEnterScopeHint()
 				},
 				check: varValueInScopeEquals("__usort_max_size", feltUint64(1)),
 			},
@@ -26,25 +27,25 @@ func TestZeroHintUsort(t *testing.T) {
 		"UsortVerifyMultiplicityAssert": {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{
-						"positions": []uint64{
-							1,
-						},
-					})
+					err := ctx.ScopeManager.AssignVariable("positions", []uint64{1})
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortVerifyMultiplicityAssertHinter()
+					return newUsortVerifyMultiplicityAssertHint()
 				},
 				errCheck: errorTextContains("assertion `len(positions) == 0` failed"),
 			},
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
-						"positions": []uint64{},
-					})
+					err := ctx.ScopeManager.AssignVariable("positions", []uint64{})
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortVerifyMultiplicityAssertHinter()
+					return newUsortVerifyMultiplicityAssertHint()
 				},
 				errCheck: errorIsNil,
 			},
@@ -52,17 +53,18 @@ func TestZeroHintUsort(t *testing.T) {
 		"UsortVerify": {
 			{
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{
-						"positions_dict": map[fp.Element][]uint64{
-							*feltUint64(0): {1, 2, 3},
-						},
+					err := ctx.ScopeManager.AssignVariable("positions_dict", map[fp.Element][]uint64{
+						*feltUint64(0): {1, 2, 3},
 					})
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(0)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortVerifyHinter(ctx.operanders["value"])
+					return newUsortVerifyHint(ctx.operanders["value"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					positions, err := ctx.runnerContext.ScopeManager.GetVariableValue("positions")
@@ -74,6 +76,41 @@ func TestZeroHintUsort(t *testing.T) {
 					require.NoError(t, err)
 
 					require.Equal(t, 0, lastPos)
+				},
+			},
+		},
+		"UsortVerifyMultiplicityBody": {
+			// Tests when no variables (positions, last_pos) are in the scope.
+			{
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
+				},
+				errCheck: func(t *testing.T, ctx *hintTestContext, err error) {
+					require.NotNil(t, err)
+				},
+			},
+			// Tests when we can calculate new memory and variable values.
+			{
+				operanders: []*hintOperander{
+					{Name: "next_item_index", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{
+						"positions":   []int64{8, 6, 4},
+						"current_pos": int64(2),
+						"last_pos":    int64(1),
+					})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueInScopeEquals(map[string]any{
+						"current_pos": int64(4),
+						"last_pos":    int64(3),
+					})(t, ctx)
+
+					varValueEquals("next_item_index", feltInt64(1))(t, ctx)
 				},
 			},
 		},
