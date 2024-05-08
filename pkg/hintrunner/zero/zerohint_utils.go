@@ -3,7 +3,6 @@ package zero
 import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -19,14 +18,10 @@ func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Elem
 		return nil, nil, err
 	}
 
-	values := make([]mem.MemoryValue, 2)
-
 	lowPart, err := vm.Memory.ReadFromAddress(&lowRefAddr)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	values[0] = lowPart
 
 	highRefAddr, err := lowRefAddr.AddOffset(1)
 	if err != nil {
@@ -38,14 +33,12 @@ func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Elem
 		return nil, nil, err
 	}
 
-	values[1] = highPart
-
-	low, err := values[0].FieldElement()
+	low, err := lowPart.FieldElement()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	high, err := values[1].FieldElement()
+	high, err := highPart.FieldElement()
 	if err != nil {
 		return nil, nil, err
 	}
