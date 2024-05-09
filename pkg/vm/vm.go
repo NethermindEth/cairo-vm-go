@@ -624,13 +624,23 @@ func EncodeMemory(memory []*f.Element) []byte {
 }
 
 func DecodeMemory(content []byte) []*f.Element {
+	if len(content) == 0 {
+		return make([]*f.Element, 0)
+	}
+
 	// calculate the max memory index
-	lastMemIndex := len(content) / (addrSize + feltSize)
+	lastMemIndex := uint64(0)
+	for i := 0; i < len(content); i += addrSize + feltSize {
+		memIndex := binary.LittleEndian.Uint64(content[i : i+addrSize])
+		if memIndex > lastMemIndex {
+			lastMemIndex = memIndex
+		}
+	}
 
 	// create the memory array with the same length as the max memory index
 	memory := make([]*f.Element, lastMemIndex+1)
 
-	// decode the encontent and store it in memory
+	// decode the content and store it in memory
 	for i := 0; i < len(content); i += addrSize + feltSize {
 		memIndex := binary.LittleEndian.Uint64(content[i : i+addrSize])
 		felt, err := f.LittleEndian.Element((*[32]byte)(content[i+addrSize : i+addrSize+feltSize]))
