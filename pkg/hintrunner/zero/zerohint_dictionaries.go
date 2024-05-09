@@ -63,7 +63,10 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			ctx.ScopeManager.AssignVariable("keys", keys)
+			err = ctx.ScopeManager.AssignVariable("keys", keys)
+			if err != nil {
+				return err
+			}
 
 			newKeyMemoryValue := memory.MemoryValueFromFieldElement(&newKey)
 
