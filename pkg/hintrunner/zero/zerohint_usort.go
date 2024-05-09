@@ -36,6 +36,14 @@ func createUsortBodyHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 	return newUsortBodyHint(input, input_len, output, output_len, multiplicities), nil
 }
 
+// UsortBody hint sorts the input array of field elements. The sorting results in generation of output array without duplicates and multiplicites array, where each element represents the number of times the corresponding element in the output array appears in the input array. The output and multiplicities arrays are written to the new, separate segments in memory.
+//
+// `newSplit64Hint` takes 5 operanders as arguments
+//   - `input` is the pointer to the base of input array of field elements
+//   - `inputLen` is the length of the input array
+//   - `output` is the pointer to the base of the output array of field elements
+//   - `outputLen` is the length of the output array
+//   - `multiplicities` is the pointer to the base of the multiplicities array of field elements
 func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortBody",
@@ -83,7 +91,7 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 				if err != nil {
 					return err
 				}
-				positionsDict[val] = append(positionsDict[val], uint64(i))
+				positionsDict[val] = append(positionsDict[val], i)
 				*inputBasePtr, err = inputBasePtr.AddOffset(1)
 				if err != nil {
 					return err
@@ -117,13 +125,13 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 			if err != nil {
 				return err
 			}
-			for i, v := range outputArray {
-				outputSegmentWriteArgsPtr, err := outputSegmentBaseAddr.AddOffset(int16(i))
+			for _, v := range outputArray {
+				outputElementMV := memory.MemoryValueFromFieldElement(&v)
+				err = vm.Memory.WriteToAddress(&outputSegmentBaseAddr, &outputElementMV)
 				if err != nil {
 					return err
 				}
-				outputElementMV := memory.MemoryValueFromFieldElement(&v)
-				err = vm.Memory.WriteToAddress(&outputSegmentWriteArgsPtr, &outputElementMV)
+				outputSegmentBaseAddr, err = outputSegmentBaseAddr.AddOffset(1)
 				if err != nil {
 					return err
 				}
@@ -142,13 +150,13 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 			if err != nil {
 				return err
 			}
-			for i, v := range multiplicitiesArray {
-				multiplicitesSegmentWriteArgsPtr, err := multiplicitesSegmentBaseAddr.AddOffset(int16(i))
+			for _, v := range multiplicitiesArray {
+				multiplicitiesElementMV := memory.MemoryValueFromFieldElement(v)
+				err = vm.Memory.WriteToAddress(&multiplicitesSegmentBaseAddr, &multiplicitiesElementMV)
 				if err != nil {
 					return err
 				}
-				multiplicitiesElementMV := memory.MemoryValueFromFieldElement(v)
-				err = vm.Memory.WriteToAddress(&multiplicitesSegmentWriteArgsPtr, &multiplicitiesElementMV)
+				multiplicitesSegmentBaseAddr, err = multiplicitesSegmentBaseAddr.AddOffset(1)
 				if err != nil {
 					return err
 				}
