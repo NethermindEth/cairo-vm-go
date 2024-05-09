@@ -1,9 +1,13 @@
 package zero
 
 import (
+	"fmt"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 // AllocSegment hint adds a new segment to the Cairo VM memory
@@ -58,4 +62,149 @@ func createMemcpyEnterScopeHinter(resolver hintReferenceResolver) (hinter.Hinter
 		return nil, err
 	}
 	return newMemcpyEnterScopeHint(len), nil
+}
+
+func newFindElementScopeHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "FindElement",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> array_ptr = ids.array_ptr
+			//> elm_size = ids.elm_size
+			//> assert isinstance(elm_size, int) and elm_size > 0, \
+			//>		f'Invalid value for elm_size. Got: {elm_size}.'
+			//> key = ids.key
+			//>
+			//> if '__find_element_index' in globals():
+			//>		ids.index = __find_element_index
+			//>		found_key = memory[array_ptr + elm_size * __find_element_index]
+			//>		assert found_key == key, \
+			//>			f'Invalid index found in __find_element_index. index: {__find_element_index}, ' \
+			//>			f'expected key {key}, found key: {found_key}.'
+			//>		# Delete __find_element_index to make sure it's not used for the next calls.
+			//>		del __find_element_index
+			//> else:
+			//>		n_elms = ids.n_elms
+			//>		assert isinstance(n_elms, int) and n_elms >= 0, \
+			//>			f'Invalid value for n_elms. Got: {n_elms}.'
+			//>		if '__find_element_max_size' in globals():
+			//>			assert n_elms <= __find_element_max_size, \
+			//>				f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \
+			//>				f'Got: n_elms={n_elms}.'
+			//>
+			//>		for i in range(n_elms):
+			//>			if memory[array_ptr + elm_size * i] == key:
+			//>				ids.index = i
+			//>				break
+			//>		else:
+			//>			raise ValueError(f'Key {key} was not found.')
+			arrayPtrAddr, err := hinter.ResolveAsAddress(vm, arrayPtr)
+			if err != nil {
+				return err
+			}
+			elmSizeVal, err := hinter.ResolveAsUint64(vm, elmSize)
+			if err != nil {
+				return err
+			}
+			if elmSizeVal == 0 {
+				return fmt.Errorf("Invalid value for elm_size. Got: %d", elmSizeVal)
+			}
+			keyVal, err := hinter.ResolveAsFelt(vm, key)
+			if err != nil {
+				return err
+			}
+			findElementIndex, err := ctx.ScopeManager.GetVariableValue("__find_element_index")
+			if err == nil {
+				findElementIndex, ok := findElementIndex.(uint64)
+				if !ok {
+					return fmt.Errorf("Invalid index found in __find_element_index. index: %v, expected key %v", findElementIndex, keyVal)
+				}
+				indexValAddr, err := index.GetAddress(vm)
+				if err != nil {
+					return err
+				}
+				findElementIndexFelt := new(fp.Element).SetUint64(findElementIndex)
+				findElementIndexMemoryValue := memory.MemoryValueFromFieldElement(findElementIndexFelt)
+				err = vm.Memory.Write(indexValAddr.SegmentIndex, indexValAddr.Offset, &findElementIndexMemoryValue)
+				if err != nil {
+					return err
+				}
+				modifiedArrayPtrAddr, err := arrayPtrAddr.AddOffset(elmSizeVal * findElementIndex)
+				if err != nil {
+					return err
+				}
+				foundKey, err := vm.Memory.ReadFromAddressAsElement(&modifiedArrayPtrAddr)
+				if err != nil {
+					return err
+				}
+				if foundKey.Cmp(keyVal) != 0 {
+					return fmt.Errorf("Invalid index found in __find_element_index. index: %d, expected key %d, found key: %d", findElementIndex, keyVal, foundKey)
+				}
+
+			} else {
+				nElmsVal, err := hinter.ResolveAsUint64(vm, nElms)
+				if err != nil {
+					return err
+				}
+				if nElmsVal < 0 {
+					return fmt.Errorf("Invalid value for n_elms. Got: %d", nElmsVal)
+				}
+				findElementMaxSize, err := ctx.ScopeManager.GetVariableValue("__find_element_max_size")
+				if err == nil {
+					findElementMaxSizeVal, ok := findElementMaxSize.(uint64)
+					if !ok {
+						return fmt.Errorf("Invalid value for __find_element_max_size. Got: %v", findElementMaxSize)
+					}
+					if nElmsVal > findElementMaxSizeVal {
+						return fmt.Errorf("find_element() can only be used with n_elms<=%d. Got: n_elms=%d", findElementMaxSizeVal, nElmsVal)
+					}
+				}
+				for i := uint64(0); i < nElmsVal; i++ {
+					addr, err := arrayPtrAddr.AddOffset(elmSizeVal * i)
+					if err != nil {
+						return err
+					}
+					val, err := vm.Memory.ReadFromAddressAsElement(&addr)
+					if err != nil {
+						return err
+					}
+					if val.Cmp(keyVal) != 0 {
+						indexValAddr, err := index.GetAddress(vm)
+						if err != nil {
+							return err
+						}
+						iFelt := new(fp.Element).SetUint64(i)
+						iFeltMemoryValue := memory.MemoryValueFromFieldElement(iFelt)
+						err = vm.Memory.WriteToAddress(&indexValAddr, &iFeltMemoryValue)
+						break
+					}
+				}
+				return fmt.Errorf("Key %s was not found", keyVal)
+			}
+			return nil
+		},
+	}
+}
+
+func createFindElementHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	arrayPtr, err := resolver.GetResOperander("array_ptr")
+	if err != nil {
+		return nil, err
+	}
+	elmSize, err := resolver.GetResOperander("elm_size")
+	if err != nil {
+		return nil, err
+	}
+	key, err := resolver.GetResOperander("key")
+	if err != nil {
+		return nil, err
+	}
+	index, err := resolver.GetResOperander("index")
+	if err != nil {
+		return nil, err
+	}
+	nElms, err := resolver.GetResOperander("n_elms")
+	if err != nil {
+		return nil, err
+	}
+	return newFindElementScopeHint(arrayPtr, elmSize, key, index, nElms), nil
 }

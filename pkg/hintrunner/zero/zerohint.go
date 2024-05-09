@@ -166,6 +166,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createVMExitScopeHinter()
 	case testAssignCode:
 		return createTestAssignHinter(resolver)
+	case findElementCode:
+		return createFindElementHinter(resolver)
 	default:
 		return nil, fmt.Errorf("Not identified hint")
 	}
