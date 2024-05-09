@@ -194,8 +194,8 @@ func TestZeroHintKeccak(t *testing.T) {
 		"BlockPermutation": {
 			{
 				operanders: []*hintOperander{
-					{Name: "KECCAK_STATE_SIZE_FELTS", Kind: apRelative, Value: feltUint64(25)},
 					{Name: "keccak_ptr", Kind: fpRelative, Value: addr(31)},
+					{Name: "KECCAK_STATE_SIZE_FELTS", Kind: apRelative, Value: feltUint64(25)},
 					{Name: "data.0", Kind: apRelative, Value: feltUint64(1)},
 					{Name: "data.1", Kind: apRelative, Value: feltUint64(2)},
 					{Name: "data.2", Kind: apRelative, Value: feltUint64(3)},
@@ -226,6 +226,36 @@ func TestZeroHintKeccak(t *testing.T) {
 					return newBlockPermutationHint(ctx.operanders["KECCAK_STATE_SIZE_FELTS"], ctx.operanders["keccak_ptr"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {},
+				// check: consecutiveVarAddrResolvedValueEquals(
+				// 	"keccak_ptr",
+				// 	[]*fp.Element{
+				// 		feltUint64(20),
+				// 		feltUint64(20),
+				// 		feltUint64(10),
+				// 		feltUint64(10),
+				// 		feltUint64(20),
+				// 		feltUint64(20),
+				// 		feltUint64(10),
+				// 		feltUint64(10),
+				// 		feltUint64(20),
+				// 		feltUint64(20),
+				// 		feltUint64(10),
+				// 		feltUint64(10),
+				// 		feltUint64(20),
+				// 		feltUint64(20),
+				// 		feltUint64(10),
+				// 		feltUint64(10),
+				// 		feltUint64(20),
+				// 		feltUint64(20),
+				// 		feltUint64(10),
+				// 		feltUint64(10),
+				// 		feltUint64(20),
+				// 		feltUint64(20),
+				// 		feltUint64(10),
+				// 		feltUint64(10),
+				// 		feltUint64(10),
+
+				// 	}),
 			},
 		},
 	})
