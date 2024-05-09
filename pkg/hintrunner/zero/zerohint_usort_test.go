@@ -96,9 +96,8 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
-						"positions":   []int64{8, 6, 4},
-						"current_pos": int64(2),
-						"last_pos":    int64(1),
+						"positions": []int64{8, 6, 4},
+						"last_pos":  int64(2),
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -106,11 +105,52 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					allVarValueInScopeEquals(map[string]any{
-						"current_pos": int64(4),
-						"last_pos":    int64(3),
+						"last_pos": int64(5),
 					})(t, ctx)
 
-					varValueEquals("next_item_index", feltInt64(1))(t, ctx)
+					varValueEquals("next_item_index", feltInt64(2))(t, ctx)
+				},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "next_item_index", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{
+						"positions": []int64{90, 80, 70, 60, 50, 40, 30, 20, 10},
+						"last_pos":  int64(0),
+					})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueInScopeEquals(map[string]any{
+						"last_pos": int64(11),
+					})(t, ctx)
+
+					varValueEquals("next_item_index", feltInt64(10))(t, ctx)
+				},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "next_item_index", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{
+						"positions": []int64{99, 91, 89, 84, 82, 79, 72, 71, 70, 64, 59},
+						"last_pos":  int64(56),
+					})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUsortVerifyMultiplicityBodyHint(ctx.operanders["next_item_index"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueInScopeEquals(map[string]any{
+						"last_pos": int64(60),
+					})(t, ctx)
+
+					varValueEquals("next_item_index", feltInt64(3))(t, ctx)
 				},
 			},
 		},
