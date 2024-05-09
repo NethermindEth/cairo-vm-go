@@ -9,7 +9,7 @@ import (
 
 func TestZeroHintDictionaries(t *testing.T) {
 	runHinterTests(t, map[string][]hintTestCase{
-		"SquashDictInnerAssertKeys": {
+		"SquashDictInnerAssertLenKeys": {
 			{
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {

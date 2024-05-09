@@ -587,7 +587,7 @@ func TestZeroHintMath(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
 				},
-				errCheck: errorTextContains(fmt.Sprintf("div=%v is out of the valid range.", &utils.FeltMax128)),
+				errCheck: errorTextContains(fmt.Sprintf("div=%v is out of the valid range", &utils.FeltMax128)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -600,7 +600,7 @@ func TestZeroHintMath(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
 				},
-				errCheck: errorTextContains(fmt.Sprintf("div=%v is out of the valid range.", &utils.FeltZero)),
+				errCheck: errorTextContains(fmt.Sprintf("div=%v is out of the valid range", &utils.FeltZero)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -639,7 +639,7 @@ func TestZeroHintMath(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
 				},
-				errCheck: errorTextContains(fmt.Sprintf("%v / %v = %v is out of the range [-%v, %v].", feltInt64(6), feltInt64(2), feltInt64(3), feltInt64(3), feltInt64(3))),
+				errCheck: errorTextContains(fmt.Sprintf("%v / %v = %v is out of the range [-%v, %v]", feltInt64(6), feltInt64(2), feltInt64(3), feltInt64(3), feltInt64(3))),
 			},
 			{
 				operanders: []*hintOperander{
@@ -725,7 +725,7 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"q": feltInt64(16),
@@ -740,7 +740,7 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"q": feltInt64(3),
@@ -755,7 +755,7 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"q": feltInt64(0),
@@ -770,9 +770,9 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
 				},
-				errCheck: errorTextContains("div=0x0 is out of the valid range."),
+				errCheck: errorTextContains("div=0x0 is out of the valid range"),
 			},
 			{
 				operanders: []*hintOperander{
@@ -782,7 +782,7 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"q": feltInt64(0),
@@ -797,7 +797,7 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"q": feltInt64(0),
@@ -812,9 +812,9 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
 				},
-				errCheck: errorTextContains("div=0x8000000000000110000000000000001 is out of the valid range."),
+				errCheck: errorTextContains("div=0x8000000000000110000000000000001 is out of the valid range"),
 			},
 		},
 	})
