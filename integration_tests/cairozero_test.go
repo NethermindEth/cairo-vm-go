@@ -22,12 +22,11 @@ func TestCairoZeroFiles(t *testing.T) {
 
 	// Get the filter value from the environment variable
 	// filter is for debugging purposes
-	err = godotenv.Load("./.env")
-	if err != nil {
-		t.Errorf("Error loading .env file: %v", err)
-	}
-
 	filtersRaw := os.Getenv("INTEGRATION_TESTS_FILTERS")
+	if filtersRaw == "" {
+		godotenv.Load("./.env")
+		filtersRaw = os.Getenv("INTEGRATION_TESTS_FILTERS")
+	}
 	filtersRaw = strings.TrimSpace(filtersRaw)
 	filters := strings.Split(filtersRaw, ",")
 
