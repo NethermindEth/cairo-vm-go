@@ -317,14 +317,7 @@ func newFastEcAddAssignNewYHint() hinter.Hinter {
 				return err
 			}
 
-			new_yBig := new(big.Int)
-			new_yBig.Sub(x0Big, new_xBig)
-			new_yBig.Mul(new_yBig, slopeBig)
-			new_yBig.Sub(new_yBig, y0Big)
-			new_yBig.Mod(new_yBig, secPBig)
-
-			valueBig := new(big.Int)
-			valueBig.Set(new_yBig)
+			valueBig := ComputeYCoordinate(slopeBig, x0Big, new_xBig, y0Big, secPBig)
 
 			return ctx.ScopeManager.AssignVariables(map[string]any{"value": valueBig})
 		},
@@ -573,14 +566,7 @@ func newEcDoubleAssignNewYV1Hint() hinter.Hinter {
 				return err
 			}
 
-			new_yBig := new(big.Int)
-			new_yBig.Sub(xBig, new_xBig)
-			new_yBig.Mul(new_yBig, slopeBig)
-			new_yBig.Sub(new_yBig, yBig)
-			new_yBig.Mod(new_yBig, secPBig)
-
-			valueBig := new(big.Int)
-			valueBig.Set(new_yBig)
+			valueBig := ComputeYCoordinate(slopeBig, xBig, new_xBig, yBig, secPBig)
 
 			return ctx.ScopeManager.AssignVariables(map[string]any{"value": valueBig})
 		},
