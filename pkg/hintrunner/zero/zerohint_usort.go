@@ -164,6 +164,11 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
+			err = ctx.ScopeManager.AssignVariable("positions", positions)
+			if err != nil {
+				return err
+			}
+
 			lastPos, err := ctx.ScopeManager.GetVariableValue("last_pos")
 			if err != nil {
 				return err
