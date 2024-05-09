@@ -115,6 +115,14 @@ func createKeccakWriteArgsHinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newKeccakWriteArgsHint(inputs, low, high), nil
 }
 
+// BlockPermutation hint executes the Keccak block permutation function to a segment of memory
+//
+// `newBlockPermutationHint` takes 2 operanders as arguments
+//   - `keccakStateSizeFelts` is the size of the state array, hardcoded to 25 field elements
+//   - `keccakPtr` is a pointer to the address in memory where to write the result of the permutation
+//
+// `newBlockPermutationHint` reads 25 memory cells starting from `keccakPtr -  25`, and writes
+// the result of the Keccak block permutation in the next 25 memory cells, starting from `keccakPtr`
 func newBlockPermutationHint(keccakStateSizeFelts, keccakPtr hinter.ResOperander) hinter.Hinter {
 	name := "BlockPermutation"
 	return &GenericZeroHinter{
