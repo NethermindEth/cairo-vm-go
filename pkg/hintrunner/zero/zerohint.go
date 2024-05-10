@@ -154,9 +154,13 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUsortVerifyHinter(resolver)
 	case usortVerifyMultiplicityBodyCode:
 		return createUsortVerifyMultiplicityBodyHinter(resolver)
+	case usortBodyCode:
+		return createUsortBodyHinter(resolver)
 		// Dictionaries hints
 	case squashDictInnerAssertLenKeys:
 		return createSquashDictInnerAssertLenKeysHinter()
+	case squashDictInnerNextKey:
+		return createSquashDictInnerNextKeyHinter(resolver)
 		// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter()
