@@ -48,6 +48,12 @@ func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Elem
 	return low, high, nil
 }
 
+// This helper function is used in FastEcAddAssignNewY and
+// EcDoubleAssignNewYV1 hints to compute the y-coordinate of
+// a point on an elliptic curve
+//
+// ComputeYCoordinate returns `valueBig` which is the result of
+// the computation: (slope * (x - new_x) - y) % SECP_P
 func ComputeYCoordinate(slopeBig *big.Int, xBig *big.Int, new_xBig *big.Int, yBig *big.Int, secPBig *big.Int) *big.Int {
 	new_yBig := new(big.Int)
 	new_yBig.Sub(xBig, new_xBig)
