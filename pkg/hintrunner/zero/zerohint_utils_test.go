@@ -2,6 +2,7 @@ package zero
 
 import (
 	"fmt"
+	"reflect"
 
 	"math/big"
 	"testing"
@@ -168,6 +169,14 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 				valueFelt := value.(*fp.Element)
 				expectedFelt := expected.(*fp.Element)
 				if valueFelt.Cmp(expectedFelt) != 0 {
+					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
+				}
+			}
+		case []fp.Element:
+			{
+				valueArray := value.([]fp.Element)
+				expectedArray := expected.([]fp.Element)
+				if !reflect.DeepEqual(valueArray, expectedArray) {
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
 			}
