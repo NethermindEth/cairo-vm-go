@@ -96,6 +96,17 @@ func varValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx
 	}
 }
 
+func varAddrResolvedValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		o := ctx.operanders[varName]
+		addr, err := o.GetAddress(ctx.vm)
+		require.NoError(t, err)
+		actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&addr)
+		require.NoError(t, err)
+		require.Equal(t, &actualFelt, expected, "%s value mismatch:\nhave: %v\nwant: %v", varName, &actualFelt, expected)
+	}
+}
+
 func consecutiveVarAddrResolvedValueEquals(varName string, expectedValues []*fp.Element) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
 		o := ctx.operanders[varName]
@@ -103,7 +114,6 @@ func consecutiveVarAddrResolvedValueEquals(varName string, expectedValues []*fp.
 		require.NoError(t, err)
 		actualAddress, err := ctx.vm.Memory.ReadFromAddressAsAddress(&addr)
 		require.NoError(t, err)
-
 		for index, expectedValue := range expectedValues {
 			expectedValueAddr := memory.MemoryAddress{SegmentIndex: actualAddress.SegmentIndex, Offset: actualAddress.Offset + uint64(index)}
 			actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&expectedValueAddr)
@@ -155,7 +165,7 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		fmt.Println("value: ", value, "expected: ", expected, "valuetype", reflect.TypeOf(value), "expectedtype", reflect.TypeOf(expected))
 		switch expected.(type) {
 		case *big.Int:
 			{
@@ -171,6 +181,14 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 				expectedFelt := expected.(*fp.Element)
 				if valueFelt.Cmp(expectedFelt) != 0 {
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
+				}
+			}
+		case uint64:
+			{
+				valueFelt := value.(uint64)
+				expectedFelt := expected.(uint64)
+				if valueFelt != expectedFelt {
+					t.Fatalf("%s scope value mismatch:\nhave: %d\nwant: %d", varName, value, expected)
 				}
 			}
 		case []f.Element:
