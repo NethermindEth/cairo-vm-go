@@ -13,6 +13,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -188,6 +189,14 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 				expectedFelt := expected.(uint64)
 				if valueFelt != expectedFelt {
 					t.Fatalf("%s scope value mismatch:\nhave: %d\nwant: %d", varName, value, expected)
+        }
+      }
+		case []f.Element:
+			{
+				valueArray := value.([]f.Element)
+				expectedArray := expected.([]f.Element)
+				if !reflect.DeepEqual(valueArray, expectedArray) {
+					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
 			}
 		default:
