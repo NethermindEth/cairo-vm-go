@@ -78,6 +78,16 @@ func (sm *ScopeManager) GetVariableValue(name string) (any, error) {
 	return nil, fmt.Errorf("variable %s not found in current scope", name)
 }
 
+func (sm *ScopeManager) DeleteVariable(name string) error {
+	scope, err := sm.getCurrentScope()
+	if err != nil {
+		return err
+	}
+
+	delete(*scope, name)
+	return nil
+}
+
 func (sm *ScopeManager) GetVariableValueAsBigInt(name string) (*big.Int, error) {
 	value, err := sm.GetVariableValue(name)
 	if err != nil {

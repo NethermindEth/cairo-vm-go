@@ -64,7 +64,7 @@ func createMemcpyEnterScopeHinter(resolver hintReferenceResolver) (hinter.Hinter
 	return newMemcpyEnterScopeHint(len), nil
 }
 
-func newFindElementScopeHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander) hinter.Hinter {
+func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "FindElement",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -106,7 +106,7 @@ func newFindElementScopeHint(arrayPtr, elmSize, key, index, nElms hinter.ResOper
 				return err
 			}
 			if elmSizeVal == 0 {
-				return fmt.Errorf("Invalid value for elm_size. Got: %d", elmSizeVal)
+				return fmt.Errorf("Invalid value for elm_size. Got: %v", elmSize)
 			}
 			keyVal, err := hinter.ResolveAsFelt(vm, key)
 			if err != nil {
@@ -114,51 +114,43 @@ func newFindElementScopeHint(arrayPtr, elmSize, key, index, nElms hinter.ResOper
 			}
 			findElementIndex, err := ctx.ScopeManager.GetVariableValue("__find_element_index")
 			if err == nil {
-				findElementIndex, ok := findElementIndex.(uint64)
-				if !ok {
-					return fmt.Errorf("Invalid index found in __find_element_index. index: %v, expected key %v", findElementIndex, keyVal)
-				}
+				findElementIndex := findElementIndex.(uint64)
+				findElementIndexFelt := new(fp.Element).SetUint64(findElementIndex)
+				findElementIndexMemoryValue := memory.MemoryValueFromFieldElement(findElementIndexFelt)
 				indexValAddr, err := index.GetAddress(vm)
 				if err != nil {
 					return err
 				}
-				findElementIndexFelt := new(fp.Element).SetUint64(findElementIndex)
-				findElementIndexMemoryValue := memory.MemoryValueFromFieldElement(findElementIndexFelt)
-				err = vm.Memory.Write(indexValAddr.SegmentIndex, indexValAddr.Offset, &findElementIndexMemoryValue)
+				err = vm.Memory.WriteToAddress(&indexValAddr, &findElementIndexMemoryValue)
 				if err != nil {
 					return err
 				}
-				modifiedArrayPtrAddr, err := arrayPtrAddr.AddOffset(elmSizeVal * findElementIndex)
+				foundKeyAddr, err := arrayPtrAddr.AddOffset(elmSizeVal * findElementIndex)
 				if err != nil {
 					return err
 				}
-				foundKey, err := vm.Memory.ReadFromAddressAsElement(&modifiedArrayPtrAddr)
+				foundKey, err := vm.Memory.ReadFromAddressAsElement(&foundKeyAddr)
 				if err != nil {
 					return err
 				}
 				if foundKey.Cmp(keyVal) != 0 {
 					return fmt.Errorf("Invalid index found in __find_element_index. index: %d, expected key %d, found key: %d", findElementIndex, keyVal, foundKey)
 				}
-
+				ctx.ScopeManager.DeleteVariable("__find_element_index")
 			} else {
-				nElmsVal, err := hinter.ResolveAsUint64(vm, nElms)
+				nElms, err := hinter.ResolveAsUint64(vm, nElms)
 				if err != nil {
 					return err
 				}
-				if nElmsVal < 0 {
-					return fmt.Errorf("Invalid value for n_elms. Got: %d", nElmsVal)
-				}
 				findElementMaxSize, err := ctx.ScopeManager.GetVariableValue("__find_element_max_size")
 				if err == nil {
-					findElementMaxSizeVal, ok := findElementMaxSize.(uint64)
-					if !ok {
-						return fmt.Errorf("Invalid value for __find_element_max_size. Got: %v", findElementMaxSize)
-					}
-					if nElmsVal > findElementMaxSizeVal {
-						return fmt.Errorf("find_element() can only be used with n_elms<=%d. Got: n_elms=%d", findElementMaxSizeVal, nElmsVal)
+					findElementMaxSize := findElementMaxSize.(uint64)
+					if nElms > findElementMaxSize {
+						return fmt.Errorf("find_element() can only be used with n_elms<=%d. Got: n_elms=%d", findElementMaxSize, nElms)
 					}
 				}
-				for i := uint64(0); i < nElmsVal; i++ {
+				found := false
+				for i := uint64(0); i < nElms; i++ {
 					addr, err := arrayPtrAddr.AddOffset(elmSizeVal * i)
 					if err != nil {
 						return err
@@ -167,7 +159,7 @@ func newFindElementScopeHint(arrayPtr, elmSize, key, index, nElms hinter.ResOper
 					if err != nil {
 						return err
 					}
-					if val.Cmp(keyVal) != 0 {
+					if val.Cmp(keyVal) == 0 {
 						indexValAddr, err := index.GetAddress(vm)
 						if err != nil {
 							return err
@@ -175,10 +167,16 @@ func newFindElementScopeHint(arrayPtr, elmSize, key, index, nElms hinter.ResOper
 						iFelt := new(fp.Element).SetUint64(i)
 						iFeltMemoryValue := memory.MemoryValueFromFieldElement(iFelt)
 						err = vm.Memory.WriteToAddress(&indexValAddr, &iFeltMemoryValue)
+						if err != nil {
+							return err
+						}
+						found = true
 						break
 					}
 				}
-				return fmt.Errorf("Key %s was not found", keyVal)
+				if !found {
+					return fmt.Errorf("Key %v was not found", keyVal)
+				}
 			}
 			return nil
 		},
@@ -206,5 +204,5 @@ func createFindElementHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	if err != nil {
 		return nil, err
 	}
-	return newFindElementScopeHint(arrayPtr, elmSize, key, index, nElms), nil
+	return newFindElementHint(arrayPtr, elmSize, key, index, nElms), nil
 }
