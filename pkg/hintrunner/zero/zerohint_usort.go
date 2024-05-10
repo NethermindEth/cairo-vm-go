@@ -154,9 +154,9 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
-			positions, ok := positionsInterface.([]int64)
+			positions, ok := positionsInterface.([]fp.Element)
 			if !ok {
-				return fmt.Errorf("cannot cast positionsInterface to []int64")
+				return fmt.Errorf("cannot cast positionsInterface to []fp.Element")
 			}
 
 			currentPos, err := utils.Pop(&positions)
@@ -174,14 +174,15 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
-			lastPosInt, ok := lastPos.(int64)
+			lastPosFelt, ok := lastPos.(fp.Element)
 			if !ok {
-				return fmt.Errorf("cannot cast last_pos to int64")
+				return fmt.Errorf("cannot cast last_pos to felt")
 			}
 
 			// Calculate `next_item_index` memory value
-			newNextItemIndexValue := currentPos - lastPosInt
-			newNextItemIndexMemoryValue := memory.MemoryValueFromInt(newNextItemIndexValue)
+			var newNextItemIndexValue fp.Element
+			newNextItemIndexValue.Sub(&currentPos, &lastPosFelt)
+			newNextItemIndexMemoryValue := memory.MemoryValueFromFieldElement(&newNextItemIndexValue)
 
 			// Save `next_item_index` value in address
 			addrNextItemIndex, err := nextItemIndex.GetAddress(vm)
@@ -194,7 +195,7 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
-			return ctx.ScopeManager.AssignVariable("last_pos", int64(currentPos+1))
+			return ctx.ScopeManager.AssignVariable("last_pos", currentPos.Add(&currentPos, &utils.FeltOne))
 		},
 	}
 }

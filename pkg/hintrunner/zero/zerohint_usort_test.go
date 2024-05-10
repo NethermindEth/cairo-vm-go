@@ -96,8 +96,8 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
-						"positions": []int64{8, 6, 4},
-						"last_pos":  int64(2),
+						"positions": []fp.Element{*feltInt64(8), *feltInt64(6), *feltInt64(4)},
+						"last_pos":  *feltInt64(2),
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -105,7 +105,7 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					allVarValueInScopeEquals(map[string]any{
-						"last_pos": int64(5), "positions": []int64{8, 6},
+						"last_pos": feltInt64(5), "positions": []fp.Element{*feltInt64(8), *feltInt64(6)},
 					})(t, ctx)
 
 					varValueEquals("next_item_index", feltInt64(2))(t, ctx)
@@ -117,8 +117,8 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
-						"positions": []int64{90, 80, 70, 60, 50, 40, 30, 20, 10},
-						"last_pos":  int64(0),
+						"positions": []fp.Element{*feltInt64(90), *feltInt64(80), *feltInt64(70), *feltInt64(60), *feltInt64(50)},
+						"last_pos":  *feltInt64(0),
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -126,10 +126,10 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					allVarValueInScopeEquals(map[string]any{
-						"last_pos": int64(11), "positions": []int64{90, 80, 70, 60, 50, 40, 30, 20},
+						"last_pos": feltInt64(51), "positions": []fp.Element{*feltInt64(90), *feltInt64(80), *feltInt64(70), *feltInt64(60)},
 					})(t, ctx)
 
-					varValueEquals("next_item_index", feltInt64(10))(t, ctx)
+					varValueEquals("next_item_index", feltInt64(50))(t, ctx)
 				},
 			},
 			{
@@ -138,8 +138,8 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					ctx.ScopeManager.EnterScope(map[string]any{
-						"positions": []int64{99, 91, 89, 84, 82, 79, 72, 71, 70, 64, 59},
-						"last_pos":  int64(56),
+						"positions": []fp.Element{*feltInt64(87), *feltInt64(51), *feltInt64(43), *feltInt64(37)},
+						"last_pos":  *feltInt64(29),
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -147,10 +147,10 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					allVarValueInScopeEquals(map[string]any{
-						"last_pos": int64(60), "positions": []int64{99, 91, 89, 84, 82, 79, 72, 71, 70, 64},
+						"last_pos": feltInt64(38), "positions": []fp.Element{*feltInt64(87), *feltInt64(51), *feltInt64(43)},
 					})(t, ctx)
 
-					varValueEquals("next_item_index", feltInt64(3))(t, ctx)
+					varValueEquals("next_item_index", feltInt64(8))(t, ctx)
 				},
 			},
 		},
