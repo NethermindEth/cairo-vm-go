@@ -284,6 +284,9 @@ func createFastEcAddAssignNewXHinter(resolver hintReferenceResolver) (hinter.Hin
 }
 
 // FastEcAddAssignNewY hint computes a new y-coordinate for fast elliptic curve addition
+// of two different points
+// This hint is ultimately used for either multiplying a point with an integer with `ec_mul_by_uint256`
+// Cairo function, or for adding two different points with `ec_add` Cairo function
 //
 // `newFastEcAddAssignNewYHint` doesn't take any operander as argument
 // This hint follows the execution of `FastEcAddAssignNewX` hint when computing the addition of two given points
@@ -533,6 +536,8 @@ func createEcDoubleAssignNewXV1Hinter(resolver hintReferenceResolver) (hinter.Hi
 
 // EcDoubleAssignNewYV1 hint computes a new y-coordinate when doubling a point
 // on an elliptic curve
+// This hint is ultimately used for either multiplying a point with an integer with `ec_mul_by_uint256`
+// Cairo function, or for adding a given point to itself with `ec_add` Cairo function
 //
 // `newEcDoubleAssignNewYV1Hint` doesn't take any operander as argument
 // This hint follows the execution of `EcDoubleAssignNewXV1` hint when doubling a point
@@ -543,7 +548,7 @@ func newEcDoubleAssignNewYV1Hint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcDoubleAssignNewYV1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> value = new_y = (slope * (x - new_x) - y) % SECP_P
+			//> value = new_y = (slope * (x - new_x) - y) % SECP256R1_P
 
 			slopeBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("slope")
 			if err != nil {
