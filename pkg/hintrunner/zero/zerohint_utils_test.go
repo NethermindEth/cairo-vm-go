@@ -2,6 +2,7 @@ package zero
 
 import (
 	"fmt"
+	"reflect"
 
 	"math/big"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -168,6 +170,14 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 				valueFelt := value.(*fp.Element)
 				expectedFelt := expected.(*fp.Element)
 				if valueFelt.Cmp(expectedFelt) != 0 {
+					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
+				}
+			}
+		case []f.Element:
+			{
+				valueSlice := value.([]f.Element)
+				expectedSlice := expected.([]f.Element)
+				if !reflect.DeepEqual(valueSlice, expectedSlice) {
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
 			}
