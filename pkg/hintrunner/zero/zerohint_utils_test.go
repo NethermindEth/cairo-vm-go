@@ -189,8 +189,8 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 				expectedFelt := expected.(uint64)
 				if valueFelt != expectedFelt {
 					t.Fatalf("%s scope value mismatch:\nhave: %d\nwant: %d", varName, value, expected)
-        }
-      }
+				}
+			}
 		case []f.Element:
 			{
 				valueArray := value.([]f.Element)
