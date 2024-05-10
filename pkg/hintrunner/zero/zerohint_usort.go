@@ -195,7 +195,7 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
-			return ctx.ScopeManager.AssignVariable("last_pos", currentPos.Add(&currentPos, &utils.FeltOne))
+			return ctx.ScopeManager.AssignVariable("last_pos", *currentPos.Add(&currentPos, &utils.FeltOne))
 		},
 	}
 }
