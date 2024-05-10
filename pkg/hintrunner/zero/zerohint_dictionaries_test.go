@@ -66,7 +66,10 @@ func TestZeroHintDictionaries(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSquashDictInnerNextKeyHint(ctx.operanders["next_key"])
 				},
-				check: varValueEquals("next_key", feltUint64(3)),
+				check: func(t *testing.T, ctx *hintTestContext) {
+					varValueInScopeEquals("key", feltUint64((3)))(t, ctx)
+					varValueEquals("next_key", feltUint64(3))(t, ctx)
+				},
 			},
 		},
 	})
