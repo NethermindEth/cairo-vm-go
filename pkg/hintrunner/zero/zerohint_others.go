@@ -138,7 +138,10 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				if foundKeyVal.Cmp(keyVal) != 0 {
 					return fmt.Errorf("Invalid index found in __find_element_index. index: %v, expected key %v, found key: %v", findElementIndex, keyVal, &foundKey)
 				}
-				ctx.ScopeManager.DeleteVariable("__find_element_index")
+				err = ctx.ScopeManager.DeleteVariable("__find_element_index")
+				if err != nil {
+					return err
+				}
 			} else {
 				nElms, err := hinter.ResolveAsUint64(vm, nElms)
 				if err != nil {
