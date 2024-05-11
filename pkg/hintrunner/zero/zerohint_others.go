@@ -106,7 +106,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				return err
 			}
 			if elmSizeVal == 0 {
-				return fmt.Errorf("Invalid value for elm_size. Got: %v", elmSize)
+				return fmt.Errorf("Invalid value for elm_size. Got: %v", elmSizeVal)
 			}
 			keyVal, err := hinter.ResolveAsFelt(vm, key)
 			if err != nil {
@@ -125,16 +125,18 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				if err != nil {
 					return err
 				}
-				foundKeyAddr, err := arrayPtrAddr.AddOffset(elmSizeVal * findElementIndex)
+				arrayPtrAddr.Offset = arrayPtrAddr.Offset + elmSizeVal*findElementIndex
+				foundKey, err := vm.Memory.ReadFromAddress(arrayPtrAddr)
 				if err != nil {
 					return err
 				}
-				foundKey, err := vm.Memory.ReadFromAddressAsElement(&foundKeyAddr)
+				foundKeyVal, err := foundKey.FieldElement()
 				if err != nil {
 					return err
 				}
-				if foundKey.Cmp(keyVal) != 0 {
-					return fmt.Errorf("Invalid index found in __find_element_index. index: %d, expected key %d, found key: %d", findElementIndex, keyVal, foundKey)
+				fmt.Println("foundKey", foundKey, "keyVal", keyVal)
+				if foundKeyVal.Cmp(keyVal) != 0 {
+					return fmt.Errorf("Invalid index found in __find_element_index. index: %v, expected key %v, found key: %v", findElementIndex, keyVal, &foundKey)
 				}
 				ctx.ScopeManager.DeleteVariable("__find_element_index")
 			} else {
@@ -146,20 +148,24 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				if err == nil {
 					findElementMaxSize := findElementMaxSize.(uint64)
 					if nElms > findElementMaxSize {
-						return fmt.Errorf("find_element() can only be used with n_elms<=%d. Got: n_elms=%d", findElementMaxSize, nElms)
+						return fmt.Errorf("find_element() can only be used with n_elms<=%v. Got: n_elms=%v", findElementMaxSize, nElms)
 					}
 				}
 				found := false
 				for i := uint64(0); i < nElms; i++ {
-					addr, err := arrayPtrAddr.AddOffset(elmSizeVal * i)
 					if err != nil {
 						return err
 					}
-					val, err := vm.Memory.ReadFromAddressAsElement(&addr)
+					val, err := vm.Memory.ReadFromAddress(arrayPtrAddr)
 					if err != nil {
 						return err
 					}
-					if val.Cmp(keyVal) == 0 {
+					valFelt, err := val.FieldElement()
+					if err != nil {
+						return err
+					}
+					fmt.Println(valFelt, keyVal)
+					if valFelt.Cmp(keyVal) == 0 {
 						indexValAddr, err := index.GetAddress(vm)
 						if err != nil {
 							return err
@@ -173,6 +179,8 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 						found = true
 						break
 					}
+					// TODO: Check if this overflows using integration tests
+					arrayPtrAddr.Offset = arrayPtrAddr.Offset + elmSizeVal
 				}
 				if !found {
 					return fmt.Errorf("Key %v was not found", keyVal)
