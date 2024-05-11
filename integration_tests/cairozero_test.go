@@ -15,20 +15,47 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCairoZeroFiles(t *testing.T) {
-	root := "./cairo_files/"
-	testFiles, err := os.ReadDir(root)
-	require.NoError(t, err)
+type Filter struct {
+	filters []string
+}
 
-	// Get the filter value from the environment variable
-	// filter is for debugging purposes
+func (f *Filter) init() {
 	filtersRaw := os.Getenv("INTEGRATION_TESTS_FILTERS")
 	if filtersRaw == "" {
 		godotenv.Load("./.env")
 		filtersRaw = os.Getenv("INTEGRATION_TESTS_FILTERS")
 	}
-	filtersRaw = strings.TrimSpace(filtersRaw)
 	filters := strings.Split(filtersRaw, ",")
+	for _, filter := range filters {
+		trimmed := strings.TrimSpace(filter)
+		if trimmed != "" {
+			f.filters = append(f.filters, trimmed)
+		}
+	}
+}
+
+func (f *Filter) filtered(testFile string) bool {
+	if len(f.filters) == 0 {
+		return true
+	}
+
+	for _, filter := range f.filters {
+		if strings.Contains(testFile, filter) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func TestCairoZeroFiles(t *testing.T) {
+	root := "./cairo_files/"
+	testFiles, err := os.ReadDir(root)
+	require.NoError(t, err)
+
+	// filter is for debugging purposes
+	filter := Filter{}
+	filter.init()
 
 	for _, dirEntry := range testFiles {
 		if dirEntry.IsDir() || isGeneratedFile(dirEntry.Name()) {
@@ -37,18 +64,7 @@ func TestCairoZeroFiles(t *testing.T) {
 
 		path := filepath.Join(root, dirEntry.Name())
 
-		matched := false
-		if len(filters) == 0 {
-			matched = true
-		} else {
-			for _, filter := range filters {
-				if strings.Contains(dirEntry.Name(), strings.TrimSpace(filter)) {
-					matched = true
-					break
-				}
-			}
-		}
-		if !matched {
+		if !filter.filtered(dirEntry.Name()) {
 			continue
 		}
 
