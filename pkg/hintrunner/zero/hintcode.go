@@ -56,6 +56,26 @@ const (
 	uint256MulDivModCode      string = "a = (ids.a.high << 128) + ids.a.low/n b = (ids.b.high << 128) + ids.b.low/n div = (ids.div.high << 128) + ids.div.low/n quotient, remainder = divmod(a * b, div)/n ids.quotient_low.low = quotient & ((1 << 128) - 1)/n ids.quotient_low.high = (quotient >> 128) & ((1 << 128) - 1)/n ids.quotient_high.low = (quotient >> 256) & ((1 << 128) - 1)/n ids.quotient_high.high = quotient >> 384/n ids.remainder.low = remainder & ((1 << 128) - 1)/n ids.remainder.high = remainder >> 128"
 
 	// ------ Usort hints related code ------
+	usortBodyCode string = `
+	from collections import defaultdict
+
+	input_ptr = ids.input
+	input_len = int(ids.input_len)
+	if __usort_max_size is not None:
+		assert input_len <= __usort_max_size, (
+			f"usort() can only be used with input_len<={__usort_max_size}. "
+			f"Got: input_len={input_len}."
+		)
+
+	positions_dict = defaultdict(list)
+	for i in range(input_len):
+		val = memory[input_ptr + i]
+		positions_dict[val].append(i)
+
+	output = sorted(positions_dict.keys())
+	ids.output_len = len(output)
+	ids.output = segments.gen_arg(output)
+	ids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])`
 	usortEnterScopeCode               string = "vm_enter_scope(dict(__usort_max_size = globals().get('__usort_max_size')))"
 	usortVerifyMultiplicityAssertCode string = "assert len(positions) == 0"
 	usortVerifyCode                   string = "last_pos = 0\npositions = positions_dict[ids.value][::-1]"
@@ -89,6 +109,7 @@ const (
 
 	// ------ Dictionaries hints related code ------
 	squashDictInnerAssertLenKeys string = "assert len(keys) == 0"
+	squashDictInnerNextKey       string = "assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'\nids.next_key = key = keys.pop()"
 
 	// ------ Other hints related code ------
 	allocSegmentCode     string = "memory[ap] = segments.add()"
