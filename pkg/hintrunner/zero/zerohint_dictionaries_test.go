@@ -14,9 +14,6 @@ func TestZeroHintDictionaries(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "default_value", Kind: apRelative, Value: feltUint64(12345)},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeScopeManager(ctx, map[string]any{})
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDefaultDictNewHint(ctx.operanders["default_value"])
 				},
