@@ -64,6 +64,14 @@ func createMemcpyEnterScopeHinter(resolver hintReferenceResolver) (hinter.Hinter
 	return newMemcpyEnterScopeHint(len), nil
 }
 
+// FindElement hint finds element in the array by given key. It either returns element at index provided by __find_element_index or searches for the key in the array, returning error if key wasn't found.
+//
+// `newFindElementHint` takes 5 operanders as arguments
+//   - `arrayPtr` is the pointer to the base of the array in memory
+//   - `elmSize` is the size of the element in the array (the number of memory cells that the element occupies)
+//   - `key` is the felt key to search for in the array
+//   - `index` is the address in memory where to write the index of the found element in the array
+//   - `nElms` is the number of elements in the array
 func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "FindElement",
