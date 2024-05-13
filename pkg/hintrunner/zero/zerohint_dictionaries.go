@@ -7,6 +7,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -55,44 +56,27 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hi
 				return err
 			}
 
-			currentAccessIndices := currentAccessIndices_.([]f.Element)
-			if len(currentAccessIndices) != 0 {
-				return fmt.Errorf("assertion `len(current_access_indices) == 0` failed")
-			}
+			currentAccessIndices := currentAccessIndices_.([]fp.Element)
 
-			loopTemps, err := hinter.ResolveAsUint64(vm, loopTemps)
+			loopTempsAddr, err := loopTemps.GetAddress(vm)
 			if err != nil {
 				return err
 			}
 
-			keys := keys_.([]f.Element)
-			if len(keys) == 0 {
-				return fmt.Errorf("no keys left but remaining_accesses > 0")
-			}
-
-			newKey, err := utils.Pop(&keys)
+			resultAddr, err := loopTempsAddr.AddOffset(4)
 			if err != nil {
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("keys", keys)
-			if err != nil {
-				return err
+			resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
+
+			if len(currentAccessIndices) == 0 {
+				return vm.Memory.WriteToAddress(&resultAddr, &resultMemZero)
+
+			} else {
+				return vm.Memory.WriteToAddress(&resultAddr, &resultMemOne)
 			}
-
-			err = ctx.ScopeManager.AssignVariable("key", newKey)
-			if err != nil {
-				return err
-			}
-
-			newKeyMemoryValue := memory.MemoryValueFromFieldElement(&newKey)
-
-			addrNextKey, err := nextKey.GetAddress(vm)
-			if err != nil {
-				return err
-			}
-
-			return vm.Memory.WriteToAddress(&addrNextKey, &newKeyMemoryValue)
 		},
 	}
 }
@@ -103,7 +87,7 @@ func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hi
 		return nil, err
 	}
 
-	return newSquashDictInnerNextKeyHint(loopTemps), nil
+	return newSquashDictInnerContinueLoopHint(loopTemps), nil
 }
 
 // SquashDictInnerAssertLenKeys hint asserts the length of the current
