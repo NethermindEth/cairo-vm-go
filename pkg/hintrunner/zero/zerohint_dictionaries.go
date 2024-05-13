@@ -39,6 +39,63 @@ func createSquashDictInnerAssertLenKeysHinter() (hinter.Hinter, error) {
 	return newSquashDictInnerAssertLenKeysHint(), nil
 }
 
+// SquashDictInnerContinueLoop hint determines if the loop should continue
+// based on remaining access indices
+//
+// `newSquashDictInnerContinueLoopHint` takes 1 operander as argument
+//   - `loopTemps` variable will be assigned to the next key in `keys`
+func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SquashDictInnerContinueLoop",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> ids.loop_temps.should_continue = 1 if current_access_indices else 0
+
+			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			if err != nil {
+				return err
+			}
+
+			keys := keys_.([]f.Element)
+			if len(keys) == 0 {
+				return fmt.Errorf("no keys left but remaining_accesses > 0")
+			}
+
+			newKey, err := utils.Pop(&keys)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("keys", keys)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("key", newKey)
+			if err != nil {
+				return err
+			}
+
+			newKeyMemoryValue := memory.MemoryValueFromFieldElement(&newKey)
+
+			addrNextKey, err := nextKey.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&addrNextKey, &newKeyMemoryValue)
+		},
+	}
+}
+
+func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	loopTemps, err := resolver.GetResOperander("loop_temps")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSquashDictInnerNextKeyHint(loopTemps), nil
+}
+
 // SquashDictInnerAssertLenKeys hint asserts the length of the current
 // access indices for a given key is zero
 // `current_access_indices` is a reversed order list of access indices
