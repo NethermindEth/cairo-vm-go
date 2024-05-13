@@ -202,6 +202,12 @@ func createUnsafeKeccakHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 	return newUnsafeKeccakHint(data, length, high, low), nil
 }
 
+// UnsafeKeccakFinalize computes keccak hash of the data in memory without validity enforcement and writes the result in the `low` and `high` memory cells. It gets the data pointers from the `keccakState` memory cell, computing the hash of the data in the range [start_ptr, end_ptr).
+//
+// `newUnsafeKeccakFinalizeHint` takes 3 operanders as arguments
+//   - `keccakState` is the address in memory where the data pointers are stored
+//   - `low` is the low part of the produced hash
+//   - `high` is the high part of the produced hash
 func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UnsafeKeccakFinalize",
