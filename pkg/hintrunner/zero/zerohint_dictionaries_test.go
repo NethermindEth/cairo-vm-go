@@ -147,7 +147,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSquashDictInnerUsedAccessesAssertHint(ctx.operanders["n_used_accesses"])
 				},
-				errCheck: errorTextContains("assertion ids.n_used_accesses == len(access_indices[key] failed"),
+				errCheck: errorTextContains("assertion ids.n_used_accesses == len(access_indices[key]) failed"),
 			},
 			{
 				operanders: []*hintOperander{
@@ -177,7 +177,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSquashDictInnerUsedAccessesAssertHint(ctx.operanders["n_used_accesses"])
 				},
-				errCheck: errorTextContains("assertion ids.n_used_accesses == len(access_indices[key] failed"),
+				errCheck: errorTextContains("assertion ids.n_used_accesses == len(access_indices[key]) failed"),
 			},
 		},
 	})
