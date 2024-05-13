@@ -9,6 +9,38 @@ import (
 
 func TestZeroHintDictionaries(t *testing.T) {
 	runHinterTests(t, map[string][]hintTestCase{
+		"SquashDictInnerSkipLoop": {
+			{
+				operanders: []*hintOperander{
+					{Name: "should_skip_loop", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("current_access_indices", []fp.Element{*feltUint64(1), *feltUint64(2), *feltUint64(3)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerSkipLoopHint(ctx.operanders["should_skip_loop"])
+				},
+				check: varValueEquals("should_skip_loop", feltInt64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "should_skip_loop", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("current_access_indices", []fp.Element{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerSkipLoopHint(ctx.operanders["should_skip_loop"])
+				},
+				check: varValueEquals("should_skip_loop", feltInt64(1)),
+			},
+		},
 		"SquashDictInnerAssertLenKeys": {
 			{
 				operanders: []*hintOperander{},

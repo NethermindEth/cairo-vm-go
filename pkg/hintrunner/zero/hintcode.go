@@ -109,6 +109,7 @@ const (
 	keccakWriteArgs string = "segments.write_arg(ids.inputs, [ids.low % 2 ** 64, ids.low // 2 ** 64])\nsegments.write_arg(ids.inputs + 2, [ids.high % 2 ** 64, ids.high // 2 ** 64])"
 
 	// ------ Dictionaries hints related code ------
+	squashDictInnerSkipLoop      string = "ids.should_skip_loop = 0 if current_access_indices else 1"
 	squashDictInnerAssertLenKeys string = "assert len(keys) == 0"
 	squashDictInnerLenAssert     string = "assert len(current_access_indices) == 0"
 	squashDictInnerNextKey       string = "assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'\nids.next_key = key = keys.pop()"

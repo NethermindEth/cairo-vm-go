@@ -7,8 +7,57 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
+
+// SquashDictInnerSkipLoop hint determines if the loop should be skipped
+// based on remaining access indices
+//
+// `newSquashDictInnerSkipLoopHint` takes 1 operander as argument
+//   - `should_skip_loop` variable will be set to 0 or 1
+//
+// `newSquashDictInnerSkipLoopHint` writes 0 or 1 in the `should_skip_loop`variable
+// depending on whether the `current_access_indices` array contains items or not
+func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SquashDictInnerSkipLoop",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> ids.should_skip_loop = 0 if current_access_indices else 1
+
+			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			if err != nil {
+				return err
+			}
+
+			currentAccessIndices := currentAccessIndices_.([]fp.Element)
+
+			shouldSkipLoopAddr, err := shouldSkipLoop.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
+
+			if len(currentAccessIndices) == 0 {
+				return vm.Memory.WriteToAddress(&shouldSkipLoopAddr, &resultMemOne)
+
+			} else {
+				return vm.Memory.WriteToAddress(&shouldSkipLoopAddr, &resultMemZero)
+			}
+		},
+	}
+}
+
+func createSquashDictInnerSkipLoopHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	shouldSkipLoop, err := resolver.GetResOperander("should_skip_loop")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSquashDictInnerSkipLoopHint(shouldSkipLoop), nil
+}
 
 // SquashDictInnerAssertLenKeys hint asserts that the length
 // of the `keys` descending list is zero during the squashing process

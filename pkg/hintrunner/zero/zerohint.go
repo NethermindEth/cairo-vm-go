@@ -159,6 +159,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case usortBodyCode:
 		return createUsortBodyHinter(resolver)
 		// Dictionaries hints
+	case squashDictInnerSkipLoop:
+		return createSquashDictInnerSkipLoopHinter(resolver)
 	case squashDictInnerAssertLenKeys:
 		return createSquashDictInnerAssertLenKeysHinter()
 	case squashDictInnerLenAssert:
