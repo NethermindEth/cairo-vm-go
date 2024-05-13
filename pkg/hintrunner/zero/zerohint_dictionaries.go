@@ -145,14 +145,20 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 				return err
 			}
 
-			access_indices := access_indices_.(map[fp.Element][]fp.Element)
+			access_indices, ok := access_indices_.(map[fp.Element][]fp.Element)
+			if !ok {
+				return fmt.Errorf("cannot cast access_indices_ to a mapping of felts")
+			}
 
 			key_, err := ctx.ScopeManager.GetVariableValue("key")
 			if err != nil {
 				return err
 			}
 
-			key := key_.(fp.Element)
+			key, ok := key_.(fp.Element)
+			if !ok {
+				return fmt.Errorf("cannot cast key_ to felt")
+			}
 
 			accessIndicesAtKey := uint64(len(access_indices[key]))
 
@@ -162,7 +168,7 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 			}
 
 			if accessIndicesAtKey != nUsedAccessesField {
-				return fmt.Errorf("assertion ids.n_used_accesses == len(access_indices[key] failed")
+				return fmt.Errorf("assertion ids.n_used_accesses == len(access_indices[key]) failed")
 			}
 
 			return nil
