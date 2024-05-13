@@ -22,7 +22,7 @@ type Filter struct {
 func (f *Filter) init() {
 	filtersRaw := os.Getenv("INTEGRATION_TESTS_FILTERS")
 	if filtersRaw == "" {
-		godotenv.Load("./.env")
+		_ = godotenv.Load("./.env")
 		filtersRaw = os.Getenv("INTEGRATION_TESTS_FILTERS")
 	}
 	filters := strings.Split(filtersRaw, ",")
