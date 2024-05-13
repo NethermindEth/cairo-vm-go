@@ -13,6 +13,7 @@ import (
 	"github.com/holiman/uint256"
 )
 
+<<<<<<< cairo0_CairoKeccakFinalizeHint
 func newCairoKeccakFinalizeHint(keccakStateSizeFeltsResOperander, blockSizeResOperander, keccakPtrEndResOperander hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsLeFelt",
@@ -85,6 +86,17 @@ func createCairoKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hin
 	return newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd), nil
 }
 
+=======
+// KeccakWriteArgs hint writes Keccak function arguments in memory
+//
+// `newKeccakWriteArgsHint` takes 3 operanders as arguments
+//   - `inputs` is the address in memory where to write Keccak arguments
+//   - `low` is the low part of the `uint256` argument for the Keccac function
+//   - `high` is the high part of the `uint256` argument for the Keccac function
+//
+// The `low` and `high` parts are splitted in 64-bit integers
+// Ultimately, the result is written into 4 memory cells
+>>>>>>> main
 func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter {
 	name := "KeccakWriteArgs"
 	return &GenericZeroHinter{
