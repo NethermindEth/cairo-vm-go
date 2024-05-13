@@ -34,8 +34,8 @@ func TestZeroHintDictionaries(t *testing.T) {
 						t.Fatalf("error reading dictionary address from ap")
 					}
 
-					key := new(fp.Element).SetUint64(100)
-					value, err := dictionaryManager.At(&dictAddr, key)
+					key := fp.NewElement(100)
+					value, err := dictionaryManager.At(&dictAddr, &key)
 					if err != nil {
 						t.Fatalf("error fetching value from dictionary")
 					}
@@ -43,10 +43,10 @@ func TestZeroHintDictionaries(t *testing.T) {
 					if err != nil {
 						t.Fatalf("mv: %s cannot be converted to felt", value)
 					}
-					expectedValueFelt := new(fp.Element).SetUint64(12345)
+					expectedValueFelt := fp.NewElement(12345)
 
-					if !valueFelt.Equal(expectedValueFelt) {
-						t.Fatalf("at key: %v expected: %s actual: %s", key, expectedValueFelt, valueFelt)
+					if !valueFelt.Equal(&expectedValueFelt) {
+						t.Fatalf("at key: %v expected: %s actual: %s", key, &expectedValueFelt, valueFelt)
 					}
 				},
 			},
@@ -60,9 +60,10 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					hinter.InitializeDictionaryManager(ctx)
-					hinter.InitializeScopeManager(ctx, map[string]any{
-						"__dict_manager": ctx.DictionaryManager,
-					})
+					err := ctx.ScopeManager.AssignVariable("__dict_manager", ctx.DictionaryManager)
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					defaultValueMv := memory.MemoryValueFromInt(12345)
@@ -70,6 +71,87 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newDictReadHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["value"])
 				},
 				check: varValueEquals("value", feltUint64(12345)),
+			},
+		},
+		"SquashDictInnerAssertLenKeys": {
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("keys", []fp.Element{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerAssertLenKeysHint()
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {},
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("keys", []fp.Element{*feltUint64(1), *feltUint64(2)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerAssertLenKeysHint()
+				},
+				errCheck: errorTextContains("assertion `len(keys) == 0` failed"),
+			},
+		},
+		"SquashDictInnerNextKey": {
+			{
+				operanders: []*hintOperander{
+					{Name: "next_key", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("keys", []fp.Element{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerNextKeyHint(ctx.operanders["next_key"])
+				},
+				errCheck: errorTextContains("no keys left but remaining_accesses > 0"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "next_key", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("keys", []fp.Element{*feltUint64(3), *feltUint64(2), *feltUint64(1)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerNextKeyHint(ctx.operanders["next_key"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueInScopeEquals(map[string]any{"keys": []fp.Element{*feltUint64(3), *feltUint64(2)}, "key": *feltUint64((1))})(t, ctx)
+					varValueEquals("next_key", feltUint64(1))(t, ctx)
+				},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "next_key", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("keys", []fp.Element{*feltUint64(15), *feltUint64(12), *feltUint64(9), *feltUint64(7), *feltUint64(6), *feltUint64(4)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerNextKeyHint(ctx.operanders["next_key"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueInScopeEquals(map[string]any{"keys": []fp.Element{*feltUint64(15), *feltUint64(12), *feltUint64(9), *feltUint64(7), *feltUint64(6)}, "key": *feltUint64((4))})(t, ctx)
+					varValueEquals("next_key", feltUint64(4))(t, ctx)
+				},
 			},
 		},
 	})
