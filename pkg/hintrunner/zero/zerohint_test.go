@@ -117,6 +117,7 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 		}
 
 		ctx := &hinter.HintRunnerContext{}
+		hinter.InitializeScopeManager(ctx, make(map[string]any))
 		if tc.ctxInit != nil {
 			tc.ctxInit(ctx)
 		}
@@ -245,7 +246,6 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 				}
 			}
 		}
-
 		h := tc.makeHinter(testCtx)
 
 		err := h.Execute(vm, ctx)

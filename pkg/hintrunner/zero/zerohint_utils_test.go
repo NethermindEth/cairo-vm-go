@@ -2,6 +2,8 @@ package zero
 
 import (
 	"fmt"
+	"reflect"
+
 	"math/big"
 	"testing"
 
@@ -11,6 +13,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -93,6 +96,17 @@ func varValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx
 	}
 }
 
+func varAddrResolvedValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		o := ctx.operanders[varName]
+		addr, err := o.GetAddress(ctx.vm)
+		require.NoError(t, err)
+		actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&addr)
+		require.NoError(t, err)
+		require.Equal(t, &actualFelt, expected, "%s value mismatch:\nhave: %v\nwant: %v", varName, &actualFelt, expected)
+	}
+}
+
 func consecutiveVarAddrResolvedValueEquals(varName string, expectedValues []*fp.Element) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
 		o := ctx.operanders[varName]
@@ -100,7 +114,6 @@ func consecutiveVarAddrResolvedValueEquals(varName string, expectedValues []*fp.
 		require.NoError(t, err)
 		actualAddress, err := ctx.vm.Memory.ReadFromAddressAsAddress(&addr)
 		require.NoError(t, err)
-
 		for index, expectedValue := range expectedValues {
 			expectedValueAddr := memory.MemoryAddress{SegmentIndex: actualAddress.SegmentIndex, Offset: actualAddress.Offset + uint64(index)}
 			actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&expectedValueAddr)
@@ -152,7 +165,7 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		fmt.Println("value: ", value, "expected: ", expected, "valuetype", reflect.TypeOf(value), "expectedtype", reflect.TypeOf(expected))
 		switch expected.(type) {
 		case *big.Int:
 			{
@@ -167,6 +180,22 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 				valueFelt := value.(*fp.Element)
 				expectedFelt := expected.(*fp.Element)
 				if valueFelt.Cmp(expectedFelt) != 0 {
+					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
+				}
+			}
+		case uint64:
+			{
+				valueFelt := value.(uint64)
+				expectedFelt := expected.(uint64)
+				if valueFelt != expectedFelt {
+					t.Fatalf("%s scope value mismatch:\nhave: %d\nwant: %d", varName, value, expected)
+				}
+			}
+		case []f.Element:
+			{
+				valueArray := value.([]f.Element)
+				expectedArray := expected.([]f.Element)
+				if !reflect.DeepEqual(valueArray, expectedArray) {
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
 			}
@@ -200,5 +229,13 @@ func errorTextContains(s string) func(t *testing.T, ctx *hintTestContext, err er
 func errorIsNil(t *testing.T, ctx *hintTestContext, err error) {
 	if err != nil {
 		t.Fatalf("expected a nil error, got: %v", err)
+	}
+}
+
+func varListInScopeEquals(expectedValues map[string]any) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		for varName, expected := range expectedValues {
+			varValueInScopeEquals(varName, expected)(t, ctx)
+		}
 	}
 }

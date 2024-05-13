@@ -17,13 +17,14 @@ func TestZeroHintDictionaries(t *testing.T) {
 					value1 := mem.MemoryValueFromUint(uint(1000))
 					value2 := mem.MemoryValueFromUint(uint(2000))
 					value3 := mem.MemoryValueFromUint(uint(3000))
-					hinter.InitializeScopeManager(ctx, map[string]any{
-						"initial_dict": map[fp.Element]*mem.MemoryValue{
-							*new(fp.Element).SetUint64(10): &value1,
-							*new(fp.Element).SetUint64(20): &value2,
-							*new(fp.Element).SetUint64(30): &value3,
-						},
+					err := ctx.ScopeManager.AssignVariable("initial_dict", map[fp.Element]*mem.MemoryValue{
+						*new(fp.Element).SetUint64(10): &value1,
+						*new(fp.Element).SetUint64(20): &value2,
+						*new(fp.Element).SetUint64(30): &value3,
 					})
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDictNewHint()
@@ -68,6 +69,87 @@ func TestZeroHintDictionaries(t *testing.T) {
 							t.Fatalf("at key: %v expected: %s actual: %s", key, expectedValueFelt, valueFelt)
 						}
 					}
+				},
+			},
+		},
+		"SquashDictInnerAssertLenKeys": {
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("keys", []fp.Element{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerAssertLenKeysHint()
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {},
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("keys", []fp.Element{*feltUint64(1), *feltUint64(2)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerAssertLenKeysHint()
+				},
+				errCheck: errorTextContains("assertion `len(keys) == 0` failed"),
+			},
+		},
+		"SquashDictInnerNextKey": {
+			{
+				operanders: []*hintOperander{
+					{Name: "next_key", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("keys", []fp.Element{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerNextKeyHint(ctx.operanders["next_key"])
+				},
+				errCheck: errorTextContains("no keys left but remaining_accesses > 0"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "next_key", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("keys", []fp.Element{*feltUint64(3), *feltUint64(2), *feltUint64(1)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerNextKeyHint(ctx.operanders["next_key"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueInScopeEquals(map[string]any{"keys": []fp.Element{*feltUint64(3), *feltUint64(2)}, "key": *feltUint64((1))})(t, ctx)
+					varValueEquals("next_key", feltUint64(1))(t, ctx)
+				},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "next_key", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("keys", []fp.Element{*feltUint64(15), *feltUint64(12), *feltUint64(9), *feltUint64(7), *feltUint64(6), *feltUint64(4)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerNextKeyHint(ctx.operanders["next_key"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueInScopeEquals(map[string]any{"keys": []fp.Element{*feltUint64(15), *feltUint64(12), *feltUint64(9), *feltUint64(7), *feltUint64(6)}, "key": *feltUint64((4))})(t, ctx)
+					varValueEquals("next_key", feltUint64(4))(t, ctx)
 				},
 			},
 		},
