@@ -13,10 +13,18 @@ import (
 	"github.com/holiman/uint256"
 )
 
-<<<<<<< cairo0_CairoKeccakFinalizeHint
-func newCairoKeccakFinalizeHint(keccakStateSizeFeltsResOperander, blockSizeResOperander, keccakPtrEndResOperander hinter.ResOperander) hinter.Hinter {
+// CairoKeccakFinalize writes the result of F1600 Keccak permutation padded by __keccak_state_size_felts__ zeros to consecutive memory cells, __block_size__ times.
+//
+// `CairoKeccakFinalize` takes 3 operanders as arguments
+//   - `keccakStateSizeFelts` is the number of felts in the Keccak state size
+//   - `blockSize` is the number of blocks to write
+//   - `keccakPtrEnd` is the address in memory where to start writing the result
+//
+// The `low` and `high` parts are splitted in 64-bit integers
+// Ultimately, the result is written into 4 memory cells
+func newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "IsLeFelt",
+		Name: "CairoKeccakFinalize",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> _keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)
 			//> _block_size = int(ids.BLOCK_SIZE)
@@ -26,30 +34,30 @@ func newCairoKeccakFinalizeHint(keccakStateSizeFeltsResOperander, blockSizeResOp
 			//> padding = (inp + keccak_func(inp)) * _block_size
 			//> segments.write_arg(ids.keccak_ptr_end, padding)
 
-			keccakStateSizeFelts, err := hinter.ResolveAsUint64(vm, keccakStateSizeFeltsResOperander)
+			keccakStateSizeFeltsVal, err := hinter.ResolveAsUint64(vm, keccakStateSizeFelts)
 			if err != nil {
 				return err
 			}
-			if keccakStateSizeFelts >= 100 {
+			if keccakStateSizeFeltsVal >= 100 {
 				return fmt.Errorf("assert 0 <= _keccak_state_size_felts < 100.")
 			}
-			blockSize, err := hinter.ResolveAsUint64(vm, blockSizeResOperander)
+			blockSizeVal, err := hinter.ResolveAsUint64(vm, blockSize)
 			if err != nil {
 				return err
 			}
-			if blockSize >= 10 {
+			if blockSizeVal >= 10 {
 				return fmt.Errorf("assert 0 <= _block_size < 10.")
 			}
 
 			var input [25]uint64
 			builtins.KeccakF1600(&input)
-			padding := make([]uint64, keccakStateSizeFelts)
+			padding := make([]uint64, keccakStateSizeFeltsVal)
 			padding = append(padding, input[:]...)
-			result := make([]uint64, 0, keccakStateSizeFelts*blockSize)
-			for i := uint64(0); i < blockSize; i++ {
+			result := make([]uint64, 0, keccakStateSizeFeltsVal*blockSizeVal)
+			for i := uint64(0); i < blockSizeVal; i++ {
 				result = append(result, padding...)
 			}
-			keccakPtrEnd, err := hinter.ResolveAsAddress(vm, keccakPtrEndResOperander)
+			keccakPtrEnd, err := hinter.ResolveAsAddress(vm, keccakPtrEnd)
 			if err != nil {
 				return err
 			}
@@ -86,7 +94,6 @@ func createCairoKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hin
 	return newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd), nil
 }
 
-=======
 // KeccakWriteArgs hint writes Keccak function arguments in memory
 //
 // `newKeccakWriteArgsHint` takes 3 operanders as arguments
@@ -96,7 +103,6 @@ func createCairoKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hin
 //
 // The `low` and `high` parts are splitted in 64-bit integers
 // Ultimately, the result is written into 4 memory cells
->>>>>>> main
 func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter {
 	name := "KeccakWriteArgs"
 	return &GenericZeroHinter{
