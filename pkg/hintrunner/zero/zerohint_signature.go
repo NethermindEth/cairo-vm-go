@@ -12,6 +12,16 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+// VerifyZero hint verifies that a packed value is zero modulo the SECP256R1 prime
+// and stores in memory the quotient of the modular divison of the packed value by
+// SECP256R1 prime
+//
+// `newVerifyZeroHint` takes 2 operanders as arguments
+//   - `value` is the value that will be verified
+//   - `q` is the variable that will store the quotient of the modular division
+//
+// `newVerifyZeroHint` writes the quotient of the modular division of the packed value
+// by SECP256R1 prime to the memory address corresponding to `q`
 func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "VerifyZero",
@@ -58,7 +68,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 
 			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
 			if rBig.Cmp(big.NewInt(0)) != 0 {
-				return fmt.Errorf("verify_zero: Invalid input (%v, %v, %v).", valValues[0], valValues[1], valValues[2])
+				return fmt.Errorf("verify_zero: Invalid input (%v, %v, %v)", valValues[0], valValues[1], valValues[2])
 			}
 
 			//> ids.q = q % PRIME
@@ -79,6 +89,7 @@ func createVerifyZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	if err != nil {
 		return nil, err
 	}
+
 	q, err := resolver.GetResOperander("q")
 	if err != nil {
 		return nil, err
@@ -87,7 +98,15 @@ func createVerifyZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	return newVerifyZeroHint(val, q), nil
 }
 
-func newVerifyECDSASignatureHinter(ecdsaPtr, signature_r, signature_s hinter.ResOperander) hinter.Hinter {
+// VerifyECDSASignature hint writes an ECDSA signature to a given address
+//
+// `newVerifyECDSASignatureHint` takes 3 operanders as arguments
+//   - `ecdsaPtr` is the pointer variable that stores the address
+//     where to write the signature
+//   - `signature_r` and `signature_s` are the r and s parts of the signature
+//
+// `newVerifyECDSASignatureHint` uses the ECDSA builtin to perform this operation
+func newVerifyECDSASignatureHint(ecdsaPtr, signature_r, signature_s hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "VerifyECDSASignature",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -119,20 +138,31 @@ func createVerifyECDSASignatureHinter(resolver hintReferenceResolver) (hinter.Hi
 	if err != nil {
 		return nil, err
 	}
+
 	signature_r, err := resolver.GetResOperander("signature_r")
 	if err != nil {
 		return nil, err
 	}
+
 	signature_s, err := resolver.GetResOperander("signature_s")
 	if err != nil {
 		return nil, err
 	}
-	return newVerifyECDSASignatureHinter(ecdsaPtr, signature_r, signature_s), nil
+
+	return newVerifyECDSASignatureHint(ecdsaPtr, signature_r, signature_s), nil
 }
 
-func newGetPointFromXHinter(xCube, v hinter.ResOperander) hinter.Hinter {
+// GetPointFromX hint calculates the y-coordinate of a point
+// on an elliptic curve for a given x-coordinate
+//
+// `newGetPointFromXHint` takes 2 operanders as arguments
+//   - `xCube` is the x-coordinate value used to calculate the point
+//   - `v` is the parity of the `y` result, it should be either 0 or 1
+//
+// `newGetPointFromXHint` assigns the y-coordinate as `value` in the current scope
+func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "VerifyECDSASignature",
+		Name: "GetPointFromX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 			//> x_cube_int = pack(ids.x_cube, PRIME) % SECP_P
@@ -203,34 +233,48 @@ func createGetPointFromXHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	if err != nil {
 		return nil, err
 	}
+
 	v, err := resolver.GetResOperander("v")
 	if err != nil {
 		return nil, err
 	}
-	return newGetPointFromXHinter(xCube, v), nil
+
+	return newGetPointFromXHint(xCube, v), nil
 }
 
-func newImportSecp256R1PHinter() hinter.Hinter {
+// ImportSecp256R1P hint imports the `SECP_P` constant from SECP256R1
+// curve utilities in the current scope
+//
+// `newImportSecp256R1PHint` doesn't take any operander as argument
+//
+// `newGetPointFromXHint` assigns `SECP_P` variable in the current scope
+func newImportSecp256R1PHint() hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "Secp256R1",
+		Name: "ImportSecp256R1P",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp256r1_utils import SECP256R1_P as SECP_P
 			SECP256R1_PBig, ok := secp_utils.GetSecp256R1_P()
 			if !ok {
-				return fmt.Errorf("SECP256R1_P failed.")
+				return fmt.Errorf("SECP256R1_P failed")
 			}
+
 			return ctx.ScopeManager.AssignVariable("SECP_P", &SECP256R1_PBig)
 		},
 	}
 }
 
 func createImportSecp256R1PHinter() (hinter.Hinter, error) {
-	return newImportSecp256R1PHinter(), nil
+	return newImportSecp256R1PHint(), nil
 }
 
-func newDivModSafeDivHinter() hinter.Hinter {
+// DivModSafeDiv hint computes a safe division in the context of the N constant
+//
+// `newDivModSafeDivHint` doesn't take any operander as argument
+//
+// `newDivModSafeDivHint` assigns the result `k` as `value` in the current scope
+func newDivModSafeDivHint() hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "DivModSafeDivHinter",
+		Name: "DivModSafeDiv",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> value = k = safe_div(res * b - a, N)
 
@@ -238,33 +282,128 @@ func newDivModSafeDivHinter() hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			a, err := ctx.ScopeManager.GetVariableValueAsBigInt("a")
 			if err != nil {
 				return err
 			}
+
 			b, err := ctx.ScopeManager.GetVariableValueAsBigInt("b")
 			if err != nil {
 				return err
 			}
+
 			N, err := ctx.ScopeManager.GetVariableValueAsBigInt("N")
 			if err != nil {
 				return err
 			}
+
 			divisor := new(big.Int).Sub(new(big.Int).Mul(res, b), a)
 			value, err := secp_utils.SafeDiv(divisor, N)
 			if err != nil {
 				return err
 			}
-			k := new(big.Int).Set(&value)
-			err = ctx.ScopeManager.AssignVariable("k", k)
-			if err != nil {
-				return err
-			}
+
 			return ctx.ScopeManager.AssignVariable("value", &value)
 		},
 	}
 }
 
 func createDivModSafeDivHinter() (hinter.Hinter, error) {
-	return newDivModSafeDivHinter(), nil
+	return newDivModSafeDivHint(), nil
+}
+
+// DivModNPackedDivmodV1 hint caculates the division modulo N for packed values
+//
+// `newDivModNPackedDivmodV1Hint` takes 2 operanders as arguments
+//   - `a` is the packed value that will be divided
+//   - `b` is the packed value that will divide `a`
+//
+// `newDivModNPackedDivmodV1Hint` assigns the result `res` as `value` in the current scope
+func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DivModNPackedDivmodV1",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import N, pack
+			//> from starkware.python.math_utils import div_mod, safe_div
+			//> a = pack(ids.a, PRIME)
+			//> b = pack(ids.b, PRIME)
+			//> value = res = div_mod(a, b, N)
+
+			aAddr, err := a.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			aMemoryValues, err := hinter.GetConsecutiveValues(vm, aAddr, int16(3))
+			if err != nil {
+				return err
+			}
+
+			bAddr, err := b.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			bMemoryValues, err := hinter.GetConsecutiveValues(vm, bAddr, int16(3))
+			if err != nil {
+				return err
+			}
+
+			var aValues [3]*fp.Element
+			var bValues [3]*fp.Element
+
+			for i := 0; i < 3; i++ {
+				aValue, err := aMemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				aValues[i] = aValue
+
+				bValue, err := bMemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				bValues[i] = bValue
+			}
+
+			//> a = pack(ids.a, PRIME)
+			aPackedBig, err := secp_utils.SecPPacked(aValues)
+			if err != nil {
+				return err
+			}
+
+			//> b = pack(ids.b, PRIME)
+			bPackedBig, err := secp_utils.SecPPacked(bValues)
+			if err != nil {
+				return err
+			}
+
+			nBig, ok := secp_utils.GetN()
+			if !ok {
+				return fmt.Errorf("GetN failed")
+			}
+
+			//> value = res = div_mod(a, b, N)
+			resBig, err := secp_utils.Divmod(&aPackedBig, &bPackedBig, &nBig)
+			if err != nil {
+				return err
+			}
+			valueBig := new(big.Int).Set(&resBig)
+
+			return ctx.ScopeManager.AssignVariable("value", valueBig)
+		},
+	}
+}
+
+func createDivModNPackedDivmodV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+
+	return newDivModNPackedDivmodV1Hint(a, b), nil
 }
