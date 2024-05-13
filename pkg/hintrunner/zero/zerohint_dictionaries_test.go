@@ -40,7 +40,6 @@ func TestZeroHintDictionaries(t *testing.T) {
 		"SquashDictInnerContinueLoop": {
 			{
 				operanders: []*hintOperander{
-					{Name: "loop_temps", Kind: fpRelative, Value: addr(7)},
 					{Name: "loop_temps.index_delta_minus1", Kind: apRelative, Value: feltInt64(0)},
 					{Name: "loop_temps.index_delta", Kind: apRelative, Value: feltInt64(0)},
 					{Name: "loop_temps.ptr_delta", Kind: apRelative, Value: feltInt64(0)},
@@ -53,13 +52,12 @@ func TestZeroHintDictionaries(t *testing.T) {
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newSquashDictInnerContinueLoopHint(ctx.operanders["loop_temps"])
+					return newSquashDictInnerContinueLoopHint(ctx.operanders["loop_temps.index_delta_minus1"])
 				},
 				check: varValueEquals("loop_temps.should_continue", feltInt64(1)),
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "loop_temps", Kind: fpRelative, Value: addr(7)},
 					{Name: "loop_temps.index_delta_minus1", Kind: apRelative, Value: feltInt64(0)},
 					{Name: "loop_temps.index_delta", Kind: apRelative, Value: feltInt64(0)},
 					{Name: "loop_temps.ptr_delta", Kind: apRelative, Value: feltInt64(0)},
@@ -72,7 +70,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newSquashDictInnerContinueLoopHint(ctx.operanders["loop_temps"])
+					return newSquashDictInnerContinueLoopHint(ctx.operanders["loop_temps.index_delta_minus1"])
 				},
 				check: varValueEquals("loop_temps.should_continue", feltInt64(0)),
 			},

@@ -66,7 +66,7 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hi
 				return err
 			}
 
-			resultAddr, err := loopTempsAddr.AddOffset(4)
+			resultAddr, err := loopTempsAddr.AddOffset(3)
 			if err != nil {
 				return err
 			}
