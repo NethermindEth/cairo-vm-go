@@ -96,7 +96,7 @@ func createSquashDictInnerNextKeyHinter(resolver hintReferenceResolver) (hinter.
 }
 
 // SquashDictInnerUsedAccessesAssert hint checks that `n_used_accesses` Cairo local variable
-// is equal to the the number of used accesses for a key during squashing
+// is equal to the the number of used accesses for a key during dictionary squashing
 //
 // `newSquashDictInnerUsedAccessesAssertHint` takes one operander as argument
 //   - `nUsedAccesses` represents the number of used accesses for a given key
