@@ -110,6 +110,7 @@ const (
 
 	// ------ Dictionaries hints related code ------
 	squashDictInnerAssertLenKeys string = "assert len(keys) == 0"
+	squashDictInnerLenAssert     string = "assert len(current_access_indices) == 0"
 	squashDictInnerNextKey       string = "assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'\nids.next_key = key = keys.pop()"
 
 	// ------ Other hints related code ------
