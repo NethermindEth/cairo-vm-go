@@ -20,14 +20,17 @@ func newSquashDictInnerAssertLenKeysHint() hinter.Hinter {
 		Name: "SquashDictInnerAssertLenKeys",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> assert len(keys) == 0
+
 			keys_, err := ctx.ScopeManager.GetVariableValue("keys")
 			if err != nil {
 				return err
 			}
+
 			keys := keys_.([]f.Element)
 			if len(keys) != 0 {
 				return fmt.Errorf("assertion `len(keys) == 0` failed")
 			}
+
 			return nil
 		},
 	}
@@ -35,6 +38,38 @@ func newSquashDictInnerAssertLenKeysHint() hinter.Hinter {
 
 func createSquashDictInnerAssertLenKeysHinter() (hinter.Hinter, error) {
 	return newSquashDictInnerAssertLenKeysHint(), nil
+}
+
+// SquashDictInnerAssertLenKeys hint asserts the length of the current
+// access indices for a given key is zero
+// `current_access_indices` is a reversed order list of access indices
+// for a given key, i.e., `sorted(access_indices[key])[::-1]`
+//
+// `newSquashDictInnerAssertLenKeysHint` doesn't take any operander as argument
+// and retrieves `current_access_indices` value from the current scope
+func newSquashDictInnerLenAssertHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SquashDictInnerLenAssert",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> assert len(current_access_indices) == 0
+
+			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			if err != nil {
+				return err
+			}
+
+			currentAccessIndices := currentAccessIndices_.([]f.Element)
+			if len(currentAccessIndices) != 0 {
+				return fmt.Errorf("assertion `len(current_access_indices) == 0` failed")
+			}
+
+			return nil
+		},
+	}
+}
+
+func createSquashDictInnerLenAssertHinter() (hinter.Hinter, error) {
+	return newSquashDictInnerLenAssertHint(), nil
 }
 
 // SquashDictInnerNextKey hint retrieves the next key for processing during

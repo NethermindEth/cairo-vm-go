@@ -37,6 +37,34 @@ func TestZeroHintDictionaries(t *testing.T) {
 				errCheck: errorTextContains("assertion `len(keys) == 0` failed"),
 			},
 		},
+		"SquashDictInnerLenAssert": {
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("current_access_indices", []fp.Element{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerLenAssertHint()
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {},
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("current_access_indices", []fp.Element{*feltUint64(1), *feltUint64(2)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerLenAssertHint()
+				},
+				errCheck: errorTextContains("assertion `len(current_access_indices) == 0` failed"),
+			},
+		},
 		"SquashDictInnerNextKey": {
 			{
 				operanders: []*hintOperander{
