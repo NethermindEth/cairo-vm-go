@@ -40,12 +40,12 @@ func createSquashDictInnerAssertLenKeysHinter() (hinter.Hinter, error) {
 	return newSquashDictInnerAssertLenKeysHint(), nil
 }
 
-// SquashDictInnerAssertLenKeys hint asserts the length of the current
+// SquashDictInnerLenAssert hint asserts the length of the current
 // access indices for a given key is zero
 // `current_access_indices` is a reversed order list of access indices
 // for a given key, i.e., `sorted(access_indices[key])[::-1]`
 //
-// `newSquashDictInnerAssertLenKeysHint` doesn't take any operander as argument
+// `newSquashDictInnerLenAssertHint` doesn't take any operander as argument
 // and retrieves `current_access_indices` value from the current scope
 func newSquashDictInnerLenAssertHint() hinter.Hinter {
 	return &GenericZeroHinter{
