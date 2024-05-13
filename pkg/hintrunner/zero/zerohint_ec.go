@@ -420,7 +420,7 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 // `newReduceV1Hint` takes 1 operander as argument
 //   - `x` is the packed value to be reduced
 //
-// `newReduceV1Hint` assigns the `slope` result as `value` in the current scope
+// `newReduceV1Hint` assigns the result as `value` in the current scope
 func newReduceV1Hint(x hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "ReduceV1",
