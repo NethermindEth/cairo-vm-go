@@ -162,12 +162,12 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 
 			accessIndicesAtKey := uint64(len(access_indices[key]))
 
-			nUsedAccessesField, err := hinter.ResolveAsUint64(vm, nUsedAccesses)
+			nUsedAccesses, err := hinter.ResolveAsUint64(vm, nUsedAccesses)
 			if err != nil {
 				return err
 			}
 
-			if accessIndicesAtKey != nUsedAccessesField {
+			if accessIndicesAtKey != nUsedAccesses {
 				return fmt.Errorf("assertion ids.n_used_accesses == len(access_indices[key]) failed")
 			}
 
