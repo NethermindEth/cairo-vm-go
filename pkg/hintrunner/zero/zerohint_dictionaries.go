@@ -71,13 +71,12 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hi
 				return err
 			}
 
-			resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
-			resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
-
 			if len(currentAccessIndices) == 0 {
+				resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
 				return vm.Memory.WriteToAddress(&resultAddr, &resultMemZero)
 
 			} else {
+				resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
 				return vm.Memory.WriteToAddress(&resultAddr, &resultMemOne)
 			}
 		},
