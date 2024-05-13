@@ -56,6 +56,26 @@ const (
 	uint256MulDivModCode      string = "a = (ids.a.high << 128) + ids.a.low/n b = (ids.b.high << 128) + ids.b.low/n div = (ids.div.high << 128) + ids.div.low/n quotient, remainder = divmod(a * b, div)/n ids.quotient_low.low = quotient & ((1 << 128) - 1)/n ids.quotient_low.high = (quotient >> 128) & ((1 << 128) - 1)/n ids.quotient_high.low = (quotient >> 256) & ((1 << 128) - 1)/n ids.quotient_high.high = quotient >> 384/n ids.remainder.low = remainder & ((1 << 128) - 1)/n ids.remainder.high = remainder >> 128"
 
 	// ------ Usort hints related code ------
+	usortBodyCode string = `
+	from collections import defaultdict
+
+	input_ptr = ids.input
+	input_len = int(ids.input_len)
+	if __usort_max_size is not None:
+		assert input_len <= __usort_max_size, (
+			f"usort() can only be used with input_len<={__usort_max_size}. "
+			f"Got: input_len={input_len}."
+		)
+
+	positions_dict = defaultdict(list)
+	for i in range(input_len):
+		val = memory[input_ptr + i]
+		positions_dict[val].append(i)
+
+	output = sorted(positions_dict.keys())
+	ids.output_len = len(output)
+	ids.output = segments.gen_arg(output)
+	ids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])`
 	usortEnterScopeCode               string = "vm_enter_scope(dict(__usort_max_size = globals().get('__usort_max_size')))"
 	usortVerifyMultiplicityAssertCode string = "assert len(positions) == 0"
 	usortVerifyCode                   string = "last_pos = 0\npositions = positions_dict[ids.value][::-1]"
@@ -64,11 +84,13 @@ const (
 	// ------ Elliptic Curve hints related code ------
 	ecNegateCode            string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\ny = pack(ids.point.y, PRIME) % SECP_P\n# The modulo operation in python always returns a nonnegative number.\nvalue = (-y) % SECP_P"
 	nondetBigint3V1Code     string = "from starkware.cairo.common.cairo_secp.secp_utils import split\n\nsegments.write_arg(ids.res.address_, split(value))"
-	fastEcAddAssignNewYCode string = "value = new_y = (slope * (x0 - new_x) - y0) % SECP_P"
 	fastEcAddAssignNewXCode string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\nslope = pack(ids.slope, PRIME)\nx0 = pack(ids.point0.x, PRIME)\nx1 = pack(ids.point1.x, PRIME)\ny0 = pack(ids.point0.y, PRIME)\n\nvalue = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P"
+	fastEcAddAssignNewYCode string = "value = new_y = (slope * (x0 - new_x) - y0) % SECP_P"
 	ecDoubleSlopeV1Code     string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\nfrom starkware.python.math_utils import ec_double_slope\n\n# Compute the slope.\nx = pack(ids.point.x, PRIME)\ny = pack(ids.point.y, PRIME)\nvalue = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)"
+	reduceV1Code            string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack	value = pack(ids.x, PRIME) % SECP_P"
 	computeSlopeV1Code      string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\nfrom starkware.python.math_utils import line_slope\n\n# Compute the slope.\nx0 = pack(ids.point0.x, PRIME)\ny0 = pack(ids.point0.y, PRIME)\nx1 = pack(ids.point1.x, PRIME)\ny1 = pack(ids.point1.y, PRIME)\nvalue = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)"
 	ecDoubleAssignNewXV1    string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\nslope = pack(ids.slope, PRIME)\nx = pack(ids.point.x, PRIME)\ny = pack(ids.point.y, PRIME)\n\nvalue = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P"
+	ecDoubleAssignNewYV1    string = "value = new_y = (slope * (x - new_x) - y) % SECP_P"
 
 	// ------ Signature hints related code ------
 	verifyECDSASignatureCode  string = "ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))"
@@ -89,6 +111,8 @@ const (
 
 	// ------ Dictionaries hints related code ------
 	squashDictInnerAssertLenKeys string = "assert len(keys) == 0"
+	squashDictInnerLenAssert     string = "assert len(current_access_indices) == 0"
+	squashDictInnerNextKey       string = "assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'\nids.next_key = key = keys.pop()"
 
 	// ------ Other hints related code ------
 	allocSegmentCode     string = "memory[ap] = segments.add()"

@@ -13,9 +13,9 @@ import (
 // Blake2sAddUint256 hint serializes a `uint256` number in a Blake2s compatible way
 //
 // `newBlake2sAddUint256Hint` takes 3 operanders as arguments
-// `low` and `high` are the low and high parts of a `uint256` variable,
-// each of them being a `felt` interpreted as a `uint128`
-// `data` is a pointer to the starting address in memory where to write the result of the hint
+//   - `low` and `high` are the low and high parts of a `uint256` variable,
+//     each of them being a `felt` interpreted as a `uint128`
+//   - `data` is a pointer to the starting address in memory where to write the result of the hint
 //
 // `newBlake2sAddUint256Hint` splits each part of the `uint256` in 4 `u32` and writes the result in memory
 // This hint is available in Big-Endian or Little-Endian representation
