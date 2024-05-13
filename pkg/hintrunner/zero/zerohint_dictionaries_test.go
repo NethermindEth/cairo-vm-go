@@ -33,8 +33,8 @@ func TestZeroHintDictionaries(t *testing.T) {
 						t.Fatalf("error reading dictionary address from ap")
 					}
 
-					key := new(fp.Element).SetUint64(100)
-					value, err := dictionaryManager.At(&dictAddr, key)
+					key := fp.NewElement(100)
+					value, err := dictionaryManager.At(&dictAddr, &key)
 					if err != nil {
 						t.Fatalf("error fetching value from dictionary")
 					}
@@ -42,10 +42,10 @@ func TestZeroHintDictionaries(t *testing.T) {
 					if err != nil {
 						t.Fatalf("mv: %s cannot be converted to felt", value)
 					}
-					expectedValueFelt := new(fp.Element).SetUint64(12345)
+					expectedValueFelt := fp.NewElement(12345)
 
-					if !valueFelt.Equal(expectedValueFelt) {
-						t.Fatalf("at key: %v expected: %s actual: %s", key, expectedValueFelt, valueFelt)
+					if !valueFelt.Equal(&expectedValueFelt) {
+						t.Fatalf("at key: %v expected: %s actual: %s", key, &expectedValueFelt, valueFelt)
 					}
 				},
 			},

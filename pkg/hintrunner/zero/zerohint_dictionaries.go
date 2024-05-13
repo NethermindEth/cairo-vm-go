@@ -10,6 +10,11 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+// DefaultDictNew hint creates a new dictionary with a default value
+//
+// `newDefaultDictNewHint` takes 1 operander as argument
+//   - `default_value` variable will be the default value
+//     returned for keys not present in the dictionary
 func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DefaultDictNew",
