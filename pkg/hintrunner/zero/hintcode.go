@@ -109,9 +109,9 @@ const (
 	keccakWriteArgs string = "segments.write_arg(ids.inputs, [ids.low % 2 ** 64, ids.low // 2 ** 64])\nsegments.write_arg(ids.inputs + 2, [ids.high % 2 ** 64, ids.high // 2 ** 64])"
 
 	// ------ Dictionaries hints related code ------
-	squashDictInnerAssertLenKeys string = "assert len(keys) == 0"
-	squashDictInnerNextKey       string = "assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'\nids.next_key = key = keys.pop()"
-
+	squashDictInnerAssertLenKeys      string = "assert len(keys) == 0"
+	squashDictInnerNextKey            string = "assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'\nids.next_key = key = keys.pop()"
+	squashDictInnerUsedAccessesAssert string = "assert ids.n_used_accesses == len(access_indices[key])"
 	// ------ Other hints related code ------
 	allocSegmentCode     string = "memory[ap] = segments.add()"
 	memcpyEnterScopeCode string = "vm_enter_scope({'n': ids.len})"

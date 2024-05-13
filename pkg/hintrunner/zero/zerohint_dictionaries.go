@@ -7,6 +7,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -92,4 +93,53 @@ func createSquashDictInnerNextKeyHinter(resolver hintReferenceResolver) (hinter.
 	}
 
 	return newSquashDictInnerNextKeyHint(nextKey), nil
+}
+
+// SquashDictInnerUsedAccessesAssert hint checks that `n_used_accesses` Cairo local variable
+// is equal to the the number of used accesses for a key during squashing
+//
+// `newSquashDictInnerUsedAccessesAssertHint` takes one operander as argument
+//   - `nUsedAccesses` represents the number of used accesses for a given key
+func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SquashDictInnerUsedAccessesAssert",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> assert ids.n_used_accesses == len(access_indices[key])
+			access_indices_, err := ctx.ScopeManager.GetVariableValue("access_indices")
+			if err != nil {
+				return err
+			}
+
+			access_indices := access_indices_.(map[fp.Element][]fp.Element)
+
+			key_, err := ctx.ScopeManager.GetVariableValue("key")
+			if err != nil {
+				return err
+			}
+
+			key := key_.(fp.Element)
+
+			accessIndicesAtKey := uint64(len(access_indices[key]))
+
+			nUsedAccessesField, err := hinter.ResolveAsUint64(vm, nUsedAccesses)
+			if err != nil {
+				return err
+			}
+
+			if accessIndicesAtKey != nUsedAccessesField {
+				return fmt.Errorf("assertion ids.n_used_accesses == len(access_indices[key] failed")
+			}
+
+			return nil
+		},
+	}
+}
+
+func createSquashDictInnerUsedAccessesAssertHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	nUsedAccesses, err := resolver.GetResOperander("n_used_accesses")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses), nil
 }
