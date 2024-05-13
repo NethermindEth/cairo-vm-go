@@ -159,6 +159,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		// Dictionaries hints
 	case squashDictInnerAssertLenKeys:
 		return createSquashDictInnerAssertLenKeysHinter()
+	case squashDictInnerLenAssert:
+		return createSquashDictInnerLenAssertHinter()
 	case squashDictInnerNextKey:
 		return createSquashDictInnerNextKeyHinter(resolver)
 		// Other hints
