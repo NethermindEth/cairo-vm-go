@@ -44,7 +44,10 @@ func createSquashDictInnerAssertLenKeysHinter() (hinter.Hinter, error) {
 // based on remaining access indices
 //
 // `newSquashDictInnerContinueLoopHint` takes 1 operander as argument
-//   - `loopTemps` variable will be assigned to the next key in `keys`
+//   - `loopTemps` variable is a struct containing a `should_continue` field
+//
+// `newSquashDictInnerContinueLoopHint`writes 0 or 1 in the `should_continue` field
+// depending on whether the `current_access_indices` array contains items or not
 func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SquashDictInnerContinueLoop",
