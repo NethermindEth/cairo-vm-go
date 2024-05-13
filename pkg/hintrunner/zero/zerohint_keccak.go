@@ -94,6 +94,13 @@ func createCairoKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hin
 	return newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd), nil
 }
 
+// UnsafeKeccak computes keccak hash of the data in memory without validity enforcement and writes the result in the `low` and `high` memory cells
+//
+// `newUnsafeKeccakHint` takes 4 operanders as arguments
+//   - `data` is the address in memory to the base of the data array to hash is stored. Each word in the array is 16 bytes long, except the last one
+//   - `length` is the length of the data to hash
+//   - `low` is the low part of the produced hash
+//   - `high` is the high part of the produced hash
 func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UnsafeKeccak",
