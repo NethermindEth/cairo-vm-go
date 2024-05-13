@@ -14,7 +14,7 @@ import (
 // EcNegate hint negates the y-coordinate of a point on an elliptic curve modulo SECP_P
 //
 // `newEcNegateHint` takes 1 operander as argument
-// `point` is the point on an elliptic curve to operate on
+//   - `point` is the point on an elliptic curve to operate on
 //
 // `newEcNegateHint` assigns the result as `value` in the current scope
 func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
@@ -80,7 +80,7 @@ func createEcNegateHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 // NondetBigint3V1 hint writes a value to a specified segment of memory
 //
 // `newNondetBigint3V1Hint` takes 1 operander as argument
-// `res` is the location in memory where to write the result
+//   - `res` is the location in memory where to write the result
 //
 // `newNondetBigint3V1Hint` uses `SecPSplit` to split the value in 3 felts and writes the result in memory
 func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
@@ -136,63 +136,11 @@ func createNondetBigint3V1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newNondetBigint3V1Hint(res), nil
 }
 
-// FastEcAddAssignNewY hint computes a new y-coordinate for fast elliptic curve addition
-//
-// `newFastEcAddAssignNewYHint` doesn't take any operander as argument
-// This hint follows the execution of `FastEcAddAssignNewX` hint when computing the addition of two given points
-// This is why all variables are already accessible in the current scope
-//
-// `newFastEcAddAssignNewYHint` assigns the new y-coordinate as `value` in the current scope
-func newFastEcAddAssignNewYHint() hinter.Hinter {
-	return &GenericZeroHinter{
-		Name: "FastEcAddAssignNewY",
-		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> value = new_y = (slope * (x0 - new_x) - y0) % SECP_P
-
-			slopeBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("slope")
-			if err != nil {
-				return err
-			}
-			x0Big, err := ctx.ScopeManager.GetVariableValueAsBigInt("x0")
-			if err != nil {
-				return err
-			}
-			new_xBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("new_x")
-			if err != nil {
-				return err
-			}
-			y0Big, err := ctx.ScopeManager.GetVariableValueAsBigInt("y0")
-			if err != nil {
-				return err
-			}
-			secPBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("SECP_P")
-			if err != nil {
-				return err
-			}
-
-			new_yBig := new(big.Int)
-			new_yBig.Sub(x0Big, new_xBig)
-			new_yBig.Mul(new_yBig, slopeBig)
-			new_yBig.Sub(new_yBig, y0Big)
-			new_yBig.Mod(new_yBig, secPBig)
-
-			valueBig := new(big.Int)
-			valueBig.Set(new_yBig)
-
-			return ctx.ScopeManager.AssignVariables(map[string]any{"value": valueBig})
-		},
-	}
-}
-
-func createFastEcAddAssignNewYHinter() (hinter.Hinter, error) {
-	return newFastEcAddAssignNewYHint(), nil
-}
-
 // FastEcAddAssignNewX hint computes a new x-coordinate for fast elliptic curve addition
 //
 // `newFastEcAddAssignNewXHint` takes 3 operanders as arguments
-// `slope` is the slope of the line connecting `point0` and `point1`
-// `point0` and `point1` are 2 points on an elliptic curve
+//   - `slope` is the slope of the line connecting `point0` and `point1`
+//   - `point0` and `point1` are 2 points on an elliptic curve
 //
 // `newFastEcAddAssignNewXHint` assigns the new x-coordinate as `value` in the current scope
 // It also assigns `slope`, `x0`, `y0` and `new_x` in the current scope
@@ -335,10 +283,58 @@ func createFastEcAddAssignNewXHinter(resolver hintReferenceResolver) (hinter.Hin
 	return newFastEcAddAssignNewXHint(slope, point0, point1), nil
 }
 
+// FastEcAddAssignNewY hint computes a new y-coordinate for fast elliptic curve addition
+// of two different points
+// This hint is ultimately used for either multiplying a point with an integer with `ec_mul_by_uint256`
+// Cairo function, or for adding two different points with `ec_add` Cairo function
+//
+// `newFastEcAddAssignNewYHint` doesn't take any operander as argument
+// This hint follows the execution of `FastEcAddAssignNewX` hint when computing the addition of two given points
+// This is why all variables are already accessible in the current scope
+//
+// `newFastEcAddAssignNewYHint` assigns the new y-coordinate as `value` in the current scope
+func newFastEcAddAssignNewYHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "FastEcAddAssignNewY",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> value = new_y = (slope * (x0 - new_x) - y0) % SECP_P
+
+			slopeBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("slope")
+			if err != nil {
+				return err
+			}
+			x0Big, err := ctx.ScopeManager.GetVariableValueAsBigInt("x0")
+			if err != nil {
+				return err
+			}
+			new_xBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("new_x")
+			if err != nil {
+				return err
+			}
+			y0Big, err := ctx.ScopeManager.GetVariableValueAsBigInt("y0")
+			if err != nil {
+				return err
+			}
+			secPBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("SECP_P")
+			if err != nil {
+				return err
+			}
+
+			valueBig := ComputeYCoordinate(slopeBig, x0Big, new_xBig, y0Big, secPBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": valueBig})
+		},
+	}
+}
+
+func createFastEcAddAssignNewYHinter() (hinter.Hinter, error) {
+	return newFastEcAddAssignNewYHint(), nil
+}
+
 // EcDoubleSlopeV1 hint computes the slope for doubling a point on an elliptic curve
 //
 // `newEcDoubleSlopeV1Hint` takes 1 operander as argument
-// `point` is the point on an elliptic curve to operate on
+//   - `point` is the point on an elliptic curve to operate on
 //
 // `newEcDoubleSlopeV1Hint` assigns the `slope` result as `value` in the current scope
 func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
@@ -419,11 +415,58 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newEcDoubleSlopeV1Hint(point), nil
 }
 
+func newReduceV1Hint(x hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "reduceV1",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> value = pack(ids.x, PRIME) % SECP_P
+
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+			xAddr, err := x.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			xMemoryValues, err := hinter.GetConsecutiveValues(vm, xAddr, int16(3))
+			if err != nil {
+				return err
+			}
+			var xValues [3]*fp.Element
+			for i := 0; i < 3; i++ {
+				xValue, err := xMemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				xValues[i] = xValue
+			}
+			xBig, err := secp_utils.SecPPacked(xValues)
+			if err != nil {
+				return err
+			}
+			xBig.Mod(&xBig, &secPBig)
+			valueBigIntPtr := new(big.Int).Set(&xBig)
+			return ctx.ScopeManager.AssignVariable("value", valueBigIntPtr)
+		},
+	}
+}
+
+func createReduceV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+	return newReduceV1Hint(x), nil
+}
+
 // EcDoubleAssignNewXV1 hint computes a new x-coordinate for a point being doubled on an elliptic curve
 //
 // `newEcDoubleAssignNewXV1Hint` takes 2 operanders as arguments
-// `slope` is the slope for doubling a point, computed with EcDoubleSlopeV1 hint
-// `point` is the point on an elliptic curve to operate on
+//   - `slope` is the slope for doubling a point, computed with EcDoubleSlopeV1 hint
+//   - `point` is the point on an elliptic curve to operate on
 //
 // `newEcDoubleAssignNewXV1Hint` assigns the `new_x` result as `value` in the current scope
 // It also assigns `slope`, `x`, `y` and `new_x` in the current scope
@@ -538,11 +581,59 @@ func createEcDoubleAssignNewXV1Hinter(resolver hintReferenceResolver) (hinter.Hi
 	return newEcDoubleAssignNewXV1Hint(slope, point), nil
 }
 
-// ComputeSlopeV1Hint hint computes the slope between two points on an elliptic curve
+// EcDoubleAssignNewYV1 hint computes a new y-coordinate when doubling a point
+// on an elliptic curve
+// This hint is ultimately used for either multiplying a point with an integer with `ec_mul_by_uint256`
+// Cairo function, or for adding a given point to itself with `ec_add` Cairo function
+//
+// `newEcDoubleAssignNewYV1Hint` doesn't take any operander as argument
+// This hint follows the execution of `EcDoubleAssignNewXV1` hint when doubling a point
+// This is why all variables are already accessible in the current scope
+//
+// `newEcDoubleAssignNewYV1Hint` assigns the new y-coordinate as `value` in the current scope
+func newEcDoubleAssignNewYV1Hint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcDoubleAssignNewYV1",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> value = new_y = (slope * (x - new_x) - y) % SECP256R1_P
+
+			slopeBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("slope")
+			if err != nil {
+				return err
+			}
+			xBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("x")
+			if err != nil {
+				return err
+			}
+			new_xBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("new_x")
+			if err != nil {
+				return err
+			}
+			yBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("y")
+			if err != nil {
+				return err
+			}
+			secPBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("SECP_P")
+			if err != nil {
+				return err
+			}
+
+			valueBig := ComputeYCoordinate(slopeBig, xBig, new_xBig, yBig, secPBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": valueBig})
+		},
+	}
+}
+
+func createEcDoubleAssignNewYV1Hinter() (hinter.Hinter, error) {
+	return newEcDoubleAssignNewYV1Hint(), nil
+}
+
+// ComputeSlopeV1 hint computes the slope between two points on an elliptic curve
 //
 // `newComputeSlopeV1Hint` takes 2 operanders as arguments
-// `point0` is the first point on an elliptic curve to operate on
-// `point1` is the second point on an elliptic curve to operate on
+//   - `point0` is the first point on an elliptic curve to operate on
+//   - `point1` is the second point on an elliptic curve to operate on
 //
 // `newComputeSlopeV1Hint` assigns the `slope` result as `value` in the current scope
 func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {

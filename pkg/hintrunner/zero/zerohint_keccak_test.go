@@ -160,7 +160,24 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "data.14", Kind: apRelative, Value: feltUint64(3)},
 					{Name: "data.15", Kind: apRelative, Value: feltUint64(4)},
 					{Name: "data.16", Kind: apRelative, Value: feltUint64(4)},
-					{Name: "length", Kind: apRelative, Value: feltUint64(17)},
+					{Name: "data.17", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "data.18", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "data.19", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "data.20", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "data.21", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "data.22", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "data.23", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "data.24", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "data.25", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "data.26", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "data.27", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "data.28", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "data.29", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "data.30", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "data.31", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "data.32", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "data.33", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "length", Kind: apRelative, Value: feltUint64(34)},
 					{Name: "high", Kind: uninitialized},
 					{Name: "low", Kind: uninitialized},
 				},
@@ -175,8 +192,8 @@ func TestZeroHintKeccak(t *testing.T) {
 					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					varValueEquals("high", feltString("56771159036737573629468716613812266635"))(t, ctx)
-					varValueEquals("low", feltString("227059976118866674457558706455644375132"))(t, ctx)
+					varValueEquals("high", feltString("43087684015060895958086736298363333858"))(t, ctx)
+					varValueEquals("low", feltString("115090685687501856751902560332884088627"))(t, ctx)
 				},
 			},
 		},
