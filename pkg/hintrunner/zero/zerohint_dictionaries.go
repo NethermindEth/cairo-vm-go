@@ -37,13 +37,12 @@ func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.ResOperander) hinter.H
 				return err
 			}
 
-			resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
-			resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
-
 			if len(currentAccessIndices) == 0 {
+				resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
 				return vm.Memory.WriteToAddress(&shouldSkipLoopAddr, &resultMemOne)
 
 			} else {
+				resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
 				return vm.Memory.WriteToAddress(&shouldSkipLoopAddr, &resultMemZero)
 			}
 		},
