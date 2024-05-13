@@ -134,7 +134,6 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				if err != nil {
 					return err
 				}
-				fmt.Println("foundKey", foundKey, "keyVal", keyVal)
 				if foundKeyVal.Cmp(keyVal) != 0 {
 					return fmt.Errorf("Invalid index found in __find_element_index. index: %v, expected key %v, found key: %v", findElementIndex, keyVal, &foundKey)
 				}
@@ -156,9 +155,6 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				}
 				found := false
 				for i := uint64(0); i < nElms; i++ {
-					if err != nil {
-						return err
-					}
 					val, err := vm.Memory.ReadFromAddress(arrayPtrAddr)
 					if err != nil {
 						return err
@@ -167,7 +163,6 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 					if err != nil {
 						return err
 					}
-					fmt.Println(valFelt, keyVal)
 					if valFelt.Cmp(keyVal) == 0 {
 						indexValAddr, err := index.GetAddress(vm)
 						if err != nil {
