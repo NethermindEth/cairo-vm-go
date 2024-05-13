@@ -55,6 +55,16 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hi
 				return err
 			}
 
+			currentAccessIndices := currentAccessIndices_.([]f.Element)
+			if len(currentAccessIndices) != 0 {
+				return fmt.Errorf("assertion `len(current_access_indices) == 0` failed")
+			}
+
+			loopTemps, err := hinter.ResolveAsUint64(vm, loopTemps)
+			if err != nil {
+				return err
+			}
+
 			keys := keys_.([]f.Element)
 			if len(keys) == 0 {
 				return fmt.Errorf("no keys left but remaining_accesses > 0")
