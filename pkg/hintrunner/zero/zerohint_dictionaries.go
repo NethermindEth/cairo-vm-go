@@ -11,6 +11,9 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+// DictNew hint creates a new dictionary
+//
+// `newDictNewHint` takes no operander as argument
 func newDictNewHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DictNew",
