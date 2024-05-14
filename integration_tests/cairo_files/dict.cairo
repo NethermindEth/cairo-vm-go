@@ -2,9 +2,28 @@ from starkware.cairo.common.default_dict import default_dict_new
 from starkware.cairo.common.dict import dict_read, dict_write, dict_update
 from starkware.cairo.common.dict_access import DictAccess
 
-func main() {
+func test_default_dict() {
     alloc_locals;
+    let (local my_dict: DictAccess*) = default_dict_new(123);
 
+    return ();
+}
+
+func test_read() {
+    alloc_locals;
+    let (local my_dict: DictAccess*) = default_dict_new(123);
+
+    let (local val1: felt) = dict_read{dict_ptr=my_dict}(key=1);
+    assert val1 = 123;
+
+    let (local val2: felt) = dict_read{dict_ptr=my_dict}(key=2);
+    assert val2 = 123;
+
+    return ();
+}
+
+func test_write() {
+    alloc_locals;
     let (local my_dict: DictAccess*) = default_dict_new(123);
 
     let (local val1: felt) = dict_read{dict_ptr=my_dict}(key=1);
@@ -27,9 +46,41 @@ func main() {
     let (local val6: felt) = dict_read{dict_ptr=my_dict}(key=2);
     assert val6 = 123;
 
-    dict_update{dict_ptr=my_dict}(key=1, prev_value=1024, new_value=2048);
+    dict_write{dict_ptr=my_dict}(key=1, new_value=888);
+    dict_write{dict_ptr=my_dict}(key=2, new_value=999);
     let (local val7: felt) = dict_read{dict_ptr=my_dict}(key=1);
-    assert val7 = 2048;
+    assert val7 = 888;
+    let (local val8: felt) = dict_read{dict_ptr=my_dict}(key=2);
+    assert val8 = 999;
+    let (local val9: felt) = dict_read{dict_ptr=my_dict}(key=3);
+    assert val9 = 123;
+
+    return ();
+}
+
+func test_update() {
+    alloc_locals;
+    let (local my_dict: DictAccess*) = default_dict_new(123);
+
+    dict_update{dict_ptr=my_dict}(key=1, prev_value=123, new_value=256);
+    let (local val1: felt) = dict_read{dict_ptr=my_dict}(key=1);
+    assert val1 = 256;
+
+    dict_update{dict_ptr=my_dict}(key=1, prev_value=256, new_value=512);
+    dict_update{dict_ptr=my_dict}(key=2, prev_value=123, new_value=1);
+    let (local val2: felt) = dict_read{dict_ptr=my_dict}(key=1);
+    assert val2 = 512;
+    let (local val3: felt) = dict_read{dict_ptr=my_dict}(key=2);
+    assert val3 = 1;
+
+    return ();
+}
+
+func main() {
+    test_default_dict();
+    test_read();
+    test_write();
+    test_update();
 
     return ();
 }
