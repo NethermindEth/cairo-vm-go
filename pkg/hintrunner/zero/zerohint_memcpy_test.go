@@ -26,7 +26,10 @@ func TestMemcPyHint(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newMemcpyContinueCopyingHint(ctx.operanders["continue_copying"])
 				},
-				check: varValueEquals("continue_copying", &utils.FeltZero),
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueInScopeEquals(map[string]any{"n": feltInt64(0)})(t, ctx)
+					varValueEquals("continue_copying", feltInt64(0))(t, ctx)
+				},
 			},
 			{
 				operanders: []*hintOperander{
@@ -44,7 +47,10 @@ func TestMemcPyHint(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newMemcpyContinueCopyingHint(ctx.operanders["continue_copying"])
 				},
-				check: varValueEquals("continue_copying", &utils.FeltOne),
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueInScopeEquals(map[string]any{"n": feltInt64(4)})(t, ctx)
+					varValueEquals("continue_copying", feltInt64(1))(t, ctx)
+				},
 			},
 		},
 	})
