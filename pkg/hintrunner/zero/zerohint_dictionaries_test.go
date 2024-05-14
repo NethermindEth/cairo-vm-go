@@ -18,9 +18,9 @@ func TestZeroHintDictionaries(t *testing.T) {
 					value2 := mem.MemoryValueFromUint(uint(2000))
 					value3 := mem.MemoryValueFromUint(uint(3000))
 					err := ctx.ScopeManager.AssignVariable("initial_dict", map[fp.Element]*mem.MemoryValue{
-						*new(fp.Element).SetUint64(10): &value1,
-						*new(fp.Element).SetUint64(20): &value2,
-						*new(fp.Element).SetUint64(30): &value3,
+						*feltUint64(10): &value1,
+						*feltUint64(20): &value2,
+						*feltUint64(30): &value3,
 					})
 					if err != nil {
 						t.Fatal(err)
@@ -54,7 +54,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 						t.Fatalf("error fetching dictionary from address at ap")
 					}
 
-					for _, key := range []fp.Element{*new(fp.Element).SetUint64(10), *new(fp.Element).SetUint64(20), *new(fp.Element).SetUint64(30)} {
+					for _, key := range []fp.Element{*feltUint64(10), *feltUint64(20), *feltUint64(30)} {
 						value, err := dictionary.At(&key)
 						if err != nil {
 							t.Fatalf("error fetching value for key: %v", key)
@@ -63,7 +63,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 						if err != nil {
 							t.Fatalf("mv: %s cannot be converted to felt", value)
 						}
-						expectedValueFelt := new(fp.Element).Mul(&key, new(fp.Element).SetUint64(100))
+						expectedValueFelt := new(fp.Element).Mul(&key, feltUint64(100))
 
 						if !valueFelt.Equal(expectedValueFelt) {
 							t.Fatalf("at key: %v expected: %s actual: %s", key, expectedValueFelt, valueFelt)
