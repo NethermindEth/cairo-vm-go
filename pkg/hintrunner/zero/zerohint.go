@@ -125,16 +125,20 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createEcNegateHinter(resolver)
 	case nondetBigint3V1Code:
 		return createNondetBigint3V1Hinter(resolver)
-	case fastEcAddAssignNewYCode:
-		return createFastEcAddAssignNewYHinter()
 	case fastEcAddAssignNewXCode:
 		return createFastEcAddAssignNewXHinter(resolver)
+	case fastEcAddAssignNewYCode:
+		return createFastEcAddAssignNewYHinter()
 	case ecDoubleSlopeV1Code:
 		return createEcDoubleSlopeV1Hinter(resolver)
+	case reduceV1Code:
+		return createReduceV1Hinter(resolver)
 	case computeSlopeV1Code:
 		return createComputeSlopeV1Hinter(resolver)
 	case ecDoubleAssignNewXV1:
 		return createEcDoubleAssignNewXV1Hinter(resolver)
+	case ecDoubleAssignNewYV1:
+		return createEcDoubleAssignNewYV1Hinter()
 		// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
@@ -157,6 +161,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		// Dictionaries hints
 	case squashDictInnerAssertLenKeys:
 		return createSquashDictInnerAssertLenKeysHinter()
+	case squashDictInnerLenAssert:
+		return createSquashDictInnerLenAssertHinter()
 	case squashDictInnerNextKey:
 		return createSquashDictInnerNextKeyHinter(resolver)
 		// Other hints
