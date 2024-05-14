@@ -316,7 +316,7 @@ func (mv *MemoryValue) addrUnsafe() *MemoryAddress {
 	return (*MemoryAddress)(unsafe.Pointer(&mv.felt))
 }
 
-func (memory *Memory) GetConsecutiveValues(addr MemoryAddress, size int16) ([]MemoryValue, error) {
+func (memory *Memory) GetConsecutiveMemoryValues(addr MemoryAddress, size int16) ([]MemoryValue, error) {
 	values := make([]MemoryValue, size)
 	for i := int16(0); i < size; i++ {
 		nAddr, err := addr.AddOffset(i)

@@ -42,7 +42,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			valMemoryValues, err := memory.InitializeEmptyMemory().GetConsecutiveValues(valAddr, int16(6))
+			valMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(valAddr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -177,7 +177,7 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			xCubeMemoryValues, err := memory.InitializeEmptyMemory().GetConsecutiveValues(xCubeAddr, int16(6))
+			xCubeMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(xCubeAddr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -334,7 +334,7 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			aMemoryValues, err := memory.InitializeEmptyMemory().GetConsecutiveValues(aAddr, int16(6))
+			aMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(aAddr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -343,7 +343,7 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			bMemoryValues, err := memory.InitializeEmptyMemory().GetConsecutiveValues(bAddr, int16(6))
+			bMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(bAddr, int16(6))
 			if err != nil {
 				return err
 			}
