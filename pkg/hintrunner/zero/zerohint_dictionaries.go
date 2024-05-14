@@ -202,6 +202,15 @@ func createDictWriteHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 	return newDictWriteHint(dictPtr, key, newValue), nil
 }
 
+// DictUpdate hint updates the value of given key for given dictionary
+// while also asserting the previous value of the key
+//
+// `newDictUpdateHint` takes 4 operander as argument
+//   - `dictPtr` variable will be pointer to the dictionary to update
+//   - `key` variable will be the key whose value is updated in the dictionary
+//   - `newValue` variable will be the new value for given `key` in the dictionary
+//   - `prevValue` variable will be the old value for given `key` in the dictionary
+//     which will be asserted before the update
 func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DictUpdate",
