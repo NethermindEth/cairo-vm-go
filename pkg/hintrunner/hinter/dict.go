@@ -40,12 +40,6 @@ type DictionaryManager struct {
 	dictionaries map[uint64]Dictionary
 }
 
-func NewDictionaryManager() DictionaryManager {
-	return DictionaryManager{
-		dictionaries: make(map[uint64]Dictionary),
-	}
-}
-
 func InitializeDictionaryManager(ctx *HintRunnerContext) {
 	if ctx.DictionaryManager.dictionaries == nil {
 		ctx.DictionaryManager.dictionaries = make(map[uint64]Dictionary)

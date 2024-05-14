@@ -30,8 +30,8 @@ func newDictNewHint() hinter.Hinter {
 			//>   __dict_manager = DictManager()
 			dictionaryManager, ok := ctx.ScopeManager.GetDictionaryManager()
 			if !ok {
-				newDictionaryManager := hinter.NewDictionaryManager()
-				dictionaryManager = newDictionaryManager
+				hinter.InitializeDictionaryManager(ctx)
+				dictionaryManager = ctx.DictionaryManager
 				err := ctx.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
 				if err != nil {
 					return err
