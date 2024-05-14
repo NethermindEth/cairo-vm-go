@@ -590,7 +590,7 @@ func DecodeTrace(content []byte) []Trace {
 const addrSize = 8
 const feltSize = 32
 
-// Encody the relocated memory in the (address, value) form
+// Encode the relocated memory in the (address, value) form
 // in a consecutive way
 func EncodeMemory(memory []*f.Element) []byte {
 	// Check non nil elements for optimal array size
@@ -623,15 +623,30 @@ func EncodeMemory(memory []*f.Element) []byte {
 	return content
 }
 
+// DecodeMemory decodes an encoded memory byte array back to a memory array of felts
 func DecodeMemory(content []byte) []*f.Element {
+	if len(content) == 0 {
+		return make([]*f.Element, 0)
+	}
+
 	// calculate the max memory index
-	lastContentInd := len(content) - (addrSize + feltSize)
-	lasMemIndex := binary.LittleEndian.Uint64(content[lastContentInd : lastContentInd+addrSize])
+	// the content byte array has addresses and its associated value
+	// in a (address, value) form
+	// but the data isn't necessarily sorted by address,
+	// so we scan through the entire memory file, find the largest memory index
+	// and use it to initialize the memory array below
+	lastMemIndex := uint64(0)
+	for i := 0; i < len(content); i += addrSize + feltSize {
+		memIndex := binary.LittleEndian.Uint64(content[i : i+addrSize])
+		if memIndex > lastMemIndex {
+			lastMemIndex = memIndex
+		}
+	}
 
 	// create the memory array with the same length as the max memory index
-	memory := make([]*f.Element, lasMemIndex+1)
+	memory := make([]*f.Element, lastMemIndex+1)
 
-	// decode the encontent and store it in memory
+	// decode the content and store it in memory
 	for i := 0; i < len(content); i += addrSize + feltSize {
 		memIndex := binary.LittleEndian.Uint64(content[i : i+addrSize])
 		felt, err := f.LittleEndian.Element((*[32]byte)(content[i+addrSize : i+addrSize+feltSize]))

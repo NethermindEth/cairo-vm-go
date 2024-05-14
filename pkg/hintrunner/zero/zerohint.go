@@ -67,11 +67,11 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case assertLeFeltCode:
 		return createAssertLeFeltHinter(resolver)
 	case assertLeFeltExcluded0Code:
-		return createAssertLeFeltExcluded0Hinter(resolver)
+		return createAssertLeFeltExcluded0Hinter()
 	case assertLeFeltExcluded1Code:
-		return createAssertLeFeltExcluded1Hinter(resolver)
+		return createAssertLeFeltExcluded1Hinter()
 	case assertLeFeltExcluded2Code:
-		return createAssertLeFeltExcluded2Hinter(resolver)
+		return createAssertLeFeltExcluded2Hinter()
 	case isNNCode:
 		return createIsNNHinter(resolver)
 	case isNNOutOfRangeCode:
@@ -125,16 +125,20 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createEcNegateHinter(resolver)
 	case nondetBigint3V1Code:
 		return createNondetBigint3V1Hinter(resolver)
-	case fastEcAddAssignNewYCode:
-		return createFastEcAddAssignNewYHinter()
 	case fastEcAddAssignNewXCode:
 		return createFastEcAddAssignNewXHinter(resolver)
+	case fastEcAddAssignNewYCode:
+		return createFastEcAddAssignNewYHinter()
 	case ecDoubleSlopeV1Code:
 		return createEcDoubleSlopeV1Hinter(resolver)
+	case reduceV1Code:
+		return createReduceV1Hinter(resolver)
 	case computeSlopeV1Code:
 		return createComputeSlopeV1Hinter(resolver)
 	case ecDoubleAssignNewXV1:
 		return createEcDoubleAssignNewXV1Hinter(resolver)
+	case ecDoubleAssignNewYV1:
+		return createEcDoubleAssignNewYV1Hinter()
 		// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
@@ -152,18 +156,26 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUsortVerifyMultiplicityAssertHinter()
 	case usortVerifyCode:
 		return createUsortVerifyHinter(resolver)
+	case usortVerifyMultiplicityBodyCode:
+		return createUsortVerifyMultiplicityBodyHinter(resolver)
+	case usortBodyCode:
+		return createUsortBodyHinter(resolver)
 		// Dictionaries hints
 	case squashDictInnerAssertLenKeys:
 		return createSquashDictInnerAssertLenKeysHinter()
+	case squashDictInnerLenAssert:
+		return createSquashDictInnerLenAssertHinter()
+	case squashDictInnerNextKey:
+		return createSquashDictInnerNextKeyHinter(resolver)
 		// Other hints
 	case allocSegmentCode:
-		return createAllocSegmentHinter(resolver)
+		return createAllocSegmentHinter()
 	case vmEnterScopeCode:
-		return createVMEnterScopeHinter(resolver)
+		return createVMEnterScopeHinter()
 	case memcpyEnterScopeCode:
 		return createMemcpyEnterScopeHinter(resolver)
 	case vmExitScopeCode:
-		return createVMExitScopeHinter(resolver)
+		return createVMExitScopeHinter()
 	case testAssignCode:
 		return createTestAssignHinter(resolver)
 	default:
