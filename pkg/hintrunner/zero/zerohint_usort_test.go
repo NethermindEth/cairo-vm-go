@@ -196,7 +196,7 @@ func TestZeroHintUsort(t *testing.T) {
 					})
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					varAddrResolvedValueEquals("output_length", feltUint64(3))(t, ctx)
+					varValueEquals("output_length", feltUint64(3))(t, ctx)
 					consecutiveVarAddrResolvedValueEquals("output", []*fp.Element{
 						feltUint64(1),
 						feltUint64(2),
@@ -232,7 +232,7 @@ func TestZeroHintUsort(t *testing.T) {
 					})
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					varAddrResolvedValueEquals("output_length", feltUint64(3))(t, ctx)
+					varValueEquals("output_length", feltUint64(3))(t, ctx)
 					consecutiveVarAddrResolvedValueEquals("output", []*fp.Element{
 						feltUint64(1),
 						feltUint64(2),
@@ -273,7 +273,7 @@ func TestZeroHintUsort(t *testing.T) {
 					})
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					varAddrResolvedValueEquals("output_length", feltUint64(6))(t, ctx)
+					varValueEquals("output_length", feltUint64(6))(t, ctx)
 					consecutiveVarAddrResolvedValueEquals("output", []*fp.Element{
 						feltUint64(1),
 						feltUint64(2),
@@ -310,7 +310,7 @@ func TestZeroHintUsort(t *testing.T) {
 					})
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					varAddrResolvedValueEquals("output_length", feltUint64(0))(t, ctx)
+					varValueEquals("output_length", feltUint64(0))(t, ctx)
 					consecutiveVarAddrResolvedValueEquals("output", []*fp.Element{})(t, ctx)
 					consecutiveVarAddrResolvedValueEquals("multiplicities", []*fp.Element{})(t, ctx)
 				},
