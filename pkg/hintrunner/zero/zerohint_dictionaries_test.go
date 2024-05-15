@@ -55,13 +55,6 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "key", Kind: apRelative, Value: feltUint64(100)},
 					{Name: "value", Kind: uninitialized},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeDictionaryManager(ctx)
-					err := ctx.ScopeManager.AssignVariable("__dict_manager", ctx.DictionaryManager)
-					if err != nil {
-						t.Fatal(err)
-					}
-				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					dictionaryManager := hinter.NewZeroDictionaryManager()
 					err := ctx.runnerContext.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
