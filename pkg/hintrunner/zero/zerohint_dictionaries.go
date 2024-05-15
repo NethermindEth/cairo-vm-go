@@ -10,6 +10,55 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+// DefaultDictNew hint creates a new dictionary with a default value
+//
+// `newDefaultDictNewHint` takes 1 operander as argument
+//   - `default_value` variable will be the default value
+//     returned for keys not present in the dictionary
+func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DefaultDictNew",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> if '__dict_manager' not in globals():
+			//> 	from starkware.cairo.common.dict import DictManager
+			//> 	__dict_manager = DictManager()
+			//>
+			//> memory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)
+
+			//> if '__dict_manager' not in globals():
+			//> 	from starkware.cairo.common.dict import DictManager
+			//> 	__dict_manager = DictManager()
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
+			if !ok {
+				dictionaryManager = hinter.NewZeroDictionaryManager()
+				err := ctx.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
+				if err != nil {
+					return err
+				}
+			}
+
+			//> memory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)
+			defaultValue, err := hinter.ResolveAsFelt(vm, defaultValue)
+			if err != nil {
+				return err
+			}
+			defaultValueMv := memory.MemoryValueFromFieldElement(defaultValue)
+			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, defaultValueMv)
+			newDefaultDictionaryAddrMv := memory.MemoryValueFromMemoryAddress(&newDefaultDictionaryAddr)
+			apAddr := vm.Context.AddressAp()
+			return vm.Memory.WriteToAddress(&apAddr, &newDefaultDictionaryAddrMv)
+		},
+	}
+}
+
+func createDefaultDictNewHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	defaultValue, err := resolver.GetResOperander("default_value")
+	if err != nil {
+		return nil, err
+	}
+	return newDefaultDictNewHint(defaultValue), nil
+}
+
 // SquashDictInnerAssertLenKeys hint asserts that the length
 // of the `keys` descending list is zero during the squashing process
 //
