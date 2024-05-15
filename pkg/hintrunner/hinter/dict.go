@@ -14,19 +14,12 @@ type Dictionary struct {
 	data map[f.Element]*mem.MemoryValue
 	// Unique id assigned at the moment of creation
 	idx uint64
-	// Default value for key not present in the dictionary
-	defaultValue *mem.MemoryValue
-	// first free offset in memory segment of dictionary
-	freeOffset uint64
 }
 
 // Gets the memory value at certain key
 func (d *Dictionary) At(key *f.Element) (*mem.MemoryValue, error) {
 	if value, ok := d.data[*key]; ok {
 		return value, nil
-	}
-	if d.defaultValue != nil {
-		return d.defaultValue, nil
 	}
 	return nil, fmt.Errorf("no value for key %s", key)
 }
@@ -39,11 +32,6 @@ func (d *Dictionary) Set(key *f.Element, value *mem.MemoryValue) {
 // Returns the initialization number when the dictionary was created
 func (d *Dictionary) InitNumber() uint64 {
 	return d.idx
-}
-
-// Given a incrementBy value, it increments the freeOffset field of dictionary by it
-func (d *Dictionary) IncrementFreeOffset(freeOffset uint64) {
-	d.freeOffset += freeOffset
 }
 
 // Used to manage dictionaries creation
@@ -64,27 +52,10 @@ func InitializeDictionaryManager(ctx *HintRunnerContext) {
 func (dm *DictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddress {
 	newDictAddr := vm.Memory.AllocateEmptySegment()
 	dm.dictionaries[newDictAddr.SegmentIndex] = Dictionary{
-		data:         make(map[f.Element]*mem.MemoryValue),
-		idx:          uint64(len(dm.dictionaries)),
-		defaultValue: nil,
-		freeOffset:   0,
+		data: make(map[f.Element]*mem.MemoryValue),
+		idx:  uint64(len(dm.dictionaries)),
 	}
 	return newDictAddr
-}
-
-// It creates a new segment which will hold dictionary values. It links this
-// segment with the current dictionary and returns the address that points
-// to the start of this segment. If key not present in the dictionary during
-// querying the defaultValue will be returned instead.
-func (dm *DictionaryManager) NewDefaultDictionary(vm *VM.VirtualMachine, defaultValue *mem.MemoryValue) mem.MemoryAddress {
-	newDefaultDictAddr := vm.Memory.AllocateEmptySegment()
-	dm.dictionaries[newDefaultDictAddr.SegmentIndex] = Dictionary{
-		data:         make(map[f.Element]*mem.MemoryValue),
-		idx:          uint64(len(dm.dictionaries)),
-		defaultValue: defaultValue,
-		freeOffset:   0,
-	}
-	return newDefaultDictAddr
 }
 
 // Given a memory address, it looks for the right dictionary using the segment index. If no
