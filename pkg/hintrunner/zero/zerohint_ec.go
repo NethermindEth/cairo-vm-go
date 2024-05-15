@@ -161,7 +161,7 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			if err != nil {
 				return err
 			}
-			slopeMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(slopeAddr, int16(6))
+			slopeMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(slopeAddr, int16(3))
 			if err != nil {
 				return err
 			}
@@ -179,7 +179,7 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			if err != nil {
 				return err
 			}
-			point1MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point1Addr, int16(6))
+			point1MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point1Addr, int16(3))
 			if err != nil {
 				return err
 			}
@@ -487,7 +487,7 @@ func newEcDoubleAssignNewXV1Hint(slope, point hinter.ResOperander) hinter.Hinter
 			if err != nil {
 				return err
 			}
-			slopeMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(slopeAddr, int16(6))
+			slopeMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(slopeAddr, int16(3))
 			if err != nil {
 				return err
 			}
