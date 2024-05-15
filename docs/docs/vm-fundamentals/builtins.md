@@ -1,5 +1,7 @@
 # Builtins Documentation #326
 
+Regular Cairo instructions are like regular Legos, they work, but for complex things they can be slow. Builtins are special Lego pieces that snap together easily, like pre-built wheels or doors. This makes building things much faster. In a Cairo context, builtins help write clean and efficient Cairo programs, just like these special Lego pieces help build cool things faster.
+
 This section provides an overview of the builtins functions available in the Cairo Virtual Machine (Cairo VM).
 
 ### What is builtins in cairo?
@@ -166,7 +168,7 @@ func hash2(hash_ptr: HashBuiltin*, x, y) -> (hash_ptr: HashBuiltin*, z: felt) {
     - **pub_key**: Represents an ECDSA public key.
     - **message**: Denotes a message signed by the pub_key.
     
-    Additionally, there's a pointer named ecdsa_ptr, which is of type SignatureBuiltin. This pointer is utilized to manage the signature builtin instances internally.
+    Additionally, there's a pointer named ecdsa_ptr, which is of type SignatureBuiltin. This pointer is used to manage the signature builtin instances internally.
     
     ```rust
     from starkware.cairo.common.bool import FALSE, TRUE
@@ -268,7 +270,7 @@ func hash2(hash_ptr: HashBuiltin*, x, y) -> (hash_ptr: HashBuiltin*, z: felt) {
     ```rust
     from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
     
-    const ALL_ONES = 2 ** 251 - 1;
+    const ALL_ONES = -1;
     
     // Computes the bitwise operations and, xor and or.
     // Arguments:
