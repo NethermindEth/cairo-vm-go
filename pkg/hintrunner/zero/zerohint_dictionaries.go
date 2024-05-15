@@ -120,10 +120,10 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			if err != nil {
 				return err
 			}
-			poppedKey := keys[len(keys)-1]
-			poppedKeyMv := memory.MemoryValueFromFieldElement(&poppedKey)
+			firstKeyValue := keys[len(keys)-1]
+			firstKeyMv := memory.MemoryValueFromFieldElement(&firstKeyValue)
 			keys = keys[:len(keys)-1]
-			err = vm.Memory.WriteToAddress(&firstKeyAddr, &poppedKeyMv)
+			err = vm.Memory.WriteToAddress(&firstKeyAddr, &firstKeyMv)
 			if err != nil {
 				return err
 			}
@@ -136,7 +136,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			if err != nil {
 				return err
 			}
-			return ctx.ScopeManager.AssignVariable("key", poppedKey)
+			return ctx.ScopeManager.AssignVariable("key", firstKeyValue)
 		},
 	}
 }

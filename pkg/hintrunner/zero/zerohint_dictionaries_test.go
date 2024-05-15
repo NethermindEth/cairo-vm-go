@@ -169,14 +169,23 @@ func TestZeroHintDictionaries(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "dict_accesses.1.key", Kind: apRelative, Value: feltUint64(10)},
-					{Name: "dict_accesses.1.prev_value", Kind: apRelative, Value: feltUint64(10)},
-					{Name: "dict_accesses.1.new_value", Kind: apRelative, Value: feltUint64(10)},
-					{Name: "dict_accesses.2.key", Kind: apRelative, Value: feltUint64(10)},
-					{Name: "dict_accesses.2.prev_value", Kind: apRelative, Value: feltUint64(10)},
-					{Name: "dict_accesses.2.new_value", Kind: apRelative, Value: feltUint64(10)},
-					{Name: "ptr_diff", Kind: apRelative, Value: feltUint64(6)},
-					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.1.key", Kind: apRelative, Value: feltUint64(8)},
+					{Name: "dict_accesses.1.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.1.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.2.key", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "dict_accesses.2.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.2.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.3.key", Kind: apRelative, Value: feltUint64(21)},
+					{Name: "dict_accesses.3.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.3.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.4.key", Kind: apRelative, Value: feltUint64(22)},
+					{Name: "dict_accesses.4.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.4.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.5.key", Kind: apRelative, Value: feltUint64(6)},
+					{Name: "dict_accesses.5.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.5.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "ptr_diff", Kind: apRelative, Value: feltUint64(15)},
+					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(5)},
 					{Name: "big_keys", Kind: uninitialized},
 					{Name: "first_key", Kind: uninitialized},
 				},
@@ -189,7 +198,23 @@ func TestZeroHintDictionaries(t *testing.T) {
 						ctx.operanders["first_key"],
 					)
 				},
-				errCheck: errorTextContains("empty keys array"),
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueEquals(map[string]*fp.Element{
+						"big_keys":  feltInt64(0),
+						"first_key": feltInt64(1),
+					})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{
+						"access_indices": map[fp.Element][]uint64{
+							*feltUint64(8):  {0},
+							*feltUint64(1):  {1},
+							*feltUint64(21): {2},
+							*feltUint64(22): {3},
+							*feltUint64(6):  {4},
+						},
+						"keys": []fp.Element{*feltUint64(22), *feltUint64(21), *feltUint64(8), *feltUint64(6)},
+						"key":  *feltUint64(1),
+					})(t, ctx)
+				},
 			},
 		},
 	})
