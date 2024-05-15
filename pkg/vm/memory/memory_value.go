@@ -315,3 +315,19 @@ func (mv *MemoryValue) Uint64() (uint64, error) {
 func (mv *MemoryValue) addrUnsafe() *MemoryAddress {
 	return (*MemoryAddress)(unsafe.Pointer(&mv.felt))
 }
+
+func (memory *Memory) GetConsecutiveMemoryValues(addr MemoryAddress, size int16) ([]MemoryValue, error) {
+	values := make([]MemoryValue, size)
+	for i := int16(0); i < size; i++ {
+		nAddr, err := addr.AddOffset(i)
+		if err != nil {
+			return nil, err
+		}
+		v, err := memory.ReadFromAddress(&nAddr)
+		if err != nil {
+			return nil, err
+		}
+		values[i] = v
+	}
+	return values, nil
+}

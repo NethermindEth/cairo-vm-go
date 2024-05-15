@@ -36,7 +36,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			pointMemoryValues, err := hinter.GetConsecutiveValues(vm, pointAddr, int16(6))
+			pointMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(pointAddr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -161,7 +161,7 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			if err != nil {
 				return err
 			}
-			slopeMemoryValues, err := hinter.GetConsecutiveValues(vm, slopeAddr, int16(3))
+			slopeMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(slopeAddr, int16(3))
 			if err != nil {
 				return err
 			}
@@ -170,7 +170,7 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			if err != nil {
 				return err
 			}
-			point0MemoryValues, err := hinter.GetConsecutiveValues(vm, point0Addr, int16(6))
+			point0MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point0Addr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -179,7 +179,7 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			if err != nil {
 				return err
 			}
-			point1MemoryValues, err := hinter.GetConsecutiveValues(vm, point1Addr, int16(3))
+			point1MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point1Addr, int16(3))
 			if err != nil {
 				return err
 			}
@@ -353,7 +353,7 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			pointMemoryValues, err := hinter.GetConsecutiveValues(vm, pointAddr, int16(6))
+			pointMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(pointAddr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -415,6 +415,53 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newEcDoubleSlopeV1Hint(point), nil
 }
 
+func newReduceV1Hint(x hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "reduceV1",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> value = pack(ids.x, PRIME) % SECP_P
+
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+			xAddr, err := x.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			xMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(xAddr, int16(3))
+			if err != nil {
+				return err
+			}
+			var xValues [3]*fp.Element
+			for i := 0; i < 3; i++ {
+				xValue, err := xMemoryValues[i].FieldElement()
+				if err != nil {
+					return err
+				}
+				xValues[i] = xValue
+			}
+			xBig, err := secp_utils.SecPPacked(xValues)
+			if err != nil {
+				return err
+			}
+			xBig.Mod(&xBig, &secPBig)
+			valueBigIntPtr := new(big.Int).Set(&xBig)
+			return ctx.ScopeManager.AssignVariable("value", valueBigIntPtr)
+		},
+	}
+}
+
+func createReduceV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+	return newReduceV1Hint(x), nil
+}
+
 // EcDoubleAssignNewXV1 hint computes a new x-coordinate for a point being doubled on an elliptic curve
 //
 // `newEcDoubleAssignNewXV1Hint` takes 2 operanders as arguments
@@ -440,7 +487,7 @@ func newEcDoubleAssignNewXV1Hint(slope, point hinter.ResOperander) hinter.Hinter
 			if err != nil {
 				return err
 			}
-			slopeMemoryValues, err := hinter.GetConsecutiveValues(vm, slopeAddr, int16(3))
+			slopeMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(slopeAddr, int16(3))
 			if err != nil {
 				return err
 			}
@@ -449,7 +496,7 @@ func newEcDoubleAssignNewXV1Hint(slope, point hinter.ResOperander) hinter.Hinter
 			if err != nil {
 				return err
 			}
-			pointMemoryValues, err := hinter.GetConsecutiveValues(vm, pointAddr, int16(6))
+			pointMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(pointAddr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -607,7 +654,7 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			point0MemoryValues, err := hinter.GetConsecutiveValues(vm, point0Addr, int16(6))
+			point0MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point0Addr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -616,7 +663,7 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			point1MemoryValues, err := hinter.GetConsecutiveValues(vm, point1Addr, int16(6))
+			point1MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point1Addr, int16(6))
 			if err != nil {
 				return err
 			}
