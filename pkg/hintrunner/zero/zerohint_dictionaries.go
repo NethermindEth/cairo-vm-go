@@ -59,7 +59,10 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hi
 				return err
 			}
 
-			currentAccessIndices := currentAccessIndices_.([]fp.Element)
+			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
+			if !ok {
+				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
+			}
 
 			loopTempsAddr, err := loopTemps.GetAddress(vm)
 			if err != nil {
