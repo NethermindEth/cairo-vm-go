@@ -160,14 +160,14 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 				return fmt.Errorf("cannot cast key_ to felt")
 			}
 
-			accessIndicesAtKey := uint64(len(access_indices[key]))
+			accessIndicesAtKeyLen := uint64(len(access_indices[key]))
 
 			nUsedAccesses, err := hinter.ResolveAsUint64(vm, nUsedAccesses)
 			if err != nil {
 				return err
 			}
 
-			if accessIndicesAtKey != nUsedAccesses {
+			if accessIndicesAtKeyLen != nUsedAccesses {
 				return fmt.Errorf("assertion ids.n_used_accesses == len(access_indices[key]) failed")
 			}
 
