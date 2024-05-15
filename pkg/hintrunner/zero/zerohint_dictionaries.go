@@ -28,10 +28,9 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 			//> if '__dict_manager' not in globals():
 			//> 	from starkware.cairo.common.dict import DictManager
 			//> 	__dict_manager = DictManager()
-			dictionaryManager, ok := ctx.ScopeManager.GetDictionaryManager()
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
 			if !ok {
-				hinter.InitializeDictionaryManager(ctx)
-				dictionaryManager = ctx.DictionaryManager
+				dictionaryManager = hinter.NewZeroDictionaryManager()
 				err := ctx.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
 				if err != nil {
 					return err
@@ -44,7 +43,7 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 			defaultValueMv := memory.MemoryValueFromFieldElement(defaultValue)
-			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, &defaultValueMv)
+			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, defaultValueMv)
 			newDefaultDictionaryAddrMv := memory.MemoryValueFromMemoryAddress(&newDefaultDictionaryAddr)
 			apAddr := vm.Context.AddressAp()
 			return vm.Memory.WriteToAddress(&apAddr, &newDefaultDictionaryAddrMv)
@@ -82,24 +81,20 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			dictionaryManager, ok := ctx.ScopeManager.GetDictionaryManager()
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
 			if !ok {
 				return fmt.Errorf("__dict_manager not in scope")
 			}
-			dictionary, err := dictionaryManager.GetDictionary(dictPtr)
-			if err != nil {
-				return err
-			}
 
 			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
-			dictionary.IncrementFreeOffset(3)
+			dictionaryManager.IncrementFreeOffset(*dictPtr, 3)
 
 			//> ids.value = dict_tracker.data[ids.key]
 			key, err := hinter.ResolveAsFelt(vm, key)
 			if err != nil {
 				return err
 			}
-			keyValue, err := dictionary.At(key)
+			keyValue, err := dictionaryManager.At(*dictPtr, *key)
 			if err != nil {
 				return err
 			}
@@ -107,7 +102,7 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			return vm.Memory.WriteToAddress(&valueAddr, keyValue)
+			return vm.Memory.WriteToAddress(&valueAddr, &keyValue)
 		},
 	}
 }
