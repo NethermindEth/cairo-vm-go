@@ -118,5 +118,79 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 			},
 		},
+		"SquashDict": {
+			{
+				operanders: []*hintOperander{
+					{Name: "dict_accesses.1.key", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.1.prev_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.1.new_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.key", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.prev_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.new_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "ptr_diff", Kind: apRelative, Value: feltUint64(7)},
+					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "big_keys", Kind: uninitialized},
+					{Name: "first_key", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictHint(
+						ctx.operanders["dict_accesses.1.key"],
+						ctx.operanders["ptr_diff"],
+						ctx.operanders["n_accesses"],
+						ctx.operanders["big_keys"],
+						ctx.operanders["first_key"],
+					)
+				},
+				errCheck: errorTextContains("Accesses array size must be divisible by DictAccess.SIZE"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "dict_accesses.1.key", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.1.prev_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.1.new_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.key", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.prev_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.new_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "ptr_diff", Kind: apRelative, Value: feltUint64(6)},
+					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(1048577)},
+					{Name: "big_keys", Kind: uninitialized},
+					{Name: "first_key", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictHint(
+						ctx.operanders["dict_accesses.1.key"],
+						ctx.operanders["ptr_diff"],
+						ctx.operanders["n_accesses"],
+						ctx.operanders["big_keys"],
+						ctx.operanders["first_key"],
+					)
+				},
+				errCheck: errorTextContains("squash_dict() can only be used with n_accesses<={1048576}. Got: n_accesses={1048577}."),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "dict_accesses.1.key", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.1.prev_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.1.new_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.key", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.prev_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.new_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "ptr_diff", Kind: apRelative, Value: feltUint64(6)},
+					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "big_keys", Kind: uninitialized},
+					{Name: "first_key", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictHint(
+						ctx.operanders["dict_accesses.1.key"],
+						ctx.operanders["ptr_diff"],
+						ctx.operanders["n_accesses"],
+						ctx.operanders["big_keys"],
+						ctx.operanders["first_key"],
+					)
+				},
+				errCheck: errorTextContains("empty keys array"),
+			},
+		},
 	})
 }
