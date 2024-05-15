@@ -30,7 +30,10 @@ func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.ResOperander) hinter.H
 				return err
 			}
 
-			currentAccessIndices := currentAccessIndices_.([]fp.Element)
+			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
+			if !ok {
+				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
+			}
 
 			shouldSkipLoopAddr, err := shouldSkipLoop.GetAddress(vm)
 			if err != nil {
