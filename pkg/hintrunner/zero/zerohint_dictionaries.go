@@ -230,17 +230,13 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hi
 			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
 
 			//> dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)
-			dictPtrAddr, err := hinter.ResolveAsAddress(vm, dictPtr)
+			dictPtr, err := hinter.ResolveAsAddress(vm, dictPtr)
 			if err != nil {
 				return err
 			}
-			dictionaryManager, ok := ctx.ScopeManager.GetDictionaryManager()
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
 			if !ok {
 				return fmt.Errorf("__dict_manager not in scope")
-			}
-			dictionary, err := dictionaryManager.GetDictionary(dictPtrAddr)
-			if err != nil {
-				return err
 			}
 
 			key, err := hinter.ResolveAsFelt(vm, key)
@@ -249,7 +245,7 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hi
 			}
 
 			//> current_value = dict_tracker.data[ids.key]
-			currentValueMv, err := dictionary.At(key)
+			currentValueMv, err := dictionaryManager.At(*dictPtr, *key)
 			if err != nil {
 				return err
 			}
@@ -275,12 +271,13 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hi
 				return err
 			}
 			newValueMv := memory.MemoryValueFromFieldElement(newValue)
-			dictionary.Set(key, &newValueMv)
+			err = dictionaryManager.Set(*dictPtr, *key, newValueMv)
+			if err != nil {
+				return err
+			}
 
 			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
-			dictionary.IncrementFreeOffset(3)
-
-			return nil
+			return dictionaryManager.IncrementFreeOffset(*dictPtr, 3)
 		},
 	}
 }

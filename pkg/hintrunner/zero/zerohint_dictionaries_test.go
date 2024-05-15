@@ -101,16 +101,14 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "prev_value", Kind: apRelative, Value: feltUint64(2)},
 					{Name: "dict_ptr", Kind: apRelative, Value: addrWithSegment(2, 0)},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeDictionaryManager(ctx)
-					err := ctx.ScopeManager.AssignVariable("__dict_manager", ctx.DictionaryManager)
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					dictionaryManager := hinter.NewZeroDictionaryManager()
+					err := ctx.runnerContext.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
 					if err != nil {
 						t.Fatal(err)
 					}
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					defaultValueMv := memory.MemoryValueFromInt(1)
-					ctx.runnerContext.DictionaryManager.NewDefaultDictionary(ctx.vm, &defaultValueMv)
+					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
 					return newDictUpdateHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["new_value"], ctx.operanders["prev_value"])
 				},
 				errCheck: errorTextContains("Wrong previous value in dict. Got 2, expected 1."),
@@ -123,16 +121,14 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "dict_ptr", Kind: apRelative, Value: addrWithSegment(2, 0)},
 					{Name: "dict_ptr1", Kind: apRelative, Value: addrWithSegment(2, 1)},
 				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					hinter.InitializeDictionaryManager(ctx)
-					err := ctx.ScopeManager.AssignVariable("__dict_manager", ctx.DictionaryManager)
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					dictionaryManager := hinter.NewZeroDictionaryManager()
+					err := ctx.runnerContext.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
 					if err != nil {
 						t.Fatal(err)
 					}
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					defaultValueMv := memory.MemoryValueFromInt(1)
-					ctx.runnerContext.DictionaryManager.NewDefaultDictionary(ctx.vm, &defaultValueMv)
+					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
 					return newDictUpdateHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["new_value"], ctx.operanders["prev_value"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {},
