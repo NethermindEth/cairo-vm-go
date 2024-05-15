@@ -141,5 +141,4 @@ func createSquashDictInnerNextKeyHinter(resolver hintReferenceResolver) (hinter.
 	}
 
 	return newSquashDictInnerNextKeyHint(nextKey), nil
-
 }
