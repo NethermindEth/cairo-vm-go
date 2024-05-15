@@ -28,10 +28,9 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 			//> if '__dict_manager' not in globals():
 			//> 	from starkware.cairo.common.dict import DictManager
 			//> 	__dict_manager = DictManager()
-			dictionaryManager, ok := ctx.ScopeManager.GetDictionaryManager()
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
 			if !ok {
-				hinter.InitializeDictionaryManager(ctx)
-				dictionaryManager = ctx.DictionaryManager
+				dictionaryManager = hinter.NewZeroDictionaryManager()
 				err := ctx.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
 				if err != nil {
 					return err
@@ -44,7 +43,7 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 			defaultValueMv := memory.MemoryValueFromFieldElement(defaultValue)
-			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, &defaultValueMv)
+			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, defaultValueMv)
 			newDefaultDictionaryAddrMv := memory.MemoryValueFromMemoryAddress(&newDefaultDictionaryAddr)
 			apAddr := vm.Context.AddressAp()
 			return vm.Memory.WriteToAddress(&apAddr, &newDefaultDictionaryAddrMv)

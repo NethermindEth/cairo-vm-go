@@ -23,7 +23,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 						t.Fatalf("__dict_manager missing")
 					}
 
-					dictionaryManager := dictionaryManagerValue.(hinter.DictionaryManager)
+					dictionaryManager := dictionaryManagerValue.(hinter.ZeroDictionaryManager)
 					apAddr := ctx.vm.Context.AddressAp()
 					dictAddr, err := ctx.vm.Memory.ReadFromAddressAsAddress(&apAddr)
 					if err != nil {
@@ -31,7 +31,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					}
 
 					key := fp.NewElement(100)
-					value, err := dictionaryManager.At(&dictAddr, &key)
+					value, err := dictionaryManager.At(dictAddr, key)
 					if err != nil {
 						t.Fatalf("error fetching value from dictionary")
 					}
