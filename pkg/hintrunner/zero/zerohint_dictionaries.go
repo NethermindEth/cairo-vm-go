@@ -9,6 +9,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"golang.org/x/exp/maps"
 )
 
 func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinter.ResOperander) hinter.Hinter {
@@ -64,7 +65,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			//>     assert n_accesses <= __squash_dict_max_size, \
 			//>         f'squash_dict() can only be used with n_accesses<={__squash_dict_max_size}. ' \
 			//>         f'Got: n_accesses={n_accesses}.'
-			// looks like __squash_dict_max_size is generally set as 2**20,
+			//  __squash_dict_max_size is always in scope and has a value of 2**20,
 			squashDictMaxSize := uint64(1048576)
 			if nAccessesValue > squashDictMaxSize {
 				return fmt.Errorf("squash_dict() can only be used with n_accesses<={%d}. Got: n_accesses={%d}.", squashDictMaxSize, nAccessesValue)
@@ -75,7 +76,6 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			//> for i in range(n_accesses):
 			//>     key = memory[address + dict_access_size * i]
 			//>     access_indices.setdefault(key, []).append(i)
-			var keys []f.Element
 			accessIndices := make(map[f.Element][]uint64)
 			for i := uint64(0); i < nAccessesValue; i++ {
 				memoryAddress, err := address.AddOffset(int16(dictAccessSize * i))
@@ -87,25 +87,30 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 					return err
 				}
 				accessIndices[key] = append(accessIndices[key], i)
-				keys = append(keys, key)
 			}
 
 			//> # Descending list of keys.
 			//> keys = sorted(access_indices.keys(), reverse=True)
+			keys := maps.Keys(accessIndices)
+			if len(keys) == 0 {
+				return fmt.Errorf("empty keys array")
+			}
 			sort.Slice(keys, func(i, j int) bool {
 				return keys[i].Cmp(&keys[j]) > 0
 			})
 
-			//> # Are the keys used bigger than range_check bound.
-			// TODO: won't keys[0] error out if ids.n_accesses = 0 ?
-			// TODO: won't value of keys always be within a felt?
 			//> ids.big_keys = 1 if keys[0] >= range_check_builtin.bound else 0
 			bigKeysAddr, err := bigKeys.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			feltZeroMv := memory.MemoryValueFromFieldElement(&utils.FeltZero)
-			err = vm.Memory.WriteToAddress(&bigKeysAddr, &feltZeroMv)
+			var bigKeysMv memory.MemoryValue
+			if utils.FeltIsPositive(&keys[0]) {
+				bigKeysMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			} else {
+				bigKeysMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			}
+			err = vm.Memory.WriteToAddress(&bigKeysAddr, &bigKeysMv)
 			if err != nil {
 				return err
 			}
@@ -118,9 +123,20 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			poppedKey := keys[len(keys)-1]
 			poppedKeyMv := memory.MemoryValueFromFieldElement(&poppedKey)
 			keys = keys[:len(keys)-1]
-			return vm.Memory.WriteToAddress(&firstKeyAddr, &poppedKeyMv)
+			err = vm.Memory.WriteToAddress(&firstKeyAddr, &poppedKeyMv)
+			if err != nil {
+				return err
+			}
 
-			// TODO: should accessIndices, keys, key be stored in scope?
+			err = ctx.ScopeManager.AssignVariable("access_indices", accessIndices)
+			if err != nil {
+				return err
+			}
+			err = ctx.ScopeManager.AssignVariable("keys", keys)
+			if err != nil {
+				return err
+			}
+			return ctx.ScopeManager.AssignVariable("key", poppedKey)
 		},
 	}
 }
