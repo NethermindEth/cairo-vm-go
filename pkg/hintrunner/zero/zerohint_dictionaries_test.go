@@ -285,7 +285,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "dict_accesses.3.prev_value", Kind: apRelative, Value: feltUint64(0)},
 					{Name: "dict_accesses.3.new_value", Kind: apRelative, Value: feltUint64(0)},
 					// largest key bigger than range_check_builtin.bound
-					{Name: "dict_accesses.4.key", Kind: apRelative, Value: &utils.FeltMax128},
+					{Name: "dict_accesses.4.key", Kind: apRelative, Value: &utils.FeltUpperBound},
 					{Name: "dict_accesses.4.prev_value", Kind: apRelative, Value: feltUint64(0)},
 					{Name: "dict_accesses.4.new_value", Kind: apRelative, Value: feltUint64(0)},
 					{Name: "dict_accesses.5.key", Kind: apRelative, Value: feltUint64(29)},
@@ -312,12 +312,12 @@ func TestZeroHintDictionaries(t *testing.T) {
 					})(t, ctx)
 					allVarValueInScopeEquals(map[string]any{
 						"access_indices": map[fp.Element][]uint64{
-							*feltUint64(80):  {0},
-							*feltUint64(29):  {1, 4},
-							*feltUint64(210): {2},
-							utils.FeltMax128: {3},
+							*feltUint64(80):      {0},
+							*feltUint64(29):      {1, 4},
+							*feltUint64(210):     {2},
+							utils.FeltUpperBound: {3},
 						},
-						"keys": []fp.Element{utils.FeltMax128, *feltUint64(210), *feltUint64(80)},
+						"keys": []fp.Element{utils.FeltUpperBound, *feltUint64(210), *feltUint64(80)},
 						"key":  *feltUint64(29),
 					})(t, ctx)
 				},
