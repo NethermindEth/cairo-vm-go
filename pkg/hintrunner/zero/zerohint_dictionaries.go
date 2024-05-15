@@ -42,7 +42,7 @@ func newDictNewHint() hinter.Hinter {
 			}
 			initialDict, ok := initialDictValue.(map[f.Element]memory.MemoryValue)
 			if !ok {
-				return fmt.Errorf("value: %s is not a *map[f.Element]*mem.MemoryValue", initialDictValue)
+				return fmt.Errorf("value: %s is not a map[f.Element]mem.MemoryValue", initialDictValue)
 			}
 
 			//> memory[ap] = __dict_manager.new_dict(segments, initial_dict)
