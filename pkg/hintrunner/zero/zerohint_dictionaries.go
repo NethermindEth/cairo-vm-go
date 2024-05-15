@@ -87,7 +87,10 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
-			dictionaryManager.IncrementFreeOffset(*dictPtr, 3)
+			err = dictionaryManager.IncrementFreeOffset(*dictPtr, 3)
+			if err != nil {
+				return err
+			}
 
 			//> ids.value = dict_tracker.data[ids.key]
 			key, err := hinter.ResolveAsFelt(vm, key)
