@@ -16,13 +16,9 @@ func TestZeroHintMemcpy(t *testing.T) {
 					{Name: "continue_copying", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-					err := ctx.ScopeManager.AssignVariables(map[string]any{
+					ctx.ScopeManager.EnterScope(map[string]any{
 						"n": &utils.FeltOne,
 					})
-					if err != nil {
-						t.Fatal(err)
-					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newMemcpyContinueCopyingHint(ctx.operanders["continue_copying"])
@@ -37,13 +33,9 @@ func TestZeroHintMemcpy(t *testing.T) {
 					{Name: "continue_copying", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{})
-					err := ctx.ScopeManager.AssignVariables(map[string]any{
+					ctx.ScopeManager.EnterScope(map[string]any{
 						"n": feltString("5"),
 					})
-					if err != nil {
-						t.Fatal(err)
-					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newMemcpyContinueCopyingHint(ctx.operanders["continue_copying"])
