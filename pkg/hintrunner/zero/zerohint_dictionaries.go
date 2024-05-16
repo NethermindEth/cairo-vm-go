@@ -7,8 +7,58 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
+
+// DefaultDictNew hint creates a new dictionary with a default value
+//
+// `newDefaultDictNewHint` takes 1 operander as argument
+//   - `default_value` variable will be the default value
+//     returned for keys not present in the dictionary
+func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DefaultDictNew",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> if '__dict_manager' not in globals():
+			//> 	from starkware.cairo.common.dict import DictManager
+			//> 	__dict_manager = DictManager()
+			//>
+			//> memory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)
+
+			//> if '__dict_manager' not in globals():
+			//> 	from starkware.cairo.common.dict import DictManager
+			//> 	__dict_manager = DictManager()
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
+			if !ok {
+				dictionaryManager = hinter.NewZeroDictionaryManager()
+				err := ctx.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
+				if err != nil {
+					return err
+				}
+			}
+
+			//> memory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)
+			defaultValue, err := hinter.ResolveAsFelt(vm, defaultValue)
+			if err != nil {
+				return err
+			}
+			defaultValueMv := memory.MemoryValueFromFieldElement(defaultValue)
+			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, defaultValueMv)
+			newDefaultDictionaryAddrMv := memory.MemoryValueFromMemoryAddress(&newDefaultDictionaryAddr)
+			apAddr := vm.Context.AddressAp()
+			return vm.Memory.WriteToAddress(&apAddr, &newDefaultDictionaryAddrMv)
+		},
+	}
+}
+
+func createDefaultDictNewHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	defaultValue, err := resolver.GetResOperander("default_value")
+	if err != nil {
+		return nil, err
+	}
+	return newDefaultDictNewHint(defaultValue), nil
+}
 
 // SquashDictInnerAssertLenKeys hint asserts that the length
 // of the `keys` descending list is zero during the squashing process
@@ -37,6 +87,56 @@ func newSquashDictInnerAssertLenKeysHint() hinter.Hinter {
 
 func createSquashDictInnerAssertLenKeysHinter() (hinter.Hinter, error) {
 	return newSquashDictInnerAssertLenKeysHint(), nil
+}
+
+// SquashDictInnerContinueLoop hint determines if the loop should continue
+// based on remaining access indices
+//
+// `newSquashDictInnerContinueLoopHint` takes 1 operander as argument
+//   - `loopTemps` variable is a struct containing a `should_continue` field
+//
+// `newSquashDictInnerContinueLoopHint`writes 0 or 1 in the `should_continue` field
+// depending on whether the `current_access_indices` array contains items or not
+func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SquashDictInnerContinueLoop",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> ids.loop_temps.should_continue = 1 if current_access_indices else 0
+
+			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			if err != nil {
+				return err
+			}
+
+			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
+			if !ok {
+				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
+			}
+
+			loopTempsAddr, err := loopTemps.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			if len(currentAccessIndices) == 0 {
+				resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
+				return hinter.WriteToNthStructField(vm, loopTempsAddr, resultMemZero, int16(3))
+
+			} else {
+				resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
+				return hinter.WriteToNthStructField(vm, loopTempsAddr, resultMemOne, int16(3))
+			}
+		},
+	}
+}
+
+func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	loopTemps, err := resolver.GetResOperander("loop_temps")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSquashDictInnerContinueLoopHint(loopTemps), nil
 }
 
 // SquashDictInnerAssertLenKeys hint asserts the length of the current
