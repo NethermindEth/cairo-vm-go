@@ -93,6 +93,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newSquashDictInnerCheckAccessIndexHint(ctx.operanders["loop_temps.index_delta_minus1"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
+					varValueEquals("loop_temps.index_delta_minus1", feltUint64(0))(t, ctx)
 					varValueInScopeEquals("current_access_index", *feltUint64(2))(t, ctx)
 				},
 			},
@@ -113,7 +114,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newSquashDictInnerCheckAccessIndexHint(ctx.operanders["loop_temps.index_delta_minus1"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					varValueEquals("loop_temps.index_delta_minus1", feltUint64(34))(t, ctx)
+					varValueEquals("loop_temps.index_delta_minus1", feltUint64(23))(t, ctx)
 					varValueInScopeEquals("current_access_index", *feltUint64(43))(t, ctx)
 				}},
 		},
