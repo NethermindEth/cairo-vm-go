@@ -119,7 +119,7 @@ func newSetAddHint(elmSize, elmPtr, setPtr, setEndPtr, index, isElmInSet hinter.
 			}
 
 			//> elm_list = memory.get_range(ids.elm_ptr, ids.elm_size)
-			elmList, err := hinter.GetConsecutiveValues(vm, *elmPtr, int16(elmSizeInt))
+			elmList, err := vm.Memory.GetConsecutiveMemoryValues(*elmPtr, int16(elmSizeInt))
 			if err != nil {
 				return err
 			}
@@ -134,7 +134,7 @@ func newSetAddHint(elmSize, elmPtr, setPtr, setEndPtr, index, isElmInSet hinter.
 			isElmInSetFelt := utils.FeltZero
 			totalSetLength := setEndPtr.Offset - setPtr.Offset
 			for i := uint64(0); i < totalSetLength; i += elmSizeInt {
-				memoryElmList, err := hinter.GetConsecutiveValues(vm, *setPtr, int16(elmSizeInt))
+				memoryElmList, err := vm.Memory.GetConsecutiveMemoryValues(*setPtr, int16(elmSizeInt))
 				if err != nil {
 					return err
 				}
