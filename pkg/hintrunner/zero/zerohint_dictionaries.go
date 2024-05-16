@@ -144,7 +144,7 @@ func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hi
 // `current_access_indices` is a reversed order list of access indices
 // for a given key, i.e., `sorted(access_indices[key])[::-1]`
 //
-// `newSquashDictInnerAssertLenKeysHint` doesn't take any operander as argument
+// `newSquashDictInnerLenAssertHint` doesn't take any operander as argument
 // and retrieves `current_access_indices` value from the current scope
 func newSquashDictInnerLenAssertHint() hinter.Hinter {
 	return &GenericZeroHinter{
@@ -227,4 +227,59 @@ func createSquashDictInnerNextKeyHinter(resolver hintReferenceResolver) (hinter.
 	}
 
 	return newSquashDictInnerNextKeyHint(nextKey), nil
+}
+
+// SquashDictInnerUsedAccessesAssert hint checks that `n_used_accesses` Cairo local variable
+// is equal to the the number of used accesses for a key during dictionary squashing
+//
+// `newSquashDictInnerUsedAccessesAssertHint` takes one operander as argument
+//   - `nUsedAccesses` represents the number of used accesses for a given key
+func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SquashDictInnerUsedAccessesAssert",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> assert ids.n_used_accesses == len(access_indices[key])
+			access_indices_, err := ctx.ScopeManager.GetVariableValue("access_indices")
+			if err != nil {
+				return err
+			}
+
+			access_indices, ok := access_indices_.(map[fp.Element][]fp.Element)
+			if !ok {
+				return fmt.Errorf("cannot cast access_indices_ to a mapping of felts")
+			}
+
+			key_, err := ctx.ScopeManager.GetVariableValue("key")
+			if err != nil {
+				return err
+			}
+
+			key, ok := key_.(fp.Element)
+			if !ok {
+				return fmt.Errorf("cannot cast key_ to felt")
+			}
+
+			accessIndicesAtKeyLen := uint64(len(access_indices[key]))
+
+			nUsedAccesses, err := hinter.ResolveAsUint64(vm, nUsedAccesses)
+			if err != nil {
+				return err
+			}
+
+			if accessIndicesAtKeyLen != nUsedAccesses {
+				return fmt.Errorf("assertion ids.n_used_accesses == len(access_indices[key]) failed")
+			}
+
+			return nil
+		},
+	}
+}
+
+func createSquashDictInnerUsedAccessesAssertHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	nUsedAccesses, err := resolver.GetResOperander("n_used_accesses")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses), nil
 }

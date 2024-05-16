@@ -194,5 +194,67 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 			},
 		},
+		"SquashDictInnerUsedAccessesAssert": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(0)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(0)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerUsedAccessesAssertHint(ctx.operanders["n_used_accesses"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(0)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(1)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerUsedAccessesAssertHint(ctx.operanders["n_used_accesses"])
+				},
+				errCheck: errorTextContains("assertion ids.n_used_accesses == len(access_indices[key]) failed"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(3)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(1)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerUsedAccessesAssertHint(ctx.operanders["n_used_accesses"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(3)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(0)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerUsedAccessesAssertHint(ctx.operanders["n_used_accesses"])
+				},
+				errCheck: errorTextContains("assertion ids.n_used_accesses == len(access_indices[key]) failed"),
+			},
+		},
 	})
 }
