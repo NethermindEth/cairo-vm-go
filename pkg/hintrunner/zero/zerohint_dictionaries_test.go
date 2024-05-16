@@ -129,6 +129,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					valueAtAddressEquals(*addr(6), feltUint64(1))(t, ctx)
+					varValueInScopeEquals("current_access_indices", []fp.Element{*feltUint64(3), *feltUint64(2)})(t, ctx)
 					varValueInScopeEquals("current_access_index", *feltUint64(1))(t, ctx)
 				},
 			},
@@ -147,6 +148,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					valueAtAddressEquals(*addr(6), feltUint64(18))(t, ctx)
+					varValueInScopeEquals("current_access_indices", []fp.Element{*feltUint64(94), *feltUint64(92), *feltUint64(76), *feltUint64(55), *feltUint64(22)})(t, ctx)
 					varValueInScopeEquals("current_access_index", *feltUint64(18))(t, ctx)
 				},
 			},
@@ -165,7 +167,8 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					valueAtAddressEquals(*addr(6), feltUint64(323))(t, ctx)
-					varValueInScopeEquals("current_access_index", *feltUint64(322))(t, ctx)
+					varValueInScopeEquals("current_access_indices", []fp.Element{*feltUint64(999), *feltUint64(888), *feltUint64(777), *feltUint64(543), *feltUint64(324)})(t, ctx)
+					varValueInScopeEquals("current_access_index", *feltUint64(323))(t, ctx)
 				},
 			},
 		},

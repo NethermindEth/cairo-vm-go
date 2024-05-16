@@ -182,7 +182,6 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 			var accessIndicesAtKeyInt []int
 
 			for _, el := range accessIndicesAtKey {
-				// Convertir chaque élément en un entier en utilisant la méthode ToUint64().
 				accessIndicesAtKeyInt = append(accessIndicesAtKeyInt, int(el.Uint64()))
 			}
 
@@ -196,6 +195,17 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 			currentAccessIndexUint := uint64(currentAccessIndex)
 			currentAccessIndexField := new(fp.Element).SetUint64(currentAccessIndexUint)
 			currentAccessIndexMv := memory.MemoryValueFromFieldElement(currentAccessIndexField)
+
+			var newaccessIndicesAtKey []fp.Element
+			for _, el := range accessIndicesAtKeyInt {
+				elUint64 := uint64(el)
+				newaccessIndicesAtKey = append(newaccessIndicesAtKey, *(new(fp.Element).SetUint64(elUint64)))
+			}
+
+			err = ctx.ScopeManager.AssignVariable("current_access_indices", newaccessIndicesAtKey)
+			if err != nil {
+				return err
+			}
 
 			err = ctx.ScopeManager.AssignVariable("current_access_index", *currentAccessIndexField)
 			if err != nil {
