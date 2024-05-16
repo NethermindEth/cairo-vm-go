@@ -155,7 +155,6 @@ func newBlockPermutationHint(keccakStateSizeFelts, keccakPtr hinter.ResOperander
 			var offset int16 = int16(keccakStateSize)
 			var negOffset int16 = -offset
 
-			// This is safe as AddOffset works for negative offsets
 			readAddr, err = readAddr.AddOffset(negOffset)
 			if err != nil {
 				return err
