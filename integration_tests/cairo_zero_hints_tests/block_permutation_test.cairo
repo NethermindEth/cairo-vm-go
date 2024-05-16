@@ -1,4 +1,4 @@
-// The content of this file has borrowed from LambdaClass Cairo VM in Rust
+// The content of this file has been partially borrowed from LambdaClass Cairo VM in Rust
 // See https://github.com/lambdaclass/cairo-vm/blob/aecbb3f01dacb6d3f90256c808466c2c37606252/cairo_programs/keccak_alternative_hint.cairo#L20
 
 %builtins output range_check bitwise
