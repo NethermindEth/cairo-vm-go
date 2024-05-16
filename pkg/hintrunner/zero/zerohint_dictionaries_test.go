@@ -116,7 +116,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 		"SquashDictInnerFirstIteration": {
 			{
 				operanders: []*hintOperander{
-					{Name: "range_check_ptr", Kind: fpRelative, Value: feltInt64(50)},
+					{Name: "range_check_ptr", Kind: fpRelative, Value: feltUint64(6)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(2), *feltUint64(1), *feltUint64(3)}}, "key": *feltUint64(0)})
@@ -128,16 +128,16 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newSquashDictInnerFirstIterationHint(ctx.operanders["range_check_ptr"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					// varValueEquals("result", feltUint64(3))(t, ctx)
-					varValueInScopeEquals("current_access_index", feltUint64(3))
+					valueAtAddressEquals(*addr(6), feltUint64(1))(t, ctx)
+					varValueInScopeEquals("current_access_index", feltUint64(1))(t, ctx)
 				},
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "range_check_ptr", Kind: fpRelative, Value: feltInt64(50)},
+					{Name: "range_check_ptr", Kind: fpRelative, Value: feltUint64(6)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(22), *feltUint64(4), *feltUint64(94), *feltUint64(55), *feltUint64(18), *feltUint64(92)}}, "key": *feltUint64(1)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(22), *feltUint64(76), *feltUint64(94), *feltUint64(55), *feltUint64(18), *feltUint64(92)}}, "key": *feltUint64(1)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -146,8 +146,26 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newSquashDictInnerFirstIterationHint(ctx.operanders["range_check_ptr"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					// varValueEquals("result", feltUint64(3))(t, ctx)
-					varValueInScopeEquals("current_access_index", feltUint64(94))
+					valueAtAddressEquals(*addr(6), feltUint64(18))(t, ctx)
+					varValueInScopeEquals("current_access_index", feltUint64(18))(t, ctx)
+				},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "range_check_ptr", Kind: fpRelative, Value: feltUint64(6)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(22)}, *feltUint64(1): {*feltUint64(5), *feltUint64(28)}, *feltUint64(2): {*feltUint64(543), *feltUint64(323), *feltUint64(324), *feltUint64(999), *feltUint64(888), *feltUint64(777)}}, "key": *feltUint64(2)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerFirstIterationHint(ctx.operanders["range_check_ptr"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					valueAtAddressEquals(*addr(6), feltUint64(323))(t, ctx)
+					varValueInScopeEquals("current_access_index", feltUint64(323))(t, ctx)
 				},
 			},
 		},

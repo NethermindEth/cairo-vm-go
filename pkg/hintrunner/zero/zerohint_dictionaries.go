@@ -207,7 +207,7 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 				return err
 			}
 
-			return vm.Memory.Write(0, rangeCheckPtrFelt, &currentAccessIndexMv)
+			return vm.Memory.Write(1, rangeCheckPtrFelt, &currentAccessIndexMv)
 		},
 	}
 }

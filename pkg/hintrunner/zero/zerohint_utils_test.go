@@ -77,6 +77,18 @@ func apValueEquals(expected *fp.Element) func(t *testing.T, ctx *hintTestContext
 	}
 }
 
+func valueAtAddressEquals(addr memory.MemoryAddress, expected *fp.Element) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&addr)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !actualFelt.Equal(expected) {
+			t.Fatalf("value mismatch:\nhave: %v\nwant: %v", &actualFelt, expected)
+		}
+	}
+}
+
 func varValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
 		o := ctx.operanders[varName]
