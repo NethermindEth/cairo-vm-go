@@ -180,14 +180,19 @@ func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt hint
 
 			for _, val := range fullPadding {
 				mv := mem.MemoryValueFromInt(val)
-				blake2sPtrEnd, err := blake2sPtrEnd.AddOffset(1)
 				if err != nil {
 					return err
 				}
-				err = vm.Memory.WriteToAddress(&blake2sPtrEnd, &mv)
+				err = vm.Memory.WriteToAddress(blake2sPtrEnd, &mv)
 				if err != nil {
 					return err
 				}
+				temp, err := blake2sPtrEnd.AddOffset(1)
+				if err != nil {
+					return err
+				}
+				*blake2sPtrEnd = temp
+
 			}
 			return nil
 		},
