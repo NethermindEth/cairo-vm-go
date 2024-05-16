@@ -7,6 +7,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -86,6 +87,56 @@ func newSquashDictInnerAssertLenKeysHint() hinter.Hinter {
 
 func createSquashDictInnerAssertLenKeysHinter() (hinter.Hinter, error) {
 	return newSquashDictInnerAssertLenKeysHint(), nil
+}
+
+// SquashDictInnerContinueLoop hint determines if the loop should continue
+// based on remaining access indices
+//
+// `newSquashDictInnerContinueLoopHint` takes 1 operander as argument
+//   - `loopTemps` variable is a struct containing a `should_continue` field
+//
+// `newSquashDictInnerContinueLoopHint`writes 0 or 1 in the `should_continue` field
+// depending on whether the `current_access_indices` array contains items or not
+func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SquashDictInnerContinueLoop",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> ids.loop_temps.should_continue = 1 if current_access_indices else 0
+
+			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			if err != nil {
+				return err
+			}
+
+			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
+			if !ok {
+				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
+			}
+
+			loopTempsAddr, err := loopTemps.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			if len(currentAccessIndices) == 0 {
+				resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
+				return hinter.WriteToNthStructField(vm, loopTempsAddr, resultMemZero, int16(3))
+
+			} else {
+				resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
+				return hinter.WriteToNthStructField(vm, loopTempsAddr, resultMemOne, int16(3))
+			}
+		},
+	}
+}
+
+func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	loopTemps, err := resolver.GetResOperander("loop_temps")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSquashDictInnerContinueLoopHint(loopTemps), nil
 }
 
 // SquashDictInnerAssertLenKeys hint asserts the length of the current
