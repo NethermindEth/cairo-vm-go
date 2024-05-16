@@ -11,7 +11,8 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-// DictNew hint creates a new dictionary
+// DictNew hint creates a new dictionary with its initial content seeded from a scope value "initial_dict"
+// Querying the value of a key which doesn't exist in the dictionary returns an error
 //
 // `newDictNewHint` takes no operander as argument
 func newDictNewHint() hinter.Hinter {
@@ -66,6 +67,7 @@ func createDictNewHinter() (hinter.Hinter, error) {
 }
 
 // DefaultDictNew hint creates a new dictionary with a default value
+// Querying the value of a key which doesn't exist in the dictionary returns the default value
 //
 // `newDefaultDictNewHint` takes 1 operander as argument
 //   - `default_value` variable will be the default value
