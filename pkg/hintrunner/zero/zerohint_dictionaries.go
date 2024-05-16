@@ -206,7 +206,7 @@ func createDictWriteHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 }
 
 // DictUpdate hint updates the value of given key in a dictionary
-// and asserts the previous value of the key before the update
+// and asserts the previous value of the key in the dictionary before the update
 //
 // `newDictUpdateHint` takes 4 operanders as argument
 //   - `dictPtr` variable will be pointer to the dictionary to update
