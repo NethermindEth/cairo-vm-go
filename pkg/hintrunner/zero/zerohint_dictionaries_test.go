@@ -75,6 +75,76 @@ func TestZeroHintDictionaries(t *testing.T) {
 				errCheck: errorTextContains("assertion `len(keys) == 0` failed"),
 			},
 		},
+		"SquashDictInnerContinueLoop": {
+			{
+				operanders: []*hintOperander{
+					{Name: "loop_temps.index_delta_minus1", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.index_delta", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.ptr_delta", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.should_continue", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("current_access_indices", []fp.Element{*feltUint64(1), *feltUint64(2), *feltUint64(3)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerContinueLoopHint(ctx.operanders["loop_temps.index_delta_minus1"])
+				},
+				check: varValueEquals("loop_temps.should_continue", feltInt64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "loop_temps.index_delta_minus1", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.index_delta", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.ptr_delta", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.should_continue", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("current_access_indices", []fp.Element{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerContinueLoopHint(ctx.operanders["loop_temps.index_delta_minus1"])
+				},
+				check: varValueEquals("loop_temps.should_continue", feltInt64(0)),
+			},
+		},
+		"SquashDictInnerSkipLoop": {
+			{
+				operanders: []*hintOperander{
+					{Name: "should_skip_loop", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("current_access_indices", []fp.Element{*feltUint64(1), *feltUint64(2), *feltUint64(3)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerSkipLoopHint(ctx.operanders["should_skip_loop"])
+				},
+				check: varValueEquals("should_skip_loop", feltInt64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "should_skip_loop", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("current_access_indices", []fp.Element{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerSkipLoopHint(ctx.operanders["should_skip_loop"])
+				},
+				check: varValueEquals("should_skip_loop", feltInt64(1)),
+			},
+		},
 		"SquashDictInnerLenAssert": {
 			{
 				operanders: []*hintOperander{},
@@ -154,6 +224,68 @@ func TestZeroHintDictionaries(t *testing.T) {
 					allVarValueInScopeEquals(map[string]any{"keys": []fp.Element{*feltUint64(15), *feltUint64(12), *feltUint64(9), *feltUint64(7), *feltUint64(6)}, "key": *feltUint64((4))})(t, ctx)
 					varValueEquals("next_key", feltUint64(4))(t, ctx)
 				},
+			},
+		},
+		"SquashDictInnerUsedAccessesAssert": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(0)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(0)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerUsedAccessesAssertHint(ctx.operanders["n_used_accesses"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(0)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(1)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerUsedAccessesAssertHint(ctx.operanders["n_used_accesses"])
+				},
+				errCheck: errorTextContains("assertion ids.n_used_accesses == len(access_indices[key]) failed"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(3)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(1)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerUsedAccessesAssertHint(ctx.operanders["n_used_accesses"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(3)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(0)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerUsedAccessesAssertHint(ctx.operanders["n_used_accesses"])
+				},
+				errCheck: errorTextContains("assertion ids.n_used_accesses == len(access_indices[key]) failed"),
 			},
 		},
 	})
