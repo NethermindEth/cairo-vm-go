@@ -139,6 +139,53 @@ func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hi
 	return newSquashDictInnerContinueLoopHint(loopTemps), nil
 }
 
+// SquashDictInnerFirstIteration hint determines if the loop should continue
+// based on remaining access indices
+//
+// `newSquashDictInnerFirstIterationHint` takes 1 operander as argument
+//   - `loopTemps` variable is a struct containing a `should_continue` field
+//
+// `newSquashDictInnerFirstIterationHint`writes 0 or 1 in the `should_continue` field
+// depending on whether the `current_access_indices` array contains items or not
+func newSquashDictInnerFirstIterationHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SquashDictInnerFirstIteration",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> current_access_indices = sorted(access_indices[key])[::-1]
+			//> current_access_index = current_access_indices.pop()
+			//> memory[ids.range_check_ptr] = current_access_index
+
+			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			if err != nil {
+				return err
+			}
+
+			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
+			if !ok {
+				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
+			}
+
+			loopTempsAddr, err := loopTemps.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			if len(currentAccessIndices) == 0 {
+				resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
+				return hinter.WriteToNthStructField(vm, loopTempsAddr, resultMemZero, int16(3))
+
+			} else {
+				resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
+				return hinter.WriteToNthStructField(vm, loopTempsAddr, resultMemOne, int16(3))
+			}
+		},
+	}
+}
+
+func createSquashDictInnerFirstIterationHinter() (hinter.Hinter, error) {
+	return newSquashDictInnerFirstIterationHint(), nil
+}
+
 // SquashDictInnerSkipLoop hint determines if the loop should be skipped
 // based on remaining access indices
 //
