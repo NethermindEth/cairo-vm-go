@@ -84,7 +84,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "loop_temps.should_continue", Kind: apRelative, Value: feltInt64(0)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(1), *feltUint64(2)}, "current_access_index": *feltUint64(2)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(3), *feltUint64(2)}, "current_access_index": *feltUint64(1)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -92,7 +92,9 @@ func TestZeroHintDictionaries(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSquashDictInnerCheckAccessIndexHint(ctx.operanders["loop_temps.index_delta_minus1"])
 				},
-				check: func(t *testing.T, ctx *hintTestContext) {},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					varValueInScopeEquals("current_access_index", *feltUint64(2))(t, ctx)
+				},
 			},
 			{
 				operanders: []*hintOperander{
@@ -102,7 +104,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "loop_temps.should_continue", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(1), *feltUint64(2)}, "current_access_index": *feltUint64(2)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(97), *feltUint64(76), *feltUint64(54), *feltUint64(51), *feltUint64(44), *feltUint64(43)}, "current_access_index": *feltUint64(19)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -110,8 +112,9 @@ func TestZeroHintDictionaries(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSquashDictInnerCheckAccessIndexHint(ctx.operanders["loop_temps.index_delta_minus1"])
 				},
-				check: func(t *testing.T, ctx *hintTestContext) {},
-			},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					varValueInScopeEquals("current_access_index", *feltUint64(43))(t, ctx)
+				}},
 		},
 		"SquashDictInnerContinueLoop": {
 			{
