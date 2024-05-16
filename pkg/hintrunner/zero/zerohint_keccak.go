@@ -161,7 +161,7 @@ func newBlockPermutationHint(keccakStateSizeFelts, keccakPtr hinter.ResOperander
 				return err
 			}
 
-			inputValuesInRange, err := hinter.GetConsecutiveValues(vm, readAddr, int16(keccakStateSize))
+			inputValuesInRange, err := vm.Memory.GetConsecutiveMemoryValues(readAddr, int16(keccakStateSize))
 			if err != nil {
 				return err
 			}
