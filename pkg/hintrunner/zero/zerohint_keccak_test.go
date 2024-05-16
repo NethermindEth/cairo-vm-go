@@ -195,6 +195,8 @@ func TestZeroHintKeccak(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "keccak_ptr", Kind: fpRelative, Value: addr(31)},
+					{Name: "x", Kind: fpRelative, Value: addr(30)},
+
 					{Name: "KECCAK_STATE_SIZE_FELTS", Kind: apRelative, Value: feltUint64(25)},
 					{Name: "data.0", Kind: apRelative, Value: feltUint64(1)},
 					{Name: "data.1", Kind: apRelative, Value: feltUint64(2)},
