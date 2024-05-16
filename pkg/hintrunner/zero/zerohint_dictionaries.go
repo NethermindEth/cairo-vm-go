@@ -59,15 +59,13 @@ func createDefaultDictNewHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	return newDefaultDictNewHint(defaultValue), nil
 }
 
-// DictRead hint reads the result of given key from given dictionary
-// and writes it to value
+// DictRead hint accesses the value of a dictionary for a given key
+// and writes it to a variable
 //
 // `newDictReadHint` takes 3 operanders as argument
 //   - `dictPtr` variable will be pointer to the dictionary to read from
-//   - `key` variable will be the key read from the dictionary
-//   - `value` variable will be the variable to which the result of
-//     the `key` read from the dictionary pointed to by `dictPtr`
-//     will be written to
+//   - `key` variable represents the key we are accessing the dictionary with
+//   - `value` variable will hold the value of the dictionary stored at key after the hint is run
 func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DictRead",
