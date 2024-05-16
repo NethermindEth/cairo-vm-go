@@ -23,10 +23,10 @@ func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hi
 				return err
 			}
 
-			felt := new(f.Element)
-			felt = felt.Sub(n.(*f.Element), &utils.FeltOne)
+			newN := new(f.Element)
+			newN = newN.Sub(n.(*f.Element), &utils.FeltOne)
 
-			if err := ctx.ScopeManager.AssignVariable("n", felt); err != nil {
+			if err := ctx.ScopeManager.AssignVariable("n", newN); err != nil {
 				return err
 			}
 
@@ -37,7 +37,7 @@ func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hi
 			}
 
 			var continueCopyingMv memory.MemoryValue
-			if utils.FeltLt(&utils.FeltZero, felt) {
+			if utils.FeltLt(&utils.FeltZero, newN) {
 				continueCopyingMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
 				continueCopyingMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
