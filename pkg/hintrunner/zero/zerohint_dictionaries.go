@@ -197,6 +197,11 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 			currentAccessIndexField := new(fp.Element).SetUint64(currentAccessIndexUint)
 			currentAccessIndexMv := memory.MemoryValueFromFieldElement(currentAccessIndexField)
 
+			err = ctx.ScopeManager.AssignVariable("current_access_index", currentAccessIndexField)
+			if err != nil {
+				return err
+			}
+
 			rangeCheckPtrFelt, err := hinter.ResolveAsUint64(vm, rangeCheckPtr)
 			if err != nil {
 				return err

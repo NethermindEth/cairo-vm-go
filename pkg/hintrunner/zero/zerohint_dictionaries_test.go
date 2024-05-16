@@ -113,6 +113,44 @@ func TestZeroHintDictionaries(t *testing.T) {
 				check: varValueEquals("loop_temps.should_continue", feltInt64(0)),
 			},
 		},
+		"SquashDictInnerFirstIteration": {
+			{
+				operanders: []*hintOperander{
+					{Name: "range_check_ptr", Kind: fpRelative, Value: feltInt64(50)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(2), *feltUint64(1), *feltUint64(3)}}, "key": *feltUint64(0)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerFirstIterationHint(ctx.operanders["range_check_ptr"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					// varValueEquals("result", feltUint64(3))(t, ctx)
+					varValueInScopeEquals("current_access_index", feltUint64(3))
+				},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "range_check_ptr", Kind: fpRelative, Value: feltInt64(50)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(22), *feltUint64(4), *feltUint64(94), *feltUint64(55), *feltUint64(18), *feltUint64(92)}}, "key": *feltUint64(1)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerFirstIterationHint(ctx.operanders["range_check_ptr"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					// varValueEquals("result", feltUint64(3))(t, ctx)
+					varValueInScopeEquals("current_access_index", feltUint64(94))
+				},
+			},
+		},
 		"SquashDictInnerSkipLoop": {
 			{
 				operanders: []*hintOperander{
