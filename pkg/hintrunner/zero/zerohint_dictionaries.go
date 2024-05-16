@@ -187,6 +187,7 @@ func createSquashDictInnerSkipLoopHinter(resolver hintReferenceResolver) (hinter
 	}
 
 	return newSquashDictInnerSkipLoopHint(shouldSkipLoop), nil
+}
 
 // SquashDictInnerAssertLenKeys hint asserts the length of the current
 // access indices for a given key is zero
