@@ -163,6 +163,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createDefaultDictNewHinter(resolver)
 	case squashDictInnerAssertLenKeys:
 		return createSquashDictInnerAssertLenKeysHinter()
+	case squashDictInnerCheckAccessIndex:
+		return createSquashDictInnerCheckAccessIndexHinter(resolver)
 	case squashDictInnerContinueLoop:
 		return createSquashDictInnerContinueLoopHinter(resolver)
 	case squashDictInnerSkipLoop:

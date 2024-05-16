@@ -111,6 +111,7 @@ const (
 	// ------ Dictionaries hints related code ------
 	defaultDictNewCode                string = "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n\nmemory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)"
 	squashDictInnerAssertLenKeys      string = "assert len(keys) == 0"
+	squashDictInnerCheckAccessIndex   string = "new_access_index = current_access_indices.pop()\nids.loop_temps.index_delta_minus1 = new_access_index - current_access_index - 1\ncurrent_access_index = new_access_index"
 	squashDictInnerContinueLoop       string = "ids.loop_temps.should_continue = 1 if current_access_indices else 0"
 	squashDictInnerSkipLoop           string = "ids.should_skip_loop = 0 if current_access_indices else 1"
 	squashDictInnerLenAssert          string = "assert len(current_access_indices) == 0"

@@ -89,6 +89,74 @@ func createSquashDictInnerAssertLenKeysHinter() (hinter.Hinter, error) {
 	return newSquashDictInnerAssertLenKeysHint(), nil
 }
 
+// SquashDictInnerCheckAccessIndex hint asserts that the length
+// of the `keys` descending list is zero during the squashing process
+//
+// `newSquashDictInnerCheckAccessIndexHint` takes 1 operander as argument
+//   - `loopTemps`
+func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SquashDictInnerCheckAccessIndex",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> new_access_index = current_access_indices.pop()
+			//> ids.loop_temps.index_delta_minus1 = new_access_index - current_access_index - 1
+			//> current_access_index = new_access_index
+
+			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			if err != nil {
+				return err
+			}
+
+			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
+			if !ok {
+				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
+			}
+
+			newAccessIndex, err := utils.Pop(&currentAccessIndices)
+			if err != nil {
+				return err
+			}
+
+			currentAccessIndex_, err := ctx.ScopeManager.GetVariableValue("current_access_index")
+			if err != nil {
+				return err
+			}
+
+			currentAccessIndex, ok := currentAccessIndex_.(fp.Element)
+			if !ok {
+				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
+			}
+
+			err = ctx.ScopeManager.AssignVariable("current_access_index", newAccessIndex)
+			if err != nil {
+				return err
+			}
+
+			loopTempsAddr, err := loopTemps.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			var result fp.Element
+			result.Sub(&newAccessIndex, &currentAccessIndex)
+			result.Sub(&result, &utils.FeltOne)
+
+			resultMem := memory.MemoryValueFromFieldElement(&result)
+
+			return hinter.WriteToNthStructField(vm, loopTempsAddr, resultMem, int16(0))
+		},
+	}
+}
+
+func createSquashDictInnerCheckAccessIndexHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	loopTemps, err := resolver.GetResOperander("loop_temps")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSquashDictInnerCheckAccessIndexHint(loopTemps), nil
+}
+
 // SquashDictInnerContinueLoop hint determines if the loop should continue
 // based on remaining access indices
 //

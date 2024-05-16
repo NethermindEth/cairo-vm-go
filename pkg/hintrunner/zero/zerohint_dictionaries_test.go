@@ -75,6 +75,44 @@ func TestZeroHintDictionaries(t *testing.T) {
 				errCheck: errorTextContains("assertion `len(keys) == 0` failed"),
 			},
 		},
+		"SquashDictInnerCheckAccessIndex": {
+			{
+				operanders: []*hintOperander{
+					{Name: "loop_temps.index_delta_minus1", Kind: uninitialized},
+					{Name: "loop_temps.index_delta", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.ptr_delta", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.should_continue", Kind: apRelative, Value: feltInt64(0)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(1), *feltUint64(2)}, "current_access_index": *feltUint64(2)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerCheckAccessIndexHint(ctx.operanders["loop_temps.index_delta_minus1"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "loop_temps.index_delta_minus1", Kind: uninitialized},
+					{Name: "loop_temps.index_delta", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.ptr_delta", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.should_continue", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(1), *feltUint64(2)}, "current_access_index": *feltUint64(2)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerCheckAccessIndexHint(ctx.operanders["loop_temps.index_delta_minus1"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {},
+			},
+		},
 		"SquashDictInnerContinueLoop": {
 			{
 				operanders: []*hintOperander{
