@@ -9,6 +9,44 @@ import (
 
 func TestZeroHintDictionaries(t *testing.T) {
 	runHinterTests(t, map[string][]hintTestCase{
+		"DefaultDictNew": {
+			{
+				operanders: []*hintOperander{
+					{Name: "default_value", Kind: apRelative, Value: feltUint64(12345)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDefaultDictNewHint(ctx.operanders["default_value"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					dictionaryManagerValue, err := ctx.runnerContext.ScopeManager.GetVariableValue("__dict_manager")
+					if err != nil {
+						t.Fatalf("__dict_manager missing")
+					}
+
+					dictionaryManager := dictionaryManagerValue.(hinter.ZeroDictionaryManager)
+					apAddr := ctx.vm.Context.AddressAp()
+					dictAddr, err := ctx.vm.Memory.ReadFromAddressAsAddress(&apAddr)
+					if err != nil {
+						t.Fatalf("error reading dictionary address from ap")
+					}
+
+					key := fp.NewElement(100)
+					value, err := dictionaryManager.At(dictAddr, key)
+					if err != nil {
+						t.Fatalf("error fetching value from dictionary")
+					}
+					valueFelt, err := value.FieldElement()
+					if err != nil {
+						t.Fatalf("mv: %s cannot be converted to felt", value)
+					}
+					expectedValueFelt := fp.NewElement(12345)
+
+					if !valueFelt.Equal(&expectedValueFelt) {
+						t.Fatalf("at key: %v expected: %s actual: %s", key, &expectedValueFelt, valueFelt)
+					}
+				},
+			},
+		},
 		"SquashDictInnerAssertLenKeys": {
 			{
 				operanders: []*hintOperander{},
@@ -35,6 +73,44 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newSquashDictInnerAssertLenKeysHint()
 				},
 				errCheck: errorTextContains("assertion `len(keys) == 0` failed"),
+			},
+		},
+		"SquashDictInnerContinueLoop": {
+			{
+				operanders: []*hintOperander{
+					{Name: "loop_temps.index_delta_minus1", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.index_delta", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.ptr_delta", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.should_continue", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("current_access_indices", []fp.Element{*feltUint64(1), *feltUint64(2), *feltUint64(3)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerContinueLoopHint(ctx.operanders["loop_temps.index_delta_minus1"])
+				},
+				check: varValueEquals("loop_temps.should_continue", feltInt64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "loop_temps.index_delta_minus1", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.index_delta", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.ptr_delta", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "loop_temps.should_continue", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("current_access_indices", []fp.Element{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictInnerContinueLoopHint(ctx.operanders["loop_temps.index_delta_minus1"])
+				},
+				check: varValueEquals("loop_temps.should_continue", feltInt64(0)),
 			},
 		},
 		"SquashDictInnerLenAssert": {
