@@ -209,7 +209,7 @@ func createDictWriteHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 // DictUpdate hint updates the value of given key for given dictionary
 // while also asserting the previous value of the key
 //
-// `newDictUpdateHint` takes 4 operander as argument
+// `newDictUpdateHint` takes 4 operanders as argument
 //   - `dictPtr` variable will be pointer to the dictionary to update
 //   - `key` variable will be the key whose value is updated in the dictionary
 //   - `newValue` variable will be the new value for given `key` in the dictionary
