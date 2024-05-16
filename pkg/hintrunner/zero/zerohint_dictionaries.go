@@ -125,13 +125,13 @@ func createDictReadHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newDictReadHint(dictPtr, key, value), nil
 }
 
-// DictWrite hint updates the value of given key for given dictionary
-// while also writing the prev_value of the key to memory
+// DictWrite hint writes a value for a given key in a dictionary
+// and writes to memory the previous value for the key in the dictionary
 //
 // `newDictWriteHint` takes 3 operanders as argument
 //   - `dictPtr` variable will be pointer to the dictionary to update
 //   - `key` variable will be the key whose value is updated in the dictionary
-//   - `newValue` variable will be the new value for given `key` in the dictionary
+//   - `newValue` variable will be the new value for given key in the dictionary
 func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DictWrite",
@@ -163,7 +163,7 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 			}
 
 			//> ids.dict_ptr.prev_value = dict_tracker.data[ids.key]
-			//> # dict_ptr porints to a DictAccess
+			//> # dict_ptr points to a DictAccess
 			//> struct DictAccess {
 			//> 	key: felt,
 			//> 	prev_value: felt,
