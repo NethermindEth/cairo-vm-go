@@ -113,7 +113,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				check: varValueEquals("loop_temps.should_continue", feltInt64(0)),
 			},
 		},
-    "SquashDictInnerSkipLoop": {
+		"SquashDictInnerSkipLoop": {
 			{
 				operanders: []*hintOperander{
 					{Name: "should_skip_loop", Kind: uninitialized},
@@ -143,8 +143,8 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newSquashDictInnerSkipLoopHint(ctx.operanders["should_skip_loop"])
 				},
 				check: varValueEquals("should_skip_loop", feltInt64(1)),
-      },
-    },
+			},
+		},
 		"SquashDictInnerLenAssert": {
 			{
 				operanders: []*hintOperander{},
