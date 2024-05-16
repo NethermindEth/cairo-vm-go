@@ -139,6 +139,56 @@ func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hi
 	return newSquashDictInnerContinueLoopHint(loopTemps), nil
 }
 
+// SquashDictInnerSkipLoop hint determines if the loop should be skipped
+// based on remaining access indices
+//
+// `newSquashDictInnerSkipLoopHint` takes 1 operander as argument
+//   - `should_skip_loop` variable will be set to 0 or 1
+//
+// `newSquashDictInnerSkipLoopHint` writes 0 or 1 in the `should_skip_loop`variable
+// depending on whether the `current_access_indices` array contains items or not
+func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SquashDictInnerSkipLoop",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> ids.should_skip_loop = 0 if current_access_indices else 1
+
+			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			if err != nil {
+				return err
+			}
+
+			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
+			if !ok {
+				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
+			}
+
+			shouldSkipLoopAddr, err := shouldSkipLoop.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			if len(currentAccessIndices) == 0 {
+				resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
+				return vm.Memory.WriteToAddress(&shouldSkipLoopAddr, &resultMemOne)
+
+			} else {
+				resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
+				return vm.Memory.WriteToAddress(&shouldSkipLoopAddr, &resultMemZero)
+			}
+		},
+	}
+}
+
+func createSquashDictInnerSkipLoopHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	shouldSkipLoop, err := resolver.GetResOperander("should_skip_loop")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSquashDictInnerSkipLoopHint(shouldSkipLoop), nil
+}
+
 // SquashDictInnerAssertLenKeys hint asserts the length of the current
 // access indices for a given key is zero
 // `current_access_indices` is a reversed order list of access indices
