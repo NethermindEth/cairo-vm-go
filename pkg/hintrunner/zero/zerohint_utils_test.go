@@ -10,7 +10,6 @@ import (
 	runnerutil "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
@@ -67,7 +66,7 @@ func feltAdd(x, y *fp.Element) *fp.Element {
 
 func apValueEquals(expected *fp.Element) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
-		actual := runnerutil.ReadFrom(ctx.vm, VM.ExecutionSegment, ctx.vm.Context.Ap)
+		actual := runnerutil.ReadFrom(ctx.vm, vm.ExecutionSegment, ctx.vm.Context.Ap)
 		actualFelt, err := actual.FieldElement()
 		if err != nil {
 			t.Fatal(err)
