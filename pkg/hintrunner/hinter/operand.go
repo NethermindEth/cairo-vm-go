@@ -231,25 +231,6 @@ func (v Immediate) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	return v
 }
 
-func GetConsecutiveValues(vm *VM.VirtualMachine, addr mem.MemoryAddress, size int16) ([]mem.MemoryValue, error) {
-	values := make([]mem.MemoryValue, size)
-	for i := int16(0); i < size; i++ {
-		nAddr, err := addr.AddOffset(i)
-		if err != nil {
-			return nil, err
-		}
-
-		v, err := vm.Memory.ReadFromAddress(&nAddr)
-		if err != nil {
-			return nil, err
-		}
-
-		values[i] = v
-	}
-
-	return values, nil
-}
-
 func WriteToNthStructField(vm *VM.VirtualMachine, addr mem.MemoryAddress, value mem.MemoryValue, field int16) error {
 	nAddr, err := addr.AddOffset(field)
 	if err != nil {
