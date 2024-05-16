@@ -102,7 +102,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "loop_temps.index_delta_minus1", Kind: uninitialized},
 					{Name: "loop_temps.index_delta", Kind: apRelative, Value: feltInt64(0)},
 					{Name: "loop_temps.ptr_delta", Kind: apRelative, Value: feltInt64(0)},
-					{Name: "loop_temps.should_continue", Kind: uninitialized},
+					{Name: "loop_temps.should_continue", Kind: apRelative, Value: feltInt64(0)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(97), *feltUint64(76), *feltUint64(54), *feltUint64(51), *feltUint64(44), *feltUint64(43)}, "current_access_index": *feltUint64(19)})
