@@ -92,7 +92,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSqrtHinter(resolver)
 	case unsignedDivRemCode:
 		return createUnsignedDivRemHinter(resolver)
-		// Uint256 hints
+	// Uint256 hints
 	case uint256AddCode:
 		return createUint256AddHinter(resolver, false)
 	case uint256AddLowCode:
@@ -120,32 +120,36 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createVerifyZeroHinter(resolver)
 	case divModNPackedDivmodV1Code:
 		return createDivModNPackedDivmodV1Hinter(resolver)
-		// EC hints
+	// EC hints
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)
 	case nondetBigint3V1Code:
 		return createNondetBigint3V1Hinter(resolver)
-	case fastEcAddAssignNewYCode:
-		return createFastEcAddAssignNewYHinter()
 	case fastEcAddAssignNewXCode:
 		return createFastEcAddAssignNewXHinter(resolver)
+	case fastEcAddAssignNewYCode:
+		return createFastEcAddAssignNewYHinter()
 	case ecDoubleSlopeV1Code:
 		return createEcDoubleSlopeV1Hinter(resolver)
+	case reduceV1Code:
+		return createReduceV1Hinter(resolver)
 	case computeSlopeV1Code:
 		return createComputeSlopeV1Hinter(resolver)
 	case ecDoubleAssignNewXV1:
 		return createEcDoubleAssignNewXV1Hinter(resolver)
-		// Blake hints
+	case ecDoubleAssignNewYV1:
+		return createEcDoubleAssignNewYV1Hinter()
+	// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
 	case blake2sAddUint256Code:
 		return createBlake2sAddUint256Hinter(resolver, false)
-		// Keccak hints
+	// Keccak hints
 	case keccakWriteArgsCode:
 		return createKeccakWriteArgsHinter(resolver)
 	case blockPermutationCode:
 		return createBlockPermutationHinter(resolver)
-		// Usort hints
+	// Usort hints
 	case usortEnterScopeCode:
 		return createUsortEnterScopeHinter()
 	case usortVerifyMultiplicityAssertCode:
@@ -154,10 +158,24 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUsortVerifyHinter(resolver)
 	case usortVerifyMultiplicityBodyCode:
 		return createUsortVerifyMultiplicityBodyHinter(resolver)
-		// Dictionaries hints
+	case usortBodyCode:
+		return createUsortBodyHinter(resolver)
+	// Dictionaries hints
+	case defaultDictNewCode:
+		return createDefaultDictNewHinter(resolver)
 	case squashDictInnerAssertLenKeys:
 		return createSquashDictInnerAssertLenKeysHinter()
-		// Other hints
+	case squashDictInnerContinueLoop:
+		return createSquashDictInnerContinueLoopHinter(resolver)
+	case squashDictInnerSkipLoop:
+		return createSquashDictInnerSkipLoopHinter(resolver)
+	case squashDictInnerLenAssert:
+		return createSquashDictInnerLenAssertHinter()
+	case squashDictInnerNextKey:
+		return createSquashDictInnerNextKeyHinter(resolver)
+	case squashDictInnerUsedAccessesAssert:
+		return createSquashDictInnerUsedAccessesAssertHinter(resolver)
+	// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter()
 	case vmEnterScopeCode:
@@ -169,7 +187,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case testAssignCode:
 		return createTestAssignHinter(resolver)
 	default:
-		return nil, fmt.Errorf("Not identified hint")
+		return nil, fmt.Errorf("not identified hint")
 	}
 }
 

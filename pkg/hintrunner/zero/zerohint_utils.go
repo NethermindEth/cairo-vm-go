@@ -1,6 +1,8 @@
 package zero
 
 import (
+	"math/big"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -44,4 +46,23 @@ func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Elem
 	}
 
 	return low, high, nil
+}
+
+// This helper function is used in FastEcAddAssignNewY and
+// EcDoubleAssignNewYV1 hints to compute the y-coordinate of
+// a point on an elliptic curve
+//
+// ComputeYCoordinate returns `valueBig` which is the result of
+// the computation: (slope * (x - new_x) - y) % SECP_P
+func ComputeYCoordinate(slopeBig *big.Int, xBig *big.Int, new_xBig *big.Int, yBig *big.Int, secPBig *big.Int) *big.Int {
+	new_yBig := new(big.Int)
+	new_yBig.Sub(xBig, new_xBig)
+	new_yBig.Mul(new_yBig, slopeBig)
+	new_yBig.Sub(new_yBig, yBig)
+	new_yBig.Mod(new_yBig, secPBig)
+
+	valueBig := new(big.Int)
+	valueBig.Set(new_yBig)
+
+	return valueBig
 }
