@@ -62,7 +62,7 @@ func createDefaultDictNewHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 // DictRead hint reads the result of given key from given dictionary
 // and writes it to value
 //
-// `newDictReadHint` takes 3 operander as argument
+// `newDictReadHint` takes 3 operanders as argument
 //   - `dictPtr` variable will be pointer to the dictionary to read from
 //   - `key` variable will be the key read from the dictionary
 //   - `value` variable will be the variable to which the result of
