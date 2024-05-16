@@ -2,6 +2,7 @@ package zero
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -139,15 +140,16 @@ func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hi
 	return newSquashDictInnerContinueLoopHint(loopTemps), nil
 }
 
-// SquashDictInnerFirstIteration hint determines if the loop should continue
-// based on remaining access indices
+// SquashDictInnerFirstIteration hint sets up the first iteration
+// of a loop for dictionary squashing, extracting `current_access_index`
+// from the `current_access_indices` descending list
 //
 // `newSquashDictInnerFirstIterationHint` takes 1 operander as argument
-//   - `loopTemps` variable is a struct containing a `should_continue` field
+//   - `rangeCheckPtr` is the offset in memory where to write `current_access_index`
 //
-// `newSquashDictInnerFirstIterationHint`writes 0 or 1 in the `should_continue` field
-// depending on whether the `current_access_indices` array contains items or not
-func newSquashDictInnerFirstIterationHint() hinter.Hinter {
+// `newSquashDictInnerFirstIterationHint`writes `current_access_index` at `rangeCheckPtr`
+// offset in the execution segment of memory
+func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SquashDictInnerFirstIteration",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -155,35 +157,63 @@ func newSquashDictInnerFirstIterationHint() hinter.Hinter {
 			//> current_access_index = current_access_indices.pop()
 			//> memory[ids.range_check_ptr] = current_access_index
 
-			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			key_, err := ctx.ScopeManager.GetVariableValue("key")
 			if err != nil {
 				return err
 			}
 
-			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
+			accessIndices_, err := ctx.ScopeManager.GetVariableValue("access_indices")
+			if err != nil {
+				return err
+			}
+
+			accessIndices, ok := accessIndices_.(map[fp.Element][]fp.Element)
 			if !ok {
-				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
+				return fmt.Errorf("cannot cast access_indices_ to a mapping of felts")
 			}
 
-			loopTempsAddr, err := loopTemps.GetAddress(vm)
+			key, ok := key_.(fp.Element)
+			if !ok {
+				return fmt.Errorf("cannot cast key_ to felt")
+			}
+
+			accessIndicesAtKey := accessIndices[key]
+
+			var accessIndicesAtKeyInt []int
+
+			for _, el := range accessIndicesAtKey {
+				// Convertir chaque élément en un entier en utilisant la méthode ToUint64().
+				accessIndicesAtKeyInt = append(accessIndicesAtKeyInt, int(el.Uint64()))
+			}
+
+			sort.Sort(sort.Reverse(sort.IntSlice(accessIndicesAtKeyInt)))
+
+			currentAccessIndex, err := utils.Pop(&accessIndicesAtKeyInt)
 			if err != nil {
 				return err
 			}
 
-			if len(currentAccessIndices) == 0 {
-				resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
-				return hinter.WriteToNthStructField(vm, loopTempsAddr, resultMemZero, int16(3))
+			currentAccessIndexUint := uint64(currentAccessIndex)
+			currentAccessIndexField := new(fp.Element).SetUint64(currentAccessIndexUint)
+			currentAccessIndexMv := memory.MemoryValueFromFieldElement(currentAccessIndexField)
 
-			} else {
-				resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
-				return hinter.WriteToNthStructField(vm, loopTempsAddr, resultMemOne, int16(3))
+			rangeCheckPtrFelt, err := hinter.ResolveAsUint64(vm, rangeCheckPtr)
+			if err != nil {
+				return err
 			}
+
+			return vm.Memory.Write(1, rangeCheckPtrFelt, &currentAccessIndexMv)
 		},
 	}
 }
 
-func createSquashDictInnerFirstIterationHinter() (hinter.Hinter, error) {
-	return newSquashDictInnerFirstIterationHint(), nil
+func createSquashDictInnerFirstIterationHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+
+	rangeCheckPtr, err := resolver.GetResOperander("range_check_ptr")
+	if err != nil {
+		return nil, err
+	}
+	return newSquashDictInnerFirstIterationHint(rangeCheckPtr), nil
 }
 
 // SquashDictInnerSkipLoop hint determines if the loop should be skipped
@@ -336,12 +366,12 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 		Name: "SquashDictInnerUsedAccessesAssert",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> assert ids.n_used_accesses == len(access_indices[key])
-			access_indices_, err := ctx.ScopeManager.GetVariableValue("access_indices")
+			accessIndices_, err := ctx.ScopeManager.GetVariableValue("access_indices")
 			if err != nil {
 				return err
 			}
 
-			access_indices, ok := access_indices_.(map[fp.Element][]fp.Element)
+			accessIndices, ok := accessIndices_.(map[fp.Element][]fp.Element)
 			if !ok {
 				return fmt.Errorf("cannot cast access_indices_ to a mapping of felts")
 			}
@@ -356,7 +386,7 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 				return fmt.Errorf("cannot cast key_ to felt")
 			}
 
-			accessIndicesAtKeyLen := uint64(len(access_indices[key]))
+			accessIndicesAtKeyLen := uint64(len(accessIndices[key]))
 
 			nUsedAccesses, err := hinter.ResolveAsUint64(vm, nUsedAccesses)
 			if err != nil {
