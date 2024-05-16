@@ -89,11 +89,15 @@ func createSquashDictInnerAssertLenKeysHinter() (hinter.Hinter, error) {
 	return newSquashDictInnerAssertLenKeysHint(), nil
 }
 
-// SquashDictInnerCheckAccessIndex hint asserts that the length
-// of the `keys` descending list is zero during the squashing process
+// SquashDictInnerCheckAccessIndex hint updates the access index
+// during the dictionary squashing process
 //
 // `newSquashDictInnerCheckAccessIndexHint` takes 1 operander as argument
-//   - `loopTemps`
+//   - `loopTemps` variable is a struct containing a `index_delta_minus1` field
+//
+// `newSquashDictInnerCheckAccessIndexHint` writes to the first field of the `loop_temps`
+// struct the result of `new_access_index - current_access_index - 1` and assigns
+// `new_access_index` to `current_access_index` in the scope
 func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SquashDictInnerCheckAccessIndex",
