@@ -79,6 +79,17 @@ Integration tests are run with:
 make integration
 ```
 
+Integration tests are run with filters in the following two methods, with the first method having higher priority.
+
+```bash
+#1) set global environment variable `INTEGRATION_TESTS_FILTERS`
+export INTEGRATION_TESTS_FILTERS=fib,alloc
+make integration
+
+#2) set by editing `INTEGRATION_TESTS_FILTERS=` in the `./integration_tests/.env` file
+make integration
+```
+
 If you want to execute all tests of the project:
 
 ```bash
