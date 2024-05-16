@@ -119,7 +119,6 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "new_value", Kind: apRelative, Value: feltUint64(4)},
 					{Name: "prev_value", Kind: apRelative, Value: feltUint64(1)},
 					{Name: "dict_ptr", Kind: apRelative, Value: addrWithSegment(2, 0)},
-					{Name: "dict_ptr1", Kind: apRelative, Value: addrWithSegment(2, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					dictionaryManager := hinter.NewZeroDictionaryManager()
