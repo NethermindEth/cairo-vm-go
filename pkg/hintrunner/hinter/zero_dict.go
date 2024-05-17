@@ -14,6 +14,8 @@ type ZeroDictionary struct {
 	data map[f.Element]mem.MemoryValue
 	// Default value for key not present in the dictionary
 	defaultValue mem.MemoryValue
+	// first free offset in memory segment of dictionary
+	freeOffset uint64
 }
 
 // Gets the memory value at certain key
@@ -30,6 +32,11 @@ func (d *ZeroDictionary) At(key f.Element) (mem.MemoryValue, error) {
 // Given a key and a value, it sets the value at the given key
 func (d *ZeroDictionary) Set(key f.Element, value mem.MemoryValue) {
 	d.data[key] = value
+}
+
+// Given a incrementBy value, it increments the freeOffset field of dictionary by it
+func (d *ZeroDictionary) IncrementFreeOffset(freeOffset uint64) {
+	d.freeOffset += freeOffset
 }
 
 // Used to manage dictionaries creation
@@ -52,6 +59,7 @@ func (dm *ZeroDictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.Memory
 	dm.dictionaries[newDictAddr.SegmentIndex] = ZeroDictionary{
 		data:         make(map[f.Element]mem.MemoryValue),
 		defaultValue: mem.UnknownValue,
+		freeOffset:   0,
 	}
 	return newDictAddr
 }
@@ -65,6 +73,7 @@ func (dm *ZeroDictionaryManager) NewDefaultDictionary(vm *VM.VirtualMachine, def
 	dm.dictionaries[newDefaultDictAddr.SegmentIndex] = ZeroDictionary{
 		data:         make(map[f.Element]mem.MemoryValue),
 		defaultValue: defaultValue,
+		freeOffset:   0,
 	}
 	return newDefaultDictAddr
 }
@@ -92,6 +101,15 @@ func (dm *ZeroDictionaryManager) At(dictAddr mem.MemoryAddress, key f.Element) (
 func (dm *ZeroDictionaryManager) Set(dictAddr mem.MemoryAddress, key f.Element, value mem.MemoryValue) error {
 	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
 		dict.Set(key, value)
+		return nil
+	}
+	return fmt.Errorf("no dictionary at address: %s", dictAddr)
+}
+
+// Given a memory address and a incrementBy, it increments the freeOffset field of dictionary by it.
+func (dm *ZeroDictionaryManager) IncrementFreeOffset(dictAddr mem.MemoryAddress, freeOffset uint64) error {
+	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
+		dict.IncrementFreeOffset(freeOffset)
 		return nil
 	}
 	return fmt.Errorf("no dictionary at address: %s", dictAddr)
