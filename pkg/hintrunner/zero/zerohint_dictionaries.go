@@ -8,7 +8,6 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 // DefaultDictNew hint creates a new dictionary with a default value
@@ -29,6 +28,59 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 			//> if '__dict_manager' not in globals():
 			//> 	from starkware.cairo.common.dict import DictManager
 			//> 	__dict_manager = DictManager()
+
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
+			if !ok {
+				dictionaryManager = hinter.NewZeroDictionaryManager()
+				err := ctx.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
+				if err != nil {
+					return err
+				}
+			}
+
+			//> memory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)
+			defaultValue, err := hinter.ResolveAsFelt(vm, defaultValue)
+			if err != nil {
+				return err
+			}
+
+			defaultValueMv := memory.MemoryValueFromFieldElement(defaultValue)
+			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, defaultValueMv)
+			newDefaultDictionaryAddrMv := memory.MemoryValueFromMemoryAddress(&newDefaultDictionaryAddr)
+			apAddr := vm.Context.AddressAp()
+
+			return vm.Memory.WriteToAddress(&apAddr, &newDefaultDictionaryAddrMv)
+		},
+	}
+}
+
+func createDefaultDictNewHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	defaultValue, err := resolver.GetResOperander("default_value")
+	if err != nil {
+		return nil, err
+	}
+
+	return newDefaultDictNewHint(defaultValue), nil
+}
+
+// DictSquashCopyDict hint prepares arguments for creating a new dictionary
+// by copying the existing one in the context of squashing
+//
+// `newDictSquashCopyDictHint` takes 1 operander as argument
+//   - `dict_accesses_end` variable is
+func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DictSquashCopyDict",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> # Prepare arguments for dict_new. In particular, the same dictionary values should be copied
+			//> # to the new (squashed) dictionary.
+			//> vm_enter_scope({
+			//> 	# Make __dict_manager accessible.
+			//> 	'__dict_manager': __dict_manager,
+			//> 	# Create a copy of the dict, in case it changes in the future.
+			//> 	'initial_dict': dict(__dict_manager.get_dict(ids.dict_accesses_end)),
+			//> })
+
 			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
 			if !ok {
 				dictionaryManager = hinter.NewZeroDictionaryManager()
@@ -52,12 +104,13 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 	}
 }
 
-func createDefaultDictNewHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	defaultValue, err := resolver.GetResOperander("default_value")
+func createDictSquashCopyDictHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	dictAccessesEnd, err := resolver.GetResOperander("dict_accesses_end")
 	if err != nil {
 		return nil, err
 	}
-	return newDefaultDictNewHint(defaultValue), nil
+
+	return newDictSquashCopyDictHint(dictAccessesEnd), nil
 }
 
 // SquashDictInnerAssertLenKeys hint asserts that the length
@@ -75,7 +128,7 @@ func newSquashDictInnerAssertLenKeysHint() hinter.Hinter {
 				return err
 			}
 
-			keys := keys_.([]f.Element)
+			keys := keys_.([]fp.Element)
 			if len(keys) != 0 {
 				return fmt.Errorf("assertion `len(keys) == 0` failed")
 			}
@@ -121,7 +174,6 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hi
 			if len(currentAccessIndices) == 0 {
 				resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
 				return hinter.WriteToNthStructField(vm, loopTempsAddr, resultMemZero, int16(3))
-
 			} else {
 				resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
 				return hinter.WriteToNthStructField(vm, loopTempsAddr, resultMemOne, int16(3))
@@ -171,7 +223,6 @@ func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.ResOperander) hinter.H
 			if len(currentAccessIndices) == 0 {
 				resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
 				return vm.Memory.WriteToAddress(&shouldSkipLoopAddr, &resultMemOne)
-
 			} else {
 				resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
 				return vm.Memory.WriteToAddress(&shouldSkipLoopAddr, &resultMemZero)
@@ -207,7 +258,7 @@ func newSquashDictInnerLenAssertHint() hinter.Hinter {
 				return err
 			}
 
-			currentAccessIndices := currentAccessIndices_.([]f.Element)
+			currentAccessIndices := currentAccessIndices_.([]fp.Element)
 			if len(currentAccessIndices) != 0 {
 				return fmt.Errorf("assertion `len(current_access_indices) == 0` failed")
 			}
@@ -238,7 +289,7 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			keys := keys_.([]f.Element)
+			keys := keys_.([]fp.Element)
 			if len(keys) == 0 {
 				return fmt.Errorf("no keys left but remaining_accesses > 0")
 			}
@@ -289,6 +340,7 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 		Name: "SquashDictInnerUsedAccessesAssert",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> assert ids.n_used_accesses == len(access_indices[key])
+
 			access_indices_, err := ctx.ScopeManager.GetVariableValue("access_indices")
 			if err != nil {
 				return err

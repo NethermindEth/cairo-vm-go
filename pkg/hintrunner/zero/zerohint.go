@@ -161,6 +161,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	// Dictionaries hints
 	case defaultDictNewCode:
 		return createDefaultDictNewHinter(resolver)
+	case dictSquashCopyDict:
+		return createDictSquashCopyDictHinter(resolver)
 	case squashDictInnerAssertLenKeys:
 		return createSquashDictInnerAssertLenKeysHinter()
 	case squashDictInnerContinueLoop:
@@ -221,6 +223,7 @@ func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 		if err != nil {
 			return resolver, err
 		}
+
 		param = param.ApplyApTracking(hint.FlowTrackingData.ApTracking, reference.ApTrackingData)
 		if err := resolver.AddReference(referenceName, param); err != nil {
 			return resolver, err
@@ -252,5 +255,6 @@ func createTestAssignHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 			return vm.Memory.WriteToAddress(&apAddr, &v)
 		},
 	}
+
 	return h, nil
 }
