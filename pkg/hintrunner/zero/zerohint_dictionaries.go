@@ -81,25 +81,6 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 			//> 	'initial_dict': dict(__dict_manager.get_dict(ids.dict_accesses_end)),
 			//> })
 
-			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
-			if !ok {
-				dictionaryManager = hinter.NewZeroDictionaryManager()
-				err := ctx.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
-				if err != nil {
-					return err
-				}
-			}
-
-			//> memory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)
-			defaultValue, err := hinter.ResolveAsFelt(vm, defaultValue)
-			if err != nil {
-				return err
-			}
-			defaultValueMv := memory.MemoryValueFromFieldElement(defaultValue)
-			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, defaultValueMv)
-			newDefaultDictionaryAddrMv := memory.MemoryValueFromMemoryAddress(&newDefaultDictionaryAddr)
-			apAddr := vm.Context.AddressAp()
-			return vm.Memory.WriteToAddress(&apAddr, &newDefaultDictionaryAddrMv)
 		},
 	}
 }
