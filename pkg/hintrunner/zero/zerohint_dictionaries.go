@@ -179,35 +179,23 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 
 			accessIndicesAtKey := accessIndices[key]
 
-			var accessIndicesAtKeyInt []int
+			sort.Slice(accessIndicesAtKey, func(i, j int) bool {
+				return accessIndicesAtKey[i].Cmp(&accessIndicesAtKey[j]) > 0
+			})
 
-			for _, el := range accessIndicesAtKey {
-				accessIndicesAtKeyInt = append(accessIndicesAtKeyInt, int(el.Uint64()))
-			}
-
-			sort.Sort(sort.Reverse(sort.IntSlice(accessIndicesAtKeyInt)))
-
-			currentAccessIndex, err := utils.Pop(&accessIndicesAtKeyInt)
+			currentAccessIndex, err := utils.Pop(&accessIndicesAtKey)
 			if err != nil {
 				return err
 			}
 
-			currentAccessIndexUint := uint64(currentAccessIndex)
-			currentAccessIndexField := new(fp.Element).SetUint64(currentAccessIndexUint)
-			currentAccessIndexMv := memory.MemoryValueFromFieldElement(currentAccessIndexField)
+			currentAccessIndexMv := memory.MemoryValueFromFieldElement(&currentAccessIndex)
 
-			var newaccessIndicesAtKey []fp.Element
-			for _, el := range accessIndicesAtKeyInt {
-				elUint64 := uint64(el)
-				newaccessIndicesAtKey = append(newaccessIndicesAtKey, *(new(fp.Element).SetUint64(elUint64)))
-			}
-
-			err = ctx.ScopeManager.AssignVariable("current_access_indices", newaccessIndicesAtKey)
+			err = ctx.ScopeManager.AssignVariable("current_access_indices", accessIndicesAtKey)
 			if err != nil {
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("current_access_index", *currentAccessIndexField)
+			err = ctx.ScopeManager.AssignVariable("current_access_index", currentAccessIndex)
 			if err != nil {
 				return err
 			}
