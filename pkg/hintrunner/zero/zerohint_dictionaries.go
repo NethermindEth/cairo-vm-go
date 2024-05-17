@@ -93,11 +93,12 @@ func createSquashDictInnerAssertLenKeysHinter() (hinter.Hinter, error) {
 // during the dictionary squashing process
 //
 // `newSquashDictInnerCheckAccessIndexHint` takes 1 operander as argument
-//   - `loopTemps` variable is a struct containing a `index_delta_minus1` field
+//   - `loopTemps` variable is a struct containing `index_delta_minus1` as
+//     a first field
 //
-// `newSquashDictInnerCheckAccessIndexHint` writes to the first field of the `loop_temps`
-// struct the result of `new_access_index - current_access_index - 1` and assigns
-// `new_access_index` to `current_access_index` in the scope
+// `newSquashDictInnerCheckAccessIndexHint` writes to the first field `index_delta_minus1`
+// of the `loop_temps` struct the result of `new_access_index - current_access_index - 1`
+// and assigns `new_access_index` to `current_access_index` in the scope
 func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SquashDictInnerCheckAccessIndex",
@@ -147,6 +148,8 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 
 			resultMem := memory.MemoryValueFromFieldElement(&result)
 
+			// We use 0 as offset for `WriteToNthStructField` function as we write
+			// to the first field of the `loop_temps` struct
 			return hinter.WriteToNthStructField(vm, loopTempsAddr, resultMem, int16(0))
 		},
 	}
