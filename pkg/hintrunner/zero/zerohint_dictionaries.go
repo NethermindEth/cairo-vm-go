@@ -81,7 +81,7 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 			//> 	'initial_dict': dict(__dict_manager.get_dict(ids.dict_accesses_end)),
 			//> })
 
-			dictManager, err := ctx.ScopeManager.GetVariableValue("__dict_manager")
+			dictionaryManager, err := ctx.ScopeManager.GetVariableValue("__dict_manager")
 			if err != nil {
 				return err
 			}
@@ -91,7 +91,7 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 				return err
 			}
 
-			ctx.ScopeManager.EnterScope(map[string]any{"__dict_manager": dictManager, "initial_dict": 0})
+			ctx.ScopeManager.EnterScope(map[string]any{"__dict_manager": dictionaryManager, "initial_dict": dictAccessesEnd_})
 
 			return nil
 		},
