@@ -110,6 +110,7 @@ const (
 
 	// ------ Dictionaries hints related code ------
 	defaultDictNewCode                string = "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n\nmemory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)"
+	dictReadCode                      string = "dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ndict_tracker.current_ptr += ids.DictAccess.SIZE\nids.value = dict_tracker.data[ids.key]"
 	squashDictInnerAssertLenKeys      string = "assert len(keys) == 0"
 	squashDictInnerContinueLoop       string = "ids.loop_temps.should_continue = 1 if current_access_indices else 0"
 	squashDictInnerSkipLoop           string = "ids.should_skip_loop = 0 if current_access_indices else 1"
@@ -118,9 +119,10 @@ const (
 	squashDictInnerUsedAccessesAssert string = "assert ids.n_used_accesses == len(access_indices[key])"
 
 	// ------ Other hints related code ------
-	allocSegmentCode     string = "memory[ap] = segments.add()"
-	memcpyEnterScopeCode string = "vm_enter_scope({'n': ids.len})"
-	vmEnterScopeCode     string = "vm_enter_scope()"
-	vmExitScopeCode      string = "vm_exit_scope()"
-	setAddCode           string = "assert ids.elm_size > 0\nassert ids.set_ptr <= ids.set_end_ptr\nelm_list = memory.get_range(ids.elm_ptr, ids.elm_size)\nfor i in range(0, ids.set_end_ptr - ids.set_ptr, ids.elm_size):\n    if memory.get_range(ids.set_ptr + i, ids.elm_size) == elm_list:\n        ids.index = i // ids.elm_size\n        ids.is_elm_in_set = 1\n        break\nelse:\n    ids.is_elm_in_set = 0"
+	allocSegmentCode          string = "memory[ap] = segments.add()"
+	memcpyContinueCopyingCode string = "n -= 1\nids.continue_copying = 1 if n > 0 else 0"
+	memcpyEnterScopeCode      string = "vm_enter_scope({'n': ids.len})"
+	vmEnterScopeCode          string = "vm_enter_scope()"
+	vmExitScopeCode           string = "vm_exit_scope()"
+	setAddCode                string = "assert ids.elm_size > 0\nassert ids.set_ptr <= ids.set_end_ptr\nelm_list = memory.get_range(ids.elm_ptr, ids.elm_size)\nfor i in range(0, ids.set_end_ptr - ids.set_ptr, ids.elm_size):\n    if memory.get_range(ids.set_ptr + i, ids.elm_size) == elm_list:\n        ids.index = i // ids.elm_size\n        ids.is_elm_in_set = 1\n        break\nelse:\n    ids.is_elm_in_set = 0"
 )

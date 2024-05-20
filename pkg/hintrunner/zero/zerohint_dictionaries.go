@@ -60,6 +60,71 @@ func createDefaultDictNewHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	return newDefaultDictNewHint(defaultValue), nil
 }
 
+// DictRead hint accesses the value of a dictionary for a given key
+// and writes it to a variable
+//
+// `newDictReadHint` takes 3 operanders as argument
+//   - `dictPtr` variable will be pointer to the dictionary to read from
+//   - `key` variable represents the key we are accessing the dictionary with
+//   - `value` variable will hold the value of the dictionary stored at key after the hint is run
+func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DictRead",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+			//> ids.value = dict_tracker.data[ids.key]
+
+			//> dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)
+			dictPtr, err := hinter.ResolveAsAddress(vm, dictPtr)
+			if err != nil {
+				return err
+			}
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
+			if !ok {
+				return fmt.Errorf("__dict_manager not in scope")
+			}
+
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+			err = dictionaryManager.IncrementFreeOffset(*dictPtr, 3)
+			if err != nil {
+				return err
+			}
+
+			//> ids.value = dict_tracker.data[ids.key]
+			key, err := hinter.ResolveAsFelt(vm, key)
+			if err != nil {
+				return err
+			}
+			keyValue, err := dictionaryManager.At(*dictPtr, *key)
+			if err != nil {
+				return err
+			}
+			valueAddr, err := value.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			return vm.Memory.WriteToAddress(&valueAddr, &keyValue)
+		},
+	}
+}
+
+func createDictReadHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	dictPtr, err := resolver.GetResOperander("dict_ptr")
+	if err != nil {
+		return nil, err
+	}
+	key, err := resolver.GetResOperander("key")
+	if err != nil {
+		return nil, err
+	}
+	value, err := resolver.GetResOperander("value")
+	if err != nil {
+		return nil, err
+	}
+	return newDictReadHint(dictPtr, key, value), nil
+}
+
 // SquashDictInnerAssertLenKeys hint asserts that the length
 // of the `keys` descending list is zero during the squashing process
 //
