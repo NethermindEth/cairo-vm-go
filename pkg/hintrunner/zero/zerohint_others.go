@@ -96,7 +96,7 @@ func newMemcpyEnterScopeHint(len hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			ctx.ScopeManager.EnterScope(map[string]any{"n": len})
+			ctx.ScopeManager.EnterScope(map[string]any{"n": *len})
 			return nil
 		},
 	}
