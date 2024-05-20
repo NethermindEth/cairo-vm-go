@@ -339,7 +339,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					assert.Equal(t, dictionary.FreeOffset, uint64(8))
+					assert.Equal(t, *dictionary.FreeOffset, uint64(8))
 				},
 			},
 		},
