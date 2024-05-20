@@ -398,3 +398,48 @@ func createSquashDictInnerUsedAccessesAssertHinter(resolver hintReferenceResolve
 
 	return newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses), nil
 }
+
+// DictSquashUpdatePtrCode updates the DictTracker's current_ptr to point to the end of the squashed dict
+//
+// `newDictSquashUpdatePtrCodeHint` takes two operanders as arguments
+//   - `squashed_dict_start` pointer to the dictionary whose current_ptr should be updated
+//   - `squashed_dict_end` new current_ptr of the dictionary
+func newDictSquashUpdatePtrCodeHint(squashedDictStart, squashedDictEnd hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DictSquashUpdatePtrCode",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> __dict_manager.get_tracker(ids.squashed_dict_start).current_ptr = ids.squashed_dict_end.address_
+
+			squashedDictStart, err := hinter.ResolveAsAddress(vm, squashedDictStart)
+			if err != nil {
+				return err
+			}
+			squashedDictEnd, err := hinter.ResolveAsAddress(vm, squashedDictEnd)
+			if err != nil {
+				return err
+			}
+
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
+			if !ok {
+				return fmt.Errorf("__dict_manager not in scope")
+			}
+
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+			// TODO: figure out if its ever possible for squashedDictEnd segment to be different from the dictionary segment
+			return dictionaryManager.SetFreeOffset(*squashedDictStart, squashedDictEnd.Offset)
+		},
+	}
+}
+
+func createDictSquashUpdatePtrCodeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	squashedDictStart, err := resolver.GetResOperander("squashed_dict_start")
+	if err != nil {
+		return nil, err
+	}
+	squashedDictEnd, err := resolver.GetResOperander("squashed_dict_end")
+	if err != nil {
+		return nil, err
+	}
+
+	return newDictSquashUpdatePtrCodeHint(squashedDictStart, squashedDictEnd), nil
+}

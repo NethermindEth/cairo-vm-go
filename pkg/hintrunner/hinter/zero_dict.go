@@ -39,6 +39,11 @@ func (d *ZeroDictionary) IncrementFreeOffset(freeOffset uint64) {
 	d.freeOffset += freeOffset
 }
 
+// Given a freeOffset value, it sets the freeOffset field of dictionary by it
+func (d *ZeroDictionary) SetFreeOffset(freeOffset uint64) {
+	d.freeOffset = freeOffset
+}
+
 // Used to manage dictionaries creation
 type ZeroDictionaryManager struct {
 	// a map that links a segment index to a dictionary
@@ -107,9 +112,18 @@ func (dm *ZeroDictionaryManager) Set(dictAddr mem.MemoryAddress, key f.Element, 
 }
 
 // Given a memory address and a incrementBy, it increments the freeOffset field of dictionary by it.
-func (dm *ZeroDictionaryManager) IncrementFreeOffset(dictAddr mem.MemoryAddress, freeOffset uint64) error {
+func (dm *ZeroDictionaryManager) IncrementFreeOffset(dictAddr mem.MemoryAddress, incrementBy uint64) error {
 	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
-		dict.IncrementFreeOffset(freeOffset)
+		dict.IncrementFreeOffset(incrementBy)
+		return nil
+	}
+	return fmt.Errorf("no dictionary at address: %s", dictAddr)
+}
+
+// Given a memory address and a freeOffset, it sets the freeOffset field of dictionary to it.
+func (dm *ZeroDictionaryManager) SetFreeOffset(dictAddr mem.MemoryAddress, freeOffset uint64) error {
+	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
+		dict.SetFreeOffset(freeOffset)
 		return nil
 	}
 	return fmt.Errorf("no dictionary at address: %s", dictAddr)
