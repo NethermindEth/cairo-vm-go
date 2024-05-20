@@ -8,7 +8,6 @@ import (
 )
 
 func TestZeroHintMemcpy(t *testing.T) {
-
 	runHinterTests(t, map[string][]hintTestCase{
 		"MemcPyContinueCopying": {
 			{

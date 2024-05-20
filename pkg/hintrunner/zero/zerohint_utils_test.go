@@ -152,7 +152,6 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Println("value: ", value, "expected: ", expected, "valuetype", reflect.TypeOf(value), "expectedtype", reflect.TypeOf(expected))
 		switch expected.(type) {
 		case *big.Int:
 			{
