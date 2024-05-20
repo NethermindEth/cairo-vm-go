@@ -6,6 +6,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestZeroHintDictionaries(t *testing.T) {
@@ -307,6 +308,39 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newSquashDictInnerUsedAccessesAssertHint(ctx.operanders["n_used_accesses"])
 				},
 				errCheck: errorTextContains("assertion ids.n_used_accesses == len(access_indices[key]) failed"),
+			},
+		},
+		"DictSquashUpdatePtrCode": {
+			{
+				operanders: []*hintOperander{
+					{Name: "squashed_dict_start", Kind: apRelative, Value: addrWithSegment(2, 0)},
+					{Name: "squashed_dict_end", Kind: apRelative, Value: addrWithSegment(2, 8)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					dictionaryManager := hinter.NewZeroDictionaryManager()
+					err := ctx.runnerContext.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
+					if err != nil {
+						t.Fatal(err)
+					}
+					defaultValueMv := memory.MemoryValueFromInt(12345)
+					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
+
+					return newDictSquashUpdatePtrCodeHint(
+						ctx.operanders["squashed_dict_start"],
+						ctx.operanders["squashed_dict_end"],
+					)
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					dictionaryManager, ok := ctx.runnerContext.ScopeManager.GetZeroDictionaryManager()
+					if !ok {
+						t.Fatal("failed to fetch dictionary manager")
+					}
+					dictionary, err := dictionaryManager.GetDictionary(*addrWithSegment(2, 0))
+					if err != nil {
+						t.Fatal(err)
+					}
+					assert.Equal(t, dictionary.FreeOffset, uint64(8))
+				},
 			},
 		},
 	})
