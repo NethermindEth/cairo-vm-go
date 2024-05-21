@@ -6,7 +6,6 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestZeroHintDictionaries(t *testing.T) {
@@ -331,15 +330,11 @@ func TestZeroHintDictionaries(t *testing.T) {
 					)
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					dictionaryManager, ok := ctx.runnerContext.ScopeManager.GetZeroDictionaryManager()
-					if !ok {
-						t.Fatal("failed to fetch dictionary manager")
-					}
-					dictionary, err := dictionaryManager.GetDictionary(*addrWithSegment(2, 0))
-					if err != nil {
-						t.Fatal(err)
-					}
-					assert.Equal(t, *dictionary.FreeOffset, uint64(8))
+					dictPtr := addrWithSegment(2, 0)
+					expectedData := map[fp.Element]memory.MemoryValue{}
+					expectedDefaultValue := memory.MemoryValueFromInt(12345)
+					expectedFreeOffset := uint64(8)
+					zeroDictInScopeEquals(*dictPtr, expectedData, expectedDefaultValue, expectedFreeOffset)(t, ctx)
 				},
 			},
 		},
