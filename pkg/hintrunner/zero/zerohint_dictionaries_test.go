@@ -6,6 +6,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestZeroHintDictionaries(t *testing.T) {
@@ -127,7 +128,19 @@ func TestZeroHintDictionaries(t *testing.T) {
 					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
 					return newDictReadHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["value"])
 				},
-				check: varValueEquals("value", feltUint64(12345)),
+				check: func(t *testing.T, ctx *hintTestContext) {
+					varValueEquals("value", feltUint64(12345))
+
+					dictionaryManager, ok := ctx.runnerContext.ScopeManager.GetZeroDictionaryManager()
+					if !ok {
+						t.Fatal("failed to fetch dictionary manager")
+					}
+					dictionary, err := dictionaryManager.GetDictionary(*addrWithSegment(2, 0))
+					if err != nil {
+						t.Fatal(err)
+					}
+					assert.Equal(t, *dictionary.FreeOffset, uint64(3))
+				},
 			},
 		},
 		"DictWrite": {
@@ -148,11 +161,23 @@ func TestZeroHintDictionaries(t *testing.T) {
 					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
 					return newDictWriteHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["new_value"])
 				},
-				check: consecutiveVarAddrResolvedValueEquals(
-					"dict_ptr.prev_value",
-					[]*fp.Element{
-						feltString("12345"),
-					}),
+				check: func(t *testing.T, ctx *hintTestContext) {
+					consecutiveVarAddrResolvedValueEquals(
+						"dict_ptr.prev_value",
+						[]*fp.Element{
+							feltString("12345"),
+						})
+
+					dictionaryManager, ok := ctx.runnerContext.ScopeManager.GetZeroDictionaryManager()
+					if !ok {
+						t.Fatal("failed to fetch dictionary manager")
+					}
+					dictionary, err := dictionaryManager.GetDictionary(*addrWithSegment(2, 0))
+					if err != nil {
+						t.Fatal(err)
+					}
+					assert.Equal(t, *dictionary.FreeOffset, uint64(3))
+				},
 			},
 		},
 		"DictUpdate": {
@@ -192,7 +217,17 @@ func TestZeroHintDictionaries(t *testing.T) {
 					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
 					return newDictUpdateHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["new_value"], ctx.operanders["prev_value"])
 				},
-				check: func(t *testing.T, ctx *hintTestContext) {},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					dictionaryManager, ok := ctx.runnerContext.ScopeManager.GetZeroDictionaryManager()
+					if !ok {
+						t.Fatal("failed to fetch dictionary manager")
+					}
+					dictionary, err := dictionaryManager.GetDictionary(*addrWithSegment(2, 0))
+					if err != nil {
+						t.Fatal(err)
+					}
+					assert.Equal(t, *dictionary.FreeOffset, uint64(3))
+				},
 			},
 		},
 		"SquashDictInnerAssertLenKeys": {
