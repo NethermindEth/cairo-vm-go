@@ -39,7 +39,7 @@ func (d *ZeroDictionary) IncrementFreeOffset(freeOffset uint64) {
 	*d.FreeOffset += freeOffset
 }
 
-// Given a freeOffset value, it sets the freeOffset field of dictionary by it
+// Given a freeOffset value, it sets the freeOffset field of dictionary to it
 func (d *ZeroDictionary) SetFreeOffset(freeOffset uint64) {
 	*d.FreeOffset = freeOffset
 }
