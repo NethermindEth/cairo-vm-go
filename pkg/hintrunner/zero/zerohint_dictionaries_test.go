@@ -6,7 +6,6 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestZeroHintDictionaries(t *testing.T) {
@@ -67,17 +66,13 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newDictReadHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["value"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					varValueEquals("value", feltUint64(12345))
+					varValueEquals("value", feltUint64(12345))(t, ctx)
 
-					dictionaryManager, ok := ctx.runnerContext.ScopeManager.GetZeroDictionaryManager()
-					if !ok {
-						t.Fatal("failed to fetch dictionary manager")
-					}
-					dictionary, err := dictionaryManager.GetDictionary(*addrWithSegment(2, 0))
-					if err != nil {
-						t.Fatal(err)
-					}
-					assert.Equal(t, *dictionary.FreeOffset, uint64(3))
+					dictPtr := addrWithSegment(2, 0)
+					expectedData := map[fp.Element]memory.MemoryValue{}
+					expectedDefaultValue := memory.MemoryValueFromInt(12345)
+					expectedFreeOffset := uint64(3)
+					zeroDictInScopeEquals(*dictPtr, expectedData, expectedDefaultValue, expectedFreeOffset)(t, ctx)
 				},
 			},
 		},
@@ -104,17 +99,13 @@ func TestZeroHintDictionaries(t *testing.T) {
 						"dict_ptr.prev_value",
 						[]*fp.Element{
 							feltString("12345"),
-						})
+						})(t, ctx)
 
-					dictionaryManager, ok := ctx.runnerContext.ScopeManager.GetZeroDictionaryManager()
-					if !ok {
-						t.Fatal("failed to fetch dictionary manager")
-					}
-					dictionary, err := dictionaryManager.GetDictionary(*addrWithSegment(2, 0))
-					if err != nil {
-						t.Fatal(err)
-					}
-					assert.Equal(t, *dictionary.FreeOffset, uint64(3))
+					dictPtr := addrWithSegment(2, 0)
+					expectedData := map[fp.Element]memory.MemoryValue{*feltUint64(100): memory.MemoryValueFromInt(9999)}
+					expectedDefaultValue := memory.MemoryValueFromInt(12345)
+					expectedFreeOffset := uint64(3)
+					zeroDictInScopeEquals(*dictPtr, expectedData, expectedDefaultValue, expectedFreeOffset)(t, ctx)
 				},
 			},
 		},
