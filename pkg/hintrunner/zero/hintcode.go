@@ -120,8 +120,9 @@ const (
 	dictSquashUpdatePtrCode           string = "# Update the DictTracker's current_ptr to point to the end of the squashed dict.\n__dict_manager.get_tracker(ids.squashed_dict_start).current_ptr = \\\n    ids.squashed_dict_end.address_"
 
 	// ------ Other hints related code ------
-	allocSegmentCode     string = "memory[ap] = segments.add()"
-	memcpyEnterScopeCode string = "vm_enter_scope({'n': ids.len})"
-	vmEnterScopeCode     string = "vm_enter_scope()"
-	vmExitScopeCode      string = "vm_exit_scope()"
+	allocSegmentCode          string = "memory[ap] = segments.add()"
+	memcpyContinueCopyingCode string = "n -= 1\nids.continue_copying = 1 if n > 0 else 0"
+	memcpyEnterScopeCode      string = "vm_enter_scope({'n': ids.len})"
+	vmEnterScopeCode          string = "vm_enter_scope()"
+	vmExitScopeCode           string = "vm_exit_scope()"
 )
