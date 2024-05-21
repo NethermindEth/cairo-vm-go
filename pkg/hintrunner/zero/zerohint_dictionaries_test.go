@@ -147,15 +147,11 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newDictUpdateHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["new_value"], ctx.operanders["prev_value"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					dictionaryManager, ok := ctx.runnerContext.ScopeManager.GetZeroDictionaryManager()
-					if !ok {
-						t.Fatal("failed to fetch dictionary manager")
-					}
-					dictionary, err := dictionaryManager.GetDictionary(*addrWithSegment(2, 0))
-					if err != nil {
-						t.Fatal(err)
-					}
-					assert.Equal(t, *dictionary.FreeOffset, uint64(3))
+					dictPtr := addrWithSegment(2, 0)
+					expectedData := map[fp.Element]memory.MemoryValue{*feltUint64(100): memory.MemoryValueFromInt(4)}
+					expectedDefaultValue := memory.MemoryValueFromInt(1)
+					expectedFreeOffset := uint64(3)
+					zeroDictInScopeEquals(*dictPtr, expectedData, expectedDefaultValue, expectedFreeOffset)(t, ctx)
 				},
 			},
 		},
