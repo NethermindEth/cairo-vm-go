@@ -67,7 +67,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newDictReadHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["value"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					varValueEquals("value", feltUint64(12345))
+					varValueEquals("value", feltUint64(12345))(t, ctx)
 
 					dictionaryManager, ok := ctx.runnerContext.ScopeManager.GetZeroDictionaryManager()
 					if !ok {
@@ -104,7 +104,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 						"dict_ptr.prev_value",
 						[]*fp.Element{
 							feltString("12345"),
-						})
+						})(t, ctx)
 
 					dictionaryManager, ok := ctx.runnerContext.ScopeManager.GetZeroDictionaryManager()
 					if !ok {
