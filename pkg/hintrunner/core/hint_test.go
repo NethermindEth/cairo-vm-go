@@ -11,7 +11,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
 )
@@ -57,7 +57,7 @@ func TestTestLessThanTrue(t *testing.T) {
 	var rhsRef hinter.FpCellRef = 0
 	rhs := hinter.Deref{Deref: rhsRef}
 
-	lhs := hinter.Immediate(f.NewElement(13))
+	lhs := hinter.Immediate(fp.NewElement(13))
 
 	hint := TestLessThan{
 		dst: dst,
@@ -77,11 +77,11 @@ func TestTestLessThanTrue(t *testing.T) {
 
 func TestTestLessThanFalse(t *testing.T) {
 	testCases := []struct {
-		lhsValue    f.Element
+		lhsValue    fp.Element
 		expectedMsg string
 	}{
-		{f.NewElement(32), "Expected the hint to evaluate to False when lhs is larger"},
-		{f.NewElement(17), "Expected the hint to evaluate to False when values are equal"},
+		{fp.NewElement(32), "Expected the hint to evaluate to False when lhs is larger"},
+		{fp.NewElement(17), "Expected the hint to evaluate to False when values are equal"},
 	}
 
 	for _, tc := range testCases {
@@ -116,11 +116,11 @@ func TestTestLessThanFalse(t *testing.T) {
 
 func TestTestLessThanOrEqTrue(t *testing.T) {
 	testCases := []struct {
-		lhsValue    f.Element
+		lhsValue    fp.Element
 		expectedMsg string
 	}{
-		{f.NewElement(13), "Expected the hint to evaluate to True when lhs is less than rhs"},
-		{f.NewElement(23), "Expected the hint to evaluate to True when values are equal"},
+		{fp.NewElement(13), "Expected the hint to evaluate to True when lhs is less than rhs"},
+		{fp.NewElement(23), "Expected the hint to evaluate to True when values are equal"},
 	}
 
 	for _, tc := range testCases {
@@ -163,7 +163,7 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 	var rhsRef hinter.FpCellRef = 0
 	rhs := hinter.Deref{Deref: rhsRef}
 
-	lhs := hinter.Immediate(f.NewElement(32))
+	lhs := hinter.Immediate(fp.NewElement(32))
 
 	hint := TestLessThanOrEqual{
 		dst: dst,
@@ -186,9 +186,9 @@ func TestLinearSplit(t *testing.T) {
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
 
-	value := hinter.Immediate(f.NewElement(42*223344 + 14))
-	scalar := hinter.Immediate(f.NewElement(42))
-	maxX := hinter.Immediate(f.NewElement(9999999999))
+	value := hinter.Immediate(fp.NewElement(42*223344 + 14))
+	scalar := hinter.Immediate(fp.NewElement(42))
+	maxX := hinter.Immediate(fp.NewElement(9999999999))
 	var x hinter.ApCellRef = 0
 	var y hinter.ApCellRef = 1
 
@@ -212,7 +212,7 @@ func TestLinearSplit(t *testing.T) {
 	vm.Context.Fp = 0
 
 	//Lower max_x
-	maxX = hinter.Immediate(f.NewElement(223343))
+	maxX = hinter.Immediate(fp.NewElement(223343))
 	hint = LinearSplit{
 		value:  value,
 		scalar: scalar,
@@ -238,10 +238,10 @@ func TestWideMul128(t *testing.T) {
 	var dstHigh hinter.ApCellRef = 2
 
 	lhsBytes := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
-	lhsFelt, err := f.BigEndian.Element(&lhsBytes)
+	lhsFelt, err := fp.BigEndian.Element(&lhsBytes)
 	require.NoError(t, err)
 
-	rhsFelt := f.NewElement(1<<8 + 1)
+	rhsFelt := fp.NewElement(1<<8 + 1)
 
 	lhs := hinter.Immediate(lhsFelt)
 	rhs := hinter.Immediate(rhsFelt)
@@ -256,7 +256,7 @@ func TestWideMul128(t *testing.T) {
 	err = hint.Execute(vm, nil)
 	require.Nil(t, err)
 
-	low := &f.Element{}
+	low := &fp.Element{}
 	low.SetBigInt(big.NewInt(1).Lsh(big.NewInt(1), 127))
 
 	require.Equal(
@@ -279,8 +279,8 @@ func TestDivMod(t *testing.T) {
 	var quo hinter.ApCellRef = 1
 	var rem hinter.ApCellRef = 2
 
-	lhsValue := hinter.Immediate(f.NewElement(89))
-	rhsValue := hinter.Immediate(f.NewElement(7))
+	lhsValue := hinter.Immediate(fp.NewElement(89))
+	rhsValue := hinter.Immediate(fp.NewElement(7))
 
 	hint := DivMod{
 		lhs:       lhsValue,
@@ -310,8 +310,8 @@ func TestDivModDivisionByZeroError(t *testing.T) {
 	var quo hinter.ApCellRef = 1
 	var rem hinter.ApCellRef = 2
 
-	lhsValue := hinter.Immediate(f.NewElement(43))
-	rhsValue := hinter.Immediate(f.NewElement(0))
+	lhsValue := hinter.Immediate(fp.NewElement(43))
+	rhsValue := hinter.Immediate(fp.NewElement(0))
 
 	hint := DivMod{
 		lhs:       lhsValue,
@@ -335,11 +335,11 @@ func TestUint256DivMod(t *testing.T) {
 		var remainder0 hinter.ApCellRef = 3
 		var remainder1 hinter.ApCellRef = 4
 
-		dividend0Felt := f.NewElement(89)
-		dividend1Felt := f.NewElement(72)
+		dividend0Felt := fp.NewElement(89)
+		dividend1Felt := fp.NewElement(72)
 
-		divisor0Felt := f.NewElement(3)
-		divisor1Felt := f.NewElement(7)
+		divisor0Felt := fp.NewElement(3)
+		divisor1Felt := fp.NewElement(7)
 
 		hint := Uint256DivMod{
 			dividend0:  hinter.Immediate(dividend0Felt),
@@ -355,7 +355,7 @@ func TestUint256DivMod(t *testing.T) {
 		err := hint.Execute(vm, nil)
 		require.Nil(t, err)
 
-		quotient0Val := &f.Element{}
+		quotient0Val := &fp.Element{}
 		_, err = quotient0Val.SetString("10")
 		require.Nil(t, err)
 
@@ -365,7 +365,7 @@ func TestUint256DivMod(t *testing.T) {
 			utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 		)
 
-		quotient1Val := &f.Element{}
+		quotient1Val := &fp.Element{}
 		quotient1Val.SetZero()
 		require.Nil(t, err)
 
@@ -375,7 +375,7 @@ func TestUint256DivMod(t *testing.T) {
 			utils.ReadFrom(vm, VM.ExecutionSegment, 2),
 		)
 
-		remainder0Val := &f.Element{}
+		remainder0Val := &fp.Element{}
 		_, err = remainder0Val.SetString("59")
 		require.Nil(t, err)
 
@@ -385,7 +385,7 @@ func TestUint256DivMod(t *testing.T) {
 			utils.ReadFrom(vm, VM.ExecutionSegment, 3),
 		)
 
-		remainder1Val := &f.Element{}
+		remainder1Val := &fp.Element{}
 		_, err = remainder1Val.SetString("2")
 		require.Nil(t, err)
 
@@ -407,12 +407,12 @@ func TestUint256DivMod(t *testing.T) {
 
 		b := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
 
-		dividend0Felt, err := f.BigEndian.Element(&b)
+		dividend0Felt, err := fp.BigEndian.Element(&b)
 		require.NoError(t, err)
-		dividend1Felt := f.NewElement(1<<8 + 1)
+		dividend1Felt := fp.NewElement(1<<8 + 1)
 
-		divisor0Felt := f.NewElement(1<<8 + 1)
-		divisor1Felt := f.NewElement(1<<8 + 1)
+		divisor0Felt := fp.NewElement(1<<8 + 1)
+		divisor1Felt := fp.NewElement(1<<8 + 1)
 
 		hint := Uint256DivMod{
 			dividend0:  hinter.Immediate(dividend0Felt),
@@ -428,7 +428,7 @@ func TestUint256DivMod(t *testing.T) {
 		err = hint.Execute(vm, nil)
 		require.Nil(t, err)
 
-		quotient0Val := &f.Element{}
+		quotient0Val := &fp.Element{}
 		quotient0Val.SetOne()
 		require.Nil(t, err)
 
@@ -438,7 +438,7 @@ func TestUint256DivMod(t *testing.T) {
 			utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 		)
 
-		quotient1Val := &f.Element{}
+		quotient1Val := &fp.Element{}
 		quotient1Val.SetZero()
 		require.Nil(t, err)
 
@@ -448,7 +448,7 @@ func TestUint256DivMod(t *testing.T) {
 			utils.ReadFrom(vm, VM.ExecutionSegment, 2),
 		)
 
-		remainder0Val := &f.Element{}
+		remainder0Val := &fp.Element{}
 		_, err = remainder0Val.SetString("170141183460469231731687303715884105471")
 		require.Nil(t, err)
 
@@ -458,7 +458,7 @@ func TestUint256DivMod(t *testing.T) {
 			utils.ReadFrom(vm, VM.ExecutionSegment, 3),
 		)
 
-		remainder1Val := &f.Element{}
+		remainder1Val := &fp.Element{}
 		remainder1Val.SetZero()
 		require.Nil(t, err)
 
@@ -480,11 +480,11 @@ func TestUint256DivModDivisionByZero(t *testing.T) {
 	var dstRemainder0 hinter.ApCellRef = 3
 	var dstRemainder1 hinter.ApCellRef = 4
 
-	dividend0Felt := f.NewElement(1<<8 + 1)
-	dividend1Felt := f.NewElement(1<<8 + 1)
+	dividend0Felt := fp.NewElement(1<<8 + 1)
+	dividend1Felt := fp.NewElement(1<<8 + 1)
 
-	divisor0Felt := f.NewElement(0)
-	divisor1Felt := f.NewElement(0)
+	divisor0Felt := fp.NewElement(0)
+	divisor1Felt := fp.NewElement(0)
 
 	hint := Uint256DivMod{
 		dividend0:  hinter.Immediate(dividend0Felt),
@@ -510,11 +510,11 @@ func TestWideMul128IncorrectRange(t *testing.T) {
 	var dstHigh hinter.ApCellRef = 2
 
 	lhsBytes := new(uint256.Int).Lsh(uint256.NewInt(1), 128).Bytes32()
-	lhsFelt, err := f.BigEndian.Element(&lhsBytes)
+	lhsFelt, err := fp.BigEndian.Element(&lhsBytes)
 	require.NoError(t, err)
 
 	lhs := hinter.Immediate(lhsFelt)
-	rhs := hinter.Immediate(f.NewElement(1))
+	rhs := hinter.Immediate(fp.NewElement(1))
 
 	hint := WideMul128{
 		low:  dstLow,
@@ -569,7 +569,7 @@ func TestSquareRoot(t *testing.T) {
 	vm.Context.Fp = 0
 	var dst hinter.ApCellRef = 1
 
-	value := hinter.Immediate(f.NewElement(36))
+	value := hinter.Immediate(fp.NewElement(36))
 	hint := SquareRoot{
 		value: value,
 		dst:   dst,
@@ -585,7 +585,7 @@ func TestSquareRoot(t *testing.T) {
 	)
 
 	dst = 2
-	value = hinter.Immediate(f.NewElement(30))
+	value = hinter.Immediate(fp.NewElement(30))
 	hint = SquareRoot{
 		value: value,
 		dst:   dst,
@@ -612,8 +612,8 @@ func TestUint256SquareRootLow(t *testing.T) {
 	var remainderHigh hinter.ApCellRef = 4
 	var sqrtMul2MinusRemainderGeU128 hinter.ApCellRef = 5
 
-	valueLow := hinter.Immediate(f.NewElement(121))
-	valueHigh := hinter.Immediate(f.NewElement(0))
+	valueLow := hinter.Immediate(fp.NewElement(121))
+	valueHigh := hinter.Immediate(fp.NewElement(0))
 
 	hint := Uint256SquareRoot{
 		valueLow:                     valueLow,
@@ -659,8 +659,8 @@ func TestUint256SquareRootHigh(t *testing.T) {
 	var remainderHigh hinter.ApCellRef = 4
 	var sqrtMul2MinusRemainderGeU128 hinter.ApCellRef = 5
 
-	valueLow := hinter.Immediate(f.NewElement(0))
-	valueHigh := hinter.Immediate(f.NewElement(1 << 8))
+	valueLow := hinter.Immediate(fp.NewElement(0))
+	valueHigh := hinter.Immediate(fp.NewElement(1 << 8))
 
 	hint := Uint256SquareRoot{
 		valueLow:                     valueLow,
@@ -706,8 +706,8 @@ func TestUint256SquareRoot(t *testing.T) {
 	var remainderHigh hinter.ApCellRef = 4
 	var sqrtMul2MinusRemainderGeU128 hinter.ApCellRef = 5
 
-	valueLow := hinter.Immediate(f.NewElement(51))
-	valueHigh := hinter.Immediate(f.NewElement(1024))
+	valueLow := hinter.Immediate(fp.NewElement(51))
+	valueHigh := hinter.Immediate(fp.NewElement(1024))
 
 	hint := Uint256SquareRoot{
 		valueLow:                     valueLow,
@@ -756,15 +756,15 @@ func TestUint512DivModByUint256(t *testing.T) {
 
 	b := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
 
-	dividend0Felt, err := f.BigEndian.Element(&b)
+	dividend0Felt, err := fp.BigEndian.Element(&b)
 	require.NoError(t, err)
-	dividend1Felt := f.NewElement(1<<8 + 1)
-	dividend2Felt, err := f.BigEndian.Element(&b)
+	dividend1Felt := fp.NewElement(1<<8 + 1)
+	dividend2Felt, err := fp.BigEndian.Element(&b)
 	require.NoError(t, err)
-	dividend3Felt := f.NewElement(1<<8 + 1)
+	dividend3Felt := fp.NewElement(1<<8 + 1)
 
-	divisor0Felt := f.NewElement(1<<8 + 1)
-	divisor1Felt := f.NewElement(1<<8 + 1)
+	divisor0Felt := fp.NewElement(1<<8 + 1)
+	divisor1Felt := fp.NewElement(1<<8 + 1)
 
 	hint := Uint512DivModByUint256{
 		dividend0:  hinter.Immediate(dividend0Felt),
@@ -784,7 +784,7 @@ func TestUint512DivModByUint256(t *testing.T) {
 	err = hint.Execute(vm, nil)
 	require.Nil(t, err)
 
-	quotient0 := &f.Element{}
+	quotient0 := &fp.Element{}
 	_, err = quotient0.SetString("170141183460469231731687303715884105730")
 	require.Nil(t, err)
 
@@ -794,7 +794,7 @@ func TestUint512DivModByUint256(t *testing.T) {
 		utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 	)
 
-	quotient1 := &f.Element{}
+	quotient1 := &fp.Element{}
 	_, err = quotient1.SetString("662027951208051485337304683719393406")
 	require.Nil(t, err)
 
@@ -804,7 +804,7 @@ func TestUint512DivModByUint256(t *testing.T) {
 		utils.ReadFrom(vm, VM.ExecutionSegment, 2),
 	)
 
-	quotient2 := &f.Element{}
+	quotient2 := &fp.Element{}
 	quotient2.SetOne()
 
 	require.Equal(
@@ -813,7 +813,7 @@ func TestUint512DivModByUint256(t *testing.T) {
 		utils.ReadFrom(vm, VM.ExecutionSegment, 3),
 	)
 
-	quotient3 := &f.Element{}
+	quotient3 := &fp.Element{}
 	quotient3.SetZero()
 
 	require.Equal(
@@ -822,7 +822,7 @@ func TestUint512DivModByUint256(t *testing.T) {
 		utils.ReadFrom(vm, VM.ExecutionSegment, 4),
 	)
 
-	remainder0 := &f.Element{}
+	remainder0 := &fp.Element{}
 	_, err = remainder0.SetString("340282366920938463463374607431768210942")
 	require.Nil(t, err)
 
@@ -832,7 +832,7 @@ func TestUint512DivModByUint256(t *testing.T) {
 		utils.ReadFrom(vm, VM.ExecutionSegment, 5),
 	)
 
-	remainder1 := &f.Element{}
+	remainder1 := &fp.Element{}
 	remainder1.SetZero()
 
 	require.Equal(
@@ -856,15 +856,15 @@ func TestUint512DivModByUint256DivisionByZero(t *testing.T) {
 
 	b := new(uint256.Int).Lsh(uint256.NewInt(1), 127).Bytes32()
 
-	dividend0Felt, err := f.BigEndian.Element(&b)
+	dividend0Felt, err := fp.BigEndian.Element(&b)
 	require.NoError(t, err)
-	dividend1Felt := f.NewElement(1<<8 + 1)
-	dividend2Felt, err := f.BigEndian.Element(&b)
+	dividend1Felt := fp.NewElement(1<<8 + 1)
+	dividend2Felt, err := fp.BigEndian.Element(&b)
 	require.NoError(t, err)
-	dividend3Felt := f.NewElement(1<<8 + 1)
+	dividend3Felt := fp.NewElement(1<<8 + 1)
 
-	divisor0Felt := f.NewElement(0)
-	divisor1Felt := f.NewElement(0)
+	divisor0Felt := fp.NewElement(0)
+	divisor1Felt := fp.NewElement(0)
 
 	hint := Uint512DivModByUint256{
 		dividend0:  hinter.Immediate(dividend0Felt),
@@ -889,9 +889,9 @@ func TestAllocConstantSize(t *testing.T) {
 	vm := VM.DefaultVirtualMachine()
 
 	sizes := [3]hinter.Immediate{
-		hinter.Immediate(f.NewElement(15)),
-		hinter.Immediate(f.NewElement(13)),
-		hinter.Immediate(f.NewElement(2)),
+		hinter.Immediate(fp.NewElement(15)),
+		hinter.Immediate(fp.NewElement(13)),
+		hinter.Immediate(fp.NewElement(2)),
 	}
 	expectedAddrs := [3]mem.MemoryAddress{
 		{SegmentIndex: 2, Offset: 0},
@@ -924,15 +924,15 @@ func TestAllocConstantSize(t *testing.T) {
 
 func TestAssertLeFindSmallArc(t *testing.T) {
 	testCases := []struct {
-		aFelt, bFelt                    f.Element
+		aFelt, bFelt                    fp.Element
 		expectedRem1, expectedQuotient1 mem.MemoryValue
 		expectedRem2, expectedQuotient2 mem.MemoryValue
 		expectedExcludedArc             int
 	}{
 		// First test case
 		{
-			aFelt:               f.NewElement(1024),
-			bFelt:               f.NewElement(1025),
+			aFelt:               fp.NewElement(1024),
+			bFelt:               fp.NewElement(1025),
 			expectedRem1:        mem.MemoryValueFromInt(1),
 			expectedQuotient1:   mem.MemoryValueFromInt(0),
 			expectedRem2:        mem.MemoryValueFromInt(1024),
@@ -942,14 +942,14 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		// Second test case
 		{
 			// 2974197561122951277584414786853691079
-			aFelt: f.Element{
+			aFelt: fp.Element{
 				13984218141608664100,
 				13287333742236603547,
 				18446744073709551615,
 				229878458336812643,
 			},
 			// 306150973282131698343156044521811432643
-			bFelt: f.Element{
+			bFelt: fp.Element{
 				6079377935050068685,
 				3868297591914914705,
 				18446744073709551587,
@@ -957,7 +957,7 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 			},
 			// 2974197561122951277584414786853691079
 			expectedRem1: mem.MemoryValueFromFieldElement(
-				&f.Element{
+				&fp.Element{
 					13984218141608664100,
 					13287333742236603547,
 					18446744073709551615,
@@ -966,7 +966,7 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 			expectedQuotient1: mem.MemoryValueFromInt(0),
 			// 112792682047919106056116278761420227
 			expectedRem2: mem.MemoryValueFromFieldElement(
-				&f.Element{
+				&fp.Element{
 					10541903867150958026,
 					18251079960242638581,
 					18446744073709551615,
@@ -1073,10 +1073,10 @@ func TestRandomEcPoint(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedX := mem.MemoryValueFromFieldElement(
-		&f.Element{12217889558999792019, 3067322962467879919, 3160430244162662030, 474947714424245026},
+		&fp.Element{12217889558999792019, 3067322962467879919, 3160430244162662030, 474947714424245026},
 	)
 	expectedY := mem.MemoryValueFromFieldElement(
-		&f.Element{12193331470568888984, 1737428559173019240, 11500517745011090163, 245183001587853482},
+		&fp.Element{12193331470568888984, 1737428559173019240, 11500517745011090163, 245183001587853482},
 	)
 
 	actualX := utils.ReadFrom(vm, VM.ExecutionSegment, 0)
@@ -1110,7 +1110,7 @@ func TestFieldSqrt(t *testing.T) {
 			vm.Context.Ap = 0
 			vm.Context.Fp = 0
 
-			value := hinter.Immediate(f.NewElement(tc.value))
+			value := hinter.Immediate(fp.NewElement(tc.value))
 			hint := FieldSqrt{
 				val:  value,
 				sqrt: hinter.ApCellRef(0),

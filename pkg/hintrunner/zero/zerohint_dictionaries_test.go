@@ -32,7 +32,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					}
 
 					key := fp.NewElement(100)
-					value, err := dictionaryManager.At(dictAddr, key)
+					value, err := dictionaryManager.At(dictAddr, &key)
 					if err != nil {
 						t.Fatalf("error fetching value from dictionary")
 					}
@@ -62,7 +62,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 						t.Fatal(err)
 					}
 					defaultValueMv := memory.MemoryValueFromInt(12345)
-					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
+					dictionaryManager.NewDefaultDictionary(ctx.vm, &defaultValueMv)
 					return newDictReadHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["value"])
 				},
 				check: varValueEquals("value", feltUint64(12345)),

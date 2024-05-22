@@ -17,22 +17,27 @@ func createUsortBodyHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 	if err != nil {
 		return nil, err
 	}
+
 	input_len, err := resolver.GetResOperander("input_len")
 	if err != nil {
 		return nil, err
 	}
+
 	output, err := resolver.GetResOperander("output")
 	if err != nil {
 		return nil, err
 	}
+
 	output_len, err := resolver.GetResOperander("output_len")
 	if err != nil {
 		return nil, err
 	}
+
 	multiplicities, err := resolver.GetResOperander("multiplicities")
 	if err != nil {
 		return nil, err
 	}
+
 	return newUsortBodyHint(input, input_len, output, output_len, multiplicities), nil
 }
 
@@ -69,22 +74,27 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 			//> 		ids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])
 			//>
 			//> 		input_ptr = ids.input
+
 			inputBasePtr, err := hinter.ResolveAsAddress(vm, input)
 			if err != nil {
 				return err
 			}
+
 			inputLenValue, err := hinter.ResolveAsUint64(vm, inputLen)
 			if err != nil {
 				return err
 			}
+
 			usortMaxSizeInterface, err := ctx.ScopeManager.GetVariableValue("__usort_max_size")
 			if err != nil {
 				return err
 			}
+
 			usortMaxSize := usortMaxSizeInterface.(uint64)
 			if inputLenValue > usortMaxSize {
 				return fmt.Errorf("usort() can only be used with input_len<=%d.\n Got: input_len=%d", usortMaxSize, inputLenValue)
 			}
+
 			positionsDict := make(map[fp.Element][]uint64, inputLenValue)
 			for i := uint64(0); i < inputLenValue; i++ {
 				val, err := vm.Memory.ReadFromAddressAsElement(inputBasePtr)
@@ -104,27 +114,32 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 				outputArray[iterator] = key
 				iterator++
 			}
+
 			sort.Sort(usortUtils.SortFelt(outputArray))
 
 			outputLenAddr, err := outputLen.GetAddress(vm)
 			if err != nil {
 				return err
 			}
+
 			outputLenMV := memory.MemoryValueFromFieldElement(new(fp.Element).SetUint64(uint64(len(outputArray))))
 			err = vm.Memory.WriteToAddress(&outputLenAddr, &outputLenMV)
 			if err != nil {
 				return err
 			}
+
 			outputSegmentBaseAddr := vm.Memory.AllocateEmptySegment()
 			outputAddr, err := output.GetAddress(vm)
 			if err != nil {
 				return err
 			}
+
 			outputSegmentBaseAddrMV := memory.MemoryValueFromMemoryAddress(&outputSegmentBaseAddr)
 			err = vm.Memory.WriteToAddress(&outputAddr, &outputSegmentBaseAddrMV)
 			if err != nil {
 				return err
 			}
+
 			for _, v := range outputArray {
 				outputElementMV := memory.MemoryValueFromFieldElement(&v)
 				err = vm.Memory.WriteToAddress(&outputSegmentBaseAddr, &outputElementMV)
@@ -136,20 +151,24 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 					return err
 				}
 			}
+
 			multiplicitiesArray := make([]*fp.Element, len(outputArray))
 			for i, v := range outputArray {
 				multiplicitiesArray[i] = new(fp.Element).SetUint64(uint64(len(positionsDict[v])))
 			}
+
 			multiplicitesSegmentBaseAddr := vm.Memory.AllocateEmptySegment()
 			multiplicitiesAddr, err := multiplicities.GetAddress(vm)
 			if err != nil {
 				return err
 			}
+
 			multiplicitesSegmentBaseAddrMV := memory.MemoryValueFromMemoryAddress(&multiplicitesSegmentBaseAddr)
 			err = vm.Memory.WriteToAddress(&multiplicitiesAddr, &multiplicitesSegmentBaseAddrMV)
 			if err != nil {
 				return err
 			}
+
 			for _, v := range multiplicitiesArray {
 				multiplicitiesElementMV := memory.MemoryValueFromFieldElement(v)
 				err = vm.Memory.WriteToAddress(&multiplicitesSegmentBaseAddr, &multiplicitiesElementMV)
@@ -161,6 +180,7 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 					return err
 				}
 			}
+
 			return nil
 		},
 	}
@@ -177,6 +197,7 @@ func newUsortEnterScopeHint() hinter.Hinter {
 		Name: "UsortEnterScope",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> vm_enter_scope(dict(__usort_max_size = globals().get('__usort_max_size')))
+
 			usortMaxSize, err := ctx.ScopeManager.GetVariableValue("__usort_max_size")
 			if err != nil {
 				return err
@@ -207,6 +228,7 @@ func newUsortVerifyMultiplicityAssertHint() hinter.Hinter {
 		Name: "UsortVerifyMultiplicityAssert",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> assert len(positions) == 0
+
 			positionsInterface, err := ctx.ScopeManager.GetVariableValue("positions")
 
 			if err != nil {

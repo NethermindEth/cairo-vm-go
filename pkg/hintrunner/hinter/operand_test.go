@@ -6,7 +6,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -103,7 +103,7 @@ func TestResolveImmediate(t *testing.T) {
 	// Immediate does not need the vm for resolving itself
 	var vm *VM.VirtualMachine = nil
 
-	imm := Immediate(f.NewElement(99))
+	imm := Immediate(fp.NewElement(99))
 
 	solved, err := imm.Resolve(vm)
 	require.NoError(t, err)

@@ -22,6 +22,7 @@ func (m *hintReferenceResolver) AddReference(name string, v hinter.Reference) er
 	if ok {
 		return fmt.Errorf("cannot overwrite reference %s (%s)", shortName, name)
 	}
+
 	m.refs[shortName] = v
 	return nil
 }
@@ -30,6 +31,7 @@ func (m *hintReferenceResolver) GetReference(name string) (hinter.Reference, err
 	if v, ok := m.refs[name]; ok {
 		return v, nil
 	}
+
 	return nil, fmt.Errorf("missing reference %s", name)
 }
 
@@ -40,10 +42,12 @@ func (m *hintReferenceResolver) GetResOperander(name string) (hinter.ResOperande
 	if err != nil {
 		return nil, err
 	}
+
 	op, ok := ref.(hinter.ResOperander)
 	if !ok {
 		return nil, fmt.Errorf("expected %s to be ResOperander (got %T)", name, ref)
 	}
+
 	return op, nil
 }
 
@@ -52,10 +56,12 @@ func (m *hintReferenceResolver) GetCellRefer(name string) (hinter.CellRefer, err
 	if err != nil {
 		return nil, err
 	}
+
 	op, ok := ref.(hinter.CellRefer)
 	if !ok {
 		return nil, fmt.Errorf("expected %s to be CellRefer (got %T)", name, ref)
 	}
+
 	return op, nil
 }
 
@@ -65,5 +71,6 @@ func shortSymbolName(name string) string {
 	if i != -1 {
 		return name[i+1:]
 	}
+
 	return name
 }

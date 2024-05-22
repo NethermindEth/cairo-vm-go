@@ -8,7 +8,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 //
@@ -32,6 +32,7 @@ func (ap ApCellRef) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
 	if overflow {
 		return mem.UnknownAddress, fmt.Errorf("overflow %d + %d", vm.Context.Ap, int16(ap))
 	}
+
 	return mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
 }
 
@@ -46,10 +47,10 @@ func (fp FpCellRef) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
 	if overflow {
 		return mem.UnknownAddress, fmt.Errorf("overflow %d + %d", vm.Context.Fp, int16(fp))
 	}
+
 	return mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
 }
 
-//
 // All ResOperand definitions
 
 type ResOperander interface {
@@ -73,6 +74,7 @@ func (deref Deref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 	if err != nil {
 		return mem.UnknownValue, fmt.Errorf("get cell address: %w", err)
 	}
+
 	return vm.Memory.ReadFromAddress(&address)
 }
 
@@ -94,6 +96,7 @@ func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error
 	if err != nil {
 		return mem.UnknownValue, err
 	}
+
 	value, err := vm.Memory.ReadFromAddress(&addr)
 	if err != nil {
 		return mem.UnknownValue, fmt.Errorf("read result at %s: %w", addr, err)
@@ -126,7 +129,7 @@ func (dderef DoubleDeref) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, 
 	return resAddr, nil
 }
 
-type Immediate f.Element
+type Immediate fp.Element
 
 func (imm Immediate) String() string {
 	return "Immediate"
@@ -134,7 +137,7 @@ func (imm Immediate) String() string {
 
 // Should we respect that, or go straight to felt?
 func (imm Immediate) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
-	felt := f.Element(imm)
+	felt := fp.Element(imm)
 	return mem.MemoryValueFromFieldElement(&felt), nil
 }
 
@@ -164,6 +167,7 @@ func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 	if err != nil {
 		return mem.UnknownValue, fmt.Errorf("get lhs address %s: %w", bop.Lhs, err)
 	}
+
 	lhs, err := vm.Memory.ReadFromAddress(&lhsAddr)
 	if err != nil {
 		return mem.UnknownValue, fmt.Errorf("read lhs address %s: %w", lhsAddr, err)
@@ -201,6 +205,7 @@ func (v ApCellRef) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	if hint.Group != ref.Group {
 		return v // Group mismatched: nothing to adjust
 	}
+
 	newOffset := v - ApCellRef(hint.Offset-ref.Offset)
 	return ApCellRef(newOffset)
 }
@@ -240,11 +245,12 @@ func WriteToNthStructField(vm *VM.VirtualMachine, addr mem.MemoryAddress, value 
 	return vm.Memory.WriteToAddress(&nAddr, &value)
 }
 
-func WriteUint256ToAddress(vm *VM.VirtualMachine, addr mem.MemoryAddress, low, high *f.Element) error {
+func WriteUint256ToAddress(vm *VM.VirtualMachine, addr mem.MemoryAddress, low, high *fp.Element) error {
 	lowMemoryValue := memory.MemoryValueFromFieldElement(low)
 	err := vm.Memory.WriteToAddress(&addr, &lowMemoryValue)
 	if err != nil {
 		return err
 	}
+
 	return WriteToNthStructField(vm, addr, memory.MemoryValueFromFieldElement(high), 1)
 }

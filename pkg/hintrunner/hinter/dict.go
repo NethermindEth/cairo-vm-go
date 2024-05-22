@@ -5,27 +5,28 @@ import (
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 // Used to keep track of all dictionaries data
 type Dictionary struct {
 	// The data contained on a dictionary
-	data map[f.Element]*mem.MemoryValue
+	data map[fp.Element]*mem.MemoryValue
 	// Unique id assigned at the moment of creation
 	idx uint64
 }
 
 // Gets the memory value at certain key
-func (d *Dictionary) At(key *f.Element) (*mem.MemoryValue, error) {
+func (d *Dictionary) At(key *fp.Element) (*mem.MemoryValue, error) {
 	if value, ok := d.data[*key]; ok {
 		return value, nil
 	}
+
 	return nil, fmt.Errorf("no value for key %s", key)
 }
 
 // Given a key and a value, it sets the value at the given key
-func (d *Dictionary) Set(key *f.Element, value *mem.MemoryValue) {
+func (d *Dictionary) Set(key *fp.Element, value *mem.MemoryValue) {
 	d.data[*key] = value
 }
 
@@ -52,9 +53,10 @@ func InitializeDictionaryManager(ctx *HintRunnerContext) {
 func (dm *DictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddress {
 	newDictAddr := vm.Memory.AllocateEmptySegment()
 	dm.dictionaries[newDictAddr.SegmentIndex] = Dictionary{
-		data: make(map[f.Element]*mem.MemoryValue),
+		data: make(map[fp.Element]*mem.MemoryValue),
 		idx:  uint64(len(dm.dictionaries)),
 	}
+
 	return newDictAddr
 }
 
@@ -65,24 +67,27 @@ func (dm *DictionaryManager) GetDictionary(dictAddr *mem.MemoryAddress) (Diction
 	if ok {
 		return dict, nil
 	}
+
 	return Dictionary{}, fmt.Errorf("no dictionary at address %s", dictAddr)
 }
 
 // Given a memory address and a key it returns the value held at that position. The address is used
 // to locate the correct dictionary and the key to index on it
-func (dm *DictionaryManager) At(dictAddr *mem.MemoryAddress, key *f.Element) (*mem.MemoryValue, error) {
+func (dm *DictionaryManager) At(dictAddr *mem.MemoryAddress, key *fp.Element) (*mem.MemoryValue, error) {
 	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
 		return dict.At(key)
 	}
+
 	return nil, fmt.Errorf("no dictionary at address %s", dictAddr)
 }
 
 // Given a memory address,a key and a value it stores the value at the correct position.
-func (dm *DictionaryManager) Set(dictAddr *mem.MemoryAddress, key *f.Element, value *mem.MemoryValue) error {
+func (dm *DictionaryManager) Set(dictAddr *mem.MemoryAddress, key *fp.Element, value *mem.MemoryValue) error {
 	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
 		dict.Set(key, value)
 		return nil
 	}
+
 	return fmt.Errorf("no dictionary at address %s", dictAddr)
 }
 
@@ -92,10 +97,9 @@ type SquashedDictionaryManager struct {
 	// the list in reversed order.
 	// Note: The indices should be Felts, but current memory limitations
 	// make it impossible to use an index that big so we use uint64 instead
-	KeyToIndices map[f.Element][]uint64
-
+	KeyToIndices map[fp.Element][]uint64
 	// A descending list of keys
-	Keys []f.Element
+	Keys []fp.Element
 }
 
 func InitializeSquashedDictionaryManager(ctx *HintRunnerContext) error {
@@ -103,14 +107,16 @@ func InitializeSquashedDictionaryManager(ctx *HintRunnerContext) error {
 		ctx.SquashedDictionaryManager.Keys != nil {
 		return fmt.Errorf("squashed dictionary manager already initialized")
 	}
-	ctx.SquashedDictionaryManager.KeyToIndices = make(map[f.Element][]uint64, 100)
-	ctx.SquashedDictionaryManager.Keys = make([]f.Element, 0, 100)
+
+	ctx.SquashedDictionaryManager.KeyToIndices = make(map[fp.Element][]uint64, 100)
+	ctx.SquashedDictionaryManager.Keys = make([]fp.Element, 0, 100)
+
 	return nil
 }
 
 // It adds another index to the list of indices associated to the given key
 // If the key is not present, it creates a new entry
-func (sdm *SquashedDictionaryManager) Insert(key *f.Element, index uint64) {
+func (sdm *SquashedDictionaryManager) Insert(key *fp.Element, index uint64) {
 	keyIndex := *key
 	if indices, ok := sdm.KeyToIndices[keyIndex]; ok {
 		sdm.KeyToIndices[keyIndex] = append(indices, index)
@@ -120,15 +126,16 @@ func (sdm *SquashedDictionaryManager) Insert(key *f.Element, index uint64) {
 }
 
 // It returns the smallest key in the key list
-func (sdm *SquashedDictionaryManager) LastKey() (f.Element, error) {
+func (sdm *SquashedDictionaryManager) LastKey() (fp.Element, error) {
 	if len(sdm.Keys) == 0 {
-		return f.Element{}, fmt.Errorf("no keys left")
+		return fp.Element{}, fmt.Errorf("no keys left")
 	}
+
 	return sdm.Keys[len(sdm.Keys)-1], nil
 }
 
 // It pops out the smallest key in the key list
-func (sdm *SquashedDictionaryManager) PopKey() (f.Element, error) {
+func (sdm *SquashedDictionaryManager) PopKey() (fp.Element, error) {
 	key, err := sdm.LastKey()
 	if err != nil {
 		return key, err

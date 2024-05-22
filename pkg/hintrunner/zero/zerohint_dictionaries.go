@@ -8,7 +8,6 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 // DefaultDictNew hint creates a new dictionary with a default value
@@ -29,6 +28,7 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 			//> if '__dict_manager' not in globals():
 			//> 	from starkware.cairo.common.dict import DictManager
 			//> 	__dict_manager = DictManager()
+
 			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
 			if !ok {
 				dictionaryManager = hinter.NewZeroDictionaryManager()
@@ -43,10 +43,12 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			defaultValueMv := memory.MemoryValueFromFieldElement(defaultValue)
-			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, defaultValueMv)
+			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, &defaultValueMv)
 			newDefaultDictionaryAddrMv := memory.MemoryValueFromMemoryAddress(&newDefaultDictionaryAddr)
 			apAddr := vm.Context.AddressAp()
+
 			return vm.Memory.WriteToAddress(&apAddr, &newDefaultDictionaryAddrMv)
 		},
 	}
@@ -57,6 +59,7 @@ func createDefaultDictNewHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	if err != nil {
 		return nil, err
 	}
+
 	return newDefaultDictNewHint(defaultValue), nil
 }
 
@@ -80,6 +83,7 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
 			if !ok {
 				return fmt.Errorf("__dict_manager not in scope")
@@ -96,14 +100,17 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			keyValue, err := dictionaryManager.At(*dictPtr, *key)
+
+			keyValue, err := dictionaryManager.At(*dictPtr, key)
 			if err != nil {
 				return err
 			}
+
 			valueAddr, err := value.GetAddress(vm)
 			if err != nil {
 				return err
 			}
+
 			return vm.Memory.WriteToAddress(&valueAddr, &keyValue)
 		},
 	}
@@ -114,14 +121,17 @@ func createDictReadHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	if err != nil {
 		return nil, err
 	}
+
 	key, err := resolver.GetResOperander("key")
 	if err != nil {
 		return nil, err
 	}
+
 	value, err := resolver.GetResOperander("value")
 	if err != nil {
 		return nil, err
 	}
+
 	return newDictReadHint(dictPtr, key, value), nil
 }
 
@@ -140,7 +150,7 @@ func newSquashDictInnerAssertLenKeysHint() hinter.Hinter {
 				return err
 			}
 
-			keys := keys_.([]f.Element)
+			keys := keys_.([]fp.Element)
 			if len(keys) != 0 {
 				return fmt.Errorf("assertion `len(keys) == 0` failed")
 			}
@@ -272,7 +282,7 @@ func newSquashDictInnerLenAssertHint() hinter.Hinter {
 				return err
 			}
 
-			currentAccessIndices := currentAccessIndices_.([]f.Element)
+			currentAccessIndices := currentAccessIndices_.([]fp.Element)
 			if len(currentAccessIndices) != 0 {
 				return fmt.Errorf("assertion `len(current_access_indices) == 0` failed")
 			}
@@ -303,7 +313,7 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			keys := keys_.([]f.Element)
+			keys := keys_.([]fp.Element)
 			if len(keys) == 0 {
 				return fmt.Errorf("no keys left but remaining_accesses > 0")
 			}

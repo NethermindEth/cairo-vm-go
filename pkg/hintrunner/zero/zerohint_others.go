@@ -5,9 +5,9 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hinter {
@@ -23,8 +23,8 @@ func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hi
 				return err
 			}
 
-			newN := new(f.Element)
-			newN = newN.Sub(n.(*f.Element), &utils.FeltOne)
+			newN := new(fp.Element)
+			newN = newN.Sub(n.(*fp.Element), &utils.FeltOne)
 
 			if err := ctx.ScopeManager.AssignVariable("n", newN); err != nil {
 				return err

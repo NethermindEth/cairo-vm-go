@@ -5,7 +5,7 @@ import (
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func ResolveAsAddress(vm *VM.VirtualMachine, op ResOperander) (*mem.MemoryAddress, error) {
@@ -22,7 +22,7 @@ func ResolveAsAddress(vm *VM.VirtualMachine, op ResOperander) (*mem.MemoryAddres
 	return addr, nil
 }
 
-func ResolveAsFelt(vm *VM.VirtualMachine, op ResOperander) (*f.Element, error) {
+func ResolveAsFelt(vm *VM.VirtualMachine, op ResOperander) (*fp.Element, error) {
 	mv, err := op.Resolve(vm)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)

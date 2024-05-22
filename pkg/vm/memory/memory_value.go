@@ -6,7 +6,7 @@ import (
 	"unsafe"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"golang.org/x/exp/constraints"
 )
 
@@ -42,9 +42,9 @@ func (address *MemoryAddress) AddOffset(offset int16) (MemoryAddress, error) {
 }
 
 // Adds a memory address and a field element
-func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) error {
-	lhsOffset := new(f.Element).SetUint64(lhs.Offset)
-	newOffset := new(f.Element).Add(lhsOffset, rhs)
+func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *fp.Element) error {
+	lhsOffset := new(fp.Element).SetUint64(lhs.Offset)
+	newOffset := new(fp.Element).Add(lhsOffset, rhs)
 	if !newOffset.IsUint64() {
 		return fmt.Errorf("new offset bigger than uint64: %s", rhs.Text(10))
 	}
@@ -53,11 +53,11 @@ func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) error {
 	return nil
 }
 
-func (address *MemoryAddress) Relocate(segmentsOffset []uint64) *f.Element {
+func (address *MemoryAddress) Relocate(segmentsOffset []uint64) *fp.Element {
 	// no risk overflow because this sizes exists in actual Memory
 	// so if by chance the uint64 addition overflowed, then we have
 	// a machine with more than 2**64 bytes of memory (quite a lot!)
-	return new(f.Element).SetUint64(
+	return new(fp.Element).SetUint64(
 		segmentsOffset[address.SegmentIndex] + address.Offset,
 	)
 }
@@ -70,11 +70,11 @@ func (address MemoryAddress) String() string {
 
 // Stores all posible types that can be stored in a Memory cell,
 //
-//   - either a Felt value (an `f.Element`),
+//   - either a Felt value (an `fp.Element`),
 //   - or a pointer to another Memory Cell (a `MemoryAddress`)
-//     both values share the same underlying memory, which is a f.Element
+//     both values share the same underlying memory, which is a fp.Element
 type MemoryValue struct {
-	felt f.Element
+	felt fp.Element
 	kind memoryValueKind
 }
 
@@ -96,7 +96,7 @@ func MemoryValueFromMemoryAddress(address *MemoryAddress) MemoryValue {
 	return v
 }
 
-func MemoryValueFromFieldElement(felt *f.Element) MemoryValue {
+func MemoryValueFromFieldElement(felt *fp.Element) MemoryValue {
 	return MemoryValue{
 		felt: *felt,
 		kind: feltMemoryValue,
@@ -109,14 +109,14 @@ func MemoryValueFromInt[T constraints.Integer](v T) MemoryValue {
 	}
 
 	value := MemoryValue{kind: feltMemoryValue}
-	rhs := f.NewElement(uint64(-v))
+	rhs := fp.NewElement(uint64(-v))
 	value.felt.Sub(&value.felt, &rhs)
 	return value
 }
 
 func MemoryValueFromUint[T constraints.Unsigned](v T) MemoryValue {
 	return MemoryValue{
-		felt: f.NewElement(uint64(v)),
+		felt: fp.NewElement(uint64(v)),
 		kind: feltMemoryValue,
 	}
 }
@@ -138,7 +138,7 @@ func MemoryValueFromAny(anyType any) (MemoryValue, error) {
 		return MemoryValueFromInt(anyType), nil
 	case uint64:
 		return MemoryValueFromUint(anyType), nil
-	case *f.Element:
+	case *fp.Element:
 		return MemoryValueFromFieldElement(anyType), nil
 	case *MemoryAddress:
 		return MemoryValueFromMemoryAddress(anyType), nil
@@ -176,7 +176,7 @@ func (mv *MemoryValue) MemoryAddress() (*MemoryAddress, error) {
 	return mv.addrUnsafe(), nil
 }
 
-func (mv *MemoryValue) FieldElement() (*f.Element, error) {
+func (mv *MemoryValue) FieldElement() (*fp.Element, error) {
 	if !mv.IsFelt() {
 		return nil, fmt.Errorf("memory value is not a field element")
 	}

@@ -41,6 +41,7 @@ func (sm *ScopeManager) ExitScope() error {
 	if len(sm.scopes) < 2 {
 		return fmt.Errorf("expected at least one existing scope")
 	}
+
 	sm.scopes = sm.scopes[:(len(sm.scopes) - 1)]
 	return nil
 }
@@ -62,6 +63,7 @@ func (sm *ScopeManager) AssignVariables(values map[string]any) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -96,6 +98,7 @@ func (sm *ScopeManager) getCurrentScope() (*map[string]any, error) {
 	if len(sm.scopes) == 0 {
 		return nil, fmt.Errorf("expected at least one existing scope")
 	}
+
 	return &sm.scopes[len(sm.scopes)-1], nil
 }
 
@@ -104,6 +107,7 @@ func (sm *ScopeManager) GetZeroDictionaryManager() (ZeroDictionaryManager, bool)
 	if err != nil {
 		return ZeroDictionaryManager{}, false
 	}
+
 	dictionaryManager, ok := dictionaryManagerValue.(ZeroDictionaryManager)
 	return dictionaryManager, ok
 }

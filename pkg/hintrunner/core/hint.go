@@ -12,7 +12,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type AllocSegment struct {
@@ -71,7 +71,7 @@ func (hint *TestLessThan) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerCon
 		return err
 	}
 
-	resFelt := f.Element{}
+	resFelt := fp.Element{}
 	if lhsFelt.Cmp(rhsFelt) < 0 {
 		resFelt.SetOne()
 	}
@@ -121,7 +121,7 @@ func (hint *TestLessThanOrEqual) Execute(vm *VM.VirtualMachine, _ *hinter.HintRu
 		return err
 	}
 
-	resFelt := f.Element{}
+	resFelt := fp.Element{}
 	if lhsFelt.Cmp(rhsFelt) <= 0 {
 		resFelt.SetOne()
 	}
@@ -201,8 +201,8 @@ func (hint LinearSplit) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 		return fmt.Errorf("get y address %s: %w", yAddr, err)
 	}
 
-	xFiled := &f.Element{}
-	yFiled := &f.Element{}
+	xFiled := &fp.Element{}
+	yFiled := &fp.Element{}
 	xFiled.SetBytes(x.Bytes())
 	yFiled.SetBytes(y.Bytes())
 	mv := mem.MemoryValueFromFieldElement(xFiled)
@@ -266,10 +266,10 @@ func (hint *WideMul128) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 
 	bytes := mul.Bytes32()
 
-	low := f.Element{}
+	low := fp.Element{}
 	low.SetBytes(bytes[16:])
 
-	high := f.Element{}
+	high := fp.Element{}
 	high.SetBytes(bytes[:16])
 
 	lowAddr, err := hint.low.Get(vm)
@@ -337,7 +337,7 @@ func (hint DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) e
 	quo := uint256.Int{}
 	quo.Div(&lhsvalue, &rhsvalue)
 
-	quotient := f.Element{}
+	quotient := fp.Element{}
 	quoVal := quo.Uint64()
 	quotient.SetUint64(quoVal)
 
@@ -359,7 +359,7 @@ func (hint DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) e
 	rem := uint256.Int{}
 	rem.Sub(&lhsvalue, &temp)
 
-	remainder := f.Element{}
+	remainder := fp.Element{}
 	remVal := rem.Uint64()
 	remainder.SetUint64(remVal)
 
@@ -451,16 +451,16 @@ func (hint Uint256DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerCon
 
 	var quotientBytes [32]byte
 	quotient.FillBytes(quotientBytes[:])
-	quotientLimb1 := f.Element{}
+	quotientLimb1 := fp.Element{}
 	quotientLimb1.SetBytes(quotientBytes[:16])
-	quotientLimb0 := f.Element{}
+	quotientLimb0 := fp.Element{}
 	quotientLimb0.SetBytes(quotientBytes[16:])
 
 	var remainderBytes [32]byte
 	remainder.FillBytes(remainderBytes[:])
-	remainderLimb1 := f.Element{}
+	remainderLimb1 := fp.Element{}
 	remainderLimb1.SetBytes(remainderBytes[:16])
-	remainderLimb0 := f.Element{}
+	remainderLimb0 := fp.Element{}
 	remainderLimb0.SetBytes(remainderBytes[16:])
 
 	quotient0Addr, err := hint.quotient0.Get(vm)
@@ -572,7 +572,7 @@ func (hint *SquareRoot) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 	valueU256 := uint256.Int(valueFelt.Bits())
 	valueU256.Sqrt(&valueU256)
 
-	sqrt := f.Element{}
+	sqrt := fp.Element{}
 	sqrt.SetBytes(valueU256.Bytes())
 
 	dstAddr, err := hint.dst.Get(vm)
@@ -646,10 +646,10 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunne
 	rootMasked.And(&root, mask64)
 	rootShifted := root.Rsh(&root, 64)
 
-	sqrt0 := f.Element{}
+	sqrt0 := fp.Element{}
 	sqrt0.SetBytes(rootMasked.Bytes())
 
-	sqrt1 := f.Element{}
+	sqrt1 := fp.Element{}
 	sqrt1.SetBytes(rootShifted.Bytes())
 
 	sqrt0Addr, err := hint.sqrt0.Get(vm)
@@ -681,12 +681,12 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunne
 	mask128.Or(mask128, mask64)
 	remainderMasked := uint256.Int{}
 	remainderMasked.And(&remainder, mask128)
-	remainderLow := f.Element{}
+	remainderLow := fp.Element{}
 	remainderLow.SetBytes(remainderMasked.Bytes())
 
 	remainderShifted := uint256.Int{}
 	remainderShifted.Rsh(&remainder, 128)
-	remainderHigh := f.Element{}
+	remainderHigh := fp.Element{}
 	remainderHigh.SetBytes(remainderShifted.Bytes())
 
 	remainderLowAddr, err := hint.remainderLow.Get(vm)
@@ -722,7 +722,7 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunne
 	result := rhs.Gt(&lhs)
 	result = !result
 
-	sqrtMul2MinusRemainderGeU128 := f.Element{}
+	sqrtMul2MinusRemainderGeU128 := fp.Element{}
 	if result {
 		sqrtMul2MinusRemainderGeU128.SetOne()
 	}
@@ -1001,7 +1001,7 @@ func (hint *GetCurrentAccessIndex) Execute(vm *VM.VirtualMachine, ctx *hinter.Hi
 		return fmt.Errorf("get last index: %w", err)
 	}
 
-	lastIndex := f.NewElement(lastIndex64)
+	lastIndex := fp.NewElement(lastIndex64)
 	mv := mem.MemoryValueFromFieldElement(&lastIndex)
 
 	return vm.Memory.WriteToAddress(rangeCheckPtr, &mv)
@@ -1021,7 +1021,7 @@ func (hint *ShouldSkipSquashLoop) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 		return fmt.Errorf("get should skip loop address: %w", err)
 	}
 
-	var shouldSkipLoop f.Element
+	var shouldSkipLoop fp.Element
 	if lastIndices, err := ctx.SquashedDictionaryManager.LastIndices(); err == nil && len(lastIndices) > 1 {
 		shouldSkipLoop.SetOne()
 	} else if err != nil {
@@ -1077,7 +1077,7 @@ func (hint *ShouldContinueSquashLoop) Execute(vm *VM.VirtualMachine, ctx *hinter
 		return fmt.Errorf("get should continue address: %w", err)
 	}
 
-	var shouldContinueLoop f.Element
+	var shouldContinueLoop fp.Element
 	if lastIndices, err := ctx.SquashedDictionaryManager.LastIndices(); err == nil && len(lastIndices) <= 1 {
 		shouldContinueLoop.SetOne()
 	} else if err != nil {
@@ -1210,20 +1210,20 @@ func (hint Uint512DivModByUint256) Execute(vm *VM.VirtualMachine, _ *hinter.Hint
 
 	var qBytes [64]byte
 	quotient.FillBytes(qBytes[:])
-	qlimb3 := f.Element{}
+	qlimb3 := fp.Element{}
 	qlimb3.SetBytes(qBytes[:16])
-	qlimb2 := f.Element{}
+	qlimb2 := fp.Element{}
 	qlimb2.SetBytes(qBytes[16:32])
-	qlimb1 := f.Element{}
+	qlimb1 := fp.Element{}
 	qlimb1.SetBytes(qBytes[32:48])
-	qlimb0 := f.Element{}
+	qlimb0 := fp.Element{}
 	qlimb0.SetBytes(qBytes[48:])
 
 	var rBytes [32]byte
 	rem.FillBytes(rBytes[:])
-	rlimb1 := f.Element{}
+	rlimb1 := fp.Element{}
 	rlimb1.SetBytes(rBytes[:16])
-	rlimb0 := f.Element{}
+	rlimb0 := fp.Element{}
 	rlimb0.SetBytes(rBytes[16:])
 
 	quotient0Addr, err := hint.quotient0.Get(vm)
@@ -1352,12 +1352,12 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 		return err
 	}
 
-	thirdLength := f.Element{32, 0, 0, 544} // -1 field element
+	thirdLength := fp.Element{32, 0, 0, 544} // -1 field element
 	thirdLength.Sub(&thirdLength, bFelt)
 
 	// Array of pairs (2-tuple)
 	lengthsAndIndices := []struct {
-		Value    f.Element
+		Value    fp.Element
 		Position int
 	}{
 		{*aFelt, 0},
@@ -1388,10 +1388,10 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 	remainder := uint256.Int{}
 	quotient.DivMod(&quotient, &primeOver3High, &remainder)
 
-	remainderFelt := f.Element{}
+	remainderFelt := fp.Element{}
 	remainderFelt.SetBytes(remainder.Bytes())
 
-	quotientFelt := f.Element{}
+	quotientFelt := fp.Element{}
 	quotientFelt.SetBytes(quotient.Bytes())
 
 	// Store remainder 1
@@ -1505,13 +1505,13 @@ func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
 	// Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic residue.
 
 	// Starkware's elliptic curve Beta value https://docs.starkware.co/starkex/crypto/stark-curve.html
-	betaFelt := f.Element{3863487492851900874, 7432612994240712710, 12360725113329547591, 88155977965380735}
+	betaFelt := fp.Element{3863487492851900874, 7432612994240712710, 12360725113329547591, 88155977965380735}
 
-	var randomX, randomYSquared f.Element
+	var randomX, randomYSquared fp.Element
 	rand := u.DefaultRandGenerator()
 	for {
 		randomX = u.RandomFeltElement(rand)
-		randomYSquared = f.Element{}
+		randomYSquared = fp.Element{}
 		randomYSquared.Square(&randomX)
 		randomYSquared.Mul(&randomYSquared, &randomX)
 		randomYSquared.Add(&randomYSquared, &randomX)
@@ -1571,10 +1571,10 @@ func (hint *FieldSqrt) Execute(vm *VM.VirtualMachine) error {
 		return err
 	}
 
-	threeFelt := f.Element{}
+	threeFelt := fp.Element{}
 	threeFelt.SetUint64(3)
 
-	var res f.Element
+	var res fp.Element
 	// Legendre == 1 -> Quadratic residue
 	// Legendre == -1 -> Quadratic non-residue
 	// Legendre == 0 -> Zero

@@ -36,5 +36,6 @@ func SetContextWithScope(scope map[string]any) *HintRunnerContext {
 	ctx := HintRunnerContext{
 		ScopeManager: *NewScopeManager(scope),
 	}
+
 	return &ctx
 }
