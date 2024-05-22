@@ -115,3 +115,24 @@ func createBlake2sAddUint256Hinter(resolver hintReferenceResolver, bigend bool) 
 
 	return newBlake2sAddUint256Hint(low, high, data, bigend), nil
 }
+
+func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Blake2sCompute",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_blake2s.blake2s_utils import compute_blake2s_func
+			//> compute_blake2s_func(segments=segments, output_ptr=ids.output)
+
+			return nil
+		},
+	}
+}
+
+func createBlake2sComputeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	output, err := resolver.GetResOperander("output")
+	if err != nil {
+		return nil, err
+	}
+
+	return newBlake2sComputeHint(output), nil
+}
