@@ -1,4 +1,7 @@
-# Builtins Documentation #326
+---
+sidebar_position: 2
+---
+# Builtins Documentation
 
 Regular Cairo instructions are like regular Legos, they work, but for complex things they can be slow. Builtins are special Lego pieces that snap together easily, like pre-built wheels or doors. This makes building things much faster. In a Cairo context, builtins help write clean and efficient Cairo programs, just like these special Lego pieces help build cool things faster.
 
@@ -161,7 +164,7 @@ func hash2(hash_ptr: HashBuiltin*, x, y) -> (hash_ptr: HashBuiltin*, z: felt) {
     
 - **ecdsa**
     
-    A structure defines the memory layout for the signature builtin. It's employed by various functions in the common library, including the ecdsa builtin. For instance, in the verify_ecdsa_signature() function, there's an implicit argument of type SignatureBuiltin, which aids in tracking the next available builtin instance.
+    A structure defines the memory layout for the signature builtin. It's employed by various functions in the common library, including the ecdsa builtin. For instance, in the verify_ecdsa_signature() function, there's an implicit argument of type SignatureBuiltin, which points to a variable of type SignatureBuiltin
     
     The struct comprises two members of type felt:
     
