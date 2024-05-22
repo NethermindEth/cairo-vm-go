@@ -7,7 +7,6 @@ import (
 	"golang.org/x/exp/constraints"
 
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	
 )
 
 // Takes a uint64 and an int16 and outputs their addition as well
@@ -119,4 +118,3 @@ func FeltDivRem(a, b *fp.Element) (div fp.Element, rem fp.Element) {
 
 	return div, rem
 }
-
