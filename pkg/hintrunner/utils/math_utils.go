@@ -23,7 +23,25 @@ func EcDoubleSlope(pointX, pointY, alpha, prime *big.Int) (big.Int, error) {
 	m := big.NewInt(2)
 	m.Mul(m, pointY)
 
-	return divmod(n, m, prime)
+	return Divmod(n, m, prime)
+}
+
+func LineSlope(point_aX, point_aY, point_bX, point_bY, prime *big.Int) (big.Int, error) {
+	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/python/math_utils.py#L130
+
+	modValue := new(big.Int).Mod(new(big.Int).Sub(point_aX, point_bX), prime)
+
+	if modValue.Cmp(big.NewInt(0)) == 0 {
+		return *big.NewInt(0), errors.New("the slope of the line is invalid")
+	}
+
+	// Compute the difference of y-coordinates
+	n := new(big.Int).Sub(point_aY, point_bY)
+
+	// Compute the difference of x-coordinates
+	m := new(big.Int).Sub(point_aX, point_bX)
+
+	return Divmod(n, m, prime)
 }
 
 func AsInt(valueFelt *fp.Element) big.Int {
@@ -44,7 +62,7 @@ func AsIntBig(value *big.Int) big.Int {
 	return *new(big.Int).Sub(value, fp.Modulus())
 }
 
-func divmod(n, m, p *big.Int) (big.Int, error) {
+func Divmod(n, m, p *big.Int) (big.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/python/math_utils.py#L26
 
 	a, _, c := igcdex(m, p)

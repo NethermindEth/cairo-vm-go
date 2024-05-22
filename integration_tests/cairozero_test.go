@@ -10,9 +10,43 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type Filter struct {
+	filters []string
+}
+
+func (f *Filter) init() {
+	filtersRaw := os.Getenv("INTEGRATION_TESTS_FILTERS")
+	if filtersRaw == "" {
+		_ = godotenv.Load("./.env")
+		filtersRaw = os.Getenv("INTEGRATION_TESTS_FILTERS")
+	}
+	filters := strings.Split(filtersRaw, ",")
+	for _, filter := range filters {
+		trimmed := strings.TrimSpace(filter)
+		if trimmed != "" {
+			f.filters = append(f.filters, trimmed)
+		}
+	}
+}
+
+func (f *Filter) filtered(testFile string) bool {
+	if len(f.filters) == 0 {
+		return true
+	}
+
+	for _, filter := range f.filters {
+		if strings.Contains(testFile, filter) {
+			return true
+		}
+	}
+
+	return false
+}
 
 func TestCairoZeroFiles(t *testing.T) {
 	root := "./cairo_files/"
@@ -20,7 +54,8 @@ func TestCairoZeroFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	// filter is for debugging purposes
-	filter := ""
+	filter := Filter{}
+	filter.init()
 
 	for _, dirEntry := range testFiles {
 		if dirEntry.IsDir() || isGeneratedFile(dirEntry.Name()) {
@@ -29,9 +64,10 @@ func TestCairoZeroFiles(t *testing.T) {
 
 		path := filepath.Join(root, dirEntry.Name())
 
-		if !strings.Contains(path, filter) {
+		if !filter.filtered(dirEntry.Name()) {
 			continue
 		}
+
 		t.Logf("testing: %s\n", path)
 
 		compiledOutput, err := compileZeroCode(path)
