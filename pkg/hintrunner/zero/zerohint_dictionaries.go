@@ -453,4 +453,3 @@ func createSquashDictInnerUsedAccessesAssertHinter(resolver hintReferenceResolve
 
 	return newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses), nil
 }
-
