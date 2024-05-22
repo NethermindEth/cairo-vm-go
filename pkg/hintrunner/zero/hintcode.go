@@ -110,6 +110,7 @@ const (
 
 	// ------ Dictionaries hints related code ------
 	defaultDictNewCode                string = "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n\nmemory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)"
+	dictReadCode                      string = "dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ndict_tracker.current_ptr += ids.DictAccess.SIZE\nids.value = dict_tracker.data[ids.key]"
 	dictSquashCopyDict                string = "# Prepare arguments for dict_new. In particular, the same dictionary values should be copied\n# to the new (squashed) dictionary.\nvm_enter_scope({\n# Make __dict_manager accessible.\n'__dict_manager': __dict_manager,\n# Create a copy of the dict, in case it changes in the future.\n'initial_dict': dict(__dict_manager.get_dict(ids.dict_accesses_end)),\n})"
 	squashDictInnerAssertLenKeys      string = "assert len(keys) == 0"
 	squashDictInnerContinueLoop       string = "ids.loop_temps.should_continue = 1 if current_access_indices else 0"
@@ -119,8 +120,9 @@ const (
 	squashDictInnerUsedAccessesAssert string = "assert ids.n_used_accesses == len(access_indices[key])"
 
 	// ------ Other hints related code ------
-	allocSegmentCode     string = "memory[ap] = segments.add()"
-	memcpyEnterScopeCode string = "vm_enter_scope({'n': ids.len})"
-	vmEnterScopeCode     string = "vm_enter_scope()"
-	vmExitScopeCode      string = "vm_exit_scope()"
+	allocSegmentCode          string = "memory[ap] = segments.add()"
+	memcpyContinueCopyingCode string = "n -= 1\nids.continue_copying = 1 if n > 0 else 0"
+	memcpyEnterScopeCode      string = "vm_enter_scope({'n': ids.len})"
+	vmEnterScopeCode          string = "vm_enter_scope()"
+	vmExitScopeCode           string = "vm_exit_scope()"
 )
