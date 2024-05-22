@@ -28,7 +28,6 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 			//> if '__dict_manager' not in globals():
 			//> 	from starkware.cairo.common.dict import DictManager
 			//> 	__dict_manager = DictManager()
-
 			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
 			if !ok {
 				dictionaryManager = hinter.NewZeroDictionaryManager()
@@ -81,17 +80,27 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 			//> 	'initial_dict': dict(__dict_manager.get_dict(ids.dict_accesses_end)),
 			//> })
 
-			dictionaryManager, err := ctx.ScopeManager.GetVariableValue("__dict_manager")
+			dictionaryManager_, err := ctx.ScopeManager.GetVariableValue("__dict_manager")
 			if err != nil {
 				return err
 			}
 
-			dictAccessesEnd_, err := hinter.ResolveAsFelt(vm, dictAccessesEnd)
+			dictionaryManager, ok := dictionaryManager_.(hinter.DictionaryManager)
+			if !ok {
+				return fmt.Errorf("cannot cast dictionaryManager to a DicttionaryManager struct")
+			}
+
+			dictAccessesEnd_, err := hinter.ResolveAsAddress(vm, dictAccessesEnd)
 			if err != nil {
 				return err
 			}
 
-			ctx.ScopeManager.EnterScope(map[string]any{"__dict_manager": dictionaryManager, "initial_dict": dictAccessesEnd_})
+			dictionaryCopy, err := dictionaryManager.GetDictionary(dictAccessesEnd_)
+			if err != nil {
+				return err
+			}
+
+			ctx.ScopeManager.EnterScope(map[string]any{"__dict_manager": dictionaryManager, "initial_dict": dictionaryCopy})
 
 			return nil
 		},
