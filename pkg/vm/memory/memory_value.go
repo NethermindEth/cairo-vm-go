@@ -332,7 +332,7 @@ func (memory *Memory) GetConsecutiveMemoryValues(addr MemoryAddress, size int16)
 	return values, nil
 }
 
-func ResolveAsBigInt3(memory *Memory, valAddr MemoryAddress) ([3]*f.Element, error) {
+func (memory *Memory) ResolveAsBigInt3(valAddr MemoryAddress) ([3]*f.Element, error) {
 	valMemoryValues, err := memory.GetConsecutiveMemoryValues(valAddr, int16(3))
 	if err != nil {
 		return [3]*f.Element{}, err

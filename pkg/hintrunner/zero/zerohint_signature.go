@@ -22,7 +22,7 @@ import (
 //
 // `newVerifyZeroHint` writes the quotient of the modular division of the packed value
 // by SECP256R1 prime to the memory address corresponding to `q`
-func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
+func newVerifyZeroHint(memory *memory.Memory, val, q hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "VerifyZero",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -32,30 +32,20 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			//> ids.q = q % PRIME
 
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-			secPBig, ok := secp_utils.GetSecPBig()
-			if !ok {
-				return fmt.Errorf("GetSecPBig failed")
-			}
-
+			
 			valAddr, err := val.GetAddress(vm)
 			if err != nil {
 				return err
 			}
 
-			valMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(valAddr, int16(3))
+			valValues, err := vm.Memory.ResolveAsBigInt3(valAddr)
 			if err != nil {
 				return err
 			}
-
-			// [d0, d1, d2]
-			var valValues [3]*fp.Element
-
-			for i := 0; i < 3; i++ {
-				valValue, err := valMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				valValues[i] = valValue
+			
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
 			}
 
 			//> q, r = divmod(pack(ids.val, PRIME), SECP_P)
@@ -84,7 +74,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 	}
 }
 
-func createVerifyZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+func createVerifyZeroHinter(memory *memory.Memory, resolver hintReferenceResolver) (hinter.Hinter, error) {
 	val, err := resolver.GetResOperander("val")
 	if err != nil {
 		return nil, err
@@ -95,7 +85,7 @@ func createVerifyZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 		return nil, err
 	}
 
-	return newVerifyZeroHint(val, q), nil
+	return newVerifyZeroHint(memory, val, q), nil
 }
 
 // VerifyECDSASignature hint writes an ECDSA signature to a given address
