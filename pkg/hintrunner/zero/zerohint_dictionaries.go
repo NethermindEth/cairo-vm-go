@@ -128,7 +128,7 @@ func createDictReadHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 }
 
 // DictSquashCopyDict hint prepares arguments for creating a new dictionary
-// by copying the existing one in the context of squashing
+// with `dict_new` by copying the existing one in the context of squashing
 //
 // `newDictSquashCopyDictHint` takes 1 operander as argument
 //   - `dict_accesses_end` variable is a memory address that allows access to the dictionary
@@ -152,7 +152,7 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 				return err
 			}
 
-			dictionaryManager, ok := dictionaryManager_.(hinter.DictionaryManager)
+			dictionaryManager, ok := dictionaryManager_.(hinter.ZeroDictionaryManager)
 			if !ok {
 				return fmt.Errorf("cannot cast dictionaryManager to a DicttionaryManager struct")
 			}
@@ -162,7 +162,7 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 				return err
 			}
 
-			dictionaryCopy, err := dictionaryManager.GetDictionary(dictAccessesEnd_)
+			dictionaryCopy, err := dictionaryManager.GetDictionary(*dictAccessesEnd_)
 			if err != nil {
 				return err
 			}
