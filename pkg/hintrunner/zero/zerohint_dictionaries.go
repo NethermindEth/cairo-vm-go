@@ -131,7 +131,9 @@ func createDictReadHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 // by copying the existing one in the context of squashing
 //
 // `newDictSquashCopyDictHint` takes 1 operander as argument
-//   - `dict_accesses_end` variable is
+//   - `dict_accesses_end` variable is a memory address that allows access to the dictionary
+//
+// `newDictSquashCopyDictHint`assigns `initial_dict` to the retrieved dictionary in the current scope
 func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DictSquashCopyDict",
