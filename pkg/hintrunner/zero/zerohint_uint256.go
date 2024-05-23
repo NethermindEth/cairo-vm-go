@@ -234,7 +234,7 @@ func newUint256SqrtHint(n, root hinter.ResOperander) hinter.Hinter {
 
 			//> ids.root.low = root
 			//> ids.root.high = 0
-			return hinter.WriteUint256ToAddress(vm, rootAddr, &calculatedFeltRoot, &utils.FeltZero)
+			return vm.Memory.WriteUint256ToAddress( rootAddr, &calculatedFeltRoot, &utils.FeltZero)
 		},
 	}
 }
@@ -351,7 +351,7 @@ func newUint256UnsignedDivRemHint(a, div, quotient, remainder hinter.ResOperande
 				return err
 			}
 
-			err = hinter.WriteUint256ToAddress(vm, quotientAddr, lowQuot, highQuot)
+			err =  vm.Memory.WriteUint256ToAddress( quotientAddr, lowQuot, highQuot)
 			if err != nil {
 				return err
 			}
@@ -361,7 +361,7 @@ func newUint256UnsignedDivRemHint(a, div, quotient, remainder hinter.ResOperande
 				return err
 			}
 
-			return hinter.WriteUint256ToAddress(vm, remainderAddr, lowRem, highRem)
+			return  vm.Memory.WriteUint256ToAddress( remainderAddr, lowRem, highRem)
 		},
 	}
 }
@@ -458,7 +458,7 @@ func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hin
 				return err
 			}
 
-			err = hinter.WriteUint256ToAddress(vm, quotientLowAddr, lowQuotLow, lowQuotHigh)
+			err =  vm.Memory.WriteUint256ToAddress( quotientLowAddr, lowQuotLow, lowQuotHigh)
 			if err != nil {
 				return err
 			}
@@ -468,7 +468,7 @@ func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hin
 				return err
 			}
 
-			err = hinter.WriteUint256ToAddress(vm, quotientHighAddr, highQuotLow, highQuotHigh)
+			err =  vm.Memory.WriteUint256ToAddress( quotientHighAddr, highQuotLow, highQuotHigh)
 			if err != nil {
 				return err
 			}
@@ -478,7 +478,7 @@ func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hin
 				return err
 			}
 
-			return hinter.WriteUint256ToAddress(vm, remainderAddr, lowRem, highRem)
+			return  vm.Memory.WriteUint256ToAddress( remainderAddr, lowRem, highRem)
 		},
 	}
 }
