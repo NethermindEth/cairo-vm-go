@@ -164,7 +164,7 @@ func hash2(hash_ptr: HashBuiltin*, x, y) -> (hash_ptr: HashBuiltin*, z: felt) {
     
 - **ecdsa**
     
-    A structure defines the memory layout for the signature builtin. It's employed by various functions in the common library, including the ecdsa builtin. For instance, in the verify_ecdsa_signature() function, there's an implicit argument of type SignatureBuiltin, which points to a variable of type SignatureBuiltin
+A structure defines the memory layout for the signature builtin. It's employed by various functions in the common library, including the ecdsa builtin. For instance, in the verify_ecdsa_signature() function, there's an implicit argument of type `*SignatureBuiltin`, which aids in tracking the next available builtin instance.
     
     The struct comprises two members of type felt:
     
