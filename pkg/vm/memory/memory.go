@@ -358,3 +358,21 @@ func (memory *Memory) FindSegmentWithBuiltin(builtinName string) (*Segment, bool
 	}
 	return nil, false
 }
+
+func WriteToNthStructField(vm *VM.VirtualMachine, addr mem.MemoryAddress, value mem.MemoryValue, field int16) error {
+	nAddr, err := addr.AddOffset(field)
+	if err != nil {
+		return err
+	}
+
+	return vm.Memory.WriteToAddress(&nAddr, &value)
+}
+
+func WriteUint256ToAddress(vm *VM.VirtualMachine, addr mem.MemoryAddress, low, high *f.Element) error {
+	lowMemoryValue := memory.MemoryValueFromFieldElement(low)
+	err := vm.Memory.WriteToAddress(&addr, &lowMemoryValue)
+	if err != nil {
+		return err
+	}
+	return WriteToNthStructField(vm, addr, memory.MemoryValueFromFieldElement(high), 1)
+}
