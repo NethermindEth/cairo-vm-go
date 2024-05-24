@@ -10,6 +10,68 @@ import (
 
 func TestZeroHintDictionaries(t *testing.T) {
 	runHinterTests(t, map[string][]hintTestCase{
+		"DictNew": {
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					value1 := memory.MemoryValueFromUint(uint(1000))
+					value2 := memory.MemoryValueFromUint(uint(2000))
+					value3 := memory.MemoryValueFromUint(uint(3000))
+					err := ctx.ScopeManager.AssignVariable("initial_dict", map[fp.Element]memory.MemoryValue{
+						*feltUint64(10): value1,
+						*feltUint64(20): value2,
+						*feltUint64(30): value3,
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDictNewHint()
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					_, err := ctx.runnerContext.ScopeManager.GetVariableValue("initial_dict")
+					if err.Error() != "variable initial_dict not found in current scope" {
+						t.Fatalf("initial_dict not deleted")
+					}
+
+					apAddr := ctx.vm.Context.AddressAp()
+					dictAddr, err := ctx.vm.Memory.ReadFromAddressAsAddress(&apAddr)
+					if err != nil {
+						t.Fatalf("error reading address from ap")
+					}
+					if dictAddr.String() != "2:0" {
+						t.Fatalf("incorrect apValue: %s expected %s", dictAddr.String(), "2:0")
+					}
+
+					dictionaryManagerValue, err := ctx.runnerContext.ScopeManager.GetVariableValue("__dict_manager")
+					if err != nil {
+						t.Fatalf("__dict_manager missing")
+					}
+					dictionaryManager := dictionaryManagerValue.(hinter.ZeroDictionaryManager)
+					dictionary, err := dictionaryManager.GetDictionary(dictAddr)
+					if err != nil {
+						t.Fatalf("error fetching dictionary from address at ap")
+					}
+
+					for _, key := range []fp.Element{*feltUint64(10), *feltUint64(20), *feltUint64(30)} {
+						value, err := dictionary.At(key)
+						if err != nil {
+							t.Fatalf("error fetching value for key: %v", key)
+						}
+						valueFelt, err := value.FieldElement()
+						if err != nil {
+							t.Fatalf("mv: %s cannot be converted to felt", value)
+						}
+						expectedValueFelt := new(fp.Element).Mul(&key, feltUint64(100))
+
+						if !valueFelt.Equal(expectedValueFelt) {
+							t.Fatalf("at key: %v expected: %s actual: %s", key, expectedValueFelt, valueFelt)
+						}
+					}
+				},
+			},
+		},
 		"DefaultDictNew": {
 			{
 				operanders: []*hintOperander{

@@ -159,6 +159,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case usortBodyCode:
 		return createUsortBodyHinter(resolver)
 	// Dictionaries hints
+	case dictNewCode:
+		return createDictNewHinter()
 	case defaultDictNewCode:
 		return createDefaultDictNewHinter(resolver)
 	case dictReadCode:
