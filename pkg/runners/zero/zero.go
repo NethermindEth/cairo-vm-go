@@ -240,7 +240,24 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 	return nil
 }
 
+func (runner *ZeroRunner) FinalizeSegments() {
+	programSize := uint64(len(runner.program.Bytecode))
+	runner.vm.Memory.Segments[vm.ExecutionSegment].Finalize(programSize)
+	for _, builtin := range runner.program.Builtins {
+		bRunner := builtins.Runner(builtin)
+		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.String())
+		if ok {
+			size, err := bRunner.GetAllocatedSize(builtinSegment.Len(), runner.vm.Step)
+			if err != nil {
+				panic(fmt.Sprintf("builtin %s: %v", bRunner.String(), err))
+			}
+			builtinSegment.Finalize(size)
+		}
+	}
+}
+
 func (runner *ZeroRunner) BuildProof() ([]byte, []byte, error) {
+	runner.FinalizeSegments()
 	relocatedTrace, err := runner.vm.ExecutionTrace()
 	if err != nil {
 		return nil, nil, err

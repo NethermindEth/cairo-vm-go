@@ -13,6 +13,10 @@ import (
 const ECDSAName = "ecdsa"
 const cellsPerECDSA = 2
 
+// TODO: Move to JSON
+const ratioECDSA = 2048
+const instancesPerComponentECDSA = 1
+
 type ECDSA struct {
 	signatures map[uint64]ecdsa.Signature
 }
@@ -134,6 +138,14 @@ func (e *ECDSA) AddSignature(pubOffset uint64, r, s *fp.Element) error {
 
 func (e *ECDSA) String() string {
 	return ECDSAName
+}
+
+func (e *ECDSA) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
+	allocatedInstances, err := GetAllocatedInstances(ratioECDSA, cellsPerECDSA, segmentUsedSize, instancesPerComponentECDSA, vmCurrentStep)
+	if err != nil {
+		return 0, err
+	}
+	return allocatedInstances * cellsPerECDSA, nil
 }
 
 // recoverY recovers the y and -y coordinate of x. True y can be either y or -y

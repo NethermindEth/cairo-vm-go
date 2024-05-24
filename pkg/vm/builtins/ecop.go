@@ -13,6 +13,8 @@ import (
 const EcOpName = "ec_op"
 const cellsPerEcOp = 7
 const inputCellsPerEcOp = 5
+const ratioEcOp = 8
+const instancesPerComponentEcOp = 5
 
 var feltThree f.Element = f.Element(
 	[]uint64{
@@ -100,6 +102,14 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 	ryMV := mem.MemoryValueFromFieldElement(&r.Y)
 	err = segment.Write(outputOff+1, &ryMV)
 	return err
+}
+
+func (e *EcOp) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
+	allocatedInstances, err := GetAllocatedInstances(ratioEcOp, inputCellsPerEcOp, segmentUsedSize, instancesPerComponentEcOp, vmCurrentStep)
+	if err != nil {
+		return 0, err
+	}
+	return allocatedInstances * inputCellsPerEcOp, nil
 }
 
 // structure to represent a point in the elliptic curve

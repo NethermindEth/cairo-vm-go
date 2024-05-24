@@ -9,6 +9,11 @@ import (
 )
 
 const RangeCheckName = "range_check"
+const cellsPerRangeCheck = 1
+
+// TODO: Move to JSON
+const ratioRangeCheck = 8
+const instancesPerComponentRangeCheck = 1
 
 type RangeCheck struct{}
 
@@ -31,4 +36,12 @@ func (r *RangeCheck) InferValue(segment *memory.Segment, offset uint64) error {
 
 func (r *RangeCheck) String() string {
 	return RangeCheckName
+}
+
+func (r *RangeCheck) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
+	allocatedInstances, err := GetAllocatedInstances(ratioRangeCheck, cellsPerRangeCheck, segmentUsedSize, instancesPerComponentRangeCheck, vmCurrentStep)
+	if err != nil {
+		return 0, err
+	}
+	return allocatedInstances * cellsPerRangeCheck, nil
 }

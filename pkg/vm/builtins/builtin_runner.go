@@ -1,7 +1,11 @@
 package builtins
 
 import (
+	"fmt"
+	"math"
+
 	starknetParser "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
@@ -28,4 +32,21 @@ func Runner(name starknetParser.Builtin) memory.BuiltinRunner {
 	default:
 		panic("Unknown builtin")
 	}
+}
+
+func GetAllocatedInstances(ratio uint64, cellsPerInstance uint64, segmentUsedSize uint64, instancesPerComponent uint64, vmCurrentStep uint64) (uint64, error) {
+	if ratio == 0 {
+		instances := math.Ceil(float64(segmentUsedSize) / float64(cellsPerInstance))
+		neededComponents := math.Ceil(instances / float64(instancesPerComponent))
+		components := uint64(0)
+		if neededComponents > 0 {
+			components = utils.NextPowerOfTwo(uint64(neededComponents))
+		}
+		return components * instancesPerComponent, nil
+	}
+	minSteps := ratio * instancesPerComponent
+	if vmCurrentStep < minSteps {
+		return 0, fmt.Errorf("Number of steps must be at least %d. Current step: %d", minSteps, vmCurrentStep)
+	}
+	return vmCurrentStep / ratio, nil
 }

@@ -12,6 +12,10 @@ const PedersenName = "pedersen"
 const cellsPerPedersen = 3
 const inputCellsPerPedersen = 2
 
+// TODO: Move to JSON
+const ratioPedersen = 256
+const instancesPerComponentPedersen = 1
+
 type Pedersen struct{}
 
 func (p *Pedersen) CheckWrite(segment *mem.Segment, offset uint64, value *mem.MemoryValue) error {
@@ -55,4 +59,12 @@ func (p *Pedersen) InferValue(segment *mem.Segment, offset uint64) error {
 
 func (p *Pedersen) String() string {
 	return PedersenName
+}
+
+func (p *Pedersen) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
+	allocatedInstances, err := GetAllocatedInstances(ratioPedersen, inputCellsPerPedersen, segmentUsedSize, instancesPerComponentPedersen, vmCurrentStep)
+	if err != nil {
+		return 0, err
+	}
+	return allocatedInstances * inputCellsPerPedersen, nil
 }
