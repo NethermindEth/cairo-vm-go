@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -122,6 +123,85 @@ func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_blake2s.blake2s_utils import compute_blake2s_func
 			//> compute_blake2s_func(segments=segments, output_ptr=ids.output)
+
+			output, err := hinter.ResolveAsAddress(vm, output)
+			if err != nil {
+				return err
+			}
+
+			hSegmentInput := new(mem.MemoryAddress)
+			err = hSegmentInput.Sub(output, new(fp.Element).SetUint64(26))
+			if err != nil {
+				return err
+			}
+			h, err := vm.Memory.GetConsecutiveMemoryValues(*hSegmentInput, 8)
+			if err != nil {
+				return err
+			}
+			var hUint32 []uint32
+			for i := 0; i < len(h); i++ {
+				value, err := utils.ToSafeUint32(&h[i])
+				if err != nil {
+					return err
+				}
+				hUint32 = append(hUint32, value)
+			}
+
+			messageSegmentInput := new(mem.MemoryAddress)
+			err = messageSegmentInput.Sub(output, new(fp.Element).SetUint64(18))
+			if err != nil {
+				return err
+			}
+			message, err := vm.Memory.GetConsecutiveMemoryValues(*messageSegmentInput, 16)
+			if err != nil {
+				return err
+			}
+			var messageUint32 []uint32
+			for i := 0; i < len(message); i++ {
+				value, err := utils.ToSafeUint32(&message[i])
+				if err != nil {
+					return err
+				}
+				messageUint32 = append(messageUint32, value)
+			}
+
+			tSegmentInput := new(mem.MemoryAddress)
+			err = tSegmentInput.Sub(output, new(fp.Element).SetUint64(2))
+			if err != nil {
+				return err
+			}
+			t, err := vm.Memory.ReadFromAddress(tSegmentInput)
+			if err != nil {
+				return err
+			}
+			tUint32, err := utils.ToSafeUint32(&t)
+			if err != nil {
+				return err
+			}
+
+			fSegmentInput := new(mem.MemoryAddress)
+			err = fSegmentInput.Sub(output, new(fp.Element).SetUint64(1))
+			if err != nil {
+				return err
+			}
+			f, err := vm.Memory.ReadFromAddress(fSegmentInput)
+			if err != nil {
+				return err
+			}
+			fUint32, err := utils.ToSafeUint32(&f)
+			if err != nil {
+				return err
+			}
+
+			newState := utils.Blake2sCompress(hUint32, messageUint32, tUint32, 0, fUint32, 0)
+			for i := 0; i < len(newState); i++ {
+				state := newState[i]
+				stateMv := mem.MemoryValueFromUint(state)
+				err := vm.Memory.Write(output.SegmentIndex, output.Offset+uint64(i), &stateMv)
+				if err != nil {
+					return err
+				}
+			}
 
 			return nil
 		},

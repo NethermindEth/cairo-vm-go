@@ -53,6 +53,21 @@ func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) error {
 	return nil
 }
 
+// Subtracts a memory address and a field element
+func (address *MemoryAddress) Sub(lhs *MemoryAddress, rhs *f.Element) error {
+	lhsOffset := new(f.Element).SetUint64(lhs.Offset)
+	if rhs.Cmp(lhsOffset) > 0 {
+		return fmt.Errorf("new offset smaller than 0")
+	}
+	newOffset := new(f.Element).Sub(lhsOffset, rhs)
+	if !newOffset.IsUint64() {
+		return fmt.Errorf("new offset bigger than uint64: %s", rhs.Text(10))
+	}
+	address.SegmentIndex = lhs.SegmentIndex
+	address.Offset = newOffset.Uint64()
+	return nil
+}
+
 func (address *MemoryAddress) Relocate(segmentsOffset []uint64) *f.Element {
 	// no risk overflow because this sizes exists in actual Memory
 	// so if by chance the uint64 addition overflowed, then we have
