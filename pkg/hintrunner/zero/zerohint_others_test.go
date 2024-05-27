@@ -10,7 +10,7 @@ import (
 func TestZeroHintMemcpy(t *testing.T) {
 
 	runHinterTests(t, map[string][]hintTestCase{
-		"MemcPyContinueCopying": {
+		"MemcpyContinueCopying": {
 			{
 				operanders: []*hintOperander{
 					{Name: "continue_copying", Kind: uninitialized},
@@ -21,7 +21,7 @@ func TestZeroHintMemcpy(t *testing.T) {
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newMemcpyContinueCopyingHint(ctx.operanders["continue_copying"])
+					return newMemContinueHint(ctx.operanders["continue_copying"], false)
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					allVarValueInScopeEquals(map[string]any{"n": feltInt64(0)})(t, ctx)
@@ -38,11 +38,47 @@ func TestZeroHintMemcpy(t *testing.T) {
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newMemcpyContinueCopyingHint(ctx.operanders["continue_copying"])
+					return newMemContinueHint(ctx.operanders["continue_copying"], false)
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					allVarValueInScopeEquals(map[string]any{"n": feltInt64(4)})(t, ctx)
 					varValueEquals("continue_copying", feltInt64(1))(t, ctx)
+				},
+			},
+		},
+		"MemsetContinueLoop": {
+			{
+				operanders: []*hintOperander{
+					{Name: "continue_loop", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{
+						"n": &utils.FeltOne,
+					})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newMemContinueHint(ctx.operanders["continue_loop"], true)
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueInScopeEquals(map[string]any{"n": feltInt64(0)})(t, ctx)
+					varValueEquals("continue_loop", feltInt64(0))(t, ctx)
+				},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "continue_loop", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					ctx.ScopeManager.EnterScope(map[string]any{
+						"n": feltString("5"),
+					})
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newMemContinueHint(ctx.operanders["continue_loop"], true)
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueInScopeEquals(map[string]any{"n": feltInt64(4)})(t, ctx)
+					varValueEquals("continue_loop", feltInt64(1))(t, ctx)
 				},
 			},
 		},
