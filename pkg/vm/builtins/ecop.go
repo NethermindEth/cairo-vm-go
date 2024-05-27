@@ -109,7 +109,7 @@ func (e *EcOp) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (u
 	if err != nil {
 		return 0, err
 	}
-	return allocatedInstances * inputCellsPerEcOp, nil
+	return allocatedInstances * cellsPerEcOp, nil
 }
 
 // structure to represent a point in the elliptic curve

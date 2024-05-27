@@ -82,6 +82,8 @@ type VirtualMachine struct {
 	config  VirtualMachineConfig
 	// instructions cache
 	instructions map[uint64]*a.Instruction
+	RcLimitsMin  int
+	RcLimitsMax  int
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
@@ -144,7 +146,20 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 	return nil
 }
 
+const RC_OFFSET_BITS = 16
+
 func (vm *VirtualMachine) RunInstruction(instruction *a.Instruction) error {
+
+	var off0 int = int(instruction.OffDest) + 1<<(RC_OFFSET_BITS-1)
+	var off1 int = int(instruction.OffOp0) + (1 << (RC_OFFSET_BITS - 1))
+	var off2 int = int(instruction.OffOp1) + (1 << (RC_OFFSET_BITS - 1))
+
+	var value int = utils.Max(off0, utils.Max(off1, off2))
+	vm.RcLimitsMax = utils.Max(vm.RcLimitsMax, value)
+
+	value = utils.Min(off0, utils.Min(off1, off2))
+	vm.RcLimitsMax = utils.Min(vm.RcLimitsMax, value)
+
 	dstAddr, err := vm.getDstAddr(instruction)
 	if err != nil {
 		return fmt.Errorf("dst cell: %w", err)
@@ -540,7 +555,8 @@ func (vm *VirtualMachine) RelocateMemory() []*f.Element {
 	// returned has nil as its first element.
 	relocatedMemory := make([]*f.Element, maxMemoryUsed)
 	for i, segment := range vm.Memory.Segments {
-		for j := uint64(0); j < segment.Len(); j++ {
+		fmt.Println("segment", i, "builtin", segment.BuiltinRunner, "len", segment.Len(), "real len", segment.RealLen())
+		for j := uint64(0); j < segment.RealLen(); j++ {
 			cell := segment.Data[j]
 			if !cell.Known() {
 				continue
@@ -553,7 +569,6 @@ func (vm *VirtualMachine) RelocateMemory() []*f.Element {
 			} else {
 				felt, _ = cell.FieldElement()
 			}
-
 			relocatedMemory[segmentsOffsets[i]+j] = felt
 		}
 	}

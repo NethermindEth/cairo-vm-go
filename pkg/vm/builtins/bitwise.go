@@ -98,5 +98,5 @@ func (b *Bitwise) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64)
 	if err != nil {
 		return 0, err
 	}
-	return allocatedInstances * inputCellsPerBitwise, nil
+	return allocatedInstances * cellsPerBitwise, nil
 }

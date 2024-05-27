@@ -66,5 +66,5 @@ func (p *Pedersen) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64
 	if err != nil {
 		return 0, err
 	}
-	return allocatedInstances * inputCellsPerPedersen, nil
+	return allocatedInstances * cellsPerPedersen, nil
 }

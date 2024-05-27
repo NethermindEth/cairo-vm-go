@@ -298,11 +298,10 @@ func (runner *ZeroRunner) checkRangeCheckUsage() error {
 }
 
 func (runner *ZeroRunner) GetPermRangeCheckLimits() (uint64, uint64) {
-	rcMin, rcMax := ^uint64(0), uint64(0)
+	rcMin, rcMax := uint64(runner.vm.RcLimitsMin), uint64(runner.vm.RcLimitsMax)
 	for _, builtin := range runner.program.Builtins {
 		bRunner := builtins.Runner(builtin)
 		rangeCheckRunner, ok := bRunner.(*builtins.RangeCheck)
-		fmt.Println("Checking", bRunner.String(), "for range check usage", ok)
 		if ok {
 			rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.String())
 			if ok {
@@ -316,7 +315,6 @@ func (runner *ZeroRunner) GetPermRangeCheckLimits() (uint64, uint64) {
 			}
 		}
 	}
-	fmt.Println("RangeCheck usage", rcMin, rcMax)
 	return rcMin, rcMax
 }
 
@@ -331,7 +329,6 @@ func (runner *ZeroRunner) FinalizeSegments() {
 			if err != nil {
 				panic(fmt.Sprintf("builtin %s: %v", bRunner.String(), err))
 			}
-			fmt.Println("Finalizing", bRunner.String(), "with size", size)
 			builtinSegment.Finalize(size)
 		}
 	}

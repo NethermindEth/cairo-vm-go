@@ -351,7 +351,6 @@ func (memory *Memory) RelocationOffsets() ([]uint64, uint64) {
 	segmentsOffsets := make([]uint64, uint64(len(memory.Segments))+1)
 	segmentsOffsets[0] = 1
 	for i, segment := range memory.Segments {
-		fmt.Println("segment", i, segment.Len(), segment.BuiltinRunner)
 		segmentLength := segment.Len()
 		maxMemoryUsed += segmentLength
 		segmentsOffsets[i+1] = segmentsOffsets[i] + segmentLength
