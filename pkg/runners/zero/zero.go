@@ -14,6 +14,9 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+// TODO: Move to JSON, value for layout small assigned arbitrarily
+const rcUnits = 16
+
 type ZeroRunner struct {
 	// core components
 	program    *Program
@@ -240,6 +243,83 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 	return nil
 }
 
+func (runner *ZeroRunner) EndRun() error {
+	if runner.proofmode {
+		pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
+		if err := runner.RunFor(pow2Steps); err != nil {
+			return err
+		}
+		for runner.checkUsedCells() != nil {
+			pow2Steps = utils.NextPowerOfTwo(runner.vm.Step + 1)
+			fmt.Println("Re-running for", pow2Steps, "steps", runner.vm.Step, "steps")
+			if err := runner.RunFor(pow2Steps); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (runner *ZeroRunner) checkUsedCells() error {
+	for _, builtin := range runner.program.Builtins {
+		bRunner := builtins.Runner(builtin)
+		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.String())
+		if ok {
+			_, err := bRunner.GetAllocatedSize(builtinSegment.Len(), runner.steps())
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return runner.checkRangeCheckUsage()
+}
+
+func (runner *ZeroRunner) checkRangeCheckUsage() error {
+	rcMin, rcMax := runner.GetPermRangeCheckLimits()
+	var rcUnitsUsedByBuiltins uint64
+	for _, builtin := range runner.program.Builtins {
+		bRunner := builtins.Runner(builtin)
+		bRunner, ok := bRunner.(*builtins.RangeCheck)
+		if ok {
+			rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.String())
+			if ok {
+				rcUnitsUsedByBuiltins += rangeCheckSegment.Len() * builtins.RangeCheckNParts
+			}
+		}
+	}
+	// TODO include rcUnits in the layout
+	unusedRcUnits := (rcUnits-3)*runner.vm.Step - rcUnitsUsedByBuiltins
+	rcUsageUpperBound := rcMax - rcMin
+	fmt.Println("RangeCheck usage", unusedRcUnits, "out of", rcUsageUpperBound, "rcmin", rcMin, "rcmax", rcMax)
+	if unusedRcUnits < rcUsageUpperBound {
+		return fmt.Errorf("RangeCheck usage is %d, but the upper bound is %d", unusedRcUnits, rcUsageUpperBound)
+	}
+	return nil
+}
+
+func (runner *ZeroRunner) GetPermRangeCheckLimits() (uint64, uint64) {
+	rcMin, rcMax := ^uint64(0), uint64(0)
+	for _, builtin := range runner.program.Builtins {
+		bRunner := builtins.Runner(builtin)
+		rangeCheckRunner, ok := bRunner.(*builtins.RangeCheck)
+		fmt.Println("Checking", bRunner.String(), "for range check usage", ok)
+		if ok {
+			rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.String())
+			if ok {
+				rangeCheckUsageMin, rangeCheckUsageMax := rangeCheckRunner.GetRangeCheckUsage(rangeCheckSegment)
+				if rangeCheckUsageMin < rcMin {
+					rcMin = rangeCheckUsageMin
+				}
+				if rangeCheckUsageMax > rcMax {
+					rcMax = rangeCheckUsageMax
+				}
+			}
+		}
+	}
+	fmt.Println("RangeCheck usage", rcMin, rcMax)
+	return rcMin, rcMax
+}
+
 func (runner *ZeroRunner) FinalizeSegments() {
 	programSize := uint64(len(runner.program.Bytecode))
 	runner.vm.Memory.Segments[vm.ExecutionSegment].Finalize(programSize)
@@ -251,13 +331,13 @@ func (runner *ZeroRunner) FinalizeSegments() {
 			if err != nil {
 				panic(fmt.Sprintf("builtin %s: %v", bRunner.String(), err))
 			}
+			fmt.Println("Finalizing", bRunner.String(), "with size", size)
 			builtinSegment.Finalize(size)
 		}
 	}
 }
 
 func (runner *ZeroRunner) BuildProof() ([]byte, []byte, error) {
-	runner.FinalizeSegments()
 	relocatedTrace, err := runner.vm.ExecutionTrace()
 	if err != nil {
 		return nil, nil, err

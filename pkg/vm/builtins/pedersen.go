@@ -13,7 +13,7 @@ const cellsPerPedersen = 3
 const inputCellsPerPedersen = 2
 
 // TODO: Move to JSON
-const ratioPedersen = 256
+const ratioPedersen = 8
 const instancesPerComponentPedersen = 1
 
 type Pedersen struct{}

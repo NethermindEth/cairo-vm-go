@@ -111,6 +111,8 @@ func main() {
 					}
 
 					if proofmode {
+						runner.EndRun()
+						runner.FinalizeSegments()
 						trace, memory, err := runner.BuildProof()
 						if err != nil {
 							return fmt.Errorf("cannot build proof: %w", err)

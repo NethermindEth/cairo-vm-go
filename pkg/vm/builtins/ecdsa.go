@@ -14,7 +14,7 @@ const ECDSAName = "ecdsa"
 const cellsPerECDSA = 2
 
 // TODO: Move to JSON
-const ratioECDSA = 2048
+const ratioECDSA = 512
 const instancesPerComponentECDSA = 1
 
 type ECDSA struct {

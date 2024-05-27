@@ -10,10 +10,14 @@ import (
 
 const RangeCheckName = "range_check"
 const cellsPerRangeCheck = 1
+const INNER_RC_BOUND_SHIFT = 16
+const INNER_RC_BOUND_MASK = (1 << 16) - 1
 
 // TODO: Move to JSON
 const ratioRangeCheck = 8
 const instancesPerComponentRangeCheck = 1
+const RangeCheckNParts = 8
+const InnerRCBound = 2 << 16
 
 type RangeCheck struct{}
 
@@ -44,4 +48,27 @@ func (r *RangeCheck) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint
 		return 0, err
 	}
 	return allocatedInstances * cellsPerRangeCheck, nil
+}
+
+func (r *RangeCheck) GetRangeCheckUsage(rangeCheckSegment *memory.Segment) (uint64, uint64) {
+	minVal, maxVal := ^uint64(0), uint64(0)
+	for _, value := range rangeCheckSegment.Data {
+		valueFelt, err := value.FieldElement()
+		if err != nil {
+			continue
+		}
+		feltDigits := valueFelt.Bits()
+		for _, digit := range feltDigits {
+			for i := 3; i >= 0; i-- {
+				part := (digit >> (i * INNER_RC_BOUND_SHIFT)) & INNER_RC_BOUND_MASK
+				if part < minVal {
+					minVal = part
+				}
+				if part > maxVal {
+					maxVal = part
+				}
+			}
+		}
+	}
+	return uint64(minVal), uint64(maxVal)
 }
