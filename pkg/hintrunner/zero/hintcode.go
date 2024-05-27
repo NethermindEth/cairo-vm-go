@@ -122,6 +122,7 @@ const (
 	allocSegmentCode          string = "memory[ap] = segments.add()"
 	memcpyContinueCopyingCode string = "n -= 1\nids.continue_copying = 1 if n > 0 else 0"
 	memcpyEnterScopeCode      string = "vm_enter_scope({'n': ids.len})"
+	memsetEnterScopeCode      string = "vm_enter_scope({'n': ids.n})"
 	vmEnterScopeCode          string = "vm_enter_scope()"
 	vmExitScopeCode           string = "vm_exit_scope()"
 )

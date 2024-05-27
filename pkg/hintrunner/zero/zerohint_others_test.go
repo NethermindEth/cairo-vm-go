@@ -52,9 +52,20 @@ func TestZeroHintMemcpy(t *testing.T) {
 					{Name: "len", Kind: apRelative, Value: feltUint64(1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newMemcpyEnterScopeHint(ctx.operanders["len"])
+					return newMemEnterScopeHint(ctx.operanders["len"], false)
 				},
 				check: varValueInScopeEquals("n", *feltUint64(1)),
+			},
+		},
+		"MemsetEnterScope": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n", Kind: apRelative, Value: feltUint64(2)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newMemEnterScopeHint(ctx.operanders["n"], true)
+				},
+				check: varValueInScopeEquals("n", *feltUint64(2)),
 			},
 		},
 	})
