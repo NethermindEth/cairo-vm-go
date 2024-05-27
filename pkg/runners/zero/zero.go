@@ -243,21 +243,19 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 	return nil
 }
 
-func (runner *ZeroRunner) EndRun() error {
+func (runner *ZeroRunner) EndRun() {
 	if runner.proofmode {
 		pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
 		if err := runner.RunFor(pow2Steps); err != nil {
-			return err
+			panic(err)
 		}
 		for runner.checkUsedCells() != nil {
 			pow2Steps = utils.NextPowerOfTwo(runner.vm.Step + 1)
-			fmt.Println("Re-running for", pow2Steps, "steps", runner.vm.Step, "steps")
 			if err := runner.RunFor(pow2Steps); err != nil {
-				return err
+				panic(err)
 			}
 		}
 	}
-	return nil
 }
 
 func (runner *ZeroRunner) checkUsedCells() error {
@@ -275,7 +273,7 @@ func (runner *ZeroRunner) checkUsedCells() error {
 }
 
 func (runner *ZeroRunner) checkRangeCheckUsage() error {
-	rcMin, rcMax := runner.GetPermRangeCheckLimits()
+	rcMin, rcMax := runner.getPermRangeCheckLimits()
 	var rcUnitsUsedByBuiltins uint64
 	for _, builtin := range runner.program.Builtins {
 		bRunner := builtins.Runner(builtin)
@@ -290,14 +288,13 @@ func (runner *ZeroRunner) checkRangeCheckUsage() error {
 	// TODO include rcUnits in the layout
 	unusedRcUnits := (rcUnits-3)*runner.vm.Step - rcUnitsUsedByBuiltins
 	rcUsageUpperBound := rcMax - rcMin
-	fmt.Println("RangeCheck usage", unusedRcUnits, "out of", rcUsageUpperBound, "rcmin", rcMin, "rcmax", rcMax)
 	if unusedRcUnits < rcUsageUpperBound {
 		return fmt.Errorf("RangeCheck usage is %d, but the upper bound is %d", unusedRcUnits, rcUsageUpperBound)
 	}
 	return nil
 }
 
-func (runner *ZeroRunner) GetPermRangeCheckLimits() (uint64, uint64) {
+func (runner *ZeroRunner) getPermRangeCheckLimits() (uint64, uint64) {
 	rcMin, rcMax := uint64(runner.vm.RcLimitsMin), uint64(runner.vm.RcLimitsMax)
 	for _, builtin := range runner.program.Builtins {
 		bRunner := builtins.Runner(builtin)
