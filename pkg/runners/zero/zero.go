@@ -359,7 +359,7 @@ func (runner *ZeroRunner) Output() []*fp.Element {
 		return output
 	}
 
-	for offset := uint64(0); offset < outputSegment.Len(); offset++ {
+	for offset := uint64(0); offset < outputSegment.RealLen(); offset++ {
 		value := outputSegment.Peek(offset)
 		// no need to check for an error here since only felts can be written
 		// to the output segment
