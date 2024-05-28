@@ -98,7 +98,7 @@ func newMemEnterScopeHint(value hinter.ResOperander, memset bool) hinter.Hinter 
 		Name: name,
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			// MemsetEnterScope
-			//> vm_enter_scope({'n': n})
+			//> vm_enter_scope({'n': ids.n})
 
 			// MemcpyEnterScope
 			//> vm_enter_scope({'n': ids.len})
