@@ -555,7 +555,6 @@ func (vm *VirtualMachine) RelocateMemory() []*f.Element {
 	// returned has nil as its first element.
 	relocatedMemory := make([]*f.Element, maxMemoryUsed)
 	for i, segment := range vm.Memory.Segments {
-		fmt.Println("segment", i, "builtin", segment.BuiltinRunner, "len", segment.Len(), "real len", segment.RealLen())
 		for j := uint64(0); j < segment.RealLen(); j++ {
 			cell := segment.Data[j]
 			if !cell.Known() {

@@ -317,7 +317,7 @@ func (runner *ZeroRunner) getPermRangeCheckLimits() (uint64, uint64) {
 
 func (runner *ZeroRunner) FinalizeSegments() {
 	programSize := uint64(len(runner.program.Bytecode))
-	runner.vm.Memory.Segments[vm.ExecutionSegment].Finalize(programSize)
+	runner.vm.Memory.Segments[vm.ProgramSegment].Finalize(programSize)
 	for _, builtin := range runner.program.Builtins {
 		bRunner := builtins.Runner(builtin)
 		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.String())

@@ -355,7 +355,6 @@ func (memory *Memory) RelocationOffsets() ([]uint64, uint64) {
 		maxMemoryUsed += segmentLength
 		segmentsOffsets[i+1] = segmentsOffsets[i] + segmentLength
 	}
-	fmt.Println("segment offsets", segmentsOffsets)
 
 	return segmentsOffsets, maxMemoryUsed
 }
