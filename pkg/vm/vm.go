@@ -3,6 +3,7 @@ package vm
 import (
 	"encoding/binary"
 	"fmt"
+	"math"
 
 	a "github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -82,8 +83,8 @@ type VirtualMachine struct {
 	config  VirtualMachineConfig
 	// instructions cache
 	instructions map[uint64]*a.Instruction
-	RcLimitsMin  int
-	RcLimitsMax  int
+	RcLimitsMin  uint64
+	RcLimitsMax  uint64
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
@@ -102,6 +103,8 @@ func NewVirtualMachine(
 		Trace:        trace,
 		config:       config,
 		instructions: make(map[uint64]*a.Instruction),
+		RcLimitsMin:  math.MaxUint64,
+		RcLimitsMax:  0,
 	}, nil
 }
 
@@ -154,11 +157,11 @@ func (vm *VirtualMachine) RunInstruction(instruction *a.Instruction) error {
 	var off1 int = int(instruction.OffOp0) + (1 << (RC_OFFSET_BITS - 1))
 	var off2 int = int(instruction.OffOp1) + (1 << (RC_OFFSET_BITS - 1))
 
-	var value int = utils.Max(off0, utils.Max(off1, off2))
+	value := uint64(utils.Max(off0, utils.Max(off1, off2)))
 	vm.RcLimitsMax = utils.Max(vm.RcLimitsMax, value)
 
-	value = utils.Min(off0, utils.Min(off1, off2))
-	vm.RcLimitsMax = utils.Min(vm.RcLimitsMax, value)
+	value = uint64(utils.Min(off0, utils.Min(off1, off2)))
+	vm.RcLimitsMin = utils.Min(vm.RcLimitsMin, value)
 
 	dstAddr, err := vm.getDstAddr(instruction)
 	if err != nil {

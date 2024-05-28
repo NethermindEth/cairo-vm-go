@@ -245,12 +245,9 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 
 func (runner *ZeroRunner) EndRun() {
 	if runner.proofmode {
-		pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
-		if err := runner.RunFor(pow2Steps); err != nil {
-			panic(err)
-		}
+		// we don't run until next power of 2 before endrun, because this vm always ends on the step, which is power of 2
 		for runner.checkUsedCells() != nil {
-			pow2Steps = utils.NextPowerOfTwo(runner.vm.Step + 1)
+			pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
 			if err := runner.RunFor(pow2Steps); err != nil {
 				panic(err)
 			}
@@ -295,7 +292,8 @@ func (runner *ZeroRunner) checkRangeCheckUsage() error {
 }
 
 func (runner *ZeroRunner) getPermRangeCheckLimits() (uint64, uint64) {
-	rcMin, rcMax := uint64(runner.vm.RcLimitsMin), uint64(runner.vm.RcLimitsMax)
+	rcMin, rcMax := runner.vm.RcLimitsMin, runner.vm.RcLimitsMax
+
 	for _, builtin := range runner.program.Builtins {
 		bRunner := builtins.Runner(builtin)
 		rangeCheckRunner, ok := bRunner.(*builtins.RangeCheck)
