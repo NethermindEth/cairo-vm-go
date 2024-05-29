@@ -92,6 +92,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSqrtHinter(resolver)
 	case unsignedDivRemCode:
 		return createUnsignedDivRemHinter(resolver)
+	case isQuadResidueCode:
+		return createIsQuadResidueHinter(resolver)
 	// Uint256 hints
 	case uint256AddCode:
 		return createUint256AddHinter(resolver, false)
