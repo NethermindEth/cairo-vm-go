@@ -14,7 +14,7 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-// TODO: Move to JSON, value for layout small assigned arbitrarily
+// TODO: rcUnits is from layout small, this value should be dynamically loaded from given layout
 const rcUnits = 16
 
 type ZeroRunner struct {
@@ -243,9 +243,12 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 	return nil
 }
 
+// EndRun is responsible for running the additional steps after the program was executed,
+// until the checkUsedCells doesn't return any error.
+// Since this vm always finishes the run of the program at the number of steps that is a power of two in the proof mode,
+// there is no need to run additional steps before the loop.
 func (runner *ZeroRunner) EndRun() {
 	if runner.proofmode {
-		// we don't run until next power of 2 before endrun, because this vm always ends on the step, which is power of 2 in the proofmode
 		for runner.checkUsedCells() != nil {
 			pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
 			if err := runner.RunFor(pow2Steps); err != nil {
@@ -255,6 +258,8 @@ func (runner *ZeroRunner) EndRun() {
 	}
 }
 
+// checkUsedCells returns error if there is not enough allocated cells for builtins
+// or there are not enough trace cells to fill the entire range check
 func (runner *ZeroRunner) checkUsedCells() error {
 	for _, builtin := range runner.program.Builtins {
 		bRunner := builtins.Runner(builtin)
@@ -282,7 +287,6 @@ func (runner *ZeroRunner) checkRangeCheckUsage() error {
 			}
 		}
 	}
-	// TODO: rcUnits is from layout small, this valuee should be dynamically loaded from given layout
 	unusedRcUnits := (rcUnits-3)*runner.vm.Step - rcUnitsUsedByBuiltins
 	rcUsageUpperBound := rcMax - rcMin
 	if unusedRcUnits < rcUsageUpperBound {
@@ -313,6 +317,9 @@ func (runner *ZeroRunner) getPermRangeCheckLimits() (uint64, uint64) {
 	return rcMin, rcMax
 }
 
+// FinalizeSegments calculates the final size of the builtins segments,
+// using number of allocated instances and memory cells per builtin instance.
+// Additionally it sets the final size of the program segment to the program size.
 func (runner *ZeroRunner) FinalizeSegments() {
 	programSize := uint64(len(runner.program.Bytecode))
 	runner.vm.Memory.Segments[vm.ProgramSegment].Finalize(programSize)
