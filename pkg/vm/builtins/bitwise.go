@@ -12,6 +12,8 @@ const BitwiseName = "bitwise"
 
 const cellsPerBitwise = 5
 const inputCellsPerBitwise = 2
+
+// TODO: This is from layout small, those values should be dynamically loaded from given layout
 const ratioBitwise = 8
 const instancesPerComponentBitwise = 5
 

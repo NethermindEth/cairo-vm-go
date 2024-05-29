@@ -13,6 +13,8 @@ import (
 const EcOpName = "ec_op"
 const cellsPerEcOp = 7
 const inputCellsPerEcOp = 5
+
+// TODO: This is from layout small, those values should be dynamically loaded from given layout
 const ratioEcOp = 8
 const instancesPerComponentEcOp = 5
 

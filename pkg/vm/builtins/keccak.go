@@ -20,6 +20,8 @@ import (
 const KeccakName = "keccak"
 const cellsPerKeccak = 16
 const inputCellsPerKeccak = 8
+
+// TODO: This is from layout small, those values should be dynamically loaded from given layout
 const ratioKeccak = 8
 const instancesPerComponentKeccak = 5
 

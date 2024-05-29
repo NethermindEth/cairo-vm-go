@@ -245,7 +245,7 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 
 func (runner *ZeroRunner) EndRun() {
 	if runner.proofmode {
-		// we don't run until next power of 2 before endrun, because this vm always ends on the step, which is power of 2
+		// we don't run until next power of 2 before endrun, because this vm always ends on the step, which is power of 2 in the proofmode
 		for runner.checkUsedCells() != nil {
 			pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
 			if err := runner.RunFor(pow2Steps); err != nil {
@@ -282,7 +282,7 @@ func (runner *ZeroRunner) checkRangeCheckUsage() error {
 			}
 		}
 	}
-	// TODO include rcUnits in the layout
+	// TODO: rcUnits is from layout small, this valuee should be dynamically loaded from given layout
 	unusedRcUnits := (rcUnits-3)*runner.vm.Step - rcUnitsUsedByBuiltins
 	rcUsageUpperBound := rcMax - rcMin
 	if unusedRcUnits < rcUsageUpperBound {
@@ -359,7 +359,7 @@ func (runner *ZeroRunner) Output() []*fp.Element {
 		return output
 	}
 
-	for offset := uint64(0); offset < outputSegment.RealLen(); offset++ {
+	for offset := uint64(0); offset < outputSegment.Len(); offset++ {
 		value := outputSegment.Peek(offset)
 		// no need to check for an error here since only felts can be written
 		// to the output segment

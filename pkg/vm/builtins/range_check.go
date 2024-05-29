@@ -13,7 +13,7 @@ const cellsPerRangeCheck = 1
 const INNER_RC_BOUND_SHIFT = 16
 const INNER_RC_BOUND_MASK = (1 << 16) - 1
 
-// TODO: Move to JSON
+// TODO: This is from layout small, those values should be dynamically loaded from given layout
 const ratioRangeCheck = 8
 const instancesPerComponentRangeCheck = 1
 const RangeCheckNParts = 8

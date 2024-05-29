@@ -12,7 +12,7 @@ const PedersenName = "pedersen"
 const cellsPerPedersen = 3
 const inputCellsPerPedersen = 2
 
-// TODO: Move to JSON
+// TODO: This is from layout small, those values should be dynamically loaded from given layout
 const ratioPedersen = 8
 const instancesPerComponentPedersen = 1
 

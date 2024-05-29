@@ -13,7 +13,7 @@ import (
 const ECDSAName = "ecdsa"
 const cellsPerECDSA = 2
 
-// TODO: Move to JSON
+// TODO: This is from layout small, those values should be dynamically loaded from given layout
 const ratioECDSA = 512
 const instancesPerComponentECDSA = 1
 

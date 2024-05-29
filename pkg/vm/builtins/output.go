@@ -27,5 +27,5 @@ func (o *Output) String() string {
 }
 
 func (o *Output) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	return 0, nil
+	return segmentUsedSize, nil
 }
