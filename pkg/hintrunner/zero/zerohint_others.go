@@ -9,7 +9,6 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
