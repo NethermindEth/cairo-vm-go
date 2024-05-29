@@ -6,7 +6,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -229,41 +229,4 @@ func (v BinaryOp) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 func (v Immediate) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	// Nothing to do
 	return v
-}
-
-func GetConsecutiveValues(vm *VM.VirtualMachine, addr mem.MemoryAddress, size int16) ([]mem.MemoryValue, error) {
-	values := make([]mem.MemoryValue, size)
-	for i := int16(0); i < size; i++ {
-		nAddr, err := addr.AddOffset(i)
-		if err != nil {
-			return nil, err
-		}
-
-		v, err := vm.Memory.ReadFromAddress(&nAddr)
-		if err != nil {
-			return nil, err
-		}
-
-		values[i] = v
-	}
-
-	return values, nil
-}
-
-func WriteToNthStructField(vm *VM.VirtualMachine, addr mem.MemoryAddress, value mem.MemoryValue, field int16) error {
-	nAddr, err := addr.AddOffset(field)
-	if err != nil {
-		return err
-	}
-
-	return vm.Memory.WriteToAddress(&nAddr, &value)
-}
-
-func WriteUint256ToAddress(vm *VM.VirtualMachine, addr mem.MemoryAddress, low, high *f.Element) error {
-	lowMemoryValue := memory.MemoryValueFromFieldElement(low)
-	err := vm.Memory.WriteToAddress(&addr, &lowMemoryValue)
-	if err != nil {
-		return err
-	}
-	return WriteToNthStructField(vm, addr, memory.MemoryValueFromFieldElement(high), 1)
 }

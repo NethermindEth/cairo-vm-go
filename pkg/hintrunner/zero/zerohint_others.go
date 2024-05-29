@@ -5,10 +5,59 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
+
+func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "MemcpyContinueCopying",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> n -= 1
+			//> ids.continue_copying = 1 if n > 0 else 0
+
+			//> n-=1
+			n, err := ctx.ScopeManager.GetVariableValue("n")
+			if err != nil {
+				return err
+			}
+
+			newN := new(f.Element)
+			newN = newN.Sub(n.(*f.Element), &utils.FeltOne)
+
+			if err := ctx.ScopeManager.AssignVariable("n", newN); err != nil {
+				return err
+			}
+
+			//> ids.continue_copying = 1 if n > 0 else 0
+			continueCopyingAddr, err := continueCopying.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			var continueCopyingMv memory.MemoryValue
+			if utils.FeltLt(&utils.FeltZero, newN) {
+				continueCopyingMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				continueCopyingMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+
+			return vm.Memory.WriteToAddress(&continueCopyingAddr, &continueCopyingMv)
+		},
+	}
+}
+
+func createMemcpyContinueCopyingHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	continueCopying, err := resolver.GetResOperander("continue_copying")
+	if err != nil {
+		return nil, err
+	}
+	return newMemcpyContinueCopyingHint(continueCopying), nil
+}
 
 // AllocSegment hint adds a new segment to the Cairo VM memory
 func createAllocSegmentHinter() (hinter.Hinter, error) {
@@ -50,7 +99,7 @@ func newMemcpyEnterScopeHint(len hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			ctx.ScopeManager.EnterScope(map[string]any{"n": len})
+			ctx.ScopeManager.EnterScope(map[string]any{"n": *len})
 			return nil
 		},
 	}
@@ -123,7 +172,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 			findElementIndex, err := ctx.ScopeManager.GetVariableValue("__find_element_index")
 			if err == nil {
 				findElementIndex := findElementIndex.(uint64)
-				findElementIndexFelt := new(fp.Element).SetUint64(findElementIndex)
+				findElementIndexFelt := new(f.Element).SetUint64(findElementIndex)
 				findElementIndexMemoryValue := memory.MemoryValueFromFieldElement(findElementIndexFelt)
 				indexValAddr, err := index.GetAddress(vm)
 				if err != nil {
@@ -176,7 +225,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 						if err != nil {
 							return err
 						}
-						iFelt := new(fp.Element).SetUint64(i)
+						iFelt := new(f.Element).SetUint64(i)
 						iFeltMemoryValue := memory.MemoryValueFromFieldElement(iFelt)
 						err = vm.Memory.WriteToAddress(&indexValAddr, &iFeltMemoryValue)
 						if err != nil {

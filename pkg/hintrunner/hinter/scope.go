@@ -108,3 +108,12 @@ func (sm *ScopeManager) getCurrentScope() (*map[string]any, error) {
 	}
 	return &sm.scopes[len(sm.scopes)-1], nil
 }
+
+func (sm *ScopeManager) GetZeroDictionaryManager() (ZeroDictionaryManager, bool) {
+	dictionaryManagerValue, err := sm.GetVariableValue("__dict_manager")
+	if err != nil {
+		return ZeroDictionaryManager{}, false
+	}
+	dictionaryManager, ok := dictionaryManagerValue.(ZeroDictionaryManager)
+	return dictionaryManager, ok
+}
