@@ -19,7 +19,7 @@ func TestZeroHintKeccak(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newCairoKeccakFinalizeHint(ctx.operanders["KECCAK_STATE_SIZE_FELTS"], ctx.operanders["BLOCK_SIZE"], ctx.operanders["keccak_ptr_end"])
 				},
-				errCheck: errorTextContains("assert 0 <= _keccak_state_size_felts < 100."),
+				errCheck: errorTextContains("assertion failed: 0 <= keccak_state_size_felts < 100."),
 			},
 			{
 				operanders: []*hintOperander{
@@ -30,7 +30,7 @@ func TestZeroHintKeccak(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newCairoKeccakFinalizeHint(ctx.operanders["KECCAK_STATE_SIZE_FELTS"], ctx.operanders["BLOCK_SIZE"], ctx.operanders["keccak_ptr_end"])
 				},
-				errCheck: errorTextContains("assert 0 <= _block_size < 10."),
+				errCheck: errorTextContains("assertion failed: 0 <= _block_size < 10."),
 			},
 			{
 				operanders: []*hintOperander{
