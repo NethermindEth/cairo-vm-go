@@ -39,14 +39,14 @@ func newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd hi
 				return err
 			}
 			if keccakStateSizeFeltsVal >= 100 {
-				return fmt.Errorf("assert 0 <= _keccak_state_size_felts < 100.")
+				return fmt.Errorf("assertion failed: 0 <= keccak_state_size_felts < 100.")
 			}
 			blockSizeVal, err := hinter.ResolveAsUint64(vm, blockSize)
 			if err != nil {
 				return err
 			}
 			if blockSizeVal >= 10 {
-				return fmt.Errorf("assert 0 <= _block_size < 10.")
+				return fmt.Errorf("assertion failed: 0 <= _block_size < 10.")
 			}
 
 			var input [25]uint64
