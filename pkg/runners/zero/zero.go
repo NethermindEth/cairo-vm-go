@@ -258,8 +258,8 @@ func (runner *ZeroRunner) EndRun() {
 	}
 }
 
-// checkUsedCells returns error if there is not enough allocated cells for builtins
-// or there are not enough trace cells to fill the entire range check
+// checkUsedCells returns error if not enough steps were made to allocate required number of cells for builtins
+// or there are not enough trace cells to fill the entire range check range
 func (runner *ZeroRunner) checkUsedCells() error {
 	for _, builtin := range runner.program.Builtins {
 		bRunner := builtins.Runner(builtin)

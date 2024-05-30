@@ -35,10 +35,10 @@ func Runner(name starknetParser.Builtin) memory.BuiltinRunner {
 }
 
 // GetAllocatedInstances calculates the number of instances of given builtin for current step and builtin ratio.
-// Ratio parameter defines the ratio between the number of steps to the number of builtin instances. For every ratio steps, we have one instance.
+// Ratio parameter defines the ratio between the number of steps to the number of builtin instances. It means that this builtin is expected to be used once every eight steps of the execution
 // cellsPerInstance defines the number of cells that one instance of the builtin occupies.
 // segmentUsedSize defines the real number of cells used in the segment.
-// instancesPerComponent defines the number of instances per component.
+// instancesPerComponent defines the number of instances per component (segment or a part of the Cairo program that makes use of builtins).
 func GetAllocatedInstances(ratio uint64, cellsPerInstance uint64, segmentUsedSize uint64, instancesPerComponent uint64, vmCurrentStep uint64) (uint64, error) {
 	if ratio == 0 {
 		instances := math.Ceil(float64(segmentUsedSize) / float64(cellsPerInstance))
