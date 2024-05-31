@@ -271,7 +271,7 @@ func (runner *ZeroRunner) EndRun() {
 // checkUsedCells returns error if not enough steps were made to allocate required number of cells for builtins
 // or there are not enough trace cells to fill the entire range check range
 func (runner *ZeroRunner) checkUsedCells() error {
-	for _, builtin := range runner.program.Builtins {
+	for _, builtin := range smallLayout.builtins {
 		bRunner := builtins.Runner(builtin)
 		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.String())
 		if ok {
@@ -333,7 +333,7 @@ func (runner *ZeroRunner) getPermRangeCheckLimits() (uint64, uint64) {
 func (runner *ZeroRunner) FinalizeSegments() {
 	programSize := uint64(len(runner.program.Bytecode))
 	runner.vm.Memory.Segments[vm.ProgramSegment].Finalize(programSize)
-	for _, builtin := range runner.program.Builtins {
+	for _, builtin := range smallLayout.builtins {
 		bRunner := builtins.Runner(builtin)
 		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.String())
 		if ok {
