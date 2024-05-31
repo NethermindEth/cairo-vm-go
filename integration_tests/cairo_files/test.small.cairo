@@ -1,5 +1,6 @@
-%builtins output pedersen range_check ecdsa
+%builtins range_check
 
-func main{output_ptr: felt, pedersen_ptr: felt, range_check_ptr: felt, ecdsa_ptr: felt}() {
+func main{range_check_ptr}() -> () {
+
     return ();
 }

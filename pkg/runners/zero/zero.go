@@ -6,6 +6,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
@@ -171,12 +172,21 @@ func (runner *ZeroRunner) initializeEntrypoint(
 	}, stack, memory)
 }
 
+type Layout struct {
+	builtins []starknet.Builtin
+}
+
+var plainLayout = Layout{builtins: []starknet.Builtin{}}
+var smallLayout = Layout{builtins: []starknet.Builtin{starknet.Output, starknet.Pedersen, starknet.RangeCheck, starknet.ECDSA}}
+
 func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) []mem.MemoryValue {
 	stack := []mem.MemoryValue{}
-	for _, builtin := range runner.program.Builtins {
+	for _, builtin := range smallLayout.builtins {
 		bRunner := builtins.Runner(builtin)
 		builtinSegment := memory.AllocateBuiltinSegment(bRunner)
-		stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
+		if builtin == starknet.RangeCheck {
+			stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
+		}
 	}
 	return stack
 }
