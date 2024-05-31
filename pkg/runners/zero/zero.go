@@ -176,7 +176,6 @@ type Layout struct {
 	builtins []starknet.Builtin
 }
 
-var plainLayout = Layout{builtins: []starknet.Builtin{}}
 var smallLayout = Layout{builtins: []starknet.Builtin{starknet.Output, starknet.Pedersen, starknet.RangeCheck, starknet.ECDSA}}
 
 func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) []mem.MemoryValue {
