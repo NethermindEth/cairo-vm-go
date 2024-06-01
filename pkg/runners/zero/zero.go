@@ -30,9 +30,12 @@ type ZeroRunner struct {
 }
 
 // Creates a new Runner of a Cairo Zero program
-func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, proofmode bool, maxsteps uint64, layout builtins.Layout) (ZeroRunner, error) {
+func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, proofmode bool, maxsteps uint64, layoutName string) (ZeroRunner, error) {
 	hintrunner := hintrunner.NewHintRunner(hints)
-
+	layout, err := builtins.GetLayout(layoutName)
+	if err != nil {
+		return ZeroRunner{}, err
+	}
 	return ZeroRunner{
 		program:    program,
 		hintrunner: hintrunner,
@@ -185,7 +188,7 @@ func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryVa
 	}
 	for _, programBuiltin := range runner.program.Builtins {
 		if _, found := builtinsSet[programBuiltin]; !found {
-			return []mem.MemoryValue{}, fmt.Errorf("builtin %s not found in the layout: %s", programBuiltin, runner.Layout.Name)
+			return []mem.MemoryValue{}, fmt.Errorf("builtin %d not found in the layout: %s", programBuiltin, runner.Layout.Name)
 		}
 	}
 	stack := []mem.MemoryValue{}

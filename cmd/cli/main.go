@@ -8,7 +8,6 @@ import (
 	hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/zero"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	runnerzero "github.com/NethermindEth/cairo-vm-go/pkg/runners/zero"
-	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/urfave/cli/v2"
 )
 
@@ -96,12 +95,8 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot create hints: %w", err)
 					}
-					layout, err := builtins.GetLayout(layoutName)
-					if err != nil {
-						return err
-					}
 					fmt.Println("Running....")
-					runner, err := runnerzero.NewRunner(program, hints, proofmode, maxsteps, layout)
+					runner, err := runnerzero.NewRunner(program, hints, proofmode, maxsteps, layoutName)
 					if err != nil {
 						return fmt.Errorf("cannot create runner: %w", err)
 					}
