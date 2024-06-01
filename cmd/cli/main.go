@@ -8,6 +8,7 @@ import (
 	hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/zero"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	runnerzero "github.com/NethermindEth/cairo-vm-go/pkg/runners/zero"
+	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/urfave/cli/v2"
 )
 
@@ -17,7 +18,7 @@ func main() {
 	var entrypointOffset uint64
 	var traceLocation string
 	var memoryLocation string
-	var layout string
+	var layoutName string
 	app := &cli.App{
 		Name:                 "cairo-vm",
 		Usage:                "A cairo virtual machine",
@@ -65,7 +66,7 @@ func main() {
 						Name:        "layout",
 						Usage:       "specifies the set of builtins to be used",
 						Required:    false,
-						Destination: &layout,
+						Destination: &layoutName,
 					},
 				},
 				Action: func(ctx *cli.Context) error {
@@ -95,9 +96,11 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot create hints: %w", err)
 					}
-
+					layout, err := builtins.GetLayout(layoutName)
+					if err != nil {
+						return err
+					}
 					fmt.Println("Running....")
-					fmt.Println("layout:", layout, memoryLocation, traceLocation)
 					runner, err := runnerzero.NewRunner(program, hints, proofmode, maxsteps, layout)
 					if err != nil {
 						return fmt.Errorf("cannot create runner: %w", err)

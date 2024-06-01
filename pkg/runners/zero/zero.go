@@ -7,6 +7,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
@@ -29,7 +30,7 @@ type ZeroRunner struct {
 }
 
 // Creates a new Runner of a Cairo Zero program
-func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, proofmode bool, maxsteps uint64, layout string) (ZeroRunner, error) {
+func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, proofmode bool, maxsteps uint64, layout builtins.Layout) (ZeroRunner, error) {
 	hintrunner := hintrunner.NewHintRunner(hints)
 
 	return ZeroRunner{
@@ -37,7 +38,7 @@ func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, proofmode boo
 		hintrunner: hintrunner,
 		proofmode:  proofmode,
 		maxsteps:   maxsteps,
-		Layout:     builtins.GetLayout(layout),
+		Layout:     layout,
 	}, nil
 }
 
@@ -126,7 +127,10 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) 
 				errors.New("end label not found. Try compiling with `--proof_mode`")
 		}
 
-		stack := runner.initializeBuiltins(memory)
+		stack, err := runner.initializeBuiltins(memory)
+		if err != nil {
+			return mem.UnknownAddress, err
+		}
 		// Add the dummy last fp and pc to the public memory, so that the verifier can enforce [fp - 2] = fp.
 		stack = append([]mem.MemoryValue{mem.MemoryValueFromSegmentAndOffset(
 			vm.ProgramSegment,
@@ -158,7 +162,10 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) 
 func (runner *ZeroRunner) initializeEntrypoint(
 	initialPCOffset uint64, arguments []*f.Element, returnFp *mem.MemoryValue, memory *mem.Memory,
 ) (mem.MemoryAddress, error) {
-	stack := runner.initializeBuiltins(memory)
+	stack, err := runner.initializeBuiltins(memory)
+	if err != nil {
+		return mem.UnknownAddress, err
+	}
 	for i := range arguments {
 		stack = append(stack, mem.MemoryValueFromFieldElement(arguments[i]))
 	}
@@ -171,17 +178,24 @@ func (runner *ZeroRunner) initializeEntrypoint(
 	}, stack, memory)
 }
 
-func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) []mem.MemoryValue {
+func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue, error) {
+	builtinsSet := make(map[starknet.Builtin]bool)
+	for _, bRunner := range runner.Layout.Builtins {
+		builtinsSet[bRunner.Builtin] = true
+	}
+	for _, programBuiltin := range runner.program.Builtins {
+		if _, found := builtinsSet[programBuiltin]; !found {
+			return []mem.MemoryValue{}, fmt.Errorf("builtin %s not found in the layout: %s", programBuiltin, runner.Layout.Name)
+		}
+	}
 	stack := []mem.MemoryValue{}
-	fmt.Println("hehehehehehehhe", runner.Layout.Builtins, runner.Layout)
 	for _, bRunner := range runner.Layout.Builtins {
 		builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
-		fmt.Println(bRunner.Builtin, runner.program.Builtins, slices.Contains(runner.program.Builtins, bRunner.Builtin))
 		if slices.Contains(runner.program.Builtins, bRunner.Builtin) {
 			stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
 		}
 	}
-	return stack
+	return stack, nil
 }
 
 func (runner *ZeroRunner) initializeVm(
