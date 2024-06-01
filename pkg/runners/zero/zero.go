@@ -3,7 +3,6 @@ package zero
 import (
 	"errors"
 	"fmt"
-	"slices"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -194,7 +193,7 @@ func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryVa
 	stack := []mem.MemoryValue{}
 	for _, bRunner := range runner.Layout.Builtins {
 		builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
-		if slices.Contains(runner.program.Builtins, bRunner.Builtin) {
+		if utils.Contains(runner.program.Builtins, bRunner.Builtin) {
 			stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
 		}
 	}
