@@ -12,11 +12,10 @@ const PedersenName = "pedersen"
 const cellsPerPedersen = 3
 const inputCellsPerPedersen = 2
 
-// TODO: This is from layout small, those values should be dynamically loaded from given layout
-const ratioPedersen = 8
-const instancesPerComponentPedersen = 1
-
-type Pedersen struct{}
+type Pedersen struct {
+	ratioPedersen                 uint64
+	instancesPerComponentPedersen uint64
+}
 
 func (p *Pedersen) CheckWrite(segment *mem.Segment, offset uint64, value *mem.MemoryValue) error {
 	return nil
@@ -62,7 +61,7 @@ func (p *Pedersen) String() string {
 }
 
 func (p *Pedersen) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(ratioPedersen, inputCellsPerPedersen, segmentUsedSize, instancesPerComponentPedersen, vmCurrentStep)
+	allocatedInstances, err := GetAllocatedInstances(p.ratioPedersen, inputCellsPerPedersen, segmentUsedSize, p.instancesPerComponentPedersen, vmCurrentStep)
 	if err != nil {
 		return 0, err
 	}

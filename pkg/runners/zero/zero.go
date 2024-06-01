@@ -3,10 +3,10 @@ package zero
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
@@ -14,9 +14,6 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
-
-// TODO: rcUnits is from layout small, this value should be dynamically loaded from given layout
-const rcUnits = 16
 
 type ZeroRunner struct {
 	// core components
@@ -28,10 +25,11 @@ type ZeroRunner struct {
 	maxsteps  uint64
 	// auxiliar
 	runFinished bool
+	Layout      builtins.Layout
 }
 
 // Creates a new Runner of a Cairo Zero program
-func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, proofmode bool, maxsteps uint64) (ZeroRunner, error) {
+func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, proofmode bool, maxsteps uint64, layout string) (ZeroRunner, error) {
 	hintrunner := hintrunner.NewHintRunner(hints)
 
 	return ZeroRunner{
@@ -39,6 +37,7 @@ func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, proofmode boo
 		hintrunner: hintrunner,
 		proofmode:  proofmode,
 		maxsteps:   maxsteps,
+		Layout:     builtins.GetLayout(layout),
 	}, nil
 }
 
@@ -172,18 +171,13 @@ func (runner *ZeroRunner) initializeEntrypoint(
 	}, stack, memory)
 }
 
-type Layout struct {
-	builtins []starknet.Builtin
-}
-
-var smallLayout = Layout{builtins: []starknet.Builtin{starknet.Output, starknet.Pedersen, starknet.RangeCheck, starknet.ECDSA}}
-
 func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) []mem.MemoryValue {
 	stack := []mem.MemoryValue{}
-	for _, builtin := range smallLayout.builtins {
-		bRunner := builtins.Runner(builtin)
-		builtinSegment := memory.AllocateBuiltinSegment(bRunner)
-		if builtin == starknet.RangeCheck {
+	fmt.Println("hehehehehehehhe", runner.Layout.Builtins, runner.Layout)
+	for _, bRunner := range runner.Layout.Builtins {
+		builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
+		fmt.Println(bRunner.Builtin, runner.program.Builtins, slices.Contains(runner.program.Builtins, bRunner.Builtin))
+		if slices.Contains(runner.program.Builtins, bRunner.Builtin) {
 			stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
 		}
 	}
@@ -270,11 +264,10 @@ func (runner *ZeroRunner) EndRun() {
 // checkUsedCells returns error if not enough steps were made to allocate required number of cells for builtins
 // or there are not enough trace cells to fill the entire range check range
 func (runner *ZeroRunner) checkUsedCells() error {
-	for _, builtin := range smallLayout.builtins {
-		bRunner := builtins.Runner(builtin)
-		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.String())
+	for _, bRunner := range runner.Layout.Builtins {
+		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.Runner.String())
 		if ok {
-			_, err := bRunner.GetAllocatedSize(builtinSegment.Len(), runner.steps())
+			_, err := bRunner.Runner.GetAllocatedSize(builtinSegment.Len(), runner.steps())
 			if err != nil {
 				return err
 			}
@@ -288,15 +281,15 @@ func (runner *ZeroRunner) checkRangeCheckUsage() error {
 	var rcUnitsUsedByBuiltins uint64
 	for _, builtin := range runner.program.Builtins {
 		bRunner := builtins.Runner(builtin)
-		bRunner, ok := bRunner.(*builtins.RangeCheck)
+		rangeCheckRunner, ok := bRunner.(*builtins.RangeCheck)
 		if ok {
-			rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.String())
+			rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(rangeCheckRunner.String())
 			if ok {
-				rcUnitsUsedByBuiltins += rangeCheckSegment.Len() * builtins.RangeCheckNParts
+				rcUnitsUsedByBuiltins += rangeCheckSegment.Len() * rangeCheckRunner.RangeCheckNParts
 			}
 		}
 	}
-	unusedRcUnits := (rcUnits-3)*runner.vm.Step - rcUnitsUsedByBuiltins
+	unusedRcUnits := (runner.Layout.RcUnits-3)*runner.vm.Step - rcUnitsUsedByBuiltins
 	rcUsageUpperBound := rcMax - rcMin
 	if unusedRcUnits < rcUsageUpperBound {
 		return fmt.Errorf("RangeCheck usage is %d, but the upper bound is %d", unusedRcUnits, rcUsageUpperBound)
@@ -311,7 +304,7 @@ func (runner *ZeroRunner) getPermRangeCheckLimits() (uint64, uint64) {
 		bRunner := builtins.Runner(builtin)
 		rangeCheckRunner, ok := bRunner.(*builtins.RangeCheck)
 		if ok {
-			rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.String())
+			rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(rangeCheckRunner.String())
 			if ok {
 				rangeCheckUsageMin, rangeCheckUsageMax := rangeCheckRunner.GetRangeCheckUsage(rangeCheckSegment)
 				if rangeCheckUsageMin < rcMin {
@@ -332,13 +325,12 @@ func (runner *ZeroRunner) getPermRangeCheckLimits() (uint64, uint64) {
 func (runner *ZeroRunner) FinalizeSegments() {
 	programSize := uint64(len(runner.program.Bytecode))
 	runner.vm.Memory.Segments[vm.ProgramSegment].Finalize(programSize)
-	for _, builtin := range smallLayout.builtins {
-		bRunner := builtins.Runner(builtin)
-		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.String())
+	for _, bRunner := range runner.Layout.Builtins {
+		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.Runner.String())
 		if ok {
-			size, err := bRunner.GetAllocatedSize(builtinSegment.Len(), runner.vm.Step)
+			size, err := bRunner.Runner.GetAllocatedSize(builtinSegment.Len(), runner.vm.Step)
 			if err != nil {
-				panic(fmt.Sprintf("builtin %s: %v", bRunner.String(), err))
+				panic(fmt.Sprintf("builtin %s: %v", bRunner.Runner.String(), err))
 			}
 			builtinSegment.Finalize(size)
 		}

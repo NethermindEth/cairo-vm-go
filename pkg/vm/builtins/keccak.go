@@ -22,10 +22,12 @@ const cellsPerKeccak = 16
 const inputCellsPerKeccak = 8
 
 // TODO: This is from layout small, those values should be dynamically loaded from given layout
-const ratioKeccak = 8
-const instancesPerComponentKeccak = 5
+// const ratioKeccak = 8
+// const instancesPerComponentKeccak = 5
 
 type Keccak struct {
+	ratioKeccak                 uint64
+	instancesPerComponentKeccak uint64
 }
 
 func (k *Keccak) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
@@ -85,7 +87,7 @@ func (k *Keccak) String() string {
 }
 
 func (k *Keccak) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(ratioKeccak, inputCellsPerKeccak, segmentUsedSize, instancesPerComponentKeccak, vmCurrentStep)
+	allocatedInstances, err := GetAllocatedInstances(k.ratioKeccak, inputCellsPerKeccak, segmentUsedSize, k.instancesPerComponentKeccak, vmCurrentStep)
 	if err != nil {
 		return 0, err
 	}

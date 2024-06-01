@@ -27,7 +27,7 @@ func TestSimpleProgram(t *testing.T) {
     `)
 
 	hints := make(map[uint64][]hinter.Hinter)
-	runner, err := NewRunner(program, hints, false, math.MaxUint64)
+	runner, err := NewRunner(program, hints, false, math.MaxUint64, "")
 	require.NoError(t, err)
 
 	endPc, err := runner.InitializeMainEntrypoint()
@@ -74,7 +74,7 @@ func TestStepLimitExceeded(t *testing.T) {
     `)
 
 	hints := make(map[uint64][]hinter.Hinter)
-	runner, err := NewRunner(program, hints, false, 3)
+	runner, err := NewRunner(program, hints, false, 3, "")
 	require.NoError(t, err)
 
 	endPc, err := runner.InitializeMainEntrypoint()
@@ -133,7 +133,7 @@ func TestStepLimitExceededProofMode(t *testing.T) {
 		// when maxstep = 6, it fails executing the extra step required by proof mode
 		// when maxstep = 7, it fails trying to get the trace to be a power of 2
 		hints := make(map[uint64][]hinter.Hinter)
-		runner, err := NewRunner(program, hints, true, uint64(maxstep))
+		runner, err := NewRunner(program, hints, true, uint64(maxstep), "")
 		require.NoError(t, err)
 
 		err = runner.Run()
@@ -368,7 +368,7 @@ func createRunner(code string, builtins ...sn.Builtin) ZeroRunner {
 	program := createProgramWithBuiltins(code, builtins...)
 
 	hints := make(map[uint64][]hinter.Hinter)
-	runner, err := NewRunner(program, hints, false, math.MaxUint64)
+	runner, err := NewRunner(program, hints, false, math.MaxUint64, "")
 	if err != nil {
 		panic(err)
 	}

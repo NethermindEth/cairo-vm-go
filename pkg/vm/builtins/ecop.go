@@ -15,8 +15,8 @@ const cellsPerEcOp = 7
 const inputCellsPerEcOp = 5
 
 // TODO: This is from layout small, those values should be dynamically loaded from given layout
-const ratioEcOp = 8
-const instancesPerComponentEcOp = 5
+// const ratioEcOp = 8
+// const instancesPerComponentEcOp = 5
 
 var feltThree f.Element = f.Element(
 	[]uint64{
@@ -26,7 +26,10 @@ var feltThree f.Element = f.Element(
 		576460752303421872,
 	})
 
-type EcOp struct{}
+type EcOp struct {
+	ratioEcOp                 uint64
+	instancesPerComponentEcOp uint64
+}
 
 func (e *EcOp) String() string {
 	return EcOpName
@@ -107,7 +110,7 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 }
 
 func (e *EcOp) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(ratioEcOp, inputCellsPerEcOp, segmentUsedSize, instancesPerComponentEcOp, vmCurrentStep)
+	allocatedInstances, err := GetAllocatedInstances(e.ratioEcOp, inputCellsPerEcOp, segmentUsedSize, e.instancesPerComponentEcOp, vmCurrentStep)
 	if err != nil {
 		return 0, err
 	}
