@@ -10,10 +10,21 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hinter {
+func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.Hinter {
+	var name string
+	if memset {
+		name = "MemsetContinueLoop"
+	} else {
+		name = "MemcpyContinueCopying"
+	}
 	return &GenericZeroHinter{
-		Name: "MemcpyContinueCopying",
+		Name: name,
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			// MemsetContinueLoop
+			//> n -= 1
+			//> ids.continue_loop = 1 if n > 0 else 0
+
+			// MemcpyContinueCopying
 			//> n -= 1
 			//> ids.continue_copying = 1 if n > 0 else 0
 
@@ -30,30 +41,36 @@ func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hi
 				return err
 			}
 
-			//> ids.continue_copying = 1 if n > 0 else 0
-			continueCopyingAddr, err := continueCopying.GetAddress(vm)
+			//> ids.continue_loop/continue_copying = 1 if n > 0 else 0
+			continueTargetAddr, err := continueTarget.GetAddress(vm)
 			if err != nil {
 				return err
 			}
 
-			var continueCopyingMv memory.MemoryValue
+			var continueTargetMv memory.MemoryValue
 			if utils.FeltLt(&utils.FeltZero, newN) {
-				continueCopyingMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+				continueTargetMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
-				continueCopyingMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+				continueTargetMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
 			}
 
-			return vm.Memory.WriteToAddress(&continueCopyingAddr, &continueCopyingMv)
+			return vm.Memory.WriteToAddress(&continueTargetAddr, &continueTargetMv)
 		},
 	}
 }
 
-func createMemcpyContinueCopyingHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	continueCopying, err := resolver.GetResOperander("continue_copying")
+func createMemContinueHinter(resolver hintReferenceResolver, memset bool) (hinter.Hinter, error) {
+	var continueTarget hinter.ResOperander
+	var err error
+	if memset {
+		continueTarget, err = resolver.GetResOperander("continue_loop")
+	} else {
+		continueTarget, err = resolver.GetResOperander("continue_copying")
+	}
 	if err != nil {
 		return nil, err
 	}
-	return newMemcpyContinueCopyingHint(continueCopying), nil
+	return newMemContinueHint(continueTarget, memset), nil
 }
 
 // AllocSegment hint adds a new segment to the Cairo VM memory
@@ -82,30 +99,48 @@ func createVMExitScopeHinter() (hinter.Hinter, error) {
 	}, nil
 }
 
-// MemcpyEnterScope hint enters a new scope for the memory copy operation with a specified length
+// MemEnterScope hint enters a new scope for the memory copy/set operation with a specified value
 //
-// `newMemcpyEnterScopeHint` takes 1 operander as argument
-//   - `len` is the length value that is added in the new scope
-func newMemcpyEnterScopeHint(len hinter.ResOperander) hinter.Hinter {
+// `newMemEnterScopeHint` takes 2 operanders as arguments
+//   - `value` is the value that is added in the new scope
+//   - `memset` specifies whether it's a memset or memcpy operation
+func newMemEnterScopeHint(value hinter.ResOperander, memset bool) hinter.Hinter {
+	var name string
+	if memset {
+		name = "MemsetEnterScope"
+	} else {
+		name = "MemcpyEnterScope"
+	}
 	return &GenericZeroHinter{
-		Name: "MemcpyEnterScope",
+		Name: name,
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//>  vm_enter_scope({'n': ids.len})
-			len, err := hinter.ResolveAsFelt(vm, len)
+			// MemsetEnterScope
+			//> vm_enter_scope({'n': ids.n})
+
+			// MemcpyEnterScope
+			//> vm_enter_scope({'n': ids.len})
+
+			value, err := hinter.ResolveAsFelt(vm, value)
 			if err != nil {
 				return err
 			}
 
-			ctx.ScopeManager.EnterScope(map[string]any{"n": *len})
+			ctx.ScopeManager.EnterScope(map[string]any{"n": *value})
 			return nil
 		},
 	}
 }
 
-func createMemcpyEnterScopeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	len, err := resolver.GetResOperander("len")
+func createMemEnterScopeHinter(resolver hintReferenceResolver, memset bool) (hinter.Hinter, error) {
+	var value hinter.ResOperander
+	var err error
+	if memset {
+		value, err = resolver.GetResOperander("n")
+	} else {
+		value, err = resolver.GetResOperander("len")
+	}
 	if err != nil {
 		return nil, err
 	}
-	return newMemcpyEnterScopeHint(len), nil
+	return newMemEnterScopeHint(value, memset), nil
 }
