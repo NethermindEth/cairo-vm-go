@@ -238,7 +238,7 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 			//> for i in range(n_elms):
 			for i := uint64(0); i < nElemsRange; i++ {
 				//> 	if memory[array_ptr + elm_size * i] >= ids.key:
-				index := arrayPtr + elmSize*i
+				index := arrayPtr + (elmSize * i)
 
 				value, err := vm.Memory.ReadAsElement(uint64(1), index)
 				if err != nil {
