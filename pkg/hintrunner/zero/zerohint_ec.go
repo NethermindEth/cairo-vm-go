@@ -623,53 +623,44 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			//> y1 = pack(ids.point1.y, PRIME)
 			//> value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
 
-			point0Addr, err := point0.GetAddress(vm)
+			point0XAddr, err := point0.GetAddress(vm)
 			if err != nil {
 				return err
 			}
 
-			point1Addr, err := point1.GetAddress(vm)
+			point1XAddr, err := point1.GetAddress(vm)
 			if err != nil {
 				return err
 			}
 
-			point0XValues, err := vm.Memory.ResolveAsBigInt3(point0Addr)
+			point0YAddr, err := point0XAddr.AddOffset(3)
 			if err != nil {
 				return err
 			}
 
-			point1XValues, err := vm.Memory.ResolveAsBigInt3(point1Addr)
+			point1YAddr, err := point1XAddr.AddOffset(3)
 			if err != nil {
 				return err
 			}
 
-			point0MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point0Addr, int16(6))
+			point0XValues, err := vm.Memory.ResolveAsBigInt3(point0XAddr)
 			if err != nil {
 				return err
 			}
 
-			point1MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point1Addr, int16(6))
+			point1XValues, err := vm.Memory.ResolveAsBigInt3(point1XAddr)
 			if err != nil {
 				return err
 			}
 
-			// [y.d0, y.d1, y.d2]
-			var point0YValues [3]*fp.Element
-			// [y.d0, y.d1, y.d2]
-			var point1YValues [3]*fp.Element
+			point0YValues, err := vm.Memory.ResolveAsBigInt3(point0YAddr)
+			if err != nil {
+				return err
+			}
 
-			for i := 3; i < 6; i++ {
-				point0YValue, err := point0MemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				point0YValues[i-3] = point0YValue
-
-				point1YValue, err := point1MemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				point1YValues[i-3] = point1YValue
+			point1YValues, err := vm.Memory.ResolveAsBigInt3(point1YAddr)
+			if err != nil {
+				return err
 			}
 
 			//> x0 = pack(ids.point0.x, PRIME)
