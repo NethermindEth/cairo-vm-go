@@ -10,7 +10,7 @@ import (
 func TestZeroHintMemcpy(t *testing.T) {
 
 	runHinterTests(t, map[string][]hintTestCase{
-		"MemcPyContinueCopying": {
+		"MemcpyContinueCopying": {
 			{
 				operanders: []*hintOperander{
 					{Name: "continue_copying", Kind: uninitialized},
@@ -21,7 +21,7 @@ func TestZeroHintMemcpy(t *testing.T) {
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newMemcpyContinueCopyingHint(ctx.operanders["continue_copying"])
+					return newMemContinueHint(ctx.operanders["continue_copying"], false)
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					allVarValueInScopeEquals(map[string]any{"n": feltInt64(0)})(t, ctx)
@@ -38,7 +38,7 @@ func TestZeroHintMemcpy(t *testing.T) {
 					})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newMemcpyContinueCopyingHint(ctx.operanders["continue_copying"])
+					return newMemContinueHint(ctx.operanders["continue_copying"], false)
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					allVarValueInScopeEquals(map[string]any{"n": feltInt64(4)})(t, ctx)
@@ -52,7 +52,7 @@ func TestZeroHintMemcpy(t *testing.T) {
 					{Name: "len", Kind: apRelative, Value: feltUint64(1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newMemcpyEnterScopeHint(ctx.operanders["len"])
+					return newMemEnterScopeHint(ctx.operanders["len"], false)
 				},
 				check: varValueInScopeEquals("n", *feltUint64(1)),
 			},

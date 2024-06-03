@@ -124,8 +124,10 @@ const (
 	// ------ Other hints related code ------
 	allocSegmentCode          string = "memory[ap] = segments.add()"
 	memcpyContinueCopyingCode string = "n -= 1\nids.continue_copying = 1 if n > 0 else 0"
+	memsetContinueLoopCode    string = "n -= 1\nids.continue_loop = 1 if n > 0 else 0"
 	memcpyEnterScopeCode      string = "vm_enter_scope({'n': ids.len})"
-	searchSortedLowerCode     string = "array_ptr = ids.array_ptr\nelm_size = ids.elm_size\nassert isinstance(elm_size, int) and elm_size > 0, \\n f'Invalid value for elm_size. Got: {elm_size}.'\n\nn_elms = ids.n_elms\nassert isinstance(n_elms, int) and n_elms >= 0, \\n f'Invalid value for n_elms. Got: {n_elms}.'\nif '__find_element_max_size' in globals():\n assert n_elms <= __find_element_max_size, \\n f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \\n f'Got: n_elms={n_elms}.'\n\nfor i in range(n_elms):\nif memory[array_ptr + elm_size * i] >= ids.key:\n ids.index = i\n break\nelse:\n ids.index = n_elms"
+	memsetEnterScopeCode      string = "vm_enter_scope({'n': ids.n})"
+  searchSortedLowerCode     string = "array_ptr = ids.array_ptr\nelm_size = ids.elm_size\nassert isinstance(elm_size, int) and elm_size > 0, \\n f'Invalid value for elm_size. Got: {elm_size}.'\n\nn_elms = ids.n_elms\nassert isinstance(n_elms, int) and n_elms >= 0, \\n f'Invalid value for n_elms. Got: {n_elms}.'\nif '__find_element_max_size' in globals():\n assert n_elms <= __find_element_max_size, \\n f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \\n f'Got: n_elms={n_elms}.'\n\nfor i in range(n_elms):\nif memory[array_ptr + elm_size * i] >= ids.key:\n ids.index = i\n break\nelse:\n ids.index = n_elms"
 	vmEnterScopeCode          string = "vm_enter_scope()"
 	vmExitScopeCode           string = "vm_exit_scope()"
 )
