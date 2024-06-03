@@ -1,6 +1,12 @@
 package builtins
 
-import mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+import (
+	"errors"
+	"fmt"
+
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+)
 
 const PoseidonName = "poseidon"
 const cellsPerPoseidon = 6
@@ -13,6 +19,36 @@ func (p *Poseidon) CheckWrite(segment *mem.Segment, offset uint64, value *mem.Me
 }
 
 func (p *Poseidon) InferValue(segment *mem.Segment, offset uint64) error {
+	fmt.Println("infer")
+	poseidonIndex := offset % cellsPerPoseidon
+	if poseidonIndex < inputCellsPerPoseidon {
+		return errors.New("cannot infer value")
+	}
+	baseOffset := offset - poseidonIndex
+	poseidonInputValues := make([]*fp.Element, inputCellsPerPoseidon)
+	for i := 0; i < inputCellsPerPoseidon; i++ {
+		mv := segment.Peek(baseOffset + uint64(i))
+		if !mv.Known() {
+			return errors.New("cannot infer value")
+		}
+		poseidonInputValue, err := mv.FieldElement()
+		if err != nil {
+			return err
+		}
+		poseidonInputValues[i] = poseidonInputValue
+	}
+
+	// poseidon hash calculation
+	hash := PoseidonPerm(poseidonInputValues[0], poseidonInputValues[1], poseidonInputValues[2])
+	fmt.Println("hash", hash)
+	for i := 0; i < 3; i++ {
+		hashValue := mem.MemoryValueFromFieldElement(&hash[i])
+		err := segment.Write(baseOffset+uint64(i+3), &hashValue)
+		if err != nil {
+			return err
+		}
+
+	}
 	return nil
 }
 
