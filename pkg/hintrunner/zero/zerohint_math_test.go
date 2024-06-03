@@ -817,5 +817,60 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorTextContains("div=0x8000000000000110000000000000001 is out of the valid range"),
 			},
 		},
+
+		"IsQuadResidue": {
+			// Test case: x is 0
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltInt64(0)),
+			},
+			// Test case: x is 1
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltInt64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(9)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltInt64(3)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltString("151461")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltString("724216096429330872433307564225094804656986062203645968681663112868516882638")),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(2734590101144995)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltString("1484343478756640997457155271309092907848857951878936388435701743478603286656")),
+			},
+		},
 	})
 }
