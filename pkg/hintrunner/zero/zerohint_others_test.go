@@ -266,6 +266,37 @@ func TestZeroHintMemcpy(t *testing.T) {
 				},
 				check: varValueEquals("index", feltInt64(6)),
 			},
+			{
+				operanders: []*hintOperander{
+					{Name: "array_ptr", Kind: fpRelative, Value: feltInt64(8)},
+					{Name: "elm_size", Kind: fpRelative, Value: feltInt64(2)},
+					{Name: "n_elms", Kind: fpRelative, Value: feltInt64(3)},
+					{Name: "key", Kind: fpRelative, Value: feltInt64(43)},
+					{Name: "firstElement", Kind: apRelative, Value: feltInt64(11)},
+					{Name: "secondElement", Kind: apRelative, Value: feltInt64(22)},
+					{Name: "thirdElement", Kind: apRelative, Value: feltInt64(33)},
+					{Name: "fourthElement", Kind: apRelative, Value: feltInt64(44)},
+					{Name: "fifthElement", Kind: apRelative, Value: feltInt64(55)},
+					{Name: "sixthElement", Kind: apRelative, Value: feltInt64(66)},
+					{Name: "index", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("__find_element_max_size", *feltUint64(10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSearchSortedLowerHint(
+						ctx.operanders["array_ptr"],
+						ctx.operanders["elm_size"],
+						ctx.operanders["n_elms"],
+						ctx.operanders["key"],
+						ctx.operanders["index"],
+					)
+				},
+				check: varValueEquals("index", feltInt64(2)),
+			},
 		},
 	})
 }
