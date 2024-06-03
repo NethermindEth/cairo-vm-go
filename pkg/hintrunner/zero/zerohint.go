@@ -188,9 +188,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createMemEnterScopeHinter(resolver, false)
 	case memsetEnterScopeCode:
 		return createMemEnterScopeHinter(resolver, true)
-  case searchSortedLowerCode:
+	case searchSortedLowerCode:
 		return createSearchSortedLowerHinter(resolver)
-  case vmEnterScopeCode:
+	case vmEnterScopeCode:
 		return createVMEnterScopeHinter()
 	case vmExitScopeCode:
 		return createVMExitScopeHinter()
