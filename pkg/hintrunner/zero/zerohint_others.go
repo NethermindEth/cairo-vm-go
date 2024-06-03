@@ -10,7 +10,6 @@ import (
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hinter {
@@ -26,8 +25,8 @@ func newMemcpyContinueCopyingHint(continueCopying hinter.ResOperander) hinter.Hi
 				return err
 			}
 
-			newN := new(f.Element)
-			newN = newN.Sub(n.(*f.Element), &utils.FeltOne)
+			newN := new(fp.Element)
+			newN = newN.Sub(n.(*fp.Element), &utils.FeltOne)
 
 			if err := ctx.ScopeManager.AssignVariable("n", newN); err != nil {
 				return err
@@ -115,6 +114,15 @@ func createMemcpyEnterScopeHinter(resolver hintReferenceResolver) (hinter.Hinter
 	return newMemcpyEnterScopeHint(len), nil
 }
 
+// SearchSortedLower hint searches for the first element in a sorted array
+// that is greater than or equal to a given key and returns its index
+//
+// `newSearchSortedLowerHint` takes 5 operanders as arguments
+//   - `arrayPtr` represents an offset in memory
+//   - `elmSize` is the size in terms of memory cells per element in the array
+//   - `nElms` is the number of elements in the array
+//   - `key` is the given key that acts a threshold
+//   - `index` is the result, i.e., the index of the first element greater or equal to the given key
 func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SearchSortedLower",
@@ -140,20 +148,20 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 			//> 	ids.index = n_elms
 
 			//> array_ptr = ids.array_ptr
-			arrayPtr, err := hinter.ResolveAsAddress(vm, arrayPtr)
+			arrayPtr, err := hinter.ResolveAsUint64(vm, arrayPtr)
 			if err != nil {
 				return err
 			}
 
 			//> elm_size = ids.elm_size
-			elmSize, err := hinter.ResolveAsFelt(vm, elmSize)
+			elmSize, err := hinter.ResolveAsUint64(vm, elmSize)
 			if err != nil {
 				return err
 			}
 
 			//> assert isinstance(elm_size, int) and elm_size > 0, \
 			//> 	f'Invalid value for elm_size. Got: {elm_size}.'
-			if utils.FeltLe(elmSize, &utils.FeltZero) {
+			if elmSize == 0 {
 				return fmt.Errorf("invalid value for elm_size. Got: %v", elmSize)
 			}
 
@@ -161,13 +169,8 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 			//> assert isinstance(n_elms, int) and n_elms >= 0, \
 			//> 	f'Invalid value for n_elms. Got: {n_elms}.'
 			nElms, err := hinter.ResolveAsFelt(vm, nElms)
-
 			if err != nil {
 				return err
-			}
-
-			if utils.FeltLe(nElms, &utils.FeltZero) {
-				return fmt.Errorf("invalid value for n_elms. Got: %v", nElms)
 			}
 
 			//> if '__find_element_max_size' in globals():
@@ -176,12 +179,12 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 			//> 		f'Got: n_elms={n_elms}.'
 			elementMaxSize, err := ctx.ScopeManager.GetVariableValue("__find_element_max_size")
 			if err == nil {
-				elementMaxSizeFelt, ok := elementMaxSize.(*fp.Element)
+				elementMaxSizeFelt, ok := elementMaxSize.(fp.Element)
 				if !ok {
 					return fmt.Errorf("failed obtaining the variable: __find_element_max_size")
 				}
 
-				if !utils.FeltLe(nElms, elementMaxSizeFelt) {
+				if !utils.FeltLe(nElms, &elementMaxSizeFelt) {
 					return fmt.Errorf("find_element() can only be used with n_elms<=%v. Got: n_elms=%v", elementMaxSizeFelt, nElms)
 				}
 			}
@@ -196,36 +199,24 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 				return err
 			}
 
-			// nElms should not be bigger than Uint64 due to felt logic
 			nElemsRange := nElms.Uint64()
-			elmSizeInt16 := int16(elmSize.Uint64())
 
 			//> for i in range(n_elms):
 			for i := uint64(0); i < nElemsRange; i++ {
-				arrayPtrValue, err := vm.Memory.ReadFromAddress(arrayPtr)
-				if err != nil {
-					return err
-				}
-
-				arrayValue, err := arrayPtrValue.FieldElement()
-				if err != nil {
-					return err
-				}
-
 				//> 	if memory[array_ptr + elm_size * i] >= ids.key:
-				if utils.FeltLe(key, arrayValue) {
+				index := arrayPtr + elmSize*i
+
+				value, err := vm.Memory.ReadAsElement(uint64(1), index)
+				if err != nil {
+					return err
+				}
+
+				if utils.FeltLe(key, &value) {
 					//> 		ids.index = i
 					//> 		break
 					indexValue := memory.MemoryValueFromFieldElement((new(fp.Element).SetUint64(i)))
 					return vm.Memory.WriteToAddress(&indexAddr, &indexValue)
 				}
-
-				// This adds elmsSize
-				*arrayPtr, err = arrayPtr.AddOffset(elmSizeInt16)
-				if err != nil {
-					return err
-				}
-
 			}
 
 			//> else:
