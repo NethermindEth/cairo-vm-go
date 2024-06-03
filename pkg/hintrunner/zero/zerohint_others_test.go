@@ -52,7 +52,7 @@ func TestZeroHintMemcpy(t *testing.T) {
 					{Name: "len", Kind: apRelative, Value: feltUint64(1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newMemcpyEnterScopeHint(ctx.operanders["len"])
+					return newMemEnterScopeHint(ctx.operanders["len"], false)
 				},
 				check: varValueInScopeEquals("n", *feltUint64(1)),
 			},
