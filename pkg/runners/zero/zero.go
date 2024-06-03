@@ -185,12 +185,18 @@ func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryVa
 	for _, bRunner := range runner.Layout.Builtins {
 		builtinsSet[bRunner.Builtin] = true
 	}
+	// check if all builtins from the program are in the layout
 	for _, programBuiltin := range runner.program.Builtins {
 		if _, found := builtinsSet[programBuiltin]; !found {
-			return []mem.MemoryValue{}, fmt.Errorf("builtin %d not found in the layout: %s", programBuiltin, runner.Layout.Name)
+			builtinName, err := programBuiltin.MarshalJSON()
+			if err != nil {
+				return []mem.MemoryValue{}, err
+			}
+			return []mem.MemoryValue{}, fmt.Errorf("builtin %s not found in the layout: %s", builtinName, runner.Layout.Name)
 		}
 	}
 	stack := []mem.MemoryValue{}
+	// adding to the stack only the builtins that are both in the program and in the layout
 	for _, bRunner := range runner.Layout.Builtins {
 		builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
 		if utils.Contains(runner.program.Builtins, bRunner.Builtin) {
@@ -338,7 +344,7 @@ func (runner *ZeroRunner) getPermRangeCheckLimits() (uint64, uint64) {
 // FinalizeSegments calculates the final size of the builtins segments,
 // using number of allocated instances and memory cells per builtin instance.
 // Additionally it sets the final size of the program segment to the program size.
-func (runner *ZeroRunner) FinalizeSegments() {
+func (runner *ZeroRunner) FinalizeSegments() error {
 	programSize := uint64(len(runner.program.Bytecode))
 	runner.vm.Memory.Segments[vm.ProgramSegment].Finalize(programSize)
 	for _, bRunner := range runner.Layout.Builtins {
@@ -346,11 +352,12 @@ func (runner *ZeroRunner) FinalizeSegments() {
 		if ok {
 			size, err := bRunner.Runner.GetAllocatedSize(builtinSegment.Len(), runner.vm.Step)
 			if err != nil {
-				panic(fmt.Sprintf("builtin %s: %v", bRunner.Runner.String(), err))
+				return fmt.Errorf("builtin %s: %v", bRunner.Runner.String(), err)
 			}
 			builtinSegment.Finalize(size)
 		}
 	}
+	return nil
 }
 
 func (runner *ZeroRunner) BuildProof() ([]byte, []byte, error) {

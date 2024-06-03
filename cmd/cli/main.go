@@ -117,7 +117,9 @@ func main() {
 
 					if proofmode {
 						runner.EndRun()
-						runner.FinalizeSegments()
+						if err := runner.FinalizeSegments(); err != nil {
+							return fmt.Errorf("cannot finalize segments: %w", err)
+						}
 						trace, memory, err := runner.BuildProof()
 						if err != nil {
 							return fmt.Errorf("cannot build proof: %w", err)

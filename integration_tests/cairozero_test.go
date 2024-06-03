@@ -192,7 +192,7 @@ func runVm(path string) (string, string, string, error) {
 	// If any other layouts are needed, add the suffix checks here.
 	// The convention would be: ".$layout.cairo"
 	// A file without this suffix will use the default ("plain") layout.
-	var layout string
+	layout := "plain"
 	if strings.Contains(path, ".small") {
 		layout = "small"
 	} else if strings.Contains(path, ".all_cairo") {
