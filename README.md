@@ -20,7 +20,7 @@ This Virtual Machine is still in development and there is no public release avai
 Currently, it is only possible to use it by building it from source by following these instructions:
 
 1. Clone the repo to your machine: `git clone https://github.com/NethermindEth/cairo-vm-go`.
-2. Install `Go` on your PC, instructions [here](https://go.dev/.doc/install).
+2. Install `Go` on your PC, instructions [here](https://go.dev/dl/).
 3. Execute on the root folder of the repo: `make build`.
 4. Make sure everything is running smoothly by executing: `make unit`.
 
@@ -76,6 +76,17 @@ make unit
 Integration tests are run with:
 
 ```bash
+make integration
+```
+
+Integration tests are run with filters in the following two methods, with the first method having higher priority.
+
+```bash
+#1) set global environment variable `INTEGRATION_TESTS_FILTERS`
+export INTEGRATION_TESTS_FILTERS=fib,alloc
+make integration
+
+#2) set by editing `INTEGRATION_TESTS_FILTERS=` in the `./integration_tests/.env` file
 make integration
 ```
 

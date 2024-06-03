@@ -25,7 +25,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: apValueEquals(feltUint64(0)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: feltUint64(1)},
@@ -36,7 +35,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: apValueEquals(feltUint64(1)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: feltUint64(0)},
@@ -48,7 +46,6 @@ func TestZeroHintMath(t *testing.T) {
 				check: apValueEquals(feltUint64(0)),
 			},
 		},
-
 		"AssertLtFelt": {
 			{
 				operanders: []*hintOperander{
@@ -60,7 +57,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				errCheck: errorTextContains("a = 0 is not less than b = 0"),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: immediate, Value: feltUint64(1)},
@@ -71,7 +67,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				errCheck: errorTextContains("a = 1 is not less than b = 0"),
 			},
-
 			{
 				// -10 felt is 3618502788666131213697322783095070105623107215331596699973092056135872020467
 				// and it will not be less than 14 in Cairo as well.
@@ -84,7 +79,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				errCheck: errorTextContains("a = -10 is not less than b = 14"),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: fpRelative, Value: feltUint64(1)},
@@ -96,7 +90,6 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorIsNil,
 			},
 		},
-
 		"AssertNotZero": {
 			{
 				operanders: []*hintOperander{
@@ -107,7 +100,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				errCheck: errorTextContains("assertion failed: value is zero"),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltInt64(1353)},
@@ -118,10 +110,8 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorIsNil,
 			},
 		},
-
 		"AssertNN": {
 			// Like IsNN, but does an assertion instead.
-
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: feltInt64(2421)},
@@ -131,7 +121,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				errCheck: errorIsNil,
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: feltInt64(0)},
@@ -141,7 +130,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				errCheck: errorIsNil,
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: feltInt64(-2)},
@@ -152,7 +140,6 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorTextContains("assertion failed: a = -2 is out of range"),
 			},
 		},
-
 		"AssertNotEqual": {
 			// Different address values.
 			{
@@ -175,7 +162,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				errCheck: errorIsNil,
 			},
-
 			// Different felt values.
 			{
 				operanders: []*hintOperander{
@@ -187,7 +173,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				errCheck: errorIsNil,
 			},
-
 			// Mismatching types.
 			{
 				operanders: []*hintOperander{
@@ -209,7 +194,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				errCheck: errorTextContains("assertion failed: non-comparable values: 1, 1:1"),
 			},
-
 			// Same value addresses.
 			{
 				operanders: []*hintOperander{
@@ -221,7 +205,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				errCheck: errorTextContains("assertion failed: 1:0 = 1:0"),
 			},
-
 			// Same value felts.
 			{
 				operanders: []*hintOperander{
@@ -234,11 +217,9 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorTextContains("assertion failed: -1 = -1"),
 			},
 		},
-
 		"IsNN": {
 			// is_nn would return 1 for non-negative values, but the
 			// hint itself writes 0 in this case (it's used as a jump condition).
-
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: feltUint64(2421)},
@@ -248,7 +229,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: apValueEquals(feltUint64(0)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: feltUint64(0)},
@@ -258,7 +238,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: apValueEquals(feltUint64(0)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: feltInt64(-2)},
@@ -269,10 +248,8 @@ func TestZeroHintMath(t *testing.T) {
 				check: apValueEquals(feltUint64(1)),
 			},
 		},
-
 		"IsNNOutOfRange": {
 			// Note that "a" is (-a - 1).
-
 			{
 				operanders: []*hintOperander{
 					// (-a - 1) => (-1 - 1) => -2
@@ -283,7 +260,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: apValueEquals(feltUint64(1)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					// (-a - 1) => (0 - 1) => -1
@@ -294,7 +270,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: apValueEquals(feltUint64(1)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: feltInt64(-1)},
@@ -304,7 +279,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: apValueEquals(feltUint64(0)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: feltAdd(&utils.FeltMax128, feltInt64(1))},
@@ -314,7 +288,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: apValueEquals(feltUint64(1)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: feltAdd(&utils.FeltMax128, feltInt64(2))},
@@ -324,7 +297,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: apValueEquals(feltUint64(1)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "a", Kind: apRelative, Value: &utils.FeltMax128},
@@ -335,7 +307,6 @@ func TestZeroHintMath(t *testing.T) {
 				check: apValueEquals(feltUint64(1)),
 			},
 		},
-
 		"IsPositive": {
 			{
 				operanders: []*hintOperander{
@@ -347,7 +318,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: varValueEquals("is_positive", feltInt64(1)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "value", Kind: apRelative, Value: feltInt64(0)},
@@ -358,7 +328,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: varValueEquals("is_positive", feltInt64(1)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "value", Kind: apRelative, Value: feltInt64(-1)},
@@ -369,7 +338,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: varValueEquals("is_positive", feltInt64(0)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "value", Kind: apRelative, Value: feltAdd(&utils.FeltMax128, feltInt64(-1))},
@@ -380,7 +348,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: varValueEquals("is_positive", feltInt64(1)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "value", Kind: apRelative, Value: &utils.FeltMax128},
@@ -391,7 +358,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: varValueEquals("is_positive", feltInt64(0)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "value", Kind: apRelative, Value: feltAdd(&utils.FeltMax128, feltInt64(1))},
@@ -403,10 +369,8 @@ func TestZeroHintMath(t *testing.T) {
 				check: varValueEquals("is_positive", feltInt64(0)),
 			},
 		},
-
 		"SplitIntAssertRange": {
 			// Zero value - assertion failed, any other - nothing.
-
 			{
 				operanders: []*hintOperander{
 					{Name: "value", Kind: apRelative, Value: feltInt64(1)},
@@ -416,7 +380,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				errCheck: errorTextContains("split_int(): value is out of range"),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltInt64(0)},
@@ -427,11 +390,9 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorIsNil,
 			},
 		},
-
 		"SplitIntHint": {
 			// Performs value%base and stores that to output.
 			// Asserts output<bound.
-
 			{
 				operanders: []*hintOperander{
 					{Name: "output", Kind: uninitialized},
@@ -444,7 +405,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: varValueEquals("output", feltInt64(1)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "output", Kind: uninitialized},
@@ -457,7 +417,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: varValueEquals("output", feltInt64(0)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "output", Kind: uninitialized},
@@ -470,7 +429,6 @@ func TestZeroHintMath(t *testing.T) {
 				},
 				check: varValueEquals("output", feltInt64(4)),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "output", Kind: uninitialized},
@@ -484,7 +442,6 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorTextContains("assertion `split_int(): Limb 4 is out of range` failed"),
 			},
 		},
-
 		"Assert250bits": {
 			{
 				operanders: []*hintOperander{
@@ -500,7 +457,6 @@ func TestZeroHintMath(t *testing.T) {
 					"high": feltInt64(0),
 				}),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
@@ -515,7 +471,6 @@ func TestZeroHintMath(t *testing.T) {
 					"high": feltInt64(0),
 				}),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
@@ -530,7 +485,6 @@ func TestZeroHintMath(t *testing.T) {
 					"high": feltInt64(1023),
 				}),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
@@ -545,7 +499,6 @@ func TestZeroHintMath(t *testing.T) {
 					"high": feltInt64(1023648380),
 				}),
 			},
-
 			{
 				operanders: []*hintOperander{
 					{Name: "low", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 0)},
@@ -634,7 +587,7 @@ func TestZeroHintMath(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
 				},
-				errCheck: errorTextContains(fmt.Sprintf("div=%v is out of the valid range.", &utils.FeltMax128)),
+				errCheck: errorTextContains(fmt.Sprintf("div=%v is out of the valid range", &utils.FeltMax128)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -647,7 +600,7 @@ func TestZeroHintMath(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
 				},
-				errCheck: errorTextContains(fmt.Sprintf("div=%v is out of the valid range.", &utils.FeltZero)),
+				errCheck: errorTextContains(fmt.Sprintf("div=%v is out of the valid range", &utils.FeltZero)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -686,7 +639,7 @@ func TestZeroHintMath(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
 				},
-				errCheck: errorTextContains(fmt.Sprintf("%v / %v = %v is out of the range [-%v, %v].", feltInt64(6), feltInt64(2), feltInt64(3), feltInt64(3), feltInt64(3))),
+				errCheck: errorTextContains(fmt.Sprintf("%v / %v = %v is out of the range [-%v, %v]", feltInt64(6), feltInt64(2), feltInt64(3), feltInt64(3), feltInt64(3))),
 			},
 			{
 				operanders: []*hintOperander{
@@ -763,7 +716,6 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorTextContains("outside of the range [0, 2**250)"),
 			},
 		},
-
 		"UnsignedDivRem": {
 			{
 				operanders: []*hintOperander{
@@ -773,7 +725,7 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"q": feltInt64(16),
@@ -788,7 +740,7 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"q": feltInt64(3),
@@ -803,7 +755,7 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"q": feltInt64(0),
@@ -818,9 +770,9 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
 				},
-				errCheck: errorTextContains("div=0x0 is out of the valid range."),
+				errCheck: errorTextContains("div=0x0 is out of the valid range"),
 			},
 			{
 				operanders: []*hintOperander{
@@ -830,7 +782,7 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"q": feltInt64(0),
@@ -845,7 +797,7 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{
 					"q": feltInt64(0),
@@ -860,9 +812,64 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "q", Kind: reference, Value: addrBuiltin(starknet.RangeCheck, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUnsignedDivRemHinter(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
+					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
 				},
-				errCheck: errorTextContains("div=0x8000000000000110000000000000001 is out of the valid range."),
+				errCheck: errorTextContains("div=0x8000000000000110000000000000001 is out of the valid range"),
+			},
+		},
+
+		"IsQuadResidue": {
+			// Test case: x is 0
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltInt64(0)),
+			},
+			// Test case: x is 1
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltInt64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(9)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltInt64(3)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltString("151461")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltString("724216096429330872433307564225094804656986062203645968681663112868516882638")),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "y", Kind: uninitialized},
+					{Name: "x", Kind: fpRelative, Value: feltInt64(2734590101144995)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsQuadResidueHint(ctx.operanders["x"], ctx.operanders["y"])
+				},
+				check: varValueEquals("y", feltString("1484343478756640997457155271309092907848857951878936388435701743478603286656")),
 			},
 		},
 	})
