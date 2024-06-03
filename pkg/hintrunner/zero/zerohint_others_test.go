@@ -60,17 +60,17 @@ func TestZeroHintMemcpy(t *testing.T) {
 		"SearchSortedLower": {
 			{
 				operanders: []*hintOperander{
-					{Name: "arrayPtr", Kind: fpRelative, Value: feltUint64(10)},
-					{Name: "elmSize", Kind: fpRelative, Value: feltInt64(0)},
-					{Name: "nElms", Kind: uninitialized},
-					{Name: "index", Kind: uninitialized},
+					{Name: "array_ptr", Kind: fpRelative, Value: feltUint64(7)},
+					{Name: "elm_size", Kind: fpRelative, Value: feltInt64(0)},
+					{Name: "n_elms", Kind: uninitialized},
 					{Name: "key", Kind: uninitialized},
+					{Name: "index", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSearchSortedLowerHint(
-						ctx.operanders["arrayPtr"],
-						ctx.operanders["elmSize"],
-						ctx.operanders["nElms"],
+						ctx.operanders["array_ptr"],
+						ctx.operanders["elm_size"],
+						ctx.operanders["n_elms"],
 						ctx.operanders["key"],
 						ctx.operanders["index"],
 					)
@@ -79,17 +79,17 @@ func TestZeroHintMemcpy(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "arrayPtr", Kind: fpRelative, Value: feltInt64(10)},
-					{Name: "elmSize", Kind: fpRelative, Value: feltInt64(1)},
-					{Name: "nElms", Kind: fpRelative, Value: feltInt64(0)},
-					{Name: "index", Kind: uninitialized},
+					{Name: "array_ptr", Kind: fpRelative, Value: feltInt64(7)},
+					{Name: "elm_size", Kind: fpRelative, Value: feltInt64(1)},
+					{Name: "n_elms", Kind: fpRelative, Value: feltInt64(0)},
 					{Name: "key", Kind: fpRelative, Value: feltInt64(1)},
+					{Name: "index", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSearchSortedLowerHint(
-						ctx.operanders["arrayPtr"],
-						ctx.operanders["elmSize"],
-						ctx.operanders["nElms"],
+						ctx.operanders["array_ptr"],
+						ctx.operanders["elm_size"],
+						ctx.operanders["n_elms"],
 						ctx.operanders["key"],
 						ctx.operanders["index"],
 					)
@@ -98,24 +98,111 @@ func TestZeroHintMemcpy(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
+					{Name: "firstElement", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "array_ptr", Kind: fpRelative, Value: feltInt64(8)},
+					{Name: "elm_size", Kind: fpRelative, Value: feltInt64(1)},
+					{Name: "n_elms", Kind: fpRelative, Value: feltInt64(1)},
+					{Name: "key", Kind: fpRelative, Value: feltInt64(1)},
+					{Name: "index", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSearchSortedLowerHint(
+						ctx.operanders["array_ptr"],
+						ctx.operanders["elm_size"],
+						ctx.operanders["n_elms"],
+						ctx.operanders["key"],
+						ctx.operanders["index"],
+					)
+				},
+				errCheck: errorIsNil,
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "firstElement", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "array_ptr", Kind: fpRelative, Value: feltInt64(8)},
+					{Name: "elm_size", Kind: fpRelative, Value: feltInt64(1)},
+					{Name: "n_elms", Kind: fpRelative, Value: feltInt64(11)},
+					{Name: "key", Kind: fpRelative, Value: feltInt64(1)},
+					{Name: "index", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("__find_element_max_size", *feltUint64(10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSearchSortedLowerHint(
+						ctx.operanders["array_ptr"],
+						ctx.operanders["elm_size"],
+						ctx.operanders["n_elms"],
+						ctx.operanders["key"],
+						ctx.operanders["index"],
+					)
+				},
+				errCheck: errorTextContains("find_element() can only be used with n_elms<"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "firstElement", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "array_ptr", Kind: fpRelative, Value: feltInt64(8)},
+					{Name: "elm_size", Kind: fpRelative, Value: feltInt64(1)},
+					{Name: "n_elms", Kind: fpRelative, Value: feltInt64(10)},
+					{Name: "key", Kind: fpRelative, Value: feltInt64(10)},
+					{Name: "index", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSearchSortedLowerHint(
+						ctx.operanders["array_ptr"],
+						ctx.operanders["elm_size"],
+						ctx.operanders["n_elms"],
+						ctx.operanders["key"],
+						ctx.operanders["index"],
+					)
+				},
+				check: varValueEquals("index", feltInt64(0)),
+			},
+			// {
+			// 	operanders: []*hintOperander{
+			// 		// We needs these buffer here because we read from offset 10 in segment 1
+			// 		// and test allocs until addr(6)
+			// 		{Name: "firstElement", Kind: apRelative, Value: feltInt64(1)},
+			// 		{Name: "array_ptr", Kind: fpRelative, Value: feltInt64(6)},
+			// 		{Name: "elm_size", Kind: fpRelative, Value: feltInt64(1)},
+			// 		{Name: "n_elms", Kind: fpRelative, Value: feltInt64(10)},
+			// 		{Name: "index", Kind: uninitialized},
+			// 		{Name: "key", Kind: fpRelative, Value: feltInt64(1)},
+			// 	},
+			// 	makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+			// 		return newSearchSortedLowerHint(
+			// 			ctx.operanders["array_ptr"],
+			// 			ctx.operanders["elm_size"],
+			// 			ctx.operanders["n_elms"],
+			// 			ctx.operanders["key"],
+			// 			ctx.operanders["index"],
+			// 		)
+			// 	},
+			// 	check: varValueEquals("key", feltInt64(0)),
+			// },
+			{
+				operanders: []*hintOperander{
 					// We needs these buffer here because we read from offset 10 in segment 1
 					// and test allocs until addr(6)
-					{Name: "buffer", Kind: apRelative, Value: feltInt64(0)},
-					{Name: "buffer", Kind: apRelative, Value: feltInt64(0)},
-					{Name: "buffer", Kind: apRelative, Value: feltInt64(0)},
-					{Name: "buffer", Kind: apRelative, Value: feltInt64(0)},
-
-					{Name: "arrayPtr", Kind: fpRelative, Value: feltInt64(10)},
-					{Name: "elmSize", Kind: fpRelative, Value: feltInt64(1)},
-					{Name: "nElms", Kind: fpRelative, Value: feltInt64(10)},
+					{Name: "firstElement", Kind: apRelative, Value: feltInt64(0)},
+					{Name: "secondElement", Kind: apRelative, Value: feltInt64(1)},
+					{Name: "thirdElement", Kind: apRelative, Value: feltInt64(2)},
+					{Name: "fourthElement", Kind: apRelative, Value: feltInt64(3)},
+					{Name: "array_ptr", Kind: fpRelative, Value: feltInt64(7)},
+					{Name: "elm_size", Kind: fpRelative, Value: feltInt64(1)},
+					{Name: "n_elms", Kind: fpRelative, Value: feltInt64(10)},
 					{Name: "index", Kind: uninitialized},
 					{Name: "key", Kind: fpRelative, Value: feltInt64(1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSearchSortedLowerHint(
-						ctx.operanders["arrayPtr"],
-						ctx.operanders["elmSize"],
-						ctx.operanders["nElms"],
+						ctx.operanders["array_ptr"],
+						ctx.operanders["elm_size"],
+						ctx.operanders["n_elms"],
 						ctx.operanders["key"],
 						ctx.operanders["index"],
 					)
