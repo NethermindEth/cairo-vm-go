@@ -41,6 +41,7 @@ func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander, lowOnly bo
 			if err != nil {
 				return err
 			}
+
 			bLow, bHigh, err := GetUint256AsFelts(vm, b)
 			if err != nil {
 				return err
@@ -54,6 +55,7 @@ func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander, lowOnly bo
 			} else {
 				cLow = &utils.FeltZero
 			}
+
 			cLowValue := memory.MemoryValueFromFieldElement(cLow)
 
 			// Save `carry_low` value in address
@@ -61,6 +63,7 @@ func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander, lowOnly bo
 			if err != nil {
 				return err
 			}
+
 			err = vm.Memory.WriteToAddress(&addrCarryLow, &cLowValue)
 			if err != nil {
 				return err
@@ -76,6 +79,7 @@ func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander, lowOnly bo
 				} else {
 					cHigh = &utils.FeltZero
 				}
+
 				cHighValue := memory.MemoryValueFromFieldElement(cHigh)
 
 				// Save `carry_high` value in address
@@ -83,6 +87,7 @@ func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander, lowOnly bo
 				if err != nil {
 					return err
 				}
+
 				err = vm.Memory.WriteToAddress(&addrCarryHigh, &cHighValue)
 				if err != nil {
 					return err
