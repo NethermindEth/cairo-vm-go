@@ -161,16 +161,8 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			if err != nil {
 				return err
 			}
-			slopeMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(slopeAddr, int16(3))
-			if err != nil {
-				return err
-			}
 
 			point0Addr, err := point0.GetAddress(vm)
-			if err != nil {
-				return err
-			}
-			point0MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point0Addr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -179,39 +171,29 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			if err != nil {
 				return err
 			}
-			point1MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point1Addr, int16(3))
+
+			slopeValues, err := vm.Memory.ResolveAsBigInt3(slopeAddr)
 			if err != nil {
 				return err
 			}
 
-			// [d0, d1, d2]
-			var slopeValues [3]*fp.Element
-			// [x.d0, x.d1, x.d2]
-			var point0XValues [3]*fp.Element
+			point0XValues, err := vm.Memory.ResolveAsBigInt3(point0Addr)
+			if err != nil {
+				return err
+			}
+
+			point1XValues, err := vm.Memory.ResolveAsBigInt3(point1Addr)
+			if err != nil {
+				return err
+			}
+
+			point0MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point0Addr, int16(6))
+			if err != nil {
+				return err
+			}
+
 			// [y.d0, y.d1, y.d2]
 			var point0YValues [3]*fp.Element
-			// [x.d0, x.d1, x.d2]
-			var point1XValues [3]*fp.Element
-
-			for i := 0; i < 3; i++ {
-				slopeValue, err := slopeMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				slopeValues[i] = slopeValue
-
-				point0XValue, err := point0MemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				point0XValues[i] = point0XValue
-
-				point1XValue, err := point1MemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				point1XValues[i] = point1XValue
-			}
 
 			for i := 3; i < 6; i++ {
 				point0YValue, err := point0MemoryValues[i].FieldElement()
@@ -353,23 +335,20 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
+			pointXValues, err := vm.Memory.ResolveAsBigInt3(pointAddr)
+			if err != nil {
+				return err
+			}
+
 			pointMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(pointAddr, int16(6))
 			if err != nil {
 				return err
 			}
 
-			// [x.d0, x.d1, x.d2]
-			var pointXValues [3]*fp.Element
 			// [y.d0, y.d1, y.d2]
 			var pointYValues [3]*fp.Element
 
-			for i := 0; i < 3; i++ {
-				pointValue, err := pointMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				pointXValues[i] = pointValue
-			}
 			for i := 3; i < 6; i++ {
 				pointValue, err := pointMemoryValues[i].FieldElement()
 				if err != nil {
@@ -438,18 +417,9 @@ func newReduceV1Hint(x hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			xMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(xAddr, int16(3))
+			xValues, err := vm.Memory.ResolveAsBigInt3(xAddr)
 			if err != nil {
 				return err
-			}
-
-			var xValues [3]*fp.Element
-			for i := 0; i < 3; i++ {
-				xValue, err := xMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				xValues[i] = xValue
 			}
 
 			xBig, err := secp_utils.SecPPacked(xValues)
@@ -499,40 +469,31 @@ func newEcDoubleAssignNewXV1Hint(slope, point hinter.ResOperander) hinter.Hinter
 			if err != nil {
 				return err
 			}
-			slopeMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(slopeAddr, int16(3))
-			if err != nil {
-				return err
-			}
 
 			pointAddr, err := point.GetAddress(vm)
 			if err != nil {
 				return err
 			}
+
+			slopeValues, err := vm.Memory.ResolveAsBigInt3(slopeAddr)
+			if err != nil {
+				return err
+			}
+
+			pointXValues, err := vm.Memory.ResolveAsBigInt3(pointAddr)
+			if err != nil {
+				return err
+			}
+
 			pointMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(pointAddr, int16(6))
 			if err != nil {
 				return err
 			}
 
-			// [d0, d1, d2]
-			var slopeValues [3]*fp.Element
-			// [x.d0, x.d1, x.d2]
-			var pointXValues [3]*fp.Element
 			// [y.d0, y.d1, y.d2]
 			var pointYValues [3]*fp.Element
 
 			for i := 0; i < 3; i++ {
-				slopeValue, err := slopeMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				slopeValues[i] = slopeValue
-
-				pointXValue, err := pointMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				pointXValues[i] = pointXValue
-
 				pointYValue, err := pointMemoryValues[i+3].FieldElement()
 				if err != nil {
 					return err
@@ -666,42 +627,36 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			point0MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point0Addr, int16(6))
-			if err != nil {
-				return err
-			}
 
 			point1Addr, err := point1.GetAddress(vm)
 			if err != nil {
 				return err
 			}
+
+			point0XValues, err := vm.Memory.ResolveAsBigInt3(point0Addr)
+			if err != nil {
+				return err
+			}
+
+			point1XValues, err := vm.Memory.ResolveAsBigInt3(point1Addr)
+			if err != nil {
+				return err
+			}
+
+			point0MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point0Addr, int16(6))
+			if err != nil {
+				return err
+			}
+
 			point1MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point1Addr, int16(6))
 			if err != nil {
 				return err
 			}
 
-			// [x.d0, x.d1, x.d2]
-			var point0XValues [3]*fp.Element
 			// [y.d0, y.d1, y.d2]
 			var point0YValues [3]*fp.Element
-			// [x.d0, x.d1, x.d2]
-			var point1XValues [3]*fp.Element
 			// [y.d0, y.d1, y.d2]
 			var point1YValues [3]*fp.Element
-
-			for i := 0; i < 3; i++ {
-				point0XValue, err := point0MemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				point0XValues[i] = point0XValue
-
-				point1XValue, err := point1MemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				point1XValues[i] = point1XValue
-			}
 
 			for i := 3; i < 6; i++ {
 				point0YValue, err := point0MemoryValues[i].FieldElement()

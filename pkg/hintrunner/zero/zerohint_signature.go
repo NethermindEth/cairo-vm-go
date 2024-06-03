@@ -8,7 +8,7 @@ import (
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -22,7 +22,7 @@ import (
 //
 // `newVerifyZeroHint` writes the quotient of the modular division of the packed value
 // by SECP256R1 prime to the memory address corresponding to `q`
-func newVerifyZeroHint(memory *memory.Memory, val, q hinter.ResOperander) hinter.Hinter {
+func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "VerifyZero",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -32,7 +32,7 @@ func newVerifyZeroHint(memory *memory.Memory, val, q hinter.ResOperander) hinter
 			//> ids.q = q % PRIME
 
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-			
+
 			valAddr, err := val.GetAddress(vm)
 			if err != nil {
 				return err
@@ -42,7 +42,7 @@ func newVerifyZeroHint(memory *memory.Memory, val, q hinter.ResOperander) hinter
 			if err != nil {
 				return err
 			}
-			
+
 			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
@@ -68,13 +68,13 @@ func newVerifyZeroHint(memory *memory.Memory, val, q hinter.ResOperander) hinter
 			if err != nil {
 				return err
 			}
-			qMv := memory.MemoryValueFromFieldElement(qFelt)
+			qMv := mem.MemoryValueFromFieldElement(qFelt)
 			return vm.Memory.WriteToAddress(&qAddr, &qMv)
 		},
 	}
 }
 
-func createVerifyZeroHinter(memory *memory.Memory, resolver hintReferenceResolver) (hinter.Hinter, error) {
+func createVerifyZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	val, err := resolver.GetResOperander("val")
 	if err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func createVerifyZeroHinter(memory *memory.Memory, resolver hintReferenceResolve
 		return nil, err
 	}
 
-	return newVerifyZeroHint(memory, val, q), nil
+	return newVerifyZeroHint(val, q), nil
 }
 
 // VerifyECDSASignature hint writes an ECDSA signature to a given address
@@ -167,10 +167,6 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			xCubeMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(xCubeAddr, int16(3))
-			if err != nil {
-				return err
-			}
 			v, err := hinter.ResolveAsFelt(vm, v)
 			if err != nil {
 				return err
@@ -179,14 +175,11 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 			secpBig, _ := secp_utils.GetSecPBig()
 
-			//> x_cube_int = pack(ids.x_cube, PRIME) % SECP_P
-			var xCubeValues [3]*fp.Element
-			for i := 0; i < 3; i++ {
-				xCubeValues[i], err = xCubeMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
+			xCubeValues, err := vm.Memory.ResolveAsBigInt3(xCubeAddr)
+			if err != nil {
+				return err
 			}
+
 			xCubeIntBig, err := secp_utils.SecPPacked(xCubeValues)
 			if err != nil {
 				return err
@@ -324,35 +317,20 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			aMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(aAddr, int16(3))
-			if err != nil {
-				return err
-			}
 
 			bAddr, err := b.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			bMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(bAddr, int16(3))
+
+			aValues, err := vm.Memory.ResolveAsBigInt3(aAddr)
 			if err != nil {
 				return err
 			}
 
-			var aValues [3]*fp.Element
-			var bValues [3]*fp.Element
-
-			for i := 0; i < 3; i++ {
-				aValue, err := aMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				aValues[i] = aValue
-
-				bValue, err := bMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				bValues[i] = bValue
+			bValues, err := vm.Memory.ResolveAsBigInt3(bAddr)
+			if err != nil {
+				return err
 			}
 
 			//> a = pack(ids.a, PRIME)
