@@ -118,7 +118,7 @@ func createMemcpyEnterScopeHinter(resolver hintReferenceResolver) (hinter.Hinter
 // that is greater than or equal to a given key and returns its index
 //
 // `newSearchSortedLowerHint` takes 5 operanders as arguments
-//   - `arrayPtr` represents an offset in memory
+//   - `arrayPtr` represents the offset in the execution segment of memory where starts the sorted array
 //   - `elmSize` is the size in terms of memory cells per element in the array
 //   - `nElms` is the number of elements in the array
 //   - `key` is the given key that acts a threshold
