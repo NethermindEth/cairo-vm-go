@@ -14,10 +14,13 @@ const cellsPerBitwise = 5
 const inputCellsPerBitwise = 2
 
 // TODO: This is from layout small, those values should be dynamically loaded from given layout
-const ratioBitwise = 8
-const instancesPerComponentBitwise = 5
+// const ratioBitwise = 8
+// const instancesPerComponentBitwise = 5
 
-type Bitwise struct{}
+type Bitwise struct {
+	ratioBitwise                 uint64
+	instancesPerComponentBitwise uint64
+}
 
 func (b *Bitwise) CheckWrite(
 	segment *memory.Segment, offset uint64, value *memory.MemoryValue,
@@ -96,7 +99,7 @@ func (b *Bitwise) String() string {
 }
 
 func (b *Bitwise) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(ratioBitwise, inputCellsPerBitwise, segmentUsedSize, instancesPerComponentBitwise, vmCurrentStep)
+	allocatedInstances, err := GetAllocatedInstances(b.ratioBitwise, inputCellsPerBitwise, segmentUsedSize, b.instancesPerComponentBitwise, vmCurrentStep)
 	if err != nil {
 		return 0, err
 	}

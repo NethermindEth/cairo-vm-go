@@ -13,13 +13,12 @@ const cellsPerRangeCheck = 1
 const INNER_RC_BOUND_SHIFT = 16
 const INNER_RC_BOUND_MASK = (1 << 16) - 1
 
-// TODO: This is from layout small, those values should be dynamically loaded from given layout
-const ratioRangeCheck = 8
-const instancesPerComponentRangeCheck = 1
-const RangeCheckNParts = 8
-const InnerRCBound = 2 << 16
-
-type RangeCheck struct{}
+type RangeCheck struct {
+	ratioRangeCheck                 uint64
+	instancesPerComponentRangeCheck uint64
+	RangeCheckNParts                uint64
+	InnerRCBound                    uint64
+}
 
 func (r *RangeCheck) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
 	felt, err := value.FieldElement()
@@ -43,7 +42,7 @@ func (r *RangeCheck) String() string {
 }
 
 func (r *RangeCheck) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(ratioRangeCheck, cellsPerRangeCheck, segmentUsedSize, instancesPerComponentRangeCheck, vmCurrentStep)
+	allocatedInstances, err := GetAllocatedInstances(r.ratioRangeCheck, cellsPerRangeCheck, segmentUsedSize, r.instancesPerComponentRangeCheck, vmCurrentStep)
 	if err != nil {
 		return 0, err
 	}

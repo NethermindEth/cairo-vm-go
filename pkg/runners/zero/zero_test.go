@@ -27,7 +27,7 @@ func TestSimpleProgram(t *testing.T) {
     `)
 
 	hints := make(map[uint64][]hinter.Hinter)
-	runner, err := NewRunner(program, hints, false, math.MaxUint64)
+	runner, err := NewRunner(program, hints, false, math.MaxUint64, "")
 	require.NoError(t, err)
 
 	endPc, err := runner.InitializeMainEntrypoint()
@@ -74,7 +74,7 @@ func TestStepLimitExceeded(t *testing.T) {
     `)
 
 	hints := make(map[uint64][]hinter.Hinter)
-	runner, err := NewRunner(program, hints, false, 3)
+	runner, err := NewRunner(program, hints, false, 3, "")
 	require.NoError(t, err)
 
 	endPc, err := runner.InitializeMainEntrypoint()
@@ -133,7 +133,7 @@ func TestStepLimitExceededProofMode(t *testing.T) {
 		// when maxstep = 6, it fails executing the extra step required by proof mode
 		// when maxstep = 7, it fails trying to get the trace to be a power of 2
 		hints := make(map[uint64][]hinter.Hinter)
-		runner, err := NewRunner(program, hints, true, uint64(maxstep))
+		runner, err := NewRunner(program, hints, true, uint64(maxstep), "")
 		require.NoError(t, err)
 
 		err = runner.Run()
@@ -186,7 +186,7 @@ func TestBitwiseBuiltin(t *testing.T) {
         [ap + 1] = 9;
         [ap + 2] = 15;
         ret;
-    `, sn.Bitwise)
+    `, "all_cairo", sn.Bitwise)
 
 	err := runner.Run()
 	require.NoError(t, err)
@@ -202,7 +202,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
 	runner := createRunner(`
 	    [ap] = [[fp - 3]];
 	    ret;
-	`, sn.Bitwise)
+	`, "all_cairo", sn.Bitwise)
 
 	err := runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
@@ -211,7 +211,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
 	runner = createRunner(`
 	    [ap] = [[fp - 3] + 1];
 	    ret;
-	`, sn.Bitwise)
+	`, "all_cairo", sn.Bitwise)
 	err = runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
 
@@ -219,7 +219,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
 	runner = createRunner(`
         [ap] = [[fp - 3] + 2];
         ret;
-    `, sn.Bitwise)
+    `, "all_cairo", sn.Bitwise)
 
 	err = runner.Run()
 	require.ErrorContains(t, err, "input value at offset 0 is unknown")
@@ -233,7 +233,7 @@ func TestOutputBuiltin(t *testing.T) {
         [ap + 1] = 7;
         [ap + 1] = [[fp - 3] + 1];
         ret;
-    `, sn.Output)
+    `, "small", sn.Output)
 	err := runner.Run()
 	require.NoError(t, err)
 
@@ -263,7 +263,7 @@ func TestPedersenBuiltin(t *testing.T) {
         ret;
     `, val1.Text(10), val2.Text(10), val3.Text(10))
 
-	runner := createRunner(code, sn.Pedersen)
+	runner := createRunner(code, "small", sn.Pedersen)
 	err := runner.Run()
 	require.NoError(t, err)
 
@@ -276,14 +276,14 @@ func TestPedersenBuiltinError(t *testing.T) {
 	runner := createRunner(`
         [ap] = [[fp - 3]];
         ret;
-    `, sn.Pedersen)
+    `, "small", sn.Pedersen)
 	err := runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
 
 	runner = createRunner(`
         [ap] = [[fp - 3] + 2];
         ret;
-    `, sn.Pedersen)
+    `, "small", sn.Pedersen)
 	err = runner.Run()
 	require.ErrorContains(t, err, "input value at offset 0 is unknown")
 }
@@ -298,7 +298,7 @@ func TestRangeCheckBuiltin(t *testing.T) {
         [ap + 1] = 0xffffffffffffffffffffffffffffffff;
         [ap + 1] = [[fp - 3] + 1];
         ret;
-    `, sn.RangeCheck)
+    `, "small", sn.RangeCheck)
 
 	err := runner.Run()
 	require.NoError(t, err)
@@ -319,7 +319,7 @@ func TestRangeCheckBuiltinError(t *testing.T) {
         [ap] = 0x100000000000000000000000000000000;
         [ap] = [[fp - 3]];
         ret;
-    `, sn.RangeCheck)
+    `, "small", sn.RangeCheck)
 
 	err := runner.Run()
 	require.ErrorContains(t, err, "check write: 2**128 <")
@@ -328,7 +328,7 @@ func TestRangeCheckBuiltinError(t *testing.T) {
 	runner = createRunner(`
         [ap] = [[fp - 3]];
         ret;
-    `, sn.RangeCheck)
+    `, "small", sn.RangeCheck)
 
 	err = runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
@@ -358,17 +358,17 @@ func TestEcOpBuiltin(t *testing.T) {
         [ap + 5] = 108925483682366235368969256555281508851459278989259552980345066351008608800;
         [ap + 6] = 1592365885972480102953613056006596671718206128324372995731808913669237079419;
         ret;
-    `, sn.ECOP)
+    `, "all_cairo", sn.ECOP)
 
 	err := runner.Run()
 	require.NoError(t, err)
 }
 
-func createRunner(code string, builtins ...sn.Builtin) ZeroRunner {
+func createRunner(code string, layoutName string, builtins ...sn.Builtin) ZeroRunner {
 	program := createProgramWithBuiltins(code, builtins...)
 
 	hints := make(map[uint64][]hinter.Hinter)
-	runner, err := NewRunner(program, hints, false, math.MaxUint64)
+	runner, err := NewRunner(program, hints, false, math.MaxUint64, layoutName)
 	if err != nil {
 		panic(err)
 	}
