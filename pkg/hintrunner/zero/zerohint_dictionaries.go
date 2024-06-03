@@ -215,7 +215,7 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 
 			// We use 0 as offset for `WriteToNthStructField` function as we write
 			// to the first field of the `loop_temps` struct
-			return hinter.WriteToNthStructField(vm, loopTempsAddr, resultMem, int16(0))
+			return vm.Memory.WriteToNthStructField(loopTempsAddr, resultMem, int16(0))
 		},
 	}
 }
