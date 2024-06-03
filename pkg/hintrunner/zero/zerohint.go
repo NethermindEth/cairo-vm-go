@@ -181,7 +181,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case allocSegmentCode:
 		return createAllocSegmentHinter()
 	case memcpyContinueCopyingCode:
-		return createMemcpyContinueCopyingHinter(resolver)
+		return createMemContinueHinter(resolver, false)
+	case memsetContinueLoopCode:
+		return createMemContinueHinter(resolver, true)
 	case vmEnterScopeCode:
 		return createVMEnterScopeHinter()
 	case memcpyEnterScopeCode:
