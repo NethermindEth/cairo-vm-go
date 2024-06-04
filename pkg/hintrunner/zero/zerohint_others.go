@@ -40,7 +40,7 @@ func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.
 			if !ok {
 				return fmt.Errorf("casting n into a felt failed")
 			}
-			
+
 			newN = *new(fp.Element).Sub(&newN, &utils.FeltOne)
 
 			if err := ctx.ScopeManager.AssignVariable("n", newN); err != nil {
