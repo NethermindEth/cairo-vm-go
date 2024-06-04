@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 )
 
 func TestZeroHintMemcpy(t *testing.T) {
@@ -16,15 +15,16 @@ func TestZeroHintMemcpy(t *testing.T) {
 					{Name: "continue_copying", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{
-						"n": &utils.FeltOne,
-					})
+					err := ctx.ScopeManager.AssignVariable("n", *feltUint64(1))
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newMemContinueHint(ctx.operanders["continue_copying"], false)
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					allVarValueInScopeEquals(map[string]any{"n": feltInt64(0)})(t, ctx)
+					varValueInScopeEquals("n", *feltUint64(0))(t, ctx)
 					varValueEquals("continue_copying", feltInt64(0))(t, ctx)
 				},
 			},
@@ -33,15 +33,16 @@ func TestZeroHintMemcpy(t *testing.T) {
 					{Name: "continue_copying", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(map[string]any{
-						"n": feltString("5"),
-					})
+					err := ctx.ScopeManager.AssignVariable("n", *feltString("5"))
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newMemContinueHint(ctx.operanders["continue_copying"], false)
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					allVarValueInScopeEquals(map[string]any{"n": feltInt64(4)})(t, ctx)
+					varValueInScopeEquals("n", *feltInt64(4))(t, ctx)
 					varValueEquals("continue_copying", feltInt64(1))(t, ctx)
 				},
 			},

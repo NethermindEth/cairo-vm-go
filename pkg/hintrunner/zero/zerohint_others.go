@@ -1,13 +1,15 @@
 package zero
 
 import (
+	"fmt"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.Hinter {
@@ -34,8 +36,12 @@ func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.
 				return err
 			}
 
-			newN := new(f.Element)
-			newN = newN.Sub(n.(*f.Element), &utils.FeltOne)
+			newN, ok := n.(fp.Element)
+			if !ok {
+				return fmt.Errorf("casting n into a felt failed")
+			}
+			
+			newN = *new(fp.Element).Sub(&newN, &utils.FeltOne)
 
 			if err := ctx.ScopeManager.AssignVariable("n", newN); err != nil {
 				return err
@@ -48,7 +54,7 @@ func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.
 			}
 
 			var continueTargetMv memory.MemoryValue
-			if utils.FeltLt(&utils.FeltZero, newN) {
+			if utils.FeltLt(&utils.FeltZero, &newN) {
 				continueTargetMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
 				continueTargetMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
