@@ -424,7 +424,6 @@ func newDictSquashUpdatePtrHint(squashedDictStart, squashedDictEnd hinter.ResOpe
 				return fmt.Errorf("__dict_manager not in scope")
 			}
 
-			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
 			// TODO: figure out if its ever possible for squashedDictEnd segment to be different from the dictionary segment
 			return dictionaryManager.SetFreeOffset(*squashedDictStart, squashedDictEnd.Offset)
 		},
