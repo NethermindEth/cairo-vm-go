@@ -20,7 +20,7 @@ This Virtual Machine is still in development and there is no public release avai
 Currently, it is only possible to use it by building it from source by following these instructions:
 
 1. Clone the repo to your machine: `git clone https://github.com/NethermindEth/cairo-vm-go`.
-2. Install `Go` on your PC, instructions [here](https://go.dev/.doc/install).
+2. Install `Go` on your PC, instructions [here](https://go.dev/dl/).
 3. Execute on the root folder of the repo: `make build`.
 4. Make sure everything is running smoothly by executing: `make unit`.
 
