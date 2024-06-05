@@ -210,7 +210,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 			findElementIndex, err := ctx.ScopeManager.GetVariableValue("__find_element_index")
 			if err == nil {
 				findElementIndex := findElementIndex.(uint64)
-				findElementIndexFelt := new(f.Element).SetUint64(findElementIndex)
+				findElementIndexFelt := new(fp.Element).SetUint64(findElementIndex)
 				findElementIndexMemoryValue := memory.MemoryValueFromFieldElement(findElementIndexFelt)
 				indexValAddr, err := index.GetAddress(vm)
 				if err != nil {
@@ -263,7 +263,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 						if err != nil {
 							return err
 						}
-						iFelt := new(f.Element).SetUint64(i)
+						iFelt := new(fp.Element).SetUint64(i)
 						iFeltMemoryValue := memory.MemoryValueFromFieldElement(iFelt)
 						err = vm.Memory.WriteToAddress(&indexValAddr, &iFeltMemoryValue)
 						if err != nil {
