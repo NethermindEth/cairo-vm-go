@@ -92,6 +92,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSqrtHinter(resolver)
 	case unsignedDivRemCode:
 		return createUnsignedDivRemHinter(resolver)
+	case isQuadResidueCode:
+		return createIsQuadResidueHinter(resolver)
 	// Uint256 hints
 	case uint256AddCode:
 		return createUint256AddHinter(resolver, false)
@@ -144,9 +146,13 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createBlake2sAddUint256Hinter(resolver, true)
 	case blake2sAddUint256Code:
 		return createBlake2sAddUint256Hinter(resolver, false)
+	case blake2sFinalizeCode:
+		return createBlake2sFinalizeHinter(resolver)
 	// Keccak hints
-	case keccakWriteArgs:
+	case keccakWriteArgsCode:
 		return createKeccakWriteArgsHinter(resolver)
+	case blockPermutationCode:
+		return createBlockPermutationHinter(resolver)
 	// Usort hints
 	case usortEnterScopeCode:
 		return createUsortEnterScopeHinter()
@@ -181,11 +187,15 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case allocSegmentCode:
 		return createAllocSegmentHinter()
 	case memcpyContinueCopyingCode:
-		return createMemcpyContinueCopyingHinter(resolver)
+		return createMemContinueHinter(resolver, false)
+	case memsetContinueLoopCode:
+		return createMemContinueHinter(resolver, true)
 	case vmEnterScopeCode:
 		return createVMEnterScopeHinter()
 	case memcpyEnterScopeCode:
-		return createMemcpyEnterScopeHinter(resolver)
+		return createMemEnterScopeHinter(resolver, false)
+	case memsetEnterScopeCode:
+		return createMemEnterScopeHinter(resolver, true)
 	case vmExitScopeCode:
 		return createVMExitScopeHinter()
 	case testAssignCode:
