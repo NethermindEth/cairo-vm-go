@@ -151,32 +151,26 @@ func newBlockPermutationHint(keccakPtr hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			inputValuesInRange, err := vm.Memory.GetConsecutiveMemoryValues(readAddr, int16(keccakStateSize))
+			inputValuesInRange, err := vm.Memory.GetConsecutiveMemoryValues(readAddr, offset)
 			if err != nil {
 				return err
 			}
 
-			var keccakInput []uint64
+			var keccakInput [25]uint64
 
-			for _, valueMemoryValue := range inputValuesInRange {
+			for i, valueMemoryValue := range inputValuesInRange {
 				valueUint64, err := valueMemoryValue.Uint64()
 				if err != nil {
 					return err
 				}
 
-				keccakInput = append(keccakInput, valueUint64)
+				keccakInput[i] = valueUint64
 			}
 
-			var input [25]uint64
+			builtins.KeccakF1600(&keccakInput)
 
 			for i := 0; i < 25; i++ {
-				input[i] = keccakInput[i]
-			}
-
-			builtins.KeccakF1600(&input)
-
-			for i := 0; i < 25; i++ {
-				inputValue := memory.MemoryValueFromUint(input[i])
+				inputValue := memory.MemoryValueFromUint(keccakInput[i])
 				memoryOffset := uint64(i)
 
 				err = vm.Memory.Write(keccakWritePtr.SegmentIndex, keccakWritePtr.Offset+memoryOffset, &inputValue)
