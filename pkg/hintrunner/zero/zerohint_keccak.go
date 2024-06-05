@@ -224,7 +224,7 @@ func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.ResOperander) hin
 			if err != nil {
 				return err
 			}
-			keccakStateMemoryValues, err := hinter.GetConsecutiveValues(vm, keccakStateAddr, 2)
+			keccakStateMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(keccakStateAddr, 2)
 			if err != nil {
 				return err
 			}
@@ -241,7 +241,7 @@ func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.ResOperander) hin
 				return err
 			}
 			keccakInput := make([]byte, 0)
-			memoryValuesInRange, err := hinter.GetConsecutiveValues(vm, *startPtr, int16(nElems))
+			memoryValuesInRange, err := vm.Memory.GetConsecutiveMemoryValues(*startPtr, int16(nElems))
 			if err != nil {
 				return err
 			}
