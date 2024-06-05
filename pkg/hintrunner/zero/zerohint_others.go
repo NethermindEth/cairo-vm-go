@@ -1,6 +1,8 @@
 package zero
 
 import (
+	"fmt"
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -29,15 +31,19 @@ func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.
 			//> ids.continue_copying = 1 if n > 0 else 0
 
 			//> n-=1
-			n, err := ctx.ScopeManager.GetVariableValue("n")
+			n_, err := ctx.ScopeManager.GetVariableValue("n")
 			if err != nil {
 				return err
 			}
+			n, ok := n_.(f.Element)
+			if !ok {
+				return fmt.Errorf("cannot cast n to felt")
+			}
 
 			newN := new(f.Element)
-			newN = newN.Sub(n.(*f.Element), &utils.FeltOne)
+			newN = newN.Sub(&n, &utils.FeltOne)
 
-			if err := ctx.ScopeManager.AssignVariable("n", newN); err != nil {
+			if err := ctx.ScopeManager.AssignVariable("n", *newN); err != nil {
 				return err
 			}
 
