@@ -399,14 +399,14 @@ func createSquashDictInnerUsedAccessesAssertHinter(resolver hintReferenceResolve
 	return newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses), nil
 }
 
-// DictSquashUpdatePtrCode updates the DictTracker's current_ptr to point to the end of the squashed dict
+// DictSquashUpdatePtr updates the DictTracker's current_ptr to point to the end of the squashed dict
 //
-// `newDictSquashUpdatePtrCodeHint` takes two operanders as arguments
+// `newDictSquashUpdatePtrHint` takes two operanders as arguments
 //   - `squashed_dict_start` pointer to the dictionary whose current_ptr should be updated
 //   - `squashed_dict_end` new current_ptr of the dictionary
-func newDictSquashUpdatePtrCodeHint(squashedDictStart, squashedDictEnd hinter.ResOperander) hinter.Hinter {
+func newDictSquashUpdatePtrHint(squashedDictStart, squashedDictEnd hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "DictSquashUpdatePtrCode",
+		Name: "DictSquashUpdatePtr",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> __dict_manager.get_tracker(ids.squashed_dict_start).current_ptr = ids.squashed_dict_end.address_
 
@@ -431,7 +431,7 @@ func newDictSquashUpdatePtrCodeHint(squashedDictStart, squashedDictEnd hinter.Re
 	}
 }
 
-func createDictSquashUpdatePtrCodeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+func createDictSquashUpdatePtrHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	squashedDictStart, err := resolver.GetResOperander("squashed_dict_start")
 	if err != nil {
 		return nil, err
@@ -441,5 +441,5 @@ func createDictSquashUpdatePtrCodeHinter(resolver hintReferenceResolver) (hinter
 		return nil, err
 	}
 
-	return newDictSquashUpdatePtrCodeHint(squashedDictStart, squashedDictEnd), nil
+	return newDictSquashUpdatePtrHint(squashedDictStart, squashedDictEnd), nil
 }

@@ -182,7 +182,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case squashDictInnerUsedAccessesAssert:
 		return createSquashDictInnerUsedAccessesAssertHinter(resolver)
 	case dictSquashUpdatePtrCode:
-		return createDictSquashUpdatePtrCodeHinter(resolver)
+		return createDictSquashUpdatePtrHinter(resolver)
 	// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter()

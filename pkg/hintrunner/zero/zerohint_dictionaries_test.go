@@ -309,7 +309,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				errCheck: errorTextContains("assertion ids.n_used_accesses == len(access_indices[key]) failed"),
 			},
 		},
-		"DictSquashUpdatePtrCode": {
+		"DictSquashUpdatePtr": {
 			{
 				operanders: []*hintOperander{
 					{Name: "squashed_dict_start", Kind: apRelative, Value: addrWithSegment(2, 0)},
@@ -324,7 +324,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					defaultValueMv := memory.MemoryValueFromInt(12345)
 					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
 
-					return newDictSquashUpdatePtrCodeHint(
+					return newDictSquashUpdatePtrHint(
 						ctx.operanders["squashed_dict_start"],
 						ctx.operanders["squashed_dict_end"],
 					)
