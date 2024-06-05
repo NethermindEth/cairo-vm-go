@@ -61,17 +61,17 @@ func newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd hi
 			if err != nil {
 				return err
 			}
-			keccakPtrEndCopy := *keccakPtrEnd
 			for i := 0; i < len(result); i++ {
 				resultMV := memory.MemoryValueFromUint(result[i])
-				err = vm.Memory.WriteToAddress(&keccakPtrEndCopy, &resultMV)
+				err = vm.Memory.WriteToAddress(keccakPtrEnd, &resultMV)
 				if err != nil {
 					return err
 				}
-				keccakPtrEndCopy, err = keccakPtrEndCopy.AddOffset(1)
+				keccakPtrEndIncremented, err := keccakPtrEnd.AddOffset(1)
 				if err != nil {
 					return err
 				}
+				keccakPtrEnd = &keccakPtrEndIncremented
 			}
 			return nil
 		},
