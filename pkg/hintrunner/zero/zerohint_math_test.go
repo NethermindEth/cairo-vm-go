@@ -390,12 +390,12 @@ func TestZeroHintMath(t *testing.T) {
 				errCheck: errorIsNil,
 			},
 		},
-		"SplitIntHint": {
+		"SplitInt": {
 			// Performs value%base and stores that to output.
 			// Asserts output<bound.
 			{
 				operanders: []*hintOperander{
-					{Name: "output", Kind: uninitialized},
+					{Name: "output", Kind: fpRelative, Value: addr(8)},
 					{Name: "value", Kind: fpRelative, Value: feltInt64(15)},
 					{Name: "base", Kind: fpRelative, Value: feltInt64(2)},
 					{Name: "bound", Kind: fpRelative, Value: feltInt64(5)},
@@ -403,11 +403,11 @@ func TestZeroHintMath(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSplitIntHint(ctx.operanders["output"], ctx.operanders["value"], ctx.operanders["base"], ctx.operanders["bound"])
 				},
-				check: varValueEquals("output", feltInt64(1)),
+				check: consecutiveVarAddrResolvedValueEquals("output", []*fp.Element{feltInt64(1)}),
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "output", Kind: uninitialized},
+					{Name: "output", Kind: fpRelative, Value: addr(8)},
 					{Name: "value", Kind: fpRelative, Value: feltInt64(100)},
 					{Name: "base", Kind: fpRelative, Value: feltInt64(10)},
 					{Name: "bound", Kind: fpRelative, Value: feltInt64(1)},
@@ -415,11 +415,11 @@ func TestZeroHintMath(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSplitIntHint(ctx.operanders["output"], ctx.operanders["value"], ctx.operanders["base"], ctx.operanders["bound"])
 				},
-				check: varValueEquals("output", feltInt64(0)),
+				check: consecutiveVarAddrResolvedValueEquals("output", []*fp.Element{feltInt64(0)}),
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "output", Kind: uninitialized},
+					{Name: "output", Kind: fpRelative, Value: addr(8)},
 					{Name: "value", Kind: fpRelative, Value: feltInt64(100)},
 					{Name: "base", Kind: fpRelative, Value: feltInt64(6)},
 					{Name: "bound", Kind: fpRelative, Value: feltInt64(7)},
@@ -427,11 +427,11 @@ func TestZeroHintMath(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSplitIntHint(ctx.operanders["output"], ctx.operanders["value"], ctx.operanders["base"], ctx.operanders["bound"])
 				},
-				check: varValueEquals("output", feltInt64(4)),
+				check: consecutiveVarAddrResolvedValueEquals("output", []*fp.Element{feltInt64(4)}),
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "output", Kind: uninitialized},
+					{Name: "output", Kind: fpRelative, Value: addr(8)},
 					{Name: "value", Kind: fpRelative, Value: feltInt64(100)},
 					{Name: "base", Kind: fpRelative, Value: feltInt64(6)},
 					{Name: "bound", Kind: fpRelative, Value: feltInt64(3)},
