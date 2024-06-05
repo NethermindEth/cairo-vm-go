@@ -358,3 +358,20 @@ func (memory *Memory) FindSegmentWithBuiltin(builtinName string) (*Segment, bool
 	}
 	return nil, false
 }
+
+func (memory *Memory) WriteUint256ToAddress(addr MemoryAddress, low, high *f.Element) error {
+	lowMemoryValue := MemoryValueFromFieldElement(low)
+	err := memory.WriteToAddress(&addr, &lowMemoryValue)
+	if err != nil {
+		return err
+	}
+	return memory.WriteToNthStructField(addr, MemoryValueFromFieldElement(high), 1)
+}
+
+func (memory *Memory) WriteToNthStructField(addr MemoryAddress, value MemoryValue, field int16) error {
+	nAddr, err := addr.AddOffset(field)
+	if err != nil {
+		return err
+	}
+	return memory.WriteToAddress(&nAddr, &value)
+}

@@ -39,14 +39,14 @@ func newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd hi
 				return err
 			}
 			if keccakStateSizeFeltsVal >= 100 {
-				return fmt.Errorf("assert 0 <= _keccak_state_size_felts < 100.")
+				return fmt.Errorf("assertion failed: 0 <= keccak_state_size_felts < 100.")
 			}
 			blockSizeVal, err := hinter.ResolveAsUint64(vm, blockSize)
 			if err != nil {
 				return err
 			}
 			if blockSizeVal >= 10 {
-				return fmt.Errorf("assert 0 <= _block_size < 10.")
+				return fmt.Errorf("assertion failed: 0 <= _block_size < 10.")
 			}
 
 			var input [25]uint64
@@ -300,9 +300,6 @@ func createUnsafeKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hi
 //   - `inputs` is the address in memory where to write Keccak arguments
 //   - `low` is the low part of the `uint256` argument for the Keccac function
 //   - `high` is the high part of the `uint256` argument for the Keccac function
-//
-// The `low` and `high` parts are splitted in 64-bit integers
-// Ultimately, the result is written into 4 memory cells
 func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter {
 	name := "KeccakWriteArgs"
 	return &GenericZeroHinter{

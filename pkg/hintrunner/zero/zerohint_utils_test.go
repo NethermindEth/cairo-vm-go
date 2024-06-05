@@ -10,10 +10,8 @@ import (
 	runnerutil "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -68,7 +66,7 @@ func feltAdd(x, y *fp.Element) *fp.Element {
 
 func apValueEquals(expected *fp.Element) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
-		actual := runnerutil.ReadFrom(ctx.vm, VM.ExecutionSegment, ctx.vm.Context.Ap)
+		actual := runnerutil.ReadFrom(ctx.vm, vm.ExecutionSegment, ctx.vm.Context.Ap)
 		actualFelt, err := actual.FieldElement()
 		if err != nil {
 			t.Fatal(err)
@@ -96,14 +94,11 @@ func varValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx
 	}
 }
 
-func varAddrResolvedValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx *hintTestContext) {
+func allVarValueEquals(expectedValues map[string]*fp.Element) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
-		o := ctx.operanders[varName]
-		addr, err := o.GetAddress(ctx.vm)
-		require.NoError(t, err)
-		actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&addr)
-		require.NoError(t, err)
-		require.Equal(t, &actualFelt, expected, "%s value mismatch:\nhave: %v\nwant: %v", varName, &actualFelt, expected)
+		for varName, expected := range expectedValues {
+			varValueEquals(varName, expected)(t, ctx)
+		}
 	}
 }
 
@@ -119,14 +114,6 @@ func consecutiveVarAddrResolvedValueEquals(varName string, expectedValues []*fp.
 			actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&expectedValueAddr)
 			require.NoError(t, err)
 			require.Equal(t, &actualFelt, expectedValue, "%s[%v] value mismatch:\nhave: %v\nwant: %v", varName, index, &actualFelt, expectedValue)
-		}
-	}
-}
-
-func allVarValueEquals(expectedValues map[string]*fp.Element) func(t *testing.T, ctx *hintTestContext) {
-	return func(t *testing.T, ctx *hintTestContext) {
-		for varName, expected := range expectedValues {
-			varValueEquals(varName, expected)(t, ctx)
 		}
 	}
 }
@@ -165,7 +152,6 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Println("value: ", value, "expected: ", expected, "valuetype", reflect.TypeOf(value), "expectedtype", reflect.TypeOf(expected))
 		switch expected.(type) {
 		case *big.Int:
 			{
@@ -191,10 +177,10 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 					t.Fatalf("%s scope value mismatch:\nhave: %d\nwant: %d", varName, value, expected)
 				}
 			}
-		case []f.Element:
+		case []fp.Element:
 			{
-				valueArray := value.([]f.Element)
-				expectedArray := expected.([]f.Element)
+				valueArray := value.([]fp.Element)
+				expectedArray := expected.([]fp.Element)
 				if !reflect.DeepEqual(valueArray, expectedArray) {
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
