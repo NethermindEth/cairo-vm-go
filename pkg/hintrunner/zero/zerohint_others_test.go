@@ -15,7 +15,7 @@ func TestZeroHintMemcpy(t *testing.T) {
 					{Name: "continue_copying", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariable("n", *feltUint64(1))
+					err := ctx.ScopeManager.AssignVariable("n", *feltInt64(1))
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -24,7 +24,7 @@ func TestZeroHintMemcpy(t *testing.T) {
 					return newMemContinueHint(ctx.operanders["continue_copying"], false)
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					varValueInScopeEquals("n", *feltUint64(0))(t, ctx)
+					varValueInScopeEquals("n", *feltInt64(0))(t, ctx)
 					varValueEquals("continue_copying", feltInt64(0))(t, ctx)
 				},
 			},
@@ -33,7 +33,7 @@ func TestZeroHintMemcpy(t *testing.T) {
 					{Name: "continue_copying", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariable("n", *feltString("5"))
+					err := ctx.ScopeManager.AssignVariable("n", *feltInt64(5))
 					if err != nil {
 						t.Fatal(err)
 					}
