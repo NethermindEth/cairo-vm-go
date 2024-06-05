@@ -194,8 +194,7 @@ func TestZeroHintKeccak(t *testing.T) {
 		"BlockPermutation": {
 			{
 				operanders: []*hintOperander{
-					{Name: "keccak_ptr", Kind: fpRelative, Value: addr(31)},
-					{Name: "KECCAK_STATE_SIZE_FELTS", Kind: apRelative, Value: feltUint64(25)},
+					{Name: "keccak_ptr", Kind: fpRelative, Value: addr(30)},
 					{Name: "data.0", Kind: apRelative, Value: feltUint64(1)},
 					{Name: "data.1", Kind: apRelative, Value: feltUint64(2)},
 					{Name: "data.2", Kind: apRelative, Value: feltUint64(3)},
@@ -223,7 +222,7 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "data.24", Kind: apRelative, Value: feltUint64(25)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlockPermutationHint(ctx.operanders["KECCAK_STATE_SIZE_FELTS"], ctx.operanders["keccak_ptr"])
+					return newBlockPermutationHint(ctx.operanders["keccak_ptr"])
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"keccak_ptr",
@@ -257,8 +256,7 @@ func TestZeroHintKeccak(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "keccak_ptr", Kind: fpRelative, Value: addr(31)},
-					{Name: "KECCAK_STATE_SIZE_FELTS", Kind: apRelative, Value: feltUint64(25)},
+					{Name: "keccak_ptr", Kind: fpRelative, Value: addr(30)},
 					{Name: "data.0", Kind: apRelative, Value: feltUint64(12)},
 					{Name: "data.1", Kind: apRelative, Value: feltUint64(12)},
 					{Name: "data.2", Kind: apRelative, Value: feltUint64(12)},
@@ -286,7 +284,7 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "data.24", Kind: apRelative, Value: feltUint64(5)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlockPermutationHint(ctx.operanders["KECCAK_STATE_SIZE_FELTS"], ctx.operanders["keccak_ptr"])
+					return newBlockPermutationHint(ctx.operanders["keccak_ptr"])
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"keccak_ptr",
