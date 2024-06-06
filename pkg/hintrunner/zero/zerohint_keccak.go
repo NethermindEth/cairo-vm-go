@@ -15,12 +15,7 @@ import (
 // CairoKeccakFinalize writes the result of F1600 Keccak permutation padded by __keccak_state_size_felts__ zeros to consecutive memory cells, __block_size__ times.
 //
 // `CairoKeccakFinalize` takes 3 operanders as arguments
-//   - `keccakStateSizeFelts` is the number of felts in the Keccak state size
-//   - `blockSize` is the number of blocks to write
 //   - `keccakPtrEnd` is the address in memory where to start writing the result
-//
-// The `low` and `high` parts are splitted in 64-bit integers
-// Ultimately, the result is written into 4 memory cells
 func newCairoKeccakFinalizeHint(keccakPtrEnd hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "CairoKeccakFinalize",
