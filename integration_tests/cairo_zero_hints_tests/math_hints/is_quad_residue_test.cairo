@@ -6,7 +6,6 @@ from starkware.cairo.common.serialize import serialize_word
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.bool import FALSE, TRUE
 
-
 // Returns TRUE if `x` is a quadratic residue modulo the STARK prime. Returns FALSE otherwise.
 // Returns TRUE on 0.
 @known_ap_change

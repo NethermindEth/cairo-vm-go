@@ -16,13 +16,13 @@ const (
 	// Depending on the context, ids.a may be a complex reference.
 	testAssignCode string = "memory[ap] = ids.a"
 
-	// assert_le_felt() hints.
+	// assert_le_felt() hints
 	assertLeFeltCode          string = "import itertools\n\nfrom starkware.cairo.common.math_utils import assert_integer\nassert_integer(ids.a)\nassert_integer(ids.b)\na = ids.a % PRIME\nb = ids.b % PRIME\nassert a <= b, f'a = {a} is not less than or equal to b = {b}.'\n\n# Find an arc less than PRIME / 3, and another less than PRIME / 2.\nlengths_and_indices = [(a, 0), (b - a, 1), (PRIME - 1 - b, 2)]\nlengths_and_indices.sort()\nassert lengths_and_indices[0][0] <= PRIME // 3 and lengths_and_indices[1][0] <= PRIME // 2\nexcluded = lengths_and_indices[2][1]\n\nmemory[ids.range_check_ptr + 1], memory[ids.range_check_ptr + 0] = (\n    divmod(lengths_and_indices[0][0], ids.PRIME_OVER_3_HIGH))\nmemory[ids.range_check_ptr + 3], memory[ids.range_check_ptr + 2] = (\n    divmod(lengths_and_indices[1][0], ids.PRIME_OVER_2_HIGH))"
 	assertLeFeltExcluded0Code string = "memory[ap] = 1 if excluded != 0 else 0"
 	assertLeFeltExcluded1Code string = "memory[ap] = 1 if excluded != 1 else 0"
 	assertLeFeltExcluded2Code string = "assert excluded == 2"
 
-	// is_nn() hints.
+	// is_nn() hints
 	isNNCode           string = "memory[ap] = 0 if 0 <= (ids.a % PRIME) < range_check_builtin.bound else 1"
 	isNNOutOfRangeCode string = "memory[ap] = 0 if 0 <= ((-ids.a - 1) % PRIME) < range_check_builtin.bound else 1"
 
@@ -30,24 +30,42 @@ const (
 	// isPositive is used in sign() and abs_value() functions.
 	isPositiveCode string = "from starkware.cairo.common.math_utils import is_positive\nids.is_positive = 1 if is_positive(\n    value=ids.value, prime=PRIME, rc_bound=range_check_builtin.bound) else 0"
 
-	// split_int() hints.
+	// split_int() hints
 	splitIntAssertRange string = "assert ids.value == 0, 'split_int(): value is out of range.'"
 	splitIntCode        string = "memory[ids.output] = res = (int(ids.value) % PRIME) % ids.base\nassert res < ids.bound, f'split_int(): Limb {res} is out of range.'"
-	signedDivRemCode    string = "from starkware.cairo.common.math_utils import as_int, assert_integer\n\nassert_integer(ids.div)\nassert 0 < ids.div <= PRIME // range_check_builtin.bound, \\n	f'div={hex(ids.div)} is out of the valid range.'\n\nassert_integer(ids.bound)\nassert ids.bound <= range_check_builtin.bound // 2, \\n	f'bound={hex(ids.bound)} is out of the valid range.'\n\nint_value = as_int(ids.value, PRIME)\nq, ids.r = divmod(int_value, ids.div)\n\nassert -ids.bound <= q < ids.bound, \\n	f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'\n\nids.biased_q = q + ids.bound"
 
-	// pow hints
+	// pow() hint
 	powCode string = "ids.locs.bit = (ids.prev_locs.exp % PRIME) & 1"
 
+	// div_rem() hints
+	signedDivRemCode string = `
+	from starkware.cairo.common.math_utils import as_int, assert_integer
+	
+	assert_integer(ids.div)
+	assert 0 < ids.div <= PRIME // range_check_builtin.bound, \
+		f'div={hex(ids.div)} is out of the valid range.'
+		
+	assert_integer(ids.bound)
+	assert ids.bound <= range_check_builtin.bound // 2, \
+		f'bound={hex(ids.bound)} is out of the valid range.'
+		
+	int_value = as_int(ids.value, PRIME)
+	q, ids.r = divmod(int_value, ids.div)
+		
+	assert -ids.bound <= q < ids.bound, \
+		f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
+		
+	ids.biased_q = q + ids.bound`
 	unsignedDivRemCode string = "from starkware.cairo.common.math_utils import assert_integer\nassert_integer(ids.div)\nassert 0 < ids.div <= PRIME // range_check_builtin.bound, \\\n    f'div={hex(ids.div)} is out of the valid range.'\nids.q, ids.r = divmod(ids.value, ids.div)"
 
-	// split_felt() hints.
+	// split_felt() hint
 	splitFeltCode string = "from starkware.cairo.common.math_utils import assert_integer\nassert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128\nassert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW\nassert_integer(ids.value)\nids.low = ids.value & ((1 << 128) - 1)\nids.high = ids.value >> 128"
 
 	// sqrt() hint
 	sqrtCode string = "from starkware.python.math_utils import isqrt\nvalue = ids.value % PRIME\nassert value < 2 ** 250, f\"value={value} is outside of the range [0, 2**250).\"\nassert 2 ** 250 < PRIME\nids.root = isqrt(value)"
 
 	// is_quad_residue() hint
-	isQuadResidueCode string = "from starkware.crypto.signature.signature import FIELD_PRIME\nfrom starkware.python.math_utils import div_mod, is_quad_residue, sqrt\n\nx = ids.x\nif is_quad_residue(x, FIELD_PRIME):\n    ids.y = sqrt(x, FIELD_PRIME)\nelse:\n    ids.y = sqrt(div_mod(x, 3, FIELD_PRIME), FIELD_PRIME)"
+	isQuadResidueCode string = "from starkware.crypto.signature.signature import FIELD_PRIME\n\tfrom starkware.python.math_utils import div_mod, is_quad_residue, sqrt\n\t\n\tx = ids.x\n\tif is_quad_residue(x, FIELD_PRIME):\n\t\tids.y = sqrt(x, FIELD_PRIME)\n\telse:\n\t\tids.y = sqrt(div_mod(x, 3, FIELD_PRIME), FIELD_PRIME)"
 
 	// ------ Uint256 hints related code ------
 	uint256AddCode            string = "sum_low = ids.a.low + ids.b.low\nids.carry_low = 1 if sum_low >= ids.SHIFT else 0\nsum_high = ids.a.high + ids.b.high + ids.carry_low\nids.carry_high = 1 if sum_high >= ids.SHIFT else 0"
