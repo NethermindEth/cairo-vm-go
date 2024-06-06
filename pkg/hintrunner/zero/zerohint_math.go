@@ -505,7 +505,7 @@ func createIsNNOutOfRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 //
 // `newIsPositiveHint` writes 1 or 0 to `dest` address, depending on
 // whether `value` is positive or negative in the context, respectively
-func newIsPositiveHint(value, dst hinter.ResOperander) hinter.Hinter {
+func newIsPositiveHint(value, isPositive hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsPositive",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -513,7 +513,7 @@ func newIsPositiveHint(value, dst hinter.ResOperander) hinter.Hinter {
 			//> ids.is_positive = 1 if is_positive(
 			//>     value=ids.value, prime=PRIME, rc_bound=range_check_builtin.bound) else 0
 
-			isPositiveAddr, err := dst.GetAddress(vm)
+			isPositiveAddr, err := isPositive.GetAddress(vm)
 			if err != nil {
 				return err
 			}
@@ -541,12 +541,12 @@ func createIsPositiveHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 		return nil, err
 	}
 
-	output, err := resolver.GetResOperander("output")
+	isPositive, err := resolver.GetResOperander("is_positive")
 	if err != nil {
 		return nil, err
 	}
 
-	return newIsPositiveHint(value, output), nil
+	return newIsPositiveHint(value, isPositive), nil
 }
 
 // SplitIntAssertRange hint asserts that the value to split in `SplitInt`
@@ -1014,7 +1014,6 @@ func createSqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 //   - `r` is the variable that will store the remainder of the modular division
 //
 // `newUnsignedDivRemHinter` writes `q` and `r` values to their respective memory address
-
 func newUnsignedDivRemHint(value, div, q, r hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UnsignedDivRem",
