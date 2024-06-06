@@ -8,7 +8,6 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 // DefaultDictNew hint creates a new dictionary with a default value
@@ -140,7 +139,7 @@ func newSquashDictInnerAssertLenKeysHint() hinter.Hinter {
 				return err
 			}
 
-			keys := keys_.([]f.Element)
+			keys := keys_.([]fp.Element)
 			if len(keys) != 0 {
 				return fmt.Errorf("assertion `len(keys) == 0` failed")
 			}
@@ -272,7 +271,7 @@ func newSquashDictInnerLenAssertHint() hinter.Hinter {
 				return err
 			}
 
-			currentAccessIndices := currentAccessIndices_.([]f.Element)
+			currentAccessIndices := currentAccessIndices_.([]fp.Element)
 			if len(currentAccessIndices) != 0 {
 				return fmt.Errorf("assertion `len(current_access_indices) == 0` failed")
 			}
@@ -303,7 +302,7 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			keys := keys_.([]f.Element)
+			keys := keys_.([]fp.Element)
 			if len(keys) == 0 {
 				return fmt.Errorf("no keys left but remaining_accesses > 0")
 			}
