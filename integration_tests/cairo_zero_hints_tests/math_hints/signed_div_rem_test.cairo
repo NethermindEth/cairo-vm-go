@@ -2,7 +2,7 @@
 // See https://github.com/lambdaclass/cairo-vm/
 
 %builtins output range_check
-// from starkware.cairo.common.math import assert_le
+from starkware.cairo.common.math import assert_le
 from starkware.cairo.common.serialize import serialize_word
 
 func signed_div_rem{range_check_ptr}(value, div, bound) -> (q: felt, r: felt) {
@@ -30,8 +30,8 @@ func signed_div_rem{range_check_ptr}(value, div, bound) -> (q: felt, r: felt) {
     %}
     let q = biased_q - bound;
     assert value = q * div + r;
-    // assert_le(r, div - 1);
-    // assert_le(biased_q, 2 * bound - 1);
+    assert_le(r, div - 1);
+    assert_le(biased_q, 2 * bound - 1);
     return (q, r);
 }
 
