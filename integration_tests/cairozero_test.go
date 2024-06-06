@@ -344,3 +344,15 @@ func TestKeccak(t *testing.T) {
 
 	clean("./builtin_tests/")
 }
+
+func TestUint256(t *testing.T) {
+
+	// Test Split64
+	compiledOutput, err := compileZeroCode("./cairo_zero_hints_tests/uint256_hints/split64_test.cairo")
+	require.NoError(t, err)
+
+	_, _, _, err = runVm(compiledOutput)
+	require.NoError(t, err)
+
+	clean("./cairo_zero_hints_tests/uint256_hints/")
+}
