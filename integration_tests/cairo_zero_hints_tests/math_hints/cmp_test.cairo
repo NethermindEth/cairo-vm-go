@@ -128,6 +128,16 @@ func test_is_nn{range_check_ptr}(base_array: felt*, new_array: felt*, iter: felt
     return test_is_nn(base_array, new_array, iter + 1, last);
 }
 
+func test_is_le{range_check_ptr}(base_array: felt*, new_array: felt*, iter: felt, last: felt) -> (
+) {
+if (iter == last) {
+    return ();
+}
+let res = is_le(base_array[iter], CONSTANT);
+assert new_array[iter] = res;
+return test_is_le(base_array, new_array, iter + 1, last);
+}
+
 func test_is_nn_le{range_check_ptr}(
     base_array: felt*, new_array: felt*, iter: felt, last: felt
 ) -> () {
