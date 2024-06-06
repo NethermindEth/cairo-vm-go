@@ -61,6 +61,48 @@ func TestZeroHintOthers(t *testing.T) {
 		"SetAdd": {
 			{
 				operanders: []*hintOperander{
+					{Name: "elm_size", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "elm_ptr", Kind: apRelative, Value: addrWithSegment(1, 0)},
+					{Name: "set_ptr", Kind: apRelative, Value: addrWithSegment(1, 0)},
+					{Name: "set_end_ptr", Kind: apRelative, Value: addrWithSegment(1, 0)},
+					{Name: "index", Kind: uninitialized},
+					{Name: "is_elm_in_set", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSetAddHint(
+						ctx.operanders["elm_size"],
+						ctx.operanders["elm_ptr"],
+						ctx.operanders["set_ptr"],
+						ctx.operanders["set_end_ptr"],
+						ctx.operanders["index"],
+						ctx.operanders["is_elm_in_set"],
+					)
+				},
+				errCheck: errorTextContains("assert ids.elm_size > 0 failed"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "elm_size", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "elm_ptr", Kind: apRelative, Value: addrWithSegment(1, 0)},
+					{Name: "set_ptr", Kind: apRelative, Value: addrWithSegment(1, 1)},
+					{Name: "set_end_ptr", Kind: apRelative, Value: addrWithSegment(1, 0)},
+					{Name: "index", Kind: uninitialized},
+					{Name: "is_elm_in_set", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSetAddHint(
+						ctx.operanders["elm_size"],
+						ctx.operanders["elm_ptr"],
+						ctx.operanders["set_ptr"],
+						ctx.operanders["set_end_ptr"],
+						ctx.operanders["index"],
+						ctx.operanders["is_elm_in_set"],
+					)
+				},
+				errCheck: errorTextContains("assert ids.set_ptr <= ids.set_end_ptr failed"),
+			},
+			{
+				operanders: []*hintOperander{
 					{Name: "elm.1", Kind: apRelative, Value: feltUint64(1)},
 					{Name: "elm.2", Kind: apRelative, Value: feltUint64(2)},
 					{Name: "elm.3", Kind: apRelative, Value: feltUint64(3)},
