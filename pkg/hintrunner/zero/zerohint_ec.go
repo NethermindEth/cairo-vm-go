@@ -36,20 +36,14 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			pointMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(pointAddr, int16(6))
+			pointYAddr, err := pointAddr.AddOffset(3)
 			if err != nil {
 				return err
 			}
 
-			// [y.d0, y.d1, y.d2]
-			var pointYValues [3]*fp.Element
-
-			for i := 0; i < 3; i++ {
-				pointYValue, err := pointMemoryValues[i+3].FieldElement()
-				if err != nil {
-					return err
-				}
-				pointYValues[i] = pointYValue
+			pointYValues, err := vm.Memory.ResolveAsBigInt3(pointYAddr)
+			if err != nil {
+				return err
 			}
 
 			//> y = pack(ids.point.y, PRIME) % SECP_P
@@ -161,16 +155,8 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			if err != nil {
 				return err
 			}
-			slopeMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(slopeAddr, int16(3))
-			if err != nil {
-				return err
-			}
 
 			point0Addr, err := point0.GetAddress(vm)
-			if err != nil {
-				return err
-			}
-			point0MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point0Addr, int16(6))
 			if err != nil {
 				return err
 			}
@@ -179,46 +165,30 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			if err != nil {
 				return err
 			}
-			point1MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point1Addr, int16(3))
+
+			point0YAddr, err := point0Addr.AddOffset(3)
 			if err != nil {
 				return err
 			}
 
-			// [d0, d1, d2]
-			var slopeValues [3]*fp.Element
-			// [x.d0, x.d1, x.d2]
-			var point0XValues [3]*fp.Element
-			// [y.d0, y.d1, y.d2]
-			var point0YValues [3]*fp.Element
-			// [x.d0, x.d1, x.d2]
-			var point1XValues [3]*fp.Element
-
-			for i := 0; i < 3; i++ {
-				slopeValue, err := slopeMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				slopeValues[i] = slopeValue
-
-				point0XValue, err := point0MemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				point0XValues[i] = point0XValue
-
-				point1XValue, err := point1MemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				point1XValues[i] = point1XValue
+			slopeValues, err := vm.Memory.ResolveAsBigInt3(slopeAddr)
+			if err != nil {
+				return err
 			}
 
-			for i := 3; i < 6; i++ {
-				point0YValue, err := point0MemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				point0YValues[i-3] = point0YValue
+			point0XValues, err := vm.Memory.ResolveAsBigInt3(point0Addr)
+			if err != nil {
+				return err
+			}
+
+			point1XValues, err := vm.Memory.ResolveAsBigInt3(point1Addr)
+			if err != nil {
+				return err
+			}
+
+			point0YValues, err := vm.Memory.ResolveAsBigInt3(point0YAddr)
+			if err != nil {
+				return err
 			}
 
 			//> slope = pack(ids.slope, PRIME)
@@ -353,29 +323,20 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			pointMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(pointAddr, int16(6))
+
+			pointYAddr, err := pointAddr.AddOffset(3)
 			if err != nil {
 				return err
 			}
 
-			// [x.d0, x.d1, x.d2]
-			var pointXValues [3]*fp.Element
-			// [y.d0, y.d1, y.d2]
-			var pointYValues [3]*fp.Element
-
-			for i := 0; i < 3; i++ {
-				pointValue, err := pointMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				pointXValues[i] = pointValue
+			pointXValues, err := vm.Memory.ResolveAsBigInt3(pointAddr)
+			if err != nil {
+				return err
 			}
-			for i := 3; i < 6; i++ {
-				pointValue, err := pointMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				pointYValues[i-3] = pointValue
+
+			pointYValues, err := vm.Memory.ResolveAsBigInt3(pointYAddr)
+			if err != nil {
+				return err
 			}
 
 			//> x = pack(ids.point.x, PRIME)
@@ -438,18 +399,9 @@ func newReduceV1Hint(x hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			xMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(xAddr, int16(3))
+			xValues, err := vm.Memory.ResolveAsBigInt3(xAddr)
 			if err != nil {
 				return err
-			}
-
-			var xValues [3]*fp.Element
-			for i := 0; i < 3; i++ {
-				xValue, err := xMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				xValues[i] = xValue
 			}
 
 			xBig, err := secp_utils.SecPPacked(xValues)
@@ -499,45 +451,30 @@ func newEcDoubleAssignNewXV1Hint(slope, point hinter.ResOperander) hinter.Hinter
 			if err != nil {
 				return err
 			}
-			slopeMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(slopeAddr, int16(3))
-			if err != nil {
-				return err
-			}
 
 			pointAddr, err := point.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			pointMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(pointAddr, int16(6))
+
+			pointYAddr, err := pointAddr.AddOffset(3)
 			if err != nil {
 				return err
 			}
 
-			// [d0, d1, d2]
-			var slopeValues [3]*fp.Element
-			// [x.d0, x.d1, x.d2]
-			var pointXValues [3]*fp.Element
-			// [y.d0, y.d1, y.d2]
-			var pointYValues [3]*fp.Element
+			slopeValues, err := vm.Memory.ResolveAsBigInt3(slopeAddr)
+			if err != nil {
+				return err
+			}
 
-			for i := 0; i < 3; i++ {
-				slopeValue, err := slopeMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				slopeValues[i] = slopeValue
+			pointXValues, err := vm.Memory.ResolveAsBigInt3(pointAddr)
+			if err != nil {
+				return err
+			}
 
-				pointXValue, err := pointMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				pointXValues[i] = pointXValue
-
-				pointYValue, err := pointMemoryValues[i+3].FieldElement()
-				if err != nil {
-					return err
-				}
-				pointYValues[i] = pointYValue
+			pointYValues, err := vm.Memory.ResolveAsBigInt3(pointYAddr)
+			if err != nil {
+				return err
 			}
 
 			//> slope = pack(ids.slope, PRIME)
@@ -662,59 +599,44 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			//> y1 = pack(ids.point1.y, PRIME)
 			//> value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
 
-			point0Addr, err := point0.GetAddress(vm)
-			if err != nil {
-				return err
-			}
-			point0MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point0Addr, int16(6))
+			point0XAddr, err := point0.GetAddress(vm)
 			if err != nil {
 				return err
 			}
 
-			point1Addr, err := point1.GetAddress(vm)
-			if err != nil {
-				return err
-			}
-			point1MemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(point1Addr, int16(6))
+			point1XAddr, err := point1.GetAddress(vm)
 			if err != nil {
 				return err
 			}
 
-			// [x.d0, x.d1, x.d2]
-			var point0XValues [3]*fp.Element
-			// [y.d0, y.d1, y.d2]
-			var point0YValues [3]*fp.Element
-			// [x.d0, x.d1, x.d2]
-			var point1XValues [3]*fp.Element
-			// [y.d0, y.d1, y.d2]
-			var point1YValues [3]*fp.Element
-
-			for i := 0; i < 3; i++ {
-				point0XValue, err := point0MemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				point0XValues[i] = point0XValue
-
-				point1XValue, err := point1MemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				point1XValues[i] = point1XValue
+			point0YAddr, err := point0XAddr.AddOffset(3)
+			if err != nil {
+				return err
 			}
 
-			for i := 3; i < 6; i++ {
-				point0YValue, err := point0MemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				point0YValues[i-3] = point0YValue
+			point1YAddr, err := point1XAddr.AddOffset(3)
+			if err != nil {
+				return err
+			}
 
-				point1YValue, err := point1MemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				point1YValues[i-3] = point1YValue
+			point0XValues, err := vm.Memory.ResolveAsBigInt3(point0XAddr)
+			if err != nil {
+				return err
+			}
+
+			point1XValues, err := vm.Memory.ResolveAsBigInt3(point1XAddr)
+			if err != nil {
+				return err
+			}
+
+			point0YValues, err := vm.Memory.ResolveAsBigInt3(point0YAddr)
+			if err != nil {
+				return err
+			}
+
+			point1YValues, err := vm.Memory.ResolveAsBigInt3(point1YAddr)
+			if err != nil {
+				return err
 			}
 
 			//> x0 = pack(ids.point0.x, PRIME)
