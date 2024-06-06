@@ -115,7 +115,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					varValueEquals("loop_temps.index_delta_minus1", feltUint64(0))(t, ctx)
-					varValueInScopeEquals("current_access_index", *feltUint64(2))(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"current_access_index": *feltUint64(2), "current_access_indices": []fp.Element{*feltUint64(3)}})(t, ctx)
 				},
 			},
 			{
@@ -136,7 +136,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					varValueEquals("loop_temps.index_delta_minus1", feltUint64(23))(t, ctx)
-					varValueInScopeEquals("current_access_index", *feltUint64(43))(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"current_access_index": *feltUint64(43), "current_access_indices": []fp.Element{*feltUint64(97), *feltUint64(76), *feltUint64(54), *feltUint64(51), *feltUint64(44)}})(t, ctx)
 				}},
 		},
 		"SquashDictInnerContinueLoop": {

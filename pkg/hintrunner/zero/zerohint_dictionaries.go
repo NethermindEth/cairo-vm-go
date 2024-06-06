@@ -179,10 +179,15 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 
 			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
 			if !ok {
-				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
+				return fmt.Errorf("casting currentAccessIndices_ into a felt failed")
 			}
 
 			newAccessIndex, err := utils.Pop(&currentAccessIndices)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("current_access_indices", currentAccessIndices)
 			if err != nil {
 				return err
 			}
@@ -213,9 +218,8 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 
 			resultMem := memory.MemoryValueFromFieldElement(&result)
 
-			// We use 0 as offset for `WriteToNthStructField` function as we write
-			// to the first field of the `loop_temps` struct
-			return vm.Memory.WriteToNthStructField(loopTempsAddr, resultMem, int16(0))
+			// We use `WriteToAddress` function as we write to the first field of the `loop_temps` struct
+			return vm.Memory.WriteToAddress(&loopTempsAddr, &resultMem)
 		},
 	}
 }
