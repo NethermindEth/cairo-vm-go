@@ -244,18 +244,21 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 
 			accessIndicesAtKey := accessIndices[key]
 
-			sort.Slice(accessIndicesAtKey, func(i, j int) bool {
-				return accessIndicesAtKey[i].Cmp(&accessIndicesAtKey[j]) > 0
+			accessIndicesAtKeyCopy := make([]fp.Element, len(accessIndicesAtKey))
+			copy(accessIndicesAtKeyCopy, accessIndicesAtKey)
+
+			sort.Slice(accessIndicesAtKeyCopy, func(i, j int) bool {
+				return accessIndicesAtKeyCopy[i].Cmp(&accessIndicesAtKeyCopy[j]) > 0
 			})
 
-			currentAccessIndex, err := utils.Pop(&accessIndicesAtKey)
+			currentAccessIndex, err := utils.Pop(&accessIndicesAtKeyCopy)
 			if err != nil {
 				return err
 			}
 
 			currentAccessIndexMv := memory.MemoryValueFromFieldElement(&currentAccessIndex)
 
-			err = ctx.ScopeManager.AssignVariable("current_access_indices", accessIndicesAtKey)
+			err = ctx.ScopeManager.AssignVariable("current_access_indices", accessIndicesAtKeyCopy)
 			if err != nil {
 				return err
 			}
