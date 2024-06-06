@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -371,6 +372,57 @@ func TestZeroHintKeccak(t *testing.T) {
 				check: func(t *testing.T, ctx *hintTestContext) {
 					varValueEquals("high", feltString("83237039305559461909708573162245910191"))(t, ctx)
 					varValueEquals("low", feltString("136371816236323410535574079355476245456"))(t, ctx)
+				},
+			},
+			{
+				// random values
+				operanders: []*hintOperander{
+					{Name: "keccak_state.start_ptr", Kind: apRelative, Value: addr(6)},
+					{Name: "keccak_state.end_ptr", Kind: apRelative, Value: addr(22)},
+					{Name: "keccak_state.0", Kind: apRelative, Value: feltUint64(16)},
+					{Name: "keccak_state.1", Kind: apRelative, Value: feltUint64(15)},
+					{Name: "keccak_state.2", Kind: apRelative, Value: feltUint64(14)},
+					{Name: "keccak_state.3", Kind: apRelative, Value: feltUint64(13)},
+					{Name: "keccak_state.4", Kind: apRelative, Value: feltUint64(12)},
+					{Name: "keccak_state.5", Kind: apRelative, Value: feltUint64(11)},
+					{Name: "keccak_state.6", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "keccak_state.7", Kind: apRelative, Value: feltUint64(9)},
+					{Name: "keccak_state.8", Kind: apRelative, Value: feltUint64(8)},
+					{Name: "keccak_state.9", Kind: apRelative, Value: feltUint64(7)},
+					{Name: "keccak_state.10", Kind: apRelative, Value: feltUint64(6)},
+					{Name: "keccak_state.11", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "keccak_state.12", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "keccak_state.13", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "keccak_state.14", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "keccak_state.15", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "high", Kind: uninitialized},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsafeKeccakFinalizeHint(ctx.operanders["keccak_state.start_ptr"], ctx.operanders["high"], ctx.operanders["low"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					varValueEquals("high", feltString("138808390298063253082378171006150548014"))(t, ctx)
+					varValueEquals("low", feltString("105025107803124291085217464954131521934"))(t, ctx)
+				},
+			},
+			{
+				// end - start is 0
+				operanders: []*hintOperander{
+					{Name: "keccak_state.start_ptr", Kind: apRelative, Value: addr(6)},
+					{Name: "keccak_state.end_ptr", Kind: apRelative, Value: addr(9)},
+					{Name: "keccak_state.0", Kind: apRelative, Value: new(fp.Element).Sub(&utils.FeltMax128, &utils.FeltOne)},
+					{Name: "keccak_state.1", Kind: apRelative, Value: new(fp.Element).Sub(&utils.FeltMax128, &utils.FeltOne)},
+					{Name: "keccak_state.2", Kind: apRelative, Value: new(fp.Element).Sub(&utils.FeltMax128, &utils.FeltOne)},
+					{Name: "high", Kind: uninitialized},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsafeKeccakFinalizeHint(ctx.operanders["keccak_state.start_ptr"], ctx.operanders["high"], ctx.operanders["low"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					varValueEquals("high", feltString("223857737769798933062329368034598208286"))(t, ctx)
+					varValueEquals("low", feltString("310600734091368901761065530388449236858"))(t, ctx)
 				},
 			},
 			{
