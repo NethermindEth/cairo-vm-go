@@ -1,7 +1,6 @@
 package zero
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -22,7 +21,7 @@ import (
 //
 // The `low` and `high` parts are splitted in 64-bit integers
 // Ultimately, the result is written into 4 memory cells
-func newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd hinter.ResOperander) hinter.Hinter {
+func newCairoKeccakFinalizeHint(keccakPtrEnd hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "CairoKeccakFinalize",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -34,20 +33,8 @@ func newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd hi
 			//> padding = (inp + keccak_func(inp)) * _block_size
 			//> segments.write_arg(ids.keccak_ptr_end, padding)
 
-			keccakStateSizeFeltsVal, err := hinter.ResolveAsUint64(vm, keccakStateSizeFelts)
-			if err != nil {
-				return err
-			}
-			if keccakStateSizeFeltsVal >= 100 {
-				return fmt.Errorf("assertion failed: 0 <= keccak_state_size_felts < 100.")
-			}
-			blockSizeVal, err := hinter.ResolveAsUint64(vm, blockSize)
-			if err != nil {
-				return err
-			}
-			if blockSizeVal >= 10 {
-				return fmt.Errorf("assertion failed: 0 <= _block_size < 10.")
-			}
+			keccakStateSizeFeltsVal := uint64(25)
+			blockSizeVal := uint64(3)
 
 			var input [25]uint64
 			builtins.KeccakF1600(&input)
@@ -79,19 +66,11 @@ func newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd hi
 }
 
 func createCairoKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	keccakStateSizeFelts, err := resolver.GetResOperander("KECCAK_STATE_SIZE_FELTS")
-	if err != nil {
-		return nil, err
-	}
-	blockSize, err := resolver.GetResOperander("BLOCK_SIZE")
-	if err != nil {
-		return nil, err
-	}
 	keccakPtrEnd, err := resolver.GetResOperander("keccak_ptr_end")
 	if err != nil {
 		return nil, err
 	}
-	return newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd), nil
+	return newCairoKeccakFinalizeHint(keccakPtrEnd), nil
 }
 
 // UnsafeKeccak computes keccak hash of the data in memory without validity enforcement and writes the result in the `low` and `high` memory cells
@@ -213,8 +192,8 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter
 	return &GenericZeroHinter{
 		Name: name,
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
-			// segments.write_arg(ids.inputs, [ids.low % 2 ** 64, ids.low // 2 ** 64])
-			// segments.write_arg(ids.inputs + 2, [ids.high % 2 ** 64, ids.high // 2 ** 64])
+			//> segments.write_arg(ids.inputs, [ids.low % 2 ** 64, ids.low // 2 ** 64])
+			//> segments.write_arg(ids.inputs + 2, [ids.high % 2 ** 64, ids.high // 2 ** 64])
 
 			low, err := hinter.ResolveAsFelt(vm, low)
 			if err != nil {
@@ -298,4 +277,83 @@ func createKeccakWriteArgsHinter(resolver hintReferenceResolver) (hinter.Hinter,
 	}
 
 	return newKeccakWriteArgsHint(inputs, low, high), nil
+}
+
+// BlockPermutation hint executes the Keccak block permutation function to a segment of memory
+//
+// `newBlockPermutationHint` takes 1 operander as argument
+//   - `keccakPtr` is a pointer to the address in memory where to write the result of the permutation
+//
+// `KECCAK_STATE_SIZE_FELTS` is an operander in the Python VM but it is constant that we decided to hardcode
+// `newBlockPermutationHint` reads 25 memory cells starting from `keccakPtr -  25`, and writes
+// the result of the Keccak block permutation in the next 25 memory cells, starting from `keccakPtr`
+func newBlockPermutationHint(keccakPtr hinter.ResOperander) hinter.Hinter {
+	name := "BlockPermutation"
+	return &GenericZeroHinter{
+		Name: name,
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.keccak_utils.keccak_utils import keccak_func
+			//> _keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)
+			//> assert 0 <= _keccak_state_size_felts < 100
+			//
+			//> output_values = keccak_func(memory.get_range(
+			//> 	ids.keccak_ptr - _keccak_state_size_felts, _keccak_state_size_felts))
+			//> segments.write_arg(ids.keccak_ptr, output_values)
+
+			keccakWritePtr, err := hinter.ResolveAsAddress(vm, keccakPtr)
+			if err != nil {
+				return err
+			}
+
+			keccakStateSize := uint64(25)
+
+			var readAddr = *keccakWritePtr
+			var offset int16 = int16(keccakStateSize)
+			var negOffset int16 = -offset
+
+			readAddr, err = readAddr.AddOffset(negOffset)
+			if err != nil {
+				return err
+			}
+
+			inputValuesInRange, err := vm.Memory.GetConsecutiveMemoryValues(readAddr, offset)
+			if err != nil {
+				return err
+			}
+
+			var keccakInput [25]uint64
+
+			for i, valueMemoryValue := range inputValuesInRange {
+				valueUint64, err := valueMemoryValue.Uint64()
+				if err != nil {
+					return err
+				}
+
+				keccakInput[i] = valueUint64
+			}
+
+			builtins.KeccakF1600(&keccakInput)
+
+			for i := 0; i < 25; i++ {
+				inputValue := memory.MemoryValueFromUint(keccakInput[i])
+				memoryOffset := uint64(i)
+
+				err = vm.Memory.Write(keccakWritePtr.SegmentIndex, keccakWritePtr.Offset+memoryOffset, &inputValue)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	}
+}
+
+func createBlockPermutationHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	keccakPtr, err := resolver.GetResOperander("keccak_ptr")
+	if keccakPtr != nil {
+		return nil, err
+	}
+
+	return newBlockPermutationHint(keccakPtr), nil
 }
