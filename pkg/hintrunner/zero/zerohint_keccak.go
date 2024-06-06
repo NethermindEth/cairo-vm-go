@@ -1,7 +1,6 @@
 package zero
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -22,7 +21,7 @@ import (
 //
 // The `low` and `high` parts are splitted in 64-bit integers
 // Ultimately, the result is written into 4 memory cells
-func newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd hinter.ResOperander) hinter.Hinter {
+func newCairoKeccakFinalizeHint(keccakPtrEnd hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "CairoKeccakFinalize",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -34,20 +33,8 @@ func newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd hi
 			//> padding = (inp + keccak_func(inp)) * _block_size
 			//> segments.write_arg(ids.keccak_ptr_end, padding)
 
-			keccakStateSizeFeltsVal, err := hinter.ResolveAsUint64(vm, keccakStateSizeFelts)
-			if err != nil {
-				return err
-			}
-			if keccakStateSizeFeltsVal >= 100 {
-				return fmt.Errorf("assertion failed: 0 <= keccak_state_size_felts < 100.")
-			}
-			blockSizeVal, err := hinter.ResolveAsUint64(vm, blockSize)
-			if err != nil {
-				return err
-			}
-			if blockSizeVal >= 10 {
-				return fmt.Errorf("assertion failed: 0 <= _block_size < 10.")
-			}
+			keccakStateSizeFeltsVal := uint64(25)
+			blockSizeVal := uint64(3)
 
 			var input [25]uint64
 			builtins.KeccakF1600(&input)
@@ -79,19 +66,11 @@ func newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd hi
 }
 
 func createCairoKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	keccakStateSizeFelts, err := resolver.GetResOperander("KECCAK_STATE_SIZE_FELTS")
-	if err != nil {
-		return nil, err
-	}
-	blockSize, err := resolver.GetResOperander("BLOCK_SIZE")
-	if err != nil {
-		return nil, err
-	}
 	keccakPtrEnd, err := resolver.GetResOperander("keccak_ptr_end")
 	if err != nil {
 		return nil, err
 	}
-	return newCairoKeccakFinalizeHint(keccakStateSizeFelts, blockSize, keccakPtrEnd), nil
+	return newCairoKeccakFinalizeHint(keccakPtrEnd), nil
 }
 
 // KeccakWriteArgs hint writes Keccak function arguments in memory
