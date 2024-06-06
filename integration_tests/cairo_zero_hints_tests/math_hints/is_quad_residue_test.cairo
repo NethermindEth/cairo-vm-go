@@ -20,10 +20,8 @@ func is_quad_residue(x: felt) -> felt {
         x = ids.x
         if is_quad_residue(x, FIELD_PRIME):
             ids.y = sqrt(x, FIELD_PRIME)
-            print(ids.y)
         else:
             ids.y = sqrt(div_mod(x, 3, FIELD_PRIME), FIELD_PRIME)
-            print(ids.y)
     %}
     // Relies on the fact that 3 is not a quadratic residue modulo the prime, so for every field
     // element x, either:
