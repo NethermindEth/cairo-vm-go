@@ -15,7 +15,7 @@ import (
 
 // CairoKeccakFinalize writes the result of F1600 Keccak permutation padded by __keccak_state_size_felts__ zeros to consecutive memory cells, __block_size__ times.
 //
-// `CairoKeccakFinalize` takes 3 operanders as arguments
+// `CairoKeccakFinalize` takes 1 operander as argument
 //   - `keccakPtrEnd` is the address in memory where to start writing the result
 func newCairoKeccakFinalizeHint(keccakPtrEnd hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
