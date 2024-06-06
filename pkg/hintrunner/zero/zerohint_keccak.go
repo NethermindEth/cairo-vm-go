@@ -1,6 +1,7 @@
 package zero
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
