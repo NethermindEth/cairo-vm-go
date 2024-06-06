@@ -100,10 +100,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 			if err != nil {
 				return err
 			}
-			keccakMaxSize, err := ctx.ScopeManager.GetVariableValueAsUint64("__keccak_max_size")
-			if err != nil {
-				return err
-			}
+			keccakMaxSize := uint64(1 << 20)
 			if lengthVal > keccakMaxSize {
 				return fmt.Errorf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d.", keccakMaxSize, lengthVal)
 			}
