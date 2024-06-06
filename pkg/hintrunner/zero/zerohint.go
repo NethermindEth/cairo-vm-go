@@ -149,7 +149,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case blake2sFinalizeCode:
 		return createBlake2sFinalizeHinter(resolver)
 	// Keccak hints
-	case keccakWriteArgs:
+	case keccakWriteArgsCode:
 		return createKeccakWriteArgsHinter(resolver)
 	case cairoKeccakFinalizeCode:
 		return createCairoKeccakFinalizeHinter(resolver)
@@ -157,6 +157,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUnsafeKeccakHinter(resolver)
 	case UnsafeKeccakFinalizeCode:
 		return createUnsafeKeccakFinalizeHinter(resolver)
+	case blockPermutationCode:
+		return createBlockPermutationHinter(resolver)
 	// Usort hints
 	case usortEnterScopeCode:
 		return createUsortEnterScopeHinter()
