@@ -62,7 +62,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createAssertNNHinter(resolver)
 	case assertNotEqualCode:
 		return createAssertNotEqualHinter(resolver)
-	case assert250bits:
+	case assert250bitsCode:
 		return createAssert250bitsHinter(resolver)
 	case assertLeFeltCode:
 		return createAssertLeFeltHinter(resolver)
@@ -78,7 +78,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createIsNNOutOfRangeHinter(resolver)
 	case isPositiveCode:
 		return createIsPositiveHinter(resolver)
-	case splitIntAssertRange:
+	case splitIntAssertRangeCode:
 		return createSplitIntAssertRangeHinter(resolver)
 	case splitIntCode:
 		return createSplitIntHinter(resolver)
@@ -137,9 +137,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createReduceV1Hinter(resolver)
 	case computeSlopeV1Code:
 		return createComputeSlopeV1Hinter(resolver)
-	case ecDoubleAssignNewXV1:
+	case ecDoubleAssignNewXV1Code:
 		return createEcDoubleAssignNewXV1Hinter(resolver)
-	case ecDoubleAssignNewYV1:
+	case ecDoubleAssignNewYV1Code:
 		return createEcDoubleAssignNewYV1Hinter()
 	// Blake hints
 	case blake2sAddUint256BigendCode:

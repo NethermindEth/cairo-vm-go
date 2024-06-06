@@ -1,3 +1,6 @@
+// The content of this file has been partially borrowed from LambdaClass Cairo VM in Rust
+// See https://github.com/lambdaclass/cairo-vm/
+
 %builtins range_check
 
 from starkware.cairo.common.bool import TRUE, FALSE
