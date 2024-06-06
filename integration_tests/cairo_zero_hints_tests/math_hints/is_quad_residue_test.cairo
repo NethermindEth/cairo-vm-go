@@ -1,9 +1,11 @@
 // The content of this file has been partially borrowed from LambdaClass Cairo VM in Rust
-// See https://github.com/lambdaclass/cairo-vm/blob/aecbb3f01dacb6d3f90256c808466c2c37606252/cairo_programs/keccak_alternative_hint.cairo#L20
+// See https://github.com/lambdaclass/cairo-vm/
 
 %builtins output
 from starkware.cairo.common.serialize import serialize_word
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.bool import FALSE, TRUE
+
 
 // Returns TRUE if `x` is a quadratic residue modulo the STARK prime. Returns FALSE otherwise.
 // Returns TRUE on 0.
@@ -38,7 +40,7 @@ func is_quad_residue(x: felt) -> felt {
 }
 
 func fill_array(array_start: felt*, iter: felt) -> () {
-    if (iter == 8) {
+    if (iter == 10) {
         return ();
     }
     assert array_start[iter] = iter;
