@@ -86,6 +86,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSignedDivRemHinter(resolver)
 	case powCode:
 		return createPowHinter(resolver)
+	case signedPowCode:
+		return createSignedPowHinter(resolver)
 	case splitFeltCode:
 		return createSplitFeltHinter(resolver)
 	case sqrtCode:
