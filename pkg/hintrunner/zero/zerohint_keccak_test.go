@@ -52,21 +52,14 @@ func TestZeroHintKeccak(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "data", Kind: uninitialized},
-					{Name: "length", Kind: apRelative, Value: feltUint64(101)},
+					{Name: "length", Kind: apRelative, Value: feltUint64((1 << 20) + 1)},
 					{Name: "high", Kind: uninitialized},
 					{Name: "low", Kind: uninitialized},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(
-						map[string]any{
-							"__keccak_max_size": uint64(100),
-						},
-					)
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
 				},
-				errCheck: errorTextContains(fmt.Sprintf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d.", 100, 101)),
+				errCheck: errorTextContains(fmt.Sprintf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d.", 1<<20, (1<<20)+1)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -75,13 +68,6 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "length", Kind: apRelative, Value: feltUint64(1)},
 					{Name: "high", Kind: uninitialized},
 					{Name: "low", Kind: uninitialized},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(
-						map[string]any{
-							"__keccak_max_size": uint64(100),
-						},
-					)
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
@@ -98,13 +84,6 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "length", Kind: apRelative, Value: feltUint64(4)},
 					{Name: "high", Kind: uninitialized},
 					{Name: "low", Kind: uninitialized},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(
-						map[string]any{
-							"__keccak_max_size": uint64(100),
-						},
-					)
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
@@ -154,13 +133,6 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "length", Kind: apRelative, Value: feltUint64(34)},
 					{Name: "high", Kind: uninitialized},
 					{Name: "low", Kind: uninitialized},
-				},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					ctx.ScopeManager.EnterScope(
-						map[string]any{
-							"__keccak_max_size": uint64(100),
-						},
-					)
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])

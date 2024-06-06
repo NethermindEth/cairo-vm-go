@@ -15,7 +15,7 @@ import (
 
 // CairoKeccakFinalize writes the result of F1600 Keccak permutation padded by __keccak_state_size_felts__ zeros to consecutive memory cells, __block_size__ times.
 //
-// `CairoKeccakFinalize` takes 3 operanders as arguments
+// `CairoKeccakFinalize` takes 1 operander as argument
 //   - `keccakPtrEnd` is the address in memory where to start writing the result
 func newCairoKeccakFinalizeHint(keccakPtrEnd hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
@@ -100,10 +100,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 			if err != nil {
 				return err
 			}
-			keccakMaxSize, err := ctx.ScopeManager.GetVariableValueAsUint64("__keccak_max_size")
-			if err != nil {
-				return err
-			}
+			keccakMaxSize := uint64(1 << 20)
 			if lengthVal > keccakMaxSize {
 				return fmt.Errorf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d.", keccakMaxSize, lengthVal)
 			}
