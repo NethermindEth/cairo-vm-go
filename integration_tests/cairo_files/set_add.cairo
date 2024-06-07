@@ -29,3 +29,7 @@
 //     return ();
 // }
 //
+
+func main() {
+    return ();
+}
