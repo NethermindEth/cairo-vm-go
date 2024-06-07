@@ -217,6 +217,12 @@ func createBlake2sFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt), nil
 }
 
+// Blake2sCompute hint computes the blake2s compress function and fills the value in the right position.
+//
+// `newBlake2sComputeHint` takes 1 operander as an argument
+//   - `output` should point to the middle of an instance, right after initial_state, message, t, f,
+//     which should all have a value at this point, and right before the output portion which will be
+//     written by this function.
 func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Blake2sCompute",
@@ -224,11 +230,28 @@ func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 			//> from starkware.cairo.common.cairo_blake2s.blake2s_utils import compute_blake2s_func
 			//> compute_blake2s_func(segments=segments, output_ptr=ids.output)
 
+			// Expanding the compute_blake2s_func function here:
+			//> def compute_blake2s_func(segments: MemorySegmentManager, output_ptr: RelocatableValue):
+			//>    h = segments.memory.get_range(output_ptr - 26, 8)
+			//>    message = segments.memory.get_range(output_ptr - 18, 16)
+			//>    t = segments.memory[output_ptr - 2]
+			//>    f = segments.memory[output_ptr - 1]
+			//>    new_state = blake2s_compress(
+			//>        message=message,
+			//>        h=h,
+			//>        t0=t,
+			//>        t1=0,
+			//>        f0=f,
+			//>        f1=0,
+			//>    )
+			//>    segments.write_arg(output_ptr, new_state)
+
 			output, err := hinter.ResolveAsAddress(vm, output)
 			if err != nil {
 				return err
 			}
 
+			//> h = segments.memory.get_range(output_ptr - 26, 8)
 			hSegmentInput := new(mem.MemoryAddress)
 			err = hSegmentInput.Sub(output, new(fp.Element).SetUint64(26))
 			if err != nil {
@@ -247,6 +270,7 @@ func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 				hUint32 = append(hUint32, value)
 			}
 
+			//> message = segments.memory.get_range(output_ptr - 18, 16)
 			messageSegmentInput := new(mem.MemoryAddress)
 			err = messageSegmentInput.Sub(output, new(fp.Element).SetUint64(18))
 			if err != nil {
@@ -265,6 +289,7 @@ func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 				messageUint32[i] = value
 			}
 
+			//> t = segments.memory[output_ptr - 2]
 			tSegmentInput := new(mem.MemoryAddress)
 			err = tSegmentInput.Sub(output, new(fp.Element).SetUint64(2))
 			if err != nil {
@@ -279,6 +304,7 @@ func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
+			//> f = segments.memory[output_ptr - 1]
 			fSegmentInput := new(mem.MemoryAddress)
 			err = fSegmentInput.Sub(output, new(fp.Element).SetUint64(1))
 			if err != nil {
@@ -293,7 +319,17 @@ func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
+			//> new_state = blake2s_compress(
+			//>     message=message,
+			//>     h=h,
+			//>     t0=t,
+			//>     t1=0,
+			//>     f0=f,
+			//>     f1=0,
+			//> )
 			newState := utils.Blake2sCompress(hUint32, messageUint32, tUint32, 0, fUint32, 0)
+
+			//> segments.write_arg(output_ptr, new_state)
 			for i := 0; i < len(newState); i++ {
 				state := newState[i]
 				stateMv := mem.MemoryValueFromUint(state)
