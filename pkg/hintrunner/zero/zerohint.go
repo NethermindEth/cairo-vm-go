@@ -151,6 +151,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	// Keccak hints
 	case keccakWriteArgsCode:
 		return createKeccakWriteArgsHinter(resolver)
+	case cairoKeccakFinalizeCode:
+		return createCairoKeccakFinalizeHinter(resolver)
 	case blockPermutationCode:
 		return createBlockPermutationHinter(resolver)
 	// Usort hints

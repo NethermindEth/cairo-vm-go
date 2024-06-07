@@ -12,15 +12,68 @@ import (
 	"github.com/holiman/uint256"
 )
 
+// CairoKeccakFinalize writes the result of F1600 Keccak permutation padded by __keccak_state_size_felts__ zeros to consecutive memory cells, __block_size__ times.
+//
+// `CairoKeccakFinalize` takes 1 operander as argument
+//   - `keccakPtrEnd` is the address in memory where to start writing the result
+func newCairoKeccakFinalizeHint(keccakPtrEnd hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "CairoKeccakFinalize",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> _keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)
+			//> _block_size = int(ids.BLOCK_SIZE)
+			//> assert 0 <= _keccak_state_size_felts < 100
+			//> assert 0 <= _block_size < 10
+			//> inp = [0] * _keccak_state_size_felts
+			//> padding = (inp + keccak_func(inp)) * _block_size
+			//> segments.write_arg(ids.keccak_ptr_end, padding)
+
+			keccakStateSizeFeltsVal := uint64(25)
+			blockSizeVal := uint64(3)
+
+			var input [25]uint64
+			builtins.KeccakF1600(&input)
+			padding := make([]uint64, keccakStateSizeFeltsVal)
+			padding = append(padding, input[:]...)
+			result := make([]uint64, 0, keccakStateSizeFeltsVal*blockSizeVal)
+			for i := uint64(0); i < blockSizeVal; i++ {
+				result = append(result, padding...)
+			}
+			keccakPtrEnd, err := hinter.ResolveAsAddress(vm, keccakPtrEnd)
+			if err != nil {
+				return err
+			}
+			for i := 0; i < len(result); i++ {
+				resultMV := memory.MemoryValueFromUint(result[i])
+				err = vm.Memory.WriteToAddress(keccakPtrEnd, &resultMV)
+				if err != nil {
+					return err
+				}
+				keccakPtrEndIncremented, err := keccakPtrEnd.AddOffset(1)
+				if err != nil {
+					return err
+				}
+				keccakPtrEnd = &keccakPtrEndIncremented
+			}
+			return nil
+		},
+	}
+}
+
+func createCairoKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	keccakPtrEnd, err := resolver.GetResOperander("keccak_ptr_end")
+	if err != nil {
+		return nil, err
+	}
+	return newCairoKeccakFinalizeHint(keccakPtrEnd), nil
+}
+
 // KeccakWriteArgs hint writes Keccak function arguments in memory
 //
 // `newKeccakWriteArgsHint` takes 3 operanders as arguments
 //   - `inputs` is the address in memory where to write Keccak arguments
 //   - `low` is the low part of the `uint256` argument for the Keccac function
 //   - `high` is the high part of the `uint256` argument for the Keccac function
-//
-// The `low` and `high` parts are splitted in 64-bit integers
-// Ultimately, the result is written into 4 memory cells
 func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter {
 	name := "KeccakWriteArgs"
 	return &GenericZeroHinter{
