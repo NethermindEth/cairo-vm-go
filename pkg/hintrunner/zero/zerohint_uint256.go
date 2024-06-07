@@ -121,10 +121,10 @@ func createUint256AddHinter(resolver hintReferenceResolver, low bool) (hinter.Hi
 	return newUint256AddHint(a, b, carryLow, carryHigh, low), nil
 }
 
-// Split64 hint Splits a `uint256` variable into its lower64 bits and the higher remaining bits
+// Split64 hint splits a field elemnent in the range [0, 2^192) to its low 64-bit and high 128-bit parts
 //
 // `newSplit64Hint` takes 3 operanders as arguments
-//   - `a` is the `uint256` variable that will be splitted
+//   - `a` is the `felt` variable that will be splitted
 //   - `low` and `high` represent the `low` 64 bits and the `high` 192 bits of the `uint256` variable
 func newSplit64Hint(a, low, high hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
