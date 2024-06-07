@@ -261,13 +261,13 @@ func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			var hUint32 []uint32
-			for i := 0; i < len(h); i++ {
+			var hUint32 [8]uint32
+			for i := 0; i < 8; i++ {
 				value, err := hintrunnerUtils.ToSafeUint32(&h[i])
 				if err != nil {
 					return err
 				}
-				hUint32 = append(hUint32, value)
+				hUint32[i] = value
 			}
 
 			//> message = segments.memory.get_range(output_ptr - 18, 16)
@@ -280,13 +280,13 @@ func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			var messageUint32 [8]uint32
-			for i := 0; i < len(message); i++ {
+			var messageUint32 []uint32
+			for i := 0; i < 16; i++ {
 				value, err := hintrunnerUtils.ToSafeUint32(&message[i])
 				if err != nil {
 					return err
 				}
-				messageUint32[i] = value
+				messageUint32 = append(messageUint32, value)
 			}
 
 			//> t = segments.memory[output_ptr - 2]
@@ -327,7 +327,7 @@ func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 			//>     f0=f,
 			//>     f1=0,
 			//> )
-			newState := utils.Blake2sCompress(hUint32, messageUint32, tUint32, 0, fUint32, 0)
+			newState := utils.Blake2sCompress(messageUint32, hUint32, tUint32, 0, fUint32, 0)
 
 			//> segments.write_arg(output_ptr, new_state)
 			for i := 0; i < len(newState); i++ {
