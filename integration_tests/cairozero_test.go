@@ -282,65 +282,65 @@ func memoryRepr(memory []*fp.Element) string {
 
 }
 
-//func TestFailingRangeCheck(t *testing.T) {
-//	compiledOutput, err := compileZeroCode("./builtin_tests/range_check.cairo")
-//	require.NoError(t, err)
-//
-//	_, _, _, err = runVm(compiledOutput)
-//	require.ErrorContains(t, err, "check write: 2**128 <")
-//
-//	clean("./builtin_tests/")
-//}
-//
-//func TestBitwise(t *testing.T) {
-//	compiledOutput, err := compileZeroCode("./builtin_tests/bitwise_builtin_test.cairo")
-//	require.NoError(t, err)
-//
-//	_, _, _, err = runVm(compiledOutput)
-//	require.NoError(t, err)
-//
-//	clean("./builtin_tests/")
-//}
-//
-//func TestPedersen(t *testing.T) {
-//	compiledOutput, err := compileZeroCode("./builtin_tests/pedersen_test.cairo")
-//	require.NoError(t, err)
-//
-//	_, _, output, err := runVm(compiledOutput)
-//	require.NoError(t, err)
-//	require.Contains(t, output, "Program output:\n  2089986280348253421170679821480865132823066470938446095505822317253594081284")
-//
-//	clean("./builtin_tests/")
-//}
-//
-//func TestECDSA(t *testing.T) {
-//	compiledOutput, err := compileZeroCode("./builtin_tests/ecdsa_test.cairo")
-//	require.NoError(t, err)
-//
-//	_, _, _, err = runVm(compiledOutput)
-//	require.NoError(t, err)
-//
-//	clean("./builtin_tests/")
-//}
-//
-//func TestEcOp(t *testing.T) {
-//	compiledOutput, err := compileZeroCode("./builtin_tests/ecop.cairo")
-//	require.NoError(t, err)
-//
-//	_, _, _, err = runVm(compiledOutput)
-//	// todo(rodro): This test is failing due to the lack of hint processing. It should be address soon
-//	require.Error(t, err)
-//
-//	clean("./builtin_tests/")
-//}
-//
-//func TestKeccak(t *testing.T) {
-//	compiledOutput, err := compileZeroCode("./builtin_tests/keccak_test.cairo")
-//	require.NoError(t, err)
-//
-//	_, _, output, err := runVm(compiledOutput)
-//	require.NoError(t, err)
-//	require.Contains(t, output, "Program output:\n  1304102964824333531548398680304964155037696012322029952943772\n  688749063493959345342507274897412933692859993314608487848187\n  986714560881445649520443980361539218531403996118322524237197\n  1184757872753521629808292433475729390634371625298664050186717\n  719230200744669084408849842242045083289669818920073250264351\n  1543031433416778513637578850638598357854418012971636697855068\n  63644822371671650271181212513090078620238279557402571802224\n  879446821229338092940381117330194802032344024906379963157761\n")
-//
-//	clean("./builtin_tests/")
-//}
+func TestFailingRangeCheck(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/range_check.cairo")
+	require.NoError(t, err)
+
+	_, _, _, err = runVm(compiledOutput)
+	require.ErrorContains(t, err, "check write: 2**128 <")
+
+	clean("./builtin_tests/")
+}
+
+func TestBitwise(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/bitwise_builtin_test.cairo")
+	require.NoError(t, err)
+
+	_, _, _, err = runVm(compiledOutput)
+	require.NoError(t, err)
+
+	clean("./builtin_tests/")
+}
+
+func TestPedersen(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/pedersen_test.cairo")
+	require.NoError(t, err)
+
+	_, _, output, err := runVm(compiledOutput)
+	require.NoError(t, err)
+	require.Contains(t, output, "Program output:\n  2089986280348253421170679821480865132823066470938446095505822317253594081284")
+
+	clean("./builtin_tests/")
+}
+
+func TestECDSA(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/ecdsa_test.cairo")
+	require.NoError(t, err)
+
+	_, _, _, err = runVm(compiledOutput)
+	require.NoError(t, err)
+
+	clean("./builtin_tests/")
+}
+
+func TestEcOp(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/ecop.cairo")
+	require.NoError(t, err)
+
+	_, _, _, err = runVm(compiledOutput)
+	// todo(rodro): This test is failing due to the lack of hint processing. It should be address soon
+	require.Error(t, err)
+
+	clean("./builtin_tests/")
+}
+
+func TestKeccak(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/keccak_test.cairo")
+	require.NoError(t, err)
+
+	_, _, output, err := runVm(compiledOutput)
+	require.NoError(t, err)
+	require.Contains(t, output, "Program output:\n  1304102964824333531548398680304964155037696012322029952943772\n  688749063493959345342507274897412933692859993314608487848187\n  986714560881445649520443980361539218531403996118322524237197\n  1184757872753521629808292433475729390634371625298664050186717\n  719230200744669084408849842242045083289669818920073250264351\n  1543031433416778513637578850638598357854418012971636697855068\n  63644822371671650271181212513090078620238279557402571802224\n  879446821229338092940381117330194802032344024906379963157761\n")
+
+	clean("./builtin_tests/")
+}
