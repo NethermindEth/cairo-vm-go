@@ -6,7 +6,7 @@ import (
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	utils2 "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
+	hintrunnerUtils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -240,7 +240,7 @@ func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 			}
 			var hUint32 []uint32
 			for i := 0; i < len(h); i++ {
-				value, err := utils2.ToSafeUint32(&h[i])
+				value, err := hintrunnerUtils.ToSafeUint32(&h[i])
 				if err != nil {
 					return err
 				}
@@ -258,7 +258,7 @@ func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 			}
 			var messageUint32 [8]uint32
 			for i := 0; i < len(message); i++ {
-				value, err := utils2.ToSafeUint32(&message[i])
+				value, err := hintrunnerUtils.ToSafeUint32(&message[i])
 				if err != nil {
 					return err
 				}
@@ -274,7 +274,7 @@ func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			tUint32, err := utils2.ToSafeUint32(&t)
+			tUint32, err := hintrunnerUtils.ToSafeUint32(&t)
 			if err != nil {
 				return err
 			}
@@ -288,7 +288,7 @@ func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			fUint32, err := utils2.ToSafeUint32(&f)
+			fUint32, err := hintrunnerUtils.ToSafeUint32(&f)
 			if err != nil {
 				return err
 			}

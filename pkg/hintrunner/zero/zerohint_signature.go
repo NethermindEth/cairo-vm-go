@@ -8,7 +8,7 @@ import (
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -32,30 +32,20 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			//> ids.q = q % PRIME
 
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-			secPBig, ok := secp_utils.GetSecPBig()
-			if !ok {
-				return fmt.Errorf("GetSecPBig failed")
-			}
 
 			valAddr, err := val.GetAddress(vm)
 			if err != nil {
 				return err
 			}
 
-			valMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(valAddr, int16(3))
+			valValues, err := vm.Memory.ResolveAsBigInt3(valAddr)
 			if err != nil {
 				return err
 			}
 
-			// [d0, d1, d2]
-			var valValues [3]*fp.Element
-
-			for i := 0; i < 3; i++ {
-				valValue, err := valMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				valValues[i] = valValue
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
 			}
 
 			//> q, r = divmod(pack(ids.val, PRIME), SECP_P)
@@ -78,7 +68,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			qMv := memory.MemoryValueFromFieldElement(qFelt)
+			qMv := mem.MemoryValueFromFieldElement(qFelt)
 			return vm.Memory.WriteToAddress(&qAddr, &qMv)
 		},
 	}
@@ -177,10 +167,6 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			xCubeMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(xCubeAddr, int16(3))
-			if err != nil {
-				return err
-			}
 			v, err := hinter.ResolveAsFelt(vm, v)
 			if err != nil {
 				return err
@@ -189,14 +175,11 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 			secpBig, _ := secp_utils.GetSecPBig()
 
-			//> x_cube_int = pack(ids.x_cube, PRIME) % SECP_P
-			var xCubeValues [3]*fp.Element
-			for i := 0; i < 3; i++ {
-				xCubeValues[i], err = xCubeMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
+			xCubeValues, err := vm.Memory.ResolveAsBigInt3(xCubeAddr)
+			if err != nil {
+				return err
 			}
+
 			xCubeIntBig, err := secp_utils.SecPPacked(xCubeValues)
 			if err != nil {
 				return err
@@ -334,35 +317,20 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			aMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(aAddr, int16(3))
-			if err != nil {
-				return err
-			}
 
 			bAddr, err := b.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			bMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(bAddr, int16(3))
+
+			aValues, err := vm.Memory.ResolveAsBigInt3(aAddr)
 			if err != nil {
 				return err
 			}
 
-			var aValues [3]*fp.Element
-			var bValues [3]*fp.Element
-
-			for i := 0; i < 3; i++ {
-				aValue, err := aMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				aValues[i] = aValue
-
-				bValue, err := bMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				bValues[i] = bValue
+			bValues, err := vm.Memory.ResolveAsBigInt3(bAddr)
+			if err != nil {
+				return err
 			}
 
 			//> a = pack(ids.a, PRIME)

@@ -9,7 +9,44 @@ import (
 
 func TestZeroHintKeccak(t *testing.T) {
 	runHinterTests(t, map[string][]hintTestCase{
-		"newKeccakWriteArgs": {
+		"CairoKeccakFinalize": {
+			{
+				operanders: []*hintOperander{
+					{Name: "keccak_ptr_end", Kind: apRelative, Value: addr(10)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newCairoKeccakFinalizeHint(ctx.operanders["keccak_ptr_end"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					testValues := []uint64{
+						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17376452488221285863, 9571781953733019530, 15391093639620504046, 13624874521033984333, 10027350355371872343, 18417369716475457492, 10448040663659726788, 10113917136857017974, 12479658147685402012, 3500241080921619556, 16959053435453822517, 12224711289652453635, 9342009439668884831, 4879704952849025062, 140226327413610143, 424854978622500449, 7259519967065370866, 7004910057750291985, 13293599522548616907, 10105770293752443592, 10668034807192757780, 1747952066141424100, 1654286879329379778, 8500057116360352059, 16929593379567477321, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17376452488221285863, 9571781953733019530, 15391093639620504046, 13624874521033984333, 10027350355371872343, 18417369716475457492, 10448040663659726788, 10113917136857017974, 12479658147685402012, 3500241080921619556, 16959053435453822517, 12224711289652453635, 9342009439668884831, 4879704952849025062, 140226327413610143, 424854978622500449, 7259519967065370866, 7004910057750291985, 13293599522548616907, 10105770293752443592, 10668034807192757780, 1747952066141424100, 1654286879329379778, 8500057116360352059, 16929593379567477321, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17376452488221285863, 9571781953733019530, 15391093639620504046, 13624874521033984333, 10027350355371872343, 18417369716475457492, 10448040663659726788, 10113917136857017974, 12479658147685402012, 3500241080921619556, 16959053435453822517, 12224711289652453635, 9342009439668884831, 4879704952849025062, 140226327413610143, 424854978622500449, 7259519967065370866, 7004910057750291985, 13293599522548616907, 10105770293752443592, 10668034807192757780, 1747952066141424100, 1654286879329379778, 8500057116360352059, 16929593379567477321}
+					testValuesFelt := make([]*fp.Element, len(testValues))
+					for i, v := range testValues {
+						testValuesFelt[i] = feltUint64(v)
+					}
+					consecutiveVarAddrResolvedValueEquals("keccak_ptr_end", testValuesFelt)(t, ctx)
+				},
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "keccak_ptr_end", Kind: apRelative, Value: addr(10)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newCairoKeccakFinalizeHint(ctx.operanders["keccak_ptr_end"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					testValues := []uint64{
+						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17376452488221285863, 9571781953733019530, 15391093639620504046, 13624874521033984333, 10027350355371872343, 18417369716475457492, 10448040663659726788, 10113917136857017974, 12479658147685402012, 3500241080921619556, 16959053435453822517, 12224711289652453635, 9342009439668884831, 4879704952849025062, 140226327413610143, 424854978622500449, 7259519967065370866, 7004910057750291985, 13293599522548616907, 10105770293752443592, 10668034807192757780, 1747952066141424100, 1654286879329379778, 8500057116360352059, 16929593379567477321,
+					}
+					testValuesFelt := make([]*fp.Element, len(testValues))
+					for i, v := range testValues {
+						testValuesFelt[i] = feltUint64(v)
+					}
+					consecutiveVarAddrResolvedValueEquals("keccak_ptr_end", testValuesFelt)(t, ctx)
+				},
+			},
+		},
+		"KeccakWriteArgs": {
 			{
 				operanders: []*hintOperander{
 					{Name: "inputs", Kind: apRelative, Value: addr(7)},
@@ -188,6 +225,132 @@ func TestZeroHintKeccak(t *testing.T) {
 						feltUint64(20),
 						feltUint64(10),
 						feltUint64(10),
+					}),
+			},
+		},
+		"BlockPermutation": {
+			{
+				operanders: []*hintOperander{
+					{Name: "keccak_ptr", Kind: fpRelative, Value: addr(30)},
+					{Name: "data.0", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "data.1", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "data.2", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "data.3", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "data.4", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.5", Kind: apRelative, Value: feltUint64(6)},
+					{Name: "data.6", Kind: apRelative, Value: feltUint64(7)},
+					{Name: "data.7", Kind: apRelative, Value: feltUint64(8)},
+					{Name: "data.8", Kind: apRelative, Value: feltUint64(9)},
+					{Name: "data.9", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "data.10", Kind: apRelative, Value: feltUint64(11)},
+					{Name: "data.11", Kind: apRelative, Value: feltUint64(12)},
+					{Name: "data.12", Kind: apRelative, Value: feltUint64(13)},
+					{Name: "data.13", Kind: apRelative, Value: feltUint64(14)},
+					{Name: "data.14", Kind: apRelative, Value: feltUint64(15)},
+					{Name: "data.15", Kind: apRelative, Value: feltUint64(16)},
+					{Name: "data.16", Kind: apRelative, Value: feltUint64(17)},
+					{Name: "data.17", Kind: apRelative, Value: feltUint64(18)},
+					{Name: "data.18", Kind: apRelative, Value: feltUint64(19)},
+					{Name: "data.19", Kind: apRelative, Value: feltUint64(20)},
+					{Name: "data.20", Kind: apRelative, Value: feltUint64(21)},
+					{Name: "data.21", Kind: apRelative, Value: feltUint64(22)},
+					{Name: "data.22", Kind: apRelative, Value: feltUint64(23)},
+					{Name: "data.23", Kind: apRelative, Value: feltUint64(24)},
+					{Name: "data.24", Kind: apRelative, Value: feltUint64(25)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBlockPermutationHint(ctx.operanders["keccak_ptr"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"keccak_ptr",
+					[]*fp.Element{
+						feltUint64(12483095336943515612),
+						feltUint64(15677359730926197488),
+						feltUint64(7487778311628531317),
+						feltUint64(1821627048823728482),
+						feltUint64(11485992932336471799),
+						feltUint64(16469217220755308995),
+						feltUint64(3029672297743876521),
+						feltUint64(4787226438136518340),
+						feltUint64(17694526120416454034),
+						feltUint64(17551465471496379789),
+						feltUint64(9299325703581808762),
+						feltUint64(8817815188065733198),
+						feltUint64(8697009915081020406),
+						feltUint64(8906369854620102227),
+						feltUint64(14321543399670582665),
+						feltUint64(6384661976273651103),
+						feltUint64(11524950614921587710),
+						feltUint64(10736292889273693277),
+						feltUint64(9487666051186580327),
+						feltUint64(12129519010572669737),
+						feltUint64(13749616481815304298),
+						feltUint64(11956376265587856622),
+						feltUint64(7332632521547853118),
+						feltUint64(3137160411931496300),
+						feltUint64(4751701212705667336),
+					}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "keccak_ptr", Kind: fpRelative, Value: addr(30)},
+					{Name: "data.0", Kind: apRelative, Value: feltUint64(12)},
+					{Name: "data.1", Kind: apRelative, Value: feltUint64(12)},
+					{Name: "data.2", Kind: apRelative, Value: feltUint64(12)},
+					{Name: "data.3", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "data.4", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.5", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.6", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.7", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.8", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.9", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.10", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.11", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.12", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.13", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.14", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.15", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.16", Kind: apRelative, Value: feltUint64(9223372036854775813)},
+					{Name: "data.17", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.18", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.19", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.20", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.21", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.22", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.23", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "data.24", Kind: apRelative, Value: feltUint64(5)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBlockPermutationHint(ctx.operanders["keccak_ptr"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"keccak_ptr",
+					[]*fp.Element{
+						feltUint64(4383730378237241658),
+						feltUint64(12444326698015973637),
+						feltUint64(12104859138858588073),
+						feltUint64(16800419876497365534),
+						feltUint64(1687670000686051907),
+						feltUint64(9357203110893952832),
+						feltUint64(15543449195353005377),
+						feltUint64(10018439473843331598),
+						feltUint64(4252067722003831863),
+						feltUint64(15043026706643958401),
+						feltUint64(3385897973286642985),
+						feltUint64(14187183346503360277),
+						feltUint64(14371620541932978658),
+						feltUint64(13148092299950144338),
+						feltUint64(1566125651106358880),
+						feltUint64(1657163393784433257),
+						feltUint64(17402730062666126860),
+						feltUint64(10877209625975612823),
+						feltUint64(10316109692548342913),
+						feltUint64(14165981879239017861),
+						feltUint64(5012909831161588138),
+						feltUint64(12731032323068111667),
+						feltUint64(6467007756398199334),
+						feltUint64(17322593527878179950),
+						feltUint64(14146902728521851886),
 					}),
 			},
 		},
