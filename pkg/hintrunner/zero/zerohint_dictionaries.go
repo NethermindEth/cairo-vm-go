@@ -173,7 +173,7 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 			if err != nil {
 				return err
 			}
-			err = hinter.WriteToNthStructField(vm, *dictPtr, prevKeyValue, 1)
+			err = vm.Memory.WriteToNthStructField(*dictPtr, prevKeyValue, 1)
 			if err != nil {
 				return err
 			}
