@@ -333,7 +333,11 @@ func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
 			for i := 0; i < len(newState); i++ {
 				state := newState[i]
 				stateMv := mem.MemoryValueFromUint(state)
-				err := vm.Memory.Write(output.SegmentIndex, output.Offset+uint64(i), &stateMv)
+				err := vm.Memory.WriteToAddress(output, &stateMv)
+				if err != nil {
+					return err
+				}
+				*output, err = output.AddOffset(1)
 				if err != nil {
 					return err
 				}
