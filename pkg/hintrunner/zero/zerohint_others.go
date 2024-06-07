@@ -167,7 +167,7 @@ func newSetAddHint(elmSize, elmPtr, setPtr, setEndPtr, index, isElmInSet hinter.
 			//>     else:
 			//>         ids.is_elm_in_set = 0
 
-			elmSize, err := hinter.ResolveAsFelt(vm, elmSize)
+			elmSize, err := hinter.ResolveAsUint64(vm, elmSize)
 			if err != nil {
 				return err
 			}
@@ -192,10 +192,8 @@ func newSetAddHint(elmSize, elmPtr, setPtr, setEndPtr, index, isElmInSet hinter.
 				return err
 			}
 
-			elmSizeInt := elmSize.Uint64()
-
 			//> assert ids.elm_size > 0
-			if elmSize.IsZero() {
+			if elmSize == 0 {
 				return fmt.Errorf("assert ids.elm_size > 0 failed")
 			}
 
@@ -205,7 +203,7 @@ func newSetAddHint(elmSize, elmPtr, setPtr, setEndPtr, index, isElmInSet hinter.
 			}
 
 			//> elm_list = memory.get_range(ids.elm_ptr, ids.elm_size)
-			elmList, err := vm.Memory.GetConsecutiveMemoryValues(*elmPtr, int16(elmSizeInt))
+			elmList, err := vm.Memory.GetConsecutiveMemoryValues(*elmPtr, int16(elmSize))
 			if err != nil {
 				return err
 			}
@@ -219,17 +217,17 @@ func newSetAddHint(elmSize, elmPtr, setPtr, setEndPtr, index, isElmInSet hinter.
 			//>         ids.is_elm_in_set = 0
 			isElmInSetFelt := utils.FeltZero
 			totalSetLength := setEndPtr.Offset - setPtr.Offset
-			for i := uint64(0); i < totalSetLength; i += elmSizeInt {
-				memoryElmList, err := vm.Memory.GetConsecutiveMemoryValues(*setPtr, int16(elmSizeInt))
+			for i := uint64(0); i < totalSetLength; i += elmSize {
+				memoryElmList, err := vm.Memory.GetConsecutiveMemoryValues(*setPtr, int16(elmSize))
 				if err != nil {
 					return err
 				}
-				*setPtr, err = setPtr.AddOffset(int16(elmSizeInt))
+				*setPtr, err = setPtr.AddOffset(int16(elmSize))
 				if err != nil {
 					return err
 				}
 				if reflect.DeepEqual(memoryElmList, elmList) {
-					indexFelt := fp.NewElement(i / elmSizeInt)
+					indexFelt := fp.NewElement(i / elmSize)
 					indexMv := memory.MemoryValueFromFieldElement(&indexFelt)
 					err := vm.Memory.WriteToAddress(&indexAddr, &indexMv)
 					if err != nil {
