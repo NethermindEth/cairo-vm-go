@@ -203,7 +203,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case testAssignCode:
 		return createTestAssignHinter(resolver)
 	default:
-		return nil, fmt.Errorf(rawHint.Code)
+		return nil, fmt.Errorf("not identified hint")
 	}
 }
 

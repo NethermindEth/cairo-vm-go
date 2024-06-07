@@ -54,7 +54,7 @@ func TestCairoZeroFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	// filter is for debugging purposes
-	filter := Filter{filters: []string{"blake2s_hello"}}
+	filter := Filter{}
 	filter.init()
 
 	for _, dirEntry := range testFiles {
