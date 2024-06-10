@@ -143,6 +143,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createEcDoubleAssignNewXV1Hinter(resolver)
 	case ecDoubleAssignNewYV1:
 		return createEcDoubleAssignNewYV1Hinter()
+	case ecMulInnerCode:
+		return createEcMulInnerHinter(resolver)
 	// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
