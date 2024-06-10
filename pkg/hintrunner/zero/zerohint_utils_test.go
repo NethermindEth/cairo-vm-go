@@ -12,6 +12,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -231,5 +232,22 @@ func varListInScopeEquals(expectedValues map[string]any) func(t *testing.T, ctx 
 		for varName, expected := range expectedValues {
 			varValueInScopeEquals(varName, expected)(t, ctx)
 		}
+	}
+}
+
+func zeroDictInScopeEquals(dictAddress memory.MemoryAddress, expectedData map[fp.Element]memory.MemoryValue, expectedDefaultValue memory.MemoryValue, expectedFreeOffset uint64) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		dictionaryManager, ok := ctx.runnerContext.ScopeManager.GetZeroDictionaryManager()
+		if !ok {
+			t.Fatal("failed to fetch dictionary manager")
+		}
+		dictionary, err := dictionaryManager.GetDictionary(dictAddress)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, expectedData, dictionary.Data)
+		assert.Equal(t, expectedDefaultValue, dictionary.DefaultValue)
+		assert.Equal(t, expectedFreeOffset, *dictionary.FreeOffset)
 	}
 }

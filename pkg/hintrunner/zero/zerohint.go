@@ -86,6 +86,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSignedDivRemHinter(resolver)
 	case powCode:
 		return createPowHinter(resolver)
+	case signedPowCode:
+		return createSignedPowHinter(resolver)
 	case splitFeltCode:
 		return createSplitFeltHinter(resolver)
 	case sqrtCode:
@@ -171,6 +173,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createDefaultDictNewHinter(resolver)
 	case dictReadCode:
 		return createDictReadHinter(resolver)
+	case dictWriteCode:
+		return createDictWriteHinter(resolver)
 	case squashDictCode:
 		return createSquashDictHinter(resolver)
 	case squashDictInnerAssertLenKeys:
