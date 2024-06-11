@@ -63,6 +63,13 @@ func Max[T constraints.Integer](a, b T) T {
 	return b
 }
 
+func Min[T constraints.Integer](a, b T) T {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // FeltLt implements `a < b` felt comparison.
 func FeltLt(a, b *fp.Element) bool {
 	return a.Cmp(b) == -1
