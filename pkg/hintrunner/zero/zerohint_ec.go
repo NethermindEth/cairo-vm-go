@@ -575,7 +575,7 @@ func newEcDoubleAssignNewXV1Hint(slope, point hinter.ResOperander) hinter.Hinter
 			valueBig := new(big.Int)
 			valueBig.Set(new_xBig)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": &slopeBig, "x": &xBig, "y": &yBig, "new_x": new_xBig, "value": valueBig})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": &slopeBig, "x": &xBig, "y": &yBig, "new_x": new_xBig, "value": valueBig, "SECP_P": &secPBig})
 		},
 	}
 }
