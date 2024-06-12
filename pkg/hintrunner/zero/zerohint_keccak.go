@@ -97,30 +97,47 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 			//>	ids.high = int.from_bytes(hashed[:16], 'big')
 			//>	ids.low = int.from_bytes(hashed[16:32], 'big')
 
+			//>	data, length = ids.data, ids.length
 			lengthVal, err := hinter.ResolveAsUint64(vm, length)
 			if err != nil {
 				return err
 			}
-			keccakMaxSize := uint64(1 << 20)
-			if lengthVal > keccakMaxSize {
-				return fmt.Errorf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d.", keccakMaxSize, lengthVal)
-			}
+
 			dataPtr, err := hinter.ResolveAsAddress(vm, data)
 			if err != nil {
 				return err
 			}
 
+			//>	if '__keccak_max_size' in globals():
+			//>		assert length <= __keccak_max_size, \
+			//>			f'unsafe_keccak() can only be used with length<={__keccak_max_size}. ' \
+			//>			f'Got: length={length}.'
+			keccakMaxSize := uint64(1 << 20)
+			if lengthVal > keccakMaxSize {
+				return fmt.Errorf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d.", keccakMaxSize, lengthVal)
+			}
+
+			//>	keccak_input = bytearray()
 			keccakInput := make([]byte, 0)
+
+			//>	for word_i, byte_i in enumerate(range(0, length, 16)):
 			for i := uint64(0); i < lengthVal; i += 16 {
 				wordFelt, err := vm.Memory.ReadAsElement(dataPtr.SegmentIndex, dataPtr.Offset)
 				if err != nil {
 					return err
 				}
+				//>		word = memory[data + word_i]
 				word := uint256.Int(wordFelt.Bits())
+
+				//>		n_bytes = min(16, length - byte_i)
 				nBytes := utils.Min(lengthVal-i, 16)
+
+				//>		assert 0 <= word < 2 ** (8 * n_bytes)
 				if uint64(word.BitLen()) >= 8*nBytes {
 					return fmt.Errorf("word %v is out range 0 <= word < 2 ** %d", &word, 8*nBytes)
 				}
+
+				//>		keccak_input += word.to_bytes(n_bytes, 'big')
 				wordBytes := word.Bytes20()
 				keccakInput = append(keccakInput, wordBytes[20-int(nBytes):]...)
 				*dataPtr, err = dataPtr.AddOffset(1)
@@ -130,6 +147,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 			}
 			hash := sha3.NewLegacyKeccak256()
 			hash.Write(keccakInput)
+			//>	hashed = keccak(keccak_input)
 			hashedBytes := hash.Sum(nil)
 			hashedHigh := new(fp.Element).SetBytes(hashedBytes[:16])
 			hashedLow := new(fp.Element).SetBytes(hashedBytes[16:32])
@@ -138,6 +156,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 				return err
 			}
 			hashedHighMV := memory.MemoryValueFromFieldElement(hashedHigh)
+			//>	ids.high = int.from_bytes(hashed[:16], 'big')
 			err = vm.Memory.WriteToAddress(&highAddr, &hashedHighMV)
 			if err != nil {
 				return err
@@ -147,6 +166,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 				return err
 			}
 			hashedLowMV := memory.MemoryValueFromFieldElement(hashedLow)
+			//>	ids.low = int.from_bytes(hashed[16:32], 'big')
 			return vm.Memory.WriteToAddress(&lowAddr, &hashedLowMV)
 		},
 	}
