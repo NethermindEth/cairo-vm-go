@@ -78,6 +78,18 @@ func apValueEquals(expected *fp.Element) func(t *testing.T, ctx *hintTestContext
 	}
 }
 
+func valueAtAddressEquals(addr memory.MemoryAddress, expected *fp.Element) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&addr)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !actualFelt.Equal(expected) {
+			t.Fatalf("value mismatch:\nhave: %v\nwant: %v", &actualFelt, expected)
+		}
+	}
+}
+
 func varValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
 		o := ctx.operanders[varName]
@@ -183,6 +195,14 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 				valueArray := value.([]fp.Element)
 				expectedArray := expected.([]fp.Element)
 				if !reflect.DeepEqual(valueArray, expectedArray) {
+					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
+				}
+			}
+		case map[fp.Element][]fp.Element:
+			{
+				valueMapping := value.(map[fp.Element][]fp.Element)
+				expectedMapping := expected.(map[fp.Element][]fp.Element)
+				if !reflect.DeepEqual(valueMapping, expectedMapping) {
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
 			}

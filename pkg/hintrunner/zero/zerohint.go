@@ -173,16 +173,22 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case usortBodyCode:
 		return createUsortBodyHinter(resolver)
 	// Dictionaries hints
+	case dictNewCode:
+		return createDictNewHinter()
 	case defaultDictNewCode:
 		return createDefaultDictNewHinter(resolver)
 	case dictReadCode:
 		return createDictReadHinter(resolver)
 	case dictWriteCode:
 		return createDictWriteHinter(resolver)
+	case dictUpdateCode:
+		return createDictUpdateHinter(resolver)
 	case squashDictInnerAssertLenKeys:
 		return createSquashDictInnerAssertLenKeysHinter()
 	case squashDictInnerContinueLoop:
 		return createSquashDictInnerContinueLoopHinter(resolver)
+	case squashDictInnerFirstIteration:
+		return createSquashDictInnerFirstIterationHinter(resolver)
 	case squashDictInnerSkipLoop:
 		return createSquashDictInnerSkipLoopHinter(resolver)
 	case squashDictInnerLenAssert:
