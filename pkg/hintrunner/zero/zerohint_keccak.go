@@ -195,9 +195,16 @@ func createUnsafeKeccakHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 // UnsafeKeccakFinalize computes keccak hash of the data in memory without validity enforcement and writes the result in the `low` and `high` memory cells. It gets the data pointers from the `keccakState` memory cell, computing the hash of the data in the range [start_ptr, end_ptr).
 //
 // `newUnsafeKeccakFinalizeHint` takes 3 operanders as arguments
-//   - `keccakState` is the address in memory where the data pointers are stored
+//   - `keccakState` is the address in memory where KeccakState struct containing 2 fields start_ptr and end_ptr is stored
 //   - `low` is the address in memory where the low part of the produced hash should be written to
 //   - `high` is the address in memory where the high part of the produced hash should be written to
+//
+// This hint utilises a struct called `KeccakState`:
+//
+//	struct KeccakState {
+//	    start_ptr: felt*,
+//	    end_ptr: felt*,
+//	}
 func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UnsafeKeccakFinalize",
@@ -250,7 +257,6 @@ func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.ResOperander) hin
 				if err != nil {
 					return err
 				}
-				fmt.Println(wordFelt.BitLen())
 				if wordFelt.Cmp(&utils.FeltMax128) > -1 {
 					return fmt.Errorf("word %v is out range 0 <= word < 2 ** 128", wordFelt)
 				}
