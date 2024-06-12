@@ -209,7 +209,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 			//> assert isinstance(elm_size, int) and elm_size > 0, \
 			//>		f'Invalid value for elm_size. Got: {elm_size}.'
 			if elmSizeVal == 0 {
-				return fmt.Errorf("Invalid value for elm_size. Got: %v", elmSizeVal)
+				return fmt.Errorf("invalid value for elm_size. Got: %v", elmSizeVal)
 			}
 
 			//> key = ids.key
@@ -224,7 +224,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 			if err == nil {
 				findElementIndex, ok := findElementIndex.(uint64)
 				if !ok {
-					return fmt.Errorf("Invalid value for __find_element_index. Got: %v", findElementIndex)
+					return fmt.Errorf("invalid value for __find_element_index. Got: %v", findElementIndex)
 				}
 
 				findElementIndexFelt := new(fp.Element).SetUint64(findElementIndex)
@@ -250,7 +250,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				//>			f'Invalid index found in __find_element_index. index: {__find_element_index}, ' \
 				//>			f'expected key {key}, found key: {found_key}.'
 				if foundKey.Cmp(keyVal) != 0 {
-					return fmt.Errorf("Invalid index found in __find_element_index. index: %v, expected key %v, found key: %v", findElementIndex, keyVal, &foundKey)
+					return fmt.Errorf("invalid index found in __find_element_index. index: %v, expected key %v, found key: %v", findElementIndex, keyVal, &foundKey)
 				}
 
 				//>		# Delete __find_element_index to make sure it's not used for the next calls.
@@ -277,7 +277,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				if err == nil {
 					findElementMaxSize, ok := findElementMaxSize.(uint64)
 					if !ok {
-						return fmt.Errorf("Invalid value for __find_element_max_size. Got: %v", findElementMaxSize)
+						return fmt.Errorf("invalid value for __find_element_max_size. Got: %v", findElementMaxSize)
 					}
 					if nElms > findElementMaxSize {
 						return fmt.Errorf("find_element() can only be used with n_elms<=%v. Got: n_elms=%v", findElementMaxSize, nElms)
@@ -317,7 +317,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 
 				//>			raise ValueError(f'Key {key} was not found.')
 				if !found {
-					return fmt.Errorf("Key %v was not found", keyVal)
+					return fmt.Errorf("key %v was not found", keyVal)
 				}
 			}
 			return nil
@@ -608,4 +608,3 @@ func createSearchSortedLowerHinter(resolver hintReferenceResolver) (hinter.Hinte
 
 	return newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index), nil
 }
-
