@@ -348,22 +348,22 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 				return err
 			}
 
-			rangeCheckPtrFelt, err := hinter.ResolveAsUint64(vm, rangeCheckPtr)
+			rangeCheckPtrFelt, err := hinter.ResolveAsAddress(vm, rangeCheckPtr)
 			if err != nil {
 				return err
 			}
 
-			return vm.Memory.Write(1, rangeCheckPtrFelt, &currentAccessIndexMv)
+			return vm.Memory.WriteToAddress(rangeCheckPtrFelt, &currentAccessIndexMv)
 		},
 	}
 }
 
 func createSquashDictInnerFirstIterationHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-
 	rangeCheckPtr, err := resolver.GetResOperander("range_check_ptr")
 	if err != nil {
 		return nil, err
 	}
+
 	return newSquashDictInnerFirstIterationHint(rangeCheckPtr), nil
 }
 

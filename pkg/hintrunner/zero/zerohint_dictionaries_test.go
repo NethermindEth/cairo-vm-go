@@ -178,7 +178,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 		"SquashDictInnerFirstIteration": {
 			{
 				operanders: []*hintOperander{
-					{Name: "range_check_ptr", Kind: fpRelative, Value: feltUint64(6)},
+					{Name: "range_check_ptr", Kind: fpRelative, Value: addr(6)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(2), *feltUint64(1), *feltUint64(3)}}, "key": *feltUint64(0)})
@@ -196,7 +196,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "range_check_ptr", Kind: fpRelative, Value: feltUint64(6)},
+					{Name: "range_check_ptr", Kind: fpRelative, Value: addr(6)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(22), *feltUint64(76), *feltUint64(94), *feltUint64(55), *feltUint64(18), *feltUint64(92)}}, "key": *feltUint64(1)})
@@ -214,7 +214,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "range_check_ptr", Kind: fpRelative, Value: feltUint64(6)},
+					{Name: "range_check_ptr", Kind: fpRelative, Value: addr(6)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(22)}, *feltUint64(1): {*feltUint64(5), *feltUint64(28)}, *feltUint64(2): {*feltUint64(543), *feltUint64(323), *feltUint64(324), *feltUint64(999), *feltUint64(888), *feltUint64(777)}}, "key": *feltUint64(2)})
