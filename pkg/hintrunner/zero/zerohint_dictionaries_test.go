@@ -65,7 +65,48 @@ func TestZeroHintDictionaries(t *testing.T) {
 					dictionaryManager.NewDefaultDictionary(ctx.vm, &defaultValueMv)
 					return newDictReadHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["value"])
 				},
-				check: varValueEquals("value", feltUint64(12345)),
+				check: func(t *testing.T, ctx *hintTestContext) {
+					varValueEquals("value", feltUint64(12345))(t, ctx)
+
+					dictPtr := addrWithSegment(2, 0)
+					expectedData := map[fp.Element]memory.MemoryValue{}
+					expectedDefaultValue := memory.MemoryValueFromInt(12345)
+					expectedFreeOffset := uint64(3)
+					zeroDictInScopeEquals(*dictPtr, expectedData, expectedDefaultValue, expectedFreeOffset)(t, ctx)
+				},
+			},
+		},
+		"DictWrite": {
+			{
+				operanders: []*hintOperander{
+					{Name: "key", Kind: apRelative, Value: feltUint64(100)},
+					{Name: "new_value", Kind: apRelative, Value: feltUint64(9999)},
+					{Name: "dict_ptr", Kind: apRelative, Value: addrWithSegment(2, 0)},
+					{Name: "dict_ptr.prev_value", Kind: apRelative, Value: addrWithSegment(2, 1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					dictionaryManager := hinter.NewZeroDictionaryManager()
+					err := ctx.runnerContext.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
+					if err != nil {
+						t.Fatal(err)
+					}
+					defaultValueMv := memory.MemoryValueFromInt(12345)
+					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
+					return newDictWriteHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["new_value"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					consecutiveVarAddrResolvedValueEquals(
+						"dict_ptr.prev_value",
+						[]*fp.Element{
+							feltString("12345"),
+						})(t, ctx)
+
+					dictPtr := addrWithSegment(2, 0)
+					expectedData := map[fp.Element]memory.MemoryValue{*feltUint64(100): memory.MemoryValueFromInt(9999)}
+					expectedDefaultValue := memory.MemoryValueFromInt(12345)
+					expectedFreeOffset := uint64(3)
+					zeroDictInScopeEquals(*dictPtr, expectedData, expectedDefaultValue, expectedFreeOffset)(t, ctx)
+				},
 			},
 		},
 		"SquashDictInnerAssertLenKeys": {

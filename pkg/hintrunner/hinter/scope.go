@@ -94,6 +94,20 @@ func (sm *ScopeManager) GetVariableValueAsBigInt(name string) (*big.Int, error) 
 	return valueBig, nil
 }
 
+func (sm *ScopeManager) GetVariableValueAsUint64(name string) (uint64, error) {
+	value, err := sm.GetVariableValue(name)
+	if err != nil {
+		return 0, err
+	}
+
+	valueUint, ok := value.(uint64)
+	if !ok {
+		return 0, fmt.Errorf("value: %s is not a uint64", value)
+	}
+
+	return valueUint, nil
+}
+
 func (sm *ScopeManager) getCurrentScope() (*map[string]any, error) {
 	if len(sm.scopes) == 0 {
 		return nil, fmt.Errorf("expected at least one existing scope")

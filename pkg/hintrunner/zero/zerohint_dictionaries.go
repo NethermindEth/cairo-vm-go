@@ -135,6 +135,86 @@ func createDictReadHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newDictReadHint(dictPtr, key, value), nil
 }
 
+// DictWrite hint writes a value for a given key in a dictionary
+// and writes to memory the previous value for the key in the dictionary
+//
+// `newDictWriteHint` takes 3 operanders as argument
+//   - `dictPtr` variable will be pointer to the dictionary to update
+//   - `key` variable will be the key whose value is updated in the dictionary
+//   - `newValue` variable will be the new value for given key in the dictionary
+func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DictWrite",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+			//> ids.dict_ptr.prev_value = dict_tracker.data[ids.key]
+			//> dict_tracker.data[ids.key] = ids.new_value
+
+			//> dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)
+			dictPtr, err := hinter.ResolveAsAddress(vm, dictPtr)
+			if err != nil {
+				return err
+			}
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
+			if !ok {
+				return fmt.Errorf("__dict_manager not in scope")
+			}
+
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+			err = dictionaryManager.IncrementFreeOffset(*dictPtr, 3)
+			if err != nil {
+				return err
+			}
+
+			key, err := hinter.ResolveAsFelt(vm, key)
+			if err != nil {
+				return err
+			}
+
+			//> ids.dict_ptr.prev_value = dict_tracker.data[ids.key]
+			//> # dict_ptr points to a DictAccess
+			//> struct DictAccess {
+			//> 	key: felt,
+			//> 	prev_value: felt,
+			//> 	new_value: felt,
+			//> }
+			prevKeyValue, err := dictionaryManager.At(*dictPtr, *key)
+			if err != nil {
+				return err
+			}
+			err = vm.Memory.WriteToNthStructField(*dictPtr, prevKeyValue, 1)
+			if err != nil {
+				return err
+			}
+
+			//> dict_tracker.data[ids.key] = ids.new_value
+			newValue, err := hinter.ResolveAsFelt(vm, newValue)
+			if err != nil {
+				return err
+			}
+			newValueMv := memory.MemoryValueFromFieldElement(newValue)
+			return dictionaryManager.Set(*dictPtr, *key, newValueMv)
+		},
+	}
+}
+
+func createDictWriteHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	dictPtr, err := resolver.GetResOperander("dict_ptr")
+	if err != nil {
+		return nil, err
+	}
+	key, err := resolver.GetResOperander("key")
+	if err != nil {
+		return nil, err
+	}
+	newValue, err := resolver.GetResOperander("new_value")
+	if err != nil {
+		return nil, err
+	}
+	return newDictWriteHint(dictPtr, key, newValue), nil
+}
+
 // SquashDictInnerAssertLenKeys hint asserts that the length
 // of the `keys` descending list is zero during the squashing process
 //

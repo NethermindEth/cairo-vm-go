@@ -545,6 +545,36 @@ func TestZeroHintMath(t *testing.T) {
 				}),
 			},
 		},
+		"SignedPow": {
+			// Zero value - assertion failed, any other - nothing.
+			{
+				operanders: []*hintOperander{
+					{Name: "base", Kind: apRelative, Value: feltInt64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedPowHint(ctx.operanders["base"])
+				},
+				errCheck: errorTextContains("Cannot raise 0 to a negative power"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "base", Kind: fpRelative, Value: feltInt64(42)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedPowHint(ctx.operanders["base"])
+				},
+				errCheck: errorIsNil,
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "base", Kind: fpRelative, Value: feltInt64(-42)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSignedPowHint(ctx.operanders["base"])
+				},
+				errCheck: errorIsNil,
+			},
+		},
 		"SplitFelt": {
 			{
 				operanders: []*hintOperander{

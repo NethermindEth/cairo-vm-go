@@ -10,35 +10,34 @@ import (
 
 // Used to keep track of all dictionaries data
 type ZeroDictionary struct {
-	// The data contained on a dictionary
-	data map[fp.Element]mem.MemoryValue
+	// The Data contained on a dictionary
+	Data map[f.Element]mem.MemoryValue
 	// Default value for key not present in the dictionary
-	defaultValue mem.MemoryValue
+	DefaultValue mem.MemoryValue
 	// first free offset in memory segment of dictionary
-	freeOffset uint64
+	FreeOffset *uint64
 }
 
 // Gets the memory value at certain key
-func (d *ZeroDictionary) At(key *fp.Element) (mem.MemoryValue, error) {
-	if value, ok := d.data[*key]; ok {
+func (d *ZeroDictionary) At(key f.Element) (mem.MemoryValue, error) {
+	if value, ok := d.Data[key]; ok {
 		return value, nil
 	}
-
-	if d.defaultValue != mem.UnknownValue {
-		return d.defaultValue, nil
+	if d.DefaultValue != mem.UnknownValue {
+		return d.DefaultValue, nil
 	}
 
 	return mem.UnknownValue, fmt.Errorf("no value for key: %v", key)
 }
 
 // Given a key and a value, it sets the value at the given key
-func (d *ZeroDictionary) Set(key *fp.Element, value *mem.MemoryValue) {
-	d.data[*key] = *value
+func (d *ZeroDictionary) Set(key f.Element, value mem.MemoryValue) {
+	d.Data[key] = value
 }
 
 // Given a incrementBy value, it increments the freeOffset field of dictionary by it
 func (d *ZeroDictionary) IncrementFreeOffset(freeOffset uint64) {
-	d.freeOffset += freeOffset
+	*d.FreeOffset += freeOffset
 }
 
 // Used to manage dictionaries creation
@@ -58,10 +57,11 @@ func NewZeroDictionaryManager() ZeroDictionaryManager {
 // to the start of this segment
 func (dm *ZeroDictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddress {
 	newDictAddr := vm.Memory.AllocateEmptySegment()
+	freeOffset := uint64(0)
 	dm.dictionaries[newDictAddr.SegmentIndex] = ZeroDictionary{
-		data:         make(map[fp.Element]mem.MemoryValue),
-		defaultValue: mem.UnknownValue,
-		freeOffset:   0,
+		Data:         make(map[f.Element]mem.MemoryValue),
+		DefaultValue: mem.UnknownValue,
+		FreeOffset:   &freeOffset,
 	}
 
 	return newDictAddr
@@ -73,10 +73,11 @@ func (dm *ZeroDictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.Memory
 // querying the defaultValue will be returned instead.
 func (dm *ZeroDictionaryManager) NewDefaultDictionary(vm *VM.VirtualMachine, defaultValue *mem.MemoryValue) mem.MemoryAddress {
 	newDefaultDictAddr := vm.Memory.AllocateEmptySegment()
+	freeOffset := uint64(0)
 	dm.dictionaries[newDefaultDictAddr.SegmentIndex] = ZeroDictionary{
-		data:         make(map[fp.Element]mem.MemoryValue),
-		defaultValue: *defaultValue,
-		freeOffset:   0,
+		Data:         make(map[f.Element]mem.MemoryValue),
+		DefaultValue: defaultValue,
+		FreeOffset:   &freeOffset,
 	}
 
 	return newDefaultDictAddr
