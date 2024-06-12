@@ -1,7 +1,6 @@
 package zero
 
 import (
-	"math/big"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -335,10 +334,10 @@ func TestZeroHintUint256(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "a.low", Kind: apRelative, Value: &utils.FeltZero},
-					{Name: "a.high", Kind: apRelative, Value: new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 127))},
+					{Name: "a.high", Kind: apRelative, Value: &utils.Felt127},
 					{Name: "b.low", Kind: apRelative, Value: &utils.FeltZero},
-					{Name: "b.high", Kind: apRelative, Value: new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 127))},
-					{Name: "div.low", Kind: apRelative, Value: new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 126))},
+					{Name: "b.high", Kind: apRelative, Value: &utils.Felt127},
+					{Name: "div.low", Kind: apRelative, Value: feltString("85070591730234615865843651857942052864")},
 					{Name: "div.high", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "quotient_low.low", Kind: uninitialized},
 					{Name: "quotient_low.high", Kind: uninitialized},
