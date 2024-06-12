@@ -156,7 +156,7 @@ func createMemEnterScopeHinter(resolver hintReferenceResolver, memset bool) (hin
 // that is greater than or equal to a given key and returns its index
 //
 // `newSearchSortedLowerHint` takes 5 operanders as arguments
-//   - `arrayPtr` represents the offset in the execution segment of memory where starts the sorted array
+//   - `arrayPtr` represents the address in memory where starts the sorted array
 //   - `elmSize` is the size in terms of memory cells per element in the array
 //   - `nElms` is the number of elements in the array
 //   - `key` is the given key that acts a threshold
@@ -186,7 +186,7 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 			//> 	ids.index = n_elms
 
 			//> array_ptr = ids.array_ptr
-			arrayPtr, err := hinter.ResolveAsUint64(vm, arrayPtr)
+			arrayPtr, err := hinter.ResolveAsAddress(vm, arrayPtr)
 			if err != nil {
 				return err
 			}
@@ -206,7 +206,7 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 			//> n_elms = ids.n_elms
 			//> assert isinstance(n_elms, int) and n_elms >= 0, \
 			//> 	f'Invalid value for n_elms. Got: {n_elms}.'
-			nElms, err := hinter.ResolveAsFelt(vm, nElms)
+			nElms, err := hinter.ResolveAsUint64(vm, nElms)
 			if err != nil {
 				return err
 			}
@@ -215,16 +215,9 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 			//> 	assert n_elms <= __find_element_max_size, \
 			//> 		f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \
 			//> 		f'Got: n_elms={n_elms}.'
-			elementMaxSize, err := ctx.ScopeManager.GetVariableValue("__find_element_max_size")
-			if err == nil {
-				elementMaxSizeFelt, ok := elementMaxSize.(fp.Element)
-				if !ok {
-					return fmt.Errorf("failed obtaining the variable: __find_element_max_size")
-				}
-
-				if !utils.FeltLe(nElms, &elementMaxSizeFelt) {
-					return fmt.Errorf("find_element() can only be used with n_elms<=%v. Got: n_elms=%v", elementMaxSizeFelt, nElms)
-				}
+			elementMaxSize := uint64(1 << 20)
+			if nElms > elementMaxSize {
+				return fmt.Errorf("find_element() can only be used with n_elms<=%d.\n Got: length=%d", elementMaxSize, nElms)
 			}
 
 			key, err := hinter.ResolveAsFelt(vm, key)
@@ -237,14 +230,12 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 				return err
 			}
 
-			nElemsRange := nElms.Uint64()
+			index := arrayPtr
 
 			//> for i in range(n_elms):
-			for i := uint64(0); i < nElemsRange; i++ {
+			for i := uint64(0); i < nElms; i++ {
 				//> 	if memory[array_ptr + elm_size * i] >= ids.key:
-				index := arrayPtr + (elmSize * i)
-
-				value, err := vm.Memory.ReadAsElement(uint64(1), index)
+				value, err := vm.Memory.ReadFromAddressAsElement(index)
 				if err != nil {
 					return err
 				}
@@ -255,11 +246,13 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 					indexValue := memory.MemoryValueFromFieldElement((new(fp.Element).SetUint64(i)))
 					return vm.Memory.WriteToAddress(&indexAddr, &indexValue)
 				}
+
+				index.AddOffset(int16(elmSize))
 			}
 
 			//> else:
 			//> 	ids.index = n_elms
-			indexValue := memory.MemoryValueFromFieldElement(nElms)
+			indexValue := memory.MemoryValueFromInt(nElms)
 
 			return vm.Memory.WriteToAddress(&indexAddr, &indexValue)
 		},
