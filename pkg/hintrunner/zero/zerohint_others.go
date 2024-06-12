@@ -197,51 +197,61 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 			if err != nil {
 				return err
 			}
+
 			elmSizeVal, err := hinter.ResolveAsUint64(vm, elmSize)
 			if err != nil {
 				return err
 			}
+
 			if elmSizeVal == 0 {
 				return fmt.Errorf("Invalid value for elm_size. Got: %v", elmSizeVal)
 			}
+
 			keyVal, err := hinter.ResolveAsFelt(vm, key)
 			if err != nil {
 				return err
 			}
+
 			findElementIndex, err := ctx.ScopeManager.GetVariableValue("__find_element_index")
 			if err == nil {
-				findElementIndex := findElementIndex.(uint64)
+				findElementIndex, ok := findElementIndex.(uint64)
+				if !ok {
+					return fmt.Errorf("Invalid value for __find_element_index. Got: %v", findElementIndex)
+				}
+
 				findElementIndexFelt := new(fp.Element).SetUint64(findElementIndex)
 				findElementIndexMemoryValue := memory.MemoryValueFromFieldElement(findElementIndexFelt)
 				indexValAddr, err := index.GetAddress(vm)
 				if err != nil {
 					return err
 				}
+
 				err = vm.Memory.WriteToAddress(&indexValAddr, &findElementIndexMemoryValue)
 				if err != nil {
 					return err
 				}
+
 				arrayPtrAddr.Offset = arrayPtrAddr.Offset + elmSizeVal*findElementIndex
-				foundKey, err := vm.Memory.ReadFromAddress(arrayPtrAddr)
+				foundKey, err := vm.Memory.ReadFromAddressAsElement(arrayPtrAddr)
 				if err != nil {
 					return err
 				}
-				foundKeyVal, err := foundKey.FieldElement()
-				if err != nil {
-					return err
-				}
-				if foundKeyVal.Cmp(keyVal) != 0 {
+
+				if foundKey.Cmp(keyVal) != 0 {
 					return fmt.Errorf("Invalid index found in __find_element_index. index: %v, expected key %v, found key: %v", findElementIndex, keyVal, &foundKey)
 				}
+
 				err = ctx.ScopeManager.DeleteVariable("__find_element_index")
 				if err != nil {
 					return err
 				}
+
 			} else {
 				nElms, err := hinter.ResolveAsUint64(vm, nElms)
 				if err != nil {
 					return err
 				}
+
 				findElementMaxSize, err := ctx.ScopeManager.GetVariableValue("__find_element_max_size")
 				if err == nil {
 					findElementMaxSize := findElementMaxSize.(uint64)
@@ -249,32 +259,34 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 						return fmt.Errorf("find_element() can only be used with n_elms<=%v. Got: n_elms=%v", findElementMaxSize, nElms)
 					}
 				}
+
 				found := false
 				for i := uint64(0); i < nElms; i++ {
-					val, err := vm.Memory.ReadFromAddress(arrayPtrAddr)
+					val, err := vm.Memory.ReadFromAddressAsElement(arrayPtrAddr)
 					if err != nil {
 						return err
 					}
-					valFelt, err := val.FieldElement()
-					if err != nil {
-						return err
-					}
-					if valFelt.Cmp(keyVal) == 0 {
+
+					if val.Cmp(keyVal) == 0 {
 						indexValAddr, err := index.GetAddress(vm)
 						if err != nil {
 							return err
 						}
+
 						iFelt := new(fp.Element).SetUint64(i)
 						iFeltMemoryValue := memory.MemoryValueFromFieldElement(iFelt)
 						err = vm.Memory.WriteToAddress(&indexValAddr, &iFeltMemoryValue)
 						if err != nil {
 							return err
 						}
+
 						found = true
 						break
 					}
-					// TODO: Check if this overflows using integration tests
-					arrayPtrAddr.Offset = arrayPtrAddr.Offset + elmSizeVal
+					*arrayPtrAddr, err = arrayPtrAddr.AddOffset(int16(elmSizeVal))
+					if err != nil {
+						return err
+					}
 				}
 				if !found {
 					return fmt.Errorf("Key %v was not found", keyVal)
@@ -295,14 +307,14 @@ func createFindElementHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 		return nil, err
 	}
 	key, err := resolver.GetResOperander("key")
-  if err != nil {
+	if err != nil {
 		return nil, err
 	}
 	index, err := resolver.GetResOperander("index")
 	if err != nil {
 		return nil, err
 	}
-  nElms, err := resolver.GetResOperander("n_elms")
+	nElms, err := resolver.GetResOperander("n_elms")
 	if err != nil {
 		return nil, err
 	}
@@ -415,14 +427,14 @@ func createSetAddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 		return nil, err
 	}
 	setEndPtr, err := resolver.GetResOperander("set_end_ptr")
-  if err != nil {
+	if err != nil {
 		return nil, err
 	}
 	index, err := resolver.GetResOperander("index")
 	if err != nil {
 		return nil, err
 	}
-  isElmInSet, err := resolver.GetResOperander("is_elm_in_set")
+	isElmInSet, err := resolver.GetResOperander("is_elm_in_set")
 	if err != nil {
 		return nil, err
 	}
