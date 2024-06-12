@@ -12,6 +12,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -73,6 +74,18 @@ func apValueEquals(expected *fp.Element) func(t *testing.T, ctx *hintTestContext
 		}
 		if expected.Cmp(actualFelt) != 0 {
 			t.Fatalf("ap values mismatch:\nhave: %v\nwant: %v", actualFelt, expected)
+		}
+	}
+}
+
+func valueAtAddressEquals(addr memory.MemoryAddress, expected *fp.Element) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		actualFelt, err := ctx.vm.Memory.ReadFromAddressAsElement(&addr)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !actualFelt.Equal(expected) {
+			t.Fatalf("value mismatch:\nhave: %v\nwant: %v", &actualFelt, expected)
 		}
 	}
 }
@@ -194,6 +207,14 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
 			}
+		case map[fp.Element][]fp.Element:
+			{
+				valueMapping := value.(map[fp.Element][]fp.Element)
+				expectedMapping := expected.(map[fp.Element][]fp.Element)
+				if !reflect.DeepEqual(valueMapping, expectedMapping) {
+					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
+				}
+			}
 		default:
 			{
 				if value != expected {
@@ -232,5 +253,22 @@ func varListInScopeEquals(expectedValues map[string]any) func(t *testing.T, ctx 
 		for varName, expected := range expectedValues {
 			varValueInScopeEquals(varName, expected)(t, ctx)
 		}
+	}
+}
+
+func zeroDictInScopeEquals(dictAddress memory.MemoryAddress, expectedData map[fp.Element]memory.MemoryValue, expectedDefaultValue memory.MemoryValue, expectedFreeOffset uint64) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		dictionaryManager, ok := ctx.runnerContext.ScopeManager.GetZeroDictionaryManager()
+		if !ok {
+			t.Fatal("failed to fetch dictionary manager")
+		}
+		dictionary, err := dictionaryManager.GetDictionary(dictAddress)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, expectedData, dictionary.Data)
+		assert.Equal(t, expectedDefaultValue, dictionary.DefaultValue)
+		assert.Equal(t, expectedFreeOffset, *dictionary.FreeOffset)
 	}
 }

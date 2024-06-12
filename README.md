@@ -32,7 +32,7 @@ To run the VM you need first to have a compiled Cairo file using the Cairo compi
 Install it with the following command:
 
 ```bash
-pip install cairo-lang==0.11
+pip install cairo-lang==0.13.1
 ```
 
 When the installation is completed, you can run the `cairo-compile` command:
