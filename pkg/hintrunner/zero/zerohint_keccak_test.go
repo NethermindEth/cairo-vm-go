@@ -379,7 +379,7 @@ func TestZeroHintKeccak(t *testing.T) {
 				},
 			},
 			{
-				// end - start is 0
+				// end - random big values
 				operanders: []*hintOperander{
 					{Name: "keccak_state.start_ptr", Kind: apRelative, Value: addr(6)},
 					{Name: "keccak_state.end_ptr", Kind: apRelative, Value: addr(9)},
@@ -396,6 +396,22 @@ func TestZeroHintKeccak(t *testing.T) {
 					varValueEquals("high", feltString("223857737769798933062329368034598208286"))(t, ctx)
 					varValueEquals("low", feltString("310600734091368901761065530388449236858"))(t, ctx)
 				},
+			},
+			{
+				// end - random values exceeding 2<<128
+				operanders: []*hintOperander{
+					{Name: "keccak_state.start_ptr", Kind: apRelative, Value: addr(6)},
+					{Name: "keccak_state.end_ptr", Kind: apRelative, Value: addr(9)},
+					{Name: "keccak_state.0", Kind: apRelative, Value: &utils.Felt127},
+					{Name: "keccak_state.1", Kind: apRelative, Value: &utils.FeltMax128},
+					{Name: "keccak_state.2", Kind: apRelative, Value: new(fp.Element).Add(&utils.FeltMax128, &utils.FeltOne)},
+					{Name: "high", Kind: uninitialized},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUnsafeKeccakFinalizeHint(ctx.operanders["keccak_state.start_ptr"], ctx.operanders["high"], ctx.operanders["low"])
+				},
+				errCheck: errorTextContains(fmt.Sprintf("word %v is out range 0 <= word < 2 ** 128", &utils.FeltMax128)),
 			},
 			{
 				// end - start is 0
