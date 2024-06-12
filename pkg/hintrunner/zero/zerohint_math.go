@@ -730,6 +730,39 @@ func createPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	return newPowHint(locsRes, prevLocsRes), nil
 }
 
+// SignedPow hint asserts that the value of base is not zero
+//
+// `newSignedPowHint` takes 1 operander as argument
+//   - `base` is the value that will be checked
+//
+// `newSignedPowHint` returns an error if `base` is zero
+func newSignedPowHint(base hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SignedPow",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> assert ids.base != 0, 'Cannot raise 0 to a negative power.'
+			base, err := hinter.ResolveAsFelt(vm, base)
+			if err != nil {
+				return err
+			}
+
+			if base.IsZero() {
+				return fmt.Errorf("assertion `Cannot raise 0 to a negative power` failed")
+			}
+
+			return nil
+		},
+	}
+}
+
+func createSignedPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	base, err := resolver.GetResOperander("base")
+	if err != nil {
+		return nil, err
+	}
+	return newSignedPowHint(base), nil
+}
+
 // SplitFelt hint splits a finite field element into high and low components
 //
 // `newSplitFeltHint` takes 3 operanders as arguments
@@ -1085,4 +1118,82 @@ func createUnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	}
 
 	return newUnsignedDivRemHint(value, div, q, r), nil
+}
+
+func newIsQuadResidueHint(x, y hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "IsQuadResidue",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.crypto.signature.signature import FIELD_PRIME
+			//>	from starkware.python.math_utils import div_mod, is_quad_residue, sqrt
+			//>	x = ids.x
+			//>	if is_quad_residue(x, FIELD_PRIME):
+			//>		ids.y = sqrt(x, FIELD_PRIME)
+			//>	else:
+			//>		ids.y = sqrt(div_mod(x, 3, FIELD_PRIME), FIELD_PRIME)
+
+			x, err := hinter.ResolveAsFelt(vm, x)
+			if err != nil {
+				return err
+			}
+
+			yAddr, err := y.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			xBigInt := math_utils.AsInt(x)
+
+			var value = memory.MemoryValue{}
+
+			if x.IsZero() || x.IsOne() {
+				value = memory.MemoryValueFromFieldElement(x)
+
+			} else {
+				var result *fp.Element = new(fp.Element)
+
+				if x.Legendre() == 1 {
+					// result = x.Sqrt(x)
+
+					const primeString = "3618502788666131213697322783095070105623107215331596699973092056135872020481"
+					primeBigInt, ok := new(big.Int).SetString(primeString, 10)
+					if !ok {
+						panic("failed to convert prime string to big.Int")
+					}
+
+					// divide primeBigInt by 2
+					halfPrimeBigInt := new(big.Int).Rsh(primeBigInt, 1)
+
+					tempResult := new(big.Int).ModSqrt(&xBigInt, primeBigInt)
+
+					// ensures that tempResult is the smaller of the two possible square roots in the prime field.
+					if tempResult.Cmp(halfPrimeBigInt) > 0 {
+						tempResult.Sub(primeBigInt, tempResult)
+					}
+
+					result.SetBigInt(tempResult)
+
+				} else {
+					result = x.Sqrt(new(fp.Element).Div(x, new(fp.Element).SetUint64(3)))
+				}
+
+				value = memory.MemoryValueFromFieldElement(result)
+			}
+
+			return vm.Memory.WriteToAddress(&yAddr, &value)
+		},
+	}
+}
+
+func createIsQuadResidueHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+	y, err := resolver.GetResOperander("y")
+	if err != nil {
+		return nil, err
+	}
+
+	return newIsQuadResidueHint(x, y), nil
 }

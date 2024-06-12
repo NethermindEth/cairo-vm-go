@@ -40,20 +40,24 @@ const (
 
 	unsignedDivRemCode string = "from starkware.cairo.common.math_utils import assert_integer\nassert_integer(ids.div)\nassert 0 < ids.div <= PRIME // range_check_builtin.bound, \\\n    f'div={hex(ids.div)} is out of the valid range.'\nids.q, ids.r = divmod(ids.value, ids.div)"
 
+	signedPowCode string = "assert ids.base != 0, 'Cannot raise 0 to a negative power.'"
+
 	// split_felt() hints.
 	splitFeltCode string = "from starkware.cairo.common.math_utils import assert_integer\nassert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128\nassert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW\nassert_integer(ids.value)\nids.low = ids.value & ((1 << 128) - 1)\nids.high = ids.value >> 128"
 
 	// sqrt() hint
 	sqrtCode string = "from starkware.python.math_utils import isqrt\nvalue = ids.value % PRIME\nassert value < 2 ** 250, f\"value={value} is outside of the range [0, 2**250).\"\nassert 2 ** 250 < PRIME\nids.root = isqrt(value)"
 
+	// is_quad_residue() hint
+	isQuadResidueCode string = "from starkware.crypto.signature.signature import FIELD_PRIME\n\tfrom starkware.python.math_utils import div_mod, is_quad_residue, sqrt\n\t\n\tx = ids.x\n\tif is_quad_residue(x, FIELD_PRIME):\n\t\tids.y = sqrt(x, FIELD_PRIME)\n\telse:\n\t\tids.y = sqrt(div_mod(x, 3, FIELD_PRIME), FIELD_PRIME)"
+
 	// ------ Uint256 hints related code ------
 	uint256AddCode            string = "sum_low = ids.a.low + ids.b.low\nids.carry_low = 1 if sum_low >= ids.SHIFT else 0\nsum_high = ids.a.high + ids.b.high + ids.carry_low\nids.carry_high = 1 if sum_high >= ids.SHIFT else 0"
-	uint256AddLowCode         string = "sum_low = ids.a.low + ids.b.low\nids.carry_low = 1 if sum_low >= ids.SHIFT else 0"
 	split64Code               string = "ids.low = ids.a & ((1<<64) - 1)\nids.high = ids.a >> 64"
 	uint256SignedNNCode       string = "memory[ap] = 1 if 0 <= (ids.a.high % PRIME) < 2 ** 127 else 0"
-	uint256UnsignedDivRemCode string = "a = (ids.a.high << 128) + ids.a.low\ndiv = (ids.div.high << 128) + ids.div.low\nquotient, remainder = divmod(a, div)\nids.quotient.low = quotient & ((1 << 128) - 1)\nids.quotient.high = quotient >> 128\nids.remainder.low = remainder & ((1 << 128) - 1)\nids.remainder.high = remainder >> 128"
+	uint256UnsignedDivRemCode string = "a = (ids.a.high << 128) + ids.a.low\ndiv = (ids.div.high << 128) + ids.div.low\nquotient, remainder = divmod(a, div)\n\nids.quotient.low = quotient & ((1 << 128) - 1)\nids.quotient.high = quotient >> 128\nids.remainder.low = remainder & ((1 << 128) - 1)\nids.remainder.high = remainder >> 128"
 	uint256SqrtCode           string = "from starkware.python.math_utils import isqrt\nn = (ids.n.high << 128) + ids.n.low\nroot = isqrt(n)\nassert 0 <= root < 2 ** 128\nids.root.low = root\nids.root.high = 0"
-	uint256MulDivModCode      string = "a = (ids.a.high << 128) + ids.a.low/n b = (ids.b.high << 128) + ids.b.low/n div = (ids.div.high << 128) + ids.div.low/n quotient, remainder = divmod(a * b, div)/n ids.quotient_low.low = quotient & ((1 << 128) - 1)/n ids.quotient_low.high = (quotient >> 128) & ((1 << 128) - 1)/n ids.quotient_high.low = (quotient >> 256) & ((1 << 128) - 1)/n ids.quotient_high.high = quotient >> 384/n ids.remainder.low = remainder & ((1 << 128) - 1)/n ids.remainder.high = remainder >> 128"
+	uint256MulDivModCode      string = "a = (ids.a.high << 128) + ids.a.low\nb = (ids.b.high << 128) + ids.b.low\ndiv = (ids.div.high << 128) + ids.div.low\nquotient, remainder = divmod(a * b, div)\n\nids.quotient_low.low = quotient & ((1 << 128) - 1)\nids.quotient_low.high = (quotient >> 128) & ((1 << 128) - 1)\nids.quotient_high.low = (quotient >> 256) & ((1 << 128) - 1)\nids.quotient_high.high = quotient >> 384\nids.remainder.low = remainder & ((1 << 128) - 1)\nids.remainder.high = remainder >> 128"
 
 	// ------ Usort hints related code ------
 	usortBodyCode string = `
@@ -91,6 +95,7 @@ const (
 	computeSlopeV1Code      string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\nfrom starkware.python.math_utils import line_slope\n\n# Compute the slope.\nx0 = pack(ids.point0.x, PRIME)\ny0 = pack(ids.point0.y, PRIME)\nx1 = pack(ids.point1.x, PRIME)\ny1 = pack(ids.point1.y, PRIME)\nvalue = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)"
 	ecDoubleAssignNewXV1    string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\nslope = pack(ids.slope, PRIME)\nx = pack(ids.point.x, PRIME)\ny = pack(ids.point.y, PRIME)\n\nvalue = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P"
 	ecDoubleAssignNewYV1    string = "value = new_y = (slope * (x - new_x) - y) % SECP_P"
+	ecMulInnerCode          string = "memory[ap] = (ids.scalar % PRIME) % 2"
 
 	// ------ Signature hints related code ------
 	verifyECDSASignatureCode  string = "ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))"
@@ -103,10 +108,20 @@ const (
 	// ------ Blake Hash hints related code ------
 	blake2sAddUint256BigendCode string = "B = 32\nMASK = 2 ** 32 - 1\nsegments.write_arg(ids.data, [(ids.high >> (B * (3 - i))) & MASK for i in range(4)])\nsegments.write_arg(ids.data + 4, [(ids.low >> (B * (3 - i))) & MASK for i in range(4)])"
 	blake2sAddUint256Code       string = "B = 32\nMASK = 2 ** 32 - 1\nsegments.write_arg(ids.data, [(ids.low >> (B * i)) & MASK for i in range(4)])\nsegments.write_arg(ids.data + 4, [(ids.high >> (B * i)) & MASK for i in range(4)])"
+	blake2sFinalizeCode         string = "from starkware.cairo.common.cairo_blake2s.blake2s_utils import IV, blake2s_compress\n\n_n_packed_instances = int(ids.N_PACKED_INSTANCES)\nassert 0 <= _n_packed_instances < 20\n_blake2s_input_chunk_size_felts = int(ids.INPUT_BLOCK_FELTS)\nassert 0 <= _blake2s_input_chunk_size_felts < 100\n\nmessage = [0] * _blake2s_input_chunk_size_felts\nmodified_iv = [IV[0] ^ 0x01010020] + IV[1:]\noutput = blake2s_compress(\n    message=message,\n    h=modified_iv,\n    t0=0,\n    t1=0,\n    f0=0xffffffff,\n    f1=0,\n)\npadding = (modified_iv + message + [0, 0xffffffff] + output) * (_n_packed_instances - 1)\nsegments.write_arg(ids.blake2s_ptr_end, padding)"
 
 	// ------ Keccak hints related code ------
-
-	keccakWriteArgs string = "segments.write_arg(ids.inputs, [ids.low % 2 ** 64, ids.low // 2 ** 64])\nsegments.write_arg(ids.inputs + 2, [ids.high % 2 ** 64, ids.high // 2 ** 64])"
+	unsafeKeccakCode        string = "from eth_hash.auto import keccak\n\ndata, length = ids.data, ids.length\n\nif '__keccak_max_size' in globals():\n    assert length <= __keccak_max_size, \\\n        f'unsafe_keccak() can only be used with length<={__keccak_max_size}. ' \\\n        f'Got: length={length}.'\n\nkeccak_input = bytearray()\nfor word_i, byte_i in enumerate(range(0, length, 16)):\n    word = memory[data + word_i]\n    n_bytes = min(16, length - byte_i)\n    assert 0 <= word < 2 ** (8 * n_bytes)\n    keccak_input += word.to_bytes(n_bytes, 'big')\n\nhashed = keccak(keccak_input)\nids.high = int.from_bytes(hashed[:16], 'big')\nids.low = int.from_bytes(hashed[16:32], 'big')"
+	cairoKeccakFinalizeCode string = `# Add dummy pairs of input and output.
+	_keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)
+	_block_size = int(ids.BLOCK_SIZE)
+	assert 0 <= _keccak_state_size_felts < 100
+	assert 0 <= _block_size < 10
+	inp = [0] * _keccak_state_size_felts
+	padding = (inp + keccak_func(inp)) * _block_size
+	segments.write_arg(ids.keccak_ptr_end, padding)`
+	keccakWriteArgsCode  string = "segments.write_arg(ids.inputs, [ids.low % 2 ** 64, ids.low // 2 ** 64])\nsegments.write_arg(ids.inputs + 2, [ids.high % 2 ** 64, ids.high // 2 ** 64])"
+	blockPermutationCode string = "from starkware.cairo.common.keccak_utils.keccak_utils import keccak_func\n_keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)\nassert 0 <= _keccak_state_size_felts < 100\noutput_values = keccak_func(memory.get_range(\nids.keccak_ptr - _keccak_state_size_felts, _keccak_state_size_felts))\nsegments.write_arg(ids.keccak_ptr, output_values)"
 
 	// ------ Dictionaries hints related code ------
 	dictNewCode                       string = "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n\nmemory[ap] = __dict_manager.new_dict(segments, initial_dict)\ndel initial_dict"
@@ -124,7 +139,10 @@ const (
 	// ------ Other hints related code ------
 	allocSegmentCode          string = "memory[ap] = segments.add()"
 	memcpyContinueCopyingCode string = "n -= 1\nids.continue_copying = 1 if n > 0 else 0"
+	memsetContinueLoopCode    string = "n -= 1\nids.continue_loop = 1 if n > 0 else 0"
 	memcpyEnterScopeCode      string = "vm_enter_scope({'n': ids.len})"
+	memsetEnterScopeCode      string = "vm_enter_scope({'n': ids.n})"
 	vmEnterScopeCode          string = "vm_enter_scope()"
 	vmExitScopeCode           string = "vm_exit_scope()"
+	setAddCode                string = "assert ids.elm_size > 0\nassert ids.set_ptr <= ids.set_end_ptr\nelm_list = memory.get_range(ids.elm_ptr, ids.elm_size)\nfor i in range(0, ids.set_end_ptr - ids.set_ptr, ids.elm_size):\n    if memory.get_range(ids.set_ptr + i, ids.elm_size) == elm_list:\n        ids.index = i // ids.elm_size\n        ids.is_elm_in_set = 1\n        break\nelse:\n    ids.is_elm_in_set = 0"
 )
