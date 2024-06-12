@@ -103,11 +103,6 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 				return err
 			}
 
-			dataPtr, err := hinter.ResolveAsAddress(vm, data)
-			if err != nil {
-				return err
-			}
-
 			//>	if '__keccak_max_size' in globals():
 			//>		assert length <= __keccak_max_size, \
 			//>			f'unsafe_keccak() can only be used with length<={__keccak_max_size}. ' \
@@ -115,6 +110,11 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 			keccakMaxSize := uint64(1 << 20)
 			if lengthVal > keccakMaxSize {
 				return fmt.Errorf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d.", keccakMaxSize, lengthVal)
+			}
+
+			dataPtr, err := hinter.ResolveAsAddress(vm, data)
+			if err != nil {
+				return err
 			}
 
 			//>	keccak_input = bytearray()
@@ -214,27 +214,37 @@ func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.ResOperander) hin
 			if err != nil {
 				return err
 			}
+
 			keccakStateMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(keccakStateAddr, 2)
 			if err != nil {
 				return err
 			}
+
 			startPtr, err := keccakStateMemoryValues[0].MemoryAddress()
 			if err != nil {
 				return err
 			}
+
 			endPtr, err := keccakStateMemoryValues[1].MemoryAddress()
 			if err != nil {
 				return err
 			}
+
+			//> n_elms = ids.keccak_state.end_ptr - ids.keccak_state.start_ptr
 			nElems, err := endPtr.SubAddress(startPtr)
 			if err != nil {
 				return err
 			}
+
+			//> keccak_input = bytearray()
 			keccakInput := make([]byte, 0)
 			memoryValuesInRange, err := vm.Memory.GetConsecutiveMemoryValues(*startPtr, int16(nElems))
 			if err != nil {
 				return err
 			}
+
+			//> for word in memory.get_range(ids.keccak_state.start_ptr, n_elms):
+			//>     keccak_input += word.to_bytes(16, 'big')
 			for _, mv := range memoryValuesInRange {
 				wordFelt, err := mv.FieldElement()
 				if err != nil {
@@ -244,6 +254,8 @@ func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.ResOperander) hin
 				wordBytes := word.Bytes20()
 				keccakInput = append(keccakInput, wordBytes[4:]...)
 			}
+
+			//> hashed = keccak(keccak_input)
 			hash := sha3.NewLegacyKeccak256()
 			hash.Write(keccakInput)
 			hashedBytes := hash.Sum(nil)
@@ -253,6 +265,7 @@ func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.ResOperander) hin
 			if err != nil {
 				return err
 			}
+			//> ids.high = int.from_bytes(hashed[:16], 'big')
 			hashedHighMV := memory.MemoryValueFromFieldElement(hashedHigh)
 			err = vm.Memory.WriteToAddress(&highAddr, &hashedHighMV)
 			if err != nil {
@@ -262,6 +275,8 @@ func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.ResOperander) hin
 			if err != nil {
 				return err
 			}
+
+			//> ids.low = int.from_bytes(hashed[16:32], 'big')
 			hashedLowMV := memory.MemoryValueFromFieldElement(hashedLow)
 			return vm.Memory.WriteToAddress(&lowAddr, &hashedLowMV)
 		},
