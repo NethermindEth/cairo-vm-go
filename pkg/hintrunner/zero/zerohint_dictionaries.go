@@ -2,6 +2,7 @@ package zero
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -445,6 +446,88 @@ func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hi
 	return newSquashDictInnerContinueLoopHint(loopTemps), nil
 }
 
+// SquashDictInnerFirstIteration hint sets up the first iteration
+// of a loop for dictionary squashing, extracting `current_access_index`
+// from the `current_access_indices` descending list
+//
+// `newSquashDictInnerFirstIterationHint` takes 1 operander as argument
+//   - `rangeCheckPtr` is the address in memory where to write `current_access_index`
+//
+// `newSquashDictInnerFirstIterationHint`writes `current_access_index` at `rangeCheckPtr`
+// offset in the execution segment of memory
+func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SquashDictInnerFirstIteration",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> current_access_indices = sorted(access_indices[key])[::-1]
+			//> current_access_index = current_access_indices.pop()
+			//> memory[ids.range_check_ptr] = current_access_index
+
+			key_, err := ctx.ScopeManager.GetVariableValue("key")
+			if err != nil {
+				return err
+			}
+
+			accessIndices_, err := ctx.ScopeManager.GetVariableValue("access_indices")
+			if err != nil {
+				return err
+			}
+
+			accessIndices, ok := accessIndices_.(map[fp.Element][]fp.Element)
+			if !ok {
+				return fmt.Errorf("cannot cast access_indices_ to a mapping of felts")
+			}
+
+			key, ok := key_.(fp.Element)
+			if !ok {
+				return fmt.Errorf("cannot cast key_ to felt")
+			}
+
+			accessIndicesAtKey := accessIndices[key]
+
+			accessIndicesAtKeyCopy := make([]fp.Element, len(accessIndicesAtKey))
+			copy(accessIndicesAtKeyCopy, accessIndicesAtKey)
+
+			sort.Slice(accessIndicesAtKeyCopy, func(i, j int) bool {
+				return accessIndicesAtKeyCopy[i].Cmp(&accessIndicesAtKeyCopy[j]) > 0
+			})
+
+			currentAccessIndex, err := utils.Pop(&accessIndicesAtKeyCopy)
+			if err != nil {
+				return err
+			}
+
+			currentAccessIndexMv := memory.MemoryValueFromFieldElement(&currentAccessIndex)
+
+			err = ctx.ScopeManager.AssignVariable("current_access_indices", accessIndicesAtKeyCopy)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("current_access_index", currentAccessIndex)
+			if err != nil {
+				return err
+			}
+
+			rangeCheckPtrAddr, err := hinter.ResolveAsAddress(vm, rangeCheckPtr)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(rangeCheckPtrAddr, &currentAccessIndexMv)
+		},
+	}
+}
+
+func createSquashDictInnerFirstIterationHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	rangeCheckPtr, err := resolver.GetResOperander("range_check_ptr")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSquashDictInnerFirstIterationHint(rangeCheckPtr), nil
+}
+
 // SquashDictInnerSkipLoop hint determines if the loop should be skipped
 // based on remaining access indices
 //
@@ -595,12 +678,12 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 		Name: "SquashDictInnerUsedAccessesAssert",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> assert ids.n_used_accesses == len(access_indices[key])
-			access_indices_, err := ctx.ScopeManager.GetVariableValue("access_indices")
+			accessIndices_, err := ctx.ScopeManager.GetVariableValue("access_indices")
 			if err != nil {
 				return err
 			}
 
-			access_indices, ok := access_indices_.(map[fp.Element][]fp.Element)
+			accessIndices, ok := accessIndices_.(map[fp.Element][]fp.Element)
 			if !ok {
 				return fmt.Errorf("cannot cast access_indices_ to a mapping of felts")
 			}
@@ -615,7 +698,7 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 				return fmt.Errorf("cannot cast key_ to felt")
 			}
 
-			accessIndicesAtKeyLen := uint64(len(access_indices[key]))
+			accessIndicesAtKeyLen := uint64(len(accessIndices[key]))
 
 			nUsedAccesses, err := hinter.ResolveAsUint64(vm, nUsedAccesses)
 			if err != nil {
