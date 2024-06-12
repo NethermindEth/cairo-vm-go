@@ -227,7 +227,6 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 					return fmt.Errorf("Invalid value for __find_element_index. Got: %v", findElementIndex)
 				}
 
-				//>		found_key = memory[array_ptr + elm_size * __find_element_index]
 				findElementIndexFelt := new(fp.Element).SetUint64(findElementIndex)
 				findElementIndexMemoryValue := memory.MemoryValueFromFieldElement(findElementIndexFelt)
 				indexValAddr, err := index.GetAddress(vm)
@@ -241,6 +240,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				}
 
 				arrayPtrAddr.Offset = arrayPtrAddr.Offset + elmSizeVal*findElementIndex
+				//>		found_key = memory[array_ptr + elm_size * __find_element_index]
 				foundKey, err := vm.Memory.ReadFromAddressAsElement(arrayPtrAddr)
 				if err != nil {
 					return err
@@ -253,6 +253,8 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 					return fmt.Errorf("Invalid index found in __find_element_index. index: %v, expected key %v, found key: %v", findElementIndex, keyVal, &foundKey)
 				}
 
+				//>		# Delete __find_element_index to make sure it's not used for the next calls.
+				//>		del __find_element_index
 				err = ctx.ScopeManager.DeleteVariable("__find_element_index")
 				if err != nil {
 					return err
@@ -261,7 +263,6 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 			} else {
 				//>		assert isinstance(n_elms, int) and n_elms >= 0, \
 				//>			f'Invalid value for n_elms. Got: {n_elms}.'
-
 				//>		n_elms = ids.n_elms
 				nElms, err := hinter.ResolveAsUint64(vm, nElms)
 				if err != nil {
@@ -293,13 +294,11 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 					if err != nil {
 						return err
 					}
-
 					if val.Cmp(keyVal) == 0 {
 						indexValAddr, err := index.GetAddress(vm)
 						if err != nil {
 							return err
 						}
-
 						iFelt := new(fp.Element).SetUint64(i)
 						iFeltMemoryValue := memory.MemoryValueFromFieldElement(iFelt)
 						err = vm.Memory.WriteToAddress(&indexValAddr, &iFeltMemoryValue)
