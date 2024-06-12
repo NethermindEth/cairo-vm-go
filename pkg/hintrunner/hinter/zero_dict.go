@@ -53,12 +53,12 @@ func NewZeroDictionaryManager() ZeroDictionaryManager {
 
 // It creates a new segment which will hold dictionary values. It links this
 // segment with the current dictionary and returns the address that points
-// to the start of this segment
-func (dm *ZeroDictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddress {
+// to the start of this segment. initial dictionary data is set from the data argument.
+func (dm *ZeroDictionaryManager) NewDictionary(vm *VM.VirtualMachine, data map[f.Element]mem.MemoryValue) mem.MemoryAddress {
 	newDictAddr := vm.Memory.AllocateEmptySegment()
 	freeOffset := uint64(0)
 	dm.dictionaries[newDictAddr.SegmentIndex] = ZeroDictionary{
-		Data:         make(map[f.Element]mem.MemoryValue),
+		Data:         data,
 		DefaultValue: mem.UnknownValue,
 		FreeOffset:   &freeOffset,
 	}
