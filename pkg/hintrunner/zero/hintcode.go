@@ -60,8 +60,7 @@ const (
 	uint256MulDivModCode      string = "a = (ids.a.high << 128) + ids.a.low\nb = (ids.b.high << 128) + ids.b.low\ndiv = (ids.div.high << 128) + ids.div.low\nquotient, remainder = divmod(a * b, div)\n\nids.quotient_low.low = quotient & ((1 << 128) - 1)\nids.quotient_low.high = (quotient >> 128) & ((1 << 128) - 1)\nids.quotient_high.low = (quotient >> 256) & ((1 << 128) - 1)\nids.quotient_high.high = quotient >> 384\nids.remainder.low = remainder & ((1 << 128) - 1)\nids.remainder.high = remainder >> 128"
 
 	// ------ Usort hints related code ------
-	usortBodyCode string = `
-	from collections import defaultdict
+	usortBodyCode string = `from collections import defaultdict
 
 	input_ptr = ids.input
 	input_len = int(ids.input_len)
