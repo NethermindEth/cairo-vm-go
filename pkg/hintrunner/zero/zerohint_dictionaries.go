@@ -11,6 +11,15 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+//	struct DictAccess {
+//	  key: felt,
+//		 prev_value: felt,
+//		 new_value: felt,
+//	}
+//
+// The size of DictAccess is 3
+const DictAccessSize = 3
+
 // DictNew hint creates a new dictionary with its initial content seeded from a scope value "initial_dict"
 // Querying the value of a key which doesn't exist in the dictionary returns an error
 //
@@ -142,7 +151,7 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
-			err = dictionaryManager.IncrementFreeOffset(*dictPtr, 3)
+			err = dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
 			if err != nil {
 				return err
 			}
@@ -208,7 +217,7 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 			}
 
 			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
-			err = dictionaryManager.IncrementFreeOffset(*dictPtr, 3)
+			err = dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
 			if err != nil {
 				return err
 			}
@@ -332,7 +341,7 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hi
 			}
 
 			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
-			return dictionaryManager.IncrementFreeOffset(*dictPtr, 3)
+			return dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
 		},
 	}
 }
