@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -72,7 +73,7 @@ func createCairoKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hin
 // UnsafeKeccak computes keccak hash of the data in memory without validity enforcement and writes the result in the `low` and `high` memory cells
 //
 // `newUnsafeKeccakHint` takes 4 operanders as arguments
-//   - `data` is the address in memory to the base of the data array to hash is stored. Each word in the array is 16 bytes long, except the last one
+//   - `data` is the address in memory where the base of the data array to be hashed is stored. Each word in the array is 16 bytes long, except the last one, which could vary
 //   - `length` is the length of the data to hash
 //   - `low` is the low part of the produced hash
 //   - `high` is the high part of the produced hash
@@ -116,10 +117,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 					return err
 				}
 				word := uint256.Int(wordFelt.Bits())
-				nBytes := lengthVal - i
-				if nBytes > 16 {
-					nBytes = 16
-				}
+				nBytes := utils.Min(lengthVal-i, 16)
 				if uint64(word.BitLen()) >= 8*nBytes {
 					return fmt.Errorf("word %v is out range 0 <= word < 2 ** %d", &word, 8*nBytes)
 				}
