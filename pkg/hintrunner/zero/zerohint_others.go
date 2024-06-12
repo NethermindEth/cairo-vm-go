@@ -193,25 +193,33 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 			//>				break
 			//>		else:
 			//>			raise ValueError(f'Key {key} was not found.')
+
+			//> array_ptr = ids.array_ptr
 			arrayPtrAddr, err := hinter.ResolveAsAddress(vm, arrayPtr)
 			if err != nil {
 				return err
 			}
 
+			//> elm_size = ids.elm_size
 			elmSizeVal, err := hinter.ResolveAsUint64(vm, elmSize)
 			if err != nil {
 				return err
 			}
 
+			//> assert isinstance(elm_size, int) and elm_size > 0, \
+			//>		f'Invalid value for elm_size. Got: {elm_size}.'
 			if elmSizeVal == 0 {
 				return fmt.Errorf("Invalid value for elm_size. Got: %v", elmSizeVal)
 			}
 
+			//> key = ids.key
 			keyVal, err := hinter.ResolveAsFelt(vm, key)
 			if err != nil {
 				return err
 			}
 
+			//> if '__find_element_index' in globals():
+			//>		ids.index = __find_element_index
 			findElementIndex, err := ctx.ScopeManager.GetVariableValue("__find_element_index")
 			if err == nil {
 				findElementIndex, ok := findElementIndex.(uint64)
@@ -219,6 +227,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 					return fmt.Errorf("Invalid value for __find_element_index. Got: %v", findElementIndex)
 				}
 
+				//>		found_key = memory[array_ptr + elm_size * __find_element_index]
 				findElementIndexFelt := new(fp.Element).SetUint64(findElementIndex)
 				findElementIndexMemoryValue := memory.MemoryValueFromFieldElement(findElementIndexFelt)
 				indexValAddr, err := index.GetAddress(vm)
@@ -237,6 +246,9 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 					return err
 				}
 
+				//>		assert found_key == key, \
+				//>			f'Invalid index found in __find_element_index. index: {__find_element_index}, ' \
+				//>			f'expected key {key}, found key: {found_key}.'
 				if foundKey.Cmp(keyVal) != 0 {
 					return fmt.Errorf("Invalid index found in __find_element_index. index: %v, expected key %v, found key: %v", findElementIndex, keyVal, &foundKey)
 				}
@@ -247,11 +259,19 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				}
 
 			} else {
+				//>		assert isinstance(n_elms, int) and n_elms >= 0, \
+				//>			f'Invalid value for n_elms. Got: {n_elms}.'
+
+				//>		n_elms = ids.n_elms
 				nElms, err := hinter.ResolveAsUint64(vm, nElms)
 				if err != nil {
 					return err
 				}
 
+				//>		if '__find_element_max_size' in globals():
+				//>			assert n_elms <= __find_element_max_size, \
+				//>				f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \
+				//>				f'Got: n_elms={n_elms}.'
 				findElementMaxSize, err := ctx.ScopeManager.GetVariableValue("__find_element_max_size")
 				if err == nil {
 					findElementMaxSize := findElementMaxSize.(uint64)
@@ -260,6 +280,10 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 					}
 				}
 
+				//>		for i in range(n_elms):
+				//>			if memory[array_ptr + elm_size * i] == key:
+				//>				ids.index = i
+				//>				break
 				found := false
 				for i := uint64(0); i < nElms; i++ {
 					val, err := vm.Memory.ReadFromAddressAsElement(arrayPtrAddr)
@@ -288,6 +312,8 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 						return err
 					}
 				}
+
+				//>			raise ValueError(f'Key {key} was not found.')
 				if !found {
 					return fmt.Errorf("Key %v was not found", keyVal)
 				}
