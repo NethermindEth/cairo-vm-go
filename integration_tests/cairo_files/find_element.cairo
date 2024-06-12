@@ -48,3 +48,7 @@
 
 //     return ();
 // }
+
+func main() -> () {
+    return ();
+}
