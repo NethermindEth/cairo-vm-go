@@ -22,7 +22,7 @@ const cellsPerKeccak = 16
 const inputCellsPerKeccak = 8
 
 type Keccak struct {
-	ratioKeccak                 uint64
+	ratio                       uint64
 	instancesPerComponentKeccak uint64
 }
 
@@ -83,7 +83,7 @@ func (k *Keccak) String() string {
 }
 
 func (k *Keccak) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(k.ratioKeccak, inputCellsPerKeccak, segmentUsedSize, k.instancesPerComponentKeccak, vmCurrentStep)
+	allocatedInstances, err := GetAllocatedInstances(k.ratio, inputCellsPerKeccak, segmentUsedSize, k.instancesPerComponentKeccak, vmCurrentStep)
 	if err != nil {
 		return 0, err
 	}

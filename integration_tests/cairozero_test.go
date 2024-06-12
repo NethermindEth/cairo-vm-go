@@ -195,8 +195,8 @@ func runVm(path string) (string, string, string, error) {
 	layout := "plain"
 	if strings.Contains(path, ".small") {
 		layout = "small"
-	} else if strings.Contains(path, ".all_cairo") {
-		layout = "all_cairo"
+	} else if strings.Contains(path, ".starknet_with_keccak") {
+		layout = "starknet_with_keccak"
 	}
 
 	cmd := exec.Command(
@@ -305,7 +305,7 @@ func TestFailingRangeCheck(t *testing.T) {
 }
 
 func TestBitwise(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/bitwise_builtin_test.all_cairo.cairo")
+	compiledOutput, err := compileZeroCode("./builtin_tests/bitwise_builtin_test.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
 	_, _, _, err = runVm(compiledOutput)
@@ -326,7 +326,7 @@ func TestPedersen(t *testing.T) {
 }
 
 func TestECDSA(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/ecdsa_test.all_cairo.cairo")
+	compiledOutput, err := compileZeroCode("./builtin_tests/ecdsa_test.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
 	_, _, _, err = runVm(compiledOutput)
@@ -336,7 +336,7 @@ func TestECDSA(t *testing.T) {
 }
 
 func TestEcOp(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/ecop.all_cairo.cairo")
+	compiledOutput, err := compileZeroCode("./builtin_tests/ecop.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
 	_, _, _, err = runVm(compiledOutput)
@@ -347,7 +347,7 @@ func TestEcOp(t *testing.T) {
 }
 
 func TestKeccak(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/keccak_test.all_cairo.cairo")
+	compiledOutput, err := compileZeroCode("./builtin_tests/keccak_test.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
 	_, _, output, err := runVm(compiledOutput)
