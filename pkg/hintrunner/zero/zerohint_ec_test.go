@@ -826,26 +826,6 @@ func TestZeroHintEc(t *testing.T) {
 				check: varValueInScopeEquals("value", bigIntString("17958932119522135058886879379160190656204633450479616", 10)),
 			},
 		},
-		"EcMulInner": {
-			{
-				operanders: []*hintOperander{
-					{Name: "scalar", Kind: apRelative, Value: feltUint64(10)},
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newEcMulInnerHint(ctx.operanders["scalar"])
-				},
-				check: apValueEquals(&utils.FeltZero),
-			},
-			{
-				operanders: []*hintOperander{
-					{Name: "scalar", Kind: apRelative, Value: feltUint64(19)},
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newEcMulInnerHint(ctx.operanders["scalar"])
-				},
-				check: apValueEquals(&utils.FeltOne),
-			},
-		},
 	},
 	)
 }

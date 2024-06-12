@@ -730,39 +730,6 @@ func createPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	return newPowHint(locsRes, prevLocsRes), nil
 }
 
-// SignedPow hint asserts that the value of base is not zero
-//
-// `newSignedPowHint` takes 1 operander as argument
-//   - `base` is the value that will be checked
-//
-// `newSignedPowHint` returns an error if `base` is zero
-func newSignedPowHint(base hinter.ResOperander) hinter.Hinter {
-	return &GenericZeroHinter{
-		Name: "SignedPow",
-		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
-			//> assert ids.base != 0, 'Cannot raise 0 to a negative power.'
-			base, err := hinter.ResolveAsFelt(vm, base)
-			if err != nil {
-				return err
-			}
-
-			if base.IsZero() {
-				return fmt.Errorf("assertion `Cannot raise 0 to a negative power` failed")
-			}
-
-			return nil
-		},
-	}
-}
-
-func createSignedPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	base, err := resolver.GetResOperander("base")
-	if err != nil {
-		return nil, err
-	}
-	return newSignedPowHint(base), nil
-}
-
 // SplitFelt hint splits a finite field element into high and low components
 //
 // `newSplitFeltHint` takes 3 operanders as arguments

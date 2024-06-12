@@ -86,8 +86,6 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSignedDivRemHinter(resolver)
 	case powCode:
 		return createPowHinter(resolver)
-	case signedPowCode:
-		return createSignedPowHinter(resolver)
 	case splitFeltCode:
 		return createSplitFeltHinter(resolver)
 	case sqrtCode:
@@ -98,7 +96,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createIsQuadResidueHinter(resolver)
 	// Uint256 hints
 	case uint256AddCode:
-		return createUint256AddHinter(resolver)
+		return createUint256AddHinter(resolver, false)
+	case uint256AddLowCode:
+		return createUint256AddHinter(resolver, true)
 	case split64Code:
 		return createSplit64Hinter(resolver)
 	case uint256SignedNNCode:
@@ -141,24 +141,14 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createEcDoubleAssignNewXV1Hinter(resolver)
 	case ecDoubleAssignNewYV1:
 		return createEcDoubleAssignNewYV1Hinter()
-	case ecMulInnerCode:
-		return createEcMulInnerHinter(resolver)
 	// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
 	case blake2sAddUint256Code:
 		return createBlake2sAddUint256Hinter(resolver, false)
-	case blake2sFinalizeCode:
-		return createBlake2sFinalizeHinter(resolver)
 	// Keccak hints
-	case keccakWriteArgsCode:
+	case keccakWriteArgs:
 		return createKeccakWriteArgsHinter(resolver)
-	case cairoKeccakFinalizeCode:
-		return createCairoKeccakFinalizeHinter(resolver)
-	case unsafeKeccakCode:
-		return createUnsafeKeccakHinter(resolver)
-	case blockPermutationCode:
-		return createBlockPermutationHinter(resolver)
 	// Usort hints
 	case usortEnterScopeCode:
 		return createUsortEnterScopeHinter()
@@ -171,22 +161,14 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case usortBodyCode:
 		return createUsortBodyHinter(resolver)
 	// Dictionaries hints
-	case dictNewCode:
-		return createDictNewHinter()
 	case defaultDictNewCode:
 		return createDefaultDictNewHinter(resolver)
 	case dictReadCode:
 		return createDictReadHinter(resolver)
-	case dictWriteCode:
-		return createDictWriteHinter(resolver)
-	case dictUpdateCode:
-		return createDictUpdateHinter(resolver)
 	case squashDictInnerAssertLenKeys:
 		return createSquashDictInnerAssertLenKeysHinter()
 	case squashDictInnerContinueLoop:
 		return createSquashDictInnerContinueLoopHinter(resolver)
-	case squashDictInnerFirstIteration:
-		return createSquashDictInnerFirstIterationHinter(resolver)
 	case squashDictInnerSkipLoop:
 		return createSquashDictInnerSkipLoopHinter(resolver)
 	case squashDictInnerLenAssert:
@@ -210,8 +192,6 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createMemEnterScopeHinter(resolver, true)
 	case vmExitScopeCode:
 		return createVMExitScopeHinter()
-	case setAddCode:
-		return createSetAddHinter(resolver)
 	case testAssignCode:
 		return createTestAssignHinter(resolver)
 	default:
