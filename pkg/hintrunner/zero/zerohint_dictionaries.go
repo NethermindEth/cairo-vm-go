@@ -348,12 +348,12 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 				return err
 			}
 
-			rangeCheckPtrFelt, err := hinter.ResolveAsAddress(vm, rangeCheckPtr)
+			rangeCheckPtrAddr, err := hinter.ResolveAsAddress(vm, rangeCheckPtr)
 			if err != nil {
 				return err
 			}
 
-			return vm.Memory.WriteToAddress(rangeCheckPtrFelt, &currentAccessIndexMv)
+			return vm.Memory.WriteToAddress(rangeCheckPtrAddr, &currentAccessIndexMv)
 		},
 	}
 }
