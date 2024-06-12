@@ -38,24 +38,7 @@ const (
 	powCode string = "ids.locs.bit = (ids.prev_locs.exp % PRIME) & 1"
 
 	// div_rem() hints
-	signedDivRemCode string = `
-	from starkware.cairo.common.math_utils import as_int, assert_integer
-	
-	assert_integer(ids.div)
-	assert 0 < ids.div <= PRIME // range_check_builtin.bound, \
-		f'div={hex(ids.div)} is out of the valid range.'
-		
-	assert_integer(ids.bound)
-	assert ids.bound <= range_check_builtin.bound // 2, \
-		f'bound={hex(ids.bound)} is out of the valid range.'
-		
-	int_value = as_int(ids.value, PRIME)
-	q, ids.r = divmod(int_value, ids.div)
-		
-	assert -ids.bound <= q < ids.bound, \
-		f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
-		
-	ids.biased_q = q + ids.bound`
+	signedDivRemCode   string = "from starkware.cairo.common.math_utils import as_int, assert_integer\n\nassert_integer(ids.div)\nassert 0 < ids.div <= PRIME // range_check_builtin.bound, \\\n    f'div={hex(ids.div)} is out of the valid range.'\n\nassert_integer(ids.bound)\nassert ids.bound <= range_check_builtin.bound // 2, \\\n    f'bound={hex(ids.bound)} is out of the valid range.'\n\nint_value = as_int(ids.value, PRIME)\nq, ids.r = divmod(int_value, ids.div)\n\nassert -ids.bound <= q < ids.bound, \\\n    f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'\n\nids.biased_q = q + ids.bound"
 	unsignedDivRemCode string = "from starkware.cairo.common.math_utils import assert_integer\nassert_integer(ids.div)\nassert 0 < ids.div <= PRIME // range_check_builtin.bound, \\\n    f'div={hex(ids.div)} is out of the valid range.'\nids.q, ids.r = divmod(ids.value, ids.div)"
 
 	// split_felt() hint
