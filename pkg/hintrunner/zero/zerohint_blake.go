@@ -6,6 +6,7 @@ import (
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	hintrunnerUtils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -214,4 +215,144 @@ func createBlake2sFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter,
 	}
 
 	return newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt), nil
+}
+
+// Blake2sCompute hint computes the blake2s compress function and fills the value in the right position.
+//
+// `newBlake2sComputeHint` takes 1 operander as an argument
+//   - `output` should point to the middle of an instance, right after initial_state, message, t, f,
+//     which should all have a value at this point, and right before the output portion which will be
+//     written by this function.
+func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Blake2sCompute",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_blake2s.blake2s_utils import compute_blake2s_func
+			//> compute_blake2s_func(segments=segments, output_ptr=ids.output)
+
+			// Expanding the compute_blake2s_func function here:
+			//> def compute_blake2s_func(segments: MemorySegmentManager, output_ptr: RelocatableValue):
+			//>    h = segments.memory.get_range(output_ptr - 26, 8)
+			//>    message = segments.memory.get_range(output_ptr - 18, 16)
+			//>    t = segments.memory[output_ptr - 2]
+			//>    f = segments.memory[output_ptr - 1]
+			//>    new_state = blake2s_compress(
+			//>        message=message,
+			//>        h=h,
+			//>        t0=t,
+			//>        t1=0,
+			//>        f0=f,
+			//>        f1=0,
+			//>    )
+			//>    segments.write_arg(output_ptr, new_state)
+
+			output, err := hinter.ResolveAsAddress(vm, output)
+			if err != nil {
+				return err
+			}
+
+			//> h = segments.memory.get_range(output_ptr - 26, 8)
+			hSegmentInput := new(mem.MemoryAddress)
+			err = hSegmentInput.Sub(output, new(fp.Element).SetUint64(26))
+			if err != nil {
+				return err
+			}
+			h, err := vm.Memory.GetConsecutiveMemoryValues(*hSegmentInput, 8)
+			if err != nil {
+				return err
+			}
+			var hUint32 [8]uint32
+			for i := 0; i < 8; i++ {
+				value, err := hintrunnerUtils.ToSafeUint32(&h[i])
+				if err != nil {
+					return err
+				}
+				hUint32[i] = value
+			}
+
+			//> message = segments.memory.get_range(output_ptr - 18, 16)
+			messageSegmentInput := new(mem.MemoryAddress)
+			err = messageSegmentInput.Sub(output, new(fp.Element).SetUint64(18))
+			if err != nil {
+				return err
+			}
+			message, err := vm.Memory.GetConsecutiveMemoryValues(*messageSegmentInput, 16)
+			if err != nil {
+				return err
+			}
+			var messageUint32 []uint32
+			for i := 0; i < 16; i++ {
+				value, err := hintrunnerUtils.ToSafeUint32(&message[i])
+				if err != nil {
+					return err
+				}
+				messageUint32 = append(messageUint32, value)
+			}
+
+			//> t = segments.memory[output_ptr - 2]
+			tSegmentInput := new(mem.MemoryAddress)
+			err = tSegmentInput.Sub(output, new(fp.Element).SetUint64(2))
+			if err != nil {
+				return err
+			}
+			t, err := vm.Memory.ReadFromAddress(tSegmentInput)
+			if err != nil {
+				return err
+			}
+			tUint32, err := hintrunnerUtils.ToSafeUint32(&t)
+			if err != nil {
+				return err
+			}
+
+			//> f = segments.memory[output_ptr - 1]
+			fSegmentInput := new(mem.MemoryAddress)
+			err = fSegmentInput.Sub(output, new(fp.Element).SetUint64(1))
+			if err != nil {
+				return err
+			}
+			f, err := vm.Memory.ReadFromAddress(fSegmentInput)
+			if err != nil {
+				return err
+			}
+			fUint32, err := hintrunnerUtils.ToSafeUint32(&f)
+			if err != nil {
+				return err
+			}
+
+			//> new_state = blake2s_compress(
+			//>     message=message,
+			//>     h=h,
+			//>     t0=t,
+			//>     t1=0,
+			//>     f0=f,
+			//>     f1=0,
+			//> )
+			newState := utils.Blake2sCompress(messageUint32, hUint32, tUint32, 0, fUint32, 0)
+
+			//> segments.write_arg(output_ptr, new_state)
+			for i := 0; i < len(newState); i++ {
+				state := newState[i]
+				stateMv := mem.MemoryValueFromUint(state)
+				err := vm.Memory.WriteToAddress(output, &stateMv)
+				if err != nil {
+					return err
+				}
+				*output, err = output.AddOffset(1)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	}
+}
+
+func createBlake2sComputeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	output, err := resolver.GetResOperander("output")
+	if err != nil {
+		return nil, err
+	}
+
+	return newBlake2sComputeHint(output), nil
 }
