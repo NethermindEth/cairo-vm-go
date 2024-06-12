@@ -9,6 +9,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/holiman/uint256"
 )
 
 // EcNegate hint negates the y-coordinate of a point on an elliptic curve modulo SECP_P
@@ -693,4 +694,35 @@ func createComputeSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	}
 
 	return newComputeSlopeV1Hint(point0, point1), nil
+}
+
+func newEcMulInnerHint(scalar hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcMulInner",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> memory[ap] = (ids.scalar % PRIME) % 2
+
+			scalarFelt, err := hinter.ResolveAsFelt(vm, scalar)
+			if err != nil {
+				return err
+			}
+			scalarBytes := scalarFelt.Bytes()
+
+			resultUint256 := new(uint256.Int).SetBytes(scalarBytes[:])
+			resultUint256.Mod(resultUint256, uint256.NewInt(2))
+			resultFelt := new(fp.Element).SetBytes(resultUint256.Bytes())
+			resultMv := mem.MemoryValueFromFieldElement(resultFelt)
+			apAddr := vm.Context.AddressAp()
+			return vm.Memory.WriteToAddress(&apAddr, &resultMv)
+		},
+	}
+}
+
+func createEcMulInnerHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	scalar, err := resolver.GetResOperander("scalar")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcMulInnerHint(scalar), nil
 }
