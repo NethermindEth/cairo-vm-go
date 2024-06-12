@@ -20,9 +20,8 @@ import (
 //   - `carryLow` and `carryHigh` represent the potential extra bit that needs to be carried
 //     if the sum of the `low` or `high` parts exceeds 2**128 - 1
 func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander) hinter.Hinter {
-	name := "Uint256Add"
 	return &GenericZeroHinter{
-		Name: name,
+		Name: "Uint256Add",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> sum_low = ids.a.low + ids.b.low
 			//> ids.carry_low = 1 if sum_low >= ids.SHIFT else 0
