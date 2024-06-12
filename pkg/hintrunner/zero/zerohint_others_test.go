@@ -236,6 +236,8 @@ func TestZeroHintOthers(t *testing.T) {
 					)
 				},
 				check: varValueEquals("index", feltInt64(2)),
+			},
+		},
 		"FindElement": {
 			{
 				operanders: []*hintOperander{
