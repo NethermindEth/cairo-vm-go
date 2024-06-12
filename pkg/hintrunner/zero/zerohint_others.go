@@ -274,7 +274,10 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				//>				f'Got: n_elms={n_elms}.'
 				findElementMaxSize, err := ctx.ScopeManager.GetVariableValue("__find_element_max_size")
 				if err == nil {
-					findElementMaxSize := findElementMaxSize.(uint64)
+					findElementMaxSize, ok := findElementMaxSize.(uint64)
+					if !ok {
+						return fmt.Errorf("Invalid value for __find_element_max_size. Got: %v", findElementMaxSize)
+					}
 					if nElms > findElementMaxSize {
 						return fmt.Errorf("find_element() can only be used with n_elms<=%v. Got: n_elms=%v", findElementMaxSize, nElms)
 					}
