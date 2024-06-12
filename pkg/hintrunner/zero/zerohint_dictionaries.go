@@ -290,7 +290,7 @@ func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hi
 // from the `current_access_indices` descending list
 //
 // `newSquashDictInnerFirstIterationHint` takes 1 operander as argument
-//   - `rangeCheckPtr` is the offset in memory where to write `current_access_index`
+//   - `rangeCheckPtr` is the address in memory where to write `current_access_index`
 //
 // `newSquashDictInnerFirstIterationHint`writes `current_access_index` at `rangeCheckPtr`
 // offset in the execution segment of memory
