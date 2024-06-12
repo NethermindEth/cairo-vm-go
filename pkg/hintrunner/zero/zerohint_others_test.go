@@ -250,7 +250,7 @@ func TestZeroHintOthers(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFindElementHint(ctx.operanders["array_ptr"], ctx.operanders["elm_size"], ctx.operanders["key"], ctx.operanders["index"], ctx.operanders["n_elms"])
 				},
-				errCheck: errorTextContains(fmt.Sprintf("Invalid value for elm_size. Got: %v", 0)),
+				errCheck: errorTextContains(fmt.Sprintf("invalid value for elm_size. Got: %v", 0)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -272,7 +272,7 @@ func TestZeroHintOthers(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFindElementHint(ctx.operanders["array_ptr"], ctx.operanders["elm_size"], ctx.operanders["key"], ctx.operanders["index"], ctx.operanders["n_elms"])
 				},
-				errCheck: errorTextContains(fmt.Sprintf("Invalid index found in __find_element_index. index: %v, expected key %v, found key: %v", feltUint64(0), feltUint64(999), feltUint64(100))),
+				errCheck: errorTextContains(fmt.Sprintf("invalid index found in __find_element_index. index: %v, expected key %v, found key: %v", feltUint64(0), feltUint64(999), feltUint64(100))),
 			},
 			{
 				operanders: []*hintOperander{
@@ -363,7 +363,7 @@ func TestZeroHintOthers(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newFindElementHint(ctx.operanders["array_ptr"], ctx.operanders["elm_size"], ctx.operanders["key"], ctx.operanders["index"], ctx.operanders["n_elms"])
 				},
-				errCheck: errorTextContains(fmt.Sprintf("Key %v was not found", feltUint64(999))),
+				errCheck: errorTextContains(fmt.Sprintf("key %v was not found", feltUint64(999))),
 			},
 		},
 		"SetAdd": {
