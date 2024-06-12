@@ -19,21 +19,12 @@ import (
 //   - `a` and `b` are the two `uint256` variables that will be added
 //   - `carryLow` and `carryHigh` represent the potential extra bit that needs to be carried
 //     if the sum of the `low` or `high` parts exceeds 2**128 - 1
-//
-// Uint256AddLow hint only computes the sum of the `low` parts of
-// two `uint256` variables and checks for overflow
-func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander, lowOnly bool) hinter.Hinter {
-	name := "Uint256Add"
-	if lowOnly {
-		name += "Low"
-	}
+func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: name,
+		Name: "Uint256Add",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> sum_low = ids.a.low + ids.b.low
 			//> ids.carry_low = 1 if sum_low >= ids.SHIFT else 0
-			//
-			// Uint256AddLow does not implement this part
 			//> sum_high = ids.a.high + ids.b.high + ids.carry_low
 			//> ids.carry_high = 1 if sum_high >= ids.SHIFT else 0
 
@@ -66,27 +57,25 @@ func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander, lowOnly bo
 				return err
 			}
 
-			if !lowOnly {
-				// Calculate `carry_high` memory value
-				sumHigh := new(fp.Element).Add(aHigh, bHigh)
-				sumHigh.Add(sumHigh, cLow)
-				var cHigh *fp.Element
-				if utils.FeltLe(&utils.FeltMax128, sumHigh) {
-					cHigh = &utils.FeltOne
-				} else {
-					cHigh = &utils.FeltZero
-				}
-				cHighValue := memory.MemoryValueFromFieldElement(cHigh)
+			// Calculate `carry_high` memory value
+			sumHigh := new(fp.Element).Add(aHigh, bHigh)
+			sumHigh.Add(sumHigh, cLow)
+			var cHigh *fp.Element
+			if utils.FeltLe(&utils.FeltMax128, sumHigh) {
+				cHigh = &utils.FeltOne
+			} else {
+				cHigh = &utils.FeltZero
+			}
+			cHighValue := memory.MemoryValueFromFieldElement(cHigh)
 
-				// Save `carry_high` value in address
-				addrCarryHigh, err := carryHigh.GetAddress(vm)
-				if err != nil {
-					return err
-				}
-				err = vm.Memory.WriteToAddress(&addrCarryHigh, &cHighValue)
-				if err != nil {
-					return err
-				}
+			// Save `carry_high` value in address
+			addrCarryHigh, err := carryHigh.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			err = vm.Memory.WriteToAddress(&addrCarryHigh, &cHighValue)
+			if err != nil {
+				return err
 			}
 
 			return nil
@@ -94,7 +83,7 @@ func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander, lowOnly bo
 	}
 }
 
-func createUint256AddHinter(resolver hintReferenceResolver, low bool) (hinter.Hinter, error) {
+func createUint256AddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	a, err := resolver.GetResOperander("a")
 	if err != nil {
 		return nil, err
@@ -110,15 +99,12 @@ func createUint256AddHinter(resolver hintReferenceResolver, low bool) (hinter.Hi
 		return nil, err
 	}
 
-	var carryHigh hinter.ResOperander
-	if !low {
-		carryHigh, err = resolver.GetResOperander("carry_high")
-		if err != nil {
-			return nil, err
-		}
+	carryHigh, err := resolver.GetResOperander("carry_high")
+	if err != nil {
+		return nil, err
 	}
 
-	return newUint256AddHint(a, b, carryLow, carryHigh, low), nil
+	return newUint256AddHint(a, b, carryLow, carryHigh), nil
 }
 
 // Split64 hint splits a field element in the range [0, 2^192) to its low 64-bit and high 128-bit parts
