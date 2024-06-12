@@ -247,7 +247,10 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 					return vm.Memory.WriteToAddress(&indexAddr, &indexValue)
 				}
 
-				index.AddOffset(int16(elmSize))
+				*index, err = index.AddOffset(int16(elmSize))
+				if err != nil {
+					return err
+				}
 			}
 
 			//> else:
