@@ -7,10 +7,6 @@ from starkware.cairo.common.serialize import serialize_word
 
 func main{output_ptr: felt*, range_check_ptr: felt}() {
     let (q_negative, r_negative) = signed_div_rem(-10, 3, 29);
-
-    serialize_word(q_negative);
-    serialize_word(r_negative);
-
     let (q, r) = signed_div_rem(10, 3, 29);
 
     return ();
