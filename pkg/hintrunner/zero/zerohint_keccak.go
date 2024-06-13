@@ -485,3 +485,62 @@ func createBlockPermutationHinter(resolver hintReferenceResolver) (hinter.Hinter
 
 	return newBlockPermutationHint(keccakPtr), nil
 }
+
+func newCompareBytesInWordNondetHint(nBytes hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "CompareBytesInWordNondetHint(",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> memory[ap] = to_felt_or_relocatable(ids.n_bytes < ids.BYTES_IN_WORD)
+			nBytesVal, err := hinter.ResolveAsUint64(vm, nBytes)
+			if err != nil {
+				return err
+			}
+			bytesInWord := uint64(8)
+			apAddr := vm.Context.AddressAp()
+			var resultMv memory.MemoryValue
+			if nBytesVal < bytesInWord {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+			return vm.Memory.WriteToAddress(&apAddr, &resultMv)
+		},
+	}
+}
+
+func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	nBytes, err := resolver.GetResOperander("n_bytes")
+	if err != nil {
+		return nil, err
+	}
+	return newCompareBytesInWordNondetHint(nBytes), nil
+}
+
+func newCompareKeccakFullRateInBytesNondetCode(nBytes hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "CompareKeccakFullRateInBytesNondetCode",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> memory[ap] = to_felt_or_relocatable(ids.n_bytes >= ids.KECCAK_FULL_RATE_IN_BYTES)
+			nBytesVal, err := hinter.ResolveAsUint64(vm, nBytes)
+			if err != nil {
+				return err
+			}
+			apAddr := vm.Context.AddressAp()
+			var resultMv memory.MemoryValue
+			if nBytesVal >= uint64(utils.KECCAK_FULL_RATE_IN_BYTES) {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+			return vm.Memory.WriteToAddress(&apAddr, &resultMv)
+		},
+	}
+}
+
+func createCompareKeccakFullRateInBytesNondetCode(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	nBytes, err := resolver.GetResOperander("n_bytes")
+	if err != nil {
+		return nil, err
+	}
+	return newCompareKeccakFullRateInBytesNondetCode(nBytes), nil
+}
