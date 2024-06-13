@@ -1,5 +1,5 @@
-// The content of this file has been partially borrowed from LambdaClass Cairo VM in Rust
-// See https://github.com/lambdaclass/cairo-vm/
+// The content of this file has been borrowed from LambdaClass Cairo VM in Rust
+// See https://github.com/lambdaclass/cairo-vm/blob/5d1181185a976c77956aaa4247846babd4d0e2df/cairo_programs/abs_value_array.cairo
 
 %builtins range_check
 

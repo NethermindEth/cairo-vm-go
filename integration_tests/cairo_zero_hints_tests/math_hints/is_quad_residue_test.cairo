@@ -1,40 +1,10 @@
 // The content of this file has been partially borrowed from LambdaClass Cairo VM in Rust
-// See https://github.com/lambdaclass/cairo-vm/
+// See https://github.com/lambdaclass/cairo-vm/blob/5d1181185a976c77956aaa4247846babd4d0e2df/cairo_programs/is_quad_residue_test.cairo
 
 %builtins output
 from starkware.cairo.common.serialize import serialize_word
+from starkware.cairo.common.math import is_quad_residue
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.bool import FALSE, TRUE
-
-// Returns TRUE if `x` is a quadratic residue modulo the STARK prime. Returns FALSE otherwise.
-// Returns TRUE on 0.
-@known_ap_change
-func is_quad_residue(x: felt) -> felt {
-    alloc_locals;
-    local y;
-    %{
-        from starkware.crypto.signature.signature import FIELD_PRIME
-        from starkware.python.math_utils import div_mod, is_quad_residue, sqrt
-
-        x = ids.x
-        if is_quad_residue(x, FIELD_PRIME):
-            ids.y = sqrt(x, FIELD_PRIME)
-        else:
-            ids.y = sqrt(div_mod(x, 3, FIELD_PRIME), FIELD_PRIME)
-    %}
-    // Relies on the fact that 3 is not a quadratic residue modulo the prime, so for every field
-    // element x, either:
-    //   * x is a quadratic residue and there exists y such that y^2 = x.
-    //   * x is not a quadratic residue and there exists y such that 3 * y^2 = x.
-    tempvar y_squared = y * y;
-    if (y_squared == x) {
-        ap += 1;
-        return TRUE;
-    } else {
-        assert 3 * y_squared = x;
-        return FALSE;
-    }
-}
 
 func fill_array(array_start: felt*, iter: felt) -> () {
     if (iter == 10) {

@@ -1,27 +1,8 @@
-// The content of this file has been partially borrowed from LambdaClass Cairo VM in Rust
-// See https://github.com/lambdaclass/cairo-vm/
+// The content of this file has been borrowed from LambdaClass Cairo VM in Rust
+// See https://github.com/lambdaclass/cairo-vm/blob/5d1181185a976c77956aaa4247846babd4d0e2df/cairo_programs/compare_different_arrays.cairo
 
+from starkware.cairo.common.math import assert_not_equal
 from starkware.cairo.common.alloc import alloc
-
-// Verifies that a != b. The proof will fail otherwise.
-func assert_not_equal(a, b) {
-    %{
-        from starkware.cairo.lang.vm.relocatable import RelocatableValue
-        both_ints = isinstance(ids.a, int) and isinstance(ids.b, int)
-        both_relocatable = (
-            isinstance(ids.a, RelocatableValue) and isinstance(ids.b, RelocatableValue) and
-            ids.a.segment_index == ids.b.segment_index)
-        assert both_ints or both_relocatable, \
-            f'assert_not_equal failed: non-comparable values: {ids.a}, {ids.b}.'
-        assert (ids.a - ids.b) % PRIME != 0, f'assert_not_equal failed: {ids.a} = {ids.b}.'
-    %}
-    if (a == b) {
-        // If a == b, add an unsatisfiable requirement.
-        a = a + 1;
-    }
-
-    return ();
-}
 
 func compare_different_arrays(array_a: felt*, array_b: felt*, array_length: felt, iterator: felt) {
     if (iterator == array_length) {

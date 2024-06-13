@@ -1,38 +1,10 @@
+// The content of this file has been borrowed from LambdaClass Cairo VM in Rust
+// See https://github.com/lambdaclass/cairo-vm/blob/5d1181185a976c77956aaa4247846babd4d0e2df/cairo_programs/assert_250_bit_element_array.cairo
+
 %builtins range_check
 
+from starkware.cairo.common.math import assert_250_bit
 from starkware.cairo.common.alloc import alloc
-
-// Asserts that 'value' is in the range [0, 2**250).
-@known_ap_change
-func assert_250_bit{range_check_ptr}(value) {
-    const UPPER_BOUND = 2 ** 250;
-    const SHIFT = 2 ** 128;
-    const HIGH_BOUND = UPPER_BOUND / SHIFT;
-
-    let low = [range_check_ptr];
-    let high = [range_check_ptr + 1];
-
-    %{
-        from starkware.cairo.common.math_utils import as_int
-
-        # Correctness check.
-        value = as_int(ids.value, PRIME) % PRIME
-        assert value < ids.UPPER_BOUND, f'{value} is outside of the range [0, 2**250).'
-
-        # Calculation for the assertion.
-        ids.high, ids.low = divmod(ids.value, ids.SHIFT)
-    %}
-
-    assert [range_check_ptr + 2] = HIGH_BOUND - 1 - high;
-
-    // The assert below guarantees that
-    //   value = high * SHIFT + low <= (HIGH_BOUND - 1) * SHIFT + 2**128 - 1 =
-    //   HIGH_BOUND * SHIFT - SHIFT + SHIFT - 1 = 2**250 - 1.
-    assert value = high * SHIFT + low;
-
-    let range_check_ptr = range_check_ptr + 3;
-    return ();
-}
 
 func assert_250_bit_element_array{range_check_ptr: felt}(
     array: felt*, array_length: felt, iterator: felt
