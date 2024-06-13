@@ -548,11 +548,106 @@ func createSquashDictInnerAssertLenKeysHinter() (hinter.Hinter, error) {
 	return newSquashDictInnerAssertLenKeysHint(), nil
 }
 
+// SquashDictInnerCheckAccessIndex hint updates the access index
+// during the dictionary squashing process
+//
+// `newSquashDictInnerCheckAccessIndexHint` takes 1 operander as argument
+//
+//   - `loopTemps` variable is a struct containing `index_delta_minus1` as
+//     a first field
+//
+//     struct LoopTemps {
+//     index_delta_minus1: felt,
+//     index_delta: felt,
+//     ptr_delta: felt,
+//     should_continue: felt,
+//     }
+//
+// `newSquashDictInnerCheckAccessIndexHint` writes to the first field `index_delta_minus1`
+// of the `loop_temps` struct the result of `new_access_index - current_access_index - 1`
+// and assigns `new_access_index` to `current_access_index` in the scope
+func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SquashDictInnerCheckAccessIndex",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> new_access_index = current_access_indices.pop()
+			//> ids.loop_temps.index_delta_minus1 = new_access_index - current_access_index - 1
+			//> current_access_index = new_access_index
+
+			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			if err != nil {
+				return err
+			}
+
+			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
+			if !ok {
+				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
+			}
+
+			newAccessIndex, err := utils.Pop(&currentAccessIndices)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("current_access_indices", currentAccessIndices)
+			if err != nil {
+				return err
+			}
+
+			currentAccessIndex_, err := ctx.ScopeManager.GetVariableValue("current_access_index")
+			if err != nil {
+				return err
+			}
+
+			currentAccessIndex, ok := currentAccessIndex_.(fp.Element)
+			if !ok {
+				return fmt.Errorf("casting currentAccessIndex_ into a felt failed")
+			}
+
+			err = ctx.ScopeManager.AssignVariable("current_access_index", newAccessIndex)
+			if err != nil {
+				return err
+			}
+
+			loopTempsAddr, err := loopTemps.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			var result fp.Element
+			result.Sub(&newAccessIndex, &currentAccessIndex)
+			result.Sub(&result, &utils.FeltOne)
+
+			resultMem := memory.MemoryValueFromFieldElement(&result)
+
+			// We use `WriteToAddress` function as we write to the first field of the `loop_temps` struct
+			return vm.Memory.WriteToAddress(&loopTempsAddr, &resultMem)
+		},
+	}
+}
+
+func createSquashDictInnerCheckAccessIndexHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	loopTemps, err := resolver.GetResOperander("loop_temps")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSquashDictInnerCheckAccessIndexHint(loopTemps), nil
+}
+
 // SquashDictInnerContinueLoop hint determines if the loop should continue
 // based on remaining access indices
 //
 // `newSquashDictInnerContinueLoopHint` takes 1 operander as argument
+//
 //   - `loopTemps` variable is a struct containing a `should_continue` field
+//
+//     struct LoopTemps {
+//     index_delta_minus1: felt,
+//     index_delta: felt,
+//     ptr_delta: felt,
+//     should_continue: felt,
+//     }
 //
 // `newSquashDictInnerContinueLoopHint`writes 0 or 1 in the `should_continue` field
 // depending on whether the `current_access_indices` array contains items or not
