@@ -8,7 +8,14 @@ There are several hints, explain each of them here. How they interact with the V
 
 ## Dictionaries
 
-A dictionary in the Cairo VM is represented by a memory segment. This segment is tracked in a DictionaryManager which exists in a scope managed by the ScopeManager.
+A dictionary in the Cairo VM is represented by a memory segment. This segment is tracked in a `ZeroDictionaryManager` which exists in a scope managed by the `ScopeManager`
+
+`ZeroDictionaryManager` is a mapping of a segment index to a `ZeroDictionary`. There can be different dictionary managers in different scopes.
+
+`ZeroDictionary` has 3 fields: 
+1. `Data`: map storing the (key, value) data pairs of the dictionary.
+2. `DefaultValue`: optional field which holds the default value of a key if it doesn't exist in the `Data` field.
+3. `FreeOffset`: tracks the next free offset in the dictionary segment.
 
 Dictionary operations in cario are covered in two library files:
 1. [dict.cairo](https://github.com/starkware-libs/cairo-lang/blob/master/src/starkware/cairo/common/dict.cairo)
