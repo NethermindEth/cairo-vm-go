@@ -8,49 +8,36 @@
 from starkware.cairo.common.uint256 import Uint256, uint256_mul_div_mod
 
 func main{range_check_ptr}() {
-    alloc_locals;
 
     // Test one
-    local a_one: Uint256;
-    a_one.low = 6;
-    a_one.high = 0;
-    local b_one: Uint256;
-    b_one.low = 6;
-    b_one.high = 0;
-    local div_one: Uint256;
-    div_one.low = 2;
-    div_one.high = 0;
-    local quotient_one_low: Uint256;
-    local quotient_one_high: Uint256;
-    local remainder_one: Uint256;
-    let (quotient_one_low, quotient_one_high, remainder_one) = uint256_mul_div_mod(a_one, b_one, div_one);
-    assert quotient_one_low.low = 18;
-    assert quotient_one_low.high = 0;
-    assert quotient_one_high.low = 0;
-    assert quotient_one_high.high = 0;
-    assert remainder_one.low = 0;
-    assert remainder_one.high = 0;
+    let (quotient_one_low, quotient_one_high, remainder_one) = uint256_mul_div_mod(
+        Uint256(89, 72), Uint256(3, 7), Uint256(107, 114)
+    );
+    assert quotient_one_low = Uint256(143276786071974089879315624181797141668, 4);
+    assert quotient_one_high = Uint256(0, 0);
+    assert remainder_one = Uint256(322372768661941702228460154409043568767, 101);
 
     // Test two
-    local a_two: Uint256;
-    a_two.low = 0;
-    a_two.high = 2;
-    local b_two: Uint256;
-    b_two.low = 0;
-    b_two.high = 3;
-    local div_two: Uint256;
-    div_two.low = 0;
-    div_two.high = 2;
-    local quotient_two_low: Uint256;
-    local quotient_two_high: Uint256;
-    local remainder_two: Uint256;
-    let (quotient_two_low, quotient_two_high, remainder_two) = uint256_mul_div_mod(a_two, b_two, div_two);
-    assert quotient_two_low.low = 0;
-    assert quotient_two_low.high = 3;
-    assert quotient_two_high.low = 0;
-    assert quotient_two_high.high = 0;
-    assert remainder_two.low = 0;
-    assert remainder_two.high = 0;
+    let (quotient_two_low, quotient_two_high, remainder_two) = uint256_mul_div_mod(
+        Uint256(340281070833283907490476236129005105807, 340282366920938463463374607431768211455),
+        Uint256(2447157533618445569039502, 0),
+        Uint256(0, 1),
+    );
+    assert quotient_two_low = Uint256(
+        340282366920938463454053728725133866491, 2447157533618445569039501
+    );
+    assert quotient_two_high = Uint256(0, 0);
+    assert remainder_two = Uint256(326588112914912836985603897252688572242, 0);
+
+    // Test three
+    let (quotient_three_low, quotient_three_high, remainder_three) = uint256_mul_div_mod(
+        Uint256(0, 2 ** 127),
+        Uint256(0, 2 ** 127),
+        Uint256(2 ** 126, 0)
+    );
+    assert quotient_three_low = Uint256(0, 0);
+    assert quotient_three_high = Uint256(0, 1);
+    assert remainder_three = Uint256(0, 0);
 
     return();
 }

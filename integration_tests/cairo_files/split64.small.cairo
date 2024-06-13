@@ -12,7 +12,7 @@ func main{range_check_ptr}() {
     assert b = 0;
 
     // Test two
-    let (c,d) = split_64(2**127);
+    let (c,d) = split_64(2 ** 127);
     assert c = 0;
     assert d = 2 ** 63;
 
