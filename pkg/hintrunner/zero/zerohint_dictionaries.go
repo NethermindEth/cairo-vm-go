@@ -400,8 +400,16 @@ func createSquashDictInnerAssertLenKeysHinter() (hinter.Hinter, error) {
 // during the dictionary squashing process
 //
 // `newSquashDictInnerCheckAccessIndexHint` takes 1 operander as argument
+//
 //   - `loopTemps` variable is a struct containing `index_delta_minus1` as
 //     a first field
+//
+//     struct LoopTemps {
+//     index_delta_minus1: felt,
+//     index_delta: felt,
+//     ptr_delta: felt,
+//     should_continue: felt,
+//     }
 //
 // `newSquashDictInnerCheckAccessIndexHint` writes to the first field `index_delta_minus1`
 // of the `loop_temps` struct the result of `new_access_index - current_access_index - 1`
@@ -421,7 +429,7 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 
 			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
 			if !ok {
-				return fmt.Errorf("casting currentAccessIndices_ into a felt failed")
+				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
 			}
 
 			newAccessIndex, err := utils.Pop(&currentAccessIndices)
@@ -441,7 +449,7 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 
 			currentAccessIndex, ok := currentAccessIndex_.(fp.Element)
 			if !ok {
-				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
+				return fmt.Errorf("casting currentAccessIndex_ into a felt failed")
 			}
 
 			err = ctx.ScopeManager.AssignVariable("current_access_index", newAccessIndex)
@@ -479,7 +487,15 @@ func createSquashDictInnerCheckAccessIndexHinter(resolver hintReferenceResolver)
 // based on remaining access indices
 //
 // `newSquashDictInnerContinueLoopHint` takes 1 operander as argument
+//
 //   - `loopTemps` variable is a struct containing a `should_continue` field
+//
+//     struct LoopTemps {
+//     index_delta_minus1: felt,
+//     index_delta: felt,
+//     ptr_delta: felt,
+//     should_continue: felt,
+//     }
 //
 // `newSquashDictInnerContinueLoopHint`writes 0 or 1 in the `should_continue` field
 // depending on whether the `current_access_indices` array contains items or not
