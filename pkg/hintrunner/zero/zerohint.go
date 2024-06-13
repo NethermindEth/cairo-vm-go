@@ -150,6 +150,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createBlake2sAddUint256Hinter(resolver, false)
 	case blake2sFinalizeCode:
 		return createBlake2sFinalizeHinter(resolver)
+	case blake2sComputeCode:
+		return createBlake2sComputeHinter(resolver)
 	// Keccak hints
 	case keccakWriteArgsCode:
 		return createKeccakWriteArgsHinter(resolver)
@@ -157,6 +159,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createCairoKeccakFinalizeHinter(resolver)
 	case unsafeKeccakCode:
 		return createUnsafeKeccakHinter(resolver)
+	case unsafeKeccakFinalizeCode:
+		return createUnsafeKeccakFinalizeHinter(resolver)
 	case blockPermutationCode:
 		return createBlockPermutationHinter(resolver)
 	// Usort hints
@@ -183,6 +187,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createDictUpdateHinter(resolver)
 	case squashDictInnerAssertLenKeys:
 		return createSquashDictInnerAssertLenKeysHinter()
+	case squashDictInnerCheckAccessIndex:
+		return createSquashDictInnerCheckAccessIndexHinter(resolver)
 	case squashDictInnerContinueLoop:
 		return createSquashDictInnerContinueLoopHinter(resolver)
 	case squashDictInnerFirstIteration:
@@ -214,6 +220,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSetAddHinter(resolver)
 	case testAssignCode:
 		return createTestAssignHinter(resolver)
+	case findElementCode:
+		return createFindElementHinter(resolver)
 	default:
 		return nil, fmt.Errorf("not identified hint")
 	}

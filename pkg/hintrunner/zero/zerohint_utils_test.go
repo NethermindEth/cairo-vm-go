@@ -159,6 +159,15 @@ func consecutiveVarValueEquals(varName string, expectedValues []*fp.Element) fun
 	}
 }
 
+func varValueNotInScope(varName string) func(t *testing.T, ctx *hintTestContext) {
+	return func(t *testing.T, ctx *hintTestContext) {
+		_, err := ctx.runnerContext.ScopeManager.GetVariableValue(varName)
+		if err == nil {
+			t.Fatalf("expected %s to not be in scope", varName)
+		}
+	}
+}
+
 func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
 		value, err := ctx.runnerContext.ScopeManager.GetVariableValue(varName)

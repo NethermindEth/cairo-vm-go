@@ -38,13 +38,39 @@ func (address *MemoryAddress) AddOffset(offset int16) (MemoryAddress, error) {
 		SegmentIndex: address.SegmentIndex,
 		Offset:       newOffset,
 	}, nil
+}
 
+func (address *MemoryAddress) SubAddress(other *MemoryAddress) (uint64, error) {
+	if address.SegmentIndex != other.SegmentIndex {
+		return 0, fmt.Errorf("cannot subtract addresses from different segments: %d != %d",
+			address.SegmentIndex, other.SegmentIndex)
+	}
+	if address.Offset < other.Offset {
+		return 0, fmt.Errorf("cannot subtract addresses: %d < %d",
+			address.Offset, other.Offset)
+	}
+	return address.Offset - other.Offset, nil
 }
 
 // Adds a memory address and a field element
 func (address *MemoryAddress) Add(lhs *MemoryAddress, rhs *f.Element) error {
 	lhsOffset := new(f.Element).SetUint64(lhs.Offset)
 	newOffset := new(f.Element).Add(lhsOffset, rhs)
+	if !newOffset.IsUint64() {
+		return fmt.Errorf("new offset bigger than uint64: %s", rhs.Text(10))
+	}
+	address.SegmentIndex = lhs.SegmentIndex
+	address.Offset = newOffset.Uint64()
+	return nil
+}
+
+// Subtracts a memory address and a field element
+func (address *MemoryAddress) Sub(lhs *MemoryAddress, rhs *f.Element) error {
+	lhsOffset := new(f.Element).SetUint64(lhs.Offset)
+	if rhs.Cmp(lhsOffset) > 0 {
+		return fmt.Errorf("new offset smaller than 0")
+	}
+	newOffset := new(f.Element).Sub(lhsOffset, rhs)
 	if !newOffset.IsUint64() {
 		return fmt.Errorf("new offset bigger than uint64: %s", rhs.Text(10))
 	}
