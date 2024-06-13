@@ -577,5 +577,22 @@ func TestZeroHintDictionaries(t *testing.T) {
 				errCheck: errorTextContains("assertion ids.n_used_accesses == len(access_indices[key]) failed"),
 			},
 		},
+		"DictSquashCopyDict": {
+			{
+				operanders: []*hintOperander{
+					{Name: "dict_accesses_end", Kind: apRelative, Value: addr(5)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("__dict_manager", hinter.ZeroDictionaryManager{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDictSquashCopyDictHint(ctx.operanders["dict_accesses_end"])
+				},
+				errCheck: errorTextContains("no dictionary at address: 1:5"),
+			},
+		},
 	})
 }

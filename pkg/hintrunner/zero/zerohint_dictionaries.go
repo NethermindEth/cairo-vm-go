@@ -220,7 +220,7 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 
 			dictionaryManager, ok := dictionaryManager_.(hinter.ZeroDictionaryManager)
 			if !ok {
-				return fmt.Errorf("cannot cast dictionaryManager to a DicttionaryManager struct")
+				return fmt.Errorf("cannot cast dictionaryManager_ to a DictionaryManager struct")
 			}
 
 			dictAccessesEnd_, err := hinter.ResolveAsAddress(vm, dictAccessesEnd)
@@ -228,7 +228,12 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 				return err
 			}
 
-			dictionaryCopy, err := dictionaryManager.GetDictionary(*dictAccessesEnd_)
+			dictionary, err := dictionaryManager.GetDictionary(*dictAccessesEnd_)
+			if err != nil {
+				return err
+			}
+
+			dictionaryCopy, err := hinter.CopyZeroDictionary(&dictionary)
 			if err != nil {
 				return err
 			}

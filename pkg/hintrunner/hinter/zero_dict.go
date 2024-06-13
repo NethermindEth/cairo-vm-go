@@ -42,12 +42,12 @@ func (d *ZeroDictionary) IncrementFreeOffset(freeOffset uint64) {
 // Used to manage dictionaries creation
 type ZeroDictionaryManager struct {
 	// a map that links a segment index to a dictionary
-	dictionaries map[uint64]ZeroDictionary
+	Dictionaries map[uint64]ZeroDictionary
 }
 
 func NewZeroDictionaryManager() ZeroDictionaryManager {
 	return ZeroDictionaryManager{
-		dictionaries: make(map[uint64]ZeroDictionary),
+		Dictionaries: make(map[uint64]ZeroDictionary),
 	}
 }
 
@@ -57,7 +57,7 @@ func NewZeroDictionaryManager() ZeroDictionaryManager {
 func (dm *ZeroDictionaryManager) NewDictionary(vm *VM.VirtualMachine, data map[f.Element]mem.MemoryValue) mem.MemoryAddress {
 	newDictAddr := vm.Memory.AllocateEmptySegment()
 	freeOffset := uint64(0)
-	dm.dictionaries[newDictAddr.SegmentIndex] = ZeroDictionary{
+	dm.Dictionaries[newDictAddr.SegmentIndex] = ZeroDictionary{
 		Data:         data,
 		DefaultValue: mem.UnknownValue,
 		FreeOffset:   &freeOffset,
@@ -72,7 +72,7 @@ func (dm *ZeroDictionaryManager) NewDictionary(vm *VM.VirtualMachine, data map[f
 func (dm *ZeroDictionaryManager) NewDefaultDictionary(vm *VM.VirtualMachine, defaultValue mem.MemoryValue) mem.MemoryAddress {
 	newDefaultDictAddr := vm.Memory.AllocateEmptySegment()
 	freeOffset := uint64(0)
-	dm.dictionaries[newDefaultDictAddr.SegmentIndex] = ZeroDictionary{
+	dm.Dictionaries[newDefaultDictAddr.SegmentIndex] = ZeroDictionary{
 		Data:         make(map[f.Element]mem.MemoryValue),
 		DefaultValue: defaultValue,
 		FreeOffset:   &freeOffset,
@@ -83,7 +83,7 @@ func (dm *ZeroDictionaryManager) NewDefaultDictionary(vm *VM.VirtualMachine, def
 // Given a memory address, it looks for the right dictionary using the segment index. If no
 // segment is associated with the given segment index, it errors
 func (dm *ZeroDictionaryManager) GetDictionary(dictAddr mem.MemoryAddress) (ZeroDictionary, error) {
-	dict, ok := dm.dictionaries[dictAddr.SegmentIndex]
+	dict, ok := dm.Dictionaries[dictAddr.SegmentIndex]
 	if ok {
 		return dict, nil
 	}
@@ -93,7 +93,7 @@ func (dm *ZeroDictionaryManager) GetDictionary(dictAddr mem.MemoryAddress) (Zero
 // Given a memory address and a key it returns the value held at that position. The address is used
 // to locate the correct dictionary and the key to index on it
 func (dm *ZeroDictionaryManager) At(dictAddr mem.MemoryAddress, key f.Element) (mem.MemoryValue, error) {
-	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
+	if dict, ok := dm.Dictionaries[dictAddr.SegmentIndex]; ok {
 		return dict.At(key)
 	}
 	return mem.UnknownValue, fmt.Errorf("no dictionary at address: %s", dictAddr)
@@ -101,7 +101,7 @@ func (dm *ZeroDictionaryManager) At(dictAddr mem.MemoryAddress, key f.Element) (
 
 // Given a memory address,a key and a value it stores the value at the correct position.
 func (dm *ZeroDictionaryManager) Set(dictAddr mem.MemoryAddress, key f.Element, value mem.MemoryValue) error {
-	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
+	if dict, ok := dm.Dictionaries[dictAddr.SegmentIndex]; ok {
 		dict.Set(key, value)
 		return nil
 	}
@@ -110,9 +110,48 @@ func (dm *ZeroDictionaryManager) Set(dictAddr mem.MemoryAddress, key f.Element, 
 
 // Given a memory address and a incrementBy, it increments the freeOffset field of dictionary by it.
 func (dm *ZeroDictionaryManager) IncrementFreeOffset(dictAddr mem.MemoryAddress, freeOffset uint64) error {
-	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
+	if dict, ok := dm.Dictionaries[dictAddr.SegmentIndex]; ok {
 		dict.IncrementFreeOffset(freeOffset)
 		return nil
 	}
 	return fmt.Errorf("no dictionary at address: %s", dictAddr)
+}
+
+// CopyZeroDictionary creates a copy of a ZeroDictionary
+func CopyZeroDictionary(dict *ZeroDictionary) (*ZeroDictionary, error) {
+	// Copy the Data field
+	dataCopy := make(map[f.Element]mem.MemoryValue)
+	for k, v := range dict.Data {
+		// Copy the key
+		keyCopy := f.Element{}
+		keyCopy.Set(&k)
+
+		// Copy the value
+		feltCopy := f.Element{}
+		feltCopy.Set(&v.Felt)
+
+		valueCopy := mem.MemoryValue{
+			Felt: feltCopy,
+			Kind: v.Kind,
+		}
+
+		dataCopy[keyCopy] = valueCopy
+	}
+
+	// Copy the DefaultValue field
+	defaultValueCopy := dict.DefaultValue
+
+	// Copy the FreeOffset field
+	var freeOffsetCopy *uint64
+	if dict.FreeOffset != nil {
+		offsetValue := *dict.FreeOffset
+		freeOffsetCopy = &offsetValue
+	}
+
+	// Create and return the new instance of ZeroDictionary
+	return &ZeroDictionary{
+		Data:         dataCopy,
+		DefaultValue: defaultValueCopy,
+		FreeOffset:   freeOffsetCopy,
+	}, nil
 }
