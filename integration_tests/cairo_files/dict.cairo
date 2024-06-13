@@ -1,7 +1,7 @@
 // inspired from the dict.cairo integration test in the lambdaclass cairo-vm codebase
 
 from starkware.cairo.common.default_dict import default_dict_new
-from starkware.cairo.common.dict import dict_read, dict_write
+from starkware.cairo.common.dict import dict_read, dict_write, dict_update
 from starkware.cairo.common.dict_access import DictAccess
 
 func test_default_dict() {
@@ -60,11 +60,29 @@ func test_write() {
     return ();
 }
 
-func main() {
-    test_default_dict();
-    test_read();
-    test_write();
+func test_update() {
+    alloc_locals;
+    let (local my_dict: DictAccess*) = default_dict_new(123);
+
+    dict_update{dict_ptr=my_dict}(key=1, prev_value=123, new_value=256);
+    let (local val1: felt) = dict_read{dict_ptr=my_dict}(key=1);
+    assert val1 = 256;
+
+    dict_update{dict_ptr=my_dict}(key=1, prev_value=256, new_value=512);
+    dict_update{dict_ptr=my_dict}(key=2, prev_value=123, new_value=1);
+    let (local val2: felt) = dict_read{dict_ptr=my_dict}(key=1);
+    assert val2 = 512;
+    let (local val3: felt) = dict_read{dict_ptr=my_dict}(key=2);
+    assert val3 = 1;
 
     return ();
 }
 
+func main() {
+    test_default_dict();
+    test_read();
+    test_write();
+    test_update();
+
+    return ();
+}
