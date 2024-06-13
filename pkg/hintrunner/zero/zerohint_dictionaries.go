@@ -51,7 +51,7 @@ func newDictNewHint() hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			initialDict, ok := initialDictValue.(map[f.Element]memory.MemoryValue)
+			initialDict, ok := initialDictValue.(map[fp.Element]memory.MemoryValue)
 			if !ok {
 				return fmt.Errorf("value: %s is not a map[f.Element]mem.MemoryValue", initialDictValue)
 			}
