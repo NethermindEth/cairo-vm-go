@@ -473,9 +473,11 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			if err != nil {
 				return err
 			}
-			firstKeyValue := keys[len(keys)-1]
+			firstKeyValue, err := utils.Pop(&keys)
+			if err != nil {
+				return err
+			}
 			firstKeyMv := memory.MemoryValueFromFieldElement(&firstKeyValue)
-			keys = keys[:len(keys)-1]
 			err = vm.Memory.WriteToAddress(&firstKeyAddr, &firstKeyMv)
 			if err != nil {
 				return err
