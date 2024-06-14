@@ -561,7 +561,7 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOpe
 				if utils.FeltLe(key, &value) {
 					//> 		ids.index = i
 					//> 		break
-					indexValue := memory.MemoryValueFromFieldElement((new(fp.Element).SetUint64(i)))
+					indexValue := memory.MemoryValueFromUint(i)
 					return vm.Memory.WriteToAddress(&indexAddr, &indexValue)
 				}
 
