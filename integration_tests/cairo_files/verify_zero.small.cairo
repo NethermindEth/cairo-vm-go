@@ -5,8 +5,6 @@
 from starkware.cairo.common.cairo_secp.bigint import UnreducedBigInt3
 from starkware.cairo.common.cairo_secp.field import verify_zero
 
-const BASE = 2 ** 86;
-
 func main{range_check_ptr}() {
 
     // Test one

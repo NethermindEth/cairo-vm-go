@@ -99,7 +99,7 @@ func newVerifyECDSASignatureHint(ecdsaPtr, signature_r, signature_s hinter.ResOp
 		Name: "VerifyECDSASignature",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))
-			
+
 			ecdsaPtrAddr, err := hinter.ResolveAsAddress(vm, ecdsaPtr)
 			if err != nil {
 				return err
@@ -158,9 +158,9 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 			//> y_square_int = (x_cube_int + ids.BETA) % SECP_P
 			//> y = pow(y_square_int, (SECP_P + 1) // 4, SECP_P)
 			//> if ids.v % 2 == y % 2:
-			//>	 value = y
+			//>		value = y
 			//> else:
-			//>	 value = (-y) % SECP_P
+			//>		value = (-y) % SECP_P
 			xCubeAddr, err := xCube.GetAddress(vm)
 			if err != nil {
 				return err
