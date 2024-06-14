@@ -1,6 +1,7 @@
 package builtins
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -13,20 +14,32 @@ func TestPoseidon(t *testing.T) {
 	poseidon := &Poseidon{}
 	segment := memory.EmptySegmentWithLength(3)
 	segment.WithBuiltinRunner(poseidon)
+	inputState := []string{
+		"1",
+		"2",
+		"3",
+	}
 
-	x, _ := new(fp.Element).SetString("0x268c44203f1c763bca21beb5aec78b9063cdcdd0fdf6b598bb8e1e8f2b6253f")
-	y, _ := new(fp.Element).SetString("0x2b85c9f686f5d3036db55b2ca58a763a3065bc1bc8efbe0e70f3a7171f6cad3")
-	z, _ := new(fp.Element).SetString("0x61df3789eef0e1ee0dbe010582a00dd099191e6395dfb976e7be3be2fa9d54b")
-	xValue := memory.MemoryValueFromFieldElement(x)
-	yValue := memory.MemoryValueFromFieldElement(y)
-	zValue := memory.MemoryValueFromFieldElement(z)
-	require.NoError(t, segment.Write(0, &xValue))
-	require.NoError(t, segment.Write(1, &yValue))
-	require.NoError(t, segment.Write(2, &zValue))
+	for i, s := range inputState {
+		felt, err := new(fp.Element).SetString(s)
+		if err != nil {
+			panic(err)
+		}
+		value := memory.MemoryValueFromFieldElement(felt)
+		require.NoError(t, segment.Write(uint64(i), &value))
+	}
+	expectedOutputStateValues := []string{
+		"fa8c9b6742b6176139365833d001e30e932a9bf7456d009b1b174f36d558c5",
+		"4f04deca4cb7f9f2bd16b1d25b817ca2d16fba2151e4252a2e2111cde08bfe6",
+		"58dde0a2a785b395ee2dc7b60b79e9472ab826e9bb5383a8018b59772964892",
+	}
 
-	poseidonXY, err := segment.Read(5)
-	require.NoError(t, err)
-	pedersenXYFelt, err := poseidonXY.FieldElement()
-	require.NoError(t, err)
-	assert.Equal(t, "749d4d0ddf41548e039f183b745a08b80fad54e9ac389021148350bdda70a92", pedersenXYFelt.Text(16))
+	for i, v := range expectedOutputStateValues {
+		hash, err := segment.Read(uint64(i + 3))
+		require.NoError(t, err)
+		hashValue, err := hash.FieldElement()
+		require.NoError(t, err)
+		fmt.Println(v, hashValue.Text(16))
+		assert.Equal(t, v, hashValue.Text(16))
+	}
 }
