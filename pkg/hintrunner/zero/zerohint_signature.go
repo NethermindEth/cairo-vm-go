@@ -286,10 +286,9 @@ func newDivModSafeDivHint() hinter.Hinter {
 				return err
 			}
 
-			ctx.ScopeManager.AssignVariable("value", &value)
 			ctx.ScopeManager.AssignVariable("k", &value)
 
-			return nil
+			return ctx.ScopeManager.AssignVariable("value", &value)
 		},
 	}
 }
@@ -368,9 +367,8 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			ctx.ScopeManager.AssignVariable("a", a_Big)
 			ctx.ScopeManager.AssignVariable("b", b_Big)
 			ctx.ScopeManager.AssignVariable("N", n_Big)
-			ctx.ScopeManager.AssignVariable("value", value_Big)
 
-			return nil
+			return ctx.ScopeManager.AssignVariable("value", value_Big)
 		},
 	}
 }
