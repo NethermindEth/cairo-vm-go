@@ -15,7 +15,14 @@ A dictionary in the Cairo VM is represented by a memory segment. This segment is
 `ZeroDictionary` has 3 fields: 
 1. `Data`: map storing the (key, value) data pairs of the dictionary.
 2. `DefaultValue`: optional field which holds the default value of a key if it doesn't exist in the `Data` field.
-3. `FreeOffset`: tracks the next free offset in the dictionary segment.  
+3. `FreeOffset`: tracks the next free offset in the dictionary segment.
+
+A dictionary segment has data written to it in sets of 3 values:
+1. key
+2. prev_value
+3. new_value
+
+eg. If a key: k1 has a value v1 currently and gets updated to value v2, the dictionary segment will have 3 values written to it: k1, v1, v2 in consecutive offsets. In fact any dictionary access operation will add similar data to the segment. eg. in case of a read operation on a key k1 having value v1, the segment will have k1, v1, v1 in consecutive offsets to it.
 
 Dictionary operations in cario are covered in two library files:
 1. [dict.cairo](https://github.com/starkware-libs/cairo-lang/blob/master/src/starkware/cairo/common/dict.cairo)
@@ -75,4 +82,10 @@ Updates a value in a dict. Updating a key in a dictionary involves writing 3 val
 
 **dict_squash**
 
-Returns a new dictionary with one DictAccess instance per key (value before and value after) which summarizes all the changes to that key. 13 hints are involved as illustrated in the table above.
+Returns a new dictionary with one DictAccess instance per key (value before and value after) which summarizes all the changes to that key. 13 hints are involved as illustrated in the table above. 
+
+eg:
+
+Input: {(key1, 0, 2), (key1, 2, 7), (key2, 4, 1), (key1, 7, 5), (key2, 1, 2)}
+
+Output: {(key1, 0, 5), (key2, 4, 2)} 
