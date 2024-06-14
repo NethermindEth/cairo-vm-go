@@ -12,16 +12,16 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-// VerifyZero hint verifies that a packed value is zero modulo the SECP256R1 prime
+// VerifyZero hint verifies that a packed value is zero modulo the SECP prime
 // and stores in memory the quotient of the modular divison of the packed value by
-// SECP256R1 prime
+// SECP prime
 //
 // `newVerifyZeroHint` takes 2 operanders as arguments
 //   - `value` is the value that will be verified
 //   - `q` is the variable that will store the quotient of the modular division
 //
 // `newVerifyZeroHint` writes the quotient of the modular division of the packed value
-// by SECP256R1 prime to the memory address corresponding to `q`
+// by SECP prime to the memory address corresponding to `q`
 func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "VerifyZero",
@@ -30,8 +30,6 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			//> q, r = divmod(pack(ids.val, PRIME), SECP_P)
 			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
 			//> ids.q = q % PRIME
-
-			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 
 			valAddr, err := val.GetAddress(vm)
 			if err != nil {
@@ -101,6 +99,7 @@ func newVerifyECDSASignatureHint(ecdsaPtr, signature_r, signature_s hinter.ResOp
 		Name: "VerifyECDSASignature",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))
+			
 			ecdsaPtrAddr, err := hinter.ResolveAsAddress(vm, ecdsaPtr)
 			if err != nil {
 				return err
