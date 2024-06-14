@@ -123,7 +123,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case divModNPackedDivmodV1Code:
 		return createDivModNPackedDivmodV1Hinter(resolver)
 	case isZeroDivModCode:
-		return createIsZeroDivModHinter(resolver)
+		return createIsZeroDivModHinter()
 	// EC hints
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)

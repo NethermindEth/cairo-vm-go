@@ -248,5 +248,71 @@ func TestVerifyZeroHint(t *testing.T) {
 				}),
 			},
 		},
+		"IsZeroDivMod": {
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("1", 10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroDivModHint()
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": bigIntString("1", 10),
+					"x_inv": bigIntString("1", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("115792089237316195423570985008687907853269984665640564039457584007908834671664", 10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroDivModHint()
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": bigIntString("1", 10),
+					"x_inv": bigIntString("1", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("57662894568246526582652685623", 10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroDivModHint()
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": bigIntString("77726902514058095204421112730928006705863972015508190238152451720695936255632", 10),
+					"x_inv": bigIntString("77726902514058095204421112730928006705863972015508190238152451720695936255632", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("28948022309329048855892746252171976963317496166410141009864396001977208667916", 10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroDivModHint()
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": bigIntString("4", 10),
+					"x_inv": bigIntString("4", 10),
+				}),
+			},
+		},
 	})
 }
