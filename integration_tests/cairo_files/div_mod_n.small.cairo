@@ -4,7 +4,7 @@
 
 %builtins range_check
 
-from starkware.cairo.common.cairo_secp.bigint3 import BigInt3
+from starkware.cairo.common.cairo_secp.bigint import BigInt3
 from starkware.cairo.common.cairo_secp.signature import div_mod_n
 
 func main{range_check_ptr: felt}() {
