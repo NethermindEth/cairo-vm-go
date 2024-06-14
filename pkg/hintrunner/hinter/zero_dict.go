@@ -8,7 +8,7 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-// Used to keep track of all dictionaries data
+// Used to keep track of all Dictionaries data
 type ZeroDictionary struct {
 	// The Data contained on a dictionary
 	Data map[f.Element]mem.MemoryValue
@@ -39,15 +39,15 @@ func (d *ZeroDictionary) IncrementFreeOffset(freeOffset uint64) {
 	*d.FreeOffset += freeOffset
 }
 
-// Used to manage dictionaries creation
+// Used to manage Dictionaries creation
 type ZeroDictionaryManager struct {
 	// a map that links a segment index to a dictionary
-	dictionaries map[uint64]ZeroDictionary
+	Dictionaries map[uint64]ZeroDictionary
 }
 
 func NewZeroDictionaryManager() ZeroDictionaryManager {
 	return ZeroDictionaryManager{
-		dictionaries: make(map[uint64]ZeroDictionary),
+		Dictionaries: make(map[uint64]ZeroDictionary),
 	}
 }
 
@@ -57,7 +57,7 @@ func NewZeroDictionaryManager() ZeroDictionaryManager {
 func (dm *ZeroDictionaryManager) NewDictionary(vm *VM.VirtualMachine, data map[f.Element]mem.MemoryValue) mem.MemoryAddress {
 	newDictAddr := vm.Memory.AllocateEmptySegment()
 	freeOffset := uint64(0)
-	dm.dictionaries[newDictAddr.SegmentIndex] = ZeroDictionary{
+	dm.Dictionaries[newDictAddr.SegmentIndex] = ZeroDictionary{
 		Data:         data,
 		DefaultValue: mem.UnknownValue,
 		FreeOffset:   &freeOffset,
@@ -72,7 +72,7 @@ func (dm *ZeroDictionaryManager) NewDictionary(vm *VM.VirtualMachine, data map[f
 func (dm *ZeroDictionaryManager) NewDefaultDictionary(vm *VM.VirtualMachine, defaultValue mem.MemoryValue) mem.MemoryAddress {
 	newDefaultDictAddr := vm.Memory.AllocateEmptySegment()
 	freeOffset := uint64(0)
-	dm.dictionaries[newDefaultDictAddr.SegmentIndex] = ZeroDictionary{
+	dm.Dictionaries[newDefaultDictAddr.SegmentIndex] = ZeroDictionary{
 		Data:         make(map[f.Element]mem.MemoryValue),
 		DefaultValue: defaultValue,
 		FreeOffset:   &freeOffset,
@@ -83,36 +83,46 @@ func (dm *ZeroDictionaryManager) NewDefaultDictionary(vm *VM.VirtualMachine, def
 // Given a memory address, it looks for the right dictionary using the segment index. If no
 // segment is associated with the given segment index, it errors
 func (dm *ZeroDictionaryManager) GetDictionary(dictAddr mem.MemoryAddress) (ZeroDictionary, error) {
-	dict, ok := dm.dictionaries[dictAddr.SegmentIndex]
-	if ok {
-		return dict, nil
+	dict, ok := dm.Dictionaries[dictAddr.SegmentIndex]
+	if !ok {
+		return ZeroDictionary{}, fmt.Errorf("no dictionary at address: %s", dictAddr)
 	}
-	return ZeroDictionary{}, fmt.Errorf("no dictionary at address: %s", dictAddr)
+	if *dict.FreeOffset != dictAddr.Offset {
+		return ZeroDictionary{}, fmt.Errorf("no dictionary at address: %s", dictAddr)
+	}
+	return dict, nil
 }
 
 // Given a memory address and a key it returns the value held at that position. The address is used
 // to locate the correct dictionary and the key to index on it
 func (dm *ZeroDictionaryManager) At(dictAddr mem.MemoryAddress, key f.Element) (mem.MemoryValue, error) {
-	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
-		return dict.At(key)
+	dict, err := dm.GetDictionary(dictAddr)
+	if err != nil {
+		return mem.UnknownValue, err
 	}
-	return mem.UnknownValue, fmt.Errorf("no dictionary at address: %s", dictAddr)
+	value, err := dict.At(key)
+	if err != nil {
+		return mem.UnknownValue, err
+	}
+	return value, nil
 }
 
 // Given a memory address,a key and a value it stores the value at the correct position.
 func (dm *ZeroDictionaryManager) Set(dictAddr mem.MemoryAddress, key f.Element, value mem.MemoryValue) error {
-	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
-		dict.Set(key, value)
-		return nil
+	dict, err := dm.GetDictionary(dictAddr)
+	if err != nil {
+		return err
 	}
-	return fmt.Errorf("no dictionary at address: %s", dictAddr)
+	dict.Set(key, value)
+	return nil
 }
 
 // Given a memory address and a incrementBy, it increments the freeOffset field of dictionary by it.
 func (dm *ZeroDictionaryManager) IncrementFreeOffset(dictAddr mem.MemoryAddress, freeOffset uint64) error {
-	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
-		dict.IncrementFreeOffset(freeOffset)
-		return nil
+	dict, err := dm.GetDictionary(dictAddr)
+	if err != nil {
+		return err
 	}
-	return fmt.Errorf("no dictionary at address: %s", dictAddr)
+	dict.IncrementFreeOffset(freeOffset)
+	return nil
 }
