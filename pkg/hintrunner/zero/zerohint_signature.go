@@ -269,17 +269,17 @@ func newDivModSafeDivHint() hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			
+
 			b, err := ctx.ScopeManager.GetVariableValueAsBigInt("b")
 			if err != nil {
 				return err
 			}
-			
+
 			N, err := ctx.ScopeManager.GetVariableValueAsBigInt("N")
 			if err != nil {
 				return err
 			}
-			
+
 			divisor := new(big.Int).Sub(new(big.Int).Mul(res, b), a)
 			value, err := secp_utils.SafeDiv(divisor, N)
 			if err != nil {
@@ -369,7 +369,7 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			ctx.ScopeManager.AssignVariable("b", b_Big)
 			ctx.ScopeManager.AssignVariable("N", n_Big)
 			ctx.ScopeManager.AssignVariable("value", value_Big)
-			
+
 			return nil
 		},
 	}
