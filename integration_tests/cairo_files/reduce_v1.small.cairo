@@ -2,9 +2,8 @@
 // SECP_P and in reduced form.
 
 %builtins range_check
-from starkware.cairo.common.cairo_secp.bigint import BigInt3
-from starkware.cairo.common.cairo_secp.bigint import nondet_bigint3
 from starkware.cairo.common.cairo_secp.field import UnreducedBigInt3, reduce
+from starkware.cairo.common.cairo_secp.bigint import BigInt3, nondet_bigint3
 
 func main{range_check_ptr: felt}() {
 
