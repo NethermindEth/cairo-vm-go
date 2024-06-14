@@ -15,7 +15,7 @@ A dictionary in the Cairo VM is represented by a memory segment. This segment is
 `ZeroDictionary` has 3 fields: 
 1. `Data`: map storing the (key, value) data pairs of the dictionary.
 2. `DefaultValue`: optional field which holds the default value of a key if it doesn't exist in the `Data` field.
-3. `FreeOffset`: tracks the next free offset in the dictionary segment.
+3. `FreeOffset`: tracks the next free offset in the dictionary segment.  
 
 Dictionary operations in cario are covered in two library files:
 1. [dict.cairo](https://github.com/starkware-libs/cairo-lang/blob/master/src/starkware/cairo/common/dict.cairo)
@@ -41,6 +41,7 @@ The functions here require certain hints to be implemented in the VM.
 | DictWrite                         | dict_write            |
 | DictUpdate                        | dict_update           |
 | DictSquashCopyDict                | dict_squash           |
+| VMExitScope                       | dict_squash           |
 | SquashDict                        | dict_squash           |
 | SquashDictInnerFirstIteration     | dict_squash           |
 | SquashDictInnerSkipLoop           | dict_squash           |
@@ -74,4 +75,4 @@ Updates a value in a dict. Updating a key in a dictionary involves writing 3 val
 
 **dict_squash**
 
-Returns a new dictionary with one DictAccess instance per key (value before and value after) which summarizes all the changes to that key.
+Returns a new dictionary with one DictAccess instance per key (value before and value after) which summarizes all the changes to that key. 13 hints are involved as illustrated in the table above.
