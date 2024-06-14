@@ -386,3 +386,49 @@ func createDivModNPackedDivmodV1Hinter(resolver hintReferenceResolver) (hinter.H
 
 	return newDivModNPackedDivmodV1Hint(a, b), nil
 }
+
+func newIsZeroPackHint(x hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "IsZeroPack",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> x = pack(ids.x, PRIME) % SECP_P
+
+			xAddr, err := x.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			xValues, err := vm.Memory.ResolveAsBigInt3(xAddr)
+			if err != nil {
+				return err
+			}
+
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			secpBig, _ := secp_utils.GetSecPBig()
+
+			xPackedBig, err := secp_utils.SecPPacked(xValues)
+			if err != nil {
+				return err
+			}
+
+			value := new(big.Int)
+			value.Mod(&xPackedBig, &secpBig)
+
+			if err := ctx.ScopeManager.AssignVariable("x", value); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+}
+
+func createIsZeroPackHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+
+	return newIsZeroPackHint(x), nil
+}
