@@ -286,9 +286,18 @@ func newDivModSafeDivHint() hinter.Hinter {
 				return err
 			}
 
-			ctx.ScopeManager.AssignVariable("k", &value)
+			k_Big := new(big.Int).Set(&value)
+			value_Big := new(big.Int).Set(&value)
 
-			return ctx.ScopeManager.AssignVariable("value", &value)
+			if err := ctx.ScopeManager.AssignVariable("k", k_Big); err != nil {
+				return err
+			}
+
+			if err := ctx.ScopeManager.AssignVariable("value", value_Big); err != nil {
+				return err
+			}
+
+			return nil
 		},
 	}
 }
@@ -363,12 +372,27 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			b_Big := new(big.Int).Set(&bPackedBig)
 			n_Big := new(big.Int).Set(&nBig)
 
-			ctx.ScopeManager.AssignVariable("res", res_Big)
-			ctx.ScopeManager.AssignVariable("a", a_Big)
-			ctx.ScopeManager.AssignVariable("b", b_Big)
-			ctx.ScopeManager.AssignVariable("N", n_Big)
+			if err := ctx.ScopeManager.AssignVariable("res", res_Big); err != nil {
+				return err
+			}
 
-			return ctx.ScopeManager.AssignVariable("value", value_Big)
+			if err := ctx.ScopeManager.AssignVariable("a", a_Big); err != nil {
+				return err
+			}
+
+			if err := ctx.ScopeManager.AssignVariable("b", b_Big); err != nil {
+				return err
+			}
+
+			if err := ctx.ScopeManager.AssignVariable("N", n_Big); err != nil {
+				return err
+			}
+
+			if err := ctx.ScopeManager.AssignVariable("value", value_Big); err != nil {
+				return err
+			}
+
+			return nil
 		},
 	}
 }
