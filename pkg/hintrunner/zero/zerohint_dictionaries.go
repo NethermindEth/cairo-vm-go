@@ -9,7 +9,6 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 //	struct DictAccess {
@@ -52,7 +51,7 @@ func newDictNewHint() hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			initialDict, ok := initialDictValue.(map[f.Element]memory.MemoryValue)
+			initialDict, ok := initialDictValue.(map[fp.Element]memory.MemoryValue)
 			if !ok {
 				return fmt.Errorf("value: %s is not a map[f.Element]mem.MemoryValue", initialDictValue)
 			}
@@ -326,7 +325,7 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hi
 				return err
 			}
 			if !currentValue.Equal(prevValue) {
-				return fmt.Errorf("Wrong previous value in dict. Got %s, expected %s.", prevValue, currentValue)
+				return fmt.Errorf("wrong previous value in dict. Got %s, expected %s", prevValue, currentValue)
 			}
 
 			//> # Update value.
@@ -382,7 +381,7 @@ func newSquashDictInnerAssertLenKeysHint() hinter.Hinter {
 				return err
 			}
 
-			keys := keys_.([]f.Element)
+			keys := keys_.([]fp.Element)
 			if len(keys) != 0 {
 				return fmt.Errorf("assertion `len(keys) == 0` failed")
 			}
@@ -691,7 +690,7 @@ func newSquashDictInnerLenAssertHint() hinter.Hinter {
 				return err
 			}
 
-			currentAccessIndices := currentAccessIndices_.([]f.Element)
+			currentAccessIndices := currentAccessIndices_.([]fp.Element)
 			if len(currentAccessIndices) != 0 {
 				return fmt.Errorf("assertion `len(current_access_indices) == 0` failed")
 			}
@@ -722,7 +721,7 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			keys := keys_.([]f.Element)
+			keys := keys_.([]fp.Element)
 			if len(keys) == 0 {
 				return fmt.Errorf("no keys left but remaining_accesses > 0")
 			}
