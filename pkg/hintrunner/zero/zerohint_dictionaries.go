@@ -368,6 +368,20 @@ func createDictUpdateHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	return newDictUpdateHint(dictPtr, key, newValue, prevValue), nil
 }
 
+// SquashDict hint as part of the larger dict_squash cairo function does data validation
+// and writes to scope a set of variables which indicate the largest used key in the dict,
+// a map from key to the list of indices accessing it
+// and a descending list of used keys except the largest key.
+// It also writes to a cairo variable the largest used key
+// and a boolean indicating if any of the keys used were bigger than the range_check
+//
+// `newSquashDictHint` takes 5 operanders as arguments
+//   - `dictAccesses` variable will be a pointer to the beginning of an array of DictAccess instances. The format of
+//     each entry is a triplet (key, prev_value, new_value)
+//   - `ptrDiff` variable will be the size of the above dictAccesses array
+//   - `nAccesses` variable will have a value indicating the number of times the dict was accessed
+//   - `bigKeys` variable will be written a value of 1 if the keys used are bigger than the range_check and 0 otherwise
+//   - `firstKey` variable will be written the value of the largest used key after the hint is run
 func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SquashDict",
