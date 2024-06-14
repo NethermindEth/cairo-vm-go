@@ -2,7 +2,6 @@
 
 %builtins ecdsa
 
-from starkware.cairo.common.serialize import serialize_word
 from starkware.cairo.common.cairo_builtins import SignatureBuiltin
 from starkware.cairo.common.signature import verify_ecdsa_signature
 

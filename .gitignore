@@ -11,3 +11,4 @@ cpu.out
 .idea/
 vendor/
 help.py
+help.cairo
