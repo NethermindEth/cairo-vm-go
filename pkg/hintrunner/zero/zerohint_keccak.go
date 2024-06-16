@@ -516,9 +516,9 @@ func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinte
 	return newCompareBytesInWordNondetHint(nBytes), nil
 }
 
-func newCompareKeccakFullRateInBytesNondetCode(nBytes hinter.ResOperander) hinter.Hinter {
+func newCompareKeccakFullRateInBytesNondetHint(nBytes hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "CompareKeccakFullRateInBytesNondetCode",
+		Name: "CompareKeccakFullRateInBytesNondet",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> memory[ap] = to_felt_or_relocatable(ids.n_bytes >= ids.KECCAK_FULL_RATE_IN_BYTES)
 			nBytesVal, err := hinter.ResolveAsUint64(vm, nBytes)
@@ -537,10 +537,10 @@ func newCompareKeccakFullRateInBytesNondetCode(nBytes hinter.ResOperander) hinte
 	}
 }
 
-func createCompareKeccakFullRateInBytesNondetCode(resolver hintReferenceResolver) (hinter.Hinter, error) {
+func createCompareKeccakFullRateInBytesNondetHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	nBytes, err := resolver.GetResOperander("n_bytes")
 	if err != nil {
 		return nil, err
 	}
-	return newCompareKeccakFullRateInBytesNondetCode(nBytes), nil
+	return newCompareKeccakFullRateInBytesNondetHint(nBytes), nil
 }

@@ -576,13 +576,13 @@ func TestZeroHintKeccak(t *testing.T) {
 				check: apValueEquals(feltUint64(0)),
 			},
 		},
-		"CompareKeccakFullRateInBytesNondetCode": {
+		"CompareKeccakFullRateInBytesNondet": {
 			{
 				operanders: []*hintOperander{
 					{Name: "n_bytes", Kind: fpRelative, Value: feltUint64(137)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newCompareKeccakFullRateInBytesNondetCode(ctx.operanders["n_bytes"])
+					return newCompareKeccakFullRateInBytesNondetHint(ctx.operanders["n_bytes"])
 				},
 				check: apValueEquals(feltUint64(1)),
 			},
@@ -591,7 +591,7 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "n_bytes", Kind: fpRelative, Value: feltUint64(136)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newCompareKeccakFullRateInBytesNondetCode(ctx.operanders["n_bytes"])
+					return newCompareKeccakFullRateInBytesNondetHint(ctx.operanders["n_bytes"])
 				},
 				check: apValueEquals(feltUint64(1)),
 			},
@@ -600,7 +600,7 @@ func TestZeroHintKeccak(t *testing.T) {
 					{Name: "n_bytes", Kind: fpRelative, Value: feltUint64(100)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newCompareKeccakFullRateInBytesNondetCode(ctx.operanders["n_bytes"])
+					return newCompareKeccakFullRateInBytesNondetHint(ctx.operanders["n_bytes"])
 				},
 				check: apValueEquals(feltUint64(0)),
 			},

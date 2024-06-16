@@ -225,10 +225,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case compareBytesInWordNondetCode:
 		return createCompareBytesInWordNondetHinter(resolver)
 	case compareKeccakFullRateInBytesNondetCode:
-		return createCompareKeccakFullRateInBytesNondetCode(resolver)
+		return createCompareKeccakFullRateInBytesNondetHinter(resolver)
 	default:
-		fmt.Println(rawHint.Code)
-		return nil, fmt.Errorf("not identified hint")
+		return nil, fmt.Errorf("not identified hint, code: %s", rawHint.Code)
 	}
 }
 
