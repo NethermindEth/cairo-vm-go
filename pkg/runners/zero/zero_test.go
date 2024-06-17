@@ -186,7 +186,7 @@ func TestBitwiseBuiltin(t *testing.T) {
         [ap + 1] = 9;
         [ap + 2] = 15;
         ret;
-    `, "all_cairo", sn.Bitwise)
+    `, "starknet_with_keccak", sn.Bitwise)
 
 	err := runner.Run()
 	require.NoError(t, err)
@@ -202,7 +202,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
 	runner := createRunner(`
 	    [ap] = [[fp - 3]];
 	    ret;
-	`, "all_cairo", sn.Bitwise)
+	`, "starknet_with_keccak", sn.Bitwise)
 
 	err := runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
@@ -211,7 +211,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
 	runner = createRunner(`
 	    [ap] = [[fp - 3] + 1];
 	    ret;
-	`, "all_cairo", sn.Bitwise)
+	`, "starknet_with_keccak", sn.Bitwise)
 	err = runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
 
@@ -219,7 +219,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
 	runner = createRunner(`
         [ap] = [[fp - 3] + 2];
         ret;
-    `, "all_cairo", sn.Bitwise)
+    `, "starknet_with_keccak", sn.Bitwise)
 
 	err = runner.Run()
 	require.ErrorContains(t, err, "input value at offset 0 is unknown")
@@ -358,7 +358,7 @@ func TestEcOpBuiltin(t *testing.T) {
         [ap + 5] = 108925483682366235368969256555281508851459278989259552980345066351008608800;
         [ap + 6] = 1592365885972480102953613056006596671718206128324372995731808913669237079419;
         ret;
-    `, "all_cairo", sn.ECOP)
+    `, "starknet_with_keccak", sn.ECOP)
 
 	err := runner.Run()
 	require.NoError(t, err)

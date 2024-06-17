@@ -13,6 +13,7 @@ import (
 const EcOpName = "ec_op"
 const cellsPerEcOp = 7
 const inputCellsPerEcOp = 5
+const instancesPerComponentEcOp = 1
 
 var feltThree f.Element = f.Element(
 	[]uint64{
@@ -23,8 +24,7 @@ var feltThree f.Element = f.Element(
 	})
 
 type EcOp struct {
-	ratioEcOp                 uint64
-	instancesPerComponentEcOp uint64
+	ratio uint64
 }
 
 func (e *EcOp) String() string {
@@ -106,7 +106,7 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 }
 
 func (e *EcOp) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(e.ratioEcOp, inputCellsPerEcOp, segmentUsedSize, e.instancesPerComponentEcOp, vmCurrentStep)
+	allocatedInstances, err := GetAllocatedInstances(e.ratio, inputCellsPerEcOp, segmentUsedSize, instancesPerComponentEcOp, vmCurrentStep)
 	if err != nil {
 		return 0, err
 	}

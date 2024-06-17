@@ -13,10 +13,11 @@ import (
 const ECDSAName = "ecdsa"
 const cellsPerECDSA = 2
 
+const instancesPerComponentECDSA = 1
+
 type ECDSA struct {
-	signatures                 map[uint64]ecdsa.Signature
-	ratioECDSA                 uint64
-	instancesPerComponentECDSA uint64
+	signatures map[uint64]ecdsa.Signature
+	ratio      uint64
 }
 
 // verify_ecdsa_signature(message_hash, public_key, sig_r, sig_s)
@@ -139,7 +140,7 @@ func (e *ECDSA) String() string {
 }
 
 func (e *ECDSA) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(e.ratioECDSA, cellsPerECDSA, segmentUsedSize, e.instancesPerComponentECDSA, vmCurrentStep)
+	allocatedInstances, err := GetAllocatedInstances(e.ratio, cellsPerECDSA, segmentUsedSize, instancesPerComponentECDSA, vmCurrentStep)
 	if err != nil {
 		return 0, err
 	}

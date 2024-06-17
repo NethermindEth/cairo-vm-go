@@ -22,7 +22,7 @@ const cellsPerKeccak = 16
 const inputCellsPerKeccak = 8
 
 type Keccak struct {
-	ratioKeccak                 uint64
+	ratio                       uint64
 	instancesPerComponentKeccak uint64
 }
 
@@ -57,7 +57,7 @@ func (k *Keccak) InferValue(segment *memory.Segment, offset uint64) error {
 		dataU64[i] = binary.LittleEndian.Uint64(data[8*i : 8*i+8])
 	}
 
-	keccakF1600(&dataU64)
+	KeccakF1600(&dataU64)
 
 	var output [200]byte
 	for i := 0; i < 25; i++ {
@@ -83,7 +83,7 @@ func (k *Keccak) String() string {
 }
 
 func (k *Keccak) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(k.ratioKeccak, inputCellsPerKeccak, segmentUsedSize, k.instancesPerComponentKeccak, vmCurrentStep)
+	allocatedInstances, err := GetAllocatedInstances(k.ratio, inputCellsPerKeccak, segmentUsedSize, k.instancesPerComponentKeccak, vmCurrentStep)
 	if err != nil {
 		return 0, err
 	}
