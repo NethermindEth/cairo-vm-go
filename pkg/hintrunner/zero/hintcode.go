@@ -139,6 +139,7 @@ const (
 	squashDictInnerLenAssert          string = "assert len(current_access_indices) == 0"
 	squashDictInnerNextKey            string = "assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'\nids.next_key = key = keys.pop()"
 	squashDictInnerUsedAccessesAssert string = "assert ids.n_used_accesses == len(access_indices[key])"
+	dictSquashUpdatePtrCode           string = "# Update the DictTracker's current_ptr to point to the end of the squashed dict.\n__dict_manager.get_tracker(ids.squashed_dict_start).current_ptr = \\\n    ids.squashed_dict_end.address_"
 
 	// ------ Other hints related code ------
 	allocSegmentCode          string = "memory[ap] = segments.add()"
