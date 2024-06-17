@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -49,13 +50,9 @@ func TestZeroHintDictionaries(t *testing.T) {
 						t.Fatalf("__dict_manager missing")
 					}
 					dictionaryManager := dictionaryManagerValue.(hinter.ZeroDictionaryManager)
-					dictionary, err := dictionaryManager.GetDictionary(dictAddr)
-					if err != nil {
-						t.Fatalf("error fetching dictionary from address at ap")
-					}
 
 					for _, key := range []fp.Element{*feltUint64(10), *feltUint64(20), *feltUint64(30)} {
-						value, err := dictionary.At(key)
+						value, err := dictionaryManager.At(dictAddr, key)
 						if err != nil {
 							t.Fatalf("error fetching value for key: %v", key)
 						}
@@ -189,7 +186,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
 					return newDictUpdateHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["new_value"], ctx.operanders["prev_value"])
 				},
-				errCheck: errorTextContains("Wrong previous value in dict. Got 2, expected 1."),
+				errCheck: errorTextContains("wrong previous value in dict. Got 2, expected 1"),
 			},
 			{
 				operanders: []*hintOperander{
@@ -577,6 +574,237 @@ func TestZeroHintDictionaries(t *testing.T) {
 				errCheck: errorTextContains("assertion ids.n_used_accesses == len(access_indices[key]) failed"),
 			},
 		},
+		"SquashDict": {
+			{
+				operanders: []*hintOperander{
+					{Name: "dict_accesses.1.key", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.1.prev_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.1.new_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.key", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.prev_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.new_value", Kind: apRelative, Value: feltUint64(10)},
+					// checking if it catches ptr_diff % 3 != 0
+					{Name: "ptr_diff", Kind: apRelative, Value: feltUint64(7)},
+					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "big_keys", Kind: uninitialized},
+					{Name: "first_key", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictHint(
+						ctx.operanders["dict_accesses.1.key"],
+						ctx.operanders["ptr_diff"],
+						ctx.operanders["n_accesses"],
+						ctx.operanders["big_keys"],
+						ctx.operanders["first_key"],
+					)
+				},
+				errCheck: errorTextContains("Accesses array size must be divisible by DictAccess.SIZE"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "dict_accesses.1.key", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.1.prev_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.1.new_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.key", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.prev_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "dict_accesses.2.new_value", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "ptr_diff", Kind: apRelative, Value: feltUint64(6)},
+					// checking if it catches n_accesses > 1048576
+					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(1048577)},
+					{Name: "big_keys", Kind: uninitialized},
+					{Name: "first_key", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictHint(
+						ctx.operanders["dict_accesses.1.key"],
+						ctx.operanders["ptr_diff"],
+						ctx.operanders["n_accesses"],
+						ctx.operanders["big_keys"],
+						ctx.operanders["first_key"],
+					)
+				},
+				errCheck: errorTextContains("squash_dict() can only be used with n_accesses<={1048576}. Got: n_accesses={1048577}."),
+			},
+			{
+				operanders: []*hintOperander{
+					// random correct values
+					{Name: "dict_accesses.1.key", Kind: apRelative, Value: feltUint64(8)},
+					{Name: "dict_accesses.1.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.1.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.2.key", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "dict_accesses.2.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.2.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.3.key", Kind: apRelative, Value: feltUint64(21)},
+					{Name: "dict_accesses.3.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.3.new_value", Kind: apRelative, Value: feltUint64(0)},
+					// largest key within range_check_builtin.bound
+					{Name: "dict_accesses.4.key", Kind: apRelative, Value: feltUint64(22)},
+					{Name: "dict_accesses.4.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.4.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.5.key", Kind: apRelative, Value: feltUint64(6)},
+					{Name: "dict_accesses.5.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.5.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "ptr_diff", Kind: apRelative, Value: feltUint64(15)},
+					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "big_keys", Kind: uninitialized},
+					{Name: "first_key", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictHint(
+						ctx.operanders["dict_accesses.1.key"],
+						ctx.operanders["ptr_diff"],
+						ctx.operanders["n_accesses"],
+						ctx.operanders["big_keys"],
+						ctx.operanders["first_key"],
+					)
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueEquals(map[string]*fp.Element{
+						"big_keys":  feltInt64(0),
+						"first_key": feltInt64(1),
+					})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{
+						"access_indices": map[fp.Element][]uint64{
+							*feltUint64(8):  {0},
+							*feltUint64(1):  {1},
+							*feltUint64(21): {2},
+							*feltUint64(22): {3},
+							*feltUint64(6):  {4},
+						},
+						"keys": []fp.Element{*feltUint64(22), *feltUint64(21), *feltUint64(8), *feltUint64(6)},
+						"key":  *feltUint64(1),
+					})(t, ctx)
+				},
+			},
+			{
+				operanders: []*hintOperander{
+					// random correct values
+					{Name: "dict_accesses.1.key", Kind: apRelative, Value: feltUint64(8)},
+					{Name: "dict_accesses.1.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.1.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.2.key", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "dict_accesses.2.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.2.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.3.key", Kind: apRelative, Value: feltUint64(21)},
+					{Name: "dict_accesses.3.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.3.new_value", Kind: apRelative, Value: feltUint64(0)},
+					// largest key bigger than range_check_builtin.bound
+					{Name: "dict_accesses.4.key", Kind: apRelative, Value: &utils.FeltMax128},
+					{Name: "dict_accesses.4.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.4.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.5.key", Kind: apRelative, Value: feltUint64(6)},
+					{Name: "dict_accesses.5.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.5.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "ptr_diff", Kind: apRelative, Value: feltUint64(15)},
+					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "big_keys", Kind: uninitialized},
+					{Name: "first_key", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictHint(
+						ctx.operanders["dict_accesses.1.key"],
+						ctx.operanders["ptr_diff"],
+						ctx.operanders["n_accesses"],
+						ctx.operanders["big_keys"],
+						ctx.operanders["first_key"],
+					)
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueEquals(map[string]*fp.Element{
+						"big_keys":  feltInt64(1),
+						"first_key": feltInt64(1),
+					})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{
+						"access_indices": map[fp.Element][]uint64{
+							*feltUint64(8):   {0},
+							*feltUint64(1):   {1},
+							*feltUint64(21):  {2},
+							utils.FeltMax128: {3},
+							*feltUint64(6):   {4},
+						},
+						"keys": []fp.Element{utils.FeltMax128, *feltUint64(21), *feltUint64(8), *feltUint64(6)},
+						"key":  *feltUint64(1),
+					})(t, ctx)
+				},
+			},
+			{
+				operanders: []*hintOperander{
+					// random correct values where keys are repeated
+					{Name: "dict_accesses.1.key", Kind: apRelative, Value: feltUint64(80)},
+					{Name: "dict_accesses.1.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.1.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.2.key", Kind: apRelative, Value: feltUint64(29)},
+					{Name: "dict_accesses.2.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.2.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.3.key", Kind: apRelative, Value: feltUint64(210)},
+					{Name: "dict_accesses.3.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.3.new_value", Kind: apRelative, Value: feltUint64(0)},
+					// largest key bigger than range_check_builtin.bound
+					{Name: "dict_accesses.4.key", Kind: apRelative, Value: &utils.FeltUpperBound},
+					{Name: "dict_accesses.4.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.4.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.5.key", Kind: apRelative, Value: feltUint64(29)},
+					{Name: "dict_accesses.5.prev_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "dict_accesses.5.new_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "ptr_diff", Kind: apRelative, Value: feltUint64(15)},
+					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "big_keys", Kind: uninitialized},
+					{Name: "first_key", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSquashDictHint(
+						ctx.operanders["dict_accesses.1.key"],
+						ctx.operanders["ptr_diff"],
+						ctx.operanders["n_accesses"],
+						ctx.operanders["big_keys"],
+						ctx.operanders["first_key"],
+					)
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					allVarValueEquals(map[string]*fp.Element{
+						"big_keys":  feltInt64(1),
+						"first_key": feltInt64(29),
+					})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{
+						"access_indices": map[fp.Element][]uint64{
+							*feltUint64(80):      {0},
+							*feltUint64(29):      {1, 4},
+							*feltUint64(210):     {2},
+							utils.FeltUpperBound: {3},
+						},
+						"keys": []fp.Element{utils.FeltUpperBound, *feltUint64(210), *feltUint64(80)},
+						"key":  *feltUint64(29),
+					})(t, ctx)
+				},
+			},
+		},
+		"DictSquashUpdatePtr": {
+			{
+				operanders: []*hintOperander{
+					{Name: "squashed_dict_start", Kind: apRelative, Value: addrWithSegment(2, 0)},
+					{Name: "squashed_dict_end", Kind: apRelative, Value: addrWithSegment(2, 8)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					dictionaryManager := hinter.NewZeroDictionaryManager()
+					err := ctx.runnerContext.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
+					if err != nil {
+						t.Fatal(err)
+					}
+					defaultValueMv := memory.MemoryValueFromInt(12345)
+					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
+
+					return newDictSquashUpdatePtrHint(
+						ctx.operanders["squashed_dict_start"],
+						ctx.operanders["squashed_dict_end"],
+					)
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					dictPtr := addrWithSegment(2, 0)
+					expectedData := map[fp.Element]memory.MemoryValue{}
+					expectedDefaultValue := memory.MemoryValueFromInt(12345)
+					expectedFreeOffset := uint64(8)
+					zeroDictInScopeEquals(*dictPtr, expectedData, expectedDefaultValue, expectedFreeOffset)(t, ctx)
+				},
 		"DictSquashCopyDict": {
 			{
 				operanders: []*hintOperander{
@@ -592,7 +820,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newDictSquashCopyDictHint(ctx.operanders["dict_accesses_end"])
 				},
 				errCheck: errorTextContains("no dictionary at address: 1:5"),
-			},
+      },
 		},
 	})
 }
