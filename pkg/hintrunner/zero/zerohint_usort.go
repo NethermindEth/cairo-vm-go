@@ -12,33 +12,30 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func createUsortBodyHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	input, err := resolver.GetResOperander("input")
-	if err != nil {
-		return nil, err
-	}
+// UsortEnterScope hint enters a new scope with `__usort_max_size` value
+//
+// `newUsortEnterScopeHint` doesn't take any operander as argument
+//
+// `newUsortEnterScopeHint` gets `__usort_max_size` value from the current
+// scope and enters a new scope with this same value
+func newUsortEnterScopeHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "UsortEnterScope",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> vm_enter_scope(dict(__usort_max_size = globals().get('__usort_max_size')))
+			usortMaxSize := uint64(1 << 20)
 
-	input_len, err := resolver.GetResOperander("input_len")
-	if err != nil {
-		return nil, err
-	}
+			ctx.ScopeManager.EnterScope(map[string]any{
+				"__usort_max_size": usortMaxSize,
+			})
 
-	output, err := resolver.GetResOperander("output")
-	if err != nil {
-		return nil, err
+			return nil
+		},
 	}
+}
 
-	output_len, err := resolver.GetResOperander("output_len")
-	if err != nil {
-		return nil, err
-	}
-
-	multiplicities, err := resolver.GetResOperander("multiplicities")
-	if err != nil {
-		return nil, err
-	}
-
-	return newUsortBodyHint(input, input_len, output, output_len, multiplicities), nil
+func createUsortEnterScopeHinter() (hinter.Hinter, error) {
+	return newUsortEnterScopeHint(), nil
 }
 
 // UsortBody hint sorts the input array of field elements. The sorting results in generation of output array without duplicates and multiplicites array, where each element represents the number of times the corresponding element in the output array appears in the input array. The output and multiplicities arrays are written to the new, separate segments in memory.
@@ -108,6 +105,8 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 					return err
 				}
 			}
+
+			ctx.ScopeManager.AssignVariable("positions_dict", positionsDict)
 
 			outputArray := make([]fp.Element, len(positionsDict))
 			iterator := 0
@@ -189,70 +188,33 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 	}
 }
 
-// UsortEnterScope hint enters a new scope with `__usort_max_size` value
-//
-// `newUsortEnterScopeHint` doesn't take any operander as argument
-//
-// `newUsortEnterScopeHint` gets `__usort_max_size` value from the current
-// scope and enters a new scope with this same value
-func newUsortEnterScopeHint() hinter.Hinter {
-	return &GenericZeroHinter{
-		Name: "UsortEnterScope",
-		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> vm_enter_scope(dict(__usort_max_size = globals().get('__usort_max_size')))
-			usortMaxSize, err := ctx.ScopeManager.GetVariableValue("__usort_max_size")
-			if err != nil {
-				return err
-			}
-
-			ctx.ScopeManager.EnterScope(map[string]any{
-				"__usort_max_size": usortMaxSize,
-			})
-
-			return nil
-		},
+func createUsortBodyHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	input, err := resolver.GetResOperander("input")
+	if err != nil {
+		return nil, err
 	}
-}
 
-func createUsortEnterScopeHinter() (hinter.Hinter, error) {
-	return newUsortEnterScopeHint(), nil
-}
-
-// UsortVerifyMultiplicityAssert hint checks that the `positions` variable in scope
-// doesn't contain any value
-//
-// `newUsortVerifyMultiplicityAssertHint` doesn't take any operander as argument
-//
-// This hint is used when sorting an array of field elements while removing duplicates
-// in `usort` Cairo function
-func newUsortVerifyMultiplicityAssertHint() hinter.Hinter {
-	return &GenericZeroHinter{
-		Name: "UsortVerifyMultiplicityAssert",
-		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> assert len(positions) == 0
-
-			positionsInterface, err := ctx.ScopeManager.GetVariableValue("positions")
-
-			if err != nil {
-				return err
-			}
-
-			positions, ok := positionsInterface.([]uint64)
-			if !ok {
-				return fmt.Errorf("casting positions into an array failed")
-			}
-
-			if len(positions) != 0 {
-				return fmt.Errorf("assertion `len(positions) == 0` failed")
-			}
-
-			return nil
-		},
+	input_len, err := resolver.GetResOperander("input_len")
+	if err != nil {
+		return nil, err
 	}
-}
 
-func createUsortVerifyMultiplicityAssertHinter() (hinter.Hinter, error) {
-	return newUsortEnterScopeHint(), nil
+	output, err := resolver.GetResOperander("output")
+	if err != nil {
+		return nil, err
+	}
+
+	output_len, err := resolver.GetResOperander("output_len")
+	if err != nil {
+		return nil, err
+	}
+
+	multiplicities, err := resolver.GetResOperander("multiplicities")
+	if err != nil {
+		return nil, err
+	}
+
+	return newUsortBodyHint(input, input_len, output, output_len, multiplicities), nil
 }
 
 // UsortVerify hint prepares for verifying the presence of duplicates of
@@ -273,28 +235,33 @@ func newUsortVerifyHint(value hinter.ResOperander) hinter.Hinter {
 			//> positions = positions_dict[ids.value][::-1]
 
 			positionsDictInterface, err := ctx.ScopeManager.GetVariableValue("positions_dict")
-
 			if err != nil {
 				return err
 			}
 
-			positionsDict, ok := positionsDictInterface.(map[fp.Element][]uint64)
+			// fmt.Println(positionsDictInterface)
 
+			positionsDict, ok := positionsDictInterface.(map[fp.Element][]uint64)
 			if !ok {
 				return fmt.Errorf("casting positions_dict into an dictionary failed")
 			}
 
-			value, err := hinter.ResolveAsFelt(vm, value)
+			// fmt.Println(positionsDict)
 
+			value, err := hinter.ResolveAsFelt(vm, value)
 			if err != nil {
 				return err
 			}
 
-			positions := positionsDict[*value]
+			positionsToCopy := positionsDict[*value]
+
+			positions := make([]uint64, len(positionsToCopy))
+			copy(positions, positionsToCopy)
+
 			utils.Reverse(positions)
 
 			return ctx.ScopeManager.AssignVariables(map[string]any{
-				"last_pos":  0,
+				"last_pos":  uint64(0),
 				"positions": positions,
 			})
 		},
@@ -309,6 +276,42 @@ func createUsortVerifyHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	}
 
 	return newUsortVerifyHint(value), nil
+}
+
+// UsortVerifyMultiplicityAssert hint checks that the `positions` variable in scope
+// doesn't contain any value
+//
+// `newUsortVerifyMultiplicityAssertHint` doesn't take any operander as argument
+//
+// This hint is used when sorting an array of field elements while removing duplicates
+// in `usort` Cairo function
+func newUsortVerifyMultiplicityAssertHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "UsortVerifyMultiplicityAssert",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> assert len(positions) == 0
+
+			positionsInterface, err := ctx.ScopeManager.GetVariableValue("positions")
+			if err != nil {
+				return err
+			}
+
+			positions, ok := positionsInterface.([]uint64)
+			if !ok {
+				return fmt.Errorf("casting positions into a []uint64 failed")
+			}
+
+			if len(positions) != 0 {
+				return fmt.Errorf("assertion `len(positions) == 0` failed")
+			}
+
+			return nil
+		},
+	}
+}
+
+func createUsortVerifyMultiplicityAssertHinter() (hinter.Hinter, error) {
+	return newUsortEnterScopeHint(), nil
 }
 
 // UsortVerifyMultiplicityBody hint extracts a specific value
@@ -333,9 +336,9 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
-			positions, ok := positionsInterface.([]fp.Element)
+			positions, ok := positionsInterface.([]uint64)
 			if !ok {
-				return fmt.Errorf("cannot cast positionsInterface to []fp.Element")
+				return fmt.Errorf("cannot cast positionsInterface to []uint64")
 			}
 
 			currentPos, err := utils.Pop(&positions)
@@ -348,20 +351,19 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
-			lastPos, err := ctx.ScopeManager.GetVariableValue("last_pos")
+			lastPosition, err := ctx.ScopeManager.GetVariableValue("last_pos")
 			if err != nil {
 				return err
 			}
 
-			lastPosFelt, ok := lastPos.(fp.Element)
+			lastPos, ok := lastPosition.(uint64)
 			if !ok {
-				return fmt.Errorf("cannot cast last_pos to felt")
+				return fmt.Errorf("cannot cast last_pos to uint64")
 			}
 
 			// Calculate `next_item_index` memory value
-			var newNextItemIndexValue fp.Element
-			newNextItemIndexValue.Sub(&currentPos, &lastPosFelt)
-			newNextItemIndexMemoryValue := memory.MemoryValueFromFieldElement(&newNextItemIndexValue)
+			newNextItemIndexValue := currentPos - lastPos
+			newNextItemIndexMemoryValue := memory.MemoryValueFromUint(newNextItemIndexValue)
 
 			// Save `next_item_index` value in address
 			addrNextItemIndex, err := nextItemIndex.GetAddress(vm)
@@ -374,7 +376,7 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
-			return ctx.ScopeManager.AssignVariable("last_pos", *currentPos.Add(&currentPos, &utils.FeltOne))
+			return ctx.ScopeManager.AssignVariable("last_pos", currentPos-1)
 		},
 	}
 }
