@@ -106,7 +106,10 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 				}
 			}
 
-			ctx.ScopeManager.AssignVariable("positions_dict", positionsDict)
+			err = ctx.ScopeManager.AssignVariable("positions_dict", positionsDict)
+			if err != nil {
+				return err
+			}
 
 			outputArray := make([]fp.Element, len(positionsDict))
 			iterator := 0
@@ -239,14 +242,10 @@ func newUsortVerifyHint(value hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			// fmt.Println(positionsDictInterface)
-
 			positionsDict, ok := positionsDictInterface.(map[fp.Element][]uint64)
 			if !ok {
 				return fmt.Errorf("casting positions_dict into an dictionary failed")
 			}
-
-			// fmt.Println(positionsDict)
 
 			value, err := hinter.ResolveAsFelt(vm, value)
 			if err != nil {
@@ -311,7 +310,7 @@ func newUsortVerifyMultiplicityAssertHint() hinter.Hinter {
 }
 
 func createUsortVerifyMultiplicityAssertHinter() (hinter.Hinter, error) {
-	return newUsortEnterScopeHint(), nil
+	return newUsortVerifyMultiplicityAssertHint(), nil
 }
 
 // UsortVerifyMultiplicityBody hint extracts a specific value
@@ -371,12 +370,12 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
-			err = vm.Memory.WriteToAddress(&addrNextItemIndex, &newNextItemIndexMemoryValue)
+			err = ctx.ScopeManager.AssignVariable("last_pos", currentPos+1)
 			if err != nil {
 				return err
 			}
 
-			return ctx.ScopeManager.AssignVariable("last_pos", currentPos-1)
+			return vm.Memory.WriteToAddress(&addrNextItemIndex, &newNextItemIndexMemoryValue)
 		},
 	}
 }

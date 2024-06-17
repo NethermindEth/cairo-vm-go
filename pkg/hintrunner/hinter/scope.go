@@ -81,8 +81,6 @@ func (sm *ScopeManager) GetVariableValue(name string) (any, error) {
 		return nil, err
 	}
 
-	fmt.Println(scope)
-
 	if value, ok := (*scope)[name]; ok {
 		return value, nil
 	}
