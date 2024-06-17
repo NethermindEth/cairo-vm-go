@@ -49,13 +49,9 @@ func TestZeroHintDictionaries(t *testing.T) {
 						t.Fatalf("__dict_manager missing")
 					}
 					dictionaryManager := dictionaryManagerValue.(hinter.ZeroDictionaryManager)
-					dictionary, err := dictionaryManager.GetDictionary(dictAddr)
-					if err != nil {
-						t.Fatalf("error fetching dictionary from address at ap")
-					}
 
 					for _, key := range []fp.Element{*feltUint64(10), *feltUint64(20), *feltUint64(30)} {
-						value, err := dictionary.At(key)
+						value, err := dictionaryManager.At(dictAddr, key)
 						if err != nil {
 							t.Fatalf("error fetching value for key: %v", key)
 						}
