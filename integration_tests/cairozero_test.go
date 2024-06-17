@@ -326,7 +326,7 @@ func TestPedersen(t *testing.T) {
 }
 
 func TestPoseidon(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/poseidon_test.cairo")
+	compiledOutput, err := compileZeroCode("./builtin_tests/poseidon_test.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
 	_, _, output, err := runVm(compiledOutput)
