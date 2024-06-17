@@ -185,6 +185,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createDictWriteHinter(resolver)
 	case dictUpdateCode:
 		return createDictUpdateHinter(resolver)
+	case squashDictCode:
+		return createSquashDictHinter(resolver)
 	case squashDictInnerAssertLenKeys:
 		return createSquashDictInnerAssertLenKeysHinter()
 	case squashDictInnerCheckAccessIndex:
