@@ -210,33 +210,6 @@ func TestZeroHintUsort(t *testing.T) {
 				},
 			},
 		},
-		"UsortVerifyMultiplicityAssert": {
-			{
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariable("positions", []uint64{1})
-					if err != nil {
-						t.Fatal(err)
-					}
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortVerifyMultiplicityAssertHint()
-				},
-				errCheck: errorTextContains("assertion `len(positions) == 0` failed"),
-			},
-			{
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariable("positions", []uint64{})
-					if err != nil {
-						t.Fatal(err)
-					}
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newUsortVerifyMultiplicityAssertHint()
-				},
-				errCheck: errorIsNil,
-			},
-		},
-
 		"UsortVerifyMultiplicityBody": {
 			// Tests when no variables (positions, last_pos) are in the scope.
 			{
@@ -310,6 +283,32 @@ func TestZeroHintUsort(t *testing.T) {
 
 					varValueEquals("next_item_index", feltInt64(8))(t, ctx)
 				},
+			},
+		},
+		"UsortVerifyMultiplicityAssert": {
+			{
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("positions", []uint64{1})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUsortVerifyMultiplicityAssertHint()
+				},
+				errCheck: errorTextContains("assertion `len(positions) == 0` failed"),
+			},
+			{
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("positions", []uint64{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUsortVerifyMultiplicityAssertHint()
+				},
+				errCheck: errorIsNil,
 			},
 		},
 	})

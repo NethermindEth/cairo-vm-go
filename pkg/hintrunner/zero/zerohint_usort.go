@@ -277,42 +277,6 @@ func createUsortVerifyHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	return newUsortVerifyHint(value), nil
 }
 
-// UsortVerifyMultiplicityAssert hint checks that the `positions` variable in scope
-// doesn't contain any value
-//
-// `newUsortVerifyMultiplicityAssertHint` doesn't take any operander as argument
-//
-// This hint is used when sorting an array of field elements while removing duplicates
-// in `usort` Cairo function
-func newUsortVerifyMultiplicityAssertHint() hinter.Hinter {
-	return &GenericZeroHinter{
-		Name: "UsortVerifyMultiplicityAssert",
-		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> assert len(positions) == 0
-
-			positionsInterface, err := ctx.ScopeManager.GetVariableValue("positions")
-			if err != nil {
-				return err
-			}
-
-			positions, ok := positionsInterface.([]uint64)
-			if !ok {
-				return fmt.Errorf("casting positions into a []uint64 failed")
-			}
-
-			if len(positions) != 0 {
-				return fmt.Errorf("assertion `len(positions) == 0` failed")
-			}
-
-			return nil
-		},
-	}
-}
-
-func createUsortVerifyMultiplicityAssertHinter() (hinter.Hinter, error) {
-	return newUsortVerifyMultiplicityAssertHint(), nil
-}
-
 // UsortVerifyMultiplicityBody hint extracts a specific value
 // of the sorted output with `pop`, updating indices for the verification
 // of the next value
@@ -387,4 +351,40 @@ func createUsortVerifyMultiplicityBodyHinter(resolver hintReferenceResolver) (hi
 	}
 
 	return newUsortVerifyMultiplicityBodyHint(nextItemIndex), nil
+}
+
+// UsortVerifyMultiplicityAssert hint checks that the `positions` variable in scope
+// doesn't contain any value
+//
+// `newUsortVerifyMultiplicityAssertHint` doesn't take any operander as argument
+//
+// This hint is used when sorting an array of field elements while removing duplicates
+// in `usort` Cairo function
+func newUsortVerifyMultiplicityAssertHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "UsortVerifyMultiplicityAssert",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> assert len(positions) == 0
+
+			positionsInterface, err := ctx.ScopeManager.GetVariableValue("positions")
+			if err != nil {
+				return err
+			}
+
+			positions, ok := positionsInterface.([]uint64)
+			if !ok {
+				return fmt.Errorf("casting positions into a []uint64 failed")
+			}
+
+			if len(positions) != 0 {
+				return fmt.Errorf("assertion `len(positions) == 0` failed")
+			}
+
+			return nil
+		},
+	}
+}
+
+func createUsortVerifyMultiplicityAssertHinter() (hinter.Hinter, error) {
+	return newUsortVerifyMultiplicityAssertHint(), nil
 }
