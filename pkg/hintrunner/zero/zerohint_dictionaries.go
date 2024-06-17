@@ -51,7 +51,7 @@ func newDictNewHint() hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			initialDict, ok := initialDictValue.(map[f.Element]memory.MemoryValue)
+			initialDict, ok := initialDictValue.(map[fp.Element]memory.MemoryValue)
 			if !ok {
 				return fmt.Errorf("value: %s is not a map[f.Element]mem.MemoryValue", initialDictValue)
 			}
@@ -325,7 +325,7 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hi
 				return err
 			}
 			if !currentValue.Equal(prevValue) {
-				return fmt.Errorf("Wrong previous value in dict. Got %s, expected %s.", prevValue, currentValue)
+				return fmt.Errorf("wrong previous value in dict. Got %s, expected %s", prevValue, currentValue)
 			}
 
 			//> # Update value.
@@ -815,4 +815,48 @@ func createSquashDictInnerUsedAccessesAssertHinter(resolver hintReferenceResolve
 	}
 
 	return newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses), nil
+}
+
+// DictSquashUpdatePtr updates the DictTracker's current_ptr to point to the end of the squashed dict
+//
+// `newDictSquashUpdatePtrHint` takes two operanders as arguments
+//   - `squashed_dict_start` pointer to the dictionary whose current_ptr should be updated
+//   - `squashed_dict_end` new current_ptr of the dictionary
+func newDictSquashUpdatePtrHint(squashedDictStart, squashedDictEnd hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DictSquashUpdatePtr",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> __dict_manager.get_tracker(ids.squashed_dict_start).current_ptr = ids.squashed_dict_end.address_
+
+			squashedDictStart, err := hinter.ResolveAsAddress(vm, squashedDictStart)
+			if err != nil {
+				return err
+			}
+			squashedDictEnd, err := hinter.ResolveAsAddress(vm, squashedDictEnd)
+			if err != nil {
+				return err
+			}
+
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
+			if !ok {
+				return fmt.Errorf("__dict_manager not in scope")
+			}
+
+			// TODO: figure out if its ever possible for squashedDictEnd segment to be different from the dictionary segment
+			return dictionaryManager.SetFreeOffset(*squashedDictStart, squashedDictEnd.Offset)
+		},
+	}
+}
+
+func createDictSquashUpdatePtrHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	squashedDictStart, err := resolver.GetResOperander("squashed_dict_start")
+	if err != nil {
+		return nil, err
+	}
+	squashedDictEnd, err := resolver.GetResOperander("squashed_dict_end")
+	if err != nil {
+		return nil, err
+	}
+
+	return newDictSquashUpdatePtrHint(squashedDictStart, squashedDictEnd), nil
 }

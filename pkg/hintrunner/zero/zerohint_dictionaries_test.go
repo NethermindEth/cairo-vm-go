@@ -49,13 +49,9 @@ func TestZeroHintDictionaries(t *testing.T) {
 						t.Fatalf("__dict_manager missing")
 					}
 					dictionaryManager := dictionaryManagerValue.(hinter.ZeroDictionaryManager)
-					dictionary, err := dictionaryManager.GetDictionary(dictAddr)
-					if err != nil {
-						t.Fatalf("error fetching dictionary from address at ap")
-					}
 
 					for _, key := range []fp.Element{*feltUint64(10), *feltUint64(20), *feltUint64(30)} {
-						value, err := dictionary.At(key)
+						value, err := dictionaryManager.At(dictAddr, key)
 						if err != nil {
 							t.Fatalf("error fetching value for key: %v", key)
 						}
@@ -189,7 +185,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
 					return newDictUpdateHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["new_value"], ctx.operanders["prev_value"])
 				},
-				errCheck: errorTextContains("Wrong previous value in dict. Got 2, expected 1."),
+				errCheck: errorTextContains("wrong previous value in dict. Got 2, expected 1"),
 			},
 			{
 				operanders: []*hintOperander{
@@ -575,6 +571,35 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newSquashDictInnerUsedAccessesAssertHint(ctx.operanders["n_used_accesses"])
 				},
 				errCheck: errorTextContains("assertion ids.n_used_accesses == len(access_indices[key]) failed"),
+			},
+		},
+		"DictSquashUpdatePtr": {
+			{
+				operanders: []*hintOperander{
+					{Name: "squashed_dict_start", Kind: apRelative, Value: addrWithSegment(2, 0)},
+					{Name: "squashed_dict_end", Kind: apRelative, Value: addrWithSegment(2, 8)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					dictionaryManager := hinter.NewZeroDictionaryManager()
+					err := ctx.runnerContext.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
+					if err != nil {
+						t.Fatal(err)
+					}
+					defaultValueMv := memory.MemoryValueFromInt(12345)
+					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
+
+					return newDictSquashUpdatePtrHint(
+						ctx.operanders["squashed_dict_start"],
+						ctx.operanders["squashed_dict_end"],
+					)
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					dictPtr := addrWithSegment(2, 0)
+					expectedData := map[fp.Element]memory.MemoryValue{}
+					expectedDefaultValue := memory.MemoryValueFromInt(12345)
+					expectedFreeOffset := uint64(8)
+					zeroDictInScopeEquals(*dictPtr, expectedData, expectedDefaultValue, expectedFreeOffset)(t, ctx)
+				},
 			},
 		},
 	})
