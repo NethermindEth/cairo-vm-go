@@ -209,7 +209,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 			//> assert isinstance(elm_size, int) and elm_size > 0, \
 			//>		f'Invalid value for elm_size. Got: {elm_size}.'
 			if elmSizeVal == 0 {
-				return fmt.Errorf("Invalid value for elm_size. Got: %v", elmSizeVal)
+				return fmt.Errorf("invalid value for elm_size. Got: %v", elmSizeVal)
 			}
 
 			//> key = ids.key
@@ -224,7 +224,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 			if err == nil {
 				findElementIndex, ok := findElementIndex.(uint64)
 				if !ok {
-					return fmt.Errorf("Invalid value for __find_element_index. Got: %v", findElementIndex)
+					return fmt.Errorf("invalid value for __find_element_index. Got: %v", findElementIndex)
 				}
 
 				findElementIndexFelt := new(fp.Element).SetUint64(findElementIndex)
@@ -250,7 +250,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				//>			f'Invalid index found in __find_element_index. index: {__find_element_index}, ' \
 				//>			f'expected key {key}, found key: {found_key}.'
 				if foundKey.Cmp(keyVal) != 0 {
-					return fmt.Errorf("Invalid index found in __find_element_index. index: %v, expected key %v, found key: %v", findElementIndex, keyVal, &foundKey)
+					return fmt.Errorf("invalid index found in __find_element_index. index: %v, expected key %v, found key: %v", findElementIndex, keyVal, &foundKey)
 				}
 
 				//>		# Delete __find_element_index to make sure it's not used for the next calls.
@@ -277,7 +277,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				if err == nil {
 					findElementMaxSize, ok := findElementMaxSize.(uint64)
 					if !ok {
-						return fmt.Errorf("Invalid value for __find_element_max_size. Got: %v", findElementMaxSize)
+						return fmt.Errorf("invalid value for __find_element_max_size. Got: %v", findElementMaxSize)
 					}
 					if nElms > findElementMaxSize {
 						return fmt.Errorf("find_element() can only be used with n_elms<=%v. Got: n_elms=%v", findElementMaxSize, nElms)
@@ -317,7 +317,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 
 				//>			raise ValueError(f'Key {key} was not found.')
 				if !found {
-					return fmt.Errorf("Key %v was not found", keyVal)
+					return fmt.Errorf("key %v was not found", keyVal)
 				}
 			}
 			return nil
@@ -468,4 +468,143 @@ func createSetAddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	}
 
 	return newSetAddHint(elmSize, elmPtr, setPtr, setEndPtr, index, isElmInSet), nil
+}
+
+// SearchSortedLower hint searches for the first element in a sorted array
+// that is greater than or equal to a given key and returns its index
+//
+// `newSearchSortedLowerHint` takes 5 operanders as arguments
+//   - `arrayPtr` represents the address in memory where starts the sorted array
+//   - `elmSize` is the size in terms of memory cells per element in the array
+//   - `nElms` is the number of elements in the array
+//   - `key` is the given key that acts a threshold
+//   - `index` is the result, i.e., the index of the first element greater or equal to the given key
+func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SearchSortedLower",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> array_ptr = ids.array_ptr
+			//> elm_size = ids.elm_size
+			//> assert isinstance(elm_size, int) and elm_size > 0, \
+			//> 	f'Invalid value for elm_size. Got: {elm_size}.'
+			//>
+			//> n_elms = ids.n_elms
+			//> assert isinstance(n_elms, int) and n_elms >= 0, \
+			//> 	f'Invalid value for n_elms. Got: {n_elms}.'
+			//> if '__find_element_max_size' in globals():
+			//> 	assert n_elms <= __find_element_max_size, \
+			//> 		f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \
+			//> 		f'Got: n_elms={n_elms}.'
+			//>
+			//> for i in range(n_elms):
+			//> 	if memory[array_ptr + elm_size * i] >= ids.key:
+			//> 		ids.index = i
+			//> 		break
+			//> else:
+			//> 	ids.index = n_elms
+
+			//> array_ptr = ids.array_ptr
+			arrayPtr, err := hinter.ResolveAsAddress(vm, arrayPtr)
+			if err != nil {
+				return err
+			}
+
+			//> elm_size = ids.elm_size
+			elmSize, err := hinter.ResolveAsUint64(vm, elmSize)
+			if err != nil {
+				return err
+			}
+
+			//> assert isinstance(elm_size, int) and elm_size > 0, \
+			//> 	f'Invalid value for elm_size. Got: {elm_size}.'
+			if elmSize == 0 {
+				return fmt.Errorf("invalid value for elm_size. Got: %v", elmSize)
+			}
+
+			//> n_elms = ids.n_elms
+			//> assert isinstance(n_elms, int) and n_elms >= 0, \
+			//> 	f'Invalid value for n_elms. Got: {n_elms}.'
+			nElms, err := hinter.ResolveAsUint64(vm, nElms)
+			if err != nil {
+				return err
+			}
+
+			//> if '__find_element_max_size' in globals():
+			//> 	assert n_elms <= __find_element_max_size, \
+			//> 		f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \
+			//> 		f'Got: n_elms={n_elms}.'
+			elementMaxSize := uint64(1 << 20)
+			if nElms > elementMaxSize {
+				return fmt.Errorf("find_element() can only be used with n_elms<=%d.\n Got: length=%d", elementMaxSize, nElms)
+			}
+
+			key, err := hinter.ResolveAsFelt(vm, key)
+			if err != nil {
+				return err
+			}
+
+			indexAddr, err := index.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			index := arrayPtr
+
+			//> for i in range(n_elms):
+			for i := uint64(0); i < nElms; i++ {
+				//> 	if memory[array_ptr + elm_size * i] >= ids.key:
+				value, err := vm.Memory.ReadFromAddressAsElement(index)
+				if err != nil {
+					return err
+				}
+
+				if utils.FeltLe(key, &value) {
+					//> 		ids.index = i
+					//> 		break
+					indexValue := memory.MemoryValueFromUint(i)
+					return vm.Memory.WriteToAddress(&indexAddr, &indexValue)
+				}
+
+				*index, err = index.AddOffset(int16(elmSize))
+				if err != nil {
+					return err
+				}
+			}
+
+			//> else:
+			//> 	ids.index = n_elms
+			indexValue := memory.MemoryValueFromInt(nElms)
+
+			return vm.Memory.WriteToAddress(&indexAddr, &indexValue)
+		},
+	}
+}
+
+func createSearchSortedLowerHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	arrayPtr, err := resolver.GetResOperander("array_ptr")
+	if err != nil {
+		return nil, err
+	}
+
+	elmSize, err := resolver.GetResOperander("elm_size")
+	if err != nil {
+		return nil, err
+	}
+
+	nElms, err := resolver.GetResOperander("n_elms")
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := resolver.GetResOperander("key")
+	if err != nil {
+		return nil, err
+	}
+
+	index, err := resolver.GetResOperander("index")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index), nil
 }
