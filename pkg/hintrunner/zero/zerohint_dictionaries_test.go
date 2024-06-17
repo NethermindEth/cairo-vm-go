@@ -805,6 +805,8 @@ func TestZeroHintDictionaries(t *testing.T) {
 					expectedFreeOffset := uint64(8)
 					zeroDictInScopeEquals(*dictPtr, expectedData, expectedDefaultValue, expectedFreeOffset)(t, ctx)
 				},
+			},
+		},
 		"DictSquashCopyDict": {
 			{
 				operanders: []*hintOperander{
@@ -820,7 +822,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newDictSquashCopyDictHint(ctx.operanders["dict_accesses_end"])
 				},
 				errCheck: errorTextContains("no dictionary at address: 1:5"),
-      },
+			},
 		},
 	})
 }

@@ -98,7 +98,7 @@ func (dm *ZeroDictionaryManager) GetDictionary(dictAddr mem.MemoryAddress) (Zero
 // Given a memory address and a key it returns the value held at that position. The address is used
 // to locate the correct dictionary and the key to index on it
 func (dm *ZeroDictionaryManager) At(dictAddr mem.MemoryAddress, key f.Element) (mem.MemoryValue, error) {
-	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
+	if dict, ok := dm.Dictionaries[dictAddr.SegmentIndex]; ok {
 		return dict.at(key)
 	}
 	return mem.UnknownValue, fmt.Errorf("no dictionary at address: %s", dictAddr)
@@ -106,7 +106,7 @@ func (dm *ZeroDictionaryManager) At(dictAddr mem.MemoryAddress, key f.Element) (
 
 // Given a memory address,a key and a value it stores the value at the correct position.
 func (dm *ZeroDictionaryManager) Set(dictAddr mem.MemoryAddress, key f.Element, value mem.MemoryValue) error {
-	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
+	if dict, ok := dm.Dictionaries[dictAddr.SegmentIndex]; ok {
 		dict.set(key, value)
 		return nil
 	}
@@ -115,7 +115,7 @@ func (dm *ZeroDictionaryManager) Set(dictAddr mem.MemoryAddress, key f.Element, 
 
 // Given a memory address and a incrementBy, it increments the freeOffset field of dictionary by it.
 func (dm *ZeroDictionaryManager) IncrementFreeOffset(dictAddr mem.MemoryAddress, incrementBy uint64) error {
-	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
+	if dict, ok := dm.Dictionaries[dictAddr.SegmentIndex]; ok {
 		dict.incrementFreeOffset(incrementBy)
 		return nil
 	}
@@ -124,7 +124,7 @@ func (dm *ZeroDictionaryManager) IncrementFreeOffset(dictAddr mem.MemoryAddress,
 
 // Given a memory address and a freeOffset, it sets the freeOffset field of dictionary to it.
 func (dm *ZeroDictionaryManager) SetFreeOffset(dictAddr mem.MemoryAddress, freeOffset uint64) error {
-	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
+	if dict, ok := dm.Dictionaries[dictAddr.SegmentIndex]; ok {
 		dict.setFreeOffset(freeOffset)
 		return nil
 	}
