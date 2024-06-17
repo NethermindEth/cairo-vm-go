@@ -189,7 +189,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
 					return newDictUpdateHint(ctx.operanders["dict_ptr"], ctx.operanders["key"], ctx.operanders["new_value"], ctx.operanders["prev_value"])
 				},
-				errCheck: errorTextContains("Wrong previous value in dict. Got 2, expected 1."),
+				errCheck: errorTextContains("wrong previous value in dict. Got 2, expected 1"),
 			},
 			{
 				operanders: []*hintOperander{
