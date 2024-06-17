@@ -9,7 +9,6 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"golang.org/x/exp/maps"
 )
 
@@ -53,7 +52,7 @@ func newDictNewHint() hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			initialDict, ok := initialDictValue.(map[f.Element]memory.MemoryValue)
+			initialDict, ok := initialDictValue.(map[fp.Element]memory.MemoryValue)
 			if !ok {
 				return fmt.Errorf("value: %s is not a map[f.Element]mem.MemoryValue", initialDictValue)
 			}
@@ -327,7 +326,7 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hi
 				return err
 			}
 			if !currentValue.Equal(prevValue) {
-				return fmt.Errorf("Wrong previous value in dict. Got %s, expected %s.", prevValue, currentValue)
+				return fmt.Errorf("wrong previous value in dict. Got %s, expected %s", prevValue, currentValue)
 			}
 
 			//> # Update value.
@@ -443,7 +442,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			//> for i in range(n_accesses):
 			//>     key = memory[address + dict_access_size * i]
 			//>     access_indices.setdefault(key, []).append(i)
-			accessIndices := make(map[f.Element][]uint64)
+			accessIndices := make(map[fp.Element][]uint64)
 			for i := uint64(0); i < nAccessesValue; i++ {
 				memoryAddress, err := address.AddOffset(int16(DictAccessSize * i))
 				if err != nil {
@@ -550,7 +549,7 @@ func newSquashDictInnerAssertLenKeysHint() hinter.Hinter {
 				return err
 			}
 
-			keys := keys_.([]f.Element)
+			keys := keys_.([]fp.Element)
 			if len(keys) != 0 {
 				return fmt.Errorf("assertion `len(keys) == 0` failed")
 			}
@@ -859,7 +858,7 @@ func newSquashDictInnerLenAssertHint() hinter.Hinter {
 				return err
 			}
 
-			currentAccessIndices := currentAccessIndices_.([]f.Element)
+			currentAccessIndices := currentAccessIndices_.([]fp.Element)
 			if len(currentAccessIndices) != 0 {
 				return fmt.Errorf("assertion `len(current_access_indices) == 0` failed")
 			}
@@ -890,7 +889,7 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			keys := keys_.([]f.Element)
+			keys := keys_.([]fp.Element)
 			if len(keys) == 0 {
 				return fmt.Errorf("no keys left but remaining_accesses > 0")
 			}
