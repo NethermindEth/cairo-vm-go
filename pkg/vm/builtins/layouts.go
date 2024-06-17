@@ -7,7 +7,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
-type Builtin struct {
+type LayoutBuiltin struct {
 	Runner  memory.BuiltinRunner
 	Builtin starknet.Builtin
 }
@@ -15,33 +15,34 @@ type Builtin struct {
 type Layout struct {
 	Name     string
 	RcUnits  uint64
-	Builtins []Builtin
+	Builtins []LayoutBuiltin
 }
 
 func getSmallLayout() Layout {
-	return Layout{Name: "small", RcUnits: 16, Builtins: []Builtin{
+	return Layout{Name: "small", RcUnits: 16, Builtins: []LayoutBuiltin{
 		{Runner: &Output{}, Builtin: starknet.Output},
-		{Runner: &Pedersen{ratioPedersen: 8, instancesPerComponentPedersen: 1}, Builtin: starknet.Pedersen},
-		{Runner: &RangeCheck{ratioRangeCheck: 8, instancesPerComponentRangeCheck: 1, RangeCheckNParts: 8, InnerRCBound: 2 << 16}, Builtin: starknet.RangeCheck},
-		{Runner: &ECDSA{ratioECDSA: 512, instancesPerComponentECDSA: 1}, Builtin: starknet.ECDSA},
+		{Runner: &Pedersen{ratio: 8}, Builtin: starknet.Pedersen},
+		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8, InnerRCBound: 2 << 16}, Builtin: starknet.RangeCheck},
+		{Runner: &ECDSA{ratio: 512}, Builtin: starknet.ECDSA},
 	}}
 }
 
 func getPlainLayout() Layout {
-	return Layout{Name: "plain", RcUnits: 16, Builtins: []Builtin{}}
+	return Layout{Name: "plain", RcUnits: 16, Builtins: []LayoutBuiltin{}}
 }
 
-func getAllCairoLayout() Layout {
-	return Layout{Name: "all_cairo", RcUnits: 16, Builtins: []Builtin{
+// TODO: Include Poseidon builtin in this layout
+func getStarknetWithKeccakLayout() Layout {
+	return Layout{Name: "starknet_with_keccak", RcUnits: 16, Builtins: []LayoutBuiltin{
 		{Runner: &Output{}, Builtin: starknet.Output},
-		{Runner: &Pedersen{ratioPedersen: 256, instancesPerComponentPedersen: 1}, Builtin: starknet.Pedersen},
-		{Runner: &RangeCheck{ratioRangeCheck: 8, instancesPerComponentRangeCheck: 1, RangeCheckNParts: 8, InnerRCBound: 2 << 16}, Builtin: starknet.RangeCheck},
-		{Runner: &ECDSA{ratioECDSA: 2048, instancesPerComponentECDSA: 1}, Builtin: starknet.ECDSA},
-		{Runner: &Bitwise{ratioBitwise: 16, instancesPerComponentBitwise: 1}, Builtin: starknet.Bitwise},
-		{Runner: &EcOp{ratioEcOp: 1024, instancesPerComponentEcOp: 1}, Builtin: starknet.ECOP},
-		{Runner: &Keccak{ratioKeccak: 2048, instancesPerComponentKeccak: 16}, Builtin: starknet.Keccak},
+		{Runner: &Pedersen{ratio: 32}, Builtin: starknet.Pedersen},
+		{Runner: &RangeCheck{ratio: 16, RangeCheckNParts: 8, InnerRCBound: 2 << 16}, Builtin: starknet.RangeCheck},
+		{Runner: &ECDSA{ratio: 2048}, Builtin: starknet.ECDSA},
+		{Runner: &Bitwise{ratio: 64}, Builtin: starknet.Bitwise},
+		{Runner: &EcOp{ratio: 1024}, Builtin: starknet.ECOP},
+		{Runner: &Keccak{ratio: 2048}, Builtin: starknet.Keccak},
+		{Runner: &Poseidon{ratio: 32}, Builtin: starknet.Poseidon},
 	}}
-
 }
 
 func GetLayout(layout string) (Layout, error) {
@@ -50,8 +51,8 @@ func GetLayout(layout string) (Layout, error) {
 		return getSmallLayout(), nil
 	case "plain":
 		return getPlainLayout(), nil
-	case "all_cairo":
-		return getAllCairoLayout(), nil
+	case "starknet_with_keccak":
+		return getStarknetWithKeccakLayout(), nil
 	case "":
 		return getPlainLayout(), nil
 	default:

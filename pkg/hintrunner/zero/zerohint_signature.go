@@ -8,7 +8,7 @@ import (
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -32,30 +32,20 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			//> ids.q = q % PRIME
 
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-			secPBig, ok := secp_utils.GetSecPBig()
-			if !ok {
-				return fmt.Errorf("GetSecPBig failed")
-			}
 
 			valAddr, err := val.GetAddress(vm)
 			if err != nil {
 				return err
 			}
 
-			valMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(valAddr, int16(3))
+			valValues, err := vm.Memory.ResolveAsBigInt3(valAddr)
 			if err != nil {
 				return err
 			}
 
-			// [d0, d1, d2]
-			var valValues [3]*fp.Element
-
-			for i := 0; i < 3; i++ {
-				valValue, err := valMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				valValues[i] = valValue
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
 			}
 
 			//> q, r = divmod(pack(ids.val, PRIME), SECP_P)
@@ -78,7 +68,8 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			qMv := memory.MemoryValueFromFieldElement(qFelt)
+
+			qMv := mem.MemoryValueFromFieldElement(qFelt)
 			return vm.Memory.WriteToAddress(&qAddr, &qMv)
 		},
 	}
@@ -111,22 +102,27 @@ func newVerifyECDSASignatureHint(ecdsaPtr, signature_r, signature_s hinter.ResOp
 		Name: "VerifyECDSASignature",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))
+
 			ecdsaPtrAddr, err := hinter.ResolveAsAddress(vm, ecdsaPtr)
 			if err != nil {
 				return err
 			}
+
 			signature_rFelt, err := hinter.ResolveAsFelt(vm, signature_r)
 			if err != nil {
 				return err
 			}
+
 			signature_sFelt, err := hinter.ResolveAsFelt(vm, signature_s)
 			if err != nil {
 				return err
 			}
+
 			ECDSA_segment, ok := vm.Memory.FindSegmentWithBuiltin(builtins.ECDSAName)
 			if !ok {
 				return fmt.Errorf("ECDSA segment not found")
 			}
+
 			ECDSA_builtinRunner := (ECDSA_segment.BuiltinRunner).(*builtins.ECDSA)
 			return ECDSA_builtinRunner.AddSignature(ecdsaPtrAddr.Offset, signature_rFelt, signature_sFelt)
 		},
@@ -172,15 +168,12 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 			//>	 value = y
 			//> else:
 			//>	 value = (-y) % SECP_P
+
 			xCubeAddr, err := xCube.GetAddress(vm)
 			if err != nil {
 				return err
 			}
 
-			xCubeMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(xCubeAddr, int16(3))
-			if err != nil {
-				return err
-			}
 			v, err := hinter.ResolveAsFelt(vm, v)
 			if err != nil {
 				return err
@@ -189,18 +182,16 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 			secpBig, _ := secp_utils.GetSecPBig()
 
-			//> x_cube_int = pack(ids.x_cube, PRIME) % SECP_P
-			var xCubeValues [3]*fp.Element
-			for i := 0; i < 3; i++ {
-				xCubeValues[i], err = xCubeMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
+			xCubeValues, err := vm.Memory.ResolveAsBigInt3(xCubeAddr)
+			if err != nil {
+				return err
 			}
+
 			xCubeIntBig, err := secp_utils.SecPPacked(xCubeValues)
 			if err != nil {
 				return err
 			}
+
 			xCubeIntBig.Mod(&xCubeIntBig, &secpBig)
 
 			//> y_square_int = (x_cube_int + ids.BETA) % SECP_P
@@ -223,6 +214,7 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 			} else {
 				value.Mod(value.Neg(y), &secpBig)
 			}
+
 			return ctx.ScopeManager.AssignVariable("value", value)
 		},
 	}
@@ -253,6 +245,7 @@ func newImportSecp256R1PHint() hinter.Hinter {
 		Name: "ImportSecp256R1P",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp256r1_utils import SECP256R1_P as SECP_P
+
 			SECP256R1_PBig, ok := secp_utils.GetSecp256R1_P()
 			if !ok {
 				return fmt.Errorf("SECP256R1_P failed")
@@ -334,35 +327,20 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			aMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(aAddr, int16(3))
-			if err != nil {
-				return err
-			}
 
 			bAddr, err := b.GetAddress(vm)
 			if err != nil {
 				return err
 			}
-			bMemoryValues, err := vm.Memory.GetConsecutiveMemoryValues(bAddr, int16(3))
+
+			aValues, err := vm.Memory.ResolveAsBigInt3(aAddr)
 			if err != nil {
 				return err
 			}
 
-			var aValues [3]*fp.Element
-			var bValues [3]*fp.Element
-
-			for i := 0; i < 3; i++ {
-				aValue, err := aMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				aValues[i] = aValue
-
-				bValue, err := bMemoryValues[i].FieldElement()
-				if err != nil {
-					return err
-				}
-				bValues[i] = bValue
+			bValues, err := vm.Memory.ResolveAsBigInt3(bAddr)
+			if err != nil {
+				return err
 			}
 
 			//> a = pack(ids.a, PRIME)
@@ -387,6 +365,7 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			valueBig := new(big.Int).Set(&resBig)
 
 			return ctx.ScopeManager.AssignVariable("value", valueBig)

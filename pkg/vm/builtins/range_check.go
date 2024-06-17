@@ -12,12 +12,12 @@ const RangeCheckName = "range_check"
 const cellsPerRangeCheck = 1
 const INNER_RC_BOUND_SHIFT = 16
 const INNER_RC_BOUND_MASK = (1 << 16) - 1
+const instancesPerComponentRangeCheck = 1
 
 type RangeCheck struct {
-	ratioRangeCheck                 uint64
-	instancesPerComponentRangeCheck uint64
-	RangeCheckNParts                uint64
-	InnerRCBound                    uint64
+	ratio            uint64
+	RangeCheckNParts uint64
+	InnerRCBound     uint64
 }
 
 func (r *RangeCheck) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
@@ -42,7 +42,7 @@ func (r *RangeCheck) String() string {
 }
 
 func (r *RangeCheck) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(r.ratioRangeCheck, cellsPerRangeCheck, segmentUsedSize, r.instancesPerComponentRangeCheck, vmCurrentStep)
+	allocatedInstances, err := GetAllocatedInstances(r.ratio, cellsPerRangeCheck, segmentUsedSize, instancesPerComponentRangeCheck, vmCurrentStep)
 	if err != nil {
 		return 0, err
 	}
