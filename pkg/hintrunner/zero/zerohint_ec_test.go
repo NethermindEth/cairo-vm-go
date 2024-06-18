@@ -876,7 +876,7 @@ func TestZeroHintEc(t *testing.T) {
 			{
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariable("x", bigIntString("0101", 10))
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("101", 10))
 					if err != nil {
 						t.Fatal(err)
 					}
