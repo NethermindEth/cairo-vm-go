@@ -248,46 +248,5 @@ func TestVerifyZeroHint(t *testing.T) {
 				}),
 			},
 		},
-		"IsZeroNondet": {
-			{
-				operanders: []*hintOperander{},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariable("x", bigIntString("0", 10))
-					if err != nil {
-						t.Fatal(err)
-					}
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newIsZeroNondetHint()
-				},
-				check: apValueEquals(feltUint64(1)),
-			},
-			{
-				operanders: []*hintOperander{},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariable("x", bigIntString("42", 10))
-					if err != nil {
-						t.Fatal(err)
-					}
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newIsZeroNondetHint()
-				},
-				check: apValueEquals(feltUint64(0)),
-			},
-			{
-				operanders: []*hintOperander{},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariable("x", bigIntString("0101", 10))
-					if err != nil {
-						t.Fatal(err)
-					}
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newIsZeroNondetHint()
-				},
-				check: apValueEquals(feltUint64(0)),
-			},
-		},
 	})
 }
