@@ -392,12 +392,8 @@ func createDivModNPackedDivmodV1Hinter(resolver hintReferenceResolver) (hinter.H
 //
 // `newIsZeroNondetHint` doesn't take any operander as argument
 //
-// `newIsZeroNondetHint` Implements hint:
-// in .cairo program
-// if nondet %{ x == 0 %} != 0:
-//
-// On .json compiled program
-// "memory[ap] = to_felt_or_relocatable(x == 0)"
+// `newIsZeroNondetHint` writes to `[ap]` the result of the comparison
+// i.e, 1 if `x == 0`, 0 otherwise
 func newIsZeroNondetHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsZeroConditional",
