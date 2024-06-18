@@ -389,7 +389,7 @@ func createDivModNPackedDivmodV1Hinter(resolver hintReferenceResolver) (hinter.H
 
 // IsZeroPack hint computes packed value modulo SECP_P prime
 //
-// `newIsZeroPackHint` takes 1 operander as arguments
+// `newIsZeroPackHint` takes 1 operander as argument
 //   - `x` is the value that will be packed and taken modulo SECP_P prime
 //
 // `newIsZeroPackHint` assigns the result as `x` in the current scope
