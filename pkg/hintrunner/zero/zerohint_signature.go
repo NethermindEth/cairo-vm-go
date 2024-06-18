@@ -387,10 +387,10 @@ func createDivModNPackedDivmodV1Hinter(resolver hintReferenceResolver) (hinter.H
 	return newDivModNPackedDivmodV1Hint(a, b), nil
 }
 
-// IsZeroPack hint caculates packed value modulo SECP_P prime
+// IsZeroPack hint computes packed value modulo SECP_P prime
 //
-// `newIsZeroPackHint` takes 1 operander as argument
-//   - `x` is the packed value that will be taken modulo SECP_P prime
+// `newIsZeroPackHint` takes 1 operander as arguments
+//   - `x` is the value that will be packed and taken modulo SECP_P prime
 //
 // `newIsZeroPackHint` assigns the result as `x` in the current scope
 func newIsZeroPackHint(x hinter.ResOperander) hinter.Hinter {
@@ -410,7 +410,6 @@ func newIsZeroPackHint(x hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 			secpBig, _ := secp_utils.GetSecPBig()
 
 			xPackedBig, err := secp_utils.SecPPacked(xValues)
