@@ -1,4 +1,4 @@
-%builtins output poseidon range_check
+%builtins output poseidon
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
 from starkware.cairo.common.poseidon_state import PoseidonBuiltinState
 
@@ -38,7 +38,7 @@ func test_poseidon_builtin_random_big_values{output_ptr: felt*, poseidon_ptr: Po
     return ();
 }
 
-func main{output_ptr: felt*, poseidon_ptr: PoseidonBuiltin*, range_check_ptr}() {
+func main{output_ptr: felt*, poseidon_ptr: PoseidonBuiltin*}() {
     test_poseidon_builtin_random_small_values();
     test_poseidon_builtin_random_big_values();
     return();
