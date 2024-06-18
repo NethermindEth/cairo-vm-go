@@ -260,10 +260,7 @@ func TestVerifyZeroHint(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newIsZeroDivModHint()
 				},
-				check: allVarValueInScopeEquals(map[string]any{
-					"value": bigIntString("1", 10),
-					"x_inv": bigIntString("1", 10),
-				}),
+				check: varValueInScopeEquals("value", bigIntString("1", 10)),
 			},
 			{
 				operanders: []*hintOperander{},
@@ -276,10 +273,7 @@ func TestVerifyZeroHint(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newIsZeroDivModHint()
 				},
-				check: allVarValueInScopeEquals(map[string]any{
-					"value": bigIntString("1", 10),
-					"x_inv": bigIntString("1", 10),
-				}),
+				check: varValueInScopeEquals("value", bigIntString("1", 10)),
 			},
 			{
 				operanders: []*hintOperander{},
@@ -292,10 +286,7 @@ func TestVerifyZeroHint(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newIsZeroDivModHint()
 				},
-				check: allVarValueInScopeEquals(map[string]any{
-					"value": bigIntString("77726902514058095204421112730928006705863972015508190238152451720695936255632", 10),
-					"x_inv": bigIntString("77726902514058095204421112730928006705863972015508190238152451720695936255632", 10),
-				}),
+				check: varValueInScopeEquals("value", bigIntString("77726902514058095204421112730928006705863972015508190238152451720695936255632", 10)),
 			},
 			{
 				operanders: []*hintOperander{},
@@ -308,10 +299,7 @@ func TestVerifyZeroHint(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newIsZeroDivModHint()
 				},
-				check: allVarValueInScopeEquals(map[string]any{
-					"value": bigIntString("4", 10),
-					"x_inv": bigIntString("4", 10),
-				}),
+				check: varValueInScopeEquals("value", bigIntString("4", 10)),
 			},
 		},
 	})

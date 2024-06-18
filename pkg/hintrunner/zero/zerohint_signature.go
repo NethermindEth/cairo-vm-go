@@ -387,7 +387,7 @@ func createDivModNPackedDivmodV1Hinter(resolver hintReferenceResolver) (hinter.H
 	return newDivModNPackedDivmodV1Hint(a, b), nil
 }
 
-// IsZeroDivMod hint caculates the division modulo SECP_P prime for a given packed value
+// IsZeroDivMod hint computes the division modulo SECP_P prime for a given packed value
 //
 // `newIsZeroDivModHint` doesn't take any operander as argument
 //
@@ -413,11 +413,6 @@ func newIsZeroDivModHint() hinter.Hinter {
 			}
 
 			valueBig := new(big.Int).Set(&resBig)
-			x_invBig := new(big.Int).Set(&resBig)
-
-			if err := ctx.ScopeManager.AssignVariable("x_inv", x_invBig); err != nil {
-				return err
-			}
 
 			if err := ctx.ScopeManager.AssignVariable("value", valueBig); err != nil {
 				return err
