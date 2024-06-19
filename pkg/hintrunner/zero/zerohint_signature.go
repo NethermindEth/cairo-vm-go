@@ -445,7 +445,7 @@ func createIsZeroPackHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 //
 // `newIsZeroDivModHint` doesn't take any operander as argument
 //
-// `newIsZeroDivModHint` assigns the result `value` in the current scope
+// `newIsZeroDivModHint` assigns the result as `value` in the current scope
 func newIsZeroDivModHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsZeroDivMod",
@@ -460,7 +460,6 @@ func newIsZeroDivModHint() hinter.Hinter {
 			}
 
 			x, err := ctx.ScopeManager.GetVariableValueAsBigInt("x")
-
 			if err != nil {
 				return err
 			}
