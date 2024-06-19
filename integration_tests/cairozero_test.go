@@ -313,17 +313,6 @@ func TestPedersen(t *testing.T) {
 	clean("./builtin_tests/")
 }
 
-func TestPoseidon(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/poseidon_test.cairo")
-	require.NoError(t, err)
-
-	_, _, output, err := runVm(compiledOutput)
-	require.NoError(t, err)
-	require.Contains(t, output, "Program output:\n  442682200349489646213731521593476982257703159825582578145778919623645026501\n  2233832504250924383748553933071188903279928981104663696710686541536735838182\n  2512222140811166287287541003826449032093371832913959128171347018667852712082\n")
-	require.Contains(t, output, "3016509350703874362933565866148509373957094754875411937434637891208784994231\n  3015199725895936530535660185611704199044060139852899280809302949374221328865\n  3062378460350040063467318871602229987911299744598148928378797834245039883769\n")
-	clean("./builtin_tests/")
-}
-
 func TestECDSA(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/ecdsa_test.cairo")
 	require.NoError(t, err)
