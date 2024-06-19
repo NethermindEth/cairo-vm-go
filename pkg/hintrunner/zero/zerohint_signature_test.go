@@ -248,6 +248,52 @@ func TestVerifyZeroHint(t *testing.T) {
 				}),
 			},
 		},
+		"IsZeroPack": {
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("42")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroPackHint(ctx.operanders["x.d0"])
+				},
+				check: varValueInScopeEquals("x", big.NewInt(42)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("100")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("99")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("88")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroPackHint(ctx.operanders["x.d0"])
+				},
+				check: varValueInScopeEquals("x", bigIntString("526795342172649295060681798242672774947232024188944484", 10)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("77371252455336262886226991")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("77371252455336267181195263")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("19342813113834066795298815")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroPackHint(ctx.operanders["x.d0"])
+				},
+				check: varValueInScopeEquals("x", big.NewInt(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("3618502788666131213697322783095070105623107215331596699973092056135872020481")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroPackHint(ctx.operanders["x.d0"])
+				},
+				check: varValueInScopeEquals("x", big.NewInt(0)),
+			},
+		},
 		"IsZeroDivMod": {
 			{
 				operanders: []*hintOperander{},
