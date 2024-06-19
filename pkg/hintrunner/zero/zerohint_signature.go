@@ -410,7 +410,10 @@ func newIsZeroPackHint(x hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			secpBig, _ := secp_utils.GetSecPBig()
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
 
 			xPackedBig, err := secp_utils.SecPPacked(xValues)
 			if err != nil {
@@ -418,7 +421,7 @@ func newIsZeroPackHint(x hinter.ResOperander) hinter.Hinter {
 			}
 
 			value := new(big.Int)
-			value.Mod(&xPackedBig, &secpBig)
+			value.Mod(&xPackedBig, &secPBig)
 
 			if err := ctx.ScopeManager.AssignVariable("x", value); err != nil {
 				return err
