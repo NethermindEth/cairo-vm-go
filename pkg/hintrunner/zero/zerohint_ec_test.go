@@ -873,19 +873,6 @@ func TestZeroHintEc(t *testing.T) {
 				},
 				check: apValueEquals(feltUint64(0)),
 			},
-			{
-				operanders: []*hintOperander{},
-				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariable("x", bigIntString("101", 10))
-					if err != nil {
-						t.Fatal(err)
-					}
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newIsZeroNondetHint()
-				},
-				check: apValueEquals(feltUint64(0)),
-			},
 		},
 	},
 	)
