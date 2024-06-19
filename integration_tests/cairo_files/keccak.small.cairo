@@ -31,7 +31,6 @@ func test_integration{range_check_ptr: felt, bitwise_ptr: BitwiseBuiltin*}(iter:
     let (low_1: felt, high_1: felt) = unsafe_keccak(data_1, chunk_len);
     let (low_2: felt, high_2: felt) = unsafe_keccak(data_1 + chunk_len, chunk_len);
     let (low_3: felt, high_3: felt) = unsafe_keccak(data_1 + 2 * chunk_len, chunk_len);
-
     // With the results of unsafe_keccak, create an array to pass to unsafe_keccak_finalize
     // through a KeccakState
     let (data_2: felt*) = alloc();
