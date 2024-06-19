@@ -31,7 +31,6 @@ func getPlainLayout() Layout {
 	return Layout{Name: "plain", RcUnits: 16, Builtins: []LayoutBuiltin{}}
 }
 
-// TODO: Include Poseidon builtin in this layout
 func getStarknetWithKeccakLayout() Layout {
 	return Layout{Name: "starknet_with_keccak", RcUnits: 16, Builtins: []LayoutBuiltin{
 		{Runner: &Output{}, Builtin: starknet.Output},
