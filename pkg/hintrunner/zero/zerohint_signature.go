@@ -412,13 +412,7 @@ func newIsZeroDivModHint() hinter.Hinter {
 				return err
 			}
 
-			valueBig := new(big.Int).Set(&resBig)
-
-			if err := ctx.ScopeManager.AssignVariable("value", valueBig); err != nil {
-				return err
-			}
-
-			return nil
+			return ctx.ScopeManager.AssignVariable("value", &resBig)
 		},
 	}
 }
