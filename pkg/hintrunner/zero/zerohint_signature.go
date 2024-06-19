@@ -454,7 +454,10 @@ func newIsZeroDivModHint() hinter.Hinter {
 			//> from starkware.python.math_utils import div_mod
 			//> value = x_inv = div_mod(1, x, SECP_P)
 
-			secpBig, _ := secp_utils.GetSecPBig()
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
 
 			x, err := ctx.ScopeManager.GetVariableValueAsBigInt("x")
 
@@ -462,7 +465,7 @@ func newIsZeroDivModHint() hinter.Hinter {
 				return err
 			}
       
-			resBig, err := secp_utils.Divmod(big.NewInt(1), x, &secpBig)
+			resBig, err := secp_utils.Divmod(big.NewInt(1), x, &secPBig)
 			if err != nil {
 				return err
 			}
