@@ -464,7 +464,7 @@ func newIsZeroDivModHint() hinter.Hinter {
 			if err != nil {
 				return err
 			}
-      
+
 			resBig, err := secp_utils.Divmod(big.NewInt(1), x, &secPBig)
 			if err != nil {
 				return err
