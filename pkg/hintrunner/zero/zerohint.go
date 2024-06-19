@@ -122,8 +122,6 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createVerifyZeroHinter(resolver)
 	case divModNPackedDivmodV1Code:
 		return createDivModNPackedDivmodV1Hinter(resolver)
-	case isZeroNondetCode:
-		return createIsZeroNondetHinter()
 	// EC hints
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)
@@ -145,6 +143,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createEcDoubleAssignNewYV1Hinter()
 	case ecMulInnerCode:
 		return createEcMulInnerHinter(resolver)
+	case isZeroNondetCode:
+		return createIsZeroNondetHinter()
 	// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
