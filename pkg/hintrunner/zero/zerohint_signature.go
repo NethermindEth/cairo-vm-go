@@ -403,10 +403,11 @@ func newIsZeroDivModHint() hinter.Hinter {
 			secpBig, _ := secp_utils.GetSecPBig()
 
 			x, err := ctx.ScopeManager.GetVariableValueAsBigInt("x")
+
 			if err != nil {
 				return err
 			}
-
+      
 			resBig, err := secp_utils.Divmod(big.NewInt(1), x, &secpBig)
 			if err != nil {
 				return err
