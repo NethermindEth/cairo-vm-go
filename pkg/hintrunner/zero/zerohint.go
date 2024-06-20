@@ -62,7 +62,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createAssertNNHinter(resolver)
 	case assertNotEqualCode:
 		return createAssertNotEqualHinter(resolver)
-	case assert250bits:
+	case assert250bitsCode:
 		return createAssert250bitsHinter(resolver)
 	case assertLeFeltCode:
 		return createAssertLeFeltHinter(resolver)
@@ -78,7 +78,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createIsNNOutOfRangeHinter(resolver)
 	case isPositiveCode:
 		return createIsPositiveHinter(resolver)
-	case splitIntAssertRange:
+	case splitIntAssertRangeCode:
 		return createSplitIntAssertRangeHinter(resolver)
 	case splitIntCode:
 		return createSplitIntHinter(resolver)
@@ -141,9 +141,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createReduceV1Hinter(resolver)
 	case computeSlopeV1Code:
 		return createComputeSlopeV1Hinter(resolver)
-	case ecDoubleAssignNewXV1:
+	case ecDoubleAssignNewXV1Code:
 		return createEcDoubleAssignNewXV1Hinter(resolver)
-	case ecDoubleAssignNewYV1:
+	case ecDoubleAssignNewYV1Code:
 		return createEcDoubleAssignNewYV1Hinter()
 	case ecMulInnerCode:
 		return createEcMulInnerHinter(resolver)
@@ -187,7 +187,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createDefaultDictNewHinter(resolver)
 	case dictReadCode:
 		return createDictReadHinter(resolver)
-	case dictSquashCopyDict:
+	case dictSquashCopyDictCode:
 		return createDictSquashCopyDictHinter(resolver)
 	case dictWriteCode:
 		return createDictWriteHinter(resolver)
@@ -195,21 +195,21 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createDictUpdateHinter(resolver)
 	case squashDictCode:
 		return createSquashDictHinter(resolver)
-	case squashDictInnerAssertLenKeys:
+	case squashDictInnerAssertLenKeysCode:
 		return createSquashDictInnerAssertLenKeysHinter()
-	case squashDictInnerCheckAccessIndex:
+	case squashDictInnerCheckAccessIndexCode:
 		return createSquashDictInnerCheckAccessIndexHinter(resolver)
-	case squashDictInnerContinueLoop:
+	case squashDictInnerContinueLoopCode:
 		return createSquashDictInnerContinueLoopHinter(resolver)
-	case squashDictInnerFirstIteration:
+	case squashDictInnerFirstIterationCode:
 		return createSquashDictInnerFirstIterationHinter(resolver)
-	case squashDictInnerSkipLoop:
+	case squashDictInnerSkipLoopCode:
 		return createSquashDictInnerSkipLoopHinter(resolver)
-	case squashDictInnerLenAssert:
+	case squashDictInnerLenAssertCode:
 		return createSquashDictInnerLenAssertHinter()
-	case squashDictInnerNextKey:
+	case squashDictInnerNextKeyCode:
 		return createSquashDictInnerNextKeyHinter(resolver)
-	case squashDictInnerUsedAccessesAssert:
+	case squashDictInnerUsedAccessesAssertCode:
 		return createSquashDictInnerUsedAccessesAssertHinter(resolver)
 	case dictSquashUpdatePtrCode:
 		return createDictSquashUpdatePtrHinter(resolver)
