@@ -234,12 +234,12 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 				return err
 			}
 
-			dictionaryCopy, err := hinter.CopyZeroDictionary(&dictionary)
+			dictionaryDataCopy, err := hinter.CopyZeroDictionaryData(&dictionary)
 			if err != nil {
 				return err
 			}
 
-			ctx.ScopeManager.EnterScope(map[string]any{"__dict_manager": dictionaryManager, "initial_dict": dictionaryCopy})
+			ctx.ScopeManager.EnterScope(map[string]any{"__dict_manager": dictionaryManager, "initial_dict": dictionaryDataCopy})
 
 			return nil
 		},
