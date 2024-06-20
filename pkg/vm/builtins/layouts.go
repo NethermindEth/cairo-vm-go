@@ -8,13 +8,18 @@ import (
 )
 
 type LayoutBuiltin struct {
-	Runner  memory.BuiltinRunner
+	// Runner for the builtin
+	Runner memory.BuiltinRunner
+	// Builtin id from starknet parser
 	Builtin starknet.Builtin
 }
 
 type Layout struct {
-	Name     string
-	RcUnits  uint64
+	// Name of the layout
+	Name string
+	// Number of range check units allowed per step
+	RcUnits uint64
+	// List of builtins to be included in given layout
 	Builtins []LayoutBuiltin
 }
 
