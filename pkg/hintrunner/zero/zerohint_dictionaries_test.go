@@ -823,6 +823,24 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				errCheck: errorTextContains("no dictionary at address: 1:5"),
 			},
+			{
+				operanders: []*hintOperander{
+					{Name: "dict_accesses_end", Kind: apRelative, Value: addrWithSegment(2, 0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					dictionaryManager := hinter.NewZeroDictionaryManager()
+					defaultValueMv := memory.MemoryValueFromInt(12345)
+					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
+
+					err := ctx.runnerContext.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					return newDictSquashCopyDictHint(ctx.operanders["dict_accesses_end"])
+				},
+				check: varValueInScopeEquals("initial_dict", make(map[fp.Element]memory.MemoryValue)),
+			},
 		},
 	})
 }
