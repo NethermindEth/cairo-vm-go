@@ -302,9 +302,9 @@ func (runner *ZeroRunner) checkRangeCheckUsage() error {
 	rcMin, rcMax := runner.getPermRangeCheckLimits()
 	var rcUnitsUsedByBuiltins uint64
 	for _, builtin := range runner.program.Builtins {
-		bRunner := builtins.Runner(builtin)
-		rangeCheckRunner, ok := bRunner.(*builtins.RangeCheck)
-		if ok {
+		if builtin == starknet.RangeCheck {
+			bRunner := builtins.Runner(builtin)
+			rangeCheckRunner, _ := bRunner.(*builtins.RangeCheck)
 			rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(rangeCheckRunner.String())
 			if ok {
 				rcUnitsUsedByBuiltins += rangeCheckSegment.Len() * rangeCheckRunner.RangeCheckNParts
@@ -323,9 +323,9 @@ func (runner *ZeroRunner) getPermRangeCheckLimits() (uint64, uint64) {
 	rcMin, rcMax := runner.vm.RcLimitsMin, runner.vm.RcLimitsMax
 
 	for _, builtin := range runner.program.Builtins {
-		bRunner := builtins.Runner(builtin)
-		rangeCheckRunner, ok := bRunner.(*builtins.RangeCheck)
-		if ok {
+		if builtin == starknet.RangeCheck {
+			bRunner := builtins.Runner(builtin)
+			rangeCheckRunner, _ := bRunner.(*builtins.RangeCheck)
 			rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(rangeCheckRunner.String())
 			if ok {
 				rangeCheckUsageMin, rangeCheckUsageMax := rangeCheckRunner.GetRangeCheckUsage(rangeCheckSegment)
