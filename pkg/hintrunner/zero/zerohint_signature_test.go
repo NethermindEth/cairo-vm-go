@@ -248,5 +248,105 @@ func TestVerifyZeroHint(t *testing.T) {
 				}),
 			},
 		},
+		"IsZeroPack": {
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("42")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroPackHint(ctx.operanders["x.d0"])
+				},
+				check: varValueInScopeEquals("x", big.NewInt(42)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("100")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("99")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("88")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroPackHint(ctx.operanders["x.d0"])
+				},
+				check: varValueInScopeEquals("x", bigIntString("526795342172649295060681798242672774947232024188944484", 10)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("77371252455336262886226991")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("77371252455336267181195263")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("19342813113834066795298815")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroPackHint(ctx.operanders["x.d0"])
+				},
+				check: varValueInScopeEquals("x", big.NewInt(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("3618502788666131213697322783095070105623107215331596699973092056135872020481")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroPackHint(ctx.operanders["x.d0"])
+				},
+				check: varValueInScopeEquals("x", big.NewInt(0)),
+			},
+		},
+		"IsZeroDivMod": {
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("1", 10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroDivModHint()
+				},
+				check: varValueInScopeEquals("value", bigIntString("1", 10)),
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("115792089237316195423570985008687907853269984665640564039457584007908834671664", 10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroDivModHint()
+				},
+				check: varValueInScopeEquals("value", bigIntString("1", 10)),
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("57662894568246526582652685623", 10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroDivModHint()
+				},
+				check: varValueInScopeEquals("value", bigIntString("77726902514058095204421112730928006705863972015508190238152451720695936255632", 10)),
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("28948022309329048855892746252171976963317496166410141009864396001977208667916", 10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroDivModHint()
+				},
+				check: varValueInScopeEquals("value", bigIntString("4", 10)),
+			},
+		},
 	})
 }
