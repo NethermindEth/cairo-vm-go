@@ -101,6 +101,7 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 				if err != nil {
 					return err
 				}
+
 				positionsDict[val] = append(positionsDict[val], i)
 				*inputBasePtr, err = inputBasePtr.AddOffset(1)
 				if err != nil {
@@ -146,6 +147,7 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 				if err != nil {
 					return err
 				}
+
 				outputSegmentBaseAddr, err = outputSegmentBaseAddr.AddOffset(1)
 				if err != nil {
 					return err
@@ -175,6 +177,7 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 				if err != nil {
 					return err
 				}
+
 				multiplicitesSegmentBaseAddr, err = multiplicitesSegmentBaseAddr.AddOffset(1)
 				if err != nil {
 					return err

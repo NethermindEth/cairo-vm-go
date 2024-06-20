@@ -68,6 +68,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			qMv := mem.MemoryValueFromFieldElement(qFelt)
 			return vm.Memory.WriteToAddress(&qAddr, &qMv)
 		},
@@ -101,22 +102,27 @@ func newVerifyECDSASignatureHint(ecdsaPtr, signature_r, signature_s hinter.ResOp
 		Name: "VerifyECDSASignature",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))
+
 			ecdsaPtrAddr, err := hinter.ResolveAsAddress(vm, ecdsaPtr)
 			if err != nil {
 				return err
 			}
+
 			signature_rFelt, err := hinter.ResolveAsFelt(vm, signature_r)
 			if err != nil {
 				return err
 			}
+
 			signature_sFelt, err := hinter.ResolveAsFelt(vm, signature_s)
 			if err != nil {
 				return err
 			}
+
 			ECDSA_segment, ok := vm.Memory.FindSegmentWithBuiltin(builtins.ECDSAName)
 			if !ok {
 				return fmt.Errorf("ECDSA segment not found")
 			}
+
 			ECDSA_builtinRunner := (ECDSA_segment.BuiltinRunner).(*builtins.ECDSA)
 			return ECDSA_builtinRunner.AddSignature(ecdsaPtrAddr.Offset, signature_rFelt, signature_sFelt)
 		},
@@ -162,6 +168,7 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 			//>	 value = y
 			//> else:
 			//>	 value = (-y) % SECP_P
+
 			xCubeAddr, err := xCube.GetAddress(vm)
 			if err != nil {
 				return err
@@ -184,6 +191,7 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			xCubeIntBig.Mod(&xCubeIntBig, &secpBig)
 
 			//> y_square_int = (x_cube_int + ids.BETA) % SECP_P
@@ -206,6 +214,7 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 			} else {
 				value.Mod(value.Neg(y), &secpBig)
 			}
+
 			return ctx.ScopeManager.AssignVariable("value", value)
 		},
 	}
@@ -236,6 +245,7 @@ func newImportSecp256R1PHint() hinter.Hinter {
 		Name: "ImportSecp256R1P",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp256r1_utils import SECP256R1_P as SECP_P
+
 			SECP256R1_PBig, ok := secp_utils.GetSecp256R1_P()
 			if !ok {
 				return fmt.Errorf("SECP256R1_P failed")
@@ -355,6 +365,7 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			valueBig := new(big.Int).Set(&resBig)
 
 			return ctx.ScopeManager.AssignVariable("value", valueBig)
@@ -374,4 +385,95 @@ func createDivModNPackedDivmodV1Hinter(resolver hintReferenceResolver) (hinter.H
 	}
 
 	return newDivModNPackedDivmodV1Hint(a, b), nil
+}
+
+// IsZeroPack hint computes packed value modulo SECP_P prime
+//
+// `newIsZeroPackHint` takes 1 operander as argument
+//   - `x` is the value that will be packed and taken modulo SECP_P prime
+//
+// `newIsZeroPackHint` assigns the result as `x` in the current scope
+func newIsZeroPackHint(x hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "IsZeroPack",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> x = pack(ids.x, PRIME) % SECP_P
+
+			xAddr, err := x.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			xValues, err := vm.Memory.ResolveAsBigInt3(xAddr)
+			if err != nil {
+				return err
+			}
+
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			xPackedBig, err := secp_utils.SecPPacked(xValues)
+			if err != nil {
+				return err
+			}
+
+			value := new(big.Int)
+			value.Mod(&xPackedBig, &secPBig)
+
+			if err := ctx.ScopeManager.AssignVariable("x", value); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+}
+
+func createIsZeroPackHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+
+	return newIsZeroPackHint(x), nil
+}
+
+// IsZeroDivMod hint computes the division modulo SECP_P prime for a given packed value
+//
+// `newIsZeroDivModHint` doesn't take any operander as argument
+//
+// `newIsZeroDivModHint` assigns the result as `value` in the current scope
+func newIsZeroDivModHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "IsZeroDivMod",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P
+			//> from starkware.python.math_utils import div_mod
+			//> value = x_inv = div_mod(1, x, SECP_P)
+
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			x, err := ctx.ScopeManager.GetVariableValueAsBigInt("x")
+			if err != nil {
+				return err
+			}
+
+			resBig, err := secp_utils.Divmod(big.NewInt(1), x, &secPBig)
+			if err != nil {
+				return err
+			}
+
+			return ctx.ScopeManager.AssignVariable("value", &resBig)
+		},
+	}
+}
+
+func createIsZeroDivModHinter() (hinter.Hinter, error) {
+	return newIsZeroDivModHint(), nil
 }

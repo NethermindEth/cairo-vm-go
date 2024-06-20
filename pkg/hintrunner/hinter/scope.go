@@ -67,6 +67,16 @@ func (sm *ScopeManager) AssignVariables(values map[string]any) error {
 	return nil
 }
 
+func (sm *ScopeManager) DeleteVariable(name string) error {
+	scope, err := sm.getCurrentScope()
+	if err != nil {
+		return err
+	}
+
+	delete(*scope, name)
+	return nil
+}
+
 func (sm *ScopeManager) GetVariableValue(name string) (any, error) {
 	scope, err := sm.getCurrentScope()
 	if err != nil {

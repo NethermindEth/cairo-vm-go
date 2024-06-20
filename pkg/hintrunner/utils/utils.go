@@ -2,6 +2,8 @@ package utils
 
 import (
 	"encoding/binary"
+	"fmt"
+	"math"
 	"math/rand"
 
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -28,4 +30,15 @@ func RandomFeltElementU128(rand *rand.Rand) fp.Element {
 
 func DefaultRandGenerator() *rand.Rand {
 	return rand.New(rand.NewSource(0))
+}
+
+func ToSafeUint32(mv *memory.MemoryValue) (uint32, error) {
+	valueUint64, err := mv.Uint64()
+	if err != nil {
+		return 0, err
+	}
+	if valueUint64 > math.MaxUint32 {
+		return 0, fmt.Errorf("value out of range")
+	}
+	return uint32(valueUint64), nil
 }
