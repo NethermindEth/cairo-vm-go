@@ -214,14 +214,9 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 			//> 	'initial_dict': dict(__dict_manager.get_dict(ids.dict_accesses_end)),
 			//> })
 
-			dictionaryManager_, err := ctx.ScopeManager.GetVariableValue("__dict_manager")
-			if err != nil {
-				return err
-			}
-
-			dictionaryManager, ok := dictionaryManager_.(hinter.ZeroDictionaryManager)
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
 			if !ok {
-				return fmt.Errorf("cannot cast dictionaryManager_ to a DictionaryManager struct")
+				return fmt.Errorf("__dict_manager not in scope")
 			}
 
 			dictAccessesEnd_, err := hinter.ResolveAsAddress(vm, dictAccessesEnd)
