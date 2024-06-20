@@ -100,8 +100,8 @@ func (address MemoryAddress) String() string {
 //   - or a pointer to another Memory Cell (a `MemoryAddress`)
 //     both values share the same underlying memory, which is a f.Element
 type MemoryValue struct {
-	felt f.Element
-	kind memoryValueKind
+	Felt f.Element
+	Kind memoryValueKind
 }
 
 type memoryValueKind uint8
@@ -116,7 +116,7 @@ var UnknownValue = MemoryValue{}
 
 func MemoryValueFromMemoryAddress(address *MemoryAddress) MemoryValue {
 	v := MemoryValue{
-		kind: addrMemoryValue,
+		Kind: addrMemoryValue,
 	}
 	*v.addrUnsafe() = *address
 	return v
@@ -124,8 +124,8 @@ func MemoryValueFromMemoryAddress(address *MemoryAddress) MemoryValue {
 
 func MemoryValueFromFieldElement(felt *f.Element) MemoryValue {
 	return MemoryValue{
-		felt: *felt,
-		kind: feltMemoryValue,
+		Felt: *felt,
+		Kind: feltMemoryValue,
 	}
 }
 
@@ -134,16 +134,16 @@ func MemoryValueFromInt[T constraints.Integer](v T) MemoryValue {
 		return MemoryValueFromUint(uint64(v))
 	}
 
-	value := MemoryValue{kind: feltMemoryValue}
+	value := MemoryValue{Kind: feltMemoryValue}
 	rhs := f.NewElement(uint64(-v))
-	value.felt.Sub(&value.felt, &rhs)
+	value.Felt.Sub(&value.Felt, &rhs)
 	return value
 }
 
 func MemoryValueFromUint[T constraints.Unsigned](v T) MemoryValue {
 	return MemoryValue{
-		felt: f.NewElement(uint64(v)),
-		kind: feltMemoryValue,
+		Felt: f.NewElement(uint64(v)),
+		Kind: feltMemoryValue,
 	}
 }
 
@@ -175,13 +175,13 @@ func MemoryValueFromAny(anyType any) (MemoryValue, error) {
 
 func EmptyMemoryValueAsFelt() MemoryValue {
 	return MemoryValue{
-		kind: feltMemoryValue,
+		Kind: feltMemoryValue,
 	}
 }
 
 func EmptyMemoryValueAsAddress() MemoryValue {
 	return MemoryValue{
-		kind: addrMemoryValue,
+		Kind: addrMemoryValue,
 	}
 }
 
@@ -191,7 +191,7 @@ func EmptyMemoryValueAs(address bool) MemoryValue {
 		kind = addrMemoryValue
 	}
 	return MemoryValue{
-		kind: kind,
+		Kind: kind,
 	}
 }
 
@@ -206,26 +206,26 @@ func (mv *MemoryValue) FieldElement() (*f.Element, error) {
 	if !mv.IsFelt() {
 		return nil, fmt.Errorf("memory value is not a field element")
 	}
-	return &mv.felt, nil
+	return &mv.Felt, nil
 }
 
 func (mv *MemoryValue) Any() any {
 	if mv.IsAddress() {
 		return mv.addrUnsafe()
 	}
-	return &mv.felt
+	return &mv.Felt
 }
 
 func (mv *MemoryValue) IsAddress() bool {
-	return mv.kind == addrMemoryValue
+	return mv.Kind == addrMemoryValue
 }
 
 func (mv *MemoryValue) IsFelt() bool {
-	return mv.kind == feltMemoryValue
+	return mv.Kind == feltMemoryValue
 }
 
 func (mv *MemoryValue) Known() bool {
-	return mv.kind != unknownMemoryValue
+	return mv.Kind != unknownMemoryValue
 }
 
 func (mv *MemoryValue) Equal(other *MemoryValue) bool {
@@ -233,7 +233,7 @@ func (mv *MemoryValue) Equal(other *MemoryValue) bool {
 		return mv.addrUnsafe().Equal(other.addrUnsafe())
 	}
 	if mv.IsFelt() && other.IsFelt() {
-		return mv.felt.Equal(&other.felt)
+		return mv.Felt.Equal(&other.Felt)
 	}
 	return false
 }
@@ -244,13 +244,13 @@ func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) error {
 		if !rhs.IsFelt() {
 			return errors.New("rhs is not a felt")
 		}
-		return mv.addrUnsafe().Add(lhs.addrUnsafe(), &rhs.felt)
+		return mv.addrUnsafe().Add(lhs.addrUnsafe(), &rhs.Felt)
 	}
 	if rhs.IsAddress() {
-		return mv.addrUnsafe().Add(rhs.addrUnsafe(), &lhs.felt)
+		return mv.addrUnsafe().Add(rhs.addrUnsafe(), &lhs.Felt)
 	}
 
-	mv.felt.Add(&lhs.felt, &rhs.felt)
+	mv.Felt.Add(&lhs.Felt, &rhs.Felt)
 	return nil
 }
 
@@ -264,7 +264,7 @@ func (mv *MemoryValue) Sub(lhs, rhs *MemoryValue) error {
 		return errors.New("cannot substract an address from a felt")
 	}
 
-	mv.felt.Sub(&lhs.felt, &rhs.felt)
+	mv.Felt.Sub(&lhs.Felt, &rhs.Felt)
 	return nil
 }
 
@@ -283,20 +283,20 @@ func (mv *MemoryValue) subAddress(lhs *MemoryAddress, rhs *MemoryValue) error {
 			return fmt.Errorf("addresses are in different segments: rhs is in %d, lhs is in %d",
 				rhsAddr.SegmentIndex, lhs.SegmentIndex)
 		}
-		mv.kind = feltMemoryValue
-		mv.felt.SetUint64(lhs.Offset - rhsAddr.Offset)
+		mv.Kind = feltMemoryValue
+		mv.Felt.SetUint64(lhs.Offset - rhsAddr.Offset)
 		return nil
 	}
 
 	// rhs is felt, the result is address.
-	if !rhs.felt.IsUint64() {
-		return fmt.Errorf("rhs field element does not fit in uint64: %s", &rhs.felt)
+	if !rhs.Felt.IsUint64() {
+		return fmt.Errorf("rhs field element does not fit in uint64: %s", &rhs.Felt)
 	}
-	rhs64 := rhs.felt.Uint64()
+	rhs64 := rhs.Felt.Uint64()
 	if rhs64 > lhs.Offset {
 		return fmt.Errorf("rhs %d is greater than lhs offset %d", rhs64, lhs.Offset)
 	}
-	mv.kind = addrMemoryValue
+	mv.Kind = addrMemoryValue
 	addrResult := mv.addrUnsafe()
 	addrResult.SegmentIndex = lhs.SegmentIndex
 	addrResult.Offset = lhs.Offset - rhs64
@@ -307,7 +307,7 @@ func (mv *MemoryValue) Mul(lhs, rhs *MemoryValue) error {
 	if lhs.IsAddress() || rhs.IsAddress() {
 		return errors.New("cannot multiply memory addresses")
 	}
-	mv.felt.Mul(&lhs.felt, &rhs.felt)
+	mv.Felt.Mul(&lhs.Felt, &rhs.Felt)
 	return nil
 }
 
@@ -315,7 +315,7 @@ func (mv *MemoryValue) Div(lhs, rhs *MemoryValue) error {
 	if lhs.IsAddress() || rhs.IsAddress() {
 		return errors.New("cannot divide memory addresses")
 	}
-	mv.felt.Div(&lhs.felt, &rhs.felt)
+	mv.Felt.Div(&lhs.Felt, &rhs.Felt)
 	return nil
 }
 
@@ -323,7 +323,7 @@ func (mv MemoryValue) String() string {
 	if mv.IsAddress() {
 		return mv.addrUnsafe().String()
 	}
-	return mv.felt.String()
+	return mv.Felt.String()
 }
 
 // Retuns a MemoryValue holding a felt as uint if it fits
@@ -331,15 +331,15 @@ func (mv *MemoryValue) Uint64() (uint64, error) {
 	if mv.IsAddress() {
 		return 0, fmt.Errorf("cannot convert a memory address into uint64: %s", *mv)
 	}
-	if !mv.felt.IsUint64() {
+	if !mv.Felt.IsUint64() {
 		return 0, fmt.Errorf("field element does not fit in uint64: %s", mv.String())
 	}
 
-	return mv.felt.Uint64(), nil
+	return mv.Felt.Uint64(), nil
 }
 
 func (mv *MemoryValue) addrUnsafe() *MemoryAddress {
-	return (*MemoryAddress)(unsafe.Pointer(&mv.felt))
+	return (*MemoryAddress)(unsafe.Pointer(&mv.Felt))
 }
 
 func (memory *Memory) GetConsecutiveMemoryValues(addr MemoryAddress, size int16) ([]MemoryValue, error) {
