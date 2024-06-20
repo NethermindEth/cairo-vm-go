@@ -6,6 +6,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -725,4 +726,40 @@ func createEcMulInnerHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	}
 
 	return newEcMulInnerHint(scalar), nil
+}
+
+// IsZeroNondet hint computes whether a value is zero or not
+//
+// `newIsZeroNondetHint` doesn't take any operander as argument
+//
+// `newIsZeroNondetHint` writes to `[ap]` the result of the comparison
+// i.e, 1 if `x == 0`, 0 otherwise
+func newIsZeroNondetHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "IsZeroConditional",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> x == 0
+
+			x, err := ctx.ScopeManager.GetVariableValueAsBigInt("x")
+			if err != nil {
+				return err
+			}
+
+			apAddr := vm.Context.AddressAp()
+
+			var v mem.MemoryValue
+
+			if x.Cmp(big.NewInt(0)) == 0 {
+				v = mem.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				v = mem.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+
+			return vm.Memory.WriteToAddress(&apAddr, &v)
+		},
+	}
+}
+
+func createIsZeroNondetHinter() (hinter.Hinter, error) {
+	return newIsZeroNondetHint(), nil
 }
