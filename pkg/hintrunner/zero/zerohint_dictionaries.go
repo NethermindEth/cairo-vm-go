@@ -230,7 +230,7 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 			}
 
 			dictionaryDataCopy := make(map[fp.Element]memory.MemoryValue)
-			for k, v := range dictionary.Data {
+			for k, v := range *dictionary.Data {
 				// Copy the key
 				keyCopy := fp.Element{}
 				keyCopy.Set(&k)

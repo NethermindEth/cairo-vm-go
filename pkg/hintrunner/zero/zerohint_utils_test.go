@@ -283,8 +283,8 @@ func zeroDictInScopeEquals(dictAddress memory.MemoryAddress, expectedData map[fp
 			t.Fatal(err)
 		}
 
-		assert.Equal(t, expectedData, dictionary.Data)
-		assert.Equal(t, expectedDefaultValue, dictionary.DefaultValue)
+		assert.Equal(t, expectedData, *dictionary.Data)
+		assert.Equal(t, expectedDefaultValue, *dictionary.DefaultValue)
 		assert.Equal(t, expectedFreeOffset, *dictionary.FreeOffset)
 	}
 }
