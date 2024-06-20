@@ -440,3 +440,40 @@ func createIsZeroPackHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 
 	return newIsZeroPackHint(x), nil
 }
+
+// IsZeroDivMod hint computes the division modulo SECP_P prime for a given packed value
+//
+// `newIsZeroDivModHint` doesn't take any operander as argument
+//
+// `newIsZeroDivModHint` assigns the result as `value` in the current scope
+func newIsZeroDivModHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "IsZeroDivMod",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P
+			//> from starkware.python.math_utils import div_mod
+			//> value = x_inv = div_mod(1, x, SECP_P)
+
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			x, err := ctx.ScopeManager.GetVariableValueAsBigInt("x")
+			if err != nil {
+				return err
+			}
+
+			resBig, err := secp_utils.Divmod(big.NewInt(1), x, &secPBig)
+			if err != nil {
+				return err
+			}
+
+			return ctx.ScopeManager.AssignVariable("value", &resBig)
+		},
+	}
+}
+
+func createIsZeroDivModHinter() (hinter.Hinter, error) {
+	return newIsZeroDivModHint(), nil
+}
