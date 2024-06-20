@@ -130,28 +130,3 @@ func (dm *ZeroDictionaryManager) SetFreeOffset(dictAddr mem.MemoryAddress, freeO
 	}
 	return fmt.Errorf("no dictionary at address: %s", dictAddr)
 }
-
-// CopyZeroDictionary creates a copy of the Data of a ZeroDictionary
-func CopyZeroDictionaryData(dict *ZeroDictionary) (map[fp.Element]mem.MemoryValue, error) {
-	// Copy the Data field
-	dataCopy := make(map[fp.Element]mem.MemoryValue)
-	for k, v := range dict.Data {
-		// Copy the key
-		keyCopy := fp.Element{}
-		keyCopy.Set(&k)
-
-		// Copy the value
-		feltCopy := fp.Element{}
-		feltCopy.Set(&v.Felt)
-
-		valueCopy := mem.MemoryValue{
-			Felt: feltCopy,
-			Kind: v.Kind,
-		}
-
-		dataCopy[keyCopy] = valueCopy
-	}
-
-	return dataCopy, nil
-
-}

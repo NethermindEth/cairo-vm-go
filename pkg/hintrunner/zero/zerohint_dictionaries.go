@@ -234,9 +234,22 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 				return err
 			}
 
-			dictionaryDataCopy, err := hinter.CopyZeroDictionaryData(&dictionary)
-			if err != nil {
-				return err
+			dictionaryDataCopy := make(map[fp.Element]memory.MemoryValue)
+			for k, v := range dictionary.Data {
+				// Copy the key
+				keyCopy := fp.Element{}
+				keyCopy.Set(&k)
+
+				// Copy the value
+				feltCopy := fp.Element{}
+				feltCopy.Set(&v.Felt)
+
+				valueCopy := memory.MemoryValue{
+					Felt: feltCopy,
+					Kind: v.Kind,
+				}
+
+				dictionaryDataCopy[keyCopy] = valueCopy
 			}
 
 			ctx.ScopeManager.EnterScope(map[string]any{"__dict_manager": dictionaryManager, "initial_dict": dictionaryDataCopy})
