@@ -57,7 +57,7 @@ func (p *Poseidon) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64
 	if err != nil {
 		return 0, err
 	}
-	return allocatedInstances * cellsPerPedersen, nil
+	return allocatedInstances * cellsPerPoseidon, nil
 }
 
 func (p *Poseidon) String() string {
