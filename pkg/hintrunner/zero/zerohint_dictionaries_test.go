@@ -812,6 +812,15 @@ func TestZeroHintDictionaries(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "dict_accesses_end", Kind: apRelative, Value: addr(5)},
 				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDictSquashCopyDictHint(ctx.operanders["dict_accesses_end"])
+				},
+				errCheck: errorTextContains("__dict_manager not in scope"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "dict_accesses_end", Kind: apRelative, Value: addr(5)},
+				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					err := ctx.ScopeManager.AssignVariable("__dict_manager", hinter.ZeroDictionaryManager{})
 					if err != nil {
