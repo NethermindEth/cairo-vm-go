@@ -49,9 +49,16 @@ func (f *Filter) filtered(testFile string) bool {
 }
 
 func TestCairoZeroFiles(t *testing.T) {
-	root := "./cairo_files/"
-	testFiles, err := os.ReadDir(root)
+	root1 := "./cairo_zero_hint_tests/"
+	root2 := "./cairo_zero_file_tests/"
+
+	testFiles1, err := os.ReadDir(root1)
 	require.NoError(t, err)
+
+	testFiles2, err := os.ReadDir(root2)
+	require.NoError(t, err)
+
+	testFiles := append(testFiles1, testFiles2...)
 
 	// filter is for debugging purposes
 	filter := Filter{}
@@ -62,7 +69,12 @@ func TestCairoZeroFiles(t *testing.T) {
 			continue
 		}
 
-		path := filepath.Join(root, dirEntry.Name())
+		var path string
+		if contains(testFiles1, dirEntry) {
+			path = filepath.Join(root1, dirEntry.Name())
+		} else {
+			path = filepath.Join(root2, dirEntry.Name())
+		}
 
 		if !filter.filtered(dirEntry.Name()) {
 			continue
@@ -110,7 +122,17 @@ func TestCairoZeroFiles(t *testing.T) {
 		}
 	}
 
-	clean(root)
+	clean(root1)
+	clean(root2)
+}
+
+func contains(files []os.DirEntry, file os.DirEntry) bool {
+	for _, f := range files {
+		if f.Name() == file.Name() {
+			return true
+		}
+	}
+	return false
 }
 
 const (
