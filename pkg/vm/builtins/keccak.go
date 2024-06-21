@@ -20,8 +20,10 @@ import (
 const KeccakName = "keccak"
 const cellsPerKeccak = 16
 const inputCellsPerKeccak = 8
+const instancesPerComponentKeccak = 16
 
 type Keccak struct {
+	ratio uint64
 }
 
 func (k *Keccak) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
@@ -78,4 +80,8 @@ func (k *Keccak) InferValue(segment *memory.Segment, offset uint64) error {
 
 func (k *Keccak) String() string {
 	return KeccakName
+}
+
+func (k *Keccak) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, k.ratio, inputCellsPerKeccak, instancesPerComponentKeccak, cellsPerKeccak)
 }

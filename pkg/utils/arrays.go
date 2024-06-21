@@ -20,3 +20,12 @@ func Pop[T any](a *[]T) (T, error) {
 	*a = (*a)[:len(*a)-1]
 	return v, nil
 }
+
+func Contains[T comparable](a []T, v T) bool {
+	for _, e := range a {
+		if e == v {
+			return true
+		}
+	}
+	return false
+}
