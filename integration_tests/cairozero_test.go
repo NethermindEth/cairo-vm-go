@@ -169,6 +169,8 @@ func runPythonVm(testFilename, path string) (string, string, error) {
 	// A file without this suffix will use the default ("plain") layout.
 	if strings.HasSuffix(testFilename, ".small.cairo") {
 		args = append(args, "--layout", "small")
+	} else if strings.HasSuffix(testFilename, ".starknet_with_keccak.cairo") {
+		args = append(args, "--layout", "starknet_with_keccak")
 	}
 
 	cmd := exec.Command("cairo-run", args...)
