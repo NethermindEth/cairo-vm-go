@@ -55,7 +55,7 @@ func (r *RangeCheck) GetRangeCheckUsage(rangeCheckSegment *memory.Segment) (uint
 		}
 		feltDigits := valueFelt.Bits()
 		for _, digit := range feltDigits {
-			for i := 3; i >= 0; i-- {
+			for i := 0; i < 3; i++ {
 				part := (digit >> (i * INNER_RC_BOUND_SHIFT)) & INNER_RC_BOUND_MASK
 				if part < minVal {
 					minVal = part
