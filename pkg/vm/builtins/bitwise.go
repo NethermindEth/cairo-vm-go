@@ -12,8 +12,11 @@ const BitwiseName = "bitwise"
 
 const cellsPerBitwise = 5
 const inputCellsPerBitwise = 2
+const instancesPerComponentBitwise = 1
 
-type Bitwise struct{}
+type Bitwise struct {
+	ratio uint64
+}
 
 func (b *Bitwise) CheckWrite(
 	segment *memory.Segment, offset uint64, value *memory.MemoryValue,
@@ -89,4 +92,8 @@ func (b *Bitwise) InferValue(segment *memory.Segment, offset uint64) error {
 
 func (b *Bitwise) String() string {
 	return BitwiseName
+}
+
+func (b *Bitwise) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, b.ratio, inputCellsPerBitwise, instancesPerComponentBitwise, cellsPerBitwise)
 }

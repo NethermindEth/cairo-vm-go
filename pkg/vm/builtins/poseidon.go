@@ -10,8 +10,11 @@ import (
 const PoseidonName = "poseidon"
 const cellsPerPoseidon = 6
 const inputCellsPerPoseidon = 3
+const instancesPerComponentPoseidon = 1
 
-type Poseidon struct{}
+type Poseidon struct {
+	ratio uint64
+}
 
 func (p *Poseidon) CheckWrite(segment *mem.Segment, offset uint64, value *mem.MemoryValue) error {
 	return nil
@@ -47,6 +50,10 @@ func (p *Poseidon) InferValue(segment *mem.Segment, offset uint64) error {
 
 	}
 	return nil
+}
+
+func (p *Poseidon) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, p.ratio, inputCellsPerPoseidon, instancesPerComponentPoseidon, cellsPerPoseidon)
 }
 
 func (p *Poseidon) String() string {
