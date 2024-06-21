@@ -181,6 +181,10 @@ func (b *testBuiltin) String() string {
 	return "test_builtin"
 }
 
+func (b *testBuiltin) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
+	return 0, nil
+}
+
 func TestSegmentBuiltin(t *testing.T) {
 	segment := EmptySegment().WithBuiltinRunner(&testBuiltin{})
 

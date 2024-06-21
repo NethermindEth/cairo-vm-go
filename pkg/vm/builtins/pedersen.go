@@ -11,8 +11,11 @@ import (
 const PedersenName = "pedersen"
 const cellsPerPedersen = 3
 const inputCellsPerPedersen = 2
+const instancesPerComponentPedersen = 1
 
-type Pedersen struct{}
+type Pedersen struct {
+	ratio uint64
+}
 
 func (p *Pedersen) CheckWrite(segment *mem.Segment, offset uint64, value *mem.MemoryValue) error {
 	return nil
@@ -55,4 +58,8 @@ func (p *Pedersen) InferValue(segment *mem.Segment, offset uint64) error {
 
 func (p *Pedersen) String() string {
 	return PedersenName
+}
+
+func (p *Pedersen) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, p.ratio, inputCellsPerPedersen, instancesPerComponentPedersen, cellsPerPedersen)
 }

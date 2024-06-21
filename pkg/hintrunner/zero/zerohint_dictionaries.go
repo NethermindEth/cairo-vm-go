@@ -109,10 +109,12 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			defaultValueMv := memory.MemoryValueFromFieldElement(defaultValue)
 			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, defaultValueMv)
 			newDefaultDictionaryAddrMv := memory.MemoryValueFromMemoryAddress(&newDefaultDictionaryAddr)
 			apAddr := vm.Context.AddressAp()
+
 			return vm.Memory.WriteToAddress(&apAddr, &newDefaultDictionaryAddrMv)
 		},
 	}
@@ -123,6 +125,7 @@ func createDefaultDictNewHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	if err != nil {
 		return nil, err
 	}
+
 	return newDefaultDictNewHint(defaultValue), nil
 }
 
@@ -189,6 +192,75 @@ func createDictReadHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 		return nil, err
 	}
 	return newDictReadHint(dictPtr, key, value), nil
+}
+
+// DictSquashCopyDict hint prepares arguments for creating a new dictionary
+// with `dict_new` by copying the existing one in the context of squashing
+//
+// `newDictSquashCopyDictHint` takes 1 operander as argument
+//   - `dict_accesses_end` variable is a memory address that allows access to the dictionary
+//
+// `newDictSquashCopyDictHint`assigns `initial_dict` to the retrieved dictionary in the current scope
+func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DictSquashCopyDict",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> # Prepare arguments for dict_new. In particular, the same dictionary values should be copied
+			//> # to the new (squashed) dictionary.
+			//> vm_enter_scope({
+			//> 	# Make __dict_manager accessible.
+			//> 	'__dict_manager': __dict_manager,
+			//> 	# Create a copy of the dict, in case it changes in the future.
+			//> 	'initial_dict': dict(__dict_manager.get_dict(ids.dict_accesses_end)),
+			//> })
+
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
+			if !ok {
+				return fmt.Errorf("__dict_manager not in scope")
+			}
+
+			dictAccessesEnd_, err := hinter.ResolveAsAddress(vm, dictAccessesEnd)
+			if err != nil {
+				return err
+			}
+
+			dictionary, err := dictionaryManager.GetDictionary(*dictAccessesEnd_)
+			if err != nil {
+				return err
+			}
+
+			dictionaryDataCopy := make(map[fp.Element]memory.MemoryValue)
+			for k, v := range dictionary.Data {
+				// Copy the key
+				keyCopy := fp.Element{}
+				keyCopy.Set(&k)
+
+				// Copy the value
+				feltCopy := fp.Element{}
+				feltCopy.Set(&v.Felt)
+
+				valueCopy := memory.MemoryValue{
+					Felt: feltCopy,
+					Kind: v.Kind,
+				}
+
+				dictionaryDataCopy[keyCopy] = valueCopy
+			}
+
+			ctx.ScopeManager.EnterScope(map[string]any{"__dict_manager": dictionaryManager, "initial_dict": dictionaryDataCopy})
+
+			return nil
+		},
+	}
+}
+
+func createDictSquashCopyDictHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	dictAccessesEnd, err := resolver.GetResOperander("dict_accesses_end")
+	if err != nil {
+		return nil, err
+	}
+
+	return newDictSquashCopyDictHint(dictAccessesEnd), nil
 }
 
 // DictWrite hint writes a value for a given key in a dictionary
@@ -690,7 +762,6 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hi
 			if len(currentAccessIndices) == 0 {
 				resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
 				return vm.Memory.WriteToNthStructField(loopTempsAddr, resultMemZero, int16(3))
-
 			} else {
 				resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
 				return vm.Memory.WriteToNthStructField(loopTempsAddr, resultMemOne, int16(3))
@@ -822,7 +893,6 @@ func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.ResOperander) hinter.H
 			if len(currentAccessIndices) == 0 {
 				resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
 				return vm.Memory.WriteToAddress(&shouldSkipLoopAddr, &resultMemOne)
-
 			} else {
 				resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
 				return vm.Memory.WriteToAddress(&shouldSkipLoopAddr, &resultMemZero)
@@ -940,6 +1010,7 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 		Name: "SquashDictInnerUsedAccessesAssert",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> assert ids.n_used_accesses == len(access_indices[key])
+
 			accessIndices_, err := ctx.ScopeManager.GetVariableValue("access_indices")
 			if err != nil {
 				return err
