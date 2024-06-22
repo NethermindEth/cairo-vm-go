@@ -295,9 +295,7 @@ func newDivModSafeDivHint() hinter.Hinter {
 				return err
 			}
 
-			value_Big := new(big.Int).Set(&value)
-
-			return ctx.ScopeManager.AssignVariable("value", value_Big)
+			return ctx.ScopeManager.AssignVariable("value", &value)
 		},
 	}
 }
