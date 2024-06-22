@@ -5,8 +5,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -57,6 +59,8 @@ func TestCairoZeroFiles(t *testing.T) {
 	filter := Filter{}
 	filter.init()
 
+	benchmarkMap := make(map[string][2]int)
+
 	for _, dirEntry := range testFiles {
 		if dirEntry.IsDir() || isGeneratedFile(dirEntry.Name()) {
 			continue
@@ -76,17 +80,26 @@ func TestCairoZeroFiles(t *testing.T) {
 			continue
 		}
 
+		start := time.Now()
+
 		pyTraceFile, pyMemoryFile, err := runPythonVm(dirEntry.Name(), compiledOutput)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
 
+		elapsed_py := time.Since(start)
+
+		start = time.Now()
+
 		traceFile, memoryFile, _, err := runVm(compiledOutput)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
+
+		elapsed_go := time.Since(start)
+		benchmarkMap[dirEntry.Name()] = [2]int{int(elapsed_py.Milliseconds()), int(elapsed_go.Milliseconds())}
 
 		pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
 		if err != nil {
@@ -110,7 +123,70 @@ func TestCairoZeroFiles(t *testing.T) {
 		}
 	}
 
+	WriteBenchMarksToFile(benchmarkMap)
+
 	clean(root)
+}
+
+// Save the Benchmarks for the integration tests in `BenchMarks.txt`
+func WriteBenchMarksToFile(benchmarkMap map[string][2]int) {
+	headers := []string{"File", "PythonVM (ms)", "GoVM (ms)"}
+	columnWidths := []int{20, 15, 10}
+
+	totalWidth := 0
+	for _, width := range columnWidths {
+		totalWidth += width + 3
+	}
+
+	totalWidth += 1
+
+	border := strings.Repeat("=", totalWidth)
+
+	var sb strings.Builder
+
+	sb.WriteString(border + "\n")
+	sb.WriteString(formatRow(headers, columnWidths) + "\n")
+	sb.WriteString(border + "\n")
+
+	for key, values := range benchmarkMap {
+		row := []string{key}
+		for _, value := range values {
+			row = append(row, strconv.Itoa(value))
+		}
+		sb.WriteString(formatRow(row, columnWidths) + "\n")
+	}
+
+	sb.WriteString(border + "\n")
+
+	fileName := "BenchMarks.txt"
+	file, err := os.Create(fileName)
+	if err != nil {
+		fmt.Println("Error creating file: ", err)
+		return
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(sb.String())
+	if err != nil {
+		fmt.Println("Error writing to file: ", err)
+	} else {
+		fmt.Println("Benchmarks successfully written to:", fileName)
+	}
+}
+
+// format a row with borders and spaces based on the column widths
+func formatRow(row []string, widths []int) string {
+	var sb strings.Builder
+	sb.WriteString("|")
+	for i, col := range row {
+		sb.WriteString(" " + padRight(col, widths[i]) + " |")
+	}
+	return sb.String()
+}
+
+// pad a string with spaces to the right to match the given width
+func padRight(str string, width int) string {
+	return fmt.Sprintf("%-"+fmt.Sprintf("%d", width)+"s", str)
 }
 
 const (
