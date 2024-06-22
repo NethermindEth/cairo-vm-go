@@ -25,3 +25,7 @@ func (o *Output) InferValue(segment *memory.Segment, offset uint64) error {
 func (o *Output) String() string {
 	return OutputName
 }
+
+func (o *Output) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
+	return segmentUsedSize, nil
+}

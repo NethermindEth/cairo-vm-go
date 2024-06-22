@@ -169,6 +169,8 @@ func runPythonVm(testFilename, path string) (string, string, error) {
 	// A file without this suffix will use the default ("plain") layout.
 	if strings.HasSuffix(testFilename, ".small.cairo") {
 		args = append(args, "--layout", "small")
+	} else if strings.HasSuffix(testFilename, ".starknet_with_keccak.cairo") {
+		args = append(args, "--layout", "starknet_with_keccak")
 	}
 
 	cmd := exec.Command("cairo-run", args...)
@@ -189,6 +191,16 @@ func runVm(path string) (string, string, string, error) {
 	traceOutput := swapExtenstion(path, traceSuffix)
 	memoryOutput := swapExtenstion(path, memorySuffix)
 
+	// If any other layouts are needed, add the suffix checks here.
+	// The convention would be: ".$layout.cairo"
+	// A file without this suffix will use the default ("plain") layout, which is a layout with no builtins included"
+	layout := "plain"
+	if strings.Contains(path, ".small") {
+		layout = "small"
+	} else if strings.Contains(path, ".starknet_with_keccak") {
+		layout = "starknet_with_keccak"
+	}
+
 	cmd := exec.Command(
 		"../bin/cairo-vm",
 		"run",
@@ -197,6 +209,8 @@ func runVm(path string) (string, string, string, error) {
 		traceOutput,
 		"--memoryfile",
 		memoryOutput,
+		"--layout",
+		layout,
 		path,
 	)
 
@@ -283,7 +297,7 @@ func memoryRepr(memory []*fp.Element) string {
 }
 
 func TestFailingRangeCheck(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/range_check.cairo")
+	compiledOutput, err := compileZeroCode("./builtin_tests/range_check.small.cairo")
 	require.NoError(t, err)
 
 	_, _, _, err = runVm(compiledOutput)
@@ -293,7 +307,7 @@ func TestFailingRangeCheck(t *testing.T) {
 }
 
 func TestBitwise(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/bitwise_builtin_test.cairo")
+	compiledOutput, err := compileZeroCode("./builtin_tests/bitwise_builtin_test.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
 	_, _, _, err = runVm(compiledOutput)
@@ -303,7 +317,7 @@ func TestBitwise(t *testing.T) {
 }
 
 func TestPedersen(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/pedersen_test.cairo")
+	compiledOutput, err := compileZeroCode("./builtin_tests/pedersen_test.small.cairo")
 	require.NoError(t, err)
 
 	_, _, output, err := runVm(compiledOutput)
@@ -314,7 +328,7 @@ func TestPedersen(t *testing.T) {
 }
 
 func TestPoseidon(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/poseidon_test.cairo")
+	compiledOutput, err := compileZeroCode("./builtin_tests/poseidon_test.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
 	_, _, output, err := runVm(compiledOutput)
@@ -325,7 +339,7 @@ func TestPoseidon(t *testing.T) {
 }
 
 func TestECDSA(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/ecdsa_test.cairo")
+	compiledOutput, err := compileZeroCode("./builtin_tests/ecdsa_test.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
 	_, _, _, err = runVm(compiledOutput)
@@ -335,7 +349,7 @@ func TestECDSA(t *testing.T) {
 }
 
 func TestEcOp(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/ecop.cairo")
+	compiledOutput, err := compileZeroCode("./builtin_tests/ecop.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
 	_, _, _, err = runVm(compiledOutput)
@@ -346,7 +360,7 @@ func TestEcOp(t *testing.T) {
 }
 
 func TestKeccak(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/keccak_test.cairo")
+	compiledOutput, err := compileZeroCode("./builtin_tests/keccak_test.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
 	_, _, output, err := runVm(compiledOutput)
