@@ -387,11 +387,7 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			if err := ctx.ScopeManager.AssignVariable("value", value_Big); err != nil {
-				return err
-			}
-
-			return nil
+			return ctx.ScopeManager.AssignVariable("value", value_Big)
 		},
 	}
 }
