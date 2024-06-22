@@ -9,8 +9,17 @@ import (
 )
 
 const RangeCheckName = "range_check"
+const inputCellsPerRangeCheck = 1
+const cellsPerRangeCheck = 1
+const INNER_RC_BOUND_SHIFT = 16
+const INNER_RC_BOUND_MASK = (1 << 16) - 1
+const instancesPerComponentRangeCheck = 1
 
-type RangeCheck struct{}
+type RangeCheck struct {
+	ratio            uint64
+	RangeCheckNParts uint64
+	InnerRCBound     uint64
+}
 
 func (r *RangeCheck) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
 	felt, err := value.FieldElement()
@@ -31,4 +40,31 @@ func (r *RangeCheck) InferValue(segment *memory.Segment, offset uint64) error {
 
 func (r *RangeCheck) String() string {
 	return RangeCheckName
+}
+
+func (r *RangeCheck) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, r.ratio, inputCellsPerRangeCheck, instancesPerComponentRangeCheck, cellsPerRangeCheck)
+}
+
+func (r *RangeCheck) GetRangeCheckUsage(rangeCheckSegment *memory.Segment) (uint64, uint64) {
+	minVal, maxVal := ^uint64(0), uint64(0)
+	for _, value := range rangeCheckSegment.Data {
+		valueFelt, err := value.FieldElement()
+		if err != nil {
+			continue
+		}
+		feltDigits := valueFelt.Bits()
+		for _, digit := range feltDigits {
+			for i := 0; i < 3; i++ {
+				part := (digit >> (i * INNER_RC_BOUND_SHIFT)) & INNER_RC_BOUND_MASK
+				if part < minVal {
+					minVal = part
+				}
+				if part > maxVal {
+					maxVal = part
+				}
+			}
+		}
+	}
+	return uint64(minVal), uint64(maxVal)
 }
