@@ -41,6 +41,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
