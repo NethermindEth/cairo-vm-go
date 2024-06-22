@@ -12,16 +12,16 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-// VerifyZero hint verifies that a packed value is zero modulo the SECP prime
+// VerifyZero hint verifies that a packed value is zero modulo the secp256k1 prime
 // and stores in memory the quotient of the modular divison of the packed value by
-// SECP prime
+// secp256k1 prime
 //
 // `newVerifyZeroHint` takes 2 operanders as arguments
 //   - `value` is the value that will be verified
 //   - `q` is the variable that will store the quotient of the modular division
 //
 // `newVerifyZeroHint` writes the quotient of the modular division of the packed value
-// by SECP prime to the memory address corresponding to `q`
+// by secp256k1 prime to the memory address corresponding to `q`
 func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "VerifyZero",
