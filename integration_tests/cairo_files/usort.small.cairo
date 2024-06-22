@@ -15,6 +15,7 @@ func main{range_check_ptr}() -> () {
     assert output[0] = 7;
     assert output[1] = 8;
     assert output[2] = 9;
+    
     assert multiplicities[0] = 1;
     assert multiplicities[1] = 1;
     assert multiplicities[2] = 1;
