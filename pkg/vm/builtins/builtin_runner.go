@@ -54,5 +54,5 @@ func GetAllocatedInstances(ratio uint64, cellsPerInstance uint64, segmentUsedSiz
 		return 0, fmt.Errorf("Number of steps must be at least %d. Current step: %d", minSteps, vmCurrentStep)
 	}
 	value := vmCurrentStep / ratio
-	return value * cellsPerInstance, nil
+	return value, nil
 }
