@@ -65,7 +65,7 @@ func TestHintParser(t *testing.T) {
 			ExpectedResOperander: hinter.BinaryOp{
 				Operator: hinter.Mul,
 				Lhs:      hinter.ApCellRef(0),
-				Rhs:      hinter.Immediate{0, 0, 0, 3},
+				Rhs:      hinter.Immediate{18446744073709551521, 18446744073709551615, 18446744073709551615, 576460752303421872},
 			},
 		},
 	}
