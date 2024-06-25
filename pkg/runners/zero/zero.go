@@ -303,11 +303,17 @@ func (runner *ZeroRunner) checkRangeCheckUsage() error {
 	var rcUnitsUsedByBuiltins uint64
 	for _, builtin := range runner.program.Builtins {
 		if builtin == starknet.RangeCheck {
-			bRunner := builtins.Runner(builtin)
-			rangeCheckRunner, _ := bRunner.(*builtins.RangeCheck)
-			rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(rangeCheckRunner.String())
-			if ok {
-				rcUnitsUsedByBuiltins += rangeCheckSegment.Len() * rangeCheckRunner.RangeCheckNParts
+			for _, layoutBuiltin := range runner.layout.Builtins {
+				if builtin == layoutBuiltin.Builtin {
+					rangeCheckRunner, ok := layoutBuiltin.Runner.(*builtins.RangeCheck)
+					if !ok {
+						return fmt.Errorf("error type casting to *builtins.RangeCheck")
+					}
+					rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(rangeCheckRunner.String())
+					if ok {
+						rcUnitsUsedByBuiltins += rangeCheckSegment.Len() * rangeCheckRunner.RangeCheckNParts
+					}
+				}
 			}
 		}
 	}
