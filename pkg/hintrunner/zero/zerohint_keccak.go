@@ -486,9 +486,16 @@ func createBlockPermutationHinter(resolver hintReferenceResolver) (hinter.Hinter
 	return newBlockPermutationHint(keccakPtr), nil
 }
 
+// CompareBytesInWord hint compares a value to BYTES_IN_WORD constant, i.e., 8
+//
+// `newCompareBytesInWordHint` takes 1 operander as argument
+//   - `nBytes` is the value to be compared with BYTES_IN_WORD
+//
+// `newCompareBytesInWordHint` writes 1 or 0 to `ap` memory address depending on whether
+// `n_bytes` is lower than BYTES_IN_WORD or not
 func newCompareBytesInWordHint(nBytes hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "CompareBytesInWordHint(",
+		Name: "CompareBytesInWordHint",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.n_bytes < ids.BYTES_IN_WORD
 			nBytesVal, err := hinter.ResolveAsUint64(vm, nBytes)
