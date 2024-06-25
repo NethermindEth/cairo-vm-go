@@ -407,7 +407,7 @@ func createKeccakWriteArgsHinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newKeccakWriteArgsHint(inputs, low, high), nil
 }
 
-// CompareKeccakFullRateInBytes hint compares a value to KECCAK_FULL_RATE_IN_BYTES
+// CompareKeccakFullRateInBytes hint compares a value to KECCAK_FULL_RATE_IN_BYTES constant, i.e., 136
 //
 // `newKeccakWriteArgsHint` takes 1 operander as argument
 //   - `nBytes` is the value to be compared with KECCAK_FULL_RATE_IN_BYTES
