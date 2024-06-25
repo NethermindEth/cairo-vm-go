@@ -37,12 +37,11 @@ func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.
 				return err
 			}
 
-			newN, ok := n.(fp.Element)
+			newN, ok := n.(uint64)
 			if !ok {
 				return fmt.Errorf("casting n into a felt failed")
 			}
-
-			newN.Sub(&newN, &utils.FeltOne)
+			newN = newN - 1
 
 			if err := ctx.ScopeManager.AssignVariable("n", newN); err != nil {
 				return err
@@ -55,7 +54,7 @@ func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.
 			}
 
 			var continueTargetMv memory.MemoryValue
-			if utils.FeltLt(&utils.FeltZero, &newN) {
+			if newN > 0 {
 				continueTargetMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
 				continueTargetMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
