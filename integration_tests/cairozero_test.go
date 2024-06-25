@@ -131,15 +131,6 @@ func TestCairoZeroFiles(t *testing.T) {
 	clean(root2)
 }
 
-func contains(files []os.DirEntry, file os.DirEntry) bool {
-	for _, f := range files {
-		if f.Name() == file.Name() {
-			return true
-		}
-	}
-	return false
-}
-
 const (
 	compiledSuffix = "_compiled.json"
 	pyTraceSuffix  = "_py_trace"
