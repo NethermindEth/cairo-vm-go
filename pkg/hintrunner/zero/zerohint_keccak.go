@@ -407,6 +407,45 @@ func createKeccakWriteArgsHinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newKeccakWriteArgsHint(inputs, low, high), nil
 }
 
+// CompareKeccakFullRateInBytes hint compares a value to KECCAK_FULL_RATE_IN_BYTES
+//
+// `newKeccakWriteArgsHint` takes 1 operander as argument
+//   - `nBytes` is the value to be compared with KECCAK_FULL_RATE_IN_BYTES
+//
+// `newKeccakWriteArgsHint` writes 1 or 0 to `ap` memory address depending on whether
+// `n_bytes` is greater or equal to KECCAK_FULL_RATE_IN_BYTES or not
+func newCompareKeccakFullRateInBytesHint(nBytes hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "CompareKeccakFullRateInBytes",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.n_bytes >= ids.KECCAK_FULL_RATE_IN_BYTES
+			nBytesVal, err := hinter.ResolveAsUint64(vm, nBytes)
+			if err != nil {
+				return err
+			}
+
+			apAddr := vm.Context.AddressAp()
+			var resultMv memory.MemoryValue
+			if nBytesVal >= uint64(utils.KECCAK_FULL_RATE_IN_BYTES) {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+
+			return vm.Memory.WriteToAddress(&apAddr, &resultMv)
+		},
+	}
+}
+
+func createCompareKeccakFullRateInBytesNondetHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	nBytes, err := resolver.GetResOperander("n_bytes")
+	if err != nil {
+		return nil, err
+	}
+
+	return newCompareKeccakFullRateInBytesHint(nBytes), nil
+}
+
 // BlockPermutation hint executes the Keccak block permutation function to a segment of memory
 //
 // `newBlockPermutationHint` takes 1 operander as argument
