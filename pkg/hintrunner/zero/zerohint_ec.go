@@ -6,6 +6,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -725,4 +726,131 @@ func createEcMulInnerHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	}
 
 	return newEcMulInnerHint(scalar), nil
+}
+
+// IsZeroNondet hint computes whether a value is zero or not
+//
+// `newIsZeroNondetHint` doesn't take any operander as argument
+//
+// `newIsZeroNondetHint` writes to `[ap]` the result of the comparison
+// i.e, 1 if `x == 0`, 0 otherwise
+func newIsZeroNondetHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "IsZeroConditional",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> x == 0
+
+			x, err := ctx.ScopeManager.GetVariableValueAsBigInt("x")
+			if err != nil {
+				return err
+			}
+
+			apAddr := vm.Context.AddressAp()
+
+			var v mem.MemoryValue
+
+			if x.Cmp(big.NewInt(0)) == 0 {
+				v = mem.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				v = mem.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+
+			return vm.Memory.WriteToAddress(&apAddr, &v)
+		},
+	}
+}
+
+func createIsZeroNondetHinter() (hinter.Hinter, error) {
+	return newIsZeroNondetHint(), nil
+}
+
+// IsZeroPack hint computes packed value modulo SECP_P prime
+//
+// `newIsZeroPackHint` takes 1 operander as argument
+//   - `x` is the value that will be packed and taken modulo SECP_P prime
+//
+// `newIsZeroPackHint` assigns the result as `x` in the current scope
+func newIsZeroPackHint(x hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "IsZeroPack",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> x = pack(ids.x, PRIME) % SECP_P
+
+			xAddr, err := x.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			xValues, err := vm.Memory.ResolveAsBigInt3(xAddr)
+			if err != nil {
+				return err
+			}
+
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			xPackedBig, err := secp_utils.SecPPacked(xValues)
+			if err != nil {
+				return err
+			}
+
+			value := new(big.Int)
+			value.Mod(&xPackedBig, &secPBig)
+
+			if err := ctx.ScopeManager.AssignVariable("x", value); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+}
+
+func createIsZeroPackHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+
+	return newIsZeroPackHint(x), nil
+}
+
+// IsZeroDivMod hint computes the division modulo SECP_P prime for a given packed value
+//
+// `newIsZeroDivModHint` doesn't take any operander as argument
+//
+// `newIsZeroDivModHint` assigns the result as `value` in the current scope
+func newIsZeroDivModHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "IsZeroDivMod",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P
+			//> from starkware.python.math_utils import div_mod
+			//> value = x_inv = div_mod(1, x, SECP_P)
+
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			x, err := ctx.ScopeManager.GetVariableValueAsBigInt("x")
+			if err != nil {
+				return err
+			}
+
+			resBig, err := secp_utils.Divmod(big.NewInt(1), x, &secPBig)
+			if err != nil {
+				return err
+			}
+
+			return ctx.ScopeManager.AssignVariable("value", &resBig)
+		},
+	}
+}
+
+func createIsZeroDivModHinter() (hinter.Hinter, error) {
+	return newIsZeroDivModHint(), nil
 }

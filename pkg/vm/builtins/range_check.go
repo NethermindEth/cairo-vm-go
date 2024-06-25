@@ -9,6 +9,7 @@ import (
 )
 
 const RangeCheckName = "range_check"
+const inputCellsPerRangeCheck = 1
 const cellsPerRangeCheck = 1
 const INNER_RC_BOUND_SHIFT = 16
 const INNER_RC_BOUND_MASK = (1 << 16) - 1
@@ -42,11 +43,7 @@ func (r *RangeCheck) String() string {
 }
 
 func (r *RangeCheck) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(r.ratio, cellsPerRangeCheck, segmentUsedSize, instancesPerComponentRangeCheck, vmCurrentStep)
-	if err != nil {
-		return 0, err
-	}
-	return allocatedInstances * cellsPerRangeCheck, nil
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, r.ratio, inputCellsPerRangeCheck, instancesPerComponentRangeCheck, cellsPerRangeCheck)
 }
 
 func (r *RangeCheck) GetRangeCheckUsage(rangeCheckSegment *memory.Segment) (uint64, uint64) {
@@ -58,7 +55,7 @@ func (r *RangeCheck) GetRangeCheckUsage(rangeCheckSegment *memory.Segment) (uint
 		}
 		feltDigits := valueFelt.Bits()
 		for _, digit := range feltDigits {
-			for i := 3; i >= 0; i-- {
+			for i := 0; i < 3; i++ {
 				part := (digit >> (i * INNER_RC_BOUND_SHIFT)) & INNER_RC_BOUND_MASK
 				if part < minVal {
 					minVal = part
