@@ -485,3 +485,36 @@ func createBlockPermutationHinter(resolver hintReferenceResolver) (hinter.Hinter
 
 	return newBlockPermutationHint(keccakPtr), nil
 }
+
+func newCompareBytesInWordHint(nBytes hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "CompareBytesInWordHint(",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.n_bytes < ids.BYTES_IN_WORD
+			nBytesVal, err := hinter.ResolveAsUint64(vm, nBytes)
+			if err != nil {
+				return err
+			}
+
+			bytesInWord := uint64(8)
+			apAddr := vm.Context.AddressAp()
+			var resultMv memory.MemoryValue
+			if nBytesVal < bytesInWord {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+
+			return vm.Memory.WriteToAddress(&apAddr, &resultMv)
+		},
+	}
+}
+
+func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	nBytes, err := resolver.GetResOperander("n_bytes")
+	if err != nil {
+		return nil, err
+	}
+
+	return newCompareBytesInWordHint(nBytes), nil
+}
