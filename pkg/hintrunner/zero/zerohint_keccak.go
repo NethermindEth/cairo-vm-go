@@ -109,7 +109,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 			//>			f'Got: length={length}.'
 			keccakMaxSize := uint64(1 << 20)
 			if lengthVal > keccakMaxSize {
-				return fmt.Errorf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d.", keccakMaxSize, lengthVal)
+				return fmt.Errorf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d", keccakMaxSize, lengthVal)
 			}
 
 			dataPtr, err := hinter.ResolveAsAddress(vm, data)
