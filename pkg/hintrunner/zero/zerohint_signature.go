@@ -296,18 +296,7 @@ func newDivModSafeDivHint() hinter.Hinter {
 				return err
 			}
 
-			k_Big := new(big.Int).Set(&value)
-			value_Big := new(big.Int).Set(&value)
-
-			if err := ctx.ScopeManager.AssignVariable("k", k_Big); err != nil {
-				return err
-			}
-
-			if err := ctx.ScopeManager.AssignVariable("value", value_Big); err != nil {
-				return err
-			}
-
-			return nil
+			return ctx.ScopeManager.AssignVariable("value", &value)
 		},
 	}
 }
