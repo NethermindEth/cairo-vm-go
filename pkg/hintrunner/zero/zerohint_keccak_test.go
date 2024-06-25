@@ -59,7 +59,7 @@ func TestZeroHintKeccak(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
 				},
-				errCheck: errorTextContains(fmt.Sprintf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d.", 1<<20, (1<<20)+1)),
+				errCheck: errorTextContains(fmt.Sprintf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d", 1<<20, (1<<20)+1)),
 			},
 			{
 				operanders: []*hintOperander{
