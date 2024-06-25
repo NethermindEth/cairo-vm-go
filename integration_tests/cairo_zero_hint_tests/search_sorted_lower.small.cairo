@@ -16,8 +16,8 @@ func main{range_check_ptr}() -> () {
     let (local array_ptr: MyStruct*) = alloc();
     assert array_ptr[0] = MyStruct(a=1, b=2);
     assert array_ptr[1] = MyStruct(a=3, b=4);
-    assert array_ptr[2] = MyStruct(a=5, b=6);
     assert array_ptr[3] = MyStruct(a=3, b=8);
+    assert array_ptr[2] = MyStruct(a=5, b=6);
 
     let (smallest_ptr: MyStruct*) = search_sorted_lower(
         array_ptr=array_ptr, elm_size=2, n_elms=3, key=2
@@ -28,8 +28,8 @@ func main{range_check_ptr}() -> () {
     let (local array_ptr: MyStruct*) = alloc();
     assert array_ptr[0] = MyStruct(a=1, b=2);
     assert array_ptr[1] = MyStruct(a=3, b=4);
-    assert array_ptr[2] = MyStruct(a=5, b=6);
     assert array_ptr[3] = MyStruct(a=3, b=8);
+    assert array_ptr[2] = MyStruct(a=5, b=6);
 
     let (smallest_ptr: MyStruct*) = search_sorted_lower(
         array_ptr=array_ptr, elm_size=2, n_elms=4, key=6
