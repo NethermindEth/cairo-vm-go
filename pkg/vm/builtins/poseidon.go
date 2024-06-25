@@ -53,11 +53,7 @@ func (p *Poseidon) InferValue(segment *mem.Segment, offset uint64) error {
 }
 
 func (p *Poseidon) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(p.ratio, inputCellsPerPoseidon, segmentUsedSize, instancesPerComponentPoseidon, vmCurrentStep)
-	if err != nil {
-		return 0, err
-	}
-	return allocatedInstances * cellsPerPoseidon, nil
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, p.ratio, inputCellsPerPoseidon, instancesPerComponentPoseidon, cellsPerPoseidon)
 }
 
 func (p *Poseidon) String() string {

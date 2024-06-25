@@ -61,9 +61,5 @@ func (p *Pedersen) String() string {
 }
 
 func (p *Pedersen) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(p.ratio, inputCellsPerPedersen, segmentUsedSize, instancesPerComponentPedersen, vmCurrentStep)
-	if err != nil {
-		return 0, err
-	}
-	return allocatedInstances * cellsPerPedersen, nil
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, p.ratio, inputCellsPerPedersen, instancesPerComponentPedersen, cellsPerPedersen)
 }

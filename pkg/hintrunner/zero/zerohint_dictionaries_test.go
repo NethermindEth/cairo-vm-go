@@ -812,5 +812,49 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 			},
 		},
+		"DictSquashCopyDict": {
+			{
+				operanders: []*hintOperander{
+					{Name: "dict_accesses_end", Kind: apRelative, Value: addr(5)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDictSquashCopyDictHint(ctx.operanders["dict_accesses_end"])
+				},
+				errCheck: errorTextContains("__dict_manager not in scope"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "dict_accesses_end", Kind: apRelative, Value: addr(5)},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("__dict_manager", hinter.ZeroDictionaryManager{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDictSquashCopyDictHint(ctx.operanders["dict_accesses_end"])
+				},
+				errCheck: errorTextContains("no dictionary at address: 1:5"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "dict_accesses_end", Kind: apRelative, Value: addrWithSegment(2, 0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					dictionaryManager := hinter.NewZeroDictionaryManager()
+					defaultValueMv := memory.MemoryValueFromInt(12345)
+					dictionaryManager.NewDefaultDictionary(ctx.vm, defaultValueMv)
+
+					err := ctx.runnerContext.ScopeManager.AssignVariable("__dict_manager", dictionaryManager)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					return newDictSquashCopyDictHint(ctx.operanders["dict_accesses_end"])
+				},
+				check: varValueInScopeEquals("initial_dict", make(map[fp.Element]memory.MemoryValue)),
+			},
+		},
 	})
 }

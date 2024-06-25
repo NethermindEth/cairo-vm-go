@@ -106,11 +106,7 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 }
 
 func (e *EcOp) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(e.ratio, inputCellsPerEcOp, segmentUsedSize, instancesPerComponentEcOp, vmCurrentStep)
-	if err != nil {
-		return 0, err
-	}
-	return allocatedInstances * cellsPerEcOp, nil
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, e.ratio, inputCellsPerEcOp, instancesPerComponentEcOp, cellsPerEcOp)
 }
 
 // structure to represent a point in the elliptic curve
