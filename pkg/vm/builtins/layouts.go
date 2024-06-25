@@ -32,7 +32,7 @@ func getPlainLayout() Layout {
 }
 
 func getStarknetWithKeccakLayout() Layout {
-	return Layout{Name: "starknet_with_keccak", RcUnits: 16, Builtins: []LayoutBuiltin{
+	return Layout{Name: "starknet_with_keccak", RcUnits: 4, Builtins: []LayoutBuiltin{
 		{Runner: &Output{}, Builtin: starknet.Output},
 		{Runner: &Pedersen{ratio: 32}, Builtin: starknet.Pedersen},
 		{Runner: &RangeCheck{ratio: 16, RangeCheckNParts: 8, InnerRCBound: 2 << 16}, Builtin: starknet.RangeCheck},
