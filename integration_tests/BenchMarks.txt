@@ -1,13 +1,14 @@
-=======================================================
-| File                 | PythonVM (ms)   | GoVM (ms)  |
-=======================================================
-| find_element.cairo   | 609             | 100        |
-| set_add.cairo        | 748             | 105        |
-| dict.cairo           | 659             | 117        |
-| fib.cairo            | 706             | 104        |
-| hintrefs.cairo       | 657             | 111        |
-| simple.cairo         | 643             | 106        |
-| squash_dict.cairo    | 590             | 109        |
-| alloc.cairo          | 592             | 96         |
-| factorial.cairo      | 1143            | 110        |
-=======================================================
+====================================================================
+| File                              | PythonVM (ms)   | GoVM (ms)  |
+====================================================================
+| fib.cairo                         | 744             | 130        |
+| squash_dict.cairo                 | 694             | 138        |
+| set_add.cairo                     | 713             | 129        |
+| simple.cairo                      | 729             | 124        |
+| test.starknet_with_keccak.cairo   | 1682            | 143        |
+| alloc.cairo                       | 716             | 127        |
+| dict.cairo                        | 714             | 123        |
+| factorial.cairo                   | 1312            | 119        |
+| find_element.cairo                | 668             | 132        |
+| hintrefs.cairo                    | 750             | 144        |
+====================================================================

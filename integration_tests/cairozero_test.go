@@ -80,25 +80,18 @@ func TestCairoZeroFiles(t *testing.T) {
 			continue
 		}
 
-		start := time.Now()
-
-		pyTraceFile, pyMemoryFile, err := runPythonVm(dirEntry.Name(), compiledOutput)
+		elapsed_py, pyTraceFile, pyMemoryFile, err := runPythonVm(dirEntry.Name(), compiledOutput)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
 
-		elapsed_py := time.Since(start)
-
-		start = time.Now()
-
-		traceFile, memoryFile, _, err := runVm(compiledOutput)
+		elapsed_go, traceFile, memoryFile, _, err := runVm(compiledOutput)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
 
-		elapsed_go := time.Since(start)
 		benchmarkMap[dirEntry.Name()] = [2]int{int(elapsed_py.Milliseconds()), int(elapsed_go.Milliseconds())}
 
 		pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
@@ -131,7 +124,7 @@ func TestCairoZeroFiles(t *testing.T) {
 // Save the Benchmarks for the integration tests in `BenchMarks.txt`
 func WriteBenchMarksToFile(benchmarkMap map[string][2]int) {
 	headers := []string{"File", "PythonVM (ms)", "GoVM (ms)"}
-	columnWidths := []int{20, 15, 10}
+	columnWidths := []int{33, 15, 10}
 
 	totalWidth := 0
 	for _, width := range columnWidths {
@@ -226,7 +219,7 @@ func compileZeroCode(path string) (string, error) {
 
 // given a path to a compiled cairo zero file, execute it using the
 // python vm and returns the trace and memory files location
-func runPythonVm(testFilename, path string) (string, string, error) {
+func runPythonVm(testFilename, path string) (time.Duration, string, string, error) {
 	traceOutput := swapExtenstion(path, pyTraceSuffix)
 	memoryOutput := swapExtenstion(path, pyMemorySuffix)
 
@@ -251,19 +244,24 @@ func runPythonVm(testFilename, path string) (string, string, error) {
 
 	cmd := exec.Command("cairo-run", args...)
 
+	start := time.Now()
+
 	res, err := cmd.CombinedOutput()
+
+	elapsed := time.Since(start)
+
 	if err != nil {
-		return "", "", fmt.Errorf(
+		return 0, "", "", fmt.Errorf(
 			"cairo-run %s: %w\n%s", path, err, string(res),
 		)
 	}
 
-	return traceOutput, memoryOutput, nil
+	return elapsed, traceOutput, memoryOutput, nil
 }
 
 // given a path to a compiled cairo zero file, execute
 // it using our vm
-func runVm(path string) (string, string, string, error) {
+func runVm(path string) (time.Duration, string, string, string, error) {
 	traceOutput := swapExtenstion(path, traceSuffix)
 	memoryOutput := swapExtenstion(path, memorySuffix)
 
@@ -290,14 +288,19 @@ func runVm(path string) (string, string, string, error) {
 		path,
 	)
 
+	start := time.Now()
+
 	res, err := cmd.CombinedOutput()
+
+	elapsed := time.Since(start)
+
 	if err != nil {
-		return "", "", string(res), fmt.Errorf(
+		return 0, "", "", string(res), fmt.Errorf(
 			"cairo-vm run %s: %w\n%s", path, err, string(res),
 		)
 	}
 
-	return traceOutput, memoryOutput, string(res), nil
+	return elapsed, traceOutput, memoryOutput, string(res), nil
 
 }
 
@@ -376,7 +379,7 @@ func TestFailingRangeCheck(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/range_check.small.cairo")
 	require.NoError(t, err)
 
-	_, _, _, err = runVm(compiledOutput)
+	_, _, _, _, err = runVm(compiledOutput)
 	require.ErrorContains(t, err, "check write: 2**128 <")
 
 	clean("./builtin_tests/")
@@ -386,7 +389,7 @@ func TestBitwise(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/bitwise_builtin_test.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
-	_, _, _, err = runVm(compiledOutput)
+	_, _, _, _, err = runVm(compiledOutput)
 	require.NoError(t, err)
 
 	clean("./builtin_tests/")
@@ -396,7 +399,7 @@ func TestPedersen(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/pedersen_test.small.cairo")
 	require.NoError(t, err)
 
-	_, _, output, err := runVm(compiledOutput)
+	_, _, _, output, err := runVm(compiledOutput)
 	require.NoError(t, err)
 	require.Contains(t, output, "Program output:\n  2089986280348253421170679821480865132823066470938446095505822317253594081284")
 
@@ -407,7 +410,7 @@ func TestPoseidon(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/poseidon_test.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
-	_, _, output, err := runVm(compiledOutput)
+	_, _, _, output, err := runVm(compiledOutput)
 	require.NoError(t, err)
 	require.Contains(t, output, "Program output:\n  442682200349489646213731521593476982257703159825582578145778919623645026501\n  2233832504250924383748553933071188903279928981104663696710686541536735838182\n  2512222140811166287287541003826449032093371832913959128171347018667852712082\n")
 	require.Contains(t, output, "3016509350703874362933565866148509373957094754875411937434637891208784994231\n  3015199725895936530535660185611704199044060139852899280809302949374221328865\n  3062378460350040063467318871602229987911299744598148928378797834245039883769\n")
@@ -418,7 +421,7 @@ func TestECDSA(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/ecdsa_test.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
-	_, _, _, err = runVm(compiledOutput)
+	_, _, _, _, err = runVm(compiledOutput)
 	require.NoError(t, err)
 
 	clean("./builtin_tests/")
@@ -428,7 +431,7 @@ func TestEcOp(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/ecop.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
-	_, _, _, err = runVm(compiledOutput)
+	_, _, _, _, err = runVm(compiledOutput)
 	// todo(rodro): This test is failing due to the lack of hint processing. It should be address soon
 	require.Error(t, err)
 
@@ -439,7 +442,7 @@ func TestKeccak(t *testing.T) {
 	compiledOutput, err := compileZeroCode("./builtin_tests/keccak_test.starknet_with_keccak.cairo")
 	require.NoError(t, err)
 
-	_, _, output, err := runVm(compiledOutput)
+	_, _, _, output, err := runVm(compiledOutput)
 	require.NoError(t, err)
 	require.Contains(t, output, "Program output:\n  1304102964824333531548398680304964155037696012322029952943772\n  688749063493959345342507274897412933692859993314608487848187\n  986714560881445649520443980361539218531403996118322524237197\n  1184757872753521629808292433475729390634371625298664050186717\n  719230200744669084408849842242045083289669818920073250264351\n  1543031433416778513637578850638598357854418012971636697855068\n  63644822371671650271181212513090078620238279557402571802224\n  879446821229338092940381117330194802032344024906379963157761\n")
 
