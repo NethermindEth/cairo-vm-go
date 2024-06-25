@@ -11,6 +11,7 @@ import (
 )
 
 const ECDSAName = "ecdsa"
+const inputCellsPerECDSA = 2
 const cellsPerECDSA = 2
 
 const instancesPerComponentECDSA = 1
@@ -140,11 +141,7 @@ func (e *ECDSA) String() string {
 }
 
 func (e *ECDSA) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(e.ratio, cellsPerECDSA, segmentUsedSize, instancesPerComponentECDSA, vmCurrentStep)
-	if err != nil {
-		return 0, err
-	}
-	return allocatedInstances * cellsPerECDSA, nil
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, e.ratio, inputCellsPerECDSA, instancesPerComponentECDSA, cellsPerECDSA)
 }
 
 // recoverY recovers the y and -y coordinate of x. True y can be either y or -y

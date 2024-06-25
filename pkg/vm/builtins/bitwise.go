@@ -95,9 +95,5 @@ func (b *Bitwise) String() string {
 }
 
 func (b *Bitwise) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	allocatedInstances, err := GetAllocatedInstances(b.ratio, inputCellsPerBitwise, segmentUsedSize, instancesPerComponentBitwise, vmCurrentStep)
-	if err != nil {
-		return 0, err
-	}
-	return allocatedInstances * cellsPerBitwise, nil
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, b.ratio, inputCellsPerBitwise, instancesPerComponentBitwise, cellsPerBitwise)
 }

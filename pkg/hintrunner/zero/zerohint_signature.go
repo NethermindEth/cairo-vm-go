@@ -12,16 +12,16 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-// VerifyZero hint verifies that a packed value is zero modulo the SECP prime
+// VerifyZero hint verifies that a packed value is zero modulo the secp256k1 prime
 // and stores in memory the quotient of the modular divison of the packed value by
-// SECP prime
+// secp256k1 prime
 //
 // `newVerifyZeroHint` takes 2 operanders as arguments
 //   - `value` is the value that will be verified
 //   - `q` is the variable that will store the quotient of the modular division
 //
 // `newVerifyZeroHint` writes the quotient of the modular division of the packed value
-// by SECP prime to the memory address corresponding to `q`
+// by secp256k1 prime to the memory address corresponding to `q`
 func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "VerifyZero",
@@ -41,6 +41,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
@@ -328,6 +329,7 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import N, pack
 			//> from starkware.python.math_utils import div_mod, safe_div
+			//>
 			//> a = pack(ids.a, PRIME)
 			//> b = pack(ids.b, PRIME)
 			//> value = res = div_mod(a, b, N)
@@ -397,11 +399,7 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			if err := ctx.ScopeManager.AssignVariable("value", value_Big); err != nil {
-				return err
-			}
-
-			return nil
+			return ctx.ScopeManager.AssignVariable("value", value_Big)
 		},
 	}
 }

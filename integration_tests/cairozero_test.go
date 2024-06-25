@@ -49,9 +49,21 @@ func (f *Filter) filtered(testFile string) bool {
 }
 
 func TestCairoZeroFiles(t *testing.T) {
-	root := "./cairo_files/"
-	testFiles, err := os.ReadDir(root)
+	root1 := "./cairo_zero_hint_tests/"
+	root2 := "./cairo_zero_file_tests/"
+
+	testFiles1, err := os.ReadDir(root1)
 	require.NoError(t, err)
+
+	testFiles2, err := os.ReadDir(root2)
+	require.NoError(t, err)
+
+	testFiles := append(testFiles1, testFiles2...)
+
+	testFiles1Map := make(map[string]struct{}, len(testFiles1))
+	for _, entry := range testFiles1 {
+		testFiles1Map[entry.Name()] = struct{}{}
+	}
 
 	// filter is for debugging purposes
 	filter := Filter{}
@@ -62,7 +74,12 @@ func TestCairoZeroFiles(t *testing.T) {
 			continue
 		}
 
-		path := filepath.Join(root, dirEntry.Name())
+		var path string
+		if _, found := testFiles1Map[dirEntry.Name()]; found {
+			path = filepath.Join(root1, dirEntry.Name())
+		} else {
+			path = filepath.Join(root2, dirEntry.Name())
+		}
 
 		if !filter.filtered(dirEntry.Name()) {
 			continue
@@ -110,7 +127,8 @@ func TestCairoZeroFiles(t *testing.T) {
 		}
 	}
 
-	clean(root)
+	clean(root1)
+	clean(root2)
 }
 
 const (
@@ -169,6 +187,8 @@ func runPythonVm(testFilename, path string) (string, string, error) {
 	// A file without this suffix will use the default ("plain") layout.
 	if strings.HasSuffix(testFilename, ".small.cairo") {
 		args = append(args, "--layout", "small")
+	} else if strings.HasSuffix(testFilename, ".starknet_with_keccak.cairo") {
+		args = append(args, "--layout", "starknet_with_keccak")
 	}
 
 	cmd := exec.Command("cairo-run", args...)
@@ -191,7 +211,7 @@ func runVm(path string) (string, string, string, error) {
 
 	// If any other layouts are needed, add the suffix checks here.
 	// The convention would be: ".$layout.cairo"
-	// A file without this suffix will use the default ("plain") layout.
+	// A file without this suffix will use the default ("plain") layout, which is a layout with no builtins included"
 	layout := "plain"
 	if strings.Contains(path, ".small") {
 		layout = "small"
