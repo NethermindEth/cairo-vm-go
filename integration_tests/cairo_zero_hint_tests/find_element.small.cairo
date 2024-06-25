@@ -59,7 +59,7 @@ func main{range_check_ptr}() -> () {
     let (element_ptr: MyStruct*) = find_element(
         array_ptr=array_ptr, elm_size=MyStruct.SIZE, n_elms=3, key=5
     );
-    // A pointer to the element with index 2 is returned.
+    // A pointer to the element with first field equal to key is returned.
     assert element_ptr.a = 5;
     assert element_ptr.b = 6;
 
