@@ -60,9 +60,9 @@ func TestCairoZeroFiles(t *testing.T) {
 
 	testFiles := append(testFiles1, testFiles2...)
 
-	testFiles1Map := make(map[string]struct{}, len(testFiles1))
+	testFiles1Map := make(map[string]bool, len(testFiles1))
 	for _, entry := range testFiles1 {
-		testFiles1Map[entry.Name()] = struct{}{}
+		testFiles1Map[entry.Name()] = true
 	}
 
 	// filter is for debugging purposes
@@ -74,11 +74,9 @@ func TestCairoZeroFiles(t *testing.T) {
 			continue
 		}
 
-		var path string
+		path := filepath.Join(root2, dirEntry.Name())
 		if _, found := testFiles1Map[dirEntry.Name()]; found {
 			path = filepath.Join(root1, dirEntry.Name())
-		} else {
-			path = filepath.Join(root2, dirEntry.Name())
 		}
 
 		if !filter.filtered(dirEntry.Name()) {
