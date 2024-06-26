@@ -286,9 +286,15 @@ func zeroDictInScopeEquals(dictAddress memory.MemoryAddress, expectedData map[fp
 		if !ok {
 			t.Fatal("failed to fetch dictionary manager")
 		}
-		dictionary, err := dictionaryManager.GetDictionary(dictAddress)
-		if err != nil {
-			t.Fatal(err)
+
+		// we are directly fetching the dictionary from the dictionary manager using the SegmentIndex
+		// using the GetDictionary function on the dictionary manager
+		// would also assert the dictAddress offset with the dictionary FreeOffset which would not match
+		// if our tests did any read/write/update operations on the dictionary
+		// this hack ensures we can use the test dict operander to still fetch and check dictionary values
+		dictionary, ok := dictionaryManager.Dictionaries[dictAddress.SegmentIndex]
+		if !ok {
+			t.Fatal(fmt.Errorf("no dictionary at address: %s", dictAddress))
 		}
 
 		assert.Equal(t, expectedData, dictionary.Data)

@@ -23,8 +23,8 @@ func main{range_check_ptr}() {
     let list_end: felt* = &my_list[2];
     let (new_elm: MyStruct*) = alloc();
     assert new_elm[0] = MyStruct(a=2, b=3);
-
     set_add{set_end_ptr=list_end}(set_ptr=my_list, elm_size=MyStruct.SIZE, elm_ptr=new_elm);
     assert my_list[2] = MyStruct(a=2, b=3);
+
     return ();
 }
