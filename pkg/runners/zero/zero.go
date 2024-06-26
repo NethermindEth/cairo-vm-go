@@ -12,7 +12,6 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type ZeroRunner struct {
@@ -162,7 +161,7 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) 
 }
 
 func (runner *ZeroRunner) initializeEntrypoint(
-	initialPCOffset uint64, arguments []*f.Element, returnFp *mem.MemoryValue, memory *mem.Memory,
+	initialPCOffset uint64, arguments []*fp.Element, returnFp *mem.MemoryValue, memory *mem.Memory,
 ) (mem.MemoryAddress, error) {
 	stack, err := runner.initializeBuiltins(memory)
 	if err != nil {
@@ -303,17 +302,11 @@ func (runner *ZeroRunner) checkRangeCheckUsage() error {
 	var rcUnitsUsedByBuiltins uint64
 	for _, builtin := range runner.program.Builtins {
 		if builtin == starknet.RangeCheck {
-			for _, layoutBuiltin := range runner.layout.Builtins {
-				if builtin == layoutBuiltin.Builtin {
-					rangeCheckRunner, ok := layoutBuiltin.Runner.(*builtins.RangeCheck)
-					if !ok {
-						return fmt.Errorf("error type casting to *builtins.RangeCheck")
-					}
-					rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(rangeCheckRunner.String())
-					if ok {
-						rcUnitsUsedByBuiltins += rangeCheckSegment.Len() * rangeCheckRunner.RangeCheckNParts
-					}
-				}
+			bRunner := builtins.Runner(builtin)
+			rangeCheckRunner, _ := bRunner.(*builtins.RangeCheck)
+			rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(rangeCheckRunner.String())
+			if ok {
+				rcUnitsUsedByBuiltins += rangeCheckSegment.Len() * rangeCheckRunner.RangeCheckNParts
 			}
 		}
 	}

@@ -91,11 +91,8 @@ type VirtualMachine struct {
 func NewVirtualMachine(
 	initialContext Context, memory *mem.Memory, config VirtualMachineConfig,
 ) (*VirtualMachine, error) {
-	// Initialize the trace if necesary
-	var trace []Context
-	if config.ProofMode {
-		trace = make([]Context, 0)
-	}
+
+	trace := make([]Context, 0)
 
 	return &VirtualMachine{
 		Context:      initialContext,
@@ -136,9 +133,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 	}
 
 	// store the trace before state change
-	if vm.config.ProofMode {
-		vm.Trace = append(vm.Trace, vm.Context)
-	}
+	vm.Trace = append(vm.Trace, vm.Context)
 
 	err = vm.RunInstruction(instruction)
 	if err != nil {
@@ -218,10 +213,6 @@ func (vm *VirtualMachine) RunInstruction(instruction *a.Instruction) error {
 
 // It returns the current trace entry, the public memory, and the occurrence of an error
 func (vm *VirtualMachine) ExecutionTrace() ([]Trace, error) {
-	if !vm.config.ProofMode {
-		return nil, fmt.Errorf("proof mode is off")
-	}
-
 	return vm.relocateTrace(), nil
 }
 
