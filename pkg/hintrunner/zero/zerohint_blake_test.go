@@ -1,7 +1,6 @@
 package zero
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -432,11 +431,9 @@ func TestZeroHintBlake(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "blake2s_ptr_end", Kind: apRelative, Value: addrWithSegment(1, 7)},
-					{Name: "N_PACKED_INSTANCES", Kind: fpRelative, Value: feltUint64(7)},
-					{Name: "INPUT_BLOCK_FELTS", Kind: apRelative, Value: feltUint64(16)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sFinalizeHint(ctx.operanders["blake2s_ptr_end"], ctx.operanders["N_PACKED_INSTANCES"], ctx.operanders["INPUT_BLOCK_FELTS"])
+					return newBlake2sFinalizeHint(ctx.operanders["blake2s_ptr_end"])
 				},
 				check: consecutiveVarAddrResolvedValueEquals(
 					"blake2s_ptr_end",
@@ -493,28 +490,6 @@ func TestZeroHintBlake(t *testing.T) {
 						feltUint64(813310313), feltUint64(2491453561), feltUint64(3491828193), feltUint64(2085238082),
 						feltUint64(1219908895), feltUint64(514171180), feltUint64(4245497115), feltUint64(4193177630),
 					}),
-			},
-			{
-				operanders: []*hintOperander{
-					{Name: "blake2s_ptr_end", Kind: apRelative, Value: addrWithSegment(1, 7)},
-					{Name: "N_PACKED_INSTANCES", Kind: fpRelative, Value: feltUint64(20)},
-					{Name: "INPUT_BLOCK_FELTS", Kind: apRelative, Value: feltUint64(16)},
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sFinalizeHint(ctx.operanders["blake2s_ptr_end"], ctx.operanders["N_PACKED_INSTANCES"], ctx.operanders["INPUT_BLOCK_FELTS"])
-				},
-				errCheck: errorTextContains(fmt.Sprintf("in range [0, 20), got %d", 20)),
-			},
-			{
-				operanders: []*hintOperander{
-					{Name: "blake2s_ptr_end", Kind: apRelative, Value: addrWithSegment(1, 7)},
-					{Name: "N_PACKED_INSTANCES", Kind: fpRelative, Value: feltUint64(7)},
-					{Name: "INPUT_BLOCK_FELTS", Kind: apRelative, Value: feltUint64(200)},
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newBlake2sFinalizeHint(ctx.operanders["blake2s_ptr_end"], ctx.operanders["N_PACKED_INSTANCES"], ctx.operanders["INPUT_BLOCK_FELTS"])
-				},
-				errCheck: errorTextContains(fmt.Sprintf("in range [0, 100), got %d", 200)),
 			},
 		},
 		"Blake2sCompute": {

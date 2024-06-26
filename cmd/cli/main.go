@@ -17,7 +17,7 @@ func main() {
 	var entrypointOffset uint64
 	var traceLocation string
 	var memoryLocation string
-
+	var layoutName string
 	app := &cli.App{
 		Name:                 "cairo-vm",
 		Usage:                "A cairo virtual machine",
@@ -61,6 +61,12 @@ func main() {
 						Required:    false,
 						Destination: &memoryLocation,
 					},
+					&cli.StringFlag{
+						Name:        "layout",
+						Usage:       "specifies the set of builtins to be used",
+						Required:    false,
+						Destination: &layoutName,
+					},
 				},
 				Action: func(ctx *cli.Context) error {
 					// TODO: move this action's body to a separate function to decrease the
@@ -89,9 +95,8 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot create hints: %w", err)
 					}
-
 					fmt.Println("Running....")
-					runner, err := runnerzero.NewRunner(program, hints, proofmode, maxsteps)
+					runner, err := runnerzero.NewRunner(program, hints, proofmode, maxsteps, layoutName)
 					if err != nil {
 						return fmt.Errorf("cannot create runner: %w", err)
 					}
@@ -111,6 +116,10 @@ func main() {
 					}
 
 					if proofmode {
+						runner.EndRun()
+						if err := runner.FinalizeSegments(); err != nil {
+							return fmt.Errorf("cannot finalize segments: %w", err)
+						}
 						trace, memory, err := runner.BuildProof()
 						if err != nil {
 							return fmt.Errorf("cannot build proof: %w", err)
