@@ -154,12 +154,6 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("__dict_manager not in scope")
 			}
 
-			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
-			err = dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
-			if err != nil {
-				return err
-			}
-
 			//> ids.value = dict_tracker.data[ids.key]
 			key, err := hinter.ResolveAsFelt(vm, key)
 			if err != nil {
@@ -173,7 +167,13 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			return vm.Memory.WriteToAddress(&valueAddr, &keyValue)
+			err = vm.Memory.WriteToAddress(&valueAddr, &keyValue)
+			if err != nil {
+				return err
+			}
+
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+			return dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
 		},
 	}
 }
@@ -289,12 +289,6 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 				return fmt.Errorf("__dict_manager not in scope")
 			}
 
-			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
-			err = dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
-			if err != nil {
-				return err
-			}
-
 			key, err := hinter.ResolveAsFelt(vm, key)
 			if err != nil {
 				return err
@@ -322,7 +316,13 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 				return err
 			}
 			newValueMv := memory.MemoryValueFromFieldElement(newValue)
-			return dictionaryManager.Set(*dictPtr, *key, newValueMv)
+			err = dictionaryManager.Set(*dictPtr, *key, newValueMv)
+			if err != nil {
+				return err
+			}
+
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+			return dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
 		},
 	}
 }
