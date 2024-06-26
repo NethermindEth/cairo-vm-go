@@ -1,5 +1,8 @@
 package utils
 
+const N_PACKED_INSTANCES = 7
+const INPUT_BLOCK_FELTS = 16
+
 func IV() [8]uint32 {
 	return [8]uint32{
 		0x6A09E667,
