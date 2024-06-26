@@ -366,11 +366,7 @@ func (runner *ZeroRunner) FinalizeSegments() error {
 }
 
 func (runner *ZeroRunner) BuildProof() ([]byte, []byte, error) {
-	relocatedTrace, err := runner.vm.ExecutionTrace()
-	if err != nil {
-		return nil, nil, err
-	}
-
+	relocatedTrace := runner.vm.RelocateTrace()
 	return vm.EncodeTrace(relocatedTrace), vm.EncodeMemory(runner.vm.RelocateMemory()), nil
 }
 

@@ -211,11 +211,6 @@ func (vm *VirtualMachine) RunInstruction(instruction *a.Instruction) error {
 	return nil
 }
 
-// It returns the current trace entry, the public memory, and the occurrence of an error
-func (vm *VirtualMachine) ExecutionTrace() ([]Trace, error) {
-	return vm.relocateTrace(), nil
-}
-
 func (vm *VirtualMachine) getDstAddr(instruction *a.Instruction) (mem.MemoryAddress, error) {
 	var dstRegister uint64
 	if instruction.DstRegister == a.Ap {
@@ -528,7 +523,7 @@ func (vm *VirtualMachine) updateFp(instruction *a.Instruction, dstAddr *mem.Memo
 	}
 }
 
-func (vm *VirtualMachine) relocateTrace() []Trace {
+func (vm *VirtualMachine) RelocateTrace() []Trace {
 	// one is added, because prover expect that the first element to be on
 	// indexed on 1 instead of 0
 	relocatedTrace := make([]Trace, len(vm.Trace))
