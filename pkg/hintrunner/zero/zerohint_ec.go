@@ -736,7 +736,7 @@ func createEcMulInnerHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 // i.e, 1 if `x == 0`, 0 otherwise
 func newIsZeroNondetHint() hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "IsZeroConditional",
+		Name: "IsZeroNondet",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> x == 0
 
