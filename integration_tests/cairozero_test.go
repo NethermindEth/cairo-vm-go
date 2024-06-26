@@ -60,9 +60,9 @@ func TestCairoZeroFiles(t *testing.T) {
 
 	testFiles := append(testFiles1, testFiles2...)
 
-	testFiles1Map := make(map[string]bool, len(testFiles1))
+	testFiles1Map := make(map[string]struct{}, len(testFiles1))
 	for _, entry := range testFiles1 {
-		testFiles1Map[entry.Name()] = true
+		testFiles1Map[entry.Name()] = struct{}{}
 	}
 
 	// filter is for debugging purposes
