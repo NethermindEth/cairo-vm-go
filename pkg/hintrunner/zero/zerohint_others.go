@@ -616,30 +616,22 @@ func createSearchSortedLowerHinter(resolver hintReferenceResolver) (hinter.Hinte
 // `newNondetElementsOverTWoHint` takes 2 operanders as arguments
 //   - `elementsEnd` represents the address in memory right after the last element of the array
 //   - `elements` represents the address in memory of the first element of the array
-func newNondetElementsOverTWoHint(elementsEnd, elements hinter.ResOperander) hinter.Hinter {
+func newNondetElementsOverTWoHint(n hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "NondetElementsOverTWo",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= 2)
+			//> python hint in cairo file: "ids.elements_end - ids.elements >= 2"
+			//> python hint in whitelist: "memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= 2)"
+			//> compiled file hint: "memory[ap] = to_felt_or_relocatable(ids.n >= 2)"
 
-			//> array_ptr = ids.array_ptr
-			elementsEndPtr, err := hinter.ResolveAsAddress(vm, elementsEnd)
+			n, err := hinter.ResolveAsUint64(vm, n)
 			if err != nil {
 				return err
 			}
-
-			//> elm_size = ids.elm_size
-			elementsPtr, err := hinter.ResolveAsAddress(vm, elements)
-			if err != nil {
-				return err
-			}
-
-			elementsEndPtrOffset := elementsEndPtr.Offset
-			elementsPtrOffset := elementsPtr.Offset
 
 			apAddr := vm.Context.AddressAp()
 			var resultMv memory.MemoryValue
-			if elementsEndPtrOffset-elementsPtrOffset >= uint64(2) {
+			if n >= uint64(2) {
 				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
 				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
@@ -651,17 +643,12 @@ func newNondetElementsOverTWoHint(elementsEnd, elements hinter.ResOperander) hin
 }
 
 func createNondetElementsOverTWoHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	elementsEnd, err := resolver.GetResOperander("elements_end")
+	n, err := resolver.GetResOperander("n")
 	if err != nil {
 		return nil, err
 	}
 
-	elements, err := resolver.GetResOperander("elements")
-	if err != nil {
-		return nil, err
-	}
-
-	return newNondetElementsOverTWoHint(elementsEnd, elements), nil
+	return newNondetElementsOverTWoHint(n), nil
 }
 
 // NondetElementsOverTen hint compares the offset difference between two memory address and
@@ -671,30 +658,22 @@ func createNondetElementsOverTWoHinter(resolver hintReferenceResolver) (hinter.H
 // `newNondetElementsOverTenHint` takes 2 operanders as arguments
 //   - `elementsEnd` represents the address in memory right after the last element of the array
 //   - `elements` represents the address in memory of the first element of the array
-func newNondetElementsOverTenHint(elementsEnd, elements hinter.ResOperander) hinter.Hinter {
+func newNondetElementsOverTenHint(n hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "NondetElementsOverTen",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= 10)
+			//> python hint in cairo file: "ids.elements_end - ids.elements >= 10"
+			//> python hint in whitelist: "memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= 10)"
+			//> compiled file hint: "memory[ap] = to_felt_or_relocatable(ids.n >= 10)"
 
-			//> array_ptr = ids.array_ptr
-			elementsEndPtr, err := hinter.ResolveAsAddress(vm, elementsEnd)
+			n, err := hinter.ResolveAsUint64(vm, n)
 			if err != nil {
 				return err
 			}
-
-			//> elm_size = ids.elm_size
-			elementsPtr, err := hinter.ResolveAsAddress(vm, elements)
-			if err != nil {
-				return err
-			}
-
-			elementsEndPtrOffset := elementsEndPtr.Offset
-			elementsPtrOffset := elementsPtr.Offset
 
 			apAddr := vm.Context.AddressAp()
 			var resultMv memory.MemoryValue
-			if elementsEndPtrOffset-elementsPtrOffset >= uint64(10) {
+			if n >= uint64(10) {
 				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
 				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
@@ -706,15 +685,10 @@ func newNondetElementsOverTenHint(elementsEnd, elements hinter.ResOperander) hin
 }
 
 func createNondetElementsOverTenHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	elementsEnd, err := resolver.GetResOperander("elements_end")
+	n, err := resolver.GetResOperander("n")
 	if err != nil {
 		return nil, err
 	}
 
-	elements, err := resolver.GetResOperander("elements")
-	if err != nil {
-		return nil, err
-	}
-
-	return newNondetElementsOverTenHint(elementsEnd, elements), nil
+	return newNondetElementsOverTenHint(n), nil
 }
