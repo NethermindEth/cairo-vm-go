@@ -588,10 +588,11 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(4)},
 					{Name: "big_keys", Kind: uninitialized},
 					{Name: "first_key", Kind: uninitialized},
+					{Name: "dict_accesses", Kind: apRelative, Value: addrWithSegment(1, 4)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSquashDictHint(
-						ctx.operanders["dict_accesses.1.key"],
+						ctx.operanders["dict_accesses"],
 						ctx.operanders["ptr_diff"],
 						ctx.operanders["n_accesses"],
 						ctx.operanders["big_keys"],
@@ -613,10 +614,11 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(1048577)},
 					{Name: "big_keys", Kind: uninitialized},
 					{Name: "first_key", Kind: uninitialized},
+					{Name: "dict_accesses", Kind: apRelative, Value: addrWithSegment(1, 4)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSquashDictHint(
-						ctx.operanders["dict_accesses.1.key"],
+						ctx.operanders["dict_accesses"],
 						ctx.operanders["ptr_diff"],
 						ctx.operanders["n_accesses"],
 						ctx.operanders["big_keys"],
@@ -648,10 +650,11 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(5)},
 					{Name: "big_keys", Kind: uninitialized},
 					{Name: "first_key", Kind: uninitialized},
+					{Name: "dict_accesses", Kind: apRelative, Value: addrWithSegment(1, 4)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSquashDictHint(
-						ctx.operanders["dict_accesses.1.key"],
+						ctx.operanders["dict_accesses"],
 						ctx.operanders["ptr_diff"],
 						ctx.operanders["n_accesses"],
 						ctx.operanders["big_keys"],
@@ -664,12 +667,12 @@ func TestZeroHintDictionaries(t *testing.T) {
 						"first_key": feltInt64(1),
 					})(t, ctx)
 					allVarValueInScopeEquals(map[string]any{
-						"access_indices": map[fp.Element][]uint64{
-							*feltUint64(8):  {0},
-							*feltUint64(1):  {1},
-							*feltUint64(21): {2},
-							*feltUint64(22): {3},
-							*feltUint64(6):  {4},
+						"access_indices": map[fp.Element][]fp.Element{
+							*feltUint64(8):  {*feltUint64(0)},
+							*feltUint64(1):  {*feltUint64(1)},
+							*feltUint64(21): {*feltUint64(2)},
+							*feltUint64(22): {*feltUint64(3)},
+							*feltUint64(6):  {*feltUint64(4)},
 						},
 						"keys": []fp.Element{*feltUint64(22), *feltUint64(21), *feltUint64(8), *feltUint64(6)},
 						"key":  *feltUint64(1),
@@ -699,10 +702,11 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(5)},
 					{Name: "big_keys", Kind: uninitialized},
 					{Name: "first_key", Kind: uninitialized},
+					{Name: "dict_accesses", Kind: apRelative, Value: addrWithSegment(1, 4)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSquashDictHint(
-						ctx.operanders["dict_accesses.1.key"],
+						ctx.operanders["dict_accesses"],
 						ctx.operanders["ptr_diff"],
 						ctx.operanders["n_accesses"],
 						ctx.operanders["big_keys"],
@@ -715,12 +719,12 @@ func TestZeroHintDictionaries(t *testing.T) {
 						"first_key": feltInt64(1),
 					})(t, ctx)
 					allVarValueInScopeEquals(map[string]any{
-						"access_indices": map[fp.Element][]uint64{
-							*feltUint64(8):   {0},
-							*feltUint64(1):   {1},
-							*feltUint64(21):  {2},
-							utils.FeltMax128: {3},
-							*feltUint64(6):   {4},
+						"access_indices": map[fp.Element][]fp.Element{
+							*feltUint64(8):   {*feltUint64(0)},
+							*feltUint64(1):   {*feltUint64(1)},
+							*feltUint64(21):  {*feltUint64(2)},
+							utils.FeltMax128: {*feltUint64(3)},
+							*feltUint64(6):   {*feltUint64(4)},
 						},
 						"keys": []fp.Element{utils.FeltMax128, *feltUint64(21), *feltUint64(8), *feltUint64(6)},
 						"key":  *feltUint64(1),
@@ -750,10 +754,11 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "n_accesses", Kind: apRelative, Value: feltUint64(5)},
 					{Name: "big_keys", Kind: uninitialized},
 					{Name: "first_key", Kind: uninitialized},
+					{Name: "dict_accesses", Kind: apRelative, Value: addrWithSegment(1, 4)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSquashDictHint(
-						ctx.operanders["dict_accesses.1.key"],
+						ctx.operanders["dict_accesses"],
 						ctx.operanders["ptr_diff"],
 						ctx.operanders["n_accesses"],
 						ctx.operanders["big_keys"],
@@ -766,11 +771,11 @@ func TestZeroHintDictionaries(t *testing.T) {
 						"first_key": feltInt64(29),
 					})(t, ctx)
 					allVarValueInScopeEquals(map[string]any{
-						"access_indices": map[fp.Element][]uint64{
-							*feltUint64(80):      {0},
-							*feltUint64(29):      {1, 4},
-							*feltUint64(210):     {2},
-							utils.FeltUpperBound: {3},
+						"access_indices": map[fp.Element][]fp.Element{
+							*feltUint64(80):      {*feltUint64(0)},
+							*feltUint64(29):      {*feltUint64(1), *feltUint64(4)},
+							*feltUint64(210):     {*feltUint64(2)},
+							utils.FeltUpperBound: {*feltUint64(3)},
 						},
 						"keys": []fp.Element{utils.FeltUpperBound, *feltUint64(210), *feltUint64(80)},
 						"key":  *feltUint64(29),

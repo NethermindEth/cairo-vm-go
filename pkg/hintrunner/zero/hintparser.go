@@ -5,6 +5,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/alecthomas/participle/v2"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp](participle.UseLookahead(10))
@@ -146,16 +147,12 @@ func (expression CastExp) Evaluate() (hinter.Reference, error) {
 	case hinter.Deref:
 		return result, nil
 	case DerefOffset:
+		rhsFelt := fp.NewElement(uint64(*result.Offset))
 		return hinter.BinaryOp{
 			Operator: result.Op,
 			Lhs:      result.Deref.Deref,
 			// TODO: why we're not using something like f.NewElement here?
-			Rhs: hinter.Immediate{
-				uint64(0),
-				uint64(0),
-				uint64(0),
-				uint64(*result.Offset),
-			},
+			Rhs: hinter.Immediate(rhsFelt),
 		}, nil
 	case DerefDeref:
 		return hinter.BinaryOp{
