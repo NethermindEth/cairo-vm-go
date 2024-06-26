@@ -154,12 +154,6 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("__dict_manager not in scope")
 			}
 
-			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
-			err = dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
-			if err != nil {
-				return err
-			}
-
 			//> ids.value = dict_tracker.data[ids.key]
 			key, err := hinter.ResolveAsFelt(vm, key)
 			if err != nil {
@@ -173,7 +167,13 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			return vm.Memory.WriteToAddress(&valueAddr, &keyValue)
+			err = vm.Memory.WriteToAddress(&valueAddr, &keyValue)
+			if err != nil {
+				return err
+			}
+
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+			return dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
 		},
 	}
 }
@@ -289,12 +289,6 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 				return fmt.Errorf("__dict_manager not in scope")
 			}
 
-			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
-			err = dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
-			if err != nil {
-				return err
-			}
-
 			key, err := hinter.ResolveAsFelt(vm, key)
 			if err != nil {
 				return err
@@ -322,7 +316,13 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 				return err
 			}
 			newValueMv := memory.MemoryValueFromFieldElement(newValue)
-			return dictionaryManager.Set(*dictPtr, *key, newValueMv)
+			err = dictionaryManager.Set(*dictPtr, *key, newValueMv)
+			if err != nil {
+				return err
+			}
+
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+			return dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
 		},
 	}
 }
@@ -478,7 +478,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			//> ids.first_key = key = keys.pop()
 
 			//> address = ids.dict_accesses.address_
-			address, err := dictAccesses.GetAddress(vm)
+			address, err := hinter.ResolveAsAddress(vm, dictAccesses)
 			if err != nil {
 				return err
 			}
@@ -514,7 +514,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			//> for i in range(n_accesses):
 			//>     key = memory[address + dict_access_size * i]
 			//>     access_indices.setdefault(key, []).append(i)
-			accessIndices := make(map[fp.Element][]uint64)
+			accessIndices := make(map[fp.Element][]fp.Element)
 			for i := uint64(0); i < nAccessesValue; i++ {
 				memoryAddress, err := address.AddOffset(int16(DictAccessSize * i))
 				if err != nil {
@@ -524,7 +524,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 				if err != nil {
 					return err
 				}
-				accessIndices[key] = append(accessIndices[key], i)
+				accessIndices[key] = append(accessIndices[key], fp.NewElement(i))
 			}
 
 			//> # Descending list of keys.
@@ -714,12 +714,14 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 }
 
 func createSquashDictInnerCheckAccessIndexHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	loopTemps, err := resolver.GetResOperander("loop_temps")
+	loopTemps, err := resolver.GetCellRefer("loop_temps")
 	if err != nil {
 		return nil, err
 	}
 
-	return newSquashDictInnerCheckAccessIndexHint(loopTemps), nil
+	loopTempsRes := hinter.Deref{Deref: loopTemps}
+
+	return newSquashDictInnerCheckAccessIndexHint(loopTempsRes), nil
 }
 
 // SquashDictInnerContinueLoop hint determines if the loop should continue
@@ -771,12 +773,14 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hi
 }
 
 func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	loopTemps, err := resolver.GetResOperander("loop_temps")
+	loopTemps, err := resolver.GetCellRefer("loop_temps")
 	if err != nil {
 		return nil, err
 	}
 
-	return newSquashDictInnerContinueLoopHint(loopTemps), nil
+	loopTempsRes := hinter.Deref{Deref: loopTemps}
+
+	return newSquashDictInnerContinueLoopHint(loopTempsRes), nil
 }
 
 // SquashDictInnerFirstIteration hint sets up the first iteration
