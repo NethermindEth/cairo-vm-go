@@ -598,12 +598,12 @@ func createSplitIntAssertRangeHinter(resolver hintReferenceResolver) (hinter.Hin
 // and writes to the `output` memory address the calculated limb
 func newSplitIntHint(output, value, base, bound hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "SplitIntHint",
+		Name: "SplitInt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> memory[ids.output] = res = (int(ids.value) % PRIME) % ids.base
 			//> assert res < ids.bound, f'split_int(): Limb {res} is out of range.'
 
-			outputAddr, err := output.GetAddress(vm)
+			outputPtr, err := hinter.ResolveAsAddress(vm, output)
 			if err != nil {
 				return err
 			}
@@ -630,7 +630,7 @@ func newSplitIntHint(output, value, base, bound hinter.ResOperander) hinter.Hint
 
 			v := memory.MemoryValueFromFieldElement(&result)
 
-			return vm.Memory.WriteToAddress(&outputAddr, &v)
+			return vm.Memory.WriteToAddress(outputPtr, &v)
 		},
 	}
 }
