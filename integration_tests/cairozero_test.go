@@ -51,39 +51,35 @@ func (f *Filter) filtered(testFile string) bool {
 func TestCairoZeroFiles(t *testing.T) {
 	root1 := "./cairo_zero_hint_tests/"
 	root2 := "./cairo_zero_file_tests/"
-	root3 := "./test"
 
-	// testFiles1, err := os.ReadDir(root1)
-	// require.NoError(t, err)
-
-	// testFiles2, err := os.ReadDir(root2)
-	// require.NoError(t, err)
-
-	testFiles3, err := os.ReadDir(root3)
+	testFiles1, err := os.ReadDir(root1)
 	require.NoError(t, err)
 
-	// testFiles := append(testFiles1, testFiles2...)
+	testFiles2, err := os.ReadDir(root2)
+	require.NoError(t, err)
 
-	// testFiles1Map := make(map[string]struct{}, len(testFiles1))
-	// for _, entry := range testFiles1 {
-	// 	testFiles1Map[entry.Name()] = struct{}{}
-	// }
+	testFiles := append(testFiles1, testFiles2...)
+
+	testFiles1Map := make(map[string]struct{}, len(testFiles1))
+	for _, entry := range testFiles1 {
+		testFiles1Map[entry.Name()] = struct{}{}
+	}
 
 	// filter is for debugging purposes
 	filter := Filter{}
 	filter.init()
 
-	for _, dirEntry := range testFiles3 {
+	for _, dirEntry := range testFiles {
 		if dirEntry.IsDir() || isGeneratedFile(dirEntry.Name()) {
 			continue
 		}
 
-		// var path string
-		// if _, found := testFiles1Map[dirEntry.Name()]; found {
-		// 	path = filepath.Join(root1, dirEntry.Name())
-		// } else {
-		// }
-		path := filepath.Join(root3, dirEntry.Name())
+		var path string
+		if _, found := testFiles1Map[dirEntry.Name()]; found {
+			path = filepath.Join(root1, dirEntry.Name())
+		} else {
+			path = filepath.Join(root2, dirEntry.Name())
+		}
 
 		if !filter.filtered(dirEntry.Name()) {
 			continue
@@ -318,76 +314,76 @@ func memoryRepr(memory []*fp.Element) string {
 
 }
 
-// func TestFailingRangeCheck(t *testing.T) {
-// 	compiledOutput, err := compileZeroCode("./builtin_tests/range_check.small.cairo")
-// 	require.NoError(t, err)
+func TestFailingRangeCheck(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/range_check.small.cairo")
+	require.NoError(t, err)
 
-// 	_, _, _, err = runVm(compiledOutput)
-// 	require.ErrorContains(t, err, "check write: 2**128 <")
+	_, _, _, err = runVm(compiledOutput)
+	require.ErrorContains(t, err, "check write: 2**128 <")
 
-// 	clean("./builtin_tests/")
-// }
+	clean("./builtin_tests/")
+}
 
-// func TestBitwise(t *testing.T) {
-// 	compiledOutput, err := compileZeroCode("./builtin_tests/bitwise_builtin_test.starknet_with_keccak.cairo")
-// 	require.NoError(t, err)
+func TestBitwise(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/bitwise_builtin_test.starknet_with_keccak.cairo")
+	require.NoError(t, err)
 
-// 	_, _, _, err = runVm(compiledOutput)
-// 	require.NoError(t, err)
+	_, _, _, err = runVm(compiledOutput)
+	require.NoError(t, err)
 
-// 	clean("./builtin_tests/")
-// }
+	clean("./builtin_tests/")
+}
 
-// func TestPedersen(t *testing.T) {
-// 	compiledOutput, err := compileZeroCode("./builtin_tests/pedersen_test.small.cairo")
-// 	require.NoError(t, err)
+func TestPedersen(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/pedersen_test.small.cairo")
+	require.NoError(t, err)
 
-// 	_, _, output, err := runVm(compiledOutput)
-// 	require.NoError(t, err)
-// 	require.Contains(t, output, "Program output:\n  2089986280348253421170679821480865132823066470938446095505822317253594081284")
+	_, _, output, err := runVm(compiledOutput)
+	require.NoError(t, err)
+	require.Contains(t, output, "Program output:\n  2089986280348253421170679821480865132823066470938446095505822317253594081284")
 
-// 	clean("./builtin_tests/")
-// }
+	clean("./builtin_tests/")
+}
 
-// func TestPoseidon(t *testing.T) {
-// 	compiledOutput, err := compileZeroCode("./builtin_tests/poseidon_test.starknet_with_keccak.cairo")
-// 	require.NoError(t, err)
+func TestPoseidon(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/poseidon_test.starknet_with_keccak.cairo")
+	require.NoError(t, err)
 
-// 	_, _, output, err := runVm(compiledOutput)
-// 	require.NoError(t, err)
-// 	require.Contains(t, output, "Program output:\n  442682200349489646213731521593476982257703159825582578145778919623645026501\n  2233832504250924383748553933071188903279928981104663696710686541536735838182\n  2512222140811166287287541003826449032093371832913959128171347018667852712082\n")
-// 	require.Contains(t, output, "3016509350703874362933565866148509373957094754875411937434637891208784994231\n  3015199725895936530535660185611704199044060139852899280809302949374221328865\n  3062378460350040063467318871602229987911299744598148928378797834245039883769\n")
-// 	clean("./builtin_tests/")
-// }
+	_, _, output, err := runVm(compiledOutput)
+	require.NoError(t, err)
+	require.Contains(t, output, "Program output:\n  442682200349489646213731521593476982257703159825582578145778919623645026501\n  2233832504250924383748553933071188903279928981104663696710686541536735838182\n  2512222140811166287287541003826449032093371832913959128171347018667852712082\n")
+	require.Contains(t, output, "3016509350703874362933565866148509373957094754875411937434637891208784994231\n  3015199725895936530535660185611704199044060139852899280809302949374221328865\n  3062378460350040063467318871602229987911299744598148928378797834245039883769\n")
+	clean("./builtin_tests/")
+}
 
-// func TestECDSA(t *testing.T) {
-// 	compiledOutput, err := compileZeroCode("./builtin_tests/ecdsa_test.starknet_with_keccak.cairo")
-// 	require.NoError(t, err)
+func TestECDSA(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/ecdsa_test.starknet_with_keccak.cairo")
+	require.NoError(t, err)
 
-// 	_, _, _, err = runVm(compiledOutput)
-// 	require.NoError(t, err)
+	_, _, _, err = runVm(compiledOutput)
+	require.NoError(t, err)
 
-// 	clean("./builtin_tests/")
-// }
+	clean("./builtin_tests/")
+}
 
-// func TestEcOp(t *testing.T) {
-// 	compiledOutput, err := compileZeroCode("./builtin_tests/ecop.starknet_with_keccak.cairo")
-// 	require.NoError(t, err)
+func TestEcOp(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/ecop.starknet_with_keccak.cairo")
+	require.NoError(t, err)
 
-// 	_, _, _, err = runVm(compiledOutput)
-// 	// todo(rodro): This test is failing due to the lack of hint processing. It should be address soon
-// 	require.Error(t, err)
+	_, _, _, err = runVm(compiledOutput)
+	// todo(rodro): This test is failing due to the lack of hint processing. It should be address soon
+	require.Error(t, err)
 
-// 	clean("./builtin_tests/")
-// }
+	clean("./builtin_tests/")
+}
 
-// func TestKeccak(t *testing.T) {
-// 	compiledOutput, err := compileZeroCode("./builtin_tests/keccak_test.starknet_with_keccak.cairo")
-// 	require.NoError(t, err)
+func TestKeccak(t *testing.T) {
+	compiledOutput, err := compileZeroCode("./builtin_tests/keccak_test.starknet_with_keccak.cairo")
+	require.NoError(t, err)
 
-// 	_, _, output, err := runVm(compiledOutput)
-// 	require.NoError(t, err)
-// 	require.Contains(t, output, "Program output:\n  1304102964824333531548398680304964155037696012322029952943772\n  688749063493959345342507274897412933692859993314608487848187\n  986714560881445649520443980361539218531403996118322524237197\n  1184757872753521629808292433475729390634371625298664050186717\n  719230200744669084408849842242045083289669818920073250264351\n  1543031433416778513637578850638598357854418012971636697855068\n  63644822371671650271181212513090078620238279557402571802224\n  879446821229338092940381117330194802032344024906379963157761\n")
+	_, _, output, err := runVm(compiledOutput)
+	require.NoError(t, err)
+	require.Contains(t, output, "Program output:\n  1304102964824333531548398680304964155037696012322029952943772\n  688749063493959345342507274897412933692859993314608487848187\n  986714560881445649520443980361539218531403996118322524237197\n  1184757872753521629808292433475729390634371625298664050186717\n  719230200744669084408849842242045083289669818920073250264351\n  1543031433416778513637578850638598357854418012971636697855068\n  63644822371671650271181212513090078620238279557402571802224\n  879446821229338092940381117330194802032344024906379963157761\n")
 
-// 	clean("./builtin_tests/")
-// }
+	clean("./builtin_tests/")
+}
