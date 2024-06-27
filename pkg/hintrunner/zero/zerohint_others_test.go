@@ -56,7 +56,7 @@ func TestZeroHintOthers(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newMemEnterScopeHint(ctx.operanders["len"], false)
 				},
-				check: varValueInScopeEquals("n", *feltUint64(1)),
+				check: varValueInScopeEquals("n", uint64(1)),
 			},
 		},
 		"SearchSortedLower": {
