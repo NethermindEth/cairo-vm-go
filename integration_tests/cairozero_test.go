@@ -95,19 +95,19 @@ func TestCairoZeroFiles(t *testing.T) {
 			continue
 		}
 
-		elapsed_py, pyTraceFile, pyMemoryFile, err := runPythonVm(dirEntry.Name(), compiledOutput)
+		elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(dirEntry.Name(), compiledOutput)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
 
-		elapsed_go, traceFile, memoryFile, _, err := runVm(compiledOutput)
+		elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
 
-		benchmarkMap[dirEntry.Name()] = [2]int{int(elapsed_py.Milliseconds()), int(elapsed_go.Milliseconds())}
+		benchmarkMap[dirEntry.Name()] = [2]int{int(elapsedPy.Milliseconds()), int(elapsedGo.Milliseconds())}
 
 		pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
 		if err != nil {
