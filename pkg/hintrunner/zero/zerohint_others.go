@@ -126,12 +126,12 @@ func newMemEnterScopeHint(value hinter.ResOperander, memset bool) hinter.Hinter 
 			// MemcpyEnterScope
 			//> vm_enter_scope({'n': ids.len})
 
-			value, err := hinter.ResolveAsFelt(vm, value)
+			value, err := hinter.ResolveAsUint64(vm, value)
 			if err != nil {
 				return err
 			}
 
-			ctx.ScopeManager.EnterScope(map[string]any{"n": *value})
+			ctx.ScopeManager.EnterScope(map[string]any{"n": value})
 			return nil
 		},
 	}
