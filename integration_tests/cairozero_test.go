@@ -78,11 +78,9 @@ func TestCairoZeroFiles(t *testing.T) {
 			continue
 		}
 
-		var path string
+		path := filepath.Join(root2, dirEntry.Name())
 		if _, found := testFiles1Map[dirEntry.Name()]; found {
 			path = filepath.Join(root1, dirEntry.Name())
-		} else {
-			path = filepath.Join(root2, dirEntry.Name())
 		}
 
 		if !filter.filtered(dirEntry.Name()) {
