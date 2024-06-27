@@ -6,7 +6,8 @@
 
 %builtins range_check
 
-from starkware.cairo.common.cairo_secp.field import is_zero, SumBigInt3
+from starkware.cairo.common.cairo_secp.field import is_zero
+from starkware.cairo.common.cairo_secp.bigint3 import BigInt3, SumBigInt3
 
 func main{range_check_ptr}() -> () {
 
