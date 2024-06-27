@@ -505,7 +505,7 @@ func createIsNNOutOfRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 //
 // `newIsPositiveHint` writes 1 or 0 to `dest` address, depending on
 // whether `value` is positive or negative in the context, respectively
-func newIsPositiveHint(value, dst hinter.ResOperander) hinter.Hinter {
+func newIsPositiveHint(value, isPositive hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsPositive",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -513,7 +513,7 @@ func newIsPositiveHint(value, dst hinter.ResOperander) hinter.Hinter {
 			//> ids.is_positive = 1 if is_positive(
 			//>     value=ids.value, prime=PRIME, rc_bound=range_check_builtin.bound) else 0
 
-			isPositiveAddr, err := dst.GetAddress(vm)
+			isPositiveAddr, err := isPositive.GetAddress(vm)
 			if err != nil {
 				return err
 			}
@@ -541,12 +541,12 @@ func createIsPositiveHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 		return nil, err
 	}
 
-	output, err := resolver.GetResOperander("output")
+	isPositive, err := resolver.GetResOperander("is_positive")
 	if err != nil {
 		return nil, err
 	}
 
-	return newIsPositiveHint(value, output), nil
+	return newIsPositiveHint(value, isPositive), nil
 }
 
 // SplitIntAssertRange hint asserts that the value to split in `SplitInt`
@@ -867,13 +867,21 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 		Name: "SignedDivRem",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.math_utils import as_int, assert_integer
+			//>
 			//> assert_integer(ids.div)
-			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, f'div={hex(ids.div)} is out of the valid range.'
+			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, \
+			//> 	f'div={hex(ids.div)} is out of the valid range.'
+			//>
 			//> assert_integer(ids.bound)
-			//> assert ids.bound <= range_check_builtin.bound // 2, f'bound={hex(ids.bound)} is out of the valid range.'
+			//> assert ids.bound <= range_check_builtin.bound // 2, \
+			//> 	f'bound={hex(ids.bound)} is out of the valid range.'
+			//>
 			//> int_value = as_int(ids.value, PRIME)
 			//> q, ids.r = divmod(int_value, ids.div)
-			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
+			//>
+			//> assert -ids.bound <= q < ids.bound, \
+			//> 	f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
+			//>
 			//> ids.biased_q = q + ids.bound
 
 			//> assert_integer(ids.div)
@@ -1039,7 +1047,6 @@ func createSqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 //   - `r` is the variable that will store the remainder of the modular division
 //
 // `newUnsignedDivRemHinter` writes `q` and `r` values to their respective memory address
-
 func newUnsignedDivRemHint(value, div, q, r hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UnsignedDivRem",
