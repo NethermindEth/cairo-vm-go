@@ -833,7 +833,7 @@ func newIsZeroDivModHint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P
 			//> from starkware.python.math_utils import div_mod
-			
+
 			//> value = x_inv = div_mod(1, x, SECP_P)
 
 			secPBig, ok := secp_utils.GetSecPBig()
