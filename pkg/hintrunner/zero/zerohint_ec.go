@@ -738,10 +738,8 @@ func newIsZeroNondetHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsZeroNondet",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> in .cairo program
-			//> if nondet %{ x == 0 %} != 0:
-			//> On .json compiled program
-			//> "memory[ap] = to_felt_or_relocatable(x == 0)"
+			//> python hint in cairo file: "x == 0"
+			//> compiled file hint: "memory[ap] = to_felt_or_relocatable(x == 0)"
 
 			x, err := ctx.ScopeManager.GetVariableValueAsBigInt("x")
 			if err != nil {
