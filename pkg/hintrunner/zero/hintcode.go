@@ -94,7 +94,7 @@ ids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])`
 	ecDoubleAssignNewXV1Code string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\nslope = pack(ids.slope, PRIME)\nx = pack(ids.point.x, PRIME)\ny = pack(ids.point.y, PRIME)\n\nvalue = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P"
 	ecDoubleAssignNewYV1Code string = "value = new_y = (slope * (x - new_x) - y) % SECP_P"
 	ecMulInnerCode           string = "memory[ap] = (ids.scalar % PRIME) % 2"
-	isZeroNondetCode         string = "x == 0"
+	isZeroNondetCode         string = "memory[ap] = to_felt_or_relocatable(x == 0)"
 	isZeroPackCode           string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\nx = pack(ids.x, PRIME) % SECP_P"
 	isZeroDivModCode         string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P\nfrom starkware.python.math_utils import div_mod\n\nvalue = x_inv = div_mod(1, x, SECP_P)"
 
