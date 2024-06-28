@@ -46,7 +46,7 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 	}
 
 	//Recover Y part of the public key
-	posY, negY, err := RecoverY(pubX)
+	posY, negY, err := recoverY(pubX)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 	pubKey := &ecdsa.PublicKey{A: key}
 	sig, ok := e.signatures[pubOffset]
 	if !ok {
-		return fmt.Errorf("signature is missing form ECDSA builtin")
+		return fmt.Errorf("signature is missing from ECDSA builtin")
 	}
 
 	msgBytes := msgField.Bytes()
@@ -145,7 +145,7 @@ func (e *ECDSA) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (
 }
 
 // recoverY recovers the y and -y coordinate of x. True y can be either y or -y
-func RecoverY(x *fp.Element) (fp.Element, fp.Element, error) {
+func recoverY(x *fp.Element) (fp.Element, fp.Element, error) {
 	// y_squared = (x * x * x + ALPHA * x + BETA) % FIELD_PRIME
 	ax := &fp.Element{}
 	ax.Mul(&utils.Alpha, x)
