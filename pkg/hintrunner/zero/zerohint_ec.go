@@ -9,6 +9,9 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	starkcurve "github.com/consensys/gnark-crypto/ecc/stark-curve"
+	ecdsa "github.com/consensys/gnark-crypto/ecc/stark-curve/ecdsa"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
 )
@@ -853,4 +856,65 @@ func newIsZeroDivModHint() hinter.Hinter {
 
 func createIsZeroDivModHinter() (hinter.Hinter, error) {
 	return newIsZeroDivModHint(), nil
+}
+
+func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "RecoverY",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME
+			//> from starkware.python.math_utils import recover_y
+			//> ids.p.x = ids.x
+			//> # This raises an exception if `x` is not on the curve.
+			//> ids.p.y = recover_y(ids.x, ALPHA, BETA, FIELD_PRIME)
+
+			pXAddr, err := p.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			pYAddr, err := pXAddr.AddOffset(3)
+			if err != nil {
+				return err
+			}
+
+			xFelt, err := hinter.ResolveAsFelt(vm, x)
+			if err != nil {
+				return err
+			}
+
+			valueX := mem.MemoryValueFromFieldElement(xFelt)
+
+			err = vm.Memory.WriteToAddress(&pXAddr, &valueX)
+			if err != nil {
+				return err
+			}
+			
+			//Recover Y part of the public key
+			posY, negY, err := builtins.RecoverY(xFelt)
+			if err != nil {
+				return err
+			}
+
+			err = vm.Memory.WriteToAddress(&pYAddr, posY)
+			if err != nil {
+				return err
+			}
+
+		},
+	}
+}
+
+func createRecoverYHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := resolver.GetResOperander("p")
+	if err != nil {
+		return nil, err
+	}
+
+	return newRecoverYHint(x, p), nil
 }

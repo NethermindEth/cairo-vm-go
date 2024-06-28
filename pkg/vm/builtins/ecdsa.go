@@ -46,7 +46,7 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 	}
 
 	//Recover Y part of the public key
-	posY, negY, err := recoverY(pubX)
+	posY, negY, err := RecoverY(pubX)
 	if err != nil {
 		return err
 	}
@@ -145,7 +145,7 @@ func (e *ECDSA) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (
 }
 
 // recoverY recovers the y and -y coordinate of x. True y can be either y or -y
-func recoverY(x *fp.Element) (fp.Element, fp.Element, error) {
+func RecoverY(x *fp.Element) (fp.Element, fp.Element, error) {
 	// y_squared = (x * x * x + ALPHA * x + BETA) % FIELD_PRIME
 	ax := &fp.Element{}
 	ax.Mul(&utils.Alpha, x)
