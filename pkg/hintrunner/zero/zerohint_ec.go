@@ -9,9 +9,6 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	starkcurve "github.com/consensys/gnark-crypto/ecc/stark-curve"
-	ecdsa "github.com/consensys/gnark-crypto/ecc/stark-curve/ecdsa"
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
 )
@@ -858,6 +855,11 @@ func createIsZeroDivModHinter() (hinter.Hinter, error) {
 	return newIsZeroDivModHint(), nil
 }
 
+// RecoverY hint Recovers the y coordinate of a point on the elliptic curve
+//
+// `newRecoverYHint` takes 2 operanders as arguments
+//   - `x` is the x coordinate of an elliptic curve point
+//   - `p` is one of the two EC points with the given x coordinate (x, y)
 func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "RecoverY",
@@ -889,18 +891,52 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			
-			//Recover Y part of the public key
-			posY, negY, err := builtins.RecoverY(xFelt)
-			if err != nil {
-				return err
+
+			const alpha = 1
+
+			const betaString = "3141592653589793238462643383279502884197169399375105820974944592307816406665"
+			betaBigInt, ok := new(big.Int).SetString(betaString, 10)
+			if !ok {
+				panic("failed to convert BETA string to big.Int")
 			}
 
-			err = vm.Memory.WriteToAddress(&pYAddr, posY)
-			if err != nil {
-				return err
+			const fieldPrimeString = "3618502788666131213697322783095070105623107215331596699973092056135872020481"
+			fieldPrimeBigInt, ok := new(big.Int).SetString(fieldPrimeString, 10)
+			if !ok {
+				panic("failed to convert FIELD_PRIME string to big.Int")
 			}
 
+			xBigInt := secp_utils.AsInt(xFelt)
+
+			y_squared := new(big.Int).Exp(&xBigInt, big.NewInt(3), fieldPrimeBigInt)
+			y_squared.Add(y_squared, new(big.Int).Mul(big.NewInt(alpha), &xBigInt)).Mod(y_squared, fieldPrimeBigInt)
+			y_squared.Add(y_squared, betaBigInt).Mod(y_squared, fieldPrimeBigInt)
+
+			var value = mem.MemoryValue{}
+
+			if xFelt.IsZero() || xFelt.IsOne() {
+				value = mem.MemoryValueFromFieldElement(xFelt)
+			} else {
+				var result *fp.Element = new(fp.Element)
+
+				if xFelt.Legendre() == 1 {
+					halfPrimeBigInt := new(big.Int).Rsh(fieldPrimeBigInt, 1)
+
+					tempResult := new(big.Int).ModSqrt(&xBigInt, fieldPrimeBigInt)
+
+					if tempResult.Cmp(halfPrimeBigInt) > 0 {
+						tempResult.Sub(fieldPrimeBigInt, tempResult)
+					}
+					result.SetBigInt(tempResult)
+				} else {
+					xString := xBigInt.String()
+					panic(fmt.Sprintf("%s does not represent the x coordinate of a point on the curve.", xString))
+				}
+
+				value = mem.MemoryValueFromFieldElement(result)
+			}
+
+			return vm.Memory.WriteToAddress(&pYAddr, &value)
 		},
 	}
 }
