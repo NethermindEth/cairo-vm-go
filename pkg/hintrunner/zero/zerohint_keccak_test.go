@@ -430,6 +430,35 @@ func TestZeroHintKeccak(t *testing.T) {
 				},
 			},
 		},
+		"CompareKeccakFullRateInBytes": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: fpRelative, Value: feltUint64(137)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newCompareKeccakFullRateInBytesHint(ctx.operanders["n_bytes"])
+				},
+				check: apValueEquals(feltUint64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: fpRelative, Value: feltUint64(136)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newCompareKeccakFullRateInBytesHint(ctx.operanders["n_bytes"])
+				},
+				check: apValueEquals(feltUint64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: fpRelative, Value: feltUint64(135)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newCompareKeccakFullRateInBytesHint(ctx.operanders["n_bytes"])
+				},
+				check: apValueEquals(feltUint64(0)),
+			},
+		},
 		"BlockPermutation": {
 			{
 				operanders: []*hintOperander{
