@@ -497,7 +497,8 @@ func newCompareBytesInWordHint(nBytes hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "CompareBytesInWordHint",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
-			//> ids.n_bytes < ids.BYTES_IN_WORD
+			//> python hint: ids.n_bytes < ids.BYTES_IN_WORD
+			// JSON file hint: memory[ap] = to_felt_or_relocatable(ids.n_bytes < ids.BYTES_IN_WORD)
 
 			// n_bytes should fit into a uint64
 			// we cannot 100% exclude the possibility that it doesn't
