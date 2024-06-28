@@ -531,5 +531,53 @@ func TestZeroHintOthers(t *testing.T) {
 				}),
 			},
 		},
+		"NondetElementsOverTwo": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n", Kind: apRelative, Value: feltUint64(1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetElementsOverTWoHint(
+						ctx.operanders["n"],
+					)
+				},
+				check: apValueEquals(feltUint64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n", Kind: apRelative, Value: feltUint64(2)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetElementsOverTWoHint(
+						ctx.operanders["n"],
+					)
+				},
+				check: apValueEquals(feltUint64(1)),
+			},
+		},
+		"NondetElementsOverTen": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n", Kind: apRelative, Value: feltUint64(9)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetElementsOverTenHint(
+						ctx.operanders["n"],
+					)
+				},
+				check: apValueEquals(feltUint64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n", Kind: apRelative, Value: feltUint64(10)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNondetElementsOverTenHint(
+						ctx.operanders["n"],
+					)
+				},
+				check: apValueEquals(feltUint64(1)),
+			},
+		},
 	})
 }
