@@ -585,5 +585,25 @@ func TestZeroHintKeccak(t *testing.T) {
 					}),
 			},
 		},
+		"CompareBytesInWordHint": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: fpRelative, Value: feltUint64(5)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newCompareBytesInWordHint(ctx.operanders["n_bytes"])
+				},
+				check: apValueEquals(feltUint64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: fpRelative, Value: feltUint64(10)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newCompareBytesInWordHint(ctx.operanders["n_bytes"])
+				},
+				check: apValueEquals(feltUint64(0)),
+			},
+		},
 	})
 }

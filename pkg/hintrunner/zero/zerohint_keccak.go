@@ -528,3 +528,47 @@ func createBlockPermutationHinter(resolver hintReferenceResolver) (hinter.Hinter
 
 	return newBlockPermutationHint(keccakPtr), nil
 }
+
+// CompareBytesInWord hint compares a value to BYTES_IN_WORD constant, i.e., 8
+//
+// `newCompareBytesInWordHint` takes 1 operander as argument
+//   - `nBytes` is the value to be compared with BYTES_IN_WORD
+//
+// `newCompareBytesInWordHint` writes 1 or 0 to `ap` memory address depending on whether
+// `n_bytes` is lower than BYTES_IN_WORD or not
+func newCompareBytesInWordHint(nBytes hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "CompareBytesInWordHint",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> python hint: ids.n_bytes < ids.BYTES_IN_WORD
+			//> JSON file hint: memory[ap] = to_felt_or_relocatable(ids.n_bytes < ids.BYTES_IN_WORD)
+
+			// n_bytes should fit into a uint64
+			// we cannot 100% exclude the possibility that it doesn't
+			nBytesVal, err := hinter.ResolveAsUint64(vm, nBytes)
+			if err != nil {
+				return err
+			}
+
+			bytesInWord := uint64(8)
+			apAddr := vm.Context.AddressAp()
+			var resultMv memory.MemoryValue
+			if nBytesVal < bytesInWord {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+
+			return vm.Memory.WriteToAddress(&apAddr, &resultMv)
+		},
+	}
+}
+
+func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	nBytes, err := resolver.GetResOperander("n_bytes")
+	if err != nil {
+		return nil, err
+	}
+
+	return newCompareBytesInWordHint(nBytes), nil
+}
