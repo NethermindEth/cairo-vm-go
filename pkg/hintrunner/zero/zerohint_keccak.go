@@ -419,6 +419,9 @@ func newCompareKeccakFullRateInBytesHint(nBytes hinter.ResOperander) hinter.Hint
 		Name: "CompareKeccakFullRateInBytes",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.n_bytes >= ids.KECCAK_FULL_RATE_IN_BYTES
+
+			// n_bytes should fit into a uint64
+			// we cannot 100% exclude the possibility that it doesn't
 			nBytesVal, err := hinter.ResolveAsUint64(vm, nBytes)
 			if err != nil {
 				return err
