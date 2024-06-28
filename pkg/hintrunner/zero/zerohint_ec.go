@@ -875,7 +875,7 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			pYAddr, err := pXAddr.AddOffset(3)
+			pYAddr, err := pXAddr.AddOffset(1)
 			if err != nil {
 				return err
 			}
@@ -892,8 +892,6 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			const alpha = 1
-
 			const betaString = "3141592653589793238462643383279502884197169399375105820974944592307816406665"
 			betaBigInt, ok := new(big.Int).SetString(betaString, 10)
 			if !ok {
@@ -906,31 +904,38 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 				panic("failed to convert FIELD_PRIME string to big.Int")
 			}
 
-			xBigInt := secp_utils.AsInt(xFelt)
+			xBigInt := new(big.Int)
+			xFelt.BigInt(xBigInt)
 
-			y_squared := new(big.Int).Exp(&xBigInt, big.NewInt(3), fieldPrimeBigInt)
-			y_squared.Add(y_squared, new(big.Int).Mul(big.NewInt(alpha), &xBigInt)).Mod(y_squared, fieldPrimeBigInt)
-			y_squared.Add(y_squared, betaBigInt).Mod(y_squared, fieldPrimeBigInt)
+			ySquaredBigInt := new(big.Int).Set(xBigInt)
+			ySquaredBigInt.Mul(ySquaredBigInt, xBigInt).Mod(ySquaredBigInt,fieldPrimeBigInt)
+			ySquaredBigInt.Mul(ySquaredBigInt, xBigInt).Mod(ySquaredBigInt,fieldPrimeBigInt)
+			ySquaredBigInt.Add(ySquaredBigInt, xBigInt).Mod(ySquaredBigInt, fieldPrimeBigInt)
+			ySquaredBigInt.Add(ySquaredBigInt, betaBigInt).Mod(ySquaredBigInt, fieldPrimeBigInt)
+
+			var ySquaredFelt *fp.Element = new(fp.Element)
+			ySquaredFelt.SetBigInt(ySquaredBigInt)
 
 			var value = mem.MemoryValue{}
 
-			if xFelt.IsZero() || xFelt.IsOne() {
-				value = mem.MemoryValueFromFieldElement(xFelt)
+			if ySquaredFelt.IsZero() || ySquaredFelt.IsOne() {
+				value = mem.MemoryValueFromFieldElement(ySquaredFelt)
 			} else {
 				var result *fp.Element = new(fp.Element)
 
-				if xFelt.Legendre() == 1 {
+				if ySquaredFelt.Legendre() == 1 {
 					halfPrimeBigInt := new(big.Int).Rsh(fieldPrimeBigInt, 1)
 
-					tempResult := new(big.Int).ModSqrt(&xBigInt, fieldPrimeBigInt)
+					tempResult := new(big.Int).ModSqrt(ySquaredBigInt, fieldPrimeBigInt)
 
 					if tempResult.Cmp(halfPrimeBigInt) > 0 {
 						tempResult.Sub(fieldPrimeBigInt, tempResult)
 					}
+
 					result.SetBigInt(tempResult)
 				} else {
-					xString := xBigInt.String()
-					panic(fmt.Sprintf("%s does not represent the x coordinate of a point on the curve.", xString))
+					ySquaredString := ySquaredBigInt.String()
+					return fmt.Errorf("%s does not represent the x coordinate of a point on the curve", ySquaredString)
 				}
 
 				value = mem.MemoryValueFromFieldElement(result)
