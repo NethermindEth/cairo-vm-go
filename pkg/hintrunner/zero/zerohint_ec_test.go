@@ -1000,6 +1000,59 @@ func TestZeroHintEc(t *testing.T) {
 				},
 				errCheck: errorTextContains("does not represent the x coordinate of a point on the curve"),
 			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x", Kind: apRelative, Value: feltString("3004956058830981475544150447242655232275382685012344776588097793621230049020")},
+					{Name: "p.x", Kind: uninitialized},
+					{Name: "p.y", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newRecoverYHint(ctx.operanders["x"], ctx.operanders["p.x"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"p.x": feltString("3004956058830981475544150447242655232275382685012344776588097793621230049020"),
+					"p.y": feltString("386236054595386575795345623791920124827519018828430310912260655089307618738"),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x", Kind: apRelative, Value: feltString("138597138396302485058562442936200017709939129389766076747102238692717075504")},
+					{Name: "p.x", Kind: uninitialized},
+					{Name: "p.y", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newRecoverYHint(ctx.operanders["x"], ctx.operanders["p.x"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"p.x": feltString("138597138396302485058562442936200017709939129389766076747102238692717075504"),
+					"p.y": feltString("1116947097676727397390632683964789044871379304271794004325353078455954290524"),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x", Kind: apRelative, Value: feltString("71635783675677659163985681365816684268526846280467284682674852685628658265882465826464572245")},
+					{Name: "p.x", Kind: uninitialized},
+					{Name: "p.y", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newRecoverYHint(ctx.operanders["x"], ctx.operanders["p.x"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"p.x": feltString("71635783675677659163985681365816684268526846280467284682674852685628658265882465826464572245"),
+					"p.y": feltString("903372048565605391120071143811887302063650776015287438589675702929494830362"),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x", Kind: apRelative, Value: feltString("42424242424242424242")},
+					{Name: "p.x", Kind: uninitialized},
+					{Name: "p.y", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newRecoverYHint(ctx.operanders["x"], ctx.operanders["p.x"])
+				},
+				errCheck: errorTextContains("does not represent the x coordinate of a point on the curve"),
+			},
 		},
 	},
 	)

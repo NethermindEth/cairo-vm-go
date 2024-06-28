@@ -908,8 +908,8 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 			xFelt.BigInt(xBigInt)
 
 			ySquaredBigInt := new(big.Int).Set(xBigInt)
-			ySquaredBigInt.Mul(ySquaredBigInt, xBigInt).Mod(ySquaredBigInt,fieldPrimeBigInt)
-			ySquaredBigInt.Mul(ySquaredBigInt, xBigInt).Mod(ySquaredBigInt,fieldPrimeBigInt)
+			ySquaredBigInt.Mul(ySquaredBigInt, xBigInt).Mod(ySquaredBigInt, fieldPrimeBigInt)
+			ySquaredBigInt.Mul(ySquaredBigInt, xBigInt).Mod(ySquaredBigInt, fieldPrimeBigInt)
 			ySquaredBigInt.Add(ySquaredBigInt, xBigInt).Mod(ySquaredBigInt, fieldPrimeBigInt)
 			ySquaredBigInt.Add(ySquaredBigInt, betaBigInt).Mod(ySquaredBigInt, fieldPrimeBigInt)
 
