@@ -498,6 +498,9 @@ func newCompareBytesInWordHint(nBytes hinter.ResOperander) hinter.Hinter {
 		Name: "CompareBytesInWordHint",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.n_bytes < ids.BYTES_IN_WORD
+
+			// n_bytes should fit into a uint64
+			// we cannot 100% exclude the possibility that it doesn't
 			nBytesVal, err := hinter.ResolveAsUint64(vm, nBytes)
 			if err != nil {
 				return err
