@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"text/tabwriter"
 	"time"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -139,34 +140,34 @@ func TestCairoZeroFiles(t *testing.T) {
 
 // Save the Benchmarks for the integration tests in `BenchMarks.txt`
 func WriteBenchMarksToFile(benchmarkMap map[string][2]int) {
-	headers := []string{"File", "PythonVM (ms)", "GoVM (ms)"}
-	columnWidths := []int{40, 15, 10}
-
-	totalWidth := 0
-	for _, width := range columnWidths {
-		totalWidth += width + 3
-	}
-
-	totalWidth += 1
+	totalWidth := 123
 
 	border := strings.Repeat("=", totalWidth)
 	separator := strings.Repeat("-", totalWidth)
 
 	var sb strings.Builder
+	w := tabwriter.NewWriter(&sb, 40, 0, 0, ' ', tabwriter.Debug)
 
 	sb.WriteString(border + "\n")
-	sb.WriteString(formatRow(headers, columnWidths) + "\n")
+	fmt.Fprintln(w, "| File \t PythonVM (ms) \t GoVM (ms) \t")
+	w.Flush()
 	sb.WriteString(border + "\n")
 
 	iterator := 0
 	totalFiles := len(benchmarkMap)
 
 	for key, values := range benchmarkMap {
-		row := []string{key}
-		for _, value := range values {
-			row = append(row, strconv.Itoa(value))
+		row := "| " + key + "\t "
+
+		for iter, value := range values {
+			row = row + strconv.Itoa(value) + "\t"
+			if iter == 0 {
+				row = row + " "
+			}
 		}
-		sb.WriteString(formatRow(row, columnWidths) + "\n")
+
+		fmt.Fprintln(w, row)
+		w.Flush()
 
 		if iterator < totalFiles-1 {
 			sb.WriteString(separator + "\n")
@@ -191,21 +192,6 @@ func WriteBenchMarksToFile(benchmarkMap map[string][2]int) {
 	} else {
 		fmt.Println("Benchmarks successfully written to:", fileName)
 	}
-}
-
-// format a row with borders and spaces based on the column widths
-func formatRow(row []string, widths []int) string {
-	var sb strings.Builder
-	sb.WriteString("|")
-	for i, col := range row {
-		sb.WriteString(" " + padRight(col, widths[i]) + " |")
-	}
-	return sb.String()
-}
-
-// pad a string with spaces to the right to match the given width
-func padRight(str string, width int) string {
-	return fmt.Sprintf("%-"+fmt.Sprintf("%d", width)+"s", str)
 }
 
 const (
