@@ -24,6 +24,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 		Name: "EcNegate",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//>
 			//> y = pack(ids.point.y, PRIME) % SECP_P
 			//> # The modulo operation in python always returns a nonnegative number.
 			//> value = (-y) % SECP_P
@@ -84,6 +85,7 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 		Name: "NondetBigint3V1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import split
+			//>
 			//> segments.write_arg(ids.res.address_, split(value))
 
 			address, err := res.GetAddress(vm)
@@ -146,11 +148,12 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 		Name: "FastEcAddAssignNewX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-			//
+			//>
 			//> slope = pack(ids.slope, PRIME)
 			//> x0 = pack(ids.point0.x, PRIME)
 			//> x1 = pack(ids.point1.x, PRIME)
 			//> y0 = pack(ids.point0.y, PRIME)
+			//>
 			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
 
 			slopeAddr, err := slope.GetAddress(vm)
@@ -315,7 +318,7 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 			//> from starkware.python.math_utils import ec_double_slope
-			//
+			//>
 			//> # Compute the slope.
 			//> x = pack(ids.point.x, PRIME)
 			//> y = pack(ids.point.y, PRIME)
@@ -389,6 +392,7 @@ func newReduceV1Hint(x hinter.ResOperander) hinter.Hinter {
 		Name: "ReduceV1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//>
 			//> value = pack(ids.x, PRIME) % SECP_P
 
 			secPBig, ok := secp_utils.GetSecPBig()
@@ -442,11 +446,11 @@ func newEcDoubleAssignNewXV1Hint(slope, point hinter.ResOperander) hinter.Hinter
 		Name: "EcDoubleAssignNewXV1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-
+			//>
 			//> slope = pack(ids.slope, PRIME)
 			//> x = pack(ids.point.x, PRIME)
 			//> y = pack(ids.point.y, PRIME)
-
+			//>
 			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
 
 			slopeAddr, err := slope.GetAddress(vm)
@@ -593,7 +597,7 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 			//> from starkware.python.math_utils import line_slope
-
+			//>
 			//> # Compute the slope.
 			//> x0 = pack(ids.point0.x, PRIME)
 			//> y0 = pack(ids.point0.y, PRIME)
@@ -776,7 +780,7 @@ func newIsZeroPackHint(x hinter.ResOperander) hinter.Hinter {
 		Name: "IsZeroPack",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-
+			//>
 			//> x = pack(ids.x, PRIME) % SECP_P
 
 			xAddr, err := x.GetAddress(vm)
@@ -831,7 +835,7 @@ func newIsZeroDivModHint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P
 			//> from starkware.python.math_utils import div_mod
-
+			//>
 			//> value = x_inv = div_mod(1, x, SECP_P)
 
 			secPBig, ok := secp_utils.GetSecPBig()
