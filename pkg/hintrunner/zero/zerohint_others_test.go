@@ -16,7 +16,7 @@ func TestZeroHintOthers(t *testing.T) {
 					{Name: "continue_copying", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariable("n", *feltInt64(1))
+					err := ctx.ScopeManager.AssignVariable("n", uint64(1))
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -25,7 +25,7 @@ func TestZeroHintOthers(t *testing.T) {
 					return newMemContinueHint(ctx.operanders["continue_copying"], false)
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					varValueInScopeEquals("n", *feltInt64(0))(t, ctx)
+					varValueInScopeEquals("n", uint64(0))(t, ctx)
 					varValueEquals("continue_copying", feltInt64(0))(t, ctx)
 				},
 			},
@@ -34,7 +34,7 @@ func TestZeroHintOthers(t *testing.T) {
 					{Name: "continue_copying", Kind: uninitialized},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariable("n", *feltInt64(5))
+					err := ctx.ScopeManager.AssignVariable("n", uint64(5))
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -43,7 +43,7 @@ func TestZeroHintOthers(t *testing.T) {
 					return newMemContinueHint(ctx.operanders["continue_copying"], false)
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					varValueInScopeEquals("n", *feltInt64(4))(t, ctx)
+					varValueInScopeEquals("n", uint64(4))(t, ctx)
 					varValueEquals("continue_copying", feltInt64(1))(t, ctx)
 				},
 			},
@@ -56,7 +56,7 @@ func TestZeroHintOthers(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newMemEnterScopeHint(ctx.operanders["len"], false)
 				},
-				check: varValueInScopeEquals("n", *feltUint64(1)),
+				check: varValueInScopeEquals("n", uint64(1)),
 			},
 		},
 		"SearchSortedLower": {
