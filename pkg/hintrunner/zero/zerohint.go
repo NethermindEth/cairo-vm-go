@@ -236,6 +236,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createTestAssignHinter(resolver)
 	case findElementCode:
 		return createFindElementHinter(resolver)
+	case nondetElementsOverTWoCode:
+		return createNondetElementsOverTWoHinter(resolver)
+	case nondetElementsOverTenCode:
+		return createNondetElementsOverTenHinter(resolver)
 	default:
 		return nil, fmt.Errorf("not identified hint")
 	}
