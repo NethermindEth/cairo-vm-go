@@ -140,7 +140,7 @@ func TestCairoZeroFiles(t *testing.T) {
 // Save the Benchmarks for the integration tests in `BenchMarks.txt`
 func WriteBenchMarksToFile(benchmarkMap map[string][2]int) {
 	headers := []string{"File", "PythonVM (ms)", "GoVM (ms)"}
-	columnWidths := []int{33, 15, 10}
+	columnWidths := []int{40, 15, 10}
 
 	totalWidth := 0
 	for _, width := range columnWidths {
@@ -150,6 +150,7 @@ func WriteBenchMarksToFile(benchmarkMap map[string][2]int) {
 	totalWidth += 1
 
 	border := strings.Repeat("=", totalWidth)
+	separator := strings.Repeat("-", totalWidth)
 
 	var sb strings.Builder
 
@@ -157,12 +158,21 @@ func WriteBenchMarksToFile(benchmarkMap map[string][2]int) {
 	sb.WriteString(formatRow(headers, columnWidths) + "\n")
 	sb.WriteString(border + "\n")
 
+	iterator := 0
+	totalFiles := len(benchmarkMap)
+
 	for key, values := range benchmarkMap {
 		row := []string{key}
 		for _, value := range values {
 			row = append(row, strconv.Itoa(value))
 		}
 		sb.WriteString(formatRow(row, columnWidths) + "\n")
+
+		if iterator < totalFiles-1 {
+			sb.WriteString(separator + "\n")
+		}
+
+		iterator++
 	}
 
 	sb.WriteString(border + "\n")
