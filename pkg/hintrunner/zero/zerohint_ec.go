@@ -736,9 +736,10 @@ func createEcMulInnerHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 // i.e, 1 if `x == 0`, 0 otherwise
 func newIsZeroNondetHint() hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "IsZeroConditional",
+		Name: "IsZeroNondet",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> x == 0
+			//> python hint in cairo file: "x == 0"
+			//> compiled file hint: "memory[ap] = to_felt_or_relocatable(x == 0)"
 
 			x, err := ctx.ScopeManager.GetVariableValueAsBigInt("x")
 			if err != nil {
@@ -775,6 +776,7 @@ func newIsZeroPackHint(x hinter.ResOperander) hinter.Hinter {
 		Name: "IsZeroPack",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+
 			//> x = pack(ids.x, PRIME) % SECP_P
 
 			xAddr, err := x.GetAddress(vm)
@@ -829,6 +831,7 @@ func newIsZeroDivModHint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P
 			//> from starkware.python.math_utils import div_mod
+
 			//> value = x_inv = div_mod(1, x, SECP_P)
 
 			secPBig, ok := secp_utils.GetSecPBig()
