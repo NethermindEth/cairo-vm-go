@@ -659,3 +659,90 @@ func createSplitInput3Hinter(resolver hintReferenceResolver) (hinter.Hinter, err
 
 	return newSplitInput3Hint(high3, low3, inputs), nil
 }
+
+// SplitInput6 hint writes at address `ids.high6` and `ids.low6` in memory
+// the quotient and remainder of the division of the value at memory address
+// `ids.inputs + 6` by 256 ** 2
+//
+// `newSplitInput6Hint` takes 3 operanders as arguments
+//   - `high6` is the address in memory where to store the quotient of the division
+//   - `low6` is the address in memory where to store the remainder of the division
+//   - `inputs` is the address in memory to which we add an offset of 6 and read that value
+func newSplitInput6Hint(high6, low6, inputs hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitInput6",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.high6, ids.low6 = divmod(memory[ids.inputs + 6], 256 ** 2)
+
+			high3Addr, err := hinter.ResolveAsAddress(vm, high6)
+			if err != nil {
+				return err
+			}
+
+			low3Addr, err := hinter.ResolveAsAddress(vm, low6)
+			if err != nil {
+				return err
+			}
+
+			inputsAddr, err := hinter.ResolveAsAddress(vm, inputs)
+			if err != nil {
+				return err
+			}
+
+			*inputsAddr, err = inputsAddr.AddOffset(6)
+			if err != nil {
+				return err
+			}
+
+			inputValue, err := vm.Memory.ReadFromAddress(inputsAddr)
+			if err != nil {
+				return err
+			}
+
+			var inputBigInt big.Int
+			inputValue.Felt.BigInt(&inputBigInt)
+
+			// 256 ** 2
+			divisor := big.NewInt(65536)
+
+			high3BigInt := new(big.Int)
+			low3BigInt := new(big.Int)
+
+			high3BigInt.DivMod(&inputBigInt, divisor, low3BigInt)
+
+			var high3Felt fp.Element
+			high3Felt.SetBigInt(high3BigInt)
+			high3Mv := memory.MemoryValueFromFieldElement(&high3Felt)
+
+			var low3Felt fp.Element
+			high3Felt.SetBigInt(low3BigInt)
+			low3Mv := memory.MemoryValueFromFieldElement(&low3Felt)
+
+			err = vm.Memory.WriteToAddress(low3Addr, &high3Mv)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(high3Addr, &low3Mv)
+		},
+	}
+}
+
+func createSplitInput6Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	high6, err := resolver.GetResOperander("high6")
+	if err != nil {
+		return nil, err
+	}
+
+	low6, err := resolver.GetResOperander("low6")
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, err := resolver.GetResOperander("inputs")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitInput6Hint(high6, low6, inputs), nil
+}
