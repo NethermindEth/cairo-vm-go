@@ -718,6 +718,7 @@ func newEcMulInnerHint(scalar hinter.ResOperander) hinter.Hinter {
 			resultFelt := new(fp.Element).SetBytes(resultUint256.Bytes())
 			resultMv := mem.MemoryValueFromFieldElement(resultFelt)
 			apAddr := vm.Context.AddressAp()
+
 			return vm.Memory.WriteToAddress(&apAddr, &resultMv)
 		},
 	}
