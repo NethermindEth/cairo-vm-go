@@ -801,16 +801,16 @@ func newSplitInput9Hint(high9, low9, inputs hinter.ResOperander) hinter.Hinter {
 			high9Felt.SetBigInt(high9BigInt)
 			high9Mv := memory.MemoryValueFromFieldElement(&high9Felt)
 
-			var low3Felt fp.Element
-			high9Felt.SetBigInt(low9BigInt)
-			low9Mv := memory.MemoryValueFromFieldElement(&low3Felt)
+			var low9Felt fp.Element
+			low9Felt.SetBigInt(low9BigInt)
+			low9Mv := memory.MemoryValueFromFieldElement(&low9Felt)
 
-			err = vm.Memory.WriteToAddress(&low9Addr, &high9Mv)
+			err = vm.Memory.WriteToAddress(&low9Addr, &low9Mv)
 			if err != nil {
 				return err
 			}
 
-			return vm.Memory.WriteToAddress(&high9Addr, &low9Mv)
+			return vm.Memory.WriteToAddress(&high9Addr, &high9Mv)
 		},
 	}
 }
