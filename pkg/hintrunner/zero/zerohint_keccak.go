@@ -574,13 +574,13 @@ func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinte
 	return newCompareBytesInWordHint(nBytes), nil
 }
 
-// SplitInput3 hint writes at address `ids.high3` and `ids.low3` in memory
+// SplitInput3 hint assigns to `ids.high3` and `ids.low3` variables
 // the quotient and remainder of the division of the value at memory address
 // `ids.inputs + 3` by 256
 //
 // `newSplitInput3Hint` takes 3 operanders as arguments
-//   - `high3` is the address in memory where to store the quotient of the division
-//   - `low3` is the address in memory where to store the remainder of the division
+//   - `high3` is the variable that will store the quotient of the division
+//   - `low3` is the variable that will store the remainder of the division
 //   - `inputs` is the address in memory to which we add an offset of 3 and read that value
 func newSplitInput3Hint(high3, low3, inputs hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
@@ -588,12 +588,12 @@ func newSplitInput3Hint(high3, low3, inputs hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.high3, ids.low3 = divmod(memory[ids.inputs + 3], 256)
 
-			high3Addr, err := hinter.ResolveAsAddress(vm, high3)
+			high3Addr, err := high3.GetAddress(vm)
 			if err != nil {
 				return err
 			}
 
-			low3Addr, err := hinter.ResolveAsAddress(vm, low3)
+			low3Addr, err := low3.GetAddress(vm)
 			if err != nil {
 				return err
 			}
@@ -631,12 +631,12 @@ func newSplitInput3Hint(high3, low3, inputs hinter.ResOperander) hinter.Hinter {
 			high3Felt.SetBigInt(low3BigInt)
 			low3Mv := memory.MemoryValueFromFieldElement(&low3Felt)
 
-			err = vm.Memory.WriteToAddress(low3Addr, &high3Mv)
+			err = vm.Memory.WriteToAddress(&low3Addr, &high3Mv)
 			if err != nil {
 				return err
 			}
 
-			return vm.Memory.WriteToAddress(high3Addr, &low3Mv)
+			return vm.Memory.WriteToAddress(&high3Addr, &low3Mv)
 		},
 	}
 }
@@ -660,13 +660,13 @@ func createSplitInput3Hinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	return newSplitInput3Hint(high3, low3, inputs), nil
 }
 
-// SplitInput6 hint writes at address `ids.high6` and `ids.low6` in memory
+// SplitInput6 hint assigns to `ids.high6` and `ids.low6` variables
 // the quotient and remainder of the division of the value at memory address
 // `ids.inputs + 6` by 256 ** 2
 //
 // `newSplitInput6Hint` takes 3 operanders as arguments
-//   - `high6` is the address in memory where to store the quotient of the division
-//   - `low6` is the address in memory where to store the remainder of the division
+//   - `high6` is the variable that will store the quotient of the division
+//   - `low6` is the variable that will store the remainder of the division
 //   - `inputs` is the address in memory to which we add an offset of 6 and read that value
 func newSplitInput6Hint(high6, low6, inputs hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
@@ -674,12 +674,12 @@ func newSplitInput6Hint(high6, low6, inputs hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.high6, ids.low6 = divmod(memory[ids.inputs + 6], 256 ** 2)
 
-			high6Addr, err := hinter.ResolveAsAddress(vm, high6)
+			high6Addr, err := high6.GetAddress(vm)
 			if err != nil {
 				return err
 			}
 
-			low6Addr, err := hinter.ResolveAsAddress(vm, low6)
+			low6Addr, err := low6.GetAddress(vm)
 			if err != nil {
 				return err
 			}
@@ -718,12 +718,12 @@ func newSplitInput6Hint(high6, low6, inputs hinter.ResOperander) hinter.Hinter {
 			high6Felt.SetBigInt(low6BigInt)
 			low6Mv := memory.MemoryValueFromFieldElement(&low6Felt)
 
-			err = vm.Memory.WriteToAddress(low6Addr, &high6Mv)
+			err = vm.Memory.WriteToAddress(&low6Addr, &high6Mv)
 			if err != nil {
 				return err
 			}
 
-			return vm.Memory.WriteToAddress(high6Addr, &low6Mv)
+			return vm.Memory.WriteToAddress(&high6Addr, &low6Mv)
 		},
 	}
 }
@@ -747,13 +747,13 @@ func createSplitInput6Hinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	return newSplitInput6Hint(high6, low6, inputs), nil
 }
 
-// SplitInput9 hint writes at address `ids.high9` and `ids.low9` in memory
+// SplitInput9 hint assigns to `ids.high9` and `ids.low9` variables
 // the quotient and remainder of the division of the value at memory address
 // `ids.inputs + 9` by 256 ** 3
 //
 // `newSplitInput9Hint` takes 3 operanders as arguments
-//   - `high9` is the address in memory where to store the quotient of the division
-//   - `low9` is the address in memory where to store the remainder of the division
+//   - `high9` is the variable that will store the quotient of the division
+//   - `low9` is the variable that will store the remainder of the division
 //   - `inputs` is the address in memory to which we add an offset of 9 and read that value
 func newSplitInput9Hint(high9, low9, inputs hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
@@ -761,12 +761,12 @@ func newSplitInput9Hint(high9, low9, inputs hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.high9, ids.low9 = divmod(memory[ids.inputs + 9], 256 ** 3)
 
-			high9Addr, err := hinter.ResolveAsAddress(vm, high9)
+			high9Addr, err := high9.GetAddress(vm)
 			if err != nil {
 				return err
 			}
 
-			low9Addr, err := hinter.ResolveAsAddress(vm, low9)
+			low9Addr, err := low9.GetAddress(vm)
 			if err != nil {
 				return err
 			}
@@ -805,12 +805,12 @@ func newSplitInput9Hint(high9, low9, inputs hinter.ResOperander) hinter.Hinter {
 			high9Felt.SetBigInt(low9BigInt)
 			low9Mv := memory.MemoryValueFromFieldElement(&low3Felt)
 
-			err = vm.Memory.WriteToAddress(low9Addr, &high9Mv)
+			err = vm.Memory.WriteToAddress(&low9Addr, &high9Mv)
 			if err != nil {
 				return err
 			}
 
-			return vm.Memory.WriteToAddress(high9Addr, &low9Mv)
+			return vm.Memory.WriteToAddress(&high9Addr, &low9Mv)
 		},
 	}
 }
