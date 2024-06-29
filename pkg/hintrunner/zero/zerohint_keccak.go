@@ -628,15 +628,15 @@ func newSplitInput3Hint(high3, low3, inputs hinter.ResOperander) hinter.Hinter {
 			high3Mv := memory.MemoryValueFromFieldElement(&high3Felt)
 
 			var low3Felt fp.Element
-			high3Felt.SetBigInt(low3BigInt)
+			low3Felt.SetBigInt(low3BigInt)
 			low3Mv := memory.MemoryValueFromFieldElement(&low3Felt)
 
-			err = vm.Memory.WriteToAddress(&low3Addr, &high3Mv)
+			err = vm.Memory.WriteToAddress(&low3Addr, &low3Mv)
 			if err != nil {
 				return err
 			}
 
-			return vm.Memory.WriteToAddress(&high3Addr, &low3Mv)
+			return vm.Memory.WriteToAddress(&high3Addr, &high3Mv)
 		},
 	}
 }
@@ -715,15 +715,15 @@ func newSplitInput6Hint(high6, low6, inputs hinter.ResOperander) hinter.Hinter {
 			high6Mv := memory.MemoryValueFromFieldElement(&high6Felt)
 
 			var low6Felt fp.Element
-			high6Felt.SetBigInt(low6BigInt)
+			low6Felt.SetBigInt(low6BigInt)
 			low6Mv := memory.MemoryValueFromFieldElement(&low6Felt)
 
-			err = vm.Memory.WriteToAddress(&low6Addr, &high6Mv)
+			err = vm.Memory.WriteToAddress(&low6Addr, &low6Mv)
 			if err != nil {
 				return err
 			}
 
-			return vm.Memory.WriteToAddress(&high6Addr, &low6Mv)
+			return vm.Memory.WriteToAddress(&high6Addr, &high6Mv)
 		},
 	}
 }
