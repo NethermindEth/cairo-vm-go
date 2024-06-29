@@ -129,6 +129,7 @@ ids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])`
 	compareKeccakFullRateInBytesCode string = "memory[ap] = to_felt_or_relocatable(ids.n_bytes >= ids.KECCAK_FULL_RATE_IN_BYTES)"
 	splintInput3Code                 string = "ids.high3, ids.low3 = divmod(memory[ids.inputs + 3], 256)"
 	splintInput6Code                 string = "ids.high6, ids.low6 = divmod(memory[ids.inputs + 6], 256 ** 2)"
+	splintInput9Code                 string = "ids.high9, ids.low9 = divmod(memory[ids.inputs + 9], 256 ** 3)"
 
 	// ------ Dictionaries hints related code ------
 	dictNewCode                           string = "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n\nmemory[ap] = __dict_manager.new_dict(segments, initial_dict)\ndel initial_dict"

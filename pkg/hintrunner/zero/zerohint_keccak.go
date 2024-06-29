@@ -674,12 +674,12 @@ func newSplitInput6Hint(high6, low6, inputs hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.high6, ids.low6 = divmod(memory[ids.inputs + 6], 256 ** 2)
 
-			high3Addr, err := hinter.ResolveAsAddress(vm, high6)
+			high6Addr, err := hinter.ResolveAsAddress(vm, high6)
 			if err != nil {
 				return err
 			}
 
-			low3Addr, err := hinter.ResolveAsAddress(vm, low6)
+			low6Addr, err := hinter.ResolveAsAddress(vm, low6)
 			if err != nil {
 				return err
 			}
@@ -705,25 +705,25 @@ func newSplitInput6Hint(high6, low6, inputs hinter.ResOperander) hinter.Hinter {
 			// 256 ** 2
 			divisor := big.NewInt(65536)
 
-			high3BigInt := new(big.Int)
-			low3BigInt := new(big.Int)
+			high6BigInt := new(big.Int)
+			low6BigInt := new(big.Int)
 
-			high3BigInt.DivMod(&inputBigInt, divisor, low3BigInt)
+			high6BigInt.DivMod(&inputBigInt, divisor, low6BigInt)
 
-			var high3Felt fp.Element
-			high3Felt.SetBigInt(high3BigInt)
-			high3Mv := memory.MemoryValueFromFieldElement(&high3Felt)
+			var high6Felt fp.Element
+			high6Felt.SetBigInt(high6BigInt)
+			high6Mv := memory.MemoryValueFromFieldElement(&high6Felt)
 
-			var low3Felt fp.Element
-			high3Felt.SetBigInt(low3BigInt)
-			low3Mv := memory.MemoryValueFromFieldElement(&low3Felt)
+			var low6Felt fp.Element
+			high6Felt.SetBigInt(low6BigInt)
+			low6Mv := memory.MemoryValueFromFieldElement(&low6Felt)
 
-			err = vm.Memory.WriteToAddress(low3Addr, &high3Mv)
+			err = vm.Memory.WriteToAddress(low6Addr, &high6Mv)
 			if err != nil {
 				return err
 			}
 
-			return vm.Memory.WriteToAddress(high3Addr, &low3Mv)
+			return vm.Memory.WriteToAddress(high6Addr, &low6Mv)
 		},
 	}
 }
@@ -745,4 +745,91 @@ func createSplitInput6Hinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	}
 
 	return newSplitInput6Hint(high6, low6, inputs), nil
+}
+
+// SplitInput9 hint writes at address `ids.high9` and `ids.low9` in memory
+// the quotient and remainder of the division of the value at memory address
+// `ids.inputs + 9` by 256 ** 3
+//
+// `newSplitInput9Hint` takes 3 operanders as arguments
+//   - `high9` is the address in memory where to store the quotient of the division
+//   - `low9` is the address in memory where to store the remainder of the division
+//   - `inputs` is the address in memory to which we add an offset of 9 and read that value
+func newSplitInput9Hint(high9, low9, inputs hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitInput9",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.high9, ids.low9 = divmod(memory[ids.inputs + 9], 256 ** 3)
+
+			high9Addr, err := hinter.ResolveAsAddress(vm, high9)
+			if err != nil {
+				return err
+			}
+
+			low9Addr, err := hinter.ResolveAsAddress(vm, low9)
+			if err != nil {
+				return err
+			}
+
+			inputsAddr, err := hinter.ResolveAsAddress(vm, inputs)
+			if err != nil {
+				return err
+			}
+
+			*inputsAddr, err = inputsAddr.AddOffset(9)
+			if err != nil {
+				return err
+			}
+
+			inputValue, err := vm.Memory.ReadFromAddress(inputsAddr)
+			if err != nil {
+				return err
+			}
+
+			var inputBigInt big.Int
+			inputValue.Felt.BigInt(&inputBigInt)
+
+			// 256 ** 3
+			divisor := big.NewInt(16777216)
+
+			high9BigInt := new(big.Int)
+			low9BigInt := new(big.Int)
+
+			high9BigInt.DivMod(&inputBigInt, divisor, low9BigInt)
+
+			var high9Felt fp.Element
+			high9Felt.SetBigInt(high9BigInt)
+			high9Mv := memory.MemoryValueFromFieldElement(&high9Felt)
+
+			var low3Felt fp.Element
+			high9Felt.SetBigInt(low9BigInt)
+			low9Mv := memory.MemoryValueFromFieldElement(&low3Felt)
+
+			err = vm.Memory.WriteToAddress(low9Addr, &high9Mv)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(high9Addr, &low9Mv)
+		},
+	}
+}
+
+func createSplitInput9Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	high9, err := resolver.GetResOperander("high9")
+	if err != nil {
+		return nil, err
+	}
+
+	low9, err := resolver.GetResOperander("low9")
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, err := resolver.GetResOperander("inputs")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitInput9Hint(high9, low9, inputs), nil
 }
