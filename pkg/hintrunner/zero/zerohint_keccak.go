@@ -3,6 +3,7 @@ package zero
 import (
 	"fmt"
 	"math"
+	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -538,7 +539,7 @@ func createBlockPermutationHinter(resolver hintReferenceResolver) (hinter.Hinter
 // `n_bytes` is lower than BYTES_IN_WORD or not
 func newCompareBytesInWordHint(nBytes hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "CompareBytesInWordHint",
+		Name: "CompareBytesInWord",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> python hint: ids.n_bytes < ids.BYTES_IN_WORD
 			//> JSON file hint: memory[ap] = to_felt_or_relocatable(ids.n_bytes < ids.BYTES_IN_WORD)
@@ -571,4 +572,90 @@ func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinte
 	}
 
 	return newCompareBytesInWordHint(nBytes), nil
+}
+
+// SplitInput3 hint writes at address `ids.high3` and `ids.low3` in memory
+// the quotient and remainder of the division of the value at memory address
+// `ids.inputs + 3` by 256
+//
+// `newSplitInput3Hint` takes 3 operanders as arguments
+//   - `high3` is the address in memory where to store the quotient of the division
+//   - `low3` is the address in memory where to store the remainder of the division
+//   - `inputs` is the address in memory to which we add an offset of 3 and read that value
+func newSplitInput3Hint(high3, low3, inputs hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitInput3",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.high3, ids.low3 = divmod(memory[ids.inputs + 3], 256)
+
+			high3Addr, err := hinter.ResolveAsAddress(vm, high3)
+			if err != nil {
+				return err
+			}
+
+			low3Addr, err := hinter.ResolveAsAddress(vm, low3)
+			if err != nil {
+				return err
+			}
+
+			inputsAddr, err := hinter.ResolveAsAddress(vm, inputs)
+			if err != nil {
+				return err
+			}
+
+			*inputsAddr, err = inputsAddr.AddOffset(3)
+			if err != nil {
+				return err
+			}
+
+			inputValue, err := vm.Memory.ReadFromAddress(inputsAddr)
+			if err != nil {
+				return err
+			}
+
+			var inputBigInt big.Int
+			inputValue.Felt.BigInt(&inputBigInt)
+
+			divisor := big.NewInt(256)
+
+			high3BigInt := new(big.Int)
+			low3BigInt := new(big.Int)
+
+			high3BigInt.DivMod(&inputBigInt, divisor, low3BigInt)
+
+			var high3Felt fp.Element
+			high3Felt.SetBigInt(high3BigInt)
+			high3Mv := memory.MemoryValueFromFieldElement(&high3Felt)
+
+			var low3Felt fp.Element
+			high3Felt.SetBigInt(low3BigInt)
+			low3Mv := memory.MemoryValueFromFieldElement(&low3Felt)
+
+			err = vm.Memory.WriteToAddress(low3Addr, &high3Mv)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(high3Addr, &low3Mv)
+		},
+	}
+}
+
+func createSplitInput3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	high3, err := resolver.GetResOperander("high3")
+	if err != nil {
+		return nil, err
+	}
+
+	low3, err := resolver.GetResOperander("low3")
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, err := resolver.GetResOperander("inputs")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitInput3Hint(high3, low3, inputs), nil
 }
