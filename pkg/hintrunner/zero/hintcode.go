@@ -127,6 +127,7 @@ ids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])`
 	blockPermutationCode             string = "from starkware.cairo.common.keccak_utils.keccak_utils import keccak_func\n_keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)\nassert 0 <= _keccak_state_size_felts < 100\noutput_values = keccak_func(memory.get_range(\nids.keccak_ptr - _keccak_state_size_felts, _keccak_state_size_felts))\nsegments.write_arg(ids.keccak_ptr, output_values)"
 	compareBytesInWordCode           string = "memory[ap] = to_felt_or_relocatable(ids.n_bytes < ids.BYTES_IN_WORD)"
 	compareKeccakFullRateInBytesCode string = "memory[ap] = to_felt_or_relocatable(ids.n_bytes >= ids.KECCAK_FULL_RATE_IN_BYTES)"
+	splitOutput0Code                 string = "ids.output0_low = ids.output0 & ((1 << 128) - 1)\nids.output0_high = ids.output0 >> 128"
 
 	// ------ Dictionaries hints related code ------
 	dictNewCode                           string = "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n\nmemory[ap] = __dict_manager.new_dict(segments, initial_dict)\ndel initial_dict"
