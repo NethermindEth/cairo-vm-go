@@ -572,3 +572,78 @@ func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinte
 
 	return newCompareBytesInWordHint(nBytes), nil
 }
+
+// SplitOutput0 hint splits `output0` into `output0_low` (16 bytes) and `output0_high` (9 bytes)
+//
+// `newSplitOutput0Hint` takes 3 operanders as arguments
+//   - `output0_low` is the variable that will store the low part of `output0`
+//   - `output0_high` is the variable that will store the high part of `output0`
+//   - `output0` is the value to split
+func newSplitOutput0Hint(output0Low, output0High, output0 hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitOutput0",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.output0_low = ids.output0 & ((1 << 128) - 1)
+			//> ids.output0_high = ids.output0 >> 128
+
+			output0LowAddr, err := output0Low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			output0HighAddr, err := output0High.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			output0, err := hinter.ResolveAsFelt(vm, output0)
+			if err != nil {
+				return err
+			}
+
+			output0Uint := uint256.Int(output0.Bits())
+
+			var output0Low uint256.Int
+			mask := new(uint256.Int).Lsh(uint256.NewInt(1), 128)
+			mask.Sub(mask, uint256.NewInt(1))
+			output0Low.And(&output0Uint, mask)
+			output0LowBytes := output0Low.Bytes()
+			output0LowFelt := fp.Element{}
+			output0LowFelt.SetBytes(output0LowBytes)
+			output0LowMv := memory.MemoryValueFromFieldElement(&output0LowFelt)
+
+			var output0High uint256.Int
+			output0High.Rsh(&output0Uint, 128)
+			output0HighBytes := output0High.Bytes()
+			output0HighFelt := fp.Element{}
+			output0HighFelt.SetBytes(output0HighBytes)
+			output0HighMv := memory.MemoryValueFromFieldElement(&output0HighFelt)
+
+			err = vm.Memory.WriteToAddress(&output0LowAddr, &output0LowMv)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&output0HighAddr, &output0HighMv)
+		},
+	}
+}
+
+func createSplitOutput0Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	output0Low, err := resolver.GetResOperander("output0_low")
+	if err != nil {
+		return nil, err
+	}
+
+	output0High, err := resolver.GetResOperander("output0_high")
+	if err != nil {
+		return nil, err
+	}
+
+	output0, err := resolver.GetResOperander("output0")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitOutput0Hint(output0Low, output0High, output0), nil
+}
