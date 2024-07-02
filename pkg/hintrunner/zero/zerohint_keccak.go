@@ -581,9 +581,8 @@ func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinte
 //   - `nBytesLeft` is the variable that will store the remainder of the division
 //   - `nBytes` is the variable that will be divided
 func newSplitNBytesHint(nBytes, nWordsToCopy, nBytesLeft hinter.ResOperander) hinter.Hinter {
-	name := "SplitNBytes"
 	return &GenericZeroHinter{
-		Name: name,
+		Name: "SplitNBytes",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.n_words_to_copy, ids.n_bytes_left = divmod(ids.n_bytes, ids.BYTES_IN_WORD)
 
