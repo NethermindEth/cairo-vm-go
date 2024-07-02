@@ -605,5 +605,18 @@ func TestZeroHintKeccak(t *testing.T) {
 				check: apValueEquals(feltUint64(0)),
 			},
 		},
+		"SplitNBytes": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "n_words_to_copy", Kind: uninitialized},
+					{Name: "n_bytes_left", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitNBytesHint(ctx.operanders["n_bytes"], ctx.operanders["n_words_to_copy"], ctx.operanders["n_bytes_left"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"n_words_to_copy": feltUint64(0), "n_bytes_left": feltUint64(0)}),
+			},
+		},
 	})
 }

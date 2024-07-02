@@ -3,6 +3,7 @@ package zero
 import (
 	"fmt"
 	"math"
+	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -571,4 +572,73 @@ func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinte
 	}
 
 	return newCompareBytesInWordHint(nBytes), nil
+}
+
+func newSplitNBytesHint(nWordsToCopy, nBytesLeft, nBytes hinter.ResOperander) hinter.Hinter {
+	name := "SplitNBytes"
+	return &GenericZeroHinter{
+		Name: name,
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.n_words_to_copy, ids.n_bytes_left = divmod(ids.n_bytes, ids.BYTES_IN_WORD)
+
+			nWordsToCopyAddr, err := nWordsToCopy.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			nBytesLeftAddr, err := nBytesLeft.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			nBytesFelt, err := hinter.ResolveAsFelt(vm, nBytes)
+			if err != nil {
+				return err
+			}
+
+			var nBytesBigInt big.Int
+			nBytesFelt.BigInt(&nBytesBigInt)
+
+			bytesInWord := big.NewInt(8)
+
+			nWordsToCopyBigInt := new(big.Int)
+			nBytesLeftBigInt := new(big.Int)
+
+			nWordsToCopyBigInt.DivMod(&nBytesBigInt, bytesInWord, nBytesLeftBigInt)
+
+			var nWordsToCopyFelt fp.Element
+			nWordsToCopyFelt.SetBigInt(nWordsToCopyBigInt)
+			nWordsToCopyMv := memory.MemoryValueFromFieldElement(&nWordsToCopyFelt)
+
+			var nBytesLeftFelt fp.Element
+			nBytesLeftFelt.SetBigInt(nBytesLeftBigInt)
+			nBytesLeftMv := memory.MemoryValueFromFieldElement(&nBytesLeftFelt)
+
+			err = vm.Memory.WriteToAddress(&nBytesLeftAddr, &nBytesLeftMv)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&nWordsToCopyAddr, &nWordsToCopyMv)
+		},
+	}
+}
+
+func createSplitNBytesHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	nBytes, err := resolver.GetResOperander("n_bytes")
+	if err != nil {
+		return nil, err
+	}
+
+	nWordsToCopy, err := resolver.GetResOperander("n_words_to_copy")
+	if err != nil {
+		return nil, err
+	}
+
+	nBytesLeft, err := resolver.GetResOperander("n_bytes_left")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitNBytesHint(nWordsToCopy, nBytesLeft, nBytes), nil
 }
