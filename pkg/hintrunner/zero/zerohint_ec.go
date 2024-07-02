@@ -863,6 +863,7 @@ func createIsZeroDivModHinter() (hinter.Hinter, error) {
 }
 
 // RecoverY hint Recovers the y coordinate of a point on the elliptic curve
+// y^2 = x^3 + alpha * x + beta (mod field_prime) of a given x coordinate.
 //
 // `newRecoverYHint` takes 2 operanders as arguments
 //   - `x` is the x coordinate of an elliptic curve point
@@ -914,6 +915,7 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 			xBigInt := new(big.Int)
 			xFelt.BigInt(xBigInt)
 
+			// y^2 = x^3 + alpha * x + beta (mod field_prime)
 			ySquaredBigInt := new(big.Int).Set(xBigInt)
 			ySquaredBigInt.Mul(ySquaredBigInt, xBigInt).Mod(ySquaredBigInt, fieldPrimeBigInt)
 			ySquaredBigInt.Mul(ySquaredBigInt, xBigInt).Mod(ySquaredBigInt, fieldPrimeBigInt)
