@@ -12,7 +12,6 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type ZeroRunner struct {
@@ -162,7 +161,7 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) 
 }
 
 func (runner *ZeroRunner) initializeEntrypoint(
-	initialPCOffset uint64, arguments []*f.Element, returnFp *mem.MemoryValue, memory *mem.Memory,
+	initialPCOffset uint64, arguments []*fp.Element, returnFp *mem.MemoryValue, memory *mem.Memory,
 ) (mem.MemoryAddress, error) {
 	stack, err := runner.initializeBuiltins(memory)
 	if err != nil {
@@ -367,11 +366,7 @@ func (runner *ZeroRunner) FinalizeSegments() error {
 }
 
 func (runner *ZeroRunner) BuildProof() ([]byte, []byte, error) {
-	relocatedTrace, err := runner.vm.ExecutionTrace()
-	if err != nil {
-		return nil, nil, err
-	}
-
+	relocatedTrace := runner.vm.RelocateTrace()
 	return vm.EncodeTrace(relocatedTrace), vm.EncodeMemory(runner.vm.RelocateMemory()), nil
 }
 

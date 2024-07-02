@@ -115,24 +115,26 @@ func main() {
 						}
 					}
 
+					runner.EndRun()
+
 					if proofmode {
-						runner.EndRun()
 						if err := runner.FinalizeSegments(); err != nil {
 							return fmt.Errorf("cannot finalize segments: %w", err)
 						}
-						trace, memory, err := runner.BuildProof()
-						if err != nil {
-							return fmt.Errorf("cannot build proof: %w", err)
+					}
+
+					trace, memory, err := runner.BuildProof()
+					if err != nil {
+						return fmt.Errorf("cannot build proof: %w", err)
+					}
+					if traceLocation != "" {
+						if err := os.WriteFile(traceLocation, trace, 0644); err != nil {
+							return fmt.Errorf("cannot write relocated trace: %w", err)
 						}
-						if traceLocation != "" {
-							if err := os.WriteFile(traceLocation, trace, 0644); err != nil {
-								return fmt.Errorf("cannot write relocated trace: %w", err)
-							}
-						}
-						if memoryLocation != "" {
-							if err := os.WriteFile(memoryLocation, memory, 0644); err != nil {
-								return fmt.Errorf("cannot write relocated memory: %w", err)
-							}
+					}
+					if memoryLocation != "" {
+						if err := os.WriteFile(memoryLocation, memory, 0644); err != nil {
+							return fmt.Errorf("cannot write relocated memory: %w", err)
 						}
 					}
 
