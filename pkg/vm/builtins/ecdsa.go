@@ -60,7 +60,7 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 	pubKey := &ecdsa.PublicKey{A: key}
 	sig, ok := e.signatures[pubOffset]
 	if !ok {
-		return fmt.Errorf("signature is missing form ECDA builtin")
+		return fmt.Errorf("signature is missing from ECDSA builtin")
 	}
 
 	msgBytes := msgField.Bytes()
