@@ -574,7 +574,7 @@ func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinte
 	return newCompareBytesInWordHint(nBytes), nil
 }
 
-func newSplitNBytesHint(nWordsToCopy, nBytesLeft, nBytes hinter.ResOperander) hinter.Hinter {
+func newSplitNBytesHint(nBytes, nWordsToCopy, nBytesLeft hinter.ResOperander) hinter.Hinter {
 	name := "SplitNBytes"
 	return &GenericZeroHinter{
 		Name: name,
@@ -596,15 +596,15 @@ func newSplitNBytesHint(nWordsToCopy, nBytesLeft, nBytes hinter.ResOperander) hi
 				return err
 			}
 
-			var nBytesBigInt big.Int
-			nBytesFelt.BigInt(&nBytesBigInt)
+			nBytesBigInt := new(big.Int)
+			nBytesFelt.BigInt(nBytesBigInt)
 
 			bytesInWord := big.NewInt(8)
 
 			nWordsToCopyBigInt := new(big.Int)
 			nBytesLeftBigInt := new(big.Int)
 
-			nWordsToCopyBigInt.DivMod(&nBytesBigInt, bytesInWord, nBytesLeftBigInt)
+			nWordsToCopyBigInt.DivMod(nBytesBigInt, bytesInWord, nBytesLeftBigInt)
 
 			var nWordsToCopyFelt fp.Element
 			nWordsToCopyFelt.SetBigInt(nWordsToCopyBigInt)
@@ -640,5 +640,5 @@ func createSplitNBytesHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 		return nil, err
 	}
 
-	return newSplitNBytesHint(nWordsToCopy, nBytesLeft, nBytes), nil
+	return newSplitNBytesHint(nBytes, nWordsToCopy, nBytesLeft), nil
 }
