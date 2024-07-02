@@ -149,7 +149,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createIsZeroPackHinter(resolver)
 	case isZeroDivModCode:
 		return createIsZeroDivModHinter()
-	case RecoverYCode:
+	case recoverYCode:
 		return createRecoverYHinter(resolver)
 	// Blake hints
 	case blake2sAddUint256BigendCode:
