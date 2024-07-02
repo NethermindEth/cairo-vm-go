@@ -3,6 +3,7 @@ package zero
 import (
 	"fmt"
 	"math"
+	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -571,4 +572,105 @@ func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinte
 	}
 
 	return newCompareBytesInWordHint(nBytes), nil
+}
+
+// SplitOutputMidLowHigh hint assigns to `ids.output1_low` the remainder of the division
+// of `ids.output1` variable by 256 ** 7 and uses its quotient as a variable which is
+// divided by 2 ** 128, the quotient and remainder of which are then assigned to `ids.output1_high`
+// and `ids.output1_mid` respectively.
+//
+// `newSplitOutputMidLowHighHint` takes 4 operanders as arguments
+//   - `output1Low` is the variable that will store the remainder of the first division
+//   - `output1Mid` is the variable that will store the remainder of the second division
+//   - `output1High` is the variable that will store the quotient of the second division
+//   - `output1` is the variable that will be divided in the first division
+func newSplitOutputMidLowHighHint(output1, output1Low, output1Mid, output1High hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitOutputMidLowHigh",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> tmp, ids.output1_low = divmod(ids.output1, 256 ** 7)
+			//> ids.output1_high, ids.output1_mid = divmod(tmp, 2 ** 128)
+
+			output1LowAddr, err := output1Low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			output1MidAddr, err := output1Mid.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			output1HighAddr, err := output1High.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			output1Felt, err := hinter.ResolveAsFelt(vm, output1)
+			if err != nil {
+				return err
+			}
+
+			output1BigInt := new(big.Int)
+			output1Felt.BigInt(output1BigInt)
+
+			tmpBigInt := new(big.Int)
+			output1LowBigInt := new(big.Int)
+			output1MidBigInt := new(big.Int)
+			output1HighBigInt := new(big.Int)
+
+			divisorOne := new(big.Int).Exp(big.NewInt(256), big.NewInt(7), nil)
+			divisorTwo := new(big.Int).Exp(big.NewInt(2), big.NewInt(128), nil)
+
+			tmpBigInt.DivMod(output1BigInt, divisorOne, output1LowBigInt)
+			output1HighBigInt.DivMod(tmpBigInt, divisorTwo, output1MidBigInt)
+
+			var output1LowFelt fp.Element
+			output1LowFelt.SetBigInt(output1LowBigInt)
+			output1LowMv := memory.MemoryValueFromFieldElement(&output1LowFelt)
+
+			var output1MidFelt fp.Element
+			output1MidFelt.SetBigInt(output1MidBigInt)
+			output1MidMv := memory.MemoryValueFromFieldElement(&output1MidFelt)
+
+			var output1HighFelt fp.Element
+			output1HighFelt.SetBigInt(output1HighBigInt)
+			output1HighMv := memory.MemoryValueFromFieldElement(&output1HighFelt)
+
+			err = vm.Memory.WriteToAddress(&output1LowAddr, &output1LowMv)
+			if err != nil {
+				return err
+			}
+
+			err = vm.Memory.WriteToAddress(&output1MidAddr, &output1MidMv)
+			if err != nil {
+				return err
+			}
+			return vm.Memory.WriteToAddress(&output1HighAddr, &output1HighMv)
+		},
+	}
+}
+
+func createSplitOutputMidLowHighHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	output1, err := resolver.GetResOperander("output1")
+	if err != nil {
+		return nil, err
+	}
+
+	output1Low, err := resolver.GetResOperander("output1_low")
+	if err != nil {
+		return nil, err
+	}
+
+	output1Mid, err := resolver.GetResOperander("output1_mid")
+	if err != nil {
+		return nil, err
+	}
+
+	output1High, err := resolver.GetResOperander("output1_high")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitOutputMidLowHighHint(output1, output1Low, output1Mid, output1High), nil
 }
