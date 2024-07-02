@@ -574,6 +574,14 @@ func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinte
 	return newCompareBytesInWordHint(nBytes), nil
 }
 
+// SplitNBytes hint assigns to `ids.n_words_to_copy` and `ids.n_bytes_left` variables
+// the quotient and remainder of the division of `ids.n_bytes` variable by the
+// variable `ids.BYTES_IN_WORD`
+//
+// `newSplitNBytesHint` takes 3 operanders as arguments
+//   - `nWordsToCopy` is the variable that will store the quotient of the division
+//   - `nBytesLeft` is the variable that will store the remainder of the division
+//   - `nBytes` is the variable that will be divided
 func newSplitNBytesHint(nBytes, nWordsToCopy, nBytesLeft hinter.ResOperander) hinter.Hinter {
 	name := "SplitNBytes"
 	return &GenericZeroHinter{
