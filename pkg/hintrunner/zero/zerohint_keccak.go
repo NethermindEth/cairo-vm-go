@@ -746,7 +746,6 @@ func createSplitInput15Hinter(resolver hintReferenceResolver) (hinter.Hinter, er
 	return newSplitInput15Hint(high15, low15, inputs), nil
 }
 
-
 // SplitOutputMidLowHigh hint assigns to `ids.output1_low` the remainder of the division
 // of `ids.output1` variable by 256 ** 7 and uses its quotient as a variable which is
 // divided by 2 ** 128, the quotient and remainder of which are then assigned to `ids.output1_high`
