@@ -5,7 +5,6 @@ import (
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	math_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -928,7 +927,7 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 
 			var value = mem.MemoryValue{}
 
-			if math_utils.IsQuadResidue(ySquaredFelt) {
+			if secp_utils.IsQuadResidue(ySquaredFelt) {
 				// sqrt(y_squared, field_prime)
 
 				var result *fp.Element = new(fp.Element)
