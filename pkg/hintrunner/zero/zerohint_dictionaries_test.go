@@ -599,7 +599,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 						ctx.operanders["first_key"],
 					)
 				},
-				errCheck: errorTextContains("Accesses array size must be divisible by DictAccess.SIZE"),
+				errCheck: errorTextContains("accesses array size must be divisible by DictAccess.SIZE"),
 			},
 			{
 				operanders: []*hintOperander{
@@ -625,7 +625,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 						ctx.operanders["first_key"],
 					)
 				},
-				errCheck: errorTextContains("squash_dict() can only be used with n_accesses<={1048576}. Got: n_accesses={1048577}."),
+				errCheck: errorTextContains("squash_dict() can only be used with n_accesses<={1048576}. Got: n_accesses={1048577}"),
 			},
 			{
 				operanders: []*hintOperander{

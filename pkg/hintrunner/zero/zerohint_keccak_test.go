@@ -59,7 +59,7 @@ func TestZeroHintKeccak(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsafeKeccakHint(ctx.operanders["data"], ctx.operanders["length"], ctx.operanders["high"], ctx.operanders["low"])
 				},
-				errCheck: errorTextContains(fmt.Sprintf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d.", 1<<20, (1<<20)+1)),
+				errCheck: errorTextContains(fmt.Sprintf("unsafe_keccak() can only be used with length<=%d.\n Got: length=%d", 1<<20, (1<<20)+1)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -430,6 +430,35 @@ func TestZeroHintKeccak(t *testing.T) {
 				},
 			},
 		},
+		"CompareKeccakFullRateInBytes": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: fpRelative, Value: feltUint64(137)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newCompareKeccakFullRateInBytesHint(ctx.operanders["n_bytes"])
+				},
+				check: apValueEquals(feltUint64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: fpRelative, Value: feltUint64(136)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newCompareKeccakFullRateInBytesHint(ctx.operanders["n_bytes"])
+				},
+				check: apValueEquals(feltUint64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: fpRelative, Value: feltUint64(135)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newCompareKeccakFullRateInBytesHint(ctx.operanders["n_bytes"])
+				},
+				check: apValueEquals(feltUint64(0)),
+			},
+		},
 		"BlockPermutation": {
 			{
 				operanders: []*hintOperander{
@@ -554,6 +583,26 @@ func TestZeroHintKeccak(t *testing.T) {
 						feltUint64(17322593527878179950),
 						feltUint64(14146902728521851886),
 					}),
+			},
+		},
+		"CompareBytesInWordHint": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: fpRelative, Value: feltUint64(5)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newCompareBytesInWordHint(ctx.operanders["n_bytes"])
+				},
+				check: apValueEquals(feltUint64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: fpRelative, Value: feltUint64(10)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newCompareBytesInWordHint(ctx.operanders["n_bytes"])
+				},
+				check: apValueEquals(feltUint64(0)),
 			},
 		},
 	})

@@ -215,7 +215,7 @@ func (expression OffsetExp) Evaluate() (*int, error) {
 		negNumber := -*expression.NegNumber
 		return &negNumber, nil
 	default:
-		return nil, fmt.Errorf("Expected a number")
+		return nil, fmt.Errorf("expected a number")
 	}
 }
 
@@ -226,7 +226,7 @@ func (expression DerefExp) Evaluate() (any, error) {
 	}
 	cellRef, ok := cellRefExp.(hinter.CellRefer)
 	if !ok {
-		return nil, fmt.Errorf("Expected a CellRefer expression but got %s", cellRefExp)
+		return nil, fmt.Errorf("expected a CellRefer expression but got %s", cellRefExp)
 	}
 	return hinter.Deref{Deref: cellRef}, nil
 }
@@ -301,7 +301,7 @@ func (expression LeftExp) Evaluate() (any, error) {
 	case expression.DerefExp != nil:
 		return expression.DerefExp.Evaluate()
 	}
-	return nil, fmt.Errorf("Unexpected left expression in binary operation")
+	return nil, fmt.Errorf("unexpected left expression in binary operation")
 }
 
 func (expression RightExp) Evaluate() (any, error) {
@@ -311,7 +311,7 @@ func (expression RightExp) Evaluate() (any, error) {
 	case expression.Offset != nil:
 		return expression.Offset.Evaluate()
 	}
-	return nil, fmt.Errorf("Unexpected right expression in binary operation")
+	return nil, fmt.Errorf("unexpected right expression in binary operation")
 }
 
 func ParseIdentifier(value string) (hinter.Reference, error) {
