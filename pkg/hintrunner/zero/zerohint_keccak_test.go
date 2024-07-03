@@ -703,5 +703,62 @@ func TestZeroHintKeccak(t *testing.T) {
 				check: allVarValueEquals(map[string]*fp.Element{"output1_low": feltUint64(38756173112), "output1_mid": feltUint64(42), "output1_high": feltUint64(1)}),
 			},
 		},
+		"SplitNBytes": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "n_words_to_copy", Kind: uninitialized},
+					{Name: "n_bytes_left", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitNBytesHint(ctx.operanders["n_bytes"], ctx.operanders["n_words_to_copy"], ctx.operanders["n_bytes_left"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"n_words_to_copy": feltUint64(0), "n_bytes_left": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(45)},
+					{Name: "n_words_to_copy", Kind: uninitialized},
+					{Name: "n_bytes_left", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitNBytesHint(ctx.operanders["n_bytes"], ctx.operanders["n_words_to_copy"], ctx.operanders["n_bytes_left"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"n_words_to_copy": feltUint64(5), "n_bytes_left": feltUint64(5)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(80)},
+					{Name: "n_words_to_copy", Kind: uninitialized},
+					{Name: "n_bytes_left", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitNBytesHint(ctx.operanders["n_bytes"], ctx.operanders["n_words_to_copy"], ctx.operanders["n_bytes_left"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"n_words_to_copy": feltUint64(10), "n_bytes_left": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(7)},
+					{Name: "n_words_to_copy", Kind: uninitialized},
+					{Name: "n_bytes_left", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitNBytesHint(ctx.operanders["n_bytes"], ctx.operanders["n_words_to_copy"], ctx.operanders["n_bytes_left"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"n_words_to_copy": feltUint64(0), "n_bytes_left": feltUint64(7)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(7523672657695691)},
+					{Name: "n_words_to_copy", Kind: uninitialized},
+					{Name: "n_bytes_left", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitNBytesHint(ctx.operanders["n_bytes"], ctx.operanders["n_words_to_copy"], ctx.operanders["n_bytes_left"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"n_words_to_copy": feltUint64(940459082211961), "n_bytes_left": feltUint64(3)}),
+			},
+		},
 	})
 }

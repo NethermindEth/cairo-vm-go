@@ -175,6 +175,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createCompareBytesInWordNondetHinter(resolver)
 	case splitOutputMidLowHighCode:
 		return createSplitOutputMidLowHighHinter(resolver)
+	case SplitNBytesCode:
+		return createSplitNBytesHinter(resolver)
 	// Usort hints
 	case usortEnterScopeCode:
 		return createUsortEnterScopeHinter()

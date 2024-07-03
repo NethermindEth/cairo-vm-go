@@ -317,9 +317,8 @@ func createUnsafeKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hi
 //   - `low` is the low part of the `uint256` argument for the Keccac function
 //   - `high` is the high part of the `uint256` argument for the Keccac function
 func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter {
-	name := "KeccakWriteArgs"
 	return &GenericZeroHinter{
-		Name: name,
+		Name: "KeccakWriteArgs",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> segments.write_arg(ids.inputs, [ids.low % 2 ** 64, ids.low // 2 ** 64])
 			//> segments.write_arg(ids.inputs + 2, [ids.high % 2 ** 64, ids.high // 2 ** 64])
@@ -460,9 +459,8 @@ func createCompareKeccakFullRateInBytesNondetHinter(resolver hintReferenceResolv
 // `newBlockPermutationHint` reads 25 memory cells starting from `keccakPtr -  25`, and writes
 // the result of the Keccak block permutation in the next 25 memory cells, starting from `keccakPtr`
 func newBlockPermutationHint(keccakPtr hinter.ResOperander) hinter.Hinter {
-	name := "BlockPermutation"
 	return &GenericZeroHinter{
-		Name: name,
+		Name: "BlockPermutation",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.keccak_utils.keccak_utils import keccak_func
 			//> _keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)
@@ -673,4 +671,81 @@ func createSplitOutputMidLowHighHinter(resolver hintReferenceResolver) (hinter.H
 	}
 
 	return newSplitOutputMidLowHighHint(output1, output1Low, output1Mid, output1High), nil
+}
+
+// SplitNBytes hint assigns to `ids.n_words_to_copy` and `ids.n_bytes_left` variables
+// the quotient and remainder of the division of `ids.n_bytes` variable by the
+// variable `ids.BYTES_IN_WORD`
+//
+// `newSplitNBytesHint` takes 3 operanders as arguments
+//   - `nWordsToCopy` is the variable that will store the quotient of the division
+//   - `nBytesLeft` is the variable that will store the remainder of the division
+//   - `nBytes` is the variable that will be divided
+func newSplitNBytesHint(nBytes, nWordsToCopy, nBytesLeft hinter.ResOperander) hinter.Hinter {
+	name := "SplitNBytes"
+	return &GenericZeroHinter{
+		Name: name,
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.n_words_to_copy, ids.n_bytes_left = divmod(ids.n_bytes, ids.BYTES_IN_WORD)
+
+			nWordsToCopyAddr, err := nWordsToCopy.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			nBytesLeftAddr, err := nBytesLeft.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			nBytesFelt, err := hinter.ResolveAsFelt(vm, nBytes)
+			if err != nil {
+				return err
+			}
+
+			nBytesBigInt := new(big.Int)
+			nBytesFelt.BigInt(nBytesBigInt)
+
+			bytesInWord := big.NewInt(8)
+
+			nWordsToCopyBigInt := new(big.Int)
+			nBytesLeftBigInt := new(big.Int)
+
+			nWordsToCopyBigInt.DivMod(nBytesBigInt, bytesInWord, nBytesLeftBigInt)
+
+			var nWordsToCopyFelt fp.Element
+			nWordsToCopyFelt.SetBigInt(nWordsToCopyBigInt)
+			nWordsToCopyMv := memory.MemoryValueFromFieldElement(&nWordsToCopyFelt)
+
+			var nBytesLeftFelt fp.Element
+			nBytesLeftFelt.SetBigInt(nBytesLeftBigInt)
+			nBytesLeftMv := memory.MemoryValueFromFieldElement(&nBytesLeftFelt)
+
+			err = vm.Memory.WriteToAddress(&nBytesLeftAddr, &nBytesLeftMv)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&nWordsToCopyAddr, &nWordsToCopyMv)
+		},
+	}
+}
+
+func createSplitNBytesHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	nBytes, err := resolver.GetResOperander("n_bytes")
+	if err != nil {
+		return nil, err
+	}
+
+	nWordsToCopy, err := resolver.GetResOperander("n_words_to_copy")
+	if err != nil {
+		return nil, err
+	}
+
+	nBytesLeft, err := resolver.GetResOperander("n_bytes_left")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitNBytesHint(nBytes, nWordsToCopy, nBytesLeft), nil
 }
