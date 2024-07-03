@@ -1009,4 +1009,3 @@ func createSplitInput9Hinter(resolver hintReferenceResolver) (hinter.Hinter, err
 
 	return newSplitInput9Hint(high9, low9, inputs), nil
 }
-
