@@ -149,6 +149,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createIsZeroPackHinter(resolver)
 	case isZeroDivModCode:
 		return createIsZeroDivModHinter()
+	case recoverYCode:
+		return createRecoverYHinter(resolver)
 	// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
@@ -177,6 +179,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSplitInput12Hinter(resolver)
 	case splintInput15Code:
 		return createSplitInput15Hinter(resolver)
+	case splitOutputMidLowHighCode:
+		return createSplitOutputMidLowHighHinter(resolver)
+	case SplitNBytesCode:
+		return createSplitNBytesHinter(resolver)
 	// Usort hints
 	case usortEnterScopeCode:
 		return createUsortEnterScopeHinter()
