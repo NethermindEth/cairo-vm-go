@@ -148,3 +148,30 @@ func IsQuadResidue(x *fp.Element) bool {
 		return false
 	}
 }
+
+func YSquaredFromX(x, beta, fieldPrime *big.Int) *big.Int {
+	// Computes y^2 using the curve equation:
+	// y^2 = x^3 + alpha * x + beta (mod field_prime)
+	// We ignore alpha as it is a constant with a value of 1
+
+	ySquaredBigInt := new(big.Int).Set(x)
+	ySquaredBigInt.Mul(ySquaredBigInt, x).Mod(ySquaredBigInt, fieldPrime)
+	ySquaredBigInt.Mul(ySquaredBigInt, x).Mod(ySquaredBigInt, fieldPrime)
+	ySquaredBigInt.Add(ySquaredBigInt, x).Mod(ySquaredBigInt, fieldPrime)
+	ySquaredBigInt.Add(ySquaredBigInt, beta).Mod(ySquaredBigInt, fieldPrime)
+
+	return ySquaredBigInt
+}
+
+func Sqrt(x, p *big.Int) *big.Int {
+	// Finds the minimum non-negative integer m such that (m*m) % p == x.
+
+	halfPrimeBigInt := new(big.Int).Rsh(p, 1)
+	m := new(big.Int).ModSqrt(x, p)
+
+	if m.Cmp(halfPrimeBigInt) > 0 {
+		m.Sub(p, m)
+	}
+
+	return m
+}

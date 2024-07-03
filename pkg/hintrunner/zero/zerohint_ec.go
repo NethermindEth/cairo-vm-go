@@ -917,37 +917,17 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 			xFelt.BigInt(xBigInt)
 
 			// y^2 = x^3 + alpha * x + beta (mod field_prime)
-			ySquaredBigInt := new(big.Int).Set(xBigInt)
-			ySquaredBigInt.Mul(ySquaredBigInt, xBigInt).Mod(ySquaredBigInt, fieldPrimeBigInt)
-			ySquaredBigInt.Mul(ySquaredBigInt, xBigInt).Mod(ySquaredBigInt, fieldPrimeBigInt)
-			ySquaredBigInt.Add(ySquaredBigInt, xBigInt).Mod(ySquaredBigInt, fieldPrimeBigInt)
-			ySquaredBigInt.Add(ySquaredBigInt, betaBigInt).Mod(ySquaredBigInt, fieldPrimeBigInt)
-
-			var ySquaredFelt *fp.Element = new(fp.Element)
-			ySquaredFelt.SetBigInt(ySquaredBigInt)
-
-			var value = mem.MemoryValue{}
+			ySquaredBigInt := secp_utils.YSquaredFromX(xBigInt, betaBigInt, fieldPrimeBigInt)
+			ySquaredFelt := new(fp.Element).SetBigInt(ySquaredBigInt)
 
 			if secp_utils.IsQuadResidue(ySquaredFelt) {
-				// sqrt(y_squared, field_prime)
-
-				var result *fp.Element = new(fp.Element)
-				halfPrimeBigInt := new(big.Int).Rsh(fieldPrimeBigInt, 1)
-
-				tempResult := new(big.Int).ModSqrt(ySquaredBigInt, fieldPrimeBigInt)
-
-				if tempResult.Cmp(halfPrimeBigInt) > 0 {
-					tempResult.Sub(fieldPrimeBigInt, tempResult)
-				}
-
-				result.SetBigInt(tempResult)
-				value = mem.MemoryValueFromFieldElement(result)
+				result := new(fp.Element).SetBigInt(secp_utils.Sqrt(ySquaredBigInt, fieldPrimeBigInt))
+				value := mem.MemoryValueFromFieldElement(result)
+				return vm.Memory.WriteToAddress(&pYAddr, &value)
 			} else {
 				ySquaredString := ySquaredBigInt.String()
 				return fmt.Errorf("%s does not represent the x coordinate of a point on the curve", ySquaredString)
 			}
-
-			return vm.Memory.WriteToAddress(&pYAddr, &value)
 		},
 	}
 }
