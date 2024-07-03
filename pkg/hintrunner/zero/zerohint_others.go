@@ -39,7 +39,7 @@ func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.
 
 			newN, ok := n.(uint64)
 			if !ok {
-				return fmt.Errorf("casting n into a felt failed")
+				return fmt.Errorf("casting n into a uint64 failed")
 			}
 			newN = newN - 1
 
