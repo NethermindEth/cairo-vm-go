@@ -1154,28 +1154,21 @@ func newIsQuadResidueHint(x, y hinter.ResOperander) hinter.Hinter {
 			var value = memory.MemoryValue{}
 			var result *fp.Element = new(fp.Element)
 
+			const primeString = "3618502788666131213697322783095070105623107215331596699973092056135872020481"
+			primeBigInt, ok := new(big.Int).SetString(primeString, 10)
+			if !ok {
+				panic("failed to convert prime string to big.Int")
+			}
+
 			if math_utils.IsQuadResidue(x) {
-				// result = x.Sqrt(x)
-
-				const primeString = "3618502788666131213697322783095070105623107215331596699973092056135872020481"
-				primeBigInt, ok := new(big.Int).SetString(primeString, 10)
-				if !ok {
-					panic("failed to convert prime string to big.Int")
-				}
-
-				// divide primeBigInt by 2
-				halfPrimeBigInt := new(big.Int).Rsh(primeBigInt, 1)
-
-				tempResult := new(big.Int).ModSqrt(&xBigInt, primeBigInt)
-
-				// ensures that tempResult is the smaller of the two possible square roots in the prime field.
-				if tempResult.Cmp(halfPrimeBigInt) > 0 {
-					tempResult.Sub(primeBigInt, tempResult)
-				}
-
-				result.SetBigInt(tempResult)
+				result.SetBigInt(math_utils.Sqrt(&xBigInt, primeBigInt))
 			} else {
-				result = x.Sqrt(new(fp.Element).Div(x, new(fp.Element).SetUint64(3)))
+				y, err := math_utils.Divmod(&xBigInt, big.NewInt(3), primeBigInt)
+				if err != nil {
+					return err
+				}
+
+				result.SetBigInt(math_utils.Sqrt(&y, primeBigInt))
 			}
 
 			value = memory.MemoryValueFromFieldElement(result)
