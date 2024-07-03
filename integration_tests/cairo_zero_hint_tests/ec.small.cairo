@@ -1,8 +1,7 @@
 %builtins range_check
 
 from starkware.cairo.common.cairo_secp.bigint import BigInt3
-from starkware.cairo.common.cairo_secp.ec import EcPoint, ec_negate, compute_doubling_slope, compute_slope, ec_double, fast_ec_add
-
+from starkware.cairo.common.cairo_secp.ec import EcPoint, ec_negate, compute_doubling_slope, compute_slope, ec_double, fast_ec_add, ec_mul_inner
 func test_ec_negate{range_check_ptr}() {
     let p = EcPoint(BigInt3(1, 2, 3), BigInt3(1, 2, 3));
     let (res) = ec_negate(p);
@@ -84,11 +83,24 @@ func test_fast_ec_add{range_check_ptr}() {
     return ();
 }
 
+func test_ec_muller_inner{range_check_ptr}() {
+    let (pow2, res) = ec_mul_inner(
+        EcPoint(
+            BigInt3(65162296, 359657, 04862662171381), BigInt3(-5166641367474701, -63029418, 793)
+        ),
+        123,
+        298,
+    );
+    
+    return ();
+}
+
 func main{range_check_ptr}() {
     test_ec_negate();
     test_compute_doubling_slope();
     test_compute_slope();
     test_ec_double();
     test_fast_ec_add();
+    test_ec_muller_inner();
     return ();
 }

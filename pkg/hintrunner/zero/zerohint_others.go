@@ -37,12 +37,11 @@ func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.
 				return err
 			}
 
-			newN, ok := n.(fp.Element)
+			newN, ok := n.(uint64)
 			if !ok {
-				return fmt.Errorf("casting n into a felt failed")
+				return fmt.Errorf("casting n into a uint64 failed")
 			}
-
-			newN.Sub(&newN, &utils.FeltOne)
+			newN = newN - 1
 
 			if err := ctx.ScopeManager.AssignVariable("n", newN); err != nil {
 				return err
@@ -55,7 +54,7 @@ func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.
 			}
 
 			var continueTargetMv memory.MemoryValue
-			if utils.FeltLt(&utils.FeltZero, &newN) {
+			if newN > 0 {
 				continueTargetMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
 				continueTargetMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
@@ -127,12 +126,12 @@ func newMemEnterScopeHint(value hinter.ResOperander, memset bool) hinter.Hinter 
 			// MemcpyEnterScope
 			//> vm_enter_scope({'n': ids.len})
 
-			value, err := hinter.ResolveAsFelt(vm, value)
+			value, err := hinter.ResolveAsUint64(vm, value)
 			if err != nil {
 				return err
 			}
 
-			ctx.ScopeManager.EnterScope(map[string]any{"n": *value})
+			ctx.ScopeManager.EnterScope(map[string]any{"n": value})
 			return nil
 		},
 	}
@@ -607,4 +606,88 @@ func createSearchSortedLowerHinter(resolver hintReferenceResolver) (hinter.Hinte
 	}
 
 	return newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index), nil
+}
+
+// NondetElementsOverTWo hint compares the offset difference between two memory address and
+// writes 1 or 0 at `ap` memory address, depending on whether the difference is greater or
+// equal to 2 or not
+//
+// `newNondetElementsOverTWoHint` takes 2 operanders as arguments
+//   - `elementsEnd` represents the address in memory right after the last element of the array
+//   - `elements` represents the address in memory of the first element of the array
+func newNondetElementsOverTWoHint(n hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "NondetElementsOverTWo",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> python hint in cairo file: "ids.elements_end - ids.elements >= 2"
+			//> python hint in whitelist: "memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= 2)"
+			//> compiled file hint: "memory[ap] = to_felt_or_relocatable(ids.n >= 2)"
+
+			n, err := hinter.ResolveAsUint64(vm, n)
+			if err != nil {
+				return err
+			}
+
+			apAddr := vm.Context.AddressAp()
+			var resultMv memory.MemoryValue
+			if n >= uint64(2) {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+
+			return vm.Memory.WriteToAddress(&apAddr, &resultMv)
+		},
+	}
+}
+
+func createNondetElementsOverTWoHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	n, err := resolver.GetResOperander("n")
+	if err != nil {
+		return nil, err
+	}
+
+	return newNondetElementsOverTWoHint(n), nil
+}
+
+// NondetElementsOverTen hint compares the offset difference between two memory address and
+// writes 1 or 0 at `ap` memory address, depending on whether the difference is greater or
+// esual to 10 or not
+//
+// `newNondetElementsOverTenHint` takes 2 operanders as arguments
+//   - `elementsEnd` represents the address in memory right after the last element of the array
+//   - `elements` represents the address in memory of the first element of the array
+func newNondetElementsOverTenHint(n hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "NondetElementsOverTen",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> python hint in cairo file: "ids.elements_end - ids.elements >= 10"
+			//> python hint in whitelist: "memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= 10)"
+			//> compiled file hint: "memory[ap] = to_felt_or_relocatable(ids.n >= 10)"
+
+			n, err := hinter.ResolveAsUint64(vm, n)
+			if err != nil {
+				return err
+			}
+
+			apAddr := vm.Context.AddressAp()
+			var resultMv memory.MemoryValue
+			if n >= uint64(10) {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+
+			return vm.Memory.WriteToAddress(&apAddr, &resultMv)
+		},
+	}
+}
+
+func createNondetElementsOverTenHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	n, err := resolver.GetResOperander("n")
+	if err != nil {
+		return nil, err
+	}
+
+	return newNondetElementsOverTenHint(n), nil
 }

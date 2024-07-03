@@ -11,27 +11,27 @@ import (
 // Used to keep track of all Dictionaries data
 type ZeroDictionary struct {
 	// The Data contained in a dictionary
-	Data map[fp.Element]mem.MemoryValue
+	Data *map[fp.Element]mem.MemoryValue
 	// Default value for key not present in the dictionary
-	DefaultValue mem.MemoryValue
+	DefaultValue *mem.MemoryValue
 	// first free offset in memory segment of dictionary
 	FreeOffset *uint64
 }
 
 // Gets the memory value at certain key
 func (d *ZeroDictionary) at(key fp.Element) (mem.MemoryValue, error) {
-	if value, ok := d.Data[key]; ok {
+	if value, ok := (*d.Data)[key]; ok {
 		return value, nil
 	}
-	if d.DefaultValue != mem.UnknownValue {
-		return d.DefaultValue, nil
+	if *d.DefaultValue != mem.UnknownValue {
+		return *d.DefaultValue, nil
 	}
 	return mem.UnknownValue, fmt.Errorf("no value for key: %v", key)
 }
 
 // Given a key and a value, it sets the value at the given key
 func (d *ZeroDictionary) set(key fp.Element, value mem.MemoryValue) {
-	d.Data[key] = value
+	(*d.Data)[key] = value
 }
 
 // Given a incrementBy value, it increments the freeOffset field of dictionary by it
@@ -63,8 +63,8 @@ func (dm *ZeroDictionaryManager) NewDictionary(vm *VM.VirtualMachine, data map[f
 	newDictAddr := vm.Memory.AllocateEmptySegment()
 	freeOffset := uint64(0)
 	dm.Dictionaries[newDictAddr.SegmentIndex] = ZeroDictionary{
-		Data:         data,
-		DefaultValue: mem.UnknownValue,
+		Data:         &data,
+		DefaultValue: &mem.UnknownValue,
 		FreeOffset:   &freeOffset,
 	}
 	return newDictAddr
@@ -76,10 +76,11 @@ func (dm *ZeroDictionaryManager) NewDictionary(vm *VM.VirtualMachine, data map[f
 // querying the defaultValue will be returned instead.
 func (dm *ZeroDictionaryManager) NewDefaultDictionary(vm *VM.VirtualMachine, defaultValue mem.MemoryValue) mem.MemoryAddress {
 	newDefaultDictAddr := vm.Memory.AllocateEmptySegment()
+	newData := make(map[fp.Element]mem.MemoryValue)
 	freeOffset := uint64(0)
 	dm.Dictionaries[newDefaultDictAddr.SegmentIndex] = ZeroDictionary{
-		Data:         make(map[fp.Element]mem.MemoryValue),
-		DefaultValue: defaultValue,
+		Data:         &newData,
+		DefaultValue: &defaultValue,
 		FreeOffset:   &freeOffset,
 	}
 	return newDefaultDictAddr
