@@ -760,7 +760,7 @@ func TestZeroHintKeccak(t *testing.T) {
 				check: allVarValueEquals(map[string]*fp.Element{"n_words_to_copy": feltUint64(940459082211961), "n_bytes_left": feltUint64(3)}),
 			},
 		},
-    	"SplitInput3": {
+		"SplitInput3": {
 			{
 				operanders: []*hintOperander{
 					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
@@ -989,7 +989,7 @@ func TestZeroHintKeccak(t *testing.T) {
 					return newSplitInput9Hint(ctx.operanders["high9"], ctx.operanders["low9"], ctx.operanders["inputs"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{"high9": feltUint64(10), "low9": feltUint64(1)}),
-      },
-    },
+			},
+		},
 	})
 }
