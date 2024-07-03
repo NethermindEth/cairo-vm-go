@@ -37,12 +37,11 @@ func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.
 				return err
 			}
 
-			newN, ok := n.(fp.Element)
+			newN, ok := n.(uint64)
 			if !ok {
-				return fmt.Errorf("casting n into a felt failed")
+				return fmt.Errorf("casting n into a uint64 failed")
 			}
-
-			newN.Sub(&newN, &utils.FeltOne)
+			newN = newN - 1
 
 			if err := ctx.ScopeManager.AssignVariable("n", newN); err != nil {
 				return err
@@ -55,7 +54,7 @@ func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.
 			}
 
 			var continueTargetMv memory.MemoryValue
-			if utils.FeltLt(&utils.FeltZero, &newN) {
+			if newN > 0 {
 				continueTargetMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
 				continueTargetMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
@@ -127,12 +126,12 @@ func newMemEnterScopeHint(value hinter.ResOperander, memset bool) hinter.Hinter 
 			// MemcpyEnterScope
 			//> vm_enter_scope({'n': ids.len})
 
-			value, err := hinter.ResolveAsFelt(vm, value)
+			value, err := hinter.ResolveAsUint64(vm, value)
 			if err != nil {
 				return err
 			}
 
-			ctx.ScopeManager.EnterScope(map[string]any{"n": *value})
+			ctx.ScopeManager.EnterScope(map[string]any{"n": value})
 			return nil
 		},
 	}
