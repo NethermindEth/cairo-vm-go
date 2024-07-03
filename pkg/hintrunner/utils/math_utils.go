@@ -142,11 +142,7 @@ func IsQuadResidue(x *fp.Element) bool {
 	// https://github.com/sympy/sympy/blob/d91b8ad6d36a59a879cc70e5f4b379da5fdd46ce/sympy/ntheory/residue_ntheory.py#L689
 	// We have omitted the prime as it will be CAIRO_PRIME
 
-	if x.IsZero() || x.IsOne() || x.Legendre() == 1 {
-		return true
-	} else {
-		return false
-	}
+	return x.IsZero() || x.IsOne() || x.Legendre() == 1
 }
 
 func YSquaredFromX(x, beta, fieldPrime *big.Int) *big.Int {
