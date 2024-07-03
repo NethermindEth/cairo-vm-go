@@ -605,7 +605,7 @@ func TestZeroHintKeccak(t *testing.T) {
 				check: apValueEquals(feltUint64(0)),
 			},
 		},
-    "SplitInput12": {
+		"SplitInput12": {
 			{
 				operanders: []*hintOperander{
 					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
@@ -832,6 +832,8 @@ func TestZeroHintKeccak(t *testing.T) {
 					return newSplitInput15Hint(ctx.operanders["high15"], ctx.operanders["low15"], ctx.operanders["inputs"])
 				},
 				check: allVarValueEquals(map[string]*fp.Element{"high15": feltUint64(10), "low15": feltUint64(1)}),
+			},
+		},
 		"SplitOutputMidLowHigh": {
 			{
 				operanders: []*hintOperander{
