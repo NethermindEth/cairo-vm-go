@@ -381,7 +381,7 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newEcDoubleSlopeV1Hint(point), nil
 }
 
-// ReduceV1 hint reduces a packed value modulo the SECP256R1 prime
+// ReduceV1 hint reduces a packed value modulo the SECP256K1 prime
 //
 // `newReduceV1Hint` takes 1 operander as argument
 //   - `x` is the packed value to be reduced
