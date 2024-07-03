@@ -129,10 +129,22 @@ func sign(n *big.Int) (int, big.Int) {
 
 func SafeDiv(x, y *big.Int) (big.Int, error) {
 	if y.Cmp(big.NewInt(0)) == 0 {
-		return *big.NewInt(0), fmt.Errorf("Division by zero.")
+		return *big.NewInt(0), fmt.Errorf("division by zero")
 	}
 	if new(big.Int).Mod(x, y).Cmp(big.NewInt(0)) != 0 {
-		return *big.NewInt(0), fmt.Errorf("%v is not divisible by %v.", x, y)
+		return *big.NewInt(0), fmt.Errorf("%v is not divisible by %v", x, y)
 	}
 	return *new(big.Int).Div(x, y), nil
+}
+
+func IsQuadResidue(x *fp.Element) bool {
+	// Implementation adapted from sympy implementation which can be found here :
+	// https://github.com/sympy/sympy/blob/d91b8ad6d36a59a879cc70e5f4b379da5fdd46ce/sympy/ntheory/residue_ntheory.py#L689
+	// We have omitted the prime as it will be CAIRO_PRIME
+
+	if x.IsZero() || x.IsOne() || x.Legendre() == 1 {
+		return true
+	} else {
+		return false
+	}
 }

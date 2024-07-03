@@ -1152,40 +1152,33 @@ func newIsQuadResidueHint(x, y hinter.ResOperander) hinter.Hinter {
 			xBigInt := math_utils.AsInt(x)
 
 			var value = memory.MemoryValue{}
+			var result *fp.Element = new(fp.Element)
 
-			if x.IsZero() || x.IsOne() {
-				value = memory.MemoryValueFromFieldElement(x)
+			if math_utils.IsQuadResidue(x) {
+				// result = x.Sqrt(x)
 
-			} else {
-				var result *fp.Element = new(fp.Element)
-
-				if x.Legendre() == 1 {
-					// result = x.Sqrt(x)
-
-					const primeString = "3618502788666131213697322783095070105623107215331596699973092056135872020481"
-					primeBigInt, ok := new(big.Int).SetString(primeString, 10)
-					if !ok {
-						panic("failed to convert prime string to big.Int")
-					}
-
-					// divide primeBigInt by 2
-					halfPrimeBigInt := new(big.Int).Rsh(primeBigInt, 1)
-
-					tempResult := new(big.Int).ModSqrt(&xBigInt, primeBigInt)
-
-					// ensures that tempResult is the smaller of the two possible square roots in the prime field.
-					if tempResult.Cmp(halfPrimeBigInt) > 0 {
-						tempResult.Sub(primeBigInt, tempResult)
-					}
-
-					result.SetBigInt(tempResult)
-
-				} else {
-					result = x.Sqrt(new(fp.Element).Div(x, new(fp.Element).SetUint64(3)))
+				const primeString = "3618502788666131213697322783095070105623107215331596699973092056135872020481"
+				primeBigInt, ok := new(big.Int).SetString(primeString, 10)
+				if !ok {
+					panic("failed to convert prime string to big.Int")
 				}
 
-				value = memory.MemoryValueFromFieldElement(result)
+				// divide primeBigInt by 2
+				halfPrimeBigInt := new(big.Int).Rsh(primeBigInt, 1)
+
+				tempResult := new(big.Int).ModSqrt(&xBigInt, primeBigInt)
+
+				// ensures that tempResult is the smaller of the two possible square roots in the prime field.
+				if tempResult.Cmp(halfPrimeBigInt) > 0 {
+					tempResult.Sub(primeBigInt, tempResult)
+				}
+
+				result.SetBigInt(tempResult)
+			} else {
+				result = x.Sqrt(new(fp.Element).Div(x, new(fp.Element).SetUint64(3)))
 			}
+
+			value = memory.MemoryValueFromFieldElement(result)
 
 			return vm.Memory.WriteToAddress(&yAddr, &value)
 		},

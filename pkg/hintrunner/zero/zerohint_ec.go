@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	math_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
@@ -927,27 +928,23 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 
 			var value = mem.MemoryValue{}
 
-			if ySquaredFelt.IsZero() || ySquaredFelt.IsOne() {
-				value = mem.MemoryValueFromFieldElement(ySquaredFelt)
-			} else {
+			if math_utils.IsQuadResidue(ySquaredFelt) {
+				// sqrt(y_squared, field_prime)
+
 				var result *fp.Element = new(fp.Element)
+				halfPrimeBigInt := new(big.Int).Rsh(fieldPrimeBigInt, 1)
 
-				if ySquaredFelt.Legendre() == 1 {
-					halfPrimeBigInt := new(big.Int).Rsh(fieldPrimeBigInt, 1)
+				tempResult := new(big.Int).ModSqrt(ySquaredBigInt, fieldPrimeBigInt)
 
-					tempResult := new(big.Int).ModSqrt(ySquaredBigInt, fieldPrimeBigInt)
-
-					if tempResult.Cmp(halfPrimeBigInt) > 0 {
-						tempResult.Sub(fieldPrimeBigInt, tempResult)
-					}
-
-					result.SetBigInt(tempResult)
-				} else {
-					ySquaredString := ySquaredBigInt.String()
-					return fmt.Errorf("%s does not represent the x coordinate of a point on the curve", ySquaredString)
+				if tempResult.Cmp(halfPrimeBigInt) > 0 {
+					tempResult.Sub(fieldPrimeBigInt, tempResult)
 				}
 
+				result.SetBigInt(tempResult)
 				value = mem.MemoryValueFromFieldElement(result)
+			} else {
+				ySquaredString := ySquaredBigInt.String()
+				return fmt.Errorf("%s does not represent the x coordinate of a point on the curve", ySquaredString)
 			}
 
 			return vm.Memory.WriteToAddress(&pYAddr, &value)
