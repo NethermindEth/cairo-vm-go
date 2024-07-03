@@ -230,7 +230,7 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 			}
 
 			dictionaryDataCopy := make(map[fp.Element]memory.MemoryValue)
-			for k, v := range dictionary.Data {
+			for k, v := range *dictionary.Data {
 				// Copy the key
 				keyCopy := fp.Element{}
 				keyCopy.Set(&k)
@@ -490,7 +490,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 				return err
 			}
 			if ptrDiffValue%DictAccessSize != 0 {
-				return fmt.Errorf("Accesses array size must be divisible by DictAccess.SIZE")
+				return fmt.Errorf("accesses array size must be divisible by DictAccess.SIZE")
 			}
 
 			//> n_accesses = ids.n_accesses
@@ -506,7 +506,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			//  __squash_dict_max_size is always in scope and has a value of 2**20,
 			squashDictMaxSize := uint64(1048576)
 			if nAccessesValue > squashDictMaxSize {
-				return fmt.Errorf("squash_dict() can only be used with n_accesses<={%d}. Got: n_accesses={%d}.", squashDictMaxSize, nAccessesValue)
+				return fmt.Errorf("squash_dict() can only be used with n_accesses<={%d}. Got: n_accesses={%d}", squashDictMaxSize, nAccessesValue)
 			}
 
 			//> # A map from key to the list of indices accessing it.
