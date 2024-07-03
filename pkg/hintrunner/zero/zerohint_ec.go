@@ -862,3 +862,86 @@ func newIsZeroDivModHint() hinter.Hinter {
 func createIsZeroDivModHinter() (hinter.Hinter, error) {
 	return newIsZeroDivModHint(), nil
 }
+
+// RecoverY hint Recovers the y coordinate of a point on the elliptic curve
+// y^2 = x^3 + alpha * x + beta (mod field_prime) of a given x coordinate.
+//
+// `newRecoverYHint` takes 2 operanders as arguments
+//   - `x` is the x coordinate of an elliptic curve point
+//   - `p` is one of the two EC points with the given x coordinate (x, y)
+func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "RecoverY",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME
+			//> from starkware.python.math_utils import recover_y
+			//> ids.p.x = ids.x
+			//> # This raises an exception if `x` is not on the curve.
+			//> ids.p.y = recover_y(ids.x, ALPHA, BETA, FIELD_PRIME)
+
+			pXAddr, err := p.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			pYAddr, err := pXAddr.AddOffset(1)
+			if err != nil {
+				return err
+			}
+
+			xFelt, err := hinter.ResolveAsFelt(vm, x)
+			if err != nil {
+				return err
+			}
+
+			valueX := mem.MemoryValueFromFieldElement(xFelt)
+
+			err = vm.Memory.WriteToAddress(&pXAddr, &valueX)
+			if err != nil {
+				return err
+			}
+
+			const betaString = "3141592653589793238462643383279502884197169399375105820974944592307816406665"
+			betaBigInt, ok := new(big.Int).SetString(betaString, 10)
+			if !ok {
+				panic("failed to convert BETA string to big.Int")
+			}
+
+			const fieldPrimeString = "3618502788666131213697322783095070105623107215331596699973092056135872020481"
+			fieldPrimeBigInt, ok := new(big.Int).SetString(fieldPrimeString, 10)
+			if !ok {
+				panic("failed to convert FIELD_PRIME string to big.Int")
+			}
+
+			xBigInt := new(big.Int)
+			xFelt.BigInt(xBigInt)
+
+			// y^2 = x^3 + alpha * x + beta (mod field_prime)
+			ySquaredBigInt := secp_utils.YSquaredFromX(xBigInt, betaBigInt, fieldPrimeBigInt)
+			ySquaredFelt := new(fp.Element).SetBigInt(ySquaredBigInt)
+
+			if secp_utils.IsQuadResidue(ySquaredFelt) {
+				result := new(fp.Element).SetBigInt(secp_utils.Sqrt(ySquaredBigInt, fieldPrimeBigInt))
+				value := mem.MemoryValueFromFieldElement(result)
+				return vm.Memory.WriteToAddress(&pYAddr, &value)
+			} else {
+				ySquaredString := ySquaredBigInt.String()
+				return fmt.Errorf("%s does not represent the x coordinate of a point on the curve", ySquaredString)
+			}
+		},
+	}
+}
+
+func createRecoverYHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := resolver.GetResOperander("p")
+	if err != nil {
+		return nil, err
+	}
+
+	return newRecoverYHint(x, p), nil
+}
