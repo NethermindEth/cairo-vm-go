@@ -129,10 +129,45 @@ func sign(n *big.Int) (int, big.Int) {
 
 func SafeDiv(x, y *big.Int) (big.Int, error) {
 	if y.Cmp(big.NewInt(0)) == 0 {
-		return *big.NewInt(0), fmt.Errorf("Division by zero.")
+		return *big.NewInt(0), fmt.Errorf("division by zero")
 	}
 	if new(big.Int).Mod(x, y).Cmp(big.NewInt(0)) != 0 {
-		return *big.NewInt(0), fmt.Errorf("%v is not divisible by %v.", x, y)
+		return *big.NewInt(0), fmt.Errorf("%v is not divisible by %v", x, y)
 	}
 	return *new(big.Int).Div(x, y), nil
+}
+
+func IsQuadResidue(x *fp.Element) bool {
+	// Implementation adapted from sympy implementation which can be found here :
+	// https://github.com/sympy/sympy/blob/d91b8ad6d36a59a879cc70e5f4b379da5fdd46ce/sympy/ntheory/residue_ntheory.py#L689
+	// We have omitted the prime as it will be CAIRO_PRIME
+
+	return x.IsZero() || x.IsOne() || x.Legendre() == 1
+}
+
+func YSquaredFromX(x, beta, fieldPrime *big.Int) *big.Int {
+	// Computes y^2 using the curve equation:
+	// y^2 = x^3 + alpha * x + beta (mod field_prime)
+	// We ignore alpha as it is a constant with a value of 1
+
+	ySquaredBigInt := new(big.Int).Set(x)
+	ySquaredBigInt.Mul(ySquaredBigInt, x).Mod(ySquaredBigInt, fieldPrime)
+	ySquaredBigInt.Mul(ySquaredBigInt, x).Mod(ySquaredBigInt, fieldPrime)
+	ySquaredBigInt.Add(ySquaredBigInt, x).Mod(ySquaredBigInt, fieldPrime)
+	ySquaredBigInt.Add(ySquaredBigInt, beta).Mod(ySquaredBigInt, fieldPrime)
+
+	return ySquaredBigInt
+}
+
+func Sqrt(x, p *big.Int) *big.Int {
+	// Finds the minimum non-negative integer m such that (m*m) % p == x.
+
+	halfPrimeBigInt := new(big.Int).Rsh(p, 1)
+	m := new(big.Int).ModSqrt(x, p)
+
+	if m.Cmp(halfPrimeBigInt) > 0 {
+		m.Sub(p, m)
+	}
+
+	return m
 }
