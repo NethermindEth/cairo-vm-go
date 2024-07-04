@@ -50,6 +50,7 @@ const (
 
 	// is_quad_residue() hint
 	isQuadResidueCode string = "from starkware.crypto.signature.signature import FIELD_PRIME\nfrom starkware.python.math_utils import div_mod, is_quad_residue, sqrt\n\nx = ids.x\nif is_quad_residue(x, FIELD_PRIME):\n    ids.y = sqrt(x, FIELD_PRIME)\nelse:\n    ids.y = sqrt(div_mod(x, 3, FIELD_PRIME), FIELD_PRIME)"
+
 	// ------ Uint256 hints related code ------
 	uint256AddCode            string = "sum_low = ids.a.low + ids.b.low\nids.carry_low = 1 if sum_low >= ids.SHIFT else 0\nsum_high = ids.a.high + ids.b.high + ids.carry_low\nids.carry_high = 1 if sum_high >= ids.SHIFT else 0"
 	split64Code               string = "ids.low = ids.a & ((1<<64) - 1)\nids.high = ids.a >> 64"
@@ -128,11 +129,11 @@ ids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])`
 	blockPermutationCode             string = "from starkware.cairo.common.keccak_utils.keccak_utils import keccak_func\n_keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)\nassert 0 <= _keccak_state_size_felts < 100\noutput_values = keccak_func(memory.get_range(\nids.keccak_ptr - _keccak_state_size_felts, _keccak_state_size_felts))\nsegments.write_arg(ids.keccak_ptr, output_values)"
 	compareBytesInWordCode           string = "memory[ap] = to_felt_or_relocatable(ids.n_bytes < ids.BYTES_IN_WORD)"
 	compareKeccakFullRateInBytesCode string = "memory[ap] = to_felt_or_relocatable(ids.n_bytes >= ids.KECCAK_FULL_RATE_IN_BYTES)"
-	splintInput3Code                 string = "ids.high3, ids.low3 = divmod(memory[ids.inputs + 3], 256)"
-	splintInput6Code                 string = "ids.high6, ids.low6 = divmod(memory[ids.inputs + 6], 256 ** 2)"
-	splintInput9Code                 string = "ids.high9, ids.low9 = divmod(memory[ids.inputs + 9], 256 ** 3)"
-  splintInput12Code                string = "ids.high12, ids.low12 = divmod(memory[ids.inputs + 12], 256 ** 4)"
-	splintInput15Code                string = "ids.high15, ids.low15 = divmod(memory[ids.inputs + 15], 256 ** 5)"
+	splitInput3Code                  string = "ids.high3, ids.low3 = divmod(memory[ids.inputs + 3], 256)"
+	splitInput6Code                  string = "ids.high6, ids.low6 = divmod(memory[ids.inputs + 6], 256 ** 2)"
+	splitInput9Code                  string = "ids.high9, ids.low9 = divmod(memory[ids.inputs + 9], 256 ** 3)"
+	splitInput12Code                 string = "ids.high12, ids.low12 = divmod(memory[ids.inputs + 12], 256 ** 4)"
+	splitInput15Code                 string = "ids.high15, ids.low15 = divmod(memory[ids.inputs + 15], 256 ** 5)"
 	splitOutputMidLowHighCode        string = "tmp, ids.output1_low = divmod(ids.output1, 256 ** 7)\nids.output1_high, ids.output1_mid = divmod(tmp, 2 ** 128)"
 	SplitNBytesCode                  string = "ids.n_words_to_copy, ids.n_bytes_left = divmod(ids.n_bytes, ids.BYTES_IN_WORD)"
 
