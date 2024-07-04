@@ -1220,5 +1220,51 @@ func TestZeroHintKeccak(t *testing.T) {
 				check: allVarValueEquals(map[string]*fp.Element{"high9": feltUint64(10), "low9": feltUint64(1)}),
 			},
 		},
+		"SplitOutput0": {
+			{
+				operanders: []*hintOperander{
+					{Name: "output0", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "output0_low", Kind: uninitialized},
+					{Name: "output0_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutput0Hint(ctx.operanders["output0_low"], ctx.operanders["output0_high"], ctx.operanders["output0"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output0_low": feltUint64(0), "output0_high": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "output0", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "output0_low", Kind: uninitialized},
+					{Name: "output0_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutput0Hint(ctx.operanders["output0_low"], ctx.operanders["output0_high"], ctx.operanders["output0"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output0_low": feltUint64(1), "output0_high": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "output0", Kind: apRelative, Value: feltString("340282366920938463463374607431768211455")},
+					{Name: "output0_low", Kind: uninitialized},
+					{Name: "output0_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutput0Hint(ctx.operanders["output0_low"], ctx.operanders["output0_high"], ctx.operanders["output0"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output0_low": feltString("340282366920938463463374607431768211455"), "output0_high": feltString("0")}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "output0", Kind: apRelative, Value: feltString("340282366920938463463374607431768211456")},
+					{Name: "output0_low", Kind: uninitialized},
+					{Name: "output0_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutput0Hint(ctx.operanders["output0_low"], ctx.operanders["output0_high"], ctx.operanders["output0"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output0_low": feltString("0"), "output0_high": feltString("1")}),
+			},
+		},
 	})
 }

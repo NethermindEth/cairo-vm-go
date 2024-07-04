@@ -128,6 +128,7 @@ ids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])`
 	splitInput12Code                 string = "ids.high12, ids.low12 = divmod(memory[ids.inputs + 12], 256 ** 4)"
 	splitInput15Code                 string = "ids.high15, ids.low15 = divmod(memory[ids.inputs + 15], 256 ** 5)"
 	splitOutputMidLowHighCode        string = "tmp, ids.output1_low = divmod(ids.output1, 256 ** 7)\nids.output1_high, ids.output1_mid = divmod(tmp, 2 ** 128)"
+	splitOutput0Code                 string = "ids.output0_low = ids.output0 & ((1 << 128) - 1)\nids.output0_high = ids.output0 >> 128"
 	SplitNBytesCode                  string = "ids.n_words_to_copy, ids.n_bytes_left = divmod(ids.n_bytes, ids.BYTES_IN_WORD)"
 
 	// ------ Dictionaries hints related code ------

@@ -187,6 +187,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createSplitInput15Hinter(resolver)
 	case splitOutputMidLowHighCode:
 		return createSplitOutputMidLowHighHinter(resolver)
+	case splitOutput0Code:
+		return createSplitOutput0Hinter(resolver)
 	case SplitNBytesCode:
 		return createSplitNBytesHinter(resolver)
 	// Usort hints
