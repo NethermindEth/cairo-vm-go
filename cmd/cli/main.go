@@ -13,6 +13,8 @@ import (
 
 func main() {
 	var proofmode bool
+	var collectMemory bool
+	var collectTrace bool
 	var maxsteps uint64
 	var entrypointOffset uint64
 	var traceLocation string
@@ -34,6 +36,18 @@ func main() {
 						Usage:       "runs the cairo vm in proof mode",
 						Required:    false,
 						Destination: &proofmode,
+					},
+					&cli.BoolFlag{
+						Name:        "collect_trace",
+						Usage:       "builds the relocated trace after execution",
+						Required:    false,
+						Destination: &collectTrace,
+					},
+					&cli.BoolFlag{
+						Name:        "collect_memory",
+						Usage:       "builds the relocated memory after execution",
+						Required:    false,
+						Destination: &collectMemory,
 					},
 					&cli.Uint64Flag{
 						Name:        "maxsteps",
@@ -118,27 +132,37 @@ func main() {
 						}
 					}
 
-					runner.EndRun()
-
 					if proofmode {
+						runner.EndRun()
+
 						if err := runner.FinalizeSegments(); err != nil {
 							return fmt.Errorf("cannot finalize segments: %w", err)
 						}
 					}
 
-					trace, memory, err := runner.BuildProof()
-					if err != nil {
-						return fmt.Errorf("cannot build proof: %w", err)
-					}
+					if proofmode || collectTrace {
+						trace, err := runner.BuildTrace()
+						if err != nil {
+							return fmt.Errorf("cannot build trace: %w", err)
+						}
 
-					if traceLocation != "" {
-						if err := os.WriteFile(traceLocation, trace, 0644); err != nil {
-							return fmt.Errorf("cannot write relocated trace: %w", err)
+						if traceLocation != "" {
+							if err := os.WriteFile(traceLocation, trace, 0644); err != nil {
+								return fmt.Errorf("cannot write relocated trace: %w", err)
+							}
 						}
 					}
-					if memoryLocation != "" {
-						if err := os.WriteFile(memoryLocation, memory, 0644); err != nil {
-							return fmt.Errorf("cannot write relocated memory: %w", err)
+
+					if proofmode || collectMemory {
+						memory, err := runner.BuildMemory()
+						if err != nil {
+							return fmt.Errorf("cannot build memory: %w", err)
+						}
+
+						if memoryLocation != "" {
+							if err := os.WriteFile(memoryLocation, memory, 0644); err != nil {
+								return fmt.Errorf("cannot write relocated memory: %w", err)
+							}
 						}
 					}
 

@@ -71,8 +71,11 @@ type Trace struct {
 
 // This type represents the current execution context of the vm
 type VirtualMachineConfig struct {
-	// If true, the vm outputs the trace and the relocated memory at the end of execution
+	// If true, the vm outputs the trace and the relocated memory at the end of execution and finalize segments
+	// in order for the prover to create a proof
 	ProofMode bool
+	// If true, the vm collects the relocated trace at the end of execution, without finalizing segments
+	CollectTrace bool
 }
 
 type VirtualMachine struct {
@@ -92,7 +95,11 @@ func NewVirtualMachine(
 	initialContext Context, memory *mem.Memory, config VirtualMachineConfig,
 ) (*VirtualMachine, error) {
 
-	trace := make([]Context, 0)
+	// Initialize the trace if necesary
+	var trace []Context
+	if config.ProofMode || config.CollectTrace {
+		trace = make([]Context, 0)
+	}
 
 	return &VirtualMachine{
 		Context:      initialContext,
@@ -133,7 +140,9 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 	}
 
 	// store the trace before state change
-	vm.Trace = append(vm.Trace, vm.Context)
+	if vm.config.ProofMode || vm.config.CollectTrace {
+		vm.Trace = append(vm.Trace, vm.Context)
+	}
 
 	err = vm.RunInstruction(instruction)
 	if err != nil {
