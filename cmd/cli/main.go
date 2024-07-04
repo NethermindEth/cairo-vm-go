@@ -13,7 +13,7 @@ import (
 
 func main() {
 	var proofmode bool
-	var collectMemory bool
+	var buildMemory bool
 	var collectTrace bool
 	var maxsteps uint64
 	var entrypointOffset uint64
@@ -37,18 +37,6 @@ func main() {
 						Required:    false,
 						Destination: &proofmode,
 					},
-					&cli.BoolFlag{
-						Name:        "collect_trace",
-						Usage:       "builds the relocated trace after execution",
-						Required:    false,
-						Destination: &collectTrace,
-					},
-					&cli.BoolFlag{
-						Name:        "collect_memory",
-						Usage:       "builds the relocated memory after execution",
-						Required:    false,
-						Destination: &collectMemory,
-					},
 					&cli.Uint64Flag{
 						Name:        "maxsteps",
 						Usage:       "limits the execution steps to 'maxsteps'",
@@ -63,11 +51,23 @@ func main() {
 						Value:       0,
 						Destination: &entrypointOffset,
 					},
+					&cli.BoolFlag{
+						Name:        "collect_trace",
+						Usage:       "collects the trace and builds the relocated trace after execution",
+						Required:    false,
+						Destination: &collectTrace,
+					},
 					&cli.StringFlag{
 						Name:        "tracefile",
 						Usage:       "location to store the relocated trace",
 						Required:    false,
 						Destination: &traceLocation,
+					},
+					&cli.BoolFlag{
+						Name:        "build_memory",
+						Usage:       "builds the relocated memory after execution",
+						Required:    false,
+						Destination: &buildMemory,
 					},
 					&cli.StringFlag{
 						Name:        "memoryfile",
@@ -153,7 +153,7 @@ func main() {
 						}
 					}
 
-					if proofmode || collectMemory {
+					if proofmode || buildMemory {
 						memory, err := runner.BuildMemory()
 						if err != nil {
 							return fmt.Errorf("cannot build memory: %w", err)

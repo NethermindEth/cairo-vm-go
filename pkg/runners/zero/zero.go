@@ -364,11 +364,13 @@ func (runner *ZeroRunner) FinalizeSegments() error {
 	return nil
 }
 
+// BuildMemory relocates the memory and returns it
 func (runner *ZeroRunner) BuildMemory() ([]byte, error) {
 	relocatedMemory := runner.vm.RelocateMemory()
 	return vm.EncodeMemory(relocatedMemory), nil
 }
 
+// BuildMemory relocates the trace and returns it
 func (runner *ZeroRunner) BuildTrace() ([]byte, error) {
 	relocatedTrace := runner.vm.RelocateTrace()
 	return vm.EncodeTrace(relocatedTrace), nil
