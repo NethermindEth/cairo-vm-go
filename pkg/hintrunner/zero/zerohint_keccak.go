@@ -3,6 +3,7 @@ package zero
 import (
 	"fmt"
 	"math"
+	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -316,9 +317,8 @@ func createUnsafeKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hi
 //   - `low` is the low part of the `uint256` argument for the Keccac function
 //   - `high` is the high part of the `uint256` argument for the Keccac function
 func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter {
-	name := "KeccakWriteArgs"
 	return &GenericZeroHinter{
-		Name: name,
+		Name: "KeccakWriteArgs",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> segments.write_arg(ids.inputs, [ids.low % 2 ** 64, ids.low // 2 ** 64])
 			//> segments.write_arg(ids.inputs + 2, [ids.high % 2 ** 64, ids.high // 2 ** 64])
@@ -459,9 +459,8 @@ func createCompareKeccakFullRateInBytesNondetHinter(resolver hintReferenceResolv
 // `newBlockPermutationHint` reads 25 memory cells starting from `keccakPtr -  25`, and writes
 // the result of the Keccak block permutation in the next 25 memory cells, starting from `keccakPtr`
 func newBlockPermutationHint(keccakPtr hinter.ResOperander) hinter.Hinter {
-	name := "BlockPermutation"
 	return &GenericZeroHinter{
-		Name: name,
+		Name: "BlockPermutation",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.keccak_utils.keccak_utils import keccak_func
 			//> _keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)
@@ -571,4 +570,691 @@ func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinte
 	}
 
 	return newCompareBytesInWordHint(nBytes), nil
+}
+
+// SplitInput12 hint assigns to `ids.high12` and `ids.low12` variables
+// the quotient and remainder of the division of the value at memory address
+// `ids.inputs + 12` by 256 ** 4
+//
+// `newSplitInput12Hint` takes 3 operanders as arguments
+//   - `high12` is the variable that will store the quotient of the division
+//   - `low12` is the variable that will store the remainder of the division
+//   - `inputs` is the address in memory to which we add an offset of 12 and read that value
+func newSplitInput12Hint(high12, low12, inputs hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitInput12",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.high12, ids.low12 = divmod(memory[ids.inputs + 12], 256 ** 4)
+
+			high12Addr, err := high12.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			low12Addr, err := low12.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			inputsAddr, err := hinter.ResolveAsAddress(vm, inputs)
+			if err != nil {
+				return err
+			}
+
+			*inputsAddr, err = inputsAddr.AddOffset(12)
+			if err != nil {
+				return err
+			}
+
+			inputValue, err := vm.Memory.ReadFromAddress(inputsAddr)
+			if err != nil {
+				return err
+			}
+
+			var inputBigInt big.Int
+			inputValue.Felt.BigInt(&inputBigInt)
+
+			// 256 ** 4
+			divisor := big.NewInt(4294967296)
+
+			high12BigInt := new(big.Int)
+			low12BigInt := new(big.Int)
+
+			high12BigInt.DivMod(&inputBigInt, divisor, low12BigInt)
+
+			var high12Felt fp.Element
+			high12Felt.SetBigInt(high12BigInt)
+			high12Mv := memory.MemoryValueFromFieldElement(&high12Felt)
+
+			var low12Felt fp.Element
+			low12Felt.SetBigInt(low12BigInt)
+			low12Mv := memory.MemoryValueFromFieldElement(&low12Felt)
+
+			err = vm.Memory.WriteToAddress(&low12Addr, &low12Mv)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&high12Addr, &high12Mv)
+		},
+	}
+}
+
+func createSplitInput12Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	high12, err := resolver.GetResOperander("high12")
+	if err != nil {
+		return nil, err
+	}
+
+	low12, err := resolver.GetResOperander("low12")
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, err := resolver.GetResOperander("inputs")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitInput12Hint(high12, low12, inputs), nil
+}
+
+// SplitInput15 hint assigns to `ids.high15` and `ids.low15` variables
+// the quotient and remainder of the division of the value at memory address
+// `ids.inputs + 15` by 256 ** 5
+//
+// `newSplitInput9Hint` takes 3 operanders as arguments
+//   - `high15` is the variable that will store the quotient of the division
+//   - `low15` is the variable that will store the remainder of the division
+//   - `inputs` is the address in memory to which we add an offset of 15 and read that value
+func newSplitInput15Hint(high15, low15, inputs hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitInput15",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.high15, ids.low15 = divmod(memory[ids.inputs + 15], 256 ** 5)
+
+			high15Addr, err := high15.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			low15Addr, err := low15.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			inputsAddr, err := hinter.ResolveAsAddress(vm, inputs)
+			if err != nil {
+				return err
+			}
+
+			*inputsAddr, err = inputsAddr.AddOffset(15)
+			if err != nil {
+				return err
+			}
+
+			inputValue, err := vm.Memory.ReadFromAddress(inputsAddr)
+			if err != nil {
+				return err
+			}
+
+			var inputBigInt big.Int
+			inputValue.Felt.BigInt(&inputBigInt)
+
+			// 256 ** 5
+			divisor := big.NewInt(1099511627776)
+
+			high15BigInt := new(big.Int)
+			low15BigInt := new(big.Int)
+
+			high15BigInt.DivMod(&inputBigInt, divisor, low15BigInt)
+
+			var high15Felt fp.Element
+			high15Felt.SetBigInt(high15BigInt)
+			high15Mv := memory.MemoryValueFromFieldElement(&high15Felt)
+
+			var low15Felt fp.Element
+			low15Felt.SetBigInt(low15BigInt)
+			low15Mv := memory.MemoryValueFromFieldElement(&low15Felt)
+
+			err = vm.Memory.WriteToAddress(&low15Addr, &low15Mv)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&high15Addr, &high15Mv)
+		},
+	}
+}
+
+func createSplitInput15Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	high15, err := resolver.GetResOperander("high15")
+	if err != nil {
+		return nil, err
+	}
+
+	low15, err := resolver.GetResOperander("low15")
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, err := resolver.GetResOperander("inputs")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitInput15Hint(high15, low15, inputs), nil
+}
+
+// SplitOutputMidLowHigh hint assigns to `ids.output1_low` the remainder of the division
+// of `ids.output1` variable by 256 ** 7 and uses its quotient as a variable which is
+// divided by 2 ** 128, the quotient and remainder of which are then assigned to `ids.output1_high`
+// and `ids.output1_mid` respectively.
+//
+// `newSplitOutputMidLowHighHint` takes 4 operanders as arguments
+//   - `output1Low` is the variable that will store the remainder of the first division
+//   - `output1Mid` is the variable that will store the remainder of the second division
+//   - `output1High` is the variable that will store the quotient of the second division
+//   - `output1` is the variable that will be divided in the first division
+func newSplitOutputMidLowHighHint(output1, output1Low, output1Mid, output1High hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitOutputMidLowHigh",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> tmp, ids.output1_low = divmod(ids.output1, 256 ** 7)
+			//> ids.output1_high, ids.output1_mid = divmod(tmp, 2 ** 128)
+
+			output1LowAddr, err := output1Low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			output1MidAddr, err := output1Mid.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			output1HighAddr, err := output1High.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			output1Felt, err := hinter.ResolveAsFelt(vm, output1)
+			if err != nil {
+				return err
+			}
+
+			output1BigInt := new(big.Int)
+			output1Felt.BigInt(output1BigInt)
+
+			tmpBigInt := new(big.Int)
+			output1LowBigInt := new(big.Int)
+			output1MidBigInt := new(big.Int)
+			output1HighBigInt := new(big.Int)
+
+			divisorOne := new(big.Int).Exp(big.NewInt(256), big.NewInt(7), nil)
+			divisorTwo := new(big.Int).Exp(big.NewInt(2), big.NewInt(128), nil)
+
+			tmpBigInt.DivMod(output1BigInt, divisorOne, output1LowBigInt)
+			output1HighBigInt.DivMod(tmpBigInt, divisorTwo, output1MidBigInt)
+
+			var output1LowFelt fp.Element
+			output1LowFelt.SetBigInt(output1LowBigInt)
+			output1LowMv := memory.MemoryValueFromFieldElement(&output1LowFelt)
+
+			var output1MidFelt fp.Element
+			output1MidFelt.SetBigInt(output1MidBigInt)
+			output1MidMv := memory.MemoryValueFromFieldElement(&output1MidFelt)
+
+			var output1HighFelt fp.Element
+			output1HighFelt.SetBigInt(output1HighBigInt)
+			output1HighMv := memory.MemoryValueFromFieldElement(&output1HighFelt)
+
+			err = vm.Memory.WriteToAddress(&output1LowAddr, &output1LowMv)
+			if err != nil {
+				return err
+			}
+
+			err = vm.Memory.WriteToAddress(&output1MidAddr, &output1MidMv)
+			if err != nil {
+				return err
+			}
+			return vm.Memory.WriteToAddress(&output1HighAddr, &output1HighMv)
+		},
+	}
+}
+
+func createSplitOutputMidLowHighHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	output1, err := resolver.GetResOperander("output1")
+	if err != nil {
+		return nil, err
+	}
+
+	output1Low, err := resolver.GetResOperander("output1_low")
+	if err != nil {
+		return nil, err
+	}
+
+	output1Mid, err := resolver.GetResOperander("output1_mid")
+	if err != nil {
+		return nil, err
+	}
+
+	output1High, err := resolver.GetResOperander("output1_high")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitOutputMidLowHighHint(output1, output1Low, output1Mid, output1High), nil
+}
+
+// SplitOutput0 hint splits `output0` into `output0_low` (16 bytes) and `output0_high` (9 bytes)
+//
+// `newSplitOutput0Hint` takes 3 operanders as arguments
+//   - `output0_low` is the variable that will store the low part of `output0`
+//   - `output0_high` is the variable that will store the high part of `output0`
+//   - `output0` is the value to split
+func newSplitOutput0Hint(output0Low, output0High, output0 hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitOutput0",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.output0_low = ids.output0 & ((1 << 128) - 1)
+			//> ids.output0_high = ids.output0 >> 128
+
+			output0LowAddr, err := output0Low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			output0HighAddr, err := output0High.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			output0, err := hinter.ResolveAsFelt(vm, output0)
+			if err != nil {
+				return err
+			}
+
+			output0Uint := uint256.Int(output0.Bits())
+
+			var output0Low uint256.Int
+			mask := new(uint256.Int).Lsh(uint256.NewInt(1), 128)
+			mask.Sub(mask, uint256.NewInt(1))
+			output0Low.And(&output0Uint, mask)
+			output0LowBytes := output0Low.Bytes()
+			output0LowFelt := fp.Element{}
+			output0LowFelt.SetBytes(output0LowBytes)
+			output0LowMv := memory.MemoryValueFromFieldElement(&output0LowFelt)
+
+			var output0High uint256.Int
+			output0High.Rsh(&output0Uint, 128)
+			output0HighBytes := output0High.Bytes()
+			output0HighFelt := fp.Element{}
+			output0HighFelt.SetBytes(output0HighBytes)
+			output0HighMv := memory.MemoryValueFromFieldElement(&output0HighFelt)
+
+			err = vm.Memory.WriteToAddress(&output0LowAddr, &output0LowMv)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&output0HighAddr, &output0HighMv)
+		},
+	}
+}
+
+func createSplitOutput0Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	output0Low, err := resolver.GetResOperander("output0_low")
+	if err != nil {
+		return nil, err
+	}
+
+	output0High, err := resolver.GetResOperander("output0_high")
+	if err != nil {
+		return nil, err
+	}
+
+	output0, err := resolver.GetResOperander("output0")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitOutput0Hint(output0Low, output0High, output0), nil
+}
+
+// SplitNBytes hint assigns to `ids.n_words_to_copy` and `ids.n_bytes_left` variables
+// the quotient and remainder of the division of `ids.n_bytes` variable by the
+// variable `ids.BYTES_IN_WORD`
+//
+// `newSplitNBytesHint` takes 3 operanders as arguments
+//   - `nWordsToCopy` is the variable that will store the quotient of the division
+//   - `nBytesLeft` is the variable that will store the remainder of the division
+//   - `nBytes` is the variable that will be divided
+func newSplitNBytesHint(nBytes, nWordsToCopy, nBytesLeft hinter.ResOperander) hinter.Hinter {
+	name := "SplitNBytes"
+	return &GenericZeroHinter{
+		Name: name,
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.n_words_to_copy, ids.n_bytes_left = divmod(ids.n_bytes, ids.BYTES_IN_WORD)
+
+			nWordsToCopyAddr, err := nWordsToCopy.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			nBytesLeftAddr, err := nBytesLeft.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			nBytesFelt, err := hinter.ResolveAsFelt(vm, nBytes)
+			if err != nil {
+				return err
+			}
+
+			nBytesBigInt := new(big.Int)
+			nBytesFelt.BigInt(nBytesBigInt)
+
+			bytesInWord := big.NewInt(8)
+
+			nWordsToCopyBigInt := new(big.Int)
+			nBytesLeftBigInt := new(big.Int)
+
+			nWordsToCopyBigInt.DivMod(nBytesBigInt, bytesInWord, nBytesLeftBigInt)
+
+			var nWordsToCopyFelt fp.Element
+			nWordsToCopyFelt.SetBigInt(nWordsToCopyBigInt)
+			nWordsToCopyMv := memory.MemoryValueFromFieldElement(&nWordsToCopyFelt)
+
+			var nBytesLeftFelt fp.Element
+			nBytesLeftFelt.SetBigInt(nBytesLeftBigInt)
+			nBytesLeftMv := memory.MemoryValueFromFieldElement(&nBytesLeftFelt)
+
+			err = vm.Memory.WriteToAddress(&nBytesLeftAddr, &nBytesLeftMv)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&nWordsToCopyAddr, &nWordsToCopyMv)
+		},
+	}
+}
+
+func createSplitNBytesHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	nBytes, err := resolver.GetResOperander("n_bytes")
+	if err != nil {
+		return nil, err
+	}
+
+	nWordsToCopy, err := resolver.GetResOperander("n_words_to_copy")
+	if err != nil {
+		return nil, err
+	}
+
+	nBytesLeft, err := resolver.GetResOperander("n_bytes_left")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitNBytesHint(nBytes, nWordsToCopy, nBytesLeft), nil
+}
+
+// SplitInput3 hint assigns to `ids.high3` and `ids.low3` variables
+// the quotient and remainder of the division of the value at memory address
+// `ids.inputs + 3` by 256
+//
+// `newSplitInput3Hint` takes 3 operanders as arguments
+//   - `high3` is the variable that will store the quotient of the division
+//   - `low3` is the variable that will store the remainder of the division
+//   - `inputs` is the address in memory to which we add an offset of 3 and read that value
+func newSplitInput3Hint(high3, low3, inputs hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitInput3",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.high3, ids.low3 = divmod(memory[ids.inputs + 3], 256)
+
+			high3Addr, err := high3.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			low3Addr, err := low3.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			inputsAddr, err := hinter.ResolveAsAddress(vm, inputs)
+			if err != nil {
+				return err
+			}
+
+			*inputsAddr, err = inputsAddr.AddOffset(3)
+			if err != nil {
+				return err
+			}
+
+			inputValue, err := vm.Memory.ReadFromAddress(inputsAddr)
+			if err != nil {
+				return err
+			}
+
+			var inputBigInt big.Int
+			inputValue.Felt.BigInt(&inputBigInt)
+
+			divisor := big.NewInt(256)
+
+			high3BigInt := new(big.Int)
+			low3BigInt := new(big.Int)
+
+			high3BigInt.DivMod(&inputBigInt, divisor, low3BigInt)
+
+			var high3Felt fp.Element
+			high3Felt.SetBigInt(high3BigInt)
+			high3Mv := memory.MemoryValueFromFieldElement(&high3Felt)
+
+			var low3Felt fp.Element
+			low3Felt.SetBigInt(low3BigInt)
+			low3Mv := memory.MemoryValueFromFieldElement(&low3Felt)
+
+			err = vm.Memory.WriteToAddress(&low3Addr, &low3Mv)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&high3Addr, &high3Mv)
+		},
+	}
+}
+
+func createSplitInput3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	high3, err := resolver.GetResOperander("high3")
+	if err != nil {
+		return nil, err
+	}
+
+	low3, err := resolver.GetResOperander("low3")
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, err := resolver.GetResOperander("inputs")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitInput3Hint(high3, low3, inputs), nil
+}
+
+// SplitInput6 hint assigns to `ids.high6` and `ids.low6` variables
+// the quotient and remainder of the division of the value at memory address
+// `ids.inputs + 6` by 256 ** 2
+//
+// `newSplitInput6Hint` takes 3 operanders as arguments
+//   - `high6` is the variable that will store the quotient of the division
+//   - `low6` is the variable that will store the remainder of the division
+//   - `inputs` is the address in memory to which we add an offset of 6 and read that value
+func newSplitInput6Hint(high6, low6, inputs hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitInput6",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.high6, ids.low6 = divmod(memory[ids.inputs + 6], 256 ** 2)
+
+			high6Addr, err := high6.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			low6Addr, err := low6.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			inputsAddr, err := hinter.ResolveAsAddress(vm, inputs)
+			if err != nil {
+				return err
+			}
+
+			*inputsAddr, err = inputsAddr.AddOffset(6)
+			if err != nil {
+				return err
+			}
+
+			inputValue, err := vm.Memory.ReadFromAddress(inputsAddr)
+			if err != nil {
+				return err
+			}
+
+			var inputBigInt big.Int
+			inputValue.Felt.BigInt(&inputBigInt)
+
+			// 256 ** 2
+			divisor := big.NewInt(65536)
+
+			high6BigInt := new(big.Int)
+			low6BigInt := new(big.Int)
+
+			high6BigInt.DivMod(&inputBigInt, divisor, low6BigInt)
+
+			var high6Felt fp.Element
+			high6Felt.SetBigInt(high6BigInt)
+			high6Mv := memory.MemoryValueFromFieldElement(&high6Felt)
+
+			var low6Felt fp.Element
+			low6Felt.SetBigInt(low6BigInt)
+			low6Mv := memory.MemoryValueFromFieldElement(&low6Felt)
+
+			err = vm.Memory.WriteToAddress(&low6Addr, &low6Mv)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&high6Addr, &high6Mv)
+		},
+	}
+}
+
+func createSplitInput6Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	high6, err := resolver.GetResOperander("high6")
+	if err != nil {
+		return nil, err
+	}
+
+	low6, err := resolver.GetResOperander("low6")
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, err := resolver.GetResOperander("inputs")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitInput6Hint(high6, low6, inputs), nil
+}
+
+// SplitInput9 hint assigns to `ids.high9` and `ids.low9` variables
+// the quotient and remainder of the division of the value at memory address
+// `ids.inputs + 9` by 256 ** 3
+//
+// `newSplitInput9Hint` takes 3 operanders as arguments
+//   - `high9` is the variable that will store the quotient of the division
+//   - `low9` is the variable that will store the remainder of the division
+//   - `inputs` is the address in memory to which we add an offset of 9 and read that value
+func newSplitInput9Hint(high9, low9, inputs hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitInput9",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.high9, ids.low9 = divmod(memory[ids.inputs + 9], 256 ** 3)
+
+			high9Addr, err := high9.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			low9Addr, err := low9.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			inputsAddr, err := hinter.ResolveAsAddress(vm, inputs)
+			if err != nil {
+				return err
+			}
+
+			*inputsAddr, err = inputsAddr.AddOffset(9)
+			if err != nil {
+				return err
+			}
+
+			inputValue, err := vm.Memory.ReadFromAddress(inputsAddr)
+			if err != nil {
+				return err
+			}
+
+			var inputBigInt big.Int
+			inputValue.Felt.BigInt(&inputBigInt)
+
+			// 256 ** 3
+			divisor := big.NewInt(16777216)
+
+			high9BigInt := new(big.Int)
+			low9BigInt := new(big.Int)
+
+			high9BigInt.DivMod(&inputBigInt, divisor, low9BigInt)
+
+			var high9Felt fp.Element
+			high9Felt.SetBigInt(high9BigInt)
+			high9Mv := memory.MemoryValueFromFieldElement(&high9Felt)
+
+			var low9Felt fp.Element
+			low9Felt.SetBigInt(low9BigInt)
+			low9Mv := memory.MemoryValueFromFieldElement(&low9Felt)
+
+			err = vm.Memory.WriteToAddress(&low9Addr, &low9Mv)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&high9Addr, &high9Mv)
+		},
+	}
+}
+
+func createSplitInput9Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	high9, err := resolver.GetResOperander("high9")
+	if err != nil {
+		return nil, err
+	}
+
+	low9, err := resolver.GetResOperander("low9")
+	if err != nil {
+		return nil, err
+	}
+
+	inputs, err := resolver.GetResOperander("inputs")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplitInput9Hint(high9, low9, inputs), nil
 }

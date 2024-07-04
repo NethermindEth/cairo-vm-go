@@ -605,5 +605,666 @@ func TestZeroHintKeccak(t *testing.T) {
 				check: apValueEquals(feltUint64(0)),
 			},
 		},
+		"SplitInput12": {
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "high12", Kind: uninitialized},
+					{Name: "low12", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput12Hint(ctx.operanders["high12"], ctx.operanders["low12"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high12": feltUint64(0), "low12": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(100)},
+					{Name: "high12", Kind: uninitialized},
+					{Name: "low12", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput12Hint(ctx.operanders["high12"], ctx.operanders["low12"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high12": feltUint64(0), "low12": feltUint64(100)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(4294967296)},
+					{Name: "high12", Kind: uninitialized},
+					{Name: "low12", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput12Hint(ctx.operanders["high12"], ctx.operanders["low12"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high12": feltUint64(1), "low12": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(4294967297)},
+					{Name: "high12", Kind: uninitialized},
+					{Name: "low12", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput12Hint(ctx.operanders["high12"], ctx.operanders["low12"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high12": feltUint64(1), "low12": feltUint64(1)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(42949672961)},
+					{Name: "high12", Kind: uninitialized},
+					{Name: "low12", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput12Hint(ctx.operanders["high12"], ctx.operanders["low12"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high12": feltUint64(10), "low12": feltUint64(1)}),
+			},
+		},
+		"SplitInput15": {
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "high15", Kind: uninitialized},
+					{Name: "low15", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput15Hint(ctx.operanders["high15"], ctx.operanders["low15"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high15": feltUint64(0), "low15": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(100)},
+					{Name: "high15", Kind: uninitialized},
+					{Name: "low15", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput15Hint(ctx.operanders["high15"], ctx.operanders["low15"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high15": feltUint64(0), "low15": feltUint64(100)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(1099511627776)},
+					{Name: "high15", Kind: uninitialized},
+					{Name: "low15", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput15Hint(ctx.operanders["high15"], ctx.operanders["low15"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high15": feltUint64(1), "low15": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(1099511627777)},
+					{Name: "high15", Kind: uninitialized},
+					{Name: "low15", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput15Hint(ctx.operanders["high15"], ctx.operanders["low15"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high15": feltUint64(1), "low15": feltUint64(1)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(10995116277761)},
+					{Name: "high15", Kind: uninitialized},
+					{Name: "low15", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput15Hint(ctx.operanders["high15"], ctx.operanders["low15"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high15": feltUint64(10), "low15": feltUint64(1)}),
+			},
+		},
+		"SplitOutputMidLowHigh": {
+			{
+				operanders: []*hintOperander{
+					{Name: "output1", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "output1_low", Kind: uninitialized},
+					{Name: "output1_mid", Kind: uninitialized},
+					{Name: "output1_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutputMidLowHighHint(ctx.operanders["output1"], ctx.operanders["output1_low"], ctx.operanders["output1_mid"], ctx.operanders["output1_high"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output1_low": feltUint64(0), "output1_mid": feltUint64(0), "output1_high": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "output1", Kind: apRelative, Value: feltUint64(72365738)},
+					{Name: "output1_low", Kind: uninitialized},
+					{Name: "output1_mid", Kind: uninitialized},
+					{Name: "output1_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutputMidLowHighHint(ctx.operanders["output1"], ctx.operanders["output1_low"], ctx.operanders["output1_mid"], ctx.operanders["output1_high"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output1_low": feltUint64(72365738), "output1_mid": feltUint64(0), "output1_high": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "output1", Kind: apRelative, Value: feltUint64(72057594037927936)},
+					{Name: "output1_low", Kind: uninitialized},
+					{Name: "output1_mid", Kind: uninitialized},
+					{Name: "output1_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutputMidLowHighHint(ctx.operanders["output1"], ctx.operanders["output1_low"], ctx.operanders["output1_mid"], ctx.operanders["output1_high"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output1_low": feltUint64(0), "output1_mid": feltUint64(1), "output1_high": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "output1", Kind: apRelative, Value: feltString("24519928653854221733733552434404946937899825954937634816")},
+					{Name: "output1_low", Kind: uninitialized},
+					{Name: "output1_mid", Kind: uninitialized},
+					{Name: "output1_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutputMidLowHighHint(ctx.operanders["output1"], ctx.operanders["output1_low"], ctx.operanders["output1_mid"], ctx.operanders["output1_high"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output1_low": feltUint64(0), "output1_mid": feltUint64(0), "output1_high": feltUint64(1)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "output1", Kind: apRelative, Value: feltString("24519928653854221733733552434404946940926244904530608128")},
+					{Name: "output1_low", Kind: uninitialized},
+					{Name: "output1_mid", Kind: uninitialized},
+					{Name: "output1_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutputMidLowHighHint(ctx.operanders["output1"], ctx.operanders["output1_low"], ctx.operanders["output1_mid"], ctx.operanders["output1_high"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output1_low": feltUint64(0), "output1_mid": feltUint64(42), "output1_high": feltUint64(1)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "output1", Kind: apRelative, Value: feltString("894386062958165334425")},
+					{Name: "output1_low", Kind: uninitialized},
+					{Name: "output1_mid", Kind: uninitialized},
+					{Name: "output1_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutputMidLowHighHint(ctx.operanders["output1"], ctx.operanders["output1_low"], ctx.operanders["output1_mid"], ctx.operanders["output1_high"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output1_low": feltUint64(7205759403792793), "output1_mid": feltUint64(12412), "output1_high": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "output1", Kind: apRelative, Value: feltString("24519928653854221733733552434404946937899825956147353057")},
+					{Name: "output1_low", Kind: uninitialized},
+					{Name: "output1_mid", Kind: uninitialized},
+					{Name: "output1_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutputMidLowHighHint(ctx.operanders["output1"], ctx.operanders["output1_low"], ctx.operanders["output1_mid"], ctx.operanders["output1_high"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output1_low": feltUint64(1209718241), "output1_mid": feltUint64(0), "output1_high": feltUint64(1)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "output1", Kind: apRelative, Value: feltString("24519928653854221733733552434404946940926244943286781240")},
+					{Name: "output1_low", Kind: uninitialized},
+					{Name: "output1_mid", Kind: uninitialized},
+					{Name: "output1_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutputMidLowHighHint(ctx.operanders["output1"], ctx.operanders["output1_low"], ctx.operanders["output1_mid"], ctx.operanders["output1_high"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output1_low": feltUint64(38756173112), "output1_mid": feltUint64(42), "output1_high": feltUint64(1)}),
+			},
+		},
+		"SplitNBytes": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "n_words_to_copy", Kind: uninitialized},
+					{Name: "n_bytes_left", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitNBytesHint(ctx.operanders["n_bytes"], ctx.operanders["n_words_to_copy"], ctx.operanders["n_bytes_left"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"n_words_to_copy": feltUint64(0), "n_bytes_left": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(45)},
+					{Name: "n_words_to_copy", Kind: uninitialized},
+					{Name: "n_bytes_left", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitNBytesHint(ctx.operanders["n_bytes"], ctx.operanders["n_words_to_copy"], ctx.operanders["n_bytes_left"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"n_words_to_copy": feltUint64(5), "n_bytes_left": feltUint64(5)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(80)},
+					{Name: "n_words_to_copy", Kind: uninitialized},
+					{Name: "n_bytes_left", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitNBytesHint(ctx.operanders["n_bytes"], ctx.operanders["n_words_to_copy"], ctx.operanders["n_bytes_left"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"n_words_to_copy": feltUint64(10), "n_bytes_left": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(7)},
+					{Name: "n_words_to_copy", Kind: uninitialized},
+					{Name: "n_bytes_left", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitNBytesHint(ctx.operanders["n_bytes"], ctx.operanders["n_words_to_copy"], ctx.operanders["n_bytes_left"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"n_words_to_copy": feltUint64(0), "n_bytes_left": feltUint64(7)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(7523672657695691)},
+					{Name: "n_words_to_copy", Kind: uninitialized},
+					{Name: "n_bytes_left", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitNBytesHint(ctx.operanders["n_bytes"], ctx.operanders["n_words_to_copy"], ctx.operanders["n_bytes_left"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"n_words_to_copy": feltUint64(940459082211961), "n_bytes_left": feltUint64(3)}),
+			},
+		},
+		"SplitInput3": {
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "high3", Kind: uninitialized},
+					{Name: "low3", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput3Hint(ctx.operanders["high3"], ctx.operanders["low3"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high3": feltUint64(0), "low3": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(100)},
+					{Name: "high3", Kind: uninitialized},
+					{Name: "low3", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput3Hint(ctx.operanders["high3"], ctx.operanders["low3"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high3": feltUint64(0), "low3": feltUint64(100)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(256)},
+					{Name: "high3", Kind: uninitialized},
+					{Name: "low3", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput3Hint(ctx.operanders["high3"], ctx.operanders["low3"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high3": feltUint64(1), "low3": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(257)},
+					{Name: "high3", Kind: uninitialized},
+					{Name: "low3", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput3Hint(ctx.operanders["high3"], ctx.operanders["low3"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high3": feltUint64(1), "low3": feltUint64(1)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(2561)},
+					{Name: "high3", Kind: uninitialized},
+					{Name: "low3", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput3Hint(ctx.operanders["high3"], ctx.operanders["low3"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high3": feltUint64(10), "low3": feltUint64(1)}),
+			},
+		},
+		"SplitInput6": {
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "high6", Kind: uninitialized},
+					{Name: "low6", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput6Hint(ctx.operanders["high6"], ctx.operanders["low6"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high6": feltUint64(0), "low6": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(100)},
+					{Name: "high6", Kind: uninitialized},
+					{Name: "low6", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput6Hint(ctx.operanders["high6"], ctx.operanders["low6"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high6": feltUint64(0), "low6": feltUint64(100)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(65536)},
+					{Name: "high6", Kind: uninitialized},
+					{Name: "low6", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput6Hint(ctx.operanders["high6"], ctx.operanders["low6"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high6": feltUint64(1), "low6": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(65537)},
+					{Name: "high6", Kind: uninitialized},
+					{Name: "low6", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput6Hint(ctx.operanders["high6"], ctx.operanders["low6"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high6": feltUint64(1), "low6": feltUint64(1)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(655361)},
+					{Name: "high6", Kind: uninitialized},
+					{Name: "low6", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput6Hint(ctx.operanders["high6"], ctx.operanders["low6"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high6": feltUint64(10), "low6": feltUint64(1)}),
+			},
+		},
+		"SplitInput9": {
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "high9", Kind: uninitialized},
+					{Name: "low9", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput9Hint(ctx.operanders["high9"], ctx.operanders["low9"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high9": feltUint64(0), "low9": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(100)},
+					{Name: "high9", Kind: uninitialized},
+					{Name: "low9", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput9Hint(ctx.operanders["high9"], ctx.operanders["low9"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high9": feltUint64(0), "low9": feltUint64(100)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(16777216)},
+					{Name: "high9", Kind: uninitialized},
+					{Name: "low9", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput9Hint(ctx.operanders["high9"], ctx.operanders["low9"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high9": feltUint64(1), "low9": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(16777217)},
+					{Name: "high9", Kind: uninitialized},
+					{Name: "low9", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput9Hint(ctx.operanders["high9"], ctx.operanders["low9"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high9": feltUint64(1), "low9": feltUint64(1)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "inputs", Kind: fpRelative, Value: addr(2)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "random_value", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "real_input", Kind: apRelative, Value: feltUint64(167772161)},
+					{Name: "high9", Kind: uninitialized},
+					{Name: "low9", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitInput9Hint(ctx.operanders["high9"], ctx.operanders["low9"], ctx.operanders["inputs"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"high9": feltUint64(10), "low9": feltUint64(1)}),
+			},
+		},
+		"SplitOutput0": {
+			{
+				operanders: []*hintOperander{
+					{Name: "output0", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "output0_low", Kind: uninitialized},
+					{Name: "output0_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutput0Hint(ctx.operanders["output0_low"], ctx.operanders["output0_high"], ctx.operanders["output0"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output0_low": feltUint64(0), "output0_high": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "output0", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "output0_low", Kind: uninitialized},
+					{Name: "output0_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutput0Hint(ctx.operanders["output0_low"], ctx.operanders["output0_high"], ctx.operanders["output0"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output0_low": feltUint64(1), "output0_high": feltUint64(0)}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "output0", Kind: apRelative, Value: feltString("340282366920938463463374607431768211455")},
+					{Name: "output0_low", Kind: uninitialized},
+					{Name: "output0_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutput0Hint(ctx.operanders["output0_low"], ctx.operanders["output0_high"], ctx.operanders["output0"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output0_low": feltString("340282366920938463463374607431768211455"), "output0_high": feltString("0")}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "output0", Kind: apRelative, Value: feltString("340282366920938463463374607431768211456")},
+					{Name: "output0_low", Kind: uninitialized},
+					{Name: "output0_high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitOutput0Hint(ctx.operanders["output0_low"], ctx.operanders["output0_high"], ctx.operanders["output0"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{"output0_low": feltString("0"), "output0_high": feltString("1")}),
+			},
+		},
 	})
 }
