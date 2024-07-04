@@ -82,10 +82,12 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
+
 					cairoZeroJson, err := zero.ZeroProgramFromJSON(content)
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
+
 					program, err := runnerzero.LoadCairoZeroProgram(cairoZeroJson)
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
@@ -95,6 +97,7 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot create hints: %w", err)
 					}
+
 					fmt.Println("Running....")
 					runner, err := runnerzero.NewRunner(program, hints, proofmode, maxsteps, layoutName)
 					if err != nil {
@@ -127,6 +130,7 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot build proof: %w", err)
 					}
+
 					if traceLocation != "" {
 						if err := os.WriteFile(traceLocation, trace, 0644); err != nil {
 							return fmt.Errorf("cannot write relocated trace: %w", err)

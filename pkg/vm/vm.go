@@ -523,8 +523,10 @@ func (vm *VirtualMachine) updateFp(instruction *a.Instruction, dstAddr *mem.Memo
 	}
 }
 
+// It returns the trace after relocation, i.e, relocates pc, ap and fp for each step
+// to be their real address value
 func (vm *VirtualMachine) RelocateTrace() []Trace {
-	// one is added, because prover expect that the first element to be on
+	// one is added, because prover expect that the first element to be
 	// indexed on 1 instead of 0
 	relocatedTrace := make([]Trace, len(vm.Trace))
 	totalBytecode := vm.Memory.Segments[ProgramSegment].Len() + 1
