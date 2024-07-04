@@ -175,12 +175,16 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createBlockPermutationHinter(resolver)
 	case compareBytesInWordCode:
 		return createCompareBytesInWordNondetHinter(resolver)
-	case splintInput3Code:
+	case splitInput3Code:
 		return createSplitInput3Hinter(resolver)
-	case splintInput6Code:
+	case splitInput6Code:
 		return createSplitInput6Hinter(resolver)
-	case splintInput9Code:
+	case splitInput9Code:
 		return createSplitInput9Hinter(resolver)
+	case splitInput12Code:
+		return createSplitInput12Hinter(resolver)
+	case splitInput15Code:
+		return createSplitInput15Hinter(resolver)
 	case splitOutputMidLowHighCode:
 		return createSplitOutputMidLowHighHinter(resolver)
 	case splitOutput0Code:
