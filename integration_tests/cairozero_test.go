@@ -54,19 +54,8 @@ func (f *Filter) filtered(testFile string) bool {
 func TestCairoZeroFiles(t *testing.T) {
 	root1 := "./cairo_zero_hint_tests/"
 	root2 := "./cairo_zero_file_tests/"
-
-	testFiles1, err := os.ReadDir(root1)
-	require.NoError(t, err)
-
-	testFiles2, err := os.ReadDir(root2)
-	require.NoError(t, err)
-
-	testFiles := append(testFiles1, testFiles2...)
-
-	testFiles1Map := make(map[string]struct{}, len(testFiles1))
-	for _, entry := range testFiles1 {
-		testFiles1Map[entry.Name()] = struct{}{}
-	}
+	root3 := "./builtin_tests/"
+	roots := []string{root1, root2, root3}
 
 	// filter is for debugging purposes
 	filter := Filter{}
@@ -74,68 +63,68 @@ func TestCairoZeroFiles(t *testing.T) {
 
 	benchmarkMap := make(map[string][2]int)
 
-	for _, dirEntry := range testFiles {
-		if dirEntry.IsDir() || isGeneratedFile(dirEntry.Name()) {
-			continue
-		}
+	for _, root := range roots {
+		testFiles, err := os.ReadDir(root)
+		require.NoError(t, err)
 
-		path := filepath.Join(root2, dirEntry.Name())
-		if _, found := testFiles1Map[dirEntry.Name()]; found {
-			path = filepath.Join(root1, dirEntry.Name())
-		}
+		for _, dirEntry := range testFiles {
+			if dirEntry.IsDir() || isGeneratedFile(dirEntry.Name()) {
+				continue
+			}
 
-		if !filter.filtered(dirEntry.Name()) {
-			continue
-		}
+			path := filepath.Join(root, dirEntry.Name())
 
-		t.Logf("testing: %s\n", path)
+			if !filter.filtered(dirEntry.Name()) {
+				continue
+			}
 
-		compiledOutput, err := compileZeroCode(path)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+			t.Logf("testing: %s\n", path)
 
-		elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(dirEntry.Name(), compiledOutput)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+			compiledOutput, err := compileZeroCode(path)
+			if err != nil {
+				t.Error(err)
+				continue
+			}
 
-		elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+			elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(dirEntry.Name(), compiledOutput)
+			if err != nil {
+				t.Error(err)
+				continue
+			}
 
-		benchmarkMap[dirEntry.Name()] = [2]int{int(elapsedPy.Milliseconds()), int(elapsedGo.Milliseconds())}
+			elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput)
+			if err != nil {
+				t.Error(err)
+				continue
+			}
 
-		pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+			benchmarkMap[dirEntry.Name()] = [2]int{int(elapsedPy.Milliseconds()), int(elapsedGo.Milliseconds())}
 
-		trace, memory, err := decodeProof(traceFile, memoryFile)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+			pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
+			if err != nil {
+				t.Error(err)
+				continue
+			}
 
-		if !assert.Equal(t, pyTrace, trace) {
-			t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
-			t.Logf("trace:\n%s\n", traceRepr(trace))
+			trace, memory, err := decodeProof(traceFile, memoryFile)
+			if err != nil {
+				t.Error(err)
+				continue
+			}
+
+			if !assert.Equal(t, pyTrace, trace) {
+				t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
+				t.Logf("trace:\n%s\n", traceRepr(trace))
+			}
+			if !assert.Equal(t, pyMemory, memory) {
+				t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
+				t.Logf("memory;\n%s\n", memoryRepr(memory))
+			}
 		}
-		if !assert.Equal(t, pyMemory, memory) {
-			t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
-			t.Logf("memory;\n%s\n", memoryRepr(memory))
-		}
+		clean(root)
 	}
 
 	WriteBenchMarksToFile(benchmarkMap)
-
-	clean(root1)
-	clean(root2)
 }
 
 // Save the Benchmarks for the integration tests in `BenchMarks.txt`
