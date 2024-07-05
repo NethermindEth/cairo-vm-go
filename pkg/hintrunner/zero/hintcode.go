@@ -50,6 +50,7 @@ const (
 
 	// is_quad_residue() hint
 	isQuadResidueCode string = "from starkware.crypto.signature.signature import FIELD_PRIME\nfrom starkware.python.math_utils import div_mod, is_quad_residue, sqrt\n\nx = ids.x\nif is_quad_residue(x, FIELD_PRIME):\n    ids.y = sqrt(x, FIELD_PRIME)\nelse:\n    ids.y = sqrt(div_mod(x, 3, FIELD_PRIME), FIELD_PRIME)"
+
 	// ------ Uint256 hints related code ------
 	uint256AddCode            string = "sum_low = ids.a.low + ids.b.low\nids.carry_low = 1 if sum_low >= ids.SHIFT else 0\nsum_high = ids.a.high + ids.b.high + ids.carry_low\nids.carry_high = 1 if sum_high >= ids.SHIFT else 0"
 	split64Code               string = "ids.low = ids.a & ((1<<64) - 1)\nids.high = ids.a >> 64"
@@ -97,6 +98,7 @@ ids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])`
 	isZeroNondetCode         string = "memory[ap] = to_felt_or_relocatable(x == 0)"
 	isZeroPackCode           string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\nx = pack(ids.x, PRIME) % SECP_P"
 	isZeroDivModCode         string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P\nfrom starkware.python.math_utils import div_mod\n\nvalue = x_inv = div_mod(1, x, SECP_P)"
+	recoverYCode             string = "from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME\nfrom starkware.python.math_utils import recover_y\nids.p.x = ids.x\n# This raises an exception if `x` is not on the curve.\nids.p.y = recover_y(ids.x, ALPHA, BETA, FIELD_PRIME)"
 	randomEcPointCode        string = "from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME\nfrom starkware.python.math_utils import random_ec_point\nfrom starkware.python.utils import to_bytes\n\n# Define a seed for random_ec_point that's dependent on all the input, so that:\n#   (1) The added point s is deterministic.\n#   (2) It's hard to choose inputs for which the builtin will fail.\nseed = b\"\".join(map(to_bytes, [ids.p.x, ids.p.y, ids.m, ids.q.x, ids.q.y]))\nids.s.x, ids.s.y = random_ec_point(FIELD_PRIME, ALPHA, BETA, seed)"
 
 	// ------ Signature hints related code ------
@@ -114,21 +116,20 @@ ids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])`
 	blake2sComputeCode          string = "from starkware.cairo.common.cairo_blake2s.blake2s_utils import compute_blake2s_func\ncompute_blake2s_func(segments=segments, output_ptr=ids.output)"
 
 	// ------ Keccak hints related code ------
-	unsafeKeccakFinalizeCode string = "from eth_hash.auto import keccak\nkeccak_input = bytearray()\nn_elms = ids.keccak_state.end_ptr - ids.keccak_state.start_ptr\nfor word in memory.get_range(ids.keccak_state.start_ptr, n_elms):\n    keccak_input += word.to_bytes(16, 'big')\nhashed = keccak(keccak_input)\nids.high = int.from_bytes(hashed[:16], 'big')\nids.low = int.from_bytes(hashed[16:32], 'big')"
-	unsafeKeccakCode         string = "from eth_hash.auto import keccak\n\ndata, length = ids.data, ids.length\n\nif '__keccak_max_size' in globals():\n    assert length <= __keccak_max_size, \\\n        f'unsafe_keccak() can only be used with length<={__keccak_max_size}. ' \\\n        f'Got: length={length}.'\n\nkeccak_input = bytearray()\nfor word_i, byte_i in enumerate(range(0, length, 16)):\n    word = memory[data + word_i]\n    n_bytes = min(16, length - byte_i)\n    assert 0 <= word < 2 ** (8 * n_bytes)\n    keccak_input += word.to_bytes(n_bytes, 'big')\n\nhashed = keccak(keccak_input)\nids.high = int.from_bytes(hashed[:16], 'big')\nids.low = int.from_bytes(hashed[16:32], 'big')"
-	cairoKeccakFinalizeCode  string = `# Add dummy pairs of input and output.
-	_keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)
-	_block_size = int(ids.BLOCK_SIZE)
-	assert 0 <= _keccak_state_size_felts < 100
-	assert 0 <= _block_size < 10
-	inp = [0] * _keccak_state_size_felts
-	padding = (inp + keccak_func(inp)) * _block_size
-	segments.write_arg(ids.keccak_ptr_end, padding)`
+	unsafeKeccakFinalizeCode         string = "from eth_hash.auto import keccak\nkeccak_input = bytearray()\nn_elms = ids.keccak_state.end_ptr - ids.keccak_state.start_ptr\nfor word in memory.get_range(ids.keccak_state.start_ptr, n_elms):\n    keccak_input += word.to_bytes(16, 'big')\nhashed = keccak(keccak_input)\nids.high = int.from_bytes(hashed[:16], 'big')\nids.low = int.from_bytes(hashed[16:32], 'big')"
+	unsafeKeccakCode                 string = "from eth_hash.auto import keccak\n\ndata, length = ids.data, ids.length\n\nif '__keccak_max_size' in globals():\n    assert length <= __keccak_max_size, \\\n        f'unsafe_keccak() can only be used with length<={__keccak_max_size}. ' \\\n        f'Got: length={length}.'\n\nkeccak_input = bytearray()\nfor word_i, byte_i in enumerate(range(0, length, 16)):\n    word = memory[data + word_i]\n    n_bytes = min(16, length - byte_i)\n    assert 0 <= word < 2 ** (8 * n_bytes)\n    keccak_input += word.to_bytes(n_bytes, 'big')\n\nhashed = keccak(keccak_input)\nids.high = int.from_bytes(hashed[:16], 'big')\nids.low = int.from_bytes(hashed[16:32], 'big')"
+	cairoKeccakFinalizeCode          string = "# Add dummy pairs of input and output.\n_keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)\n_block_size = int(ids.BLOCK_SIZE)\nassert 0 <= _keccak_state_size_felts < 100\nassert 0 <= _block_size < 10\ninp = [0] * _keccak_state_size_felts\npadding = (inp + keccak_func(inp)) * _block_size\nsegments.write_arg(ids.keccak_ptr_end, padding)"
 	keccakWriteArgsCode              string = "segments.write_arg(ids.inputs, [ids.low % 2 ** 64, ids.low // 2 ** 64])\nsegments.write_arg(ids.inputs + 2, [ids.high % 2 ** 64, ids.high // 2 ** 64])"
-	blockPermutationCode             string = "from starkware.cairo.common.keccak_utils.keccak_utils import keccak_func\n_keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)\nassert 0 <= _keccak_state_size_felts < 100\noutput_values = keccak_func(memory.get_range(\nids.keccak_ptr - _keccak_state_size_felts, _keccak_state_size_felts))\nsegments.write_arg(ids.keccak_ptr, output_values)"
+	blockPermutationCode             string = "from starkware.cairo.common.keccak_utils.keccak_utils import keccak_func\n_keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)\nassert 0 <= _keccak_state_size_felts < 100\n\noutput_values = keccak_func(memory.get_range(\n    ids.keccak_ptr - _keccak_state_size_felts, _keccak_state_size_felts))\nsegments.write_arg(ids.keccak_ptr, output_values)"
 	compareBytesInWordCode           string = "memory[ap] = to_felt_or_relocatable(ids.n_bytes < ids.BYTES_IN_WORD)"
 	compareKeccakFullRateInBytesCode string = "memory[ap] = to_felt_or_relocatable(ids.n_bytes >= ids.KECCAK_FULL_RATE_IN_BYTES)"
+	splitInput3Code                  string = "ids.high3, ids.low3 = divmod(memory[ids.inputs + 3], 256)"
+	splitInput6Code                  string = "ids.high6, ids.low6 = divmod(memory[ids.inputs + 6], 256 ** 2)"
+	splitInput9Code                  string = "ids.high9, ids.low9 = divmod(memory[ids.inputs + 9], 256 ** 3)"
+	splitInput12Code                 string = "ids.high12, ids.low12 = divmod(memory[ids.inputs + 12], 256 ** 4)"
+	splitInput15Code                 string = "ids.high15, ids.low15 = divmod(memory[ids.inputs + 15], 256 ** 5)"
 	splitOutputMidLowHighCode        string = "tmp, ids.output1_low = divmod(ids.output1, 256 ** 7)\nids.output1_high, ids.output1_mid = divmod(tmp, 2 ** 128)"
+	splitOutput0Code                 string = "ids.output0_low = ids.output0 & ((1 << 128) - 1)\nids.output0_high = ids.output0 >> 128"
 	SplitNBytesCode                  string = "ids.n_words_to_copy, ids.n_bytes_left = divmod(ids.n_bytes, ids.BYTES_IN_WORD)"
 
 	// ------ Dictionaries hints related code ------

@@ -8,7 +8,7 @@ import (
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	hintrunner_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
+	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -32,7 +32,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			//> # The modulo operation in python always returns a nonnegative number.
 			//> value = (-y) % SECP_P
 
-			secPBig, ok := hintrunner_utils.GetSecPBig()
+			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
 			}
@@ -53,7 +53,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> y = pack(ids.point.y, PRIME) % SECP_P
-			yBig, err := hintrunner_utils.SecPPacked(pointYValues)
+			yBig, err := secp_utils.SecPPacked(pointYValues)
 			if err != nil {
 				return err
 			}
@@ -102,7 +102,7 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> split(value)
-			values, err := hintrunner_utils.SecPSplit(valueBig)
+			values, err := secp_utils.SecPSplit(valueBig)
 			if err != nil {
 				return err
 			}
@@ -200,32 +200,32 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			}
 
 			//> slope = pack(ids.slope, PRIME)
-			slopeBig, err := hintrunner_utils.SecPPacked(slopeValues)
+			slopeBig, err := secp_utils.SecPPacked(slopeValues)
 			if err != nil {
 				return err
 			}
 
 			//> x0 = pack(ids.point0.x, PRIME)
-			x0Big, err := hintrunner_utils.SecPPacked(point0XValues)
+			x0Big, err := secp_utils.SecPPacked(point0XValues)
 			if err != nil {
 				return err
 			}
 
 			//> x1 = pack(ids.point1.x, PRIME)
-			x1Big, err := hintrunner_utils.SecPPacked(point1XValues)
+			x1Big, err := secp_utils.SecPPacked(point1XValues)
 			if err != nil {
 				return err
 			}
 
 			//> y0 = pack(ids.point0.y, PRIME)
-			y0Big, err := hintrunner_utils.SecPPacked(point0YValues)
+			y0Big, err := secp_utils.SecPPacked(point0YValues)
 			if err != nil {
 				return err
 			}
 
 			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
 
-			secPBig, ok := hintrunner_utils.GetSecPBig()
+			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
 			}
@@ -348,24 +348,24 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> x = pack(ids.point.x, PRIME)
-			xBig, err := hintrunner_utils.SecPPacked(pointXValues)
+			xBig, err := secp_utils.SecPPacked(pointXValues)
 			if err != nil {
 				return err
 			}
 
 			//> y = pack(ids.point.y, PRIME)
-			yBig, err := hintrunner_utils.SecPPacked(pointYValues)
+			yBig, err := secp_utils.SecPPacked(pointYValues)
 			if err != nil {
 				return err
 			}
 
-			secPBig, ok := hintrunner_utils.GetSecPBig()
+			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
 			//> value = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)
-			valueBig, err := hintrunner_utils.EcDoubleSlope(&xBig, &yBig, big.NewInt(0), &secPBig)
+			valueBig, err := secp_utils.EcDoubleSlope(&xBig, &yBig, big.NewInt(0), &secPBig)
 			if err != nil {
 				return err
 			}
@@ -398,7 +398,7 @@ func newReduceV1Hint(x hinter.ResOperander) hinter.Hinter {
 			//>
 			//> value = pack(ids.x, PRIME) % SECP_P
 
-			secPBig, ok := hintrunner_utils.GetSecPBig()
+			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
 			}
@@ -413,7 +413,7 @@ func newReduceV1Hint(x hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			xBig, err := hintrunner_utils.SecPPacked(xValues)
+			xBig, err := secp_utils.SecPPacked(xValues)
 			if err != nil {
 				return err
 			}
@@ -487,25 +487,25 @@ func newEcDoubleAssignNewXV1Hint(slope, point hinter.ResOperander) hinter.Hinter
 			}
 
 			//> slope = pack(ids.slope, PRIME)
-			slopeBig, err := hintrunner_utils.SecPPacked(slopeValues)
+			slopeBig, err := secp_utils.SecPPacked(slopeValues)
 			if err != nil {
 				return err
 			}
 
 			//> x = pack(ids.point.x, PRIME)
-			xBig, err := hintrunner_utils.SecPPacked(pointXValues)
+			xBig, err := secp_utils.SecPPacked(pointXValues)
 			if err != nil {
 				return err
 			}
 
 			//> y = pack(ids.point.y, PRIME)
-			yBig, err := hintrunner_utils.SecPPacked(pointYValues)
+			yBig, err := secp_utils.SecPPacked(pointYValues)
 			if err != nil {
 				return err
 			}
 
 			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
-			secPBig, ok := hintrunner_utils.GetSecPBig()
+			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
 			}
@@ -649,36 +649,36 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> x0 = pack(ids.point0.x, PRIME)
-			x0Big, err := hintrunner_utils.SecPPacked(point0XValues)
+			x0Big, err := secp_utils.SecPPacked(point0XValues)
 			if err != nil {
 				return err
 			}
 
 			//> x1 = pack(ids.point1.x, PRIME)
-			x1Big, err := hintrunner_utils.SecPPacked(point1XValues)
+			x1Big, err := secp_utils.SecPPacked(point1XValues)
 			if err != nil {
 				return err
 			}
 
 			//> y0 = pack(ids.point0.y, PRIME)
-			y0Big, err := hintrunner_utils.SecPPacked(point0YValues)
+			y0Big, err := secp_utils.SecPPacked(point0YValues)
 			if err != nil {
 				return err
 			}
 
 			//> y1 = pack(ids.point0.y, PRIME)
-			y1Big, err := hintrunner_utils.SecPPacked(point1YValues)
+			y1Big, err := secp_utils.SecPPacked(point1YValues)
 			if err != nil {
 				return err
 			}
 
-			secPBig, ok := hintrunner_utils.GetSecPBig()
+			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
 			// value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
-			slopeBig, err := hintrunner_utils.LineSlope(&x0Big, &y0Big, &x1Big, &y1Big, &secPBig)
+			slopeBig, err := secp_utils.LineSlope(&x0Big, &y0Big, &x1Big, &y1Big, &secPBig)
 			if err != nil {
 				return err
 			}
@@ -797,12 +797,12 @@ func newIsZeroPackHint(x hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			secPBig, ok := hintrunner_utils.GetSecPBig()
+			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
-			xPackedBig, err := hintrunner_utils.SecPPacked(xValues)
+			xPackedBig, err := secp_utils.SecPPacked(xValues)
 			if err != nil {
 				return err
 			}
@@ -842,7 +842,7 @@ func newIsZeroDivModHint() hinter.Hinter {
 			//>
 			//> value = x_inv = div_mod(1, x, SECP_P)
 
-			secPBig, ok := hintrunner_utils.GetSecPBig()
+			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
 			}
@@ -852,7 +852,7 @@ func newIsZeroDivModHint() hinter.Hinter {
 				return err
 			}
 
-			resBig, err := hintrunner_utils.Divmod(big.NewInt(1), x, &secPBig)
+			resBig, err := secp_utils.Divmod(big.NewInt(1), x, &secPBig)
 			if err != nil {
 				return err
 			}
@@ -864,6 +864,81 @@ func newIsZeroDivModHint() hinter.Hinter {
 
 func createIsZeroDivModHinter() (hinter.Hinter, error) {
 	return newIsZeroDivModHint(), nil
+}
+
+// RecoverY hint Recovers the y coordinate of a point on the elliptic curve
+// y^2 = x^3 + alpha * x + beta (mod field_prime) of a given x coordinate.
+//
+// `newRecoverYHint` takes 2 operanders as arguments
+//   - `x` is the x coordinate of an elliptic curve point
+//   - `p` is one of the two EC points with the given x coordinate (x, y)
+func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "RecoverY",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME
+			//> from starkware.python.math_utils import recover_y
+			//> ids.p.x = ids.x
+			//> # This raises an exception if `x` is not on the curve.
+			//> ids.p.y = recover_y(ids.x, ALPHA, BETA, FIELD_PRIME)
+
+			pXAddr, err := p.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			pYAddr, err := pXAddr.AddOffset(1)
+			if err != nil {
+				return err
+			}
+
+			xFelt, err := hinter.ResolveAsFelt(vm, x)
+			if err != nil {
+				return err
+			}
+
+			valueX := mem.MemoryValueFromFieldElement(xFelt)
+
+			err = vm.Memory.WriteToAddress(&pXAddr, &valueX)
+			if err != nil {
+				return err
+			}
+
+			betaBigInt := new(big.Int)
+			utils.Beta.BigInt(betaBigInt)
+
+			fieldPrimeBigInt, ok := secp_utils.GetCairoPrime()
+			if !ok {
+				return fmt.Errorf("GetCairoPrime failed")
+			}
+
+			xBigInt := new(big.Int)
+			xFelt.BigInt(xBigInt)
+
+			// y^2 = x^3 + alpha * x + beta (mod field_prime)
+			resultBigInt, err := secp_utils.RecoverY(xBigInt, betaBigInt, &fieldPrimeBigInt)
+			if err != nil {
+				return err
+			}
+			resultFelt := new(fp.Element).SetBigInt(resultBigInt)
+			resultMv := mem.MemoryValueFromFieldElement(resultFelt)
+			return vm.Memory.WriteToAddress(&pYAddr, &resultMv)
+		},
+	}
+}
+
+func createRecoverYHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := resolver.GetResOperander("p")
+	if err != nil {
+		return nil, err
+	}
+
+	return newRecoverYHint(x, p), nil
 }
 
 func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
@@ -920,7 +995,10 @@ func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
 			utils.Alpha.BigInt(alphaBig)
 			betaBig := new(big.Int)
 			utils.Beta.BigInt(betaBig)
-			fieldPrime, ok := hintrunner_utils.GetCairoPrime()
+			fieldPrime, ok := secp_utils.GetCairoPrime()
+			if !ok {
+				return fmt.Errorf("GetCairoPrime failed")
+			}
 
 			for i := uint64(0); i < 100; i++ {
 				iBytes := make([]byte, 10)
@@ -940,7 +1018,7 @@ func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
 				if !ok {
 					return fmt.Errorf("failed to get field prime value")
 				}
-				if y, err := hintrunner_utils.RecoverY(x, alphaBig, betaBig, &fieldPrime); err == nil {
+				if y, err := secp_utils.RecoverY(x, betaBig, &fieldPrime); err == nil {
 					y.Mul(yCoef, y)
 					y.Mod(y, &fieldPrime)
 
@@ -951,8 +1029,6 @@ func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
 
 					sXFelt := new(fp.Element).SetBigInt(x)
 					sYFelt := new(fp.Element).SetBigInt(y)
-					fmt.Println(sXFelt.String())
-					fmt.Println(sYFelt.String())
 					sXMv := mem.MemoryValueFromFieldElement(sXFelt)
 					sYMv := mem.MemoryValueFromFieldElement(sYFelt)
 

@@ -149,6 +149,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createIsZeroPackHinter(resolver)
 	case isZeroDivModCode:
 		return createIsZeroDivModHinter()
+	case recoverYCode:
+		return createRecoverYHinter(resolver)
 	case randomEcPointCode:
 		return createRandomEcPointHinter(resolver)
 	// Blake hints
@@ -175,8 +177,20 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createBlockPermutationHinter(resolver)
 	case compareBytesInWordCode:
 		return createCompareBytesInWordNondetHinter(resolver)
+	case splitInput3Code:
+		return createSplitInput3Hinter(resolver)
+	case splitInput6Code:
+		return createSplitInput6Hinter(resolver)
+	case splitInput9Code:
+		return createSplitInput9Hinter(resolver)
+	case splitInput12Code:
+		return createSplitInput12Hinter(resolver)
+	case splitInput15Code:
+		return createSplitInput15Hinter(resolver)
 	case splitOutputMidLowHighCode:
 		return createSplitOutputMidLowHighHinter(resolver)
+	case splitOutput0Code:
+		return createSplitOutput0Hinter(resolver)
 	case SplitNBytesCode:
 		return createSplitNBytesHinter(resolver)
 	// Usort hints
