@@ -444,8 +444,7 @@ func TestEcOp(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, _, _, err = runVm(compiledOutput)
-	// todo(rodro): This test is failing due to the lack of hint processing. It should be address soon
-	require.Error(t, err)
+	require.NoError(t, err)
 
 	clean("./builtin_tests/")
 }
