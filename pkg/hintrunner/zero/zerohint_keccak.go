@@ -521,7 +521,7 @@ func newBlockPermutationHint(keccakPtr hinter.ResOperander) hinter.Hinter {
 
 func createBlockPermutationHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	keccakPtr, err := resolver.GetResOperander("keccak_ptr")
-	if keccakPtr != nil {
+	if err != nil {
 		return nil, err
 	}
 
