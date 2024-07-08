@@ -537,7 +537,7 @@ func TestZeroHintOthers(t *testing.T) {
 					{Name: "n", Kind: apRelative, Value: feltUint64(1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newNondetElementsOverTWoHint(
+					return newNondetElementsOverTwoHint(
 						ctx.operanders["n"],
 					)
 				},
@@ -548,7 +548,7 @@ func TestZeroHintOthers(t *testing.T) {
 					{Name: "n", Kind: apRelative, Value: feltUint64(2)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newNondetElementsOverTWoHint(
+					return newNondetElementsOverTwoHint(
 						ctx.operanders["n"],
 					)
 				},
