@@ -941,6 +941,15 @@ func createRecoverYHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newRecoverYHint(x, p), nil
 }
 
+// RandomEcPoint hint Returns a random non-zero point on the elliptic curve
+// y^2 = x^3 + alpha * x + beta (mod field_prime).
+// The point is created deterministically from the seed.
+//
+// `newRandomEcPointHint` takes 4 operanders as arguments
+//   - `p` is an EC point used for seed generation
+//   - `m` the multiplication coefficient of Q used for seed generation
+//   - `q` an EC point used for seed generation
+//   - `s` is where the generated random EC point is written to
 func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "RandomEcPoint",
