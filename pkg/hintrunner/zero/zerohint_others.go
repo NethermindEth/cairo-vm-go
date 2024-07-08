@@ -608,14 +608,14 @@ func createSearchSortedLowerHinter(resolver hintReferenceResolver) (hinter.Hinte
 	return newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index), nil
 }
 
-// NondetElementsOverTWo hint compares the offset difference between two memory address and
+// NondetElementsOverTwo hint compares the offset difference between two memory address and
 // writes 1 or 0 at `ap` memory address, depending on whether the difference is greater or
 // equal to 2 or not
 //
-// `newNondetElementsOverTWoHint` takes 2 operanders as arguments
+// `newNondetElementsOverTwoHint` takes 2 operanders as arguments
 //   - `elementsEnd` represents the address in memory right after the last element of the array
 //   - `elements` represents the address in memory of the first element of the array
-func newNondetElementsOverTWoHint(n hinter.ResOperander) hinter.Hinter {
+func newNondetElementsOverTwoHint(n hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "NondetElementsOverTWo",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -641,13 +641,13 @@ func newNondetElementsOverTWoHint(n hinter.ResOperander) hinter.Hinter {
 	}
 }
 
-func createNondetElementsOverTWoHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+func createNondetElementsOverTwoHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	n, err := resolver.GetResOperander("n")
 	if err != nil {
 		return nil, err
 	}
 
-	return newNondetElementsOverTWoHint(n), nil
+	return newNondetElementsOverTwoHint(n), nil
 }
 
 // NondetElementsOverTen hint compares the offset difference between two memory address and
