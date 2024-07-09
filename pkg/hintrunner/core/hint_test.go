@@ -929,7 +929,7 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		expectedRem2, expectedQuotient2 mem.MemoryValue
 		expectedExcludedArc             int
 	}{
-		// First test case
+		// First test case.
 		{
 			aFelt:               f.NewElement(1024),
 			bFelt:               f.NewElement(1025),
