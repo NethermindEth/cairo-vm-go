@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9.11"
+          python-version: "3.9"
 
       - name: Install cairo-lang
         run: pip install cairo-lang==0.13.1
