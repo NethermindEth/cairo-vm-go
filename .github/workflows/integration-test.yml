@@ -21,7 +21,7 @@ jobs:
         run: pip install cairo-lang==0.13.1
 
       - name: Install sympy
-        run: pip install sympy==1.12.1
+        run: pip install sympy==1.11.1
 
       - name: Build
         run: make build
