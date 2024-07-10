@@ -287,11 +287,16 @@ func (runner *ZeroRunner) EndRun() {
 // or there are not enough trace cells to fill the entire range check range
 func (runner *ZeroRunner) checkUsedCells() error {
 	for _, bRunner := range runner.layout.Builtins {
-		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.Runner.String())
+		builtinName := bRunner.Runner.String()
+		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtinName)
 		if ok {
-			_, err := bRunner.Runner.GetAllocatedSize(builtinSegment.Len(), runner.steps())
+			segmentUsedSize := builtinSegment.Len()
+			allocatedSize, err := bRunner.Runner.GetAllocatedSize(segmentUsedSize, runner.steps())
 			if err != nil {
 				return err
+			}
+			if segmentUsedSize > allocatedSize {
+				return fmt.Errorf("builtin %s used size: %d exceeds allocated size: %d ", builtinName, segmentUsedSize, allocatedSize)
 			}
 		}
 	}
