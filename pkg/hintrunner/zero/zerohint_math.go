@@ -1154,21 +1154,20 @@ func newIsQuadResidueHint(x, y hinter.ResOperander) hinter.Hinter {
 			var value = memory.MemoryValue{}
 			var result *fp.Element = new(fp.Element)
 
-			const primeString = "3618502788666131213697322783095070105623107215331596699973092056135872020481"
-			primeBigInt, ok := new(big.Int).SetString(primeString, 10)
+			primeBigInt, ok := math_utils.GetCairoPrime()
 			if !ok {
-				panic("failed to convert prime string to big.Int")
+				return fmt.Errorf("GetCairoPrime failed")
 			}
 
 			if math_utils.IsQuadResidue(x) {
-				result.SetBigInt(math_utils.Sqrt(&xBigInt, primeBigInt))
+				result.SetBigInt(math_utils.Sqrt(&xBigInt, &primeBigInt))
 			} else {
-				y, err := math_utils.Divmod(&xBigInt, big.NewInt(3), primeBigInt)
+				y, err := math_utils.Divmod(&xBigInt, big.NewInt(3), &primeBigInt)
 				if err != nil {
 					return err
 				}
 
-				result.SetBigInt(math_utils.Sqrt(&y, primeBigInt))
+				result.SetBigInt(math_utils.Sqrt(&y, &primeBigInt))
 			}
 
 			value = memory.MemoryValueFromFieldElement(result)
