@@ -82,12 +82,11 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 				return err
 			}
 
-			usortMaxSizeInterface, err := ctx.ScopeManager.GetVariableValue("__usort_max_size")
+			usortMaxSize, err := hinter.GetVariableAs[uint64](&ctx.ScopeManager, "__usort_max_size")
 			if err != nil {
 				return err
 			}
 
-			usortMaxSize := usortMaxSizeInterface.(uint64)
 			if inputLenValue > usortMaxSize {
 				return fmt.Errorf("usort() can only be used with input_len<=%d.\n Got: input_len=%d", usortMaxSize, inputLenValue)
 			}
@@ -237,14 +236,9 @@ func newUsortVerifyHint(value hinter.ResOperander) hinter.Hinter {
 			//> last_pos = 0
 			//> positions = positions_dict[ids.value][::-1]
 
-			positionsDictInterface, err := ctx.ScopeManager.GetVariableValue("positions_dict")
+			positionsDict, err := hinter.GetVariableAs[map[fp.Element][]uint64](&ctx.ScopeManager, "positions_dict")
 			if err != nil {
 				return err
-			}
-
-			positionsDict, ok := positionsDictInterface.(map[fp.Element][]uint64)
-			if !ok {
-				return fmt.Errorf("casting positions_dict into an dictionary failed")
 			}
 
 			value, err := hinter.ResolveAsFelt(vm, value)
@@ -294,14 +288,9 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 			//> ids.next_item_index = current_pos - last_pos
 			//> last_pos = current_pos + 1
 
-			positionsInterface, err := ctx.ScopeManager.GetVariableValue("positions")
+			positions, err := hinter.GetVariableAs[[]uint64](&ctx.ScopeManager, "positions")
 			if err != nil {
 				return err
-			}
-
-			positions, ok := positionsInterface.([]uint64)
-			if !ok {
-				return fmt.Errorf("cannot cast positionsInterface to []uint64")
 			}
 
 			currentPos, err := utils.Pop(&positions)
@@ -314,14 +303,9 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinte
 				return err
 			}
 
-			lastPosition, err := ctx.ScopeManager.GetVariableValue("last_pos")
+			lastPos, err := hinter.GetVariableAs[uint64](&ctx.ScopeManager, "last_pos")
 			if err != nil {
 				return err
-			}
-
-			lastPos, ok := lastPosition.(uint64)
-			if !ok {
-				return fmt.Errorf("cannot cast last_pos to uint64")
 			}
 
 			// Calculate `next_item_index` memory value
@@ -366,14 +350,9 @@ func newUsortVerifyMultiplicityAssertHint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> assert len(positions) == 0
 
-			positionsInterface, err := ctx.ScopeManager.GetVariableValue("positions")
+			positions, err := hinter.GetVariableAs[[]uint64](&ctx.ScopeManager, "positions")
 			if err != nil {
 				return err
-			}
-
-			positions, ok := positionsInterface.([]uint64)
-			if !ok {
-				return fmt.Errorf("casting positions into a []uint64 failed")
 			}
 
 			if len(positions) != 0 {
