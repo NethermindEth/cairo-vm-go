@@ -941,7 +941,7 @@ func createRecoverYHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newRecoverYHint(x, p), nil
 }
 
-// RandomEcPoint hint Returns a random non-zero point on the elliptic curve
+// RandomEcPoint hint returns a random non-zero point on the elliptic curve
 // y^2 = x^3 + alpha * x + beta (mod field_prime).
 // The point is created deterministically from the seed.
 //
