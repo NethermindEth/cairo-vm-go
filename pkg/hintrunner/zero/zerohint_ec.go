@@ -1146,7 +1146,7 @@ func newChainedEcOpRandomEcPointHint(len, p, m, q, s hinter.ResOperander) hinter
 				return err
 			}
 
-			qAddr, err := q.GetAddress(vm)
+			qAddr, err := hinter.ResolveAsAddress(vm, q)
 			if err != nil {
 				return err
 			}
@@ -1158,17 +1158,17 @@ func newChainedEcOpRandomEcPointHint(len, p, m, q, s hinter.ResOperander) hinter
 
 			var firstRangeFelts []*fp.Element
 			for _, element := range firstRange {
-				firstRangeFelts = append(firstRangeFelts, &element.Felt)
+				firstRangeFelts = append(firstRangeFelts, &(element.Felt))
 			}
 
-			secondRange, err := vm.Memory.GetConsecutiveMemoryValues(qAddr, int16(2*nElms))
+			secondRange, err := vm.Memory.GetConsecutiveMemoryValues(*qAddr, int16(2*nElms))
 			if err != nil {
 				return err
 			}
 
 			var secondRangeFelts []*fp.Element
 			for _, element := range secondRange {
-				secondRangeFelts = append(secondRangeFelts, &element.Felt)
+				secondRangeFelts = append(secondRangeFelts, &(element.Felt))
 			}
 
 			var bytesArray []byte
