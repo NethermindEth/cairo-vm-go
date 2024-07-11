@@ -60,31 +60,34 @@ func (b *Bitwise) InferValue(segment *memory.Segment, offset uint64) error {
 	var bitwiseValue memory.MemoryValue
 	var bitwiseFelt fp.Element
 	var bitwiseBytes [32]byte
-	for i := 0; i < 32; i++ {
-		bitwiseBytes[i] = xBytes[i] & yBytes[i]
-	}
-	bitwiseFelt.SetBytes(bitwiseBytes[:])
-	bitwiseValue = memory.MemoryValueFromFieldElement(&bitwiseFelt)
-	if err := segment.Write(xOffset+2, &bitwiseValue); err != nil {
-		return err
-	}
 
-	for i := 0; i < 32; i++ {
-		bitwiseBytes[i] = xBytes[i] ^ yBytes[i]
-	}
-	bitwiseFelt.SetBytes(bitwiseBytes[:])
-	bitwiseValue = memory.MemoryValueFromFieldElement(&bitwiseFelt)
-	if err := segment.Write(xOffset+3, &bitwiseValue); err != nil {
-		return err
-	}
-
-	for i := 0; i < 32; i++ {
-		bitwiseBytes[i] = xBytes[i] | yBytes[i]
-	}
-	bitwiseFelt.SetBytes(bitwiseBytes[:])
-	bitwiseValue = memory.MemoryValueFromFieldElement(&bitwiseFelt)
-	if err := segment.Write(xOffset+4, &bitwiseValue); err != nil {
-		return err
+	if bitwiseIndex == 2 {
+		for i := 0; i < 32; i++ {
+			bitwiseBytes[i] = xBytes[i] & yBytes[i]
+		}
+		bitwiseFelt.SetBytes(bitwiseBytes[:])
+		bitwiseValue = memory.MemoryValueFromFieldElement(&bitwiseFelt)
+		if err := segment.Write(xOffset+2, &bitwiseValue); err != nil {
+			return err
+		}
+	} else if bitwiseIndex == 3 {
+		for i := 0; i < 32; i++ {
+			bitwiseBytes[i] = xBytes[i] ^ yBytes[i]
+		}
+		bitwiseFelt.SetBytes(bitwiseBytes[:])
+		bitwiseValue = memory.MemoryValueFromFieldElement(&bitwiseFelt)
+		if err := segment.Write(xOffset+3, &bitwiseValue); err != nil {
+			return err
+		}
+	} else if bitwiseIndex == 4 {
+		for i := 0; i < 32; i++ {
+			bitwiseBytes[i] = xBytes[i] | yBytes[i]
+		}
+		bitwiseFelt.SetBytes(bitwiseBytes[:])
+		bitwiseValue = memory.MemoryValueFromFieldElement(&bitwiseFelt)
+		if err := segment.Write(xOffset+4, &bitwiseValue); err != nil {
+			return err
+		}
 	}
 
 	return nil
