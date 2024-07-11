@@ -941,7 +941,7 @@ func createRecoverYHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newRecoverYHint(x, p), nil
 }
 
-// RandomEcPoint hint returns a random non-zero point on the elliptic curve
+// RandomEcPoint hint returns a random non-zero point on the STARK curve
 // y^2 = x^3 + alpha * x + beta (mod field_prime).
 // The point is created deterministically from the seed.
 //
@@ -1073,4 +1073,203 @@ func createRandomEcPointHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	}
 
 	return newRandomEcPointHint(p, m, q, s), nil
+}
+
+// ChainedEcOpRandomEcPoint hint returns a random non-zero point on the STARK curve
+// in the context of chained ecop operations.
+// The point is created deterministically from the seed.
+//
+// `newChainedEcOpRandomEcPointHint` takes 5 operanders as arguments
+//   - `len` is the number of chained elements in the chained ecop operation
+//   - `p` is an EC point used for seed generation
+//   - `m` the multiplication coefficient of Q used for seed generation
+//   - `q` an EC point used for seed generation
+//   - `s` is where the generated random EC point is written to
+func newChainedEcOpRandomEcPointHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "ChainedEcOpRandomEcPoint",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME
+			//> from starkware.python.math_utils import random_ec_point
+			//> from starkware.python.utils import to_bytes
+			//>
+			//> n_elms = ids.len
+			//> assert isinstance(n_elms, int) and n_elms >= 0, \
+			//> 	f'Invalid value for len. Got: {n_elms}.'
+			//> if '__chained_ec_op_max_len' in globals():
+			//> 	assert n_elms <= __chained_ec_op_max_len, \
+			//> 		f'chained_ec_op() can only be used with len<={__chained_ec_op_max_len}. ' \
+			//> 		f'Got: n_elms={n_elms}.'
+			//>
+			//> # Define a seed for random_ec_point that's dependent on all the input, so that:
+			//> #   (1) The added point s is deterministic.
+			//> #   (2) It's hard to choose inputs for which the builtin will fail.
+			//> seed = b"".join(
+			//> 	map(
+			//> 		to_bytes,
+			//> 		[
+			//> 			ids.p.x,
+			//> 			ids.p.y,
+			//> 			*memory.get_range(ids.m, n_elms),
+			//> 			*memory.get_range(ids.q.address_, 2 * n_elms),
+			//> 		],
+			//> 	)
+			//> )
+			//> ids.s.x, ids.s.y = random_ec_point(FIELD_PRIME, ALPHA, BETA, seed)
+
+			nElms, err := hinter.ResolveAsUint64(vm, len)
+			if err != nil {
+				return err
+			}
+
+			if nElms == 0 {
+				return fmt.Errorf("invalid value for len. Got: %v", nElms)
+			}
+
+			chainedEcOpMaxLen := uint64(1000)
+			if nElms > chainedEcOpMaxLen {
+				return fmt.Errorf("f'chained_ec_op() can only be used with len<=%d.\n Got: n_elms=%d", chainedEcOpMaxLen, nElms)
+			}
+
+			pAddr, err := p.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			pValues, err := vm.Memory.ResolveAsEcPoint(pAddr)
+			if err != nil {
+				return err
+			}
+
+			mAddr, err := hinter.ResolveAsAddress(vm, m)
+			if err != nil {
+				return err
+			}
+
+			qAddr, err := q.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			firstRange, err := vm.Memory.GetConsecutiveMemoryValues(*mAddr, int16(nElms))
+			if err != nil {
+				return err
+			}
+
+			var firstRangeFelts []*fp.Element
+			for _, element := range firstRange {
+				firstRangeFelts = append(firstRangeFelts, &element.Felt)
+			}
+
+			secondRange, err := vm.Memory.GetConsecutiveMemoryValues(qAddr, int16(2*nElms))
+			if err != nil {
+				return err
+			}
+
+			var secondRangeFelts []*fp.Element
+			for _, element := range secondRange {
+				secondRangeFelts = append(secondRangeFelts, &element.Felt)
+			}
+
+			var bytesArray []byte
+
+			writeFeltToBytesArray := func(n *fp.Element) {
+				for _, byteValue := range n.Bytes() {
+					bytesArray = append(bytesArray, byteValue)
+				}
+			}
+
+			for _, felt := range pValues {
+				writeFeltToBytesArray(felt)
+			}
+			for _, felt := range firstRangeFelts {
+				writeFeltToBytesArray(felt)
+			}
+			for _, felt := range secondRangeFelts {
+				writeFeltToBytesArray(felt)
+			}
+
+			seed := sha256.Sum256(bytesArray)
+
+			alphaBig := new(big.Int)
+			utils.Alpha.BigInt(alphaBig)
+			betaBig := new(big.Int)
+			utils.Beta.BigInt(betaBig)
+			fieldPrime, ok := secp_utils.GetCairoPrime()
+			if !ok {
+				return fmt.Errorf("GetCairoPrime failed")
+			}
+
+			for i := uint64(0); i < 100; i++ {
+				iBytes := make([]byte, 10)
+				binary.LittleEndian.PutUint64(iBytes, i)
+				concatenated := append(seed[1:], iBytes...)
+				hash := sha256.Sum256(concatenated)
+				hashHex := hex.EncodeToString(hash[:])
+				x := new(big.Int)
+				x.SetString(hashHex, 16)
+
+				yCoef := big.NewInt(1)
+				if seed[0]&1 == 1 {
+					yCoef.Neg(yCoef)
+				}
+
+				// Try to recover y
+				if !ok {
+					return fmt.Errorf("failed to get field prime value")
+				}
+				if y, err := secp_utils.RecoverY(x, betaBig, &fieldPrime); err == nil {
+					y.Mul(yCoef, y)
+					y.Mod(y, &fieldPrime)
+
+					sAddr, err := s.GetAddress(vm)
+					if err != nil {
+						return err
+					}
+
+					sXFelt := new(fp.Element).SetBigInt(x)
+					sYFelt := new(fp.Element).SetBigInt(y)
+					sXMv := mem.MemoryValueFromFieldElement(sXFelt)
+					sYMv := mem.MemoryValueFromFieldElement(sYFelt)
+
+					err = vm.Memory.WriteToNthStructField(sAddr, sXMv, 0)
+					if err != nil {
+						return err
+					}
+					return vm.Memory.WriteToNthStructField(sAddr, sYMv, 1)
+				}
+			}
+
+			return fmt.Errorf("could not find a point on the curve")
+		},
+	}
+}
+
+func createChainedEcOpRandomEcPointHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	len, err := resolver.GetResOperander("len")
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := resolver.GetResOperander("p")
+	if err != nil {
+		return nil, err
+	}
+
+	m, err := resolver.GetResOperander("m")
+	if err != nil {
+		return nil, err
+	}
+
+	q, err := resolver.GetResOperander("q")
+	if err != nil {
+		return nil, err
+	}
+
+	s, err := resolver.GetResOperander("s")
+	if err != nil {
+		return nil, err
+	}
+
+	return newChainedEcOpRandomEcPointHint(len, p, m, q, s), nil
 }
