@@ -259,9 +259,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case findElementCode:
 		return createFindElementHinter(resolver)
 	case nondetElementsOverTwoCode:
-		return createNondetElementsOverTwoHinter(resolver)
+		return createNondetElementsOverXHinter(resolver, 2)
 	case nondetElementsOverTenCode:
-		return createNondetElementsOverTenHinter(resolver)
+		return createNondetElementsOverXHinter(resolver, 10)
 	default:
 		return nil, fmt.Errorf("not identified hint")
 	}
