@@ -1168,7 +1168,8 @@ func newChainedEcOpRandomEcPointHint(len, p, m, q, s hinter.ResOperander) hinter
 
 			var secondRangeFelts []*fp.Element
 			for _, element := range secondRange {
-				secondRangeFelts = append(secondRangeFelts, &(element.Felt))
+				feltCopy := element.Felt
+				secondRangeFelts = append(secondRangeFelts, &feltCopy)
 			}
 
 			var bytesArray []byte
@@ -1188,6 +1189,8 @@ func newChainedEcOpRandomEcPointHint(len, p, m, q, s hinter.ResOperander) hinter
 			for _, felt := range secondRangeFelts {
 				writeFeltToBytesArray(felt)
 			}
+
+			fmt.Println(bytesArray)
 
 			seed := sha256.Sum256(bytesArray)
 
