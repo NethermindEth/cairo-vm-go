@@ -273,12 +273,10 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 // Since this vm always finishes the run of the program at the number of steps that is a power of two in the proof mode,
 // there is no need to run additional steps before the loop.
 func (runner *ZeroRunner) EndRun() error {
-	if runner.proofmode {
-		for runner.checkUsedCells() != nil {
-			pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
-			if err := runner.RunFor(pow2Steps); err != nil {
-				return err
-			}
+	for runner.checkUsedCells() != nil {
+		pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
+		if err := runner.RunFor(pow2Steps); err != nil {
+			return err
 		}
 	}
 	return nil
