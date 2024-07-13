@@ -272,15 +272,16 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 // until the checkUsedCells doesn't return any error.
 // Since this vm always finishes the run of the program at the number of steps that is a power of two in the proof mode,
 // there is no need to run additional steps before the loop.
-func (runner *ZeroRunner) EndRun() {
+func (runner *ZeroRunner) EndRun() error {
 	if runner.proofmode {
 		for runner.checkUsedCells() != nil {
 			pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
 			if err := runner.RunFor(pow2Steps); err != nil {
-				panic(err)
+				return err
 			}
 		}
 	}
+	return nil
 }
 
 // checkUsedCells returns error if not enough steps were made to allocate required number of cells for builtins
@@ -298,6 +299,7 @@ func (runner *ZeroRunner) checkUsedCells() error {
 	return runner.checkRangeCheckUsage()
 }
 
+// Checks if there are not enough trace cells to fill the entire range check range. Each step has assigned a number of range check units. If the number of unused range check units is less than the range of potential values to be checked (defined by rcMin and rcMax), the number of trace cells must be increased, by running additional steps.
 func (runner *ZeroRunner) checkRangeCheckUsage() error {
 	rcMin, rcMax := runner.getPermRangeCheckLimits()
 	var rcUnitsUsedByBuiltins uint64
@@ -311,21 +313,23 @@ func (runner *ZeroRunner) checkRangeCheckUsage() error {
 					}
 					rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(rangeCheckRunner.String())
 					if ok {
-						rcUnitsUsedByBuiltins += rangeCheckSegment.Len() * rangeCheckRunner.RangeCheckNParts
+						rcUnitsUsedByBuiltins += rangeCheckSegment.Len() * builtins.RANGE_CHECK_N_PARTS
 					}
 				}
 			}
 		}
 	}
+	// Out of the range check units allowed per step three are used for the instruction.
 	unusedRcUnits := (runner.layout.RcUnits-3)*runner.vm.Step - rcUnitsUsedByBuiltins
-	rcUsageUpperBound := rcMax - rcMin
+	rcUsageUpperBound := uint64(rcMax - rcMin)
 	if unusedRcUnits < rcUsageUpperBound {
 		return fmt.Errorf("RangeCheck usage is %d, but the upper bound is %d", unusedRcUnits, rcUsageUpperBound)
 	}
 	return nil
 }
 
-func (runner *ZeroRunner) getPermRangeCheckLimits() (uint64, uint64) {
+// getPermRangeCheckLimits returns the minimum and maximum values used by the range check units in the program. To find the values, maximum and minimum values from the range check segment are compared with maximum and minimum values of instructions offsets calculated during running the instructions.
+func (runner *ZeroRunner) getPermRangeCheckLimits() (uint16, uint16) {
 	rcMin, rcMax := runner.vm.RcLimitsMin, runner.vm.RcLimitsMax
 
 	for _, builtin := range runner.program.Builtins {
