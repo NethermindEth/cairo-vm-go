@@ -78,9 +78,6 @@ func TestCairoFiles(t *testing.T) {
 			errorExpected := false
 			if name == "range_check.small.cairo" {
 				errorExpected = true
-			} else if name == "ecop.starknet_with_keccak.cairo" {
-				// temporary, being fixed in another PR soon
-				continue
 			}
 
 			path := filepath.Join(root, name)

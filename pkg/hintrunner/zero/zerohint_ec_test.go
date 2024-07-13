@@ -1054,6 +1054,52 @@ func TestZeroHintEc(t *testing.T) {
 				errCheck: errorTextContains("does not represent the x coordinate of a point on the curve"),
 			},
 		},
+		"RandomEcPoint": {
+			{
+				operanders: []*hintOperander{
+					{Name: "p.x", Kind: apRelative, Value: feltString("3004956058830981475544150447242655232275382685012344776588097793621230049020")},
+					{Name: "p.y", Kind: apRelative, Value: feltString("3232266734070744637901977159303149980795588196503166389060831401046564401743")},
+					{Name: "m", Kind: apRelative, Value: feltUint64(34)},
+					{Name: "q.x", Kind: apRelative, Value: feltString("2864041794633455918387139831609347757720597354645583729611044800117714995244")},
+					{Name: "q.y", Kind: apRelative, Value: feltString("2252415379535459416893084165764951913426528160630388985542241241048300343256")},
+					{Name: "s.x", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newRandomEcPointHint(
+						ctx.operanders["p.x"],
+						ctx.operanders["m"],
+						ctx.operanders["q.x"],
+						ctx.operanders["s.x"],
+					)
+				},
+				check: consecutiveVarValueEquals("s.x", []*fp.Element{
+					feltString("96578541406087262240552119423829615463800550101008760434566010168435227837635"),
+					feltString("3412645436898503501401619513420382337734846074629040678138428701431530606439"),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "p.x", Kind: apRelative, Value: feltUint64(12345)},
+					{Name: "p.y", Kind: apRelative, Value: feltUint64(6789)},
+					{Name: "m", Kind: apRelative, Value: feltUint64(101)},
+					{Name: "q.x", Kind: apRelative, Value: feltUint64(98765)},
+					{Name: "q.y", Kind: apRelative, Value: feltUint64(4321)},
+					{Name: "s.x", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newRandomEcPointHint(
+						ctx.operanders["p.x"],
+						ctx.operanders["m"],
+						ctx.operanders["q.x"],
+						ctx.operanders["s.x"],
+					)
+				},
+				check: consecutiveVarValueEquals("s.x", []*fp.Element{
+					feltString("39190969885360777615413526676655883809466222002423777590585892821354159079496"),
+					feltString("533983185449702770508526175744869430974740140562200547506631069957329272485"),
+				}),
+			},
+		},
 	},
 	)
 }
