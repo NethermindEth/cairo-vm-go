@@ -12,7 +12,6 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type ZeroRunner struct {
@@ -21,8 +20,9 @@ type ZeroRunner struct {
 	vm         *vm.VirtualMachine
 	hintrunner hintrunner.HintRunner
 	// config
-	proofmode bool
-	maxsteps  uint64
+	proofmode    bool
+	collectTrace bool
+	maxsteps     uint64
 	// auxiliar
 	runFinished bool
 	layout      builtins.Layout
@@ -162,7 +162,7 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) 
 }
 
 func (runner *ZeroRunner) initializeEntrypoint(
-	initialPCOffset uint64, arguments []*f.Element, returnFp *mem.MemoryValue, memory *mem.Memory,
+	initialPCOffset uint64, arguments []*fp.Element, returnFp *mem.MemoryValue, memory *mem.Memory,
 ) (mem.MemoryAddress, error) {
 	stack, err := runner.initializeBuiltins(memory)
 	if err != nil {
@@ -223,7 +223,7 @@ func (runner *ZeroRunner) initializeVm(
 		Pc: *initialPC,
 		Ap: offset + uint64(len(stack)),
 		Fp: offset + uint64(len(stack)),
-	}, memory, vm.VirtualMachineConfig{ProofMode: runner.proofmode})
+	}, memory, vm.VirtualMachineConfig{ProofMode: runner.proofmode, CollectTrace: runner.collectTrace})
 	return err
 }
 
@@ -286,11 +286,16 @@ func (runner *ZeroRunner) EndRun() error {
 // or there are not enough trace cells to fill the entire range check range
 func (runner *ZeroRunner) checkUsedCells() error {
 	for _, bRunner := range runner.layout.Builtins {
-		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.Runner.String())
+		builtinName := bRunner.Runner.String()
+		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtinName)
 		if ok {
-			_, err := bRunner.Runner.GetAllocatedSize(builtinSegment.Len(), runner.steps())
+			segmentUsedSize := builtinSegment.Len()
+			allocatedSize, err := bRunner.Runner.GetAllocatedSize(segmentUsedSize, runner.steps())
 			if err != nil {
 				return err
+			}
+			if segmentUsedSize > allocatedSize {
+				return fmt.Errorf("builtin %s used size: %d exceeds allocated size: %d ", builtinName, segmentUsedSize, allocatedSize)
 			}
 		}
 	}
@@ -368,13 +373,16 @@ func (runner *ZeroRunner) FinalizeSegments() error {
 	return nil
 }
 
-func (runner *ZeroRunner) BuildProof() ([]byte, []byte, error) {
-	relocatedTrace, err := runner.vm.ExecutionTrace()
-	if err != nil {
-		return nil, nil, err
-	}
+// BuildMemory relocates the memory and returns it
+func (runner *ZeroRunner) BuildMemory() ([]byte, error) {
+	relocatedMemory := runner.vm.RelocateMemory()
+	return vm.EncodeMemory(relocatedMemory), nil
+}
 
-	return vm.EncodeTrace(relocatedTrace), vm.EncodeMemory(runner.vm.RelocateMemory()), nil
+// BuildMemory relocates the trace and returns it
+func (runner *ZeroRunner) BuildTrace() ([]byte, error) {
+	relocatedTrace := runner.vm.RelocateTrace()
+	return vm.EncodeTrace(relocatedTrace), nil
 }
 
 func (runner *ZeroRunner) pc() mem.MemoryAddress {

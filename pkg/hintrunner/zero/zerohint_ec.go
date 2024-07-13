@@ -1,6 +1,9 @@
 package zero
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 
@@ -901,33 +904,25 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			const betaString = "3141592653589793238462643383279502884197169399375105820974944592307816406665"
-			betaBigInt, ok := new(big.Int).SetString(betaString, 10)
-			if !ok {
-				panic("failed to convert BETA string to big.Int")
-			}
+			betaBigInt := new(big.Int)
+			utils.Beta.BigInt(betaBigInt)
 
-			const fieldPrimeString = "3618502788666131213697322783095070105623107215331596699973092056135872020481"
-			fieldPrimeBigInt, ok := new(big.Int).SetString(fieldPrimeString, 10)
+			fieldPrimeBigInt, ok := secp_utils.GetCairoPrime()
 			if !ok {
-				panic("failed to convert FIELD_PRIME string to big.Int")
+				return fmt.Errorf("GetCairoPrime failed")
 			}
 
 			xBigInt := new(big.Int)
 			xFelt.BigInt(xBigInt)
 
 			// y^2 = x^3 + alpha * x + beta (mod field_prime)
-			ySquaredBigInt := secp_utils.YSquaredFromX(xBigInt, betaBigInt, fieldPrimeBigInt)
-			ySquaredFelt := new(fp.Element).SetBigInt(ySquaredBigInt)
-
-			if secp_utils.IsQuadResidue(ySquaredFelt) {
-				result := new(fp.Element).SetBigInt(secp_utils.Sqrt(ySquaredBigInt, fieldPrimeBigInt))
-				value := mem.MemoryValueFromFieldElement(result)
-				return vm.Memory.WriteToAddress(&pYAddr, &value)
-			} else {
-				ySquaredString := ySquaredBigInt.String()
-				return fmt.Errorf("%s does not represent the x coordinate of a point on the curve", ySquaredString)
+			resultBigInt, err := secp_utils.RecoverY(xBigInt, betaBigInt, &fieldPrimeBigInt)
+			if err != nil {
+				return err
 			}
+			resultFelt := new(fp.Element).SetBigInt(resultBigInt)
+			resultMv := mem.MemoryValueFromFieldElement(resultFelt)
+			return vm.Memory.WriteToAddress(&pYAddr, &resultMv)
 		},
 	}
 }
@@ -944,4 +939,138 @@ func createRecoverYHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	}
 
 	return newRecoverYHint(x, p), nil
+}
+
+// RandomEcPoint hint returns a random non-zero point on the elliptic curve
+// y^2 = x^3 + alpha * x + beta (mod field_prime).
+// The point is created deterministically from the seed.
+//
+// `newRandomEcPointHint` takes 4 operanders as arguments
+//   - `p` is an EC point used for seed generation
+//   - `m` the multiplication coefficient of Q used for seed generation
+//   - `q` an EC point used for seed generation
+//   - `s` is where the generated random EC point is written to
+func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "RandomEcPoint",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME
+			//> from starkware.python.math_utils import random_ec_point
+			//> from starkware.python.utils import to_bytes
+			//>
+			//> # Define a seed for random_ec_point that's dependent on all the input, so that:
+			//> #   (1) The added point s is deterministic.
+			//> #   (2) It's hard to choose inputs for which the builtin will fail.
+			//> seed = b"".join(map(to_bytes, [ids.p.x, ids.p.y, ids.m, ids.q.x, ids.q.y]))
+			//> ids.s.x, ids.s.y = random_ec_point(FIELD_PRIME, ALPHA, BETA, seed)
+
+			pAddr, err := p.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			pValues, err := vm.Memory.ResolveAsEcPoint(pAddr)
+			if err != nil {
+				return err
+			}
+			mFelt, err := hinter.ResolveAsFelt(vm, m)
+			if err != nil {
+				return err
+			}
+			qAddr, err := q.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			qValues, err := vm.Memory.ResolveAsEcPoint(qAddr)
+			if err != nil {
+				return err
+			}
+
+			var bytesArray []byte
+			writeFeltToBytesArray := func(n *fp.Element) {
+				for _, byteValue := range n.Bytes() {
+					bytesArray = append(bytesArray, byteValue)
+				}
+			}
+			for _, felt := range pValues {
+				writeFeltToBytesArray(felt)
+			}
+			writeFeltToBytesArray(mFelt)
+			for _, felt := range qValues {
+				writeFeltToBytesArray(felt)
+			}
+			seed := sha256.Sum256(bytesArray)
+
+			alphaBig := new(big.Int)
+			utils.Alpha.BigInt(alphaBig)
+			betaBig := new(big.Int)
+			utils.Beta.BigInt(betaBig)
+			fieldPrime, ok := secp_utils.GetCairoPrime()
+			if !ok {
+				return fmt.Errorf("GetCairoPrime failed")
+			}
+
+			for i := uint64(0); i < 100; i++ {
+				iBytes := make([]byte, 10)
+				binary.LittleEndian.PutUint64(iBytes, i)
+				concatenated := append(seed[1:], iBytes...)
+				hash := sha256.Sum256(concatenated)
+				hashHex := hex.EncodeToString(hash[:])
+				x := new(big.Int)
+				x.SetString(hashHex, 16)
+
+				yCoef := big.NewInt(1)
+				if seed[0]&1 == 1 {
+					yCoef.Neg(yCoef)
+				}
+
+				// Try to recover y
+				if !ok {
+					return fmt.Errorf("failed to get field prime value")
+				}
+				if y, err := secp_utils.RecoverY(x, betaBig, &fieldPrime); err == nil {
+					y.Mul(yCoef, y)
+					y.Mod(y, &fieldPrime)
+
+					sAddr, err := s.GetAddress(vm)
+					if err != nil {
+						return err
+					}
+
+					sXFelt := new(fp.Element).SetBigInt(x)
+					sYFelt := new(fp.Element).SetBigInt(y)
+					sXMv := mem.MemoryValueFromFieldElement(sXFelt)
+					sYMv := mem.MemoryValueFromFieldElement(sYFelt)
+
+					err = vm.Memory.WriteToNthStructField(sAddr, sXMv, 0)
+					if err != nil {
+						return err
+					}
+					return vm.Memory.WriteToNthStructField(sAddr, sYMv, 1)
+				}
+			}
+
+			return fmt.Errorf("could not find a point on the curve")
+		},
+	}
+}
+
+func createRandomEcPointHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	p, err := resolver.GetResOperander("p")
+	if err != nil {
+		return nil, err
+	}
+	m, err := resolver.GetResOperander("m")
+	if err != nil {
+		return nil, err
+	}
+	q, err := resolver.GetResOperander("q")
+	if err != nil {
+		return nil, err
+	}
+	s, err := resolver.GetResOperander("s")
+	if err != nil {
+		return nil, err
+	}
+
+	return newRandomEcPointHint(p, m, q, s), nil
 }
