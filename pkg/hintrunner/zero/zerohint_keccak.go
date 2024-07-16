@@ -390,17 +390,17 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter
 
 func createKeccakWriteArgsHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	inputs, err := resolver.GetResOperander("inputs")
-	if inputs != nil {
+	if err != nil {
 		return nil, err
 	}
 
 	low, err := resolver.GetResOperander("low")
-	if low != nil {
+	if err != nil {
 		return nil, err
 	}
 
 	high, err := resolver.GetResOperander("high")
-	if high != nil {
+	if err != nil {
 		return nil, err
 	}
 
@@ -521,7 +521,7 @@ func newBlockPermutationHint(keccakPtr hinter.ResOperander) hinter.Hinter {
 
 func createBlockPermutationHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	keccakPtr, err := resolver.GetResOperander("keccak_ptr")
-	if keccakPtr != nil {
+	if err != nil {
 		return nil, err
 	}
 
