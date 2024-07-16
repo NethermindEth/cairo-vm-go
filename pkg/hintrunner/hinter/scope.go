@@ -94,10 +94,13 @@ func GetVariableAs[T any](sm *ScopeManager, name string) (T, error) {
 	if err != nil {
 		return zero, err
 	}
+
 	typedValue, ok := value.(T)
 	if !ok {
-		return zero, fmt.Errorf("value has a different type")
+		return zero, fmt.Errorf("value has a different type: value = %v, type = %T, expected type = %T", value, value, zero)
+
 	}
+
 	return typedValue, nil
 }
 
@@ -105,6 +108,7 @@ func (sm *ScopeManager) getCurrentScope() (*map[string]any, error) {
 	if len(sm.scopes) == 0 {
 		return nil, fmt.Errorf("expected at least one existing scope")
 	}
+
 	return &sm.scopes[len(sm.scopes)-1], nil
 }
 
@@ -113,6 +117,7 @@ func (sm *ScopeManager) GetZeroDictionaryManager() (ZeroDictionaryManager, bool)
 	if err != nil {
 		return ZeroDictionaryManager{}, false
 	}
+
 	dictionaryManager, ok := dictionaryManagerValue.(ZeroDictionaryManager)
 	return dictionaryManager, ok
 }
