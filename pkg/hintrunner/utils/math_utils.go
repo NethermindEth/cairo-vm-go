@@ -145,7 +145,7 @@ func IsQuadResidue(x *fp.Element) bool {
 	return x.IsZero() || x.IsOne() || x.Legendre() == 1
 }
 
-func YSquaredFromX(x, beta, fieldPrime *big.Int) *big.Int {
+func ySquaredFromX(x, beta, fieldPrime *big.Int) *big.Int {
 	// Computes y^2 using the curve equation:
 	// y^2 = x^3 + alpha * x + beta (mod field_prime)
 	// We ignore alpha as it is a constant with a value of 1
@@ -170,4 +170,18 @@ func Sqrt(x, p *big.Int) *big.Int {
 	}
 
 	return m
+}
+
+func RecoverY(x, beta, fieldPrime *big.Int) (*big.Int, error) {
+	ySquared := ySquaredFromX(x, beta, fieldPrime)
+	if IsQuadResidue(new(fp.Element).SetBigInt(ySquared)) {
+		return Sqrt(ySquared, fieldPrime), nil
+	}
+	return nil, fmt.Errorf("%s does not represent the x coordinate of a point on the curve", ySquared.String())
+}
+
+func GetCairoPrime() (big.Int, bool) {
+	// 2**251 + 17 * 2**192 + 1
+	cairoPrime, ok := new(big.Int).SetString("3618502788666131213697322783095070105623107215331596699973092056135872020481", 10)
+	return *cairoPrime, ok
 }

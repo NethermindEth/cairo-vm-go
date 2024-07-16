@@ -71,8 +71,11 @@ type Trace struct {
 
 // This type represents the current execution context of the vm
 type VirtualMachineConfig struct {
-	// If true, the vm outputs the trace and the relocated memory at the end of execution
+	// If true, the vm outputs the trace and the relocated memory at the end of execution and finalize segments
+	// in order for the prover to create a proof
 	ProofMode bool
+	// If true, the vm collects the relocated trace at the end of execution, without finalizing segments
+	CollectTrace bool
 }
 
 type VirtualMachine struct {
@@ -91,9 +94,10 @@ type VirtualMachine struct {
 func NewVirtualMachine(
 	initialContext Context, memory *mem.Memory, config VirtualMachineConfig,
 ) (*VirtualMachine, error) {
+
 	// Initialize the trace if necesary
 	var trace []Context
-	if config.ProofMode {
+	if config.ProofMode || config.CollectTrace {
 		trace = make([]Context, 0)
 	}
 
@@ -136,7 +140,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 	}
 
 	// store the trace before state change
-	if vm.config.ProofMode {
+	if vm.config.ProofMode || vm.config.CollectTrace {
 		vm.Trace = append(vm.Trace, vm.Context)
 	}
 
@@ -214,15 +218,6 @@ func (vm *VirtualMachine) RunInstruction(instruction *a.Instruction) error {
 	vm.Context.Fp = nextFp
 
 	return nil
-}
-
-// It returns the current trace entry, the public memory, and the occurrence of an error
-func (vm *VirtualMachine) ExecutionTrace() ([]Trace, error) {
-	if !vm.config.ProofMode {
-		return nil, fmt.Errorf("proof mode is off")
-	}
-
-	return vm.relocateTrace(), nil
 }
 
 func (vm *VirtualMachine) getDstAddr(instruction *a.Instruction) (mem.MemoryAddress, error) {
@@ -537,8 +532,10 @@ func (vm *VirtualMachine) updateFp(instruction *a.Instruction, dstAddr *mem.Memo
 	}
 }
 
-func (vm *VirtualMachine) relocateTrace() []Trace {
-	// one is added, because prover expect that the first element to be on
+// It returns the trace after relocation, i.e, relocates pc, ap and fp for each step
+// to be their real address value
+func (vm *VirtualMachine) RelocateTrace() []Trace {
+	// one is added, because prover expect that the first element to be
 	// indexed on 1 instead of 0
 	relocatedTrace := make([]Trace, len(vm.Trace))
 	totalBytecode := vm.Memory.Segments[ProgramSegment].Len() + 1
