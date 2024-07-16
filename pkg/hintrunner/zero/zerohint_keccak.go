@@ -21,7 +21,7 @@ import (
 //   - `keccakPtrEnd` is the address in memory where to start writing the result
 //
 // There are 2 versions of this hint, depending on whether `_block_size` should be lower than 10 or 1000
-// Corresponding hintocdes are cairoKeccakFinalizeCode and cairoKeccakFinalizeBlockSize1000Code
+// Corresponding hintcodes are cairoKeccakFinalizeCode and cairoKeccakFinalizeBlockSize1000Code
 func newCairoKeccakFinalizeHint(keccakPtrEnd hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "CairoKeccakFinalize",
@@ -29,7 +29,7 @@ func newCairoKeccakFinalizeHint(keccakPtrEnd hinter.ResOperander) hinter.Hinter 
 			//> _keccak_state_size_felts = int(ids.KECCAK_STATE_SIZE_FELTS)
 			//> _block_size = int(ids.BLOCK_SIZE)
 			//> assert 0 <= _keccak_state_size_felts < 100
-			//> assert 0 <= _block_size < 10       //> assert 0 <= _block_size < 1000
+			//> assert 0 <= _block_size < 10 (cairoKeccakFinalize)  //> assert 0 <= _block_size < 1000 (cairoKeccakFinalizeBlockSize1000)
 			//> inp = [0] * _keccak_state_size_felts
 			//> padding = (inp + keccak_func(inp)) * _block_size
 			//> segments.write_arg(ids.keccak_ptr_end, padding)
