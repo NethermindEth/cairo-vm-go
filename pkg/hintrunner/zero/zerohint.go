@@ -167,6 +167,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createKeccakWriteArgsHinter(resolver)
 	case cairoKeccakFinalizeCode:
 		return createCairoKeccakFinalizeHinter(resolver)
+	case cairoKeccakFinalizeBlockSize1000Code:
+		return createCairoKeccakFinalizeHinter(resolver)
 	case unsafeKeccakCode:
 		return createUnsafeKeccakHinter(resolver)
 	case unsafeKeccakFinalizeCode:
