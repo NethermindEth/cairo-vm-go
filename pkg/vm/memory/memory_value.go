@@ -284,7 +284,14 @@ func (mv *MemoryValue) subAddress(lhs *MemoryAddress, rhs *MemoryValue) error {
 				rhsAddr.SegmentIndex, lhs.SegmentIndex)
 		}
 		mv.Kind = feltMemoryValue
-		mv.Felt.SetUint64(lhs.Offset - rhsAddr.Offset)
+		if lhs.Offset >= rhsAddr.Offset {
+			mv.Felt.SetUint64(lhs.Offset - rhsAddr.Offset)
+		} else {
+			// There can be an issue here as difference can be upto
+			// -uint64.max which int64 cant accommodate. But such
+			// offsets aren't expected.
+			mv.Felt.SetInt64(-int64(rhsAddr.Offset - lhs.Offset))
+		}
 		return nil
 	}
 
