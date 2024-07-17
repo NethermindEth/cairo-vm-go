@@ -107,7 +107,6 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 			//> memory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)
 			defaultValue, err := defaultValue.Resolve(vm)
 			if err != nil {
-
 				return fmt.Errorf("%s: %w", defaultValue, err)
 			}
 
@@ -157,7 +156,6 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 			//> ids.value = dict_tracker.data[ids.key]
 			key, err := key.Resolve(vm)
 			if err != nil {
-
 				return fmt.Errorf("%s: %w", key, err)
 			}
 			keyValue, err := dictionaryManager.At(*dictPtr, key)
@@ -295,7 +293,6 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 
 			key, err := key.Resolve(vm)
 			if err != nil {
-
 				return fmt.Errorf("%s: %w", key, err)
 			}
 
@@ -318,7 +315,6 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 			//> dict_tracker.data[ids.key] = ids.new_value
 			newValue, err := newValue.Resolve(vm)
 			if err != nil {
-
 				return fmt.Errorf("%s: %w", newValue, err)
 			}
 			err = dictionaryManager.Set(*dictPtr, key, newValue)
@@ -383,27 +379,22 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hi
 
 			key, err := key.Resolve(vm)
 			if err != nil {
-
 				return fmt.Errorf("%s: %w", key, err)
 			}
 
 			//> current_value = dict_tracker.data[ids.key]
-			currentValueMv, err := dictionaryManager.At(*dictPtr, key)
+			currentValue, err := dictionaryManager.At(*dictPtr, key)
 			if err != nil {
-				return err
-			}
-			currentValue, err := currentValueMv.FieldElement()
-			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", key, err)
 			}
 
 			//> assert current_value == ids.prev_value, \
 			//>     f'Wrong previous value in dict. Got {ids.prev_value}, expected {current_value}.'
-			prevValue, err := hinter.ResolveAsFelt(vm, prevValue)
+			prevValue, err := prevValue.Resolve(vm)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", prevValue, err)
 			}
-			if !currentValue.Equal(prevValue) {
+			if !currentValue.Equal(&prevValue) {
 				return fmt.Errorf("wrong previous value in dict. Got %s, expected %s", prevValue, currentValue)
 			}
 
@@ -411,7 +402,6 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hi
 			//> dict_tracker.data[ids.key] = ids.new_value
 			newValue, err := newValue.Resolve(vm)
 			if err != nil {
-
 				return fmt.Errorf("%s: %w", newValue, err)
 			}
 			err = dictionaryManager.Set(*dictPtr, key, newValue)
