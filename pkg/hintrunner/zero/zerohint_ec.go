@@ -390,6 +390,84 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newEcDoubleSlopeV1Hint(point), nil
 }
 
+// EcDoubleSlopeV3 hint computes the slope for doubling a point on an elliptic curve
+//
+// `newEcDoubleSlopeV3Hint` takes 1 operander as argument
+//   - `pt` is the point on an elliptic curve to operate on
+//
+// `newEcDoubleSlopeV3Hint` assigns the `slope` result as `value` in the current scope
+func newEcDoubleSlopeV3Hint(point hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcDoubleSlopeV3",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> from starkware.python.math_utils import div_mod
+			//>
+			//> # Compute the slope.
+			//> x = pack(ids.pt.x, PRIME)
+			//> y = pack(ids.pt.y, PRIME)
+			//> value = slope = div_mod(3 * x ** 2, 2 * y, SECP_P)
+
+			pointAddr, err := point.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			pointYAddr, err := pointAddr.AddOffset(3)
+			if err != nil {
+				return err
+			}
+
+			pointXValues, err := vm.Memory.ResolveAsBigInt3(pointAddr)
+			if err != nil {
+				return err
+			}
+
+			pointYValues, err := vm.Memory.ResolveAsBigInt3(pointYAddr)
+			if err != nil {
+				return err
+			}
+
+			//> x = pack(ids.pt.x, PRIME)
+			xBig, err := secp_utils.SecPPacked(pointXValues)
+			if err != nil {
+				return err
+			}
+
+			//> y = pack(ids.pt.y, PRIME)
+			yBig, err := secp_utils.SecPPacked(pointYValues)
+			if err != nil {
+				return err
+			}
+
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			//> value = slope = div_mod(3 * x ** 2, 2 * y, SECP_P)
+			numerator := new(big.Int).Mul(big.NewInt(3), new(big.Int).Mul(&xBig, &xBig))
+			denominator := new(big.Int).Mul(big.NewInt(2), &yBig)
+
+			valueBig, err := secp_utils.Divmod(numerator, denominator, &secPBig)
+			if err != nil {
+				return err
+			}
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &valueBig})
+		},
+	}
+}
+
+func createEcDoubleSlopeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	point, err := resolver.GetResOperander("pt")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcDoubleSlopeV3Hint(point), nil
+}
+
 // ReduceV1 hint reduces a packed value modulo the SECP256K1 prime
 //
 // `newReduceV1Hint` takes 1 operander as argument

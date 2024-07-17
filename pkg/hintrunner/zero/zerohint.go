@@ -133,6 +133,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createFastEcAddAssignNewYHinter()
 	case ecDoubleSlopeV1Code:
 		return createEcDoubleSlopeV1Hinter(resolver)
+	case ecDoubleSlopeV3Code:
+		return createEcDoubleSlopeV3Hinter(resolver)
 	case reduceV1Code:
 		return createReduceV1Hinter(resolver)
 	case computeSlopeV1Code:
