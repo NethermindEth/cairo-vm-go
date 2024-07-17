@@ -129,6 +129,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createNondetBigint3V1Hinter(resolver)
 	case fastEcAddAssignNewXCode:
 		return createFastEcAddAssignNewXHinter(resolver)
+	case fastEcAddAssignNewXV2Code:
+		return createFastEcAddAssignNewXV2Hinter(resolver)
+	case fastEcAddAssignNewXV3Code:
+		return createFastEcAddAssignNewXV3Hinter(resolver)
 	case fastEcAddAssignNewYCode:
 		return createFastEcAddAssignNewYHinter()
 	case ecDoubleSlopeV1Code:
