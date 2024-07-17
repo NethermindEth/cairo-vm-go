@@ -1,6 +1,7 @@
-%builtins range_check
+// The content of this file has been borrowed from LambdaClass Cairo VM in Rust
+// See https://github.com/lambdaclass/cairo-vm/blob/db7fff18c9c1312024ebf4119fcdfeba23657b12/cairo_programs/ed25519_ec.cairo#L57
 
-// Source: https://github.com/NilFoundation/cairo-ed25519/blob/fee64a1a60b2e07b3b5c20df57f31d7ffcb29ac9/ed25519_ec.cairo
+%builtins range_check
 
 from starkware.cairo.common.serialize import serialize_word
 from starkware.cairo.common.cairo_secp.bigint import BigInt3, UnreducedBigInt3, nondet_bigint3
@@ -11,19 +12,12 @@ from starkware.cairo.common.cairo_secp.field import (
     verify_zero,
 )
 
-// Represents a point on the elliptic curve.
-// The zero point is represented using pt.x=0, as there is no point on the curve with this x value.
 struct EcPoint {
     x: BigInt3,
     y: BigInt3,
 }
 
-// Returns the slope of the elliptic curve at the given point.
-// The slope is used to compute pt + pt.
-// Assumption: pt != 0.
 func compute_doubling_slope{range_check_ptr}(pt: EcPoint) -> (slope: BigInt3) {
-    // Note that y cannot be zero: assume that it is, then pt = -pt, so 2 * pt = 0, which
-    // contradicts the fact that the size of the curve is odd.
     %{
         from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
         from starkware.python.math_utils import div_mod
@@ -49,9 +43,6 @@ func compute_doubling_slope{range_check_ptr}(pt: EcPoint) -> (slope: BigInt3) {
     return (slope=slope);
 }
 
-// Returns the slope of the line connecting the two given points.
-// The slope is used to compute pt0 + pt1.
-// Assumption: pt0.x != pt1.x (mod secp256k1_prime).
 func compute_slope{range_check_ptr: felt}(pt0: EcPoint, pt1: EcPoint) -> (slope: BigInt3) {
     %{
         from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
@@ -86,7 +77,6 @@ func test_compute_double_slope{range_check_ptr: felt}() {
 
     let pt = EcPoint(x=x, y=y);
 
-    // Compute slope
     let (slope) = compute_doubling_slope(pt);
 
     assert slope = BigInt3(
@@ -107,7 +97,6 @@ func test_compute_slope{range_check_ptr: felt}() {
 
     let pt1 = EcPoint(x=x1, y=y1);
 
-    // Compute slope
     let (slope) = compute_slope(pt0, pt1);
 
     assert slope = BigInt3(
