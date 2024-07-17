@@ -32,16 +32,12 @@ func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.
 			//> ids.continue_copying = 1 if n > 0 else 0
 
 			//> n-=1
-			n, err := ctx.ScopeManager.GetVariableValue("n")
+			newN, err := hinter.GetVariableAs[uint64](&ctx.ScopeManager, "n")
 			if err != nil {
 				return err
 			}
 
-			newN, ok := n.(uint64)
-			if !ok {
-				return fmt.Errorf("casting n into a uint64 failed")
-			}
-			newN = newN - 1
+			newN -= 1
 
 			if err := ctx.ScopeManager.AssignVariable("n", newN); err != nil {
 				return err
@@ -219,13 +215,8 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 
 			//> if '__find_element_index' in globals():
 			//>		ids.index = __find_element_index
-			findElementIndex, err := ctx.ScopeManager.GetVariableValue("__find_element_index")
+			findElementIndex, err := hinter.GetVariableAs[uint64](&ctx.ScopeManager, "__find_element_index")
 			if err == nil {
-				findElementIndex, ok := findElementIndex.(uint64)
-				if !ok {
-					return fmt.Errorf("invalid value for __find_element_index. Got: %v", findElementIndex)
-				}
-
 				findElementIndexFelt := new(fp.Element).SetUint64(findElementIndex)
 				findElementIndexMemoryValue := memory.MemoryValueFromFieldElement(findElementIndexFelt)
 				indexValAddr, err := index.GetAddress(vm)
@@ -272,12 +263,9 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				//>			assert n_elms <= __find_element_max_size, \
 				//>				f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \
 				//>				f'Got: n_elms={n_elms}.'
-				findElementMaxSize, err := ctx.ScopeManager.GetVariableValue("__find_element_max_size")
+
+				findElementMaxSize, err := hinter.GetVariableAs[uint64](&ctx.ScopeManager, "__find_element_max_size")
 				if err == nil {
-					findElementMaxSize, ok := findElementMaxSize.(uint64)
-					if !ok {
-						return fmt.Errorf("invalid value for __find_element_max_size. Got: %v", findElementMaxSize)
-					}
 					if nElms > findElementMaxSize {
 						return fmt.Errorf("find_element() can only be used with n_elms<=%v. Got: n_elms=%v", findElementMaxSize, nElms)
 					}

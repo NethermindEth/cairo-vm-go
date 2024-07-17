@@ -270,22 +270,22 @@ func newDivModSafeDivHint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> value = k = safe_div(res * b - a, N)
 
-			res, err := ctx.ScopeManager.GetVariableValueAsBigInt("res")
+			res, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "res")
 			if err != nil {
 				return err
 			}
 
-			a, err := ctx.ScopeManager.GetVariableValueAsBigInt("a")
+			a, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "a")
 			if err != nil {
 				return err
 			}
 
-			b, err := ctx.ScopeManager.GetVariableValueAsBigInt("b")
+			b, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "b")
 			if err != nil {
 				return err
 			}
 
-			N, err := ctx.ScopeManager.GetVariableValueAsBigInt("N")
+			N, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "N")
 			if err != nil {
 				return err
 			}
