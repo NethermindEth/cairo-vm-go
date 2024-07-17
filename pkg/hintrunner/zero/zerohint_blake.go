@@ -211,7 +211,7 @@ func createBlake2sFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter,
 // modification in the way padding is done compared to V1 and V2
 func newBlake2sFinalizeV3Hint(blake2sPtrEnd hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "Blake2sFinalize",
+		Name: "Blake2sFinalizeV3",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> # Add dummy pairs of input and output.
 			//> from starkware.cairo.common.cairo_blake2s.blake2s_utils import IV, blake2s_compress
