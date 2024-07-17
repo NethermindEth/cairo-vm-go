@@ -546,6 +546,111 @@ func createEcDoubleAssignNewXV1Hinter(resolver hintReferenceResolver) (hinter.Hi
 	return newEcDoubleAssignNewXV1Hint(slope, point), nil
 }
 
+// EcDoubleAssignNewXV4 hint computes a new x-coordinate for a point being doubled on an elliptic curve
+//
+// `newEcDoubleAssignNewXV4Hint` takes 2 operanders as arguments
+//   - `slope` is the slope for doubling a point, computed with EcDoubleSlope hint
+//   - `point` is the point on an elliptic curve to operate on
+//
+// `newEcDoubleAssignNewXV4Hint` assigns the `new_x` result as `value` in the current scope
+// It also assigns `slope`, `x`, `y` and `new_x` in the current scope
+// so that they are available in the current scope for EcDoubleAssignNewY hint
+func newEcDoubleAssignNewXV4Hint(slope, point hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcDoubleAssignNewXV4",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//>
+			//> slope = pack(ids.slope, PRIME)
+			//> x = pack(ids.pt.x, PRIME)
+			//> y = pack(ids.pt.y, PRIME)
+			//>
+			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
+
+			slopeAddr, err := slope.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			pointAddr, err := point.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			pointYAddr, err := pointAddr.AddOffset(3)
+			if err != nil {
+				return err
+			}
+
+			slopeValues, err := vm.Memory.ResolveAsBigInt3(slopeAddr)
+			if err != nil {
+				return err
+			}
+
+			pointXValues, err := vm.Memory.ResolveAsBigInt3(pointAddr)
+			if err != nil {
+				return err
+			}
+
+			pointYValues, err := vm.Memory.ResolveAsBigInt3(pointYAddr)
+			if err != nil {
+				return err
+			}
+
+			//> slope = pack(ids.slope, PRIME)
+			slopeBig, err := secp_utils.SecPPacked(slopeValues)
+			if err != nil {
+				return err
+			}
+
+			//> x = pack(ids.pt.x, PRIME)
+			xBig, err := secp_utils.SecPPacked(pointXValues)
+			if err != nil {
+				return err
+			}
+
+			//> y = pack(ids.pt.y, PRIME)
+			yBig, err := secp_utils.SecPPacked(pointYValues)
+			if err != nil {
+				return err
+			}
+
+			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			multRes := new(big.Int)
+			multRes.Mul(big.NewInt(2), &xBig)
+
+			new_xBig := new(big.Int)
+			new_xBig.Exp(&slopeBig, big.NewInt(2), &secPBig)
+			new_xBig.Sub(new_xBig, multRes)
+			new_xBig.Mod(new_xBig, &secPBig)
+
+			valueBig := new(big.Int)
+			valueBig.Set(new_xBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": &slopeBig, "x": &xBig, "y": &yBig, "new_x": new_xBig, "value": valueBig, "SECP_P": &secPBig})
+		},
+	}
+}
+
+func createEcDoubleAssignNewXV4Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	slope, err := resolver.GetResOperander("slope")
+	if err != nil {
+		return nil, err
+	}
+
+	point, err := resolver.GetResOperander("pt")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcDoubleAssignNewXV4Hint(slope, point), nil
+}
+
 // EcDoubleAssignNewYV1 hint computes a new y-coordinate when doubling a point
 // on an elliptic curve
 // This hint is ultimately used for either multiplying a point with an integer with `ec_mul_by_uint256`
