@@ -160,6 +160,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createBlake2sAddUint256Hinter(resolver, false)
 	case blake2sFinalizeCode:
 		return createBlake2sFinalizeHinter(resolver)
+	case blake2sFinalizeV2Code:
+		return createBlake2sFinalizeHinter(resolver)
+	case blake2sFinalizeV3Code:
+		return createBlake2sFinalizeHinter(resolver)
 	case blake2sComputeCode:
 		return createBlake2sComputeHinter(resolver)
 	// Keccak hints

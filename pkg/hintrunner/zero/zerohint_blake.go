@@ -118,6 +118,15 @@ func createBlake2sAddUint256Hinter(resolver hintReferenceResolver, bigend bool) 
 	return newBlake2sAddUint256Hint(low, high, data, bigend), nil
 }
 
+// Blake2sFinalize hint finalizes the Blake2s hash computation
+//
+// `newBlake2sFinalizeHint` takes 1 operander as argument
+//   - `blake2sPtrEnd` is a pointer to the address where to write the result
+//
+// `newBlake2sAddUint256Hint` splits each part of the `uint256` in 4 `u32` and writes the result of
+// `blake2s_compress` after padding
+//
+// There are 3 versions of Blake2sFinalize hint, with slightly hintcode differences but with the same implementation
 func newBlake2sFinalizeHint(blake2sPtrEnd hinter.ResOperander) hinter.Hinter {
 	name := "Blake2sFinalize"
 	return &GenericZeroHinter{
@@ -127,7 +136,7 @@ func newBlake2sFinalizeHint(blake2sPtrEnd hinter.ResOperander) hinter.Hinter {
 			//> from starkware.cairo.common.cairo_blake2s.blake2s_utils import IV, blake2s_compress
 			//> _n_packed_instances = int(ids.N_PACKED_INSTANCES)
 			//> assert 0 <= _n_packed_instances < 20
-			//> _blake2s_input_chunk_size_felts = int(ids.INPUT_BLOCK_FELTS)
+			//> _blake2s_input_chunk_size_felts = int(ids.INPUT_BLOCK_FELTS) (V1) //> _blake2s_input_chunk_size_felts = int(ids.BLAKE2S_INPUT_CHUNK_SIZE_FELTS) (V2 / V3)
 			//> assert 0 <= _blake2s_input_chunk_size_felts < 100
 			//>
 			//> message = [0] * _blake2s_input_chunk_size_felts
@@ -140,7 +149,7 @@ func newBlake2sFinalizeHint(blake2sPtrEnd hinter.ResOperander) hinter.Hinter {
 			//>     f0=0xffffffff,
 			//>     f1=0,
 			//> )
-			//> padding = (modified_iv + message + [0, 0xffffffff] + output) * (_n_packed_instances - 1)
+			//> padding = (modified_iv + message + [0, 0xffffffff] + output) * (_n_packed_instances - 1) (V1 / V2)  //> padding = ( message + modified_iv + [0, 0xffffffff] + output) * (_n_packed_instances - 1) (V3)
 			//> segments.write_arg(ids.blake2s_ptr_end, padding)
 
 			blake2sPtrEnd, err := hinter.ResolveAsAddress(vm, blake2sPtrEnd)
