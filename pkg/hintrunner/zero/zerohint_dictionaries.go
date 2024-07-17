@@ -52,7 +52,7 @@ func newDictNewHint() hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			initialDict, ok := initialDictValue.(map[fp.Element]memory.MemoryValue)
+			initialDict, ok := initialDictValue.(map[memory.MemoryValue]memory.MemoryValue)
 			if !ok {
 				return fmt.Errorf("value: %s is not a map[f.Element]mem.MemoryValue", initialDictValue)
 			}
@@ -105,13 +105,13 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> memory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)
-			defaultValue, err := hinter.ResolveAsFelt(vm, defaultValue)
+			defaultValue, err := defaultValue.Resolve(vm)
 			if err != nil {
-				return err
+
+				return fmt.Errorf("%s: %w", defaultValue, err)
 			}
 
-			defaultValueMv := memory.MemoryValueFromFieldElement(defaultValue)
-			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, defaultValueMv)
+			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, defaultValue)
 			newDefaultDictionaryAddrMv := memory.MemoryValueFromMemoryAddress(&newDefaultDictionaryAddr)
 			apAddr := vm.Context.AddressAp()
 
@@ -155,11 +155,12 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> ids.value = dict_tracker.data[ids.key]
-			key, err := hinter.ResolveAsFelt(vm, key)
+			key, err := key.Resolve(vm)
 			if err != nil {
-				return err
+
+				return fmt.Errorf("%s: %w", key, err)
 			}
-			keyValue, err := dictionaryManager.At(*dictPtr, *key)
+			keyValue, err := dictionaryManager.At(*dictPtr, key)
 			if err != nil {
 				return err
 			}
@@ -229,18 +230,21 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 				return err
 			}
 
-			dictionaryDataCopy := make(map[fp.Element]memory.MemoryValue)
+			dictionaryDataCopy := make(map[memory.MemoryValue]memory.MemoryValue)
 			for k, v := range *dictionary.Data {
 				// Copy the key
-				keyCopy := fp.Element{}
-				keyCopy.Set(&k)
+				keyFeltCopy := fp.Element{}
+				keyFeltCopy.Set(&k.Felt)
+				keyCopy := memory.MemoryValue{
+					Felt: keyFeltCopy,
+					Kind: k.Kind,
+				}
 
 				// Copy the value
-				feltCopy := fp.Element{}
-				feltCopy.Set(&v.Felt)
-
+				valueFeltCopy := fp.Element{}
+				valueFeltCopy.Set(&v.Felt)
 				valueCopy := memory.MemoryValue{
-					Felt: feltCopy,
+					Felt: valueFeltCopy,
 					Kind: v.Kind,
 				}
 
@@ -289,9 +293,10 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 				return fmt.Errorf("__dict_manager not in scope")
 			}
 
-			key, err := hinter.ResolveAsFelt(vm, key)
+			key, err := key.Resolve(vm)
 			if err != nil {
-				return err
+
+				return fmt.Errorf("%s: %w", key, err)
 			}
 
 			//> ids.dict_ptr.prev_value = dict_tracker.data[ids.key]
@@ -301,7 +306,7 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 			//> 	prev_value: felt,
 			//> 	new_value: felt,
 			//> }
-			prevKeyValue, err := dictionaryManager.At(*dictPtr, *key)
+			prevKeyValue, err := dictionaryManager.At(*dictPtr, key)
 			if err != nil {
 				return err
 			}
@@ -311,12 +316,12 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 			}
 
 			//> dict_tracker.data[ids.key] = ids.new_value
-			newValue, err := hinter.ResolveAsFelt(vm, newValue)
+			newValue, err := newValue.Resolve(vm)
 			if err != nil {
-				return err
+
+				return fmt.Errorf("%s: %w", newValue, err)
 			}
-			newValueMv := memory.MemoryValueFromFieldElement(newValue)
-			err = dictionaryManager.Set(*dictPtr, *key, newValueMv)
+			err = dictionaryManager.Set(*dictPtr, key, newValue)
 			if err != nil {
 				return err
 			}
@@ -376,13 +381,14 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hi
 				return fmt.Errorf("__dict_manager not in scope")
 			}
 
-			key, err := hinter.ResolveAsFelt(vm, key)
+			key, err := key.Resolve(vm)
 			if err != nil {
-				return err
+
+				return fmt.Errorf("%s: %w", key, err)
 			}
 
 			//> current_value = dict_tracker.data[ids.key]
-			currentValueMv, err := dictionaryManager.At(*dictPtr, *key)
+			currentValueMv, err := dictionaryManager.At(*dictPtr, key)
 			if err != nil {
 				return err
 			}
@@ -403,12 +409,12 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hi
 
 			//> # Update value.
 			//> dict_tracker.data[ids.key] = ids.new_value
-			newValue, err := hinter.ResolveAsFelt(vm, newValue)
+			newValue, err := newValue.Resolve(vm)
 			if err != nil {
-				return err
+
+				return fmt.Errorf("%s: %w", newValue, err)
 			}
-			newValueMv := memory.MemoryValueFromFieldElement(newValue)
-			err = dictionaryManager.Set(*dictPtr, *key, newValueMv)
+			err = dictionaryManager.Set(*dictPtr, key, newValue)
 			if err != nil {
 				return err
 			}
