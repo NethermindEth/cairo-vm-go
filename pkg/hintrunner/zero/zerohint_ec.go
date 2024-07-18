@@ -11,10 +11,82 @@ import (
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
 )
+
+// BigIntToUint256 hint guesses the low part of the result
+//
+// `newBigIntToUint256Hint` takes 2 operanders as arguments
+//   - `low` is the variable that will store the result
+//   - `x` is the BigInt variable to convert to uint256
+func newBigIntToUint256Hint(low, x hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "BigIntToUint256",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> ids.low = (ids.x.d0 + ids.x.d1 * ids.BASE) & ((1 << 128) - 1)
+
+			lowAddr, err := low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			xAddr, err := x.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			xBigInt, err := vm.Memory.ResolveAsBigInt3(xAddr)
+			if err != nil {
+				return err
+			}
+
+			var xD0Big big.Int
+			(*xBigInt[0]).BigInt(&xD0Big)
+
+			var xD1Big big.Int
+			(*xBigInt[1]).BigInt(&xD0Big)
+
+			baseBig, ok := secp_utils.GetBaseBig()
+			if !ok {
+				return fmt.Errorf("getBaseBig failed")
+			}
+
+			var operand *big.Int
+			operand.Mul(&xD1Big, &baseBig)
+			operand.Add(operand, &xD0Big)
+
+			mask := new(big.Int).Lsh(big.NewInt(1), 128)
+			mask = new(big.Int).Sub(mask, big.NewInt(1))
+
+			lowBigInt := new(big.Int).And(operand, mask)
+			lowValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(lowBigInt))
+
+			err = vm.Memory.WriteToAddress(&lowAddr, &lowValue)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+}
+
+func createBigIntToUint256Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	low, err := resolver.GetResOperander("low")
+	if err != nil {
+		return nil, err
+	}
+
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+
+	return newBigIntToUint256Hint(low, x), nil
+}
 
 // EcNegate hint negates the y-coordinate of a point on an elliptic curve modulo SECP_P
 //

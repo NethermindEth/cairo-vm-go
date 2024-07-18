@@ -125,6 +125,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case divModNPackedDivmodV1Code:
 		return createDivModNPackedDivmodV1Hinter(resolver)
 	// EC hints
+	case bigIntToUint256Code:
+		return createBigIntToUint256Hinter(resolver)
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)
 	case nondetBigint3V1Code:
