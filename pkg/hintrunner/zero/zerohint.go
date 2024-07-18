@@ -120,6 +120,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createImportSecp256R1PHinter()
 	case verifyZeroCode:
 		return createVerifyZeroHinter(resolver)
+	case verifyZeroV2Code:
+		return createVerifyZeroHinter(resolver)
+	case verifyZeroAltCode:
+		return createVerifyZeroHinter(resolver)
 	case divModNPackedDivmodV1Code:
 		return createDivModNPackedDivmodV1Hinter(resolver)
 	// EC hints
