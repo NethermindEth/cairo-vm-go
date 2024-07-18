@@ -77,6 +77,11 @@ func createEcNegateHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newEcNegateHint(point), nil
 }
 
+// DivModeNSafeDivPlusOne performs a safe division of the result obtained from
+// the multiplication of `res` and `b` subtracted by `a`, by `N`. It then adds 1
+// to the final result to ensure safety and prevent division by zero errors.
+//
+// `DivModeNSafeDivPlusOne` assigns the result as `value` in the current scope.
 func newDivModNSafeDivPlusOneHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DivModNSafeDivPlusOne",
