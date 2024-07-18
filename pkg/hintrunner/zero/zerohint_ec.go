@@ -715,6 +715,125 @@ func createComputeSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	return newComputeSlopeV1Hint(point0, point1), nil
 }
 
+// ComputeSlopeV2 hint computes the slope between two points on the Curve25519 curve
+//
+// `newComputeSlopeV2Hint` takes 2 operanders as arguments
+//   - `point0` is the first point on an elliptic curve to operate on
+//   - `point1` is the second point on an elliptic curve to operate on
+//
+// `newComputeSlopeV2Hint` assigns the `slope` result as `value` in the current scope
+// // This version uses Curve25519 curve with SECP_P = 2**255 - 19
+func newComputeSlopeV2Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "ComputeSlopeV2",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.python.math_utils import line_slope
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> SECP_P = 2**255-19
+			//> # Compute the slope.
+			//> x0 = pack(ids.point0.x, PRIME)
+			//> y0 = pack(ids.point0.y, PRIME)
+			//> x1 = pack(ids.point1.x, PRIME)
+			//> y1 = pack(ids.point1.y, PRIME)
+			//> value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
+
+			point0XAddr, err := point0.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			point1XAddr, err := point1.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			point0YAddr, err := point0XAddr.AddOffset(3)
+			if err != nil {
+				return err
+			}
+
+			point1YAddr, err := point1XAddr.AddOffset(3)
+			if err != nil {
+				return err
+			}
+
+			point0XValues, err := vm.Memory.ResolveAsBigInt3(point0XAddr)
+			if err != nil {
+				return err
+			}
+
+			point1XValues, err := vm.Memory.ResolveAsBigInt3(point1XAddr)
+			if err != nil {
+				return err
+			}
+
+			point0YValues, err := vm.Memory.ResolveAsBigInt3(point0YAddr)
+			if err != nil {
+				return err
+			}
+
+			point1YValues, err := vm.Memory.ResolveAsBigInt3(point1YAddr)
+			if err != nil {
+				return err
+			}
+
+			//> x0 = pack(ids.point0.x, PRIME)
+			x0Big, err := secp_utils.SecPPacked(point0XValues)
+			if err != nil {
+				return err
+			}
+
+			//> x1 = pack(ids.point1.x, PRIME)
+			x1Big, err := secp_utils.SecPPacked(point1XValues)
+			if err != nil {
+				return err
+			}
+
+			//> y0 = pack(ids.point0.y, PRIME)
+			y0Big, err := secp_utils.SecPPacked(point0YValues)
+			if err != nil {
+				return err
+			}
+
+			//> y1 = pack(ids.point0.y, PRIME)
+			y1Big, err := secp_utils.SecPPacked(point1YValues)
+			if err != nil {
+				return err
+			}
+
+			//> SECP_P = 2**255-19
+			secPBig, ok := secp_utils.GetCurve25519PBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			// value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
+			slopeBig, err := secp_utils.LineSlope(&x0Big, &y0Big, &x1Big, &y1Big, &secPBig)
+			if err != nil {
+				return err
+			}
+
+			value := new(big.Int).Set(&slopeBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": value})
+		},
+	}
+}
+
+func createComputeSlopeV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	point0, err := resolver.GetResOperander("point0")
+	if err != nil {
+		return nil, err
+	}
+
+	point1, err := resolver.GetResOperander("point1")
+	if err != nil {
+		return nil, err
+	}
+
+	return newComputeSlopeV2Hint(point0, point1), nil
+}
+
 func newEcMulInnerHint(scalar hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcMulInner",
