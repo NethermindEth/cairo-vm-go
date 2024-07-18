@@ -77,6 +77,52 @@ func createEcNegateHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newEcNegateHint(point), nil
 }
 
+func newDivModNSafeDivPlusOneHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DivModNSafeDivPlusOne",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> value = k_plus_one = safe_div(res * b - a, N) + 1
+			valueBig := new(big.Int)
+
+			resBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "res")
+			if err != nil {
+				return err
+			}
+
+			aBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "a")
+			if err != nil {
+				return err
+			}
+
+			bBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "b")
+			if err != nil {
+				return err
+			}
+
+			nBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "N")
+			if err != nil {
+				return err
+			}
+
+			valueBig.Mul(resBig, bBig)
+			valueBig.Sub(valueBig, aBig)
+
+			newValueBig, err := secp_utils.SafeDiv(valueBig, nBig)
+			if err != nil {
+				return err
+			}
+
+			newValueBig.Add(&newValueBig, big.NewInt(1))
+
+			return ctx.ScopeManager.AssignVariable("value", &newValueBig)
+		},
+	}
+}
+
+func createDivModNSafeDivPlusOneHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	return newDivModNSafeDivPlusOneHint(), nil
+}
+
 // NondetBigint3V1 hint writes a value to a specified segment of memory
 //
 // `newNondetBigint3V1Hint` takes 1 operander as argument
