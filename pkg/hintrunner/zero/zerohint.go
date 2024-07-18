@@ -288,9 +288,9 @@ func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 			if references[i].Pc <= hintPC {
 				reference = references[i]
 				ok = true
-			}
-			if references[i].Pc < hintPC {
-				break
+				if references[i].Pc < hintPC {
+					break
+				}
 			}
 		}
 		if !ok {
