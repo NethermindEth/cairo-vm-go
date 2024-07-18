@@ -2,7 +2,6 @@ package hinter
 
 import (
 	"fmt"
-	"math/big"
 )
 
 // ScopeManager handles all operations regarding scopes:
@@ -88,38 +87,28 @@ func (sm *ScopeManager) GetVariableValue(name string) (any, error) {
 	return nil, fmt.Errorf("variable %s not found in current scope", name)
 }
 
-func (sm *ScopeManager) GetVariableValueAsBigInt(name string) (*big.Int, error) {
+// GetVariableAs retrieves a variable from the current scope and asserts its type
+func GetVariableAs[T any](sm *ScopeManager, name string) (T, error) {
+	var zero T // Zero value of the generic type
 	value, err := sm.GetVariableValue(name)
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
 
-	valueBig, ok := value.(*big.Int)
+	typedValue, ok := value.(T)
 	if !ok {
-		return nil, fmt.Errorf("value: %s is not a *big.Int", value)
+		return zero, fmt.Errorf("value has a different type: value = %v, type = %T, expected type = %T", value, value, zero)
+
 	}
 
-	return valueBig, nil
-}
-
-func (sm *ScopeManager) GetVariableValueAsUint64(name string) (uint64, error) {
-	value, err := sm.GetVariableValue(name)
-	if err != nil {
-		return 0, err
-	}
-
-	valueUint, ok := value.(uint64)
-	if !ok {
-		return 0, fmt.Errorf("value: %s is not a uint64", value)
-	}
-
-	return valueUint, nil
+	return typedValue, nil
 }
 
 func (sm *ScopeManager) getCurrentScope() (*map[string]any, error) {
 	if len(sm.scopes) == 0 {
 		return nil, fmt.Errorf("expected at least one existing scope")
 	}
+
 	return &sm.scopes[len(sm.scopes)-1], nil
 }
 
@@ -128,6 +117,7 @@ func (sm *ScopeManager) GetZeroDictionaryManager() (ZeroDictionaryManager, bool)
 	if err != nil {
 		return ZeroDictionaryManager{}, false
 	}
+
 	dictionaryManager, ok := dictionaryManagerValue.(ZeroDictionaryManager)
 	return dictionaryManager, ok
 }

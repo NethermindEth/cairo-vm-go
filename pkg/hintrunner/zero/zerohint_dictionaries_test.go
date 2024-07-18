@@ -45,11 +45,10 @@ func TestZeroHintDictionaries(t *testing.T) {
 						t.Fatalf("incorrect apValue: %s expected %s", dictAddr.String(), "2:0")
 					}
 
-					dictionaryManagerValue, err := ctx.runnerContext.ScopeManager.GetVariableValue("__dict_manager")
+					dictionaryManager, err := hinter.GetVariableAs[hinter.ZeroDictionaryManager](&ctx.runnerContext.ScopeManager, "__dict_manager")
 					if err != nil {
 						t.Fatalf("__dict_manager missing")
 					}
-					dictionaryManager := dictionaryManagerValue.(hinter.ZeroDictionaryManager)
 
 					for _, key := range []fp.Element{*feltUint64(10), *feltUint64(20), *feltUint64(30)} {
 						value, err := dictionaryManager.At(dictAddr, key)
@@ -78,12 +77,11 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newDefaultDictNewHint(ctx.operanders["default_value"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					dictionaryManagerValue, err := ctx.runnerContext.ScopeManager.GetVariableValue("__dict_manager")
+					dictionaryManager, err := hinter.GetVariableAs[hinter.ZeroDictionaryManager](&ctx.runnerContext.ScopeManager, "__dict_manager")
 					if err != nil {
 						t.Fatalf("__dict_manager missing")
 					}
 
-					dictionaryManager := dictionaryManagerValue.(hinter.ZeroDictionaryManager)
 					apAddr := ctx.vm.Context.AddressAp()
 					dictAddr, err := ctx.vm.Memory.ReadFromAddressAsAddress(&apAddr)
 					if err != nil {

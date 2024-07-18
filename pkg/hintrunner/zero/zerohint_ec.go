@@ -96,7 +96,7 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			valueBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("value")
+			valueBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "value")
 			if err != nil {
 				return err
 			}
@@ -249,10 +249,12 @@ func createFastEcAddAssignNewXHinter(resolver hintReferenceResolver) (hinter.Hin
 	if err != nil {
 		return nil, err
 	}
+
 	point0, err := resolver.GetResOperander("point0")
 	if err != nil {
 		return nil, err
 	}
+
 	point1, err := resolver.GetResOperander("point1")
 	if err != nil {
 		return nil, err
@@ -277,23 +279,27 @@ func newFastEcAddAssignNewYHint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> value = new_y = (slope * (x0 - new_x) - y0) % SECP_P
 
-			slopeBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("slope")
+			slopeBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "slope")
 			if err != nil {
 				return err
 			}
-			x0Big, err := ctx.ScopeManager.GetVariableValueAsBigInt("x0")
+
+			x0Big, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "x0")
 			if err != nil {
 				return err
 			}
-			new_xBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("new_x")
+
+			new_xBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "new_x")
 			if err != nil {
 				return err
 			}
-			y0Big, err := ctx.ScopeManager.GetVariableValueAsBigInt("y0")
+
+			y0Big, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "y0")
 			if err != nil {
 				return err
 			}
-			secPBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("SECP_P")
+
+			secPBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "SECP_P")
 			if err != nil {
 				return err
 			}
@@ -531,6 +537,7 @@ func createEcDoubleAssignNewXV1Hinter(resolver hintReferenceResolver) (hinter.Hi
 	if err != nil {
 		return nil, err
 	}
+
 	point, err := resolver.GetResOperander("point")
 	if err != nil {
 		return nil, err
@@ -555,23 +562,27 @@ func newEcDoubleAssignNewYV1Hint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> value = new_y = (slope * (x - new_x) - y) % SECP256R1_P
 
-			slopeBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("slope")
+			slopeBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "slope")
 			if err != nil {
 				return err
 			}
-			xBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("x")
+
+			xBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "x")
 			if err != nil {
 				return err
 			}
-			new_xBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("new_x")
+
+			new_xBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "new_x")
 			if err != nil {
 				return err
 			}
-			yBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("y")
+
+			yBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "y")
 			if err != nil {
 				return err
 			}
-			secPBig, err := ctx.ScopeManager.GetVariableValueAsBigInt("SECP_P")
+
+			secPBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "SECP_P")
 			if err != nil {
 				return err
 			}
@@ -714,6 +725,7 @@ func newEcMulInnerHint(scalar hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			scalarBytes := scalarFelt.Bytes()
 
 			resultUint256 := new(uint256.Int).SetBytes(scalarBytes[:])
@@ -749,7 +761,7 @@ func newIsZeroNondetHint() hinter.Hinter {
 			//> python hint in cairo file: "x == 0"
 			//> compiled file hint: "memory[ap] = to_felt_or_relocatable(x == 0)"
 
-			x, err := ctx.ScopeManager.GetVariableValueAsBigInt("x")
+			x, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "x")
 			if err != nil {
 				return err
 			}
@@ -847,7 +859,7 @@ func newIsZeroDivModHint() hinter.Hinter {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
-			x, err := ctx.ScopeManager.GetVariableValueAsBigInt("x")
+			x, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "x")
 			if err != nil {
 				return err
 			}
@@ -968,18 +980,22 @@ func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			pValues, err := vm.Memory.ResolveAsEcPoint(pAddr)
 			if err != nil {
 				return err
 			}
+
 			mFelt, err := hinter.ResolveAsFelt(vm, m)
 			if err != nil {
 				return err
 			}
+
 			qAddr, err := q.GetAddress(vm)
 			if err != nil {
 				return err
 			}
+
 			qValues, err := vm.Memory.ResolveAsEcPoint(qAddr)
 			if err != nil {
 				return err
@@ -991,6 +1007,7 @@ func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
 					bytesArray = append(bytesArray, byteValue)
 				}
 			}
+
 			for _, felt := range pValues {
 				writeFeltToBytesArray(felt)
 			}
@@ -1059,14 +1076,17 @@ func createRandomEcPointHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	if err != nil {
 		return nil, err
 	}
+
 	m, err := resolver.GetResOperander("m")
 	if err != nil {
 		return nil, err
 	}
+
 	q, err := resolver.GetResOperander("q")
 	if err != nil {
 		return nil, err
 	}
+
 	s, err := resolver.GetResOperander("s")
 	if err != nil {
 		return nil, err
