@@ -17,10 +17,10 @@ import (
 	"github.com/holiman/uint256"
 )
 
-// BigIntToUint256 hint guesses the low part of the result
+// BigIntToUint256 hint guesses the low part of the result uint256 variable
 //
 // `newBigIntToUint256Hint` takes 2 operanders as arguments
-//   - `low` is the variable that will store the result
+//   - `low` is the variable that will store the low part of the uint256 result
 //   - `x` is the BigInt variable to convert to uint256
 func newBigIntToUint256Hint(low, x hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
