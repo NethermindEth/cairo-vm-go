@@ -162,6 +162,28 @@ func TestZeroHintEc(t *testing.T) {
 				check: varValueInScopeEquals("value", bigIntString("115792089237316195423511115915312127562362008772591693155831694873530722155557", 10)),
 			},
 		},
+		"DivModNSafeDivPlusOne": {
+			{
+				operanders: []*hintOperander{
+					{Name: "value", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					resBig := big.NewInt(100)
+					aBig := big.NewInt(200)
+					bBig := big.NewInt(199)
+					nBig := big.NewInt(20)
+
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"res": resBig, "a": aBig, "b": bBig, "N": nBig})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDivModNSafeDivPlusOneHint()
+				},
+				check: varValueInScopeEquals("value", big.NewInt(986)),
+			},
+		},
 		"NondetBigint3V1": {
 			{
 				operanders: []*hintOperander{
