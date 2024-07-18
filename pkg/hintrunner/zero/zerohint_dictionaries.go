@@ -48,13 +48,9 @@ func newDictNewHint() hinter.Hinter {
 				}
 			}
 
-			initialDictValue, err := ctx.ScopeManager.GetVariableValue("initial_dict")
+			initialDict, err := hinter.GetVariableAs[map[fp.Element]memory.MemoryValue](&ctx.ScopeManager, "initial_dict")
 			if err != nil {
 				return err
-			}
-			initialDict, ok := initialDictValue.(map[fp.Element]memory.MemoryValue)
-			if !ok {
-				return fmt.Errorf("value: %s is not a map[f.Element]mem.MemoryValue", initialDictValue)
 			}
 
 			//> memory[ap] = __dict_manager.new_dict(segments, initial_dict)
@@ -616,12 +612,11 @@ func newSquashDictInnerAssertLenKeysHint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> assert len(keys) == 0
 
-			keys_, err := ctx.ScopeManager.GetVariableValue("keys")
+			keys, err := hinter.GetVariableAs[[]fp.Element](&ctx.ScopeManager, "keys")
 			if err != nil {
 				return err
 			}
 
-			keys := keys_.([]fp.Element)
 			if len(keys) != 0 {
 				return fmt.Errorf("assertion `len(keys) == 0` failed")
 			}
@@ -661,14 +656,9 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 			//> ids.loop_temps.index_delta_minus1 = new_access_index - current_access_index - 1
 			//> current_access_index = new_access_index
 
-			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			currentAccessIndices, err := hinter.GetVariableAs[[]fp.Element](&ctx.ScopeManager, "current_access_indices")
 			if err != nil {
 				return err
-			}
-
-			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
-			if !ok {
-				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
 			}
 
 			newAccessIndex, err := utils.Pop(&currentAccessIndices)
@@ -681,14 +671,9 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 				return err
 			}
 
-			currentAccessIndex_, err := ctx.ScopeManager.GetVariableValue("current_access_index")
+			currentAccessIndex, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, "current_access_index")
 			if err != nil {
 				return err
-			}
-
-			currentAccessIndex, ok := currentAccessIndex_.(fp.Element)
-			if !ok {
-				return fmt.Errorf("casting currentAccessIndex_ into a felt failed")
 			}
 
 			err = ctx.ScopeManager.AssignVariable("current_access_index", newAccessIndex)
@@ -746,14 +731,9 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hi
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> ids.loop_temps.should_continue = 1 if current_access_indices else 0
 
-			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			currentAccessIndices, err := hinter.GetVariableAs[[]fp.Element](&ctx.ScopeManager, "current_access_indices")
 			if err != nil {
 				return err
-			}
-
-			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
-			if !ok {
-				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
 			}
 
 			loopTempsAddr, err := loopTemps.GetAddress(vm)
@@ -800,24 +780,14 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 			//> current_access_index = current_access_indices.pop()
 			//> memory[ids.range_check_ptr] = current_access_index
 
-			key_, err := ctx.ScopeManager.GetVariableValue("key")
+			key, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, "key")
 			if err != nil {
 				return err
 			}
 
-			accessIndices_, err := ctx.ScopeManager.GetVariableValue("access_indices")
+			accessIndices, err := hinter.GetVariableAs[map[fp.Element][]fp.Element](&ctx.ScopeManager, "access_indices")
 			if err != nil {
 				return err
-			}
-
-			accessIndices, ok := accessIndices_.(map[fp.Element][]fp.Element)
-			if !ok {
-				return fmt.Errorf("cannot cast access_indices_ to a mapping of felts")
-			}
-
-			key, ok := key_.(fp.Element)
-			if !ok {
-				return fmt.Errorf("cannot cast key_ to felt")
 			}
 
 			accessIndicesAtKey := accessIndices[key]
@@ -879,14 +849,9 @@ func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.ResOperander) hinter.H
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> ids.should_skip_loop = 0 if current_access_indices else 1
 
-			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			currentAccessIndices, err := hinter.GetVariableAs[[]fp.Element](&ctx.ScopeManager, "current_access_indices")
 			if err != nil {
 				return err
-			}
-
-			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
-			if !ok {
-				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
 			}
 
 			shouldSkipLoopAddr, err := shouldSkipLoop.GetAddress(vm)
@@ -927,12 +892,11 @@ func newSquashDictInnerLenAssertHint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> assert len(current_access_indices) == 0
 
-			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			currentAccessIndices, err := hinter.GetVariableAs[[]fp.Element](&ctx.ScopeManager, "current_access_indices")
 			if err != nil {
 				return err
 			}
 
-			currentAccessIndices := currentAccessIndices_.([]fp.Element)
 			if len(currentAccessIndices) != 0 {
 				return fmt.Errorf("assertion `len(current_access_indices) == 0` failed")
 			}
@@ -958,12 +922,11 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
 			//> assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'
 			//> ids.next_key = key = keys.pop()
 
-			keys_, err := ctx.ScopeManager.GetVariableValue("keys")
+			keys, err := hinter.GetVariableAs[[]fp.Element](&ctx.ScopeManager, "keys")
 			if err != nil {
 				return err
 			}
 
-			keys := keys_.([]fp.Element)
 			if len(keys) == 0 {
 				return fmt.Errorf("no keys left but remaining_accesses > 0")
 			}
@@ -1015,24 +978,14 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> assert ids.n_used_accesses == len(access_indices[key])
 
-			accessIndices_, err := ctx.ScopeManager.GetVariableValue("access_indices")
+			accessIndices, err := hinter.GetVariableAs[map[fp.Element][]fp.Element](&ctx.ScopeManager, "access_indices")
 			if err != nil {
 				return err
 			}
 
-			accessIndices, ok := accessIndices_.(map[fp.Element][]fp.Element)
-			if !ok {
-				return fmt.Errorf("cannot cast access_indices_ to a mapping of felts")
-			}
-
-			key_, err := ctx.ScopeManager.GetVariableValue("key")
+			key, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, "key")
 			if err != nil {
 				return err
-			}
-
-			key, ok := key_.(fp.Element)
-			if !ok {
-				return fmt.Errorf("cannot cast key_ to felt")
 			}
 
 			accessIndicesAtKeyLen := uint64(len(accessIndices[key]))

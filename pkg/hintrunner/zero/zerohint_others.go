@@ -32,16 +32,12 @@ func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.
 			//> ids.continue_copying = 1 if n > 0 else 0
 
 			//> n-=1
-			n, err := ctx.ScopeManager.GetVariableValue("n")
+			newN, err := hinter.GetVariableAs[uint64](&ctx.ScopeManager, "n")
 			if err != nil {
 				return err
 			}
 
-			newN, ok := n.(uint64)
-			if !ok {
-				return fmt.Errorf("casting n into a uint64 failed")
-			}
-			newN = newN - 1
+			newN -= 1
 
 			if err := ctx.ScopeManager.AssignVariable("n", newN); err != nil {
 				return err
@@ -219,13 +215,8 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 
 			//> if '__find_element_index' in globals():
 			//>		ids.index = __find_element_index
-			findElementIndex, err := ctx.ScopeManager.GetVariableValue("__find_element_index")
+			findElementIndex, err := hinter.GetVariableAs[uint64](&ctx.ScopeManager, "__find_element_index")
 			if err == nil {
-				findElementIndex, ok := findElementIndex.(uint64)
-				if !ok {
-					return fmt.Errorf("invalid value for __find_element_index. Got: %v", findElementIndex)
-				}
-
 				findElementIndexFelt := new(fp.Element).SetUint64(findElementIndex)
 				findElementIndexMemoryValue := memory.MemoryValueFromFieldElement(findElementIndexFelt)
 				indexValAddr, err := index.GetAddress(vm)
@@ -272,12 +263,9 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander
 				//>			assert n_elms <= __find_element_max_size, \
 				//>				f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \
 				//>				f'Got: n_elms={n_elms}.'
-				findElementMaxSize, err := ctx.ScopeManager.GetVariableValue("__find_element_max_size")
+
+				findElementMaxSize, err := hinter.GetVariableAs[uint64](&ctx.ScopeManager, "__find_element_max_size")
 				if err == nil {
-					findElementMaxSize, ok := findElementMaxSize.(uint64)
-					if !ok {
-						return fmt.Errorf("invalid value for __find_element_max_size. Got: %v", findElementMaxSize)
-					}
 					if nElms > findElementMaxSize {
 						return fmt.Errorf("find_element() can only be used with n_elms<=%v. Got: n_elms=%v", findElementMaxSize, nElms)
 					}
@@ -608,29 +596,34 @@ func createSearchSortedLowerHinter(resolver hintReferenceResolver) (hinter.Hinte
 	return newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index), nil
 }
 
-// NondetElementsOverTWo hint compares the offset difference between two memory address and
+// NondetElementsOverX hint compares the offset difference between two memory address and
 // writes 1 or 0 at `ap` memory address, depending on whether the difference is greater or
-// equal to 2 or not
+// equal to x or not
 //
-// `newNondetElementsOverTWoHint` takes 2 operanders as arguments
+// `newNondetElementsOverXHint` takes 3 arguments
 //   - `elementsEnd` represents the address in memory right after the last element of the array
 //   - `elements` represents the address in memory of the first element of the array
-func newNondetElementsOverTWoHint(n hinter.ResOperander) hinter.Hinter {
+//   - `x` represents the offset difference used to decide the result
+func newNondetElementsOverXHint(elementsEnd, elements hinter.ResOperander, x uint64) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "NondetElementsOverTWo",
+		Name: "NondetElementsOverX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> python hint in cairo file: "ids.elements_end - ids.elements >= 2"
-			//> python hint in whitelist: "memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= 2)"
-			//> compiled file hint: "memory[ap] = to_felt_or_relocatable(ids.n >= 2)"
+			//> python hint in cairo file: "ids.elements_end - ids.elements >= x"
+			//> python hint in whitelist: "memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= x)"
 
-			n, err := hinter.ResolveAsUint64(vm, n)
+			elementsEndAddr, err := hinter.ResolveAsAddress(vm, elementsEnd)
+			if err != nil {
+				return err
+			}
+			elementsAddr, err := hinter.ResolveAsAddress(vm, elements)
 			if err != nil {
 				return err
 			}
 
 			apAddr := vm.Context.AddressAp()
 			var resultMv memory.MemoryValue
-			if n >= uint64(2) {
+			offsetDiff := elementsEndAddr.Offset - elementsAddr.Offset
+			if offsetDiff >= x {
 				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
 				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
@@ -641,53 +634,15 @@ func newNondetElementsOverTWoHint(n hinter.ResOperander) hinter.Hinter {
 	}
 }
 
-func createNondetElementsOverTWoHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	n, err := resolver.GetResOperander("n")
+func createNondetElementsOverXHinter(resolver hintReferenceResolver, x uint64) (hinter.Hinter, error) {
+	elementsEnd, err := resolver.GetResOperander("elements_end")
+	if err != nil {
+		return nil, err
+	}
+	elements, err := resolver.GetResOperander("elements")
 	if err != nil {
 		return nil, err
 	}
 
-	return newNondetElementsOverTWoHint(n), nil
-}
-
-// NondetElementsOverTen hint compares the offset difference between two memory address and
-// writes 1 or 0 at `ap` memory address, depending on whether the difference is greater or
-// esual to 10 or not
-//
-// `newNondetElementsOverTenHint` takes 2 operanders as arguments
-//   - `elementsEnd` represents the address in memory right after the last element of the array
-//   - `elements` represents the address in memory of the first element of the array
-func newNondetElementsOverTenHint(n hinter.ResOperander) hinter.Hinter {
-	return &GenericZeroHinter{
-		Name: "NondetElementsOverTen",
-		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> python hint in cairo file: "ids.elements_end - ids.elements >= 10"
-			//> python hint in whitelist: "memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= 10)"
-			//> compiled file hint: "memory[ap] = to_felt_or_relocatable(ids.n >= 10)"
-
-			n, err := hinter.ResolveAsUint64(vm, n)
-			if err != nil {
-				return err
-			}
-
-			apAddr := vm.Context.AddressAp()
-			var resultMv memory.MemoryValue
-			if n >= uint64(10) {
-				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
-			} else {
-				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
-			}
-
-			return vm.Memory.WriteToAddress(&apAddr, &resultMv)
-		},
-	}
-}
-
-func createNondetElementsOverTenHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	n, err := resolver.GetResOperander("n")
-	if err != nil {
-		return nil, err
-	}
-
-	return newNondetElementsOverTenHint(n), nil
+	return newNondetElementsOverXHint(elementsEnd, elements, x), nil
 }

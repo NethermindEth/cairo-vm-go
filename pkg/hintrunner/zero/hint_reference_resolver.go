@@ -34,7 +34,7 @@ func (m *hintReferenceResolver) GetReference(name string) (hinter.Reference, err
 }
 
 // GetResOperander returns the result of GetReference type-asserted to ResOperander.
-// If reference is not found or it's not of ResOperander type, a non-nil error is returned.
+// If reference is not found or is not of ResOperander type, a non-nil error is returned.
 func (m *hintReferenceResolver) GetResOperander(name string) (hinter.ResOperander, error) {
 	ref, err := m.GetReference(name)
 	if err != nil {
