@@ -179,11 +179,7 @@ func createDictReadHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	if err != nil {
 		return nil, err
 	}
-
-	var keyName string = "key"
-	var keyNamePtr *string = &keyName
-
-	key, err := resolver.GetResOperander(*keyNamePtr)
+	key, err := resolver.GetResOperander("key")
 	if err != nil {
 		return nil, err
 	}
@@ -332,11 +328,7 @@ func createDictWriteHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 	if err != nil {
 		return nil, err
 	}
-
-	var keyName string = "key"
-	var keyNamePtr *string = &keyName
-
-	key, err := resolver.GetResOperander(*keyNamePtr)
+	key, err := resolver.GetResOperander("key")
 	if err != nil {
 		return nil, err
 	}
@@ -428,11 +420,7 @@ func createDictUpdateHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	if err != nil {
 		return nil, err
 	}
-
-	var keyName string = "key"
-	var keyNamePtr *string = &keyName
-
-	key, err := resolver.GetResOperander(*keyNamePtr)
+	key, err := resolver.GetResOperander("key")
 	if err != nil {
 		return nil, err
 	}
@@ -584,11 +572,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			if err != nil {
 				return err
 			}
-
-			var keyName string = "key"
-			var keyNamePtr *string = &keyName
-
-			return ctx.ScopeManager.AssignVariable(*keyNamePtr, firstKeyValue)
+			return ctx.ScopeManager.AssignVariable("key", &firstKeyValue)
 		},
 	}
 }
@@ -687,15 +671,12 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 				return err
 			}
 
-			var currentAccessIndexName string = "current_access_index"
-			var currentAccessIndexNamePtr *string = &currentAccessIndexName
-
-			currentAccessIndex, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, *currentAccessIndexNamePtr)
+			currentAccessIndex, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, "current_access_index")
 			if err != nil {
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable(*currentAccessIndexNamePtr, newAccessIndex)
+			err = ctx.ScopeManager.AssignVariable("current_access_index", &newAccessIndex)
 			if err != nil {
 				return err
 			}
@@ -799,10 +780,7 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 			//> current_access_index = current_access_indices.pop()
 			//> memory[ids.range_check_ptr] = current_access_index
 
-			var keyName string = "key"
-			var keyNamePtr *string = &keyName
-
-			key, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, *keyNamePtr)
+			key, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, "key")
 			if err != nil {
 				return err
 			}
@@ -833,10 +811,7 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 				return err
 			}
 
-			var currentAccessIndexName string = "current_access_index"
-			var currentAccessIndexNamePtr *string = &currentAccessIndexName
-
-			err = ctx.ScopeManager.AssignVariable(*currentAccessIndexNamePtr, currentAccessIndex)
+			err = ctx.ScopeManager.AssignVariable("current_access_index", &currentAccessIndex)
 			if err != nil {
 				return err
 			}
@@ -966,10 +941,7 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			var keyName string = "key"
-			var keyNamePtr *string = &keyName
-
-			err = ctx.ScopeManager.AssignVariable(*keyNamePtr, newKey)
+			err = ctx.ScopeManager.AssignVariable("key", &newKey)
 			if err != nil {
 				return err
 			}
@@ -1011,10 +983,7 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 				return err
 			}
 
-			var keyName string = "key"
-			var keyNamePtr *string = &keyName
-
-			key, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, *keyNamePtr)
+			key, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, "key")
 			if err != nil {
 				return err
 			}
