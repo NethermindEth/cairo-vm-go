@@ -259,7 +259,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					varValueEquals("loop_temps.index_delta_minus1", feltUint64(0))(t, ctx)
-					allVarValueInScopeEquals(map[string]any{"current_access_index": *feltUint64(2), "current_access_indices": []fp.Element{*feltUint64(3)}})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"current_access_index": feltUint64(2), "current_access_indices": []fp.Element{*feltUint64(3)}})(t, ctx)
 				},
 			},
 			{
@@ -280,7 +280,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					varValueEquals("loop_temps.index_delta_minus1", feltUint64(23))(t, ctx)
-					allVarValueInScopeEquals(map[string]any{"current_access_index": *feltUint64(43), "current_access_indices": []fp.Element{*feltUint64(97), *feltUint64(76), *feltUint64(54), *feltUint64(51), *feltUint64(44)}})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"current_access_index": feltUint64(43), "current_access_indices": []fp.Element{*feltUint64(97), *feltUint64(76), *feltUint64(54), *feltUint64(51), *feltUint64(44)}})(t, ctx)
 				},
 			},
 			{
@@ -356,7 +356,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					valueAtAddressEquals(*addr(6), feltUint64(1))(t, ctx)
-					allVarValueInScopeEquals(map[string]any{"current_access_indices": []fp.Element{*feltUint64(3), *feltUint64(2)}, "current_access_index": *feltUint64(1), "access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(2), *feltUint64(1), *feltUint64(3)}}})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"current_access_indices": []fp.Element{*feltUint64(3), *feltUint64(2)}, "current_access_index": feltUint64(1), "access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(2), *feltUint64(1), *feltUint64(3)}}})(t, ctx)
 				},
 			},
 			{
@@ -374,7 +374,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					valueAtAddressEquals(*addr(6), feltUint64(18))(t, ctx)
-					allVarValueInScopeEquals(map[string]any{"current_access_indices": []fp.Element{*feltUint64(94), *feltUint64(92), *feltUint64(76), *feltUint64(55), *feltUint64(22)}, "current_access_index": *feltUint64(18), "access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(22), *feltUint64(76), *feltUint64(94), *feltUint64(55), *feltUint64(18), *feltUint64(92)}}, "key": *feltUint64(1)})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"current_access_indices": []fp.Element{*feltUint64(94), *feltUint64(92), *feltUint64(76), *feltUint64(55), *feltUint64(22)}, "current_access_index": feltUint64(18), "access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(22), *feltUint64(76), *feltUint64(94), *feltUint64(55), *feltUint64(18), *feltUint64(92)}}, "key": *feltUint64(1)})(t, ctx)
 				},
 			},
 			{
@@ -393,7 +393,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				check: func(t *testing.T, ctx *hintTestContext) {
 					valueAtAddressEquals(*addr(6), feltUint64(323))(t, ctx)
 					varValueInScopeEquals("current_access_indices", []fp.Element{*feltUint64(999), *feltUint64(888), *feltUint64(777), *feltUint64(543), *feltUint64(324)})(t, ctx)
-					varValueInScopeEquals("current_access_index", *feltUint64(323))(t, ctx)
+					varValueInScopeEquals("current_access_index", feltUint64(323))(t, ctx)
 				},
 			},
 		},
@@ -487,7 +487,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newSquashDictInnerNextKeyHint(ctx.operanders["next_key"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					allVarValueInScopeEquals(map[string]any{"keys": []fp.Element{*feltUint64(3), *feltUint64(2)}, "key": *feltUint64((1))})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"keys": []fp.Element{*feltUint64(3), *feltUint64(2)}, "key": feltUint64((1))})(t, ctx)
 					varValueEquals("next_key", feltUint64(1))(t, ctx)
 				},
 			},
@@ -505,7 +505,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newSquashDictInnerNextKeyHint(ctx.operanders["next_key"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					allVarValueInScopeEquals(map[string]any{"keys": []fp.Element{*feltUint64(15), *feltUint64(12), *feltUint64(9), *feltUint64(7), *feltUint64(6)}, "key": *feltUint64((4))})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"keys": []fp.Element{*feltUint64(15), *feltUint64(12), *feltUint64(9), *feltUint64(7), *feltUint64(6)}, "key": feltUint64((4))})(t, ctx)
 					varValueEquals("next_key", feltUint64(4))(t, ctx)
 				},
 			},
@@ -673,7 +673,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 							*feltUint64(6):  {*feltUint64(4)},
 						},
 						"keys": []fp.Element{*feltUint64(22), *feltUint64(21), *feltUint64(8), *feltUint64(6)},
-						"key":  *feltUint64(1),
+						"key":  feltUint64(1),
 					})(t, ctx)
 				},
 			},
@@ -725,7 +725,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 							*feltUint64(6):   {*feltUint64(4)},
 						},
 						"keys": []fp.Element{utils.FeltMax128, *feltUint64(21), *feltUint64(8), *feltUint64(6)},
-						"key":  *feltUint64(1),
+						"key":  feltUint64(1),
 					})(t, ctx)
 				},
 			},
@@ -776,7 +776,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 							utils.FeltUpperBound: {*feltUint64(3)},
 						},
 						"keys": []fp.Element{utils.FeltUpperBound, *feltUint64(210), *feltUint64(80)},
-						"key":  *feltUint64(29),
+						"key":  feltUint64(29),
 					})(t, ctx)
 				},
 			},
