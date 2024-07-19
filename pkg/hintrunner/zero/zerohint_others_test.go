@@ -561,5 +561,33 @@ func TestZeroHintOthers(t *testing.T) {
 				check: apValueEquals(feltUint64(0)),
 			},
 		},
+		"NormalizeAddress": {
+			{
+				operanders: []*hintOperander{
+					{Name: "addr", Kind: apRelative, Value: feltString("3618502788666131106986593281521497120414687020801267626233049500247285300992")},
+					{Name: "is_small", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNormalizeAddressHint(
+						ctx.operanders["is_small"],
+						ctx.operanders["addr"],
+					)
+				},
+				check: varValueEquals("is_small", feltUint64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "addr", Kind: apRelative, Value: feltString("3618502788666131106986593281521497120414687020801267626233049500247285300991")},
+					{Name: "is_small", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNormalizeAddressHint(
+						ctx.operanders["is_small"],
+						ctx.operanders["addr"],
+					)
+				},
+				check: varValueEquals("is_small", feltUint64(1)),
+			},
+		},
 	})
 }
