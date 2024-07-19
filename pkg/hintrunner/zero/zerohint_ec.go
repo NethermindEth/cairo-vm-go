@@ -1095,19 +1095,19 @@ func createRandomEcPointHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	return newRandomEcPointHint(p, m, q, s), nil
 }
 
-// ChainedEcOpRandomEcPoint hint returns a random non-zero point on the STARK curve
+// ChainedEcOp hint returns a random non-zero point on the STARK curve
 // in the context of chained ecop operations.
 // The point is created deterministically from the seed.
 //
-// `newChainedEcOpRandomEcPointHint` takes 5 operanders as arguments
+// `newChainedEcOpHint` takes 5 operanders as arguments
 //   - `len` is the number of chained elements in the chained ecop operation
 //   - `p` is an EC point used for seed generation
 //   - `m` the multiplication coefficient of Q used for seed generation
 //   - `q` an EC point used for seed generation
 //   - `s` is where the generated random EC point is written to
-func newChainedEcOpRandomEcPointHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
+func newChainedEcOpHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "ChainedEcOpRandomEcPoint",
+		Name: "ChainedEcOp",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME
 			//> from starkware.python.math_utils import random_ec_point
@@ -1171,7 +1171,7 @@ func newChainedEcOpRandomEcPointHint(len, p, m, q, s hinter.ResOperander) hinter
 				return err
 			}
 
-			firstRange, err := vm.Memory.GetConsecutiveMemoryValues(*mAddr, int16(nElms))
+			firstRange, err := vm.Memory.GetConsecutiveMemoryValues(*mAddr, nElms)
 			if err != nil {
 				return err
 			}
@@ -1181,7 +1181,7 @@ func newChainedEcOpRandomEcPointHint(len, p, m, q, s hinter.ResOperander) hinter
 				firstRangeFelts = append(firstRangeFelts, &(element.Felt))
 			}
 
-			secondRange, err := vm.Memory.GetConsecutiveMemoryValues(*qAddr, int16(2*nElms))
+			secondRange, err := vm.Memory.GetConsecutiveMemoryValues(*qAddr, 2*nElms)
 			if err != nil {
 				return err
 			}
@@ -1209,8 +1209,6 @@ func newChainedEcOpRandomEcPointHint(len, p, m, q, s hinter.ResOperander) hinter
 			for _, felt := range secondRangeFelts {
 				writeFeltToBytesArray(felt)
 			}
-
-			fmt.Println(bytesArray)
 
 			seed := sha256.Sum256(bytesArray)
 
@@ -1268,7 +1266,7 @@ func newChainedEcOpRandomEcPointHint(len, p, m, q, s hinter.ResOperander) hinter
 	}
 }
 
-func createChainedEcOpRandomEcPointHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+func createChainedEcOpHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	len, err := resolver.GetResOperander("len")
 	if err != nil {
 		return nil, err
@@ -1294,5 +1292,5 @@ func createChainedEcOpRandomEcPointHinter(resolver hintReferenceResolver) (hinte
 		return nil, err
 	}
 
-	return newChainedEcOpRandomEcPointHint(len, p, m, q, s), nil
+	return newChainedEcOpHint(len, p, m, q, s), nil
 }

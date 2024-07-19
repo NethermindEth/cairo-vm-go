@@ -153,8 +153,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createRecoverYHinter(resolver)
 	case randomEcPointCode:
 		return createRandomEcPointHinter(resolver)
-	case chainedEcOpRandomEcPointCode:
-		return createChainedEcOpRandomEcPointHinter(resolver)
+	case chainedEcOpCode:
+		return createChainedEcOpHinter(resolver)
 	// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)

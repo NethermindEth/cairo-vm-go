@@ -1100,7 +1100,7 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
-		"ChainedEcopRandomEcPoint": {
+		"ChainedEcOp": {
 			{
 				operanders: []*hintOperander{
 					{Name: "len", Kind: apRelative, Value: feltUint64(3)},
@@ -1120,7 +1120,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "s", Kind: uninitialized},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newChainedEcOpRandomEcPointHint(
+					return newChainedEcOpHint(
 						ctx.operanders["len"],
 						ctx.operanders["p.x"],
 						ctx.operanders["m"],
