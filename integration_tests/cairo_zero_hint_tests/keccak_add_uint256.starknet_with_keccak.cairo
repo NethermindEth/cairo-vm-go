@@ -14,7 +14,7 @@ func main{output_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
 
     let num = Uint256(34623634663146736, 598249824422424658356);
 
-    keccak_add_uint256{inputs=inputs_start}(num=num, bigend=0);
+    keccak_add_uint256{inputs=inputs_start}(num=num, bigend=1);
 
     return ();
 }
