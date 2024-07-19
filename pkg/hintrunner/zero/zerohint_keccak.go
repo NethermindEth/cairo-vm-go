@@ -409,10 +409,10 @@ func createKeccakWriteArgsHinter(resolver hintReferenceResolver) (hinter.Hinter,
 
 // CompareKeccakFullRateInBytes hint compares a value to KECCAK_FULL_RATE_IN_BYTES constant, i.e., 136
 //
-// `newKeccakWriteArgsHint` takes 1 operander as argument
+// `newCompareKeccakFullRateInBytesHint` takes 1 operander as argument
 //   - `nBytes` is the value to be compared with KECCAK_FULL_RATE_IN_BYTES
 //
-// `newKeccakWriteArgsHint` writes 1 or 0 to `ap` memory address depending on whether
+// `newCompareKeccakFullRateInBytesHint` writes 1 or 0 to `ap` memory address depending on whether
 // `n_bytes` is greater or equal to KECCAK_FULL_RATE_IN_BYTES or not
 func newCompareKeccakFullRateInBytesHint(nBytes hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
