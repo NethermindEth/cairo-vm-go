@@ -1,20 +1,18 @@
 package zero
 
 const (
+	// This is a very simple Cairo0 hint that allows us to test the identifier resolution code.
+	// Depending on the context, ids.a may be a complex reference.
+	testAssignCode string = "memory[ap] = ids.a"
+
 	// ------ Math hints related code ------
-	// This is a block for hint code strings where there is a single
-	// hint per function it belongs to (with some exceptions like testAssignCode).
+	// This is a block for hint code strings where there is a single hint per function it belongs to.
 	isLeFeltCode       string = "memory[ap] = 0 if (ids.a % PRIME) <= (ids.b % PRIME) else 1"
 	assertLtFeltCode   string = "from starkware.cairo.common.math_utils import assert_integer\nassert_integer(ids.a)\nassert_integer(ids.b)\nassert (ids.a % PRIME) < (ids.b % PRIME), \\\n    f'a = {ids.a % PRIME} is not less than b = {ids.b % PRIME}.'"
 	assertNotZeroCode  string = "from starkware.cairo.common.math_utils import assert_integer\nassert_integer(ids.value)\nassert ids.value % PRIME != 0, f'assert_not_zero failed: {ids.value} = 0.'"
 	assertNNCode       string = "from starkware.cairo.common.math_utils import assert_integer\nassert_integer(ids.a)\nassert 0 <= ids.a % PRIME < range_check_builtin.bound, f'a = {ids.a} is out of range.'"
 	assertNotEqualCode string = "from starkware.cairo.lang.vm.relocatable import RelocatableValue\nboth_ints = isinstance(ids.a, int) and isinstance(ids.b, int)\nboth_relocatable = (\n    isinstance(ids.a, RelocatableValue) and isinstance(ids.b, RelocatableValue) and\n    ids.a.segment_index == ids.b.segment_index)\nassert both_ints or both_relocatable, \\\n    f'assert_not_equal failed: non-comparable values: {ids.a}, {ids.b}.'\nassert (ids.a - ids.b) % PRIME != 0, f'assert_not_equal failed: {ids.a} = {ids.b}.'"
 	assert250bitsCode  string = "from starkware.cairo.common.math_utils import as_int\n\n# Correctness check.\nvalue = as_int(ids.value, PRIME) % PRIME\nassert value < ids.UPPER_BOUND, f'{value} is outside of the range [0, 2**250).'\n\n# Calculation for the assertion.\nids.high, ids.low = divmod(ids.value, ids.SHIFT)"
-
-	// This is a very simple Cairo0 hint that allows us to test
-	// the identifier resolution code.
-	// Depending on the context, ids.a may be a complex reference.
-	testAssignCode string = "memory[ap] = ids.a"
 
 	// assert_le_felt() hints
 	assertLeFeltCode          string = "import itertools\n\nfrom starkware.cairo.common.math_utils import assert_integer\nassert_integer(ids.a)\nassert_integer(ids.b)\na = ids.a % PRIME\nb = ids.b % PRIME\nassert a <= b, f'a = {a} is not less than or equal to b = {b}.'\n\n# Find an arc less than PRIME / 3, and another less than PRIME / 2.\nlengths_and_indices = [(a, 0), (b - a, 1), (PRIME - 1 - b, 2)]\nlengths_and_indices.sort()\nassert lengths_and_indices[0][0] <= PRIME // 3 and lengths_and_indices[1][0] <= PRIME // 2\nexcluded = lengths_and_indices[2][1]\n\nmemory[ids.range_check_ptr + 1], memory[ids.range_check_ptr + 0] = (\n    divmod(lengths_and_indices[0][0], ids.PRIME_OVER_3_HIGH))\nmemory[ids.range_check_ptr + 3], memory[ids.range_check_ptr + 2] = (\n    divmod(lengths_and_indices[1][0], ids.PRIME_OVER_2_HIGH))"
@@ -60,25 +58,7 @@ const (
 	uint256MulDivModCode      string = "a = (ids.a.high << 128) + ids.a.low\nb = (ids.b.high << 128) + ids.b.low\ndiv = (ids.div.high << 128) + ids.div.low\nquotient, remainder = divmod(a * b, div)\n\nids.quotient_low.low = quotient & ((1 << 128) - 1)\nids.quotient_low.high = (quotient >> 128) & ((1 << 128) - 1)\nids.quotient_high.low = (quotient >> 256) & ((1 << 128) - 1)\nids.quotient_high.high = quotient >> 384\nids.remainder.low = remainder & ((1 << 128) - 1)\nids.remainder.high = remainder >> 128"
 
 	// ------ Usort hints related code ------
-	usortBodyCode string = `from collections import defaultdict
-
-input_ptr = ids.input
-input_len = int(ids.input_len)
-if __usort_max_size is not None:
-    assert input_len <= __usort_max_size, (
-        f"usort() can only be used with input_len<={__usort_max_size}. "
-        f"Got: input_len={input_len}."
-    )
-
-positions_dict = defaultdict(list)
-for i in range(input_len):
-    val = memory[input_ptr + i]
-    positions_dict[val].append(i)
-
-output = sorted(positions_dict.keys())
-ids.output_len = len(output)
-ids.output = segments.gen_arg(output)
-ids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])`
+	usortBodyCode                     string = "from collections import defaultdict\n\ninput_ptr = ids.input\ninput_len = int(ids.input_len)\nif __usort_max_size is not None:\n    assert input_len <= __usort_max_size, (\n        f\"usort() can only be used with input_len<={__usort_max_size}. \"\n        f\"Got: input_len={input_len}.\"\n    )\n\npositions_dict = defaultdict(list)\nfor i in range(input_len):\n    val = memory[input_ptr + i]\n    positions_dict[val].append(i)\n\noutput = sorted(positions_dict.keys())\nids.output_len = len(output)\nids.output = segments.gen_arg(output)\nids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])"
 	usortEnterScopeCode               string = "vm_enter_scope(dict(__usort_max_size = globals().get('__usort_max_size')))"
 	usortVerifyMultiplicityAssertCode string = "assert len(positions) == 0"
 	usortVerifyCode                   string = "last_pos = 0\npositions = positions_dict[ids.value][::-1]"
@@ -160,26 +140,8 @@ ids.multiplicities = segments.gen_arg([len(positions_dict[k]) for k in output])`
 	vmEnterScopeCode          string = "vm_enter_scope()"
 	vmExitScopeCode           string = "vm_exit_scope()"
 	findElementCode           string = "array_ptr = ids.array_ptr\nelm_size = ids.elm_size\nassert isinstance(elm_size, int) and elm_size > 0, \\\n    f'Invalid value for elm_size. Got: {elm_size}.'\nkey = ids.key\n\nif '__find_element_index' in globals():\n    ids.index = __find_element_index\n    found_key = memory[array_ptr + elm_size * __find_element_index]\n    assert found_key == key, \\\n        f'Invalid index found in __find_element_index. index: {__find_element_index}, ' \\\n        f'expected key {key}, found key: {found_key}.'\n    # Delete __find_element_index to make sure it's not used for the next calls.\n    del __find_element_index\nelse:\n    n_elms = ids.n_elms\n    assert isinstance(n_elms, int) and n_elms >= 0, \\\n        f'Invalid value for n_elms. Got: {n_elms}.'\n    if '__find_element_max_size' in globals():\n        assert n_elms <= __find_element_max_size, \\\n            f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \\\n            f'Got: n_elms={n_elms}.'\n\n    for i in range(n_elms):\n        if memory[array_ptr + elm_size * i] == key:\n            ids.index = i\n            break\n    else:\n        raise ValueError(f'Key {key} was not found.')"
-	nondetElementsOverTWoCode string = "memory[ap] = to_felt_or_relocatable(ids.n >= 2)"
-	nondetElementsOverTenCode string = "memory[ap] = to_felt_or_relocatable(ids.n >= 10)"
+	nondetElementsOverTwoCode string = "memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= 2)"
+	nondetElementsOverTenCode string = "memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= 10)"
 	setAddCode                string = "assert ids.elm_size > 0\nassert ids.set_ptr <= ids.set_end_ptr\nelm_list = memory.get_range(ids.elm_ptr, ids.elm_size)\nfor i in range(0, ids.set_end_ptr - ids.set_ptr, ids.elm_size):\n    if memory.get_range(ids.set_ptr + i, ids.elm_size) == elm_list:\n        ids.index = i // ids.elm_size\n        ids.is_elm_in_set = 1\n        break\nelse:\n    ids.is_elm_in_set = 0"
-	searchSortedLowerCode     string = `array_ptr = ids.array_ptr
-elm_size = ids.elm_size
-assert isinstance(elm_size, int) and elm_size > 0, \
-    f'Invalid value for elm_size. Got: {elm_size}.'
-
-n_elms = ids.n_elms
-assert isinstance(n_elms, int) and n_elms >= 0, \
-    f'Invalid value for n_elms. Got: {n_elms}.'
-if '__find_element_max_size' in globals():
-    assert n_elms <= __find_element_max_size, \
-        f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \
-        f'Got: n_elms={n_elms}.'
-
-for i in range(n_elms):
-    if memory[array_ptr + elm_size * i] >= ids.key:
-        ids.index = i
-        break
-else:
-    ids.index = n_elms`
+	searchSortedLowerCode     string = "array_ptr = ids.array_ptr\nelm_size = ids.elm_size\nassert isinstance(elm_size, int) and elm_size > 0, \\\n    f'Invalid value for elm_size. Got: {elm_size}.'\n\nn_elms = ids.n_elms\nassert isinstance(n_elms, int) and n_elms >= 0, \\\n    f'Invalid value for n_elms. Got: {n_elms}.'\nif '__find_element_max_size' in globals():\n    assert n_elms <= __find_element_max_size, \\\n        f'find_element() can only be used with n_elms<={__find_element_max_size}. ' \\\n        f'Got: n_elms={n_elms}.'\n\nfor i in range(n_elms):\n    if memory[array_ptr + elm_size * i] >= ids.key:\n        ids.index = i\n        break\nelse:\n    ids.index = n_elms"
 )

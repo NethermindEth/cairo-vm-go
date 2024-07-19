@@ -262,10 +262,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createTestAssignHinter(resolver)
 	case findElementCode:
 		return createFindElementHinter(resolver)
-	case nondetElementsOverTWoCode:
-		return createNondetElementsOverTWoHinter(resolver)
+	case nondetElementsOverTwoCode:
+		return createNondetElementsOverXHinter(resolver, 2)
 	case nondetElementsOverTenCode:
-		return createNondetElementsOverTenHinter(resolver)
+		return createNondetElementsOverXHinter(resolver, 10)
 	default:
 		return nil, fmt.Errorf("not identified hint")
 	}
@@ -290,13 +290,16 @@ func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 		ok = false
 		for i := len(references) - 1; i >= 0; i-- {
 			if references[i].Pc <= hintPC {
+				if ok && reference.Pc != references[i].Pc {
+					break
+				}
 				reference = references[i]
 				ok = true
-				break
+
 			}
 		}
 		if !ok {
-			return resolver, fmt.Errorf("identifier %s should have a reference with pc smaller or equal than %d", referenceName, hintPC)
+			return resolver, fmt.Errorf("identifier %s with pc %d should have a reference with pc smaller or equal than %d", referenceName, reference.Pc, hintPC)
 		}
 
 		param, err := ParseIdentifier(reference.Value)
