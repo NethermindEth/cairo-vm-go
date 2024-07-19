@@ -1,12 +1,6 @@
 %builtins range_check
 
-from starkware.cairo.common.cairo_secp.bigint import (
-    BigInt3,
-    UnreducedBigInt3,
-    nondet_bigint3,
-    bigint_to_uint256,
-    uint256_to_bigint,
-)
+from starkware.cairo.common.cairo_secp.bigint import BigInt3, UnreducedBigInt3, nondet_bigint3
 
 struct EcPoint {
     x: BigInt3,

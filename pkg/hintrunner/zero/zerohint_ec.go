@@ -47,7 +47,7 @@ func newBigIntToUint256Hint(low, x hinter.ResOperander) hinter.Hinter {
 			(*xBigInt[0]).BigInt(&xD0Big)
 
 			var xD1Big big.Int
-			(*xBigInt[1]).BigInt(&xD0Big)
+			(*xBigInt[1]).BigInt(&xD1Big)
 
 			baseBig, ok := secp_utils.GetBaseBig()
 			if !ok {
