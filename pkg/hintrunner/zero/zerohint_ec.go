@@ -390,17 +390,18 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newEcDoubleSlopeV1Hint(point), nil
 }
 
-// ReduceV1 hint reduces a packed value modulo the SECP256K1 prime
+// Reduce hint reduces a packed value modulo the SECP256K1 prime
 //
-// `newReduceV1Hint` takes 1 operander as argument
+// `newReduceHint` takes 1 operander as argument
 //   - `x` is the packed value to be reduced
 //
-// `newReduceV1Hint` assigns the result as `value` in the current scope
-func newReduceV1Hint(x hinter.ResOperander) hinter.Hinter {
+// `newReduceHint` assigns the result as `value` in the current scope
+// This implementation is valid for ReduceV1 and ReduceV1
+func newReduceHint(x hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "ReduceV1",
+		Name: "Reduce",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack (V1) //> from starkware.cairo.common.cairo_secp.secp_utils import pack (V2)
 			//>
 			//> value = pack(ids.x, PRIME) % SECP_P
 
@@ -432,13 +433,64 @@ func newReduceV1Hint(x hinter.ResOperander) hinter.Hinter {
 	}
 }
 
-func createReduceV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+func createReduceHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	x, err := resolver.GetResOperander("x")
 	if err != nil {
 		return nil, err
 	}
 
-	return newReduceV1Hint(x), nil
+	return newReduceHint(x), nil
+}
+
+// ReduceEd25519 hint reduces a packed value modulo the Curve25519 prime
+//
+// `newReduceEd25519Hint` takes 1 operander as argument
+//   - `x` is the packed value to be reduced
+//
+// `newReduceEd25519Hint` assigns the result as `value` in the current scope
+func newReduceEd25519Hint(x hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "ReduceEd25519",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack (V1) //> from starkware.cairo.common.cairo_secp.secp_utils import pack (V2)
+			//>
+			//> value = pack(ids.x, PRIME) % SECP_P
+
+			secPBig, ok := secp_utils.GetCurve25519PBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			xAddr, err := x.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			xValues, err := vm.Memory.ResolveAsBigInt3(xAddr)
+			if err != nil {
+				return err
+			}
+
+			xBig, err := secp_utils.SecPPacked(xValues)
+			if err != nil {
+				return err
+			}
+
+			xBig.Mod(&xBig, &secPBig)
+			valueBigIntPtr := new(big.Int).Set(&xBig)
+
+			return ctx.ScopeManager.AssignVariable("value", valueBigIntPtr)
+		},
+	}
+}
+
+func createReduceEd25519Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+
+	return newReduceEd25519Hint(x), nil
 }
 
 // EcDoubleAssignNewXV1 hint computes a new x-coordinate for a point being doubled on an elliptic curve

@@ -754,7 +754,7 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
-		"ReduceV1": {
+		"Reduce": {
 			{
 				operanders: []*hintOperander{
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
@@ -765,7 +765,7 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newReduceV1Hint(ctx.operanders["x.d0"])
+					return newReduceHint(ctx.operanders["x.d0"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("0", 10)),
 			},
@@ -779,7 +779,7 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newReduceV1Hint(ctx.operanders["x.d0"])
+					return newReduceHint(ctx.operanders["x.d0"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("1", 10)),
 			},
@@ -793,7 +793,7 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newReduceV1Hint(ctx.operanders["x.d0"])
+					return newReduceHint(ctx.operanders["x.d0"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("10", 10)),
 			},
@@ -807,7 +807,7 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newReduceV1Hint(ctx.operanders["x.d0"])
+					return newReduceHint(ctx.operanders["x.d0"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("17958932119522135058886879379160190656204633450479617", 10)),
 			},
@@ -821,7 +821,7 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newReduceV1Hint(ctx.operanders["x.d0"])
+					return newReduceHint(ctx.operanders["x.d0"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("17958932119522135058886879379160190656204633450479616", 10)),
 			},
