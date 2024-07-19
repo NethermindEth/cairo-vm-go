@@ -1,9 +1,6 @@
 package zero
 
 import (
-	"crypto/sha256"
-	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"math/big"
 
@@ -1015,58 +1012,13 @@ func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
 			for _, felt := range qValues {
 				writeFeltToBytesArray(felt)
 			}
-			seed := sha256.Sum256(bytesArray)
 
-			alphaBig := new(big.Int)
-			utils.Alpha.BigInt(alphaBig)
-			betaBig := new(big.Int)
-			utils.Beta.BigInt(betaBig)
-			fieldPrime, ok := secp_utils.GetCairoPrime()
-			if !ok {
-				return fmt.Errorf("GetCairoPrime failed")
+			sAddr, err := s.GetAddress(vm)
+			if err != nil {
+				return err
 			}
 
-			for i := uint64(0); i < 100; i++ {
-				iBytes := make([]byte, 10)
-				binary.LittleEndian.PutUint64(iBytes, i)
-				concatenated := append(seed[1:], iBytes...)
-				hash := sha256.Sum256(concatenated)
-				hashHex := hex.EncodeToString(hash[:])
-				x := new(big.Int)
-				x.SetString(hashHex, 16)
-
-				yCoef := big.NewInt(1)
-				if seed[0]&1 == 1 {
-					yCoef.Neg(yCoef)
-				}
-
-				// Try to recover y
-				if !ok {
-					return fmt.Errorf("failed to get field prime value")
-				}
-				if y, err := secp_utils.RecoverY(x, betaBig, &fieldPrime); err == nil {
-					y.Mul(yCoef, y)
-					y.Mod(y, &fieldPrime)
-
-					sAddr, err := s.GetAddress(vm)
-					if err != nil {
-						return err
-					}
-
-					sXFelt := new(fp.Element).SetBigInt(x)
-					sYFelt := new(fp.Element).SetBigInt(y)
-					sXMv := mem.MemoryValueFromFieldElement(sXFelt)
-					sYMv := mem.MemoryValueFromFieldElement(sYFelt)
-
-					err = vm.Memory.WriteToNthStructField(sAddr, sXMv, 0)
-					if err != nil {
-						return err
-					}
-					return vm.Memory.WriteToNthStructField(sAddr, sYMv, 1)
-				}
-			}
-
-			return fmt.Errorf("could not find a point on the curve")
+			return secp_utils.RandomEcPoint(vm, bytesArray, sAddr)
 		},
 	}
 }
@@ -1156,11 +1108,6 @@ func newChainedEcOpHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			pValues, err := vm.Memory.ResolveAsEcPoint(pAddr)
-			if err != nil {
-				return err
-			}
-
 			mAddr, err := hinter.ResolveAsAddress(vm, m)
 			if err != nil {
 				return err
@@ -1171,14 +1118,14 @@ func newChainedEcOpHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			firstRange, err := vm.Memory.GetConsecutiveMemoryValues(*mAddr, nElms)
+			pValues, err := vm.Memory.ResolveAsEcPoint(pAddr)
 			if err != nil {
 				return err
 			}
 
-			var firstRangeFelts []*fp.Element
-			for _, element := range firstRange {
-				firstRangeFelts = append(firstRangeFelts, &(element.Felt))
+			firstRange, err := vm.Memory.GetConsecutiveMemoryValues(*mAddr, nElms)
+			if err != nil {
+				return err
 			}
 
 			secondRange, err := vm.Memory.GetConsecutiveMemoryValues(*qAddr, 2*nElms)
@@ -1186,10 +1133,13 @@ func newChainedEcOpHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			var secondRangeFelts []*fp.Element
+			var RangeFelts []*fp.Element
+			for _, element := range firstRange {
+				RangeFelts = append(RangeFelts, &(element.Felt))
+			}
 			for _, element := range secondRange {
 				feltCopy := element.Felt
-				secondRangeFelts = append(secondRangeFelts, &feltCopy)
+				RangeFelts = append(RangeFelts, &feltCopy)
 			}
 
 			var bytesArray []byte
@@ -1203,65 +1153,16 @@ func newChainedEcOpHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
 			for _, felt := range pValues {
 				writeFeltToBytesArray(felt)
 			}
-			for _, felt := range firstRangeFelts {
-				writeFeltToBytesArray(felt)
-			}
-			for _, felt := range secondRangeFelts {
+			for _, felt := range RangeFelts {
 				writeFeltToBytesArray(felt)
 			}
 
-			seed := sha256.Sum256(bytesArray)
-
-			alphaBig := new(big.Int)
-			utils.Alpha.BigInt(alphaBig)
-			betaBig := new(big.Int)
-			utils.Beta.BigInt(betaBig)
-			fieldPrime, ok := secp_utils.GetCairoPrime()
-			if !ok {
-				return fmt.Errorf("GetCairoPrime failed")
+			sAddr, err := s.GetAddress(vm)
+			if err != nil {
+				return err
 			}
 
-			for i := uint64(0); i < 100; i++ {
-				iBytes := make([]byte, 10)
-				binary.LittleEndian.PutUint64(iBytes, i)
-				concatenated := append(seed[1:], iBytes...)
-				hash := sha256.Sum256(concatenated)
-				hashHex := hex.EncodeToString(hash[:])
-				x := new(big.Int)
-				x.SetString(hashHex, 16)
-
-				yCoef := big.NewInt(1)
-				if seed[0]&1 == 1 {
-					yCoef.Neg(yCoef)
-				}
-
-				// Try to recover y
-				if !ok {
-					return fmt.Errorf("failed to get field prime value")
-				}
-				if y, err := secp_utils.RecoverY(x, betaBig, &fieldPrime); err == nil {
-					y.Mul(yCoef, y)
-					y.Mod(y, &fieldPrime)
-
-					sAddr, err := s.GetAddress(vm)
-					if err != nil {
-						return err
-					}
-
-					sXFelt := new(fp.Element).SetBigInt(x)
-					sYFelt := new(fp.Element).SetBigInt(y)
-					sXMv := mem.MemoryValueFromFieldElement(sXFelt)
-					sYMv := mem.MemoryValueFromFieldElement(sYFelt)
-
-					err = vm.Memory.WriteToNthStructField(sAddr, sXMv, 0)
-					if err != nil {
-						return err
-					}
-					return vm.Memory.WriteToNthStructField(sAddr, sYMv, 1)
-				}
-			}
-
-			return fmt.Errorf("could not find a point on the curve")
+			return secp_utils.RandomEcPoint(vm, bytesArray, sAddr)
 		},
 	}
 }
