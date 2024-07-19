@@ -274,7 +274,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) (hintReferenceResolver, error) {
 	resolver := NewReferenceResolver()
 
-	for referenceName := range hint.FlowTrackingData.ReferenceIds {
+	for referenceName, id := range hint.FlowTrackingData.ReferenceIds {
 		rawIdentifier, ok := zeroProgram.Identifiers[referenceName]
 		if !ok {
 			return resolver, fmt.Errorf("missing identifier %s", referenceName)
@@ -283,24 +283,10 @@ func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 		if len(rawIdentifier.References) == 0 {
 			return resolver, fmt.Errorf("identifier %s should have at least one reference", referenceName)
 		}
-		references := rawIdentifier.References
-
-		// Go through the references in reverse order to get the one with biggest pc smaller or equal to the hint pc
-		var reference zero.Reference
-		ok = false
-		for i := len(references) - 1; i >= 0; i-- {
-			if references[i].Pc <= hintPC {
-				if ok && reference.Pc != references[i].Pc {
-					break
-				}
-				reference = references[i]
-				ok = true
-
-			}
+		if int(id) >= len(zeroProgram.ReferenceManager.References) {
+			return resolver, fmt.Errorf("invalid reference id %d", id)
 		}
-		if !ok {
-			return resolver, fmt.Errorf("identifier %s with pc %d should have a reference with pc smaller or equal than %d", referenceName, reference.Pc, hintPC)
-		}
+		reference := zeroProgram.ReferenceManager.References[id]
 
 		param, err := ParseIdentifier(reference.Value)
 		if err != nil {
