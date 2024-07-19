@@ -505,3 +505,65 @@ func createUint256MulDivModHinter(resolver hintReferenceResolver) (hinter.Hinter
 
 	return newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder), nil
 }
+
+func createUint128AddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+	carry, err := resolver.GetResOperander("carry")
+	if err != nil {
+		return nil, err
+	}
+	return newUint128AddHint(a, b, carry), nil
+}
+
+func newUint128AddHint(a, b, carry hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Uint128Add",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//>res = ids.a + ids.b
+			//>ids.carry = 1 if res >= ids.SHIFT else 0
+
+			a, err := hinter.ResolveAsFelt(vm, a)
+			if err != nil {
+				return err
+			}
+
+			b, err := hinter.ResolveAsFelt(vm, b)
+			if err != nil {
+				return err
+			}
+
+			// Calculate `carry` memory value
+			res := new(fp.Element).Add(a, b)
+			var c *fp.Element
+			if utils.FeltLe(&utils.FeltMax128, res) {
+				c = &utils.FeltOne
+			} else {
+				c = &utils.FeltZero
+			}
+
+			cValue := memory.MemoryValueFromFieldElement(c)
+
+			// Save `carry` value in address
+			addrCarry, err := carry.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			err = vm.Memory.WriteToAddress(&addrCarry, &cValue)
+			if err != nil {
+				return err
+			}
+
+			return nil
+
+		},
+	}
+
+}
