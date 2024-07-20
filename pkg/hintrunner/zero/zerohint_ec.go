@@ -128,6 +128,82 @@ func createDivModNSafeDivPlusOneHinter(resolver hintReferenceResolver) (hinter.H
 	return newDivModNSafeDivPlusOneHint(), nil
 }
 
+// DivModNPackedDivModExternalN finds a nonnegative integer 0 <= x < p
+// such that (m * x) % p == n.
+// `newDivModNPackedDivModExternalN` takes 2 operander as argument
+//   - `a` is the value that will be packed and taken prime
+//   - `b` is the value that will be packed and taken prime
+//
+// `DivModNPackedDivModExternalN` assigns the result as `value` in the current scope.
+func newDivModNPackedDivModExternalN(a, b hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DivModNPackedDivModExternalN",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> from starkware.python.math_utils import div_mod, safe_div
+			//> a = pack(ids.a, PRIME)
+			//> b = pack(ids.b, PRIME)
+			//> value = res = div_mod(a, b, N)
+
+			aAddr, err := a.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			aValues, err := vm.Memory.ResolveAsBigInt3(aAddr)
+			if err != nil {
+				return err
+			}
+
+			aBig, err := secp_utils.SecPPacked(aValues)
+			if err != nil {
+				return err
+			}
+
+			bAddr, err := b.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			bValues, err := vm.Memory.ResolveAsBigInt3(bAddr)
+			if err != nil {
+				return err
+			}
+
+			bBig, err := secp_utils.SecPPacked(bValues)
+			if err != nil {
+				return err
+			}
+
+			nBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "N")
+			if err != nil {
+				return err
+			}
+
+			newValueBig, err := secp_utils.Divmod(&aBig, &bBig, nBig)
+			if err != nil {
+				return err
+			}
+
+			return ctx.ScopeManager.AssignVariable("value", &newValueBig)
+		},
+	}
+}
+
+func createDivModNPackedDivModExternalNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+
+	return newDivModNPackedDivModExternalN(a, b), nil
+}
+
 // NondetBigint3V1 hint writes a value to a specified segment of memory
 //
 // `newNondetBigint3V1Hint` takes 1 operander as argument
