@@ -379,6 +379,103 @@ func createUint256UnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.H
 	return newUint256UnsignedDivRemHint(a, div, quotient, remainder), nil
 }
 
+// Uint256UnsignedDivRemExpanded hint computes the division and modulus operations
+// on `uint256` variables, combining the `high`, `low` and `b23` (high), `b01` (low) parts of the dividend and divisor
+//
+// `newUint256UnsignedDivRemExpandedHint` takes 4 operanders as arguments
+//   - `a` is the `uint256` variable that will be divided
+//   - `div` is the `uint256` variable that will divide `a`, consists of `b23` (high) parts and `b01` (low)
+//   - `quotient` is the quotient of the Euclidean division of `a` by `div`
+//   - `remainder` is the remainder of the Euclidean division of `a` by `div`
+func newUint256UnsignedDivRemExpandedHint(a, div, quotient, remainder hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Uint256UnsignedDivRem",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> a = (ids.a.high << 128) + ids.a.low
+			//> div = (ids.div.b23 << 128) + ids.div.b01
+			//> quotient, remainder = divmod(a, div)
+			//> ids.quotient.low = quotient & ((1 << 128) - 1)
+			//> ids.quotient.high = quotient >> 128
+			//> ids.remainder.low = remainder & ((1 << 128) - 1)
+			//> ids.remainder.high = remainder >> 128
+
+			aLow, aHigh, err := GetUint256AsFelts(vm, a)
+			if err != nil {
+				return err
+			}
+
+			var aLowBig big.Int
+			aLow.BigInt(&aLowBig)
+			var aHighBig big.Int
+			aHigh.BigInt(&aHighBig)
+
+			divB01, divB23, err := GetUint256AsFelts(vm, div)
+			if err != nil {
+				return err
+			}
+
+			var divB23Big big.Int
+			divB23.BigInt(&divB23Big)
+			var divB01Big big.Int
+			divB01.BigInt(&divB01Big)
+
+			aBig := new(big.Int).Add(new(big.Int).Lsh(&aHighBig, 128), &aLowBig)
+			divBig := new(big.Int).Add(new(big.Int).Lsh(&divB23Big, 128), &divB01Big)
+			quotBig := new(big.Int).Div(aBig, divBig)
+			remBig := new(big.Int).Mod(aBig, divBig)
+
+			mask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
+
+			lowQuot := new(fp.Element).SetBigInt(new(big.Int).And(quotBig, mask))
+			highQuot := new(fp.Element).SetBigInt(new(big.Int).Rsh(quotBig, 128))
+
+			lowRem := new(fp.Element).SetBigInt(new(big.Int).And(remBig, mask))
+			highRem := new(fp.Element).SetBigInt(new(big.Int).Rsh(remBig, 128))
+
+			quotientAddr, err := quotient.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			err = vm.Memory.WriteUint256ToAddress(quotientAddr, lowQuot, highQuot)
+			if err != nil {
+				return err
+			}
+
+			remainderAddr, err := remainder.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteUint256ToAddress(remainderAddr, lowRem, highRem)
+		},
+	}
+}
+
+func createUint256UnsignedDivRemExpandedHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	div, err := resolver.GetResOperander("div")
+	if err != nil {
+		return nil, err
+	}
+
+	quotient, err := resolver.GetResOperander("quotient")
+	if err != nil {
+		return nil, err
+	}
+
+	remainder, err := resolver.GetResOperander("remainder")
+	if err != nil {
+		return nil, err
+	}
+
+	return newUint256UnsignedDivRemExpandedHint(a, div, quotient, remainder), nil
+}
+
 // Uint256MulDivMod hint multiplies two `uint256` variables, divides the result
 // by another `uint256` variable, and computes the quotient and the remainder
 //
