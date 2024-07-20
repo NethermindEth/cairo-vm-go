@@ -542,8 +542,7 @@ func newUint256SubHint(a, b, res hinter.ResOperander) hinter.Hinter {
 				low.BigInt(&lowBig)
 				high.BigInt(&highBig)
 
-				result := new(big.Int).Add(new(big.Int).Lsh(&highBig, uint(numBitsShift)), &lowBig)
-				return *result
+				return *new(big.Int).Add(new(big.Int).Lsh(&highBig, uint(numBitsShift)), &lowBig)
 			}
 
 			a := pack(aLow, aHigh, 128)
