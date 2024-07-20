@@ -184,6 +184,29 @@ func TestZeroHintEc(t *testing.T) {
 				check: varValueInScopeEquals("value", big.NewInt(986)),
 			},
 		},
+		"DivModNPackedDivModExternalN": {
+			{
+				operanders: []*hintOperander{
+					{Name: "a.d0", Kind: apRelative, Value: feltString("986")},
+					{Name: "a.d1", Kind: apRelative, Value: feltString("23")},
+					{Name: "a.d2", Kind: apRelative, Value: feltString("43")},
+					{Name: "b.d0", Kind: apRelative, Value: feltString("657")},
+					{Name: "b.d1", Kind: apRelative, Value: feltString("45")},
+					{Name: "b.d2", Kind: apRelative, Value: feltString("2167")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					value := bigIntString("45", 10)
+					err := ctx.ScopeManager.AssignVariable("N", value)
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDivModNPackedDivModExternalN(ctx.operanders["a.d0"], ctx.operanders["b.d0"])
+				},
+				check: varValueInScopeEquals("value", big.NewInt(14)),
+			},
+		},
 		"NondetBigint3V1": {
 			{
 				operanders: []*hintOperander{
