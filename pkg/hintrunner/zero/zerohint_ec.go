@@ -124,7 +124,7 @@ func newDivModNSafeDivPlusOneHint() hinter.Hinter {
 	}
 }
 
-func createDivModNSafeDivPlusOneHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+func createDivModNSafeDivPlusOneHinter() (hinter.Hinter, error) {
 	return newDivModNSafeDivPlusOneHint(), nil
 }
 
