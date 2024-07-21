@@ -238,7 +238,7 @@ func (mv *MemoryValue) Equal(other *MemoryValue) bool {
 	return false
 }
 
-// Adds two memory values is the second one is a Felt
+// Adds two memory values if the second one is a Felt
 func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) error {
 	if lhs.IsAddress() {
 		if !rhs.IsFelt() {
