@@ -205,8 +205,8 @@ func TestZeroHintEc(t *testing.T) {
 					return newDivModNPackedDivModExternalN(ctx.operanders["a.d0"], ctx.operanders["b.d0"])
 				},
 				check: allVarValueInScopeEquals(map[string]any{
-					"value":      big.NewInt(14),
-					"res": big.NewInt(14),
+					"value": big.NewInt(14),
+					"res":   big.NewInt(14),
 				}),
 			},
 		},
