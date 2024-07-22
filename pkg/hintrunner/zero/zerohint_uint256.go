@@ -297,6 +297,7 @@ func newUint256UnsignedDivRemHint(a, div, quotient, remainder hinter.ResOperande
 			//> a = (ids.a.high << 128) + ids.a.low
 			//> div = (ids.div.high << 128) + ids.div.low
 			//> quotient, remainder = divmod(a, div)
+			//>
 			//> ids.quotient.low = quotient & ((1 << 128) - 1)
 			//> ids.quotient.high = quotient >> 128
 			//> ids.remainder.low = remainder & ((1 << 128) - 1)
@@ -389,11 +390,12 @@ func createUint256UnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.H
 //   - `remainder` is the remainder of the Euclidean division of `a` by `div`
 func newUint256UnsignedDivRemExpandedHint(a, div, quotient, remainder hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "Uint256UnsignedDivRem",
+		Name: "Uint256UnsignedDivRemExpanded",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> a = (ids.a.high << 128) + ids.a.low
 			//> div = (ids.div.b23 << 128) + ids.div.b01
 			//> quotient, remainder = divmod(a, div)
+			//>
 			//> ids.quotient.low = quotient & ((1 << 128) - 1)
 			//> ids.quotient.high = quotient >> 128
 			//> ids.remainder.low = remainder & ((1 << 128) - 1)
