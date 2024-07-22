@@ -86,7 +86,7 @@ type VirtualMachine struct {
 	config  VirtualMachineConfig
 	// instructions cache
 	instructions map[uint64]*a.Instruction
-	// RcLimitsMin and RcLimitsMax define the range of values of instructions offsets, used for checking the the number of potential range checks holes
+	// RcLimitsMin and RcLimitsMax define the range of values of instructions offsets, used for checking the number of potential range checks holes
 	RcLimitsMin uint16
 	RcLimitsMax uint16
 }
