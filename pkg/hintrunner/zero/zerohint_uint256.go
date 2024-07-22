@@ -506,21 +506,13 @@ func createUint256MulDivModHinter(resolver hintReferenceResolver) (hinter.Hinter
 	return newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder), nil
 }
 
-func createUint128AddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
-	if err != nil {
-		return nil, err
-	}
-	b, err := resolver.GetResOperander("b")
-	if err != nil {
-		return nil, err
-	}
-	carry, err := resolver.GetResOperander("carry")
-	if err != nil {
-		return nil, err
-	}
-	return newUint128AddHint(a, b, carry), nil
-}
+// Uint128Add hint computes the result of the sum of parts of
+// two `uint128` variables(`a` & `b`)  and checks for overflow
+//
+// `newUint128AddHint` takes 3 operanders as arguments
+//   - `a` and `b` are the two `uint128` variables that will be added
+//   - `carry` represent the potential extra bit that needs to be carried
+//     if the res of the sum of `a` and `b` exceeds 2**64 - 1
 
 func newUint128AddHint(a, b, carry hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
@@ -566,4 +558,20 @@ func newUint128AddHint(a, b, carry hinter.ResOperander) hinter.Hinter {
 		},
 	}
 
+}
+
+func createUint128AddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+	carry, err := resolver.GetResOperander("carry")
+	if err != nil {
+		return nil, err
+	}
+	return newUint128AddHint(a, b, carry), nil
 }

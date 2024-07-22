@@ -10,6 +10,60 @@ import (
 
 func TestZeroHintUint256(t *testing.T) {
 	runHinterTests(t, map[string][]hintTestCase{
+		"Uint128Add": {
+			{
+				operanders: []*hintOperander{
+					{Name: "a", Kind: fpRelative, Value: &utils.Felt127},
+					{Name: "b", Kind: apRelative, Value: &utils.Felt127},
+					{Name: "carry", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint128AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"carry": feltUint64(1),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "a", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "b", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "carry", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint128AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"carry": feltUint64(0),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "a", Kind: fpRelative, Value: &utils.Felt127},
+					{Name: "b", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "carry", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint128AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"carry": feltUint64(0),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "a", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "b", Kind: apRelative, Value: &utils.Felt127},
+					{Name: "carry", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint128AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"carry": feltUint64(0),
+				}),
+			},
+		},
 		"Uint256Add": {
 			{
 				operanders: []*hintOperander{
