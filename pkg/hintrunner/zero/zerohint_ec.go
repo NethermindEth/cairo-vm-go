@@ -1163,14 +1163,10 @@ func newEcRecoverDivModNPackedHint(n, x, s hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("res", &resBig)
-			if err != nil {
-				return err
-			}
-
 			valueBig := new(big.Int)
 			valueBig.Set(&resBig)
-			return ctx.ScopeManager.AssignVariable("value", valueBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"res": &resBig, "value": valueBig})
 		},
 	}
 }
@@ -1245,14 +1241,10 @@ func newEcRecoverSubABHint(a, b hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("res", resBig)
-			if err != nil {
-				return err
-			}
-
 			valueBig := new(big.Int)
 			valueBig.Set(resBig)
-			return ctx.ScopeManager.AssignVariable("value", valueBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"res": resBig, "value": valueBig})
 		},
 	}
 }
@@ -1344,22 +1336,7 @@ func newEcRecoverProductModHint(a, b, m hinter.ResOperander) hinter.Hinter {
 			valueBig := new(big.Int)
 			valueBig.Set(resBig)
 
-			err = ctx.ScopeManager.AssignVariable("m", &mPackedBig)
-			if err != nil {
-				return err
-			}
-
-			err = ctx.ScopeManager.AssignVariable("product", productBig)
-			if err != nil {
-				return err
-			}
-
-			err = ctx.ScopeManager.AssignVariable("res", resBig)
-			if err != nil {
-				return err
-			}
-
-			return ctx.ScopeManager.AssignVariable("value", valueBig)
+			return ctx.ScopeManager.AssignVariables(map[string]any{"m": &mPackedBig, "product": productBig, "res": resBig, "value": valueBig})
 		},
 	}
 }
@@ -1405,12 +1382,7 @@ func newEcRecoverProductDivMHint() hinter.Hinter {
 			valueBig := new(big.Int)
 			valueBig.Set(kBig)
 
-			err = ctx.ScopeManager.AssignVariable("k", kBig)
-			if err != nil {
-				return err
-			}
-
-			return ctx.ScopeManager.AssignVariable("value", valueBig)
+			return ctx.ScopeManager.AssignVariables(map[string]any{"k": kBig, "value": valueBig})
 		},
 	}
 }
