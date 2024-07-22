@@ -12,7 +12,6 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
 )
@@ -187,7 +186,7 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 				}
 
 				valueFelt := new(fp.Element).SetBigInt(&values[i])
-				valueMv := mem.MemoryValueFromFieldElement(valueFelt)
+				valueMv := memory.MemoryValueFromFieldElement(valueFelt)
 
 				err = vm.Memory.WriteToAddress(&valueAddr, &valueMv)
 				if err != nil {
@@ -922,7 +921,7 @@ func newEcMulInnerHint(scalar hinter.ResOperander) hinter.Hinter {
 			resultUint256 := new(uint256.Int).SetBytes(scalarBytes[:])
 			resultUint256.Mod(resultUint256, uint256.NewInt(2))
 			resultFelt := new(fp.Element).SetBytes(resultUint256.Bytes())
-			resultMv := mem.MemoryValueFromFieldElement(resultFelt)
+			resultMv := memory.MemoryValueFromFieldElement(resultFelt)
 			apAddr := vm.Context.AddressAp()
 
 			return vm.Memory.WriteToAddress(&apAddr, &resultMv)
@@ -959,12 +958,12 @@ func newIsZeroNondetHint() hinter.Hinter {
 
 			apAddr := vm.Context.AddressAp()
 
-			var v mem.MemoryValue
+			var v memory.MemoryValue
 
 			if x.Cmp(big.NewInt(0)) == 0 {
-				v = mem.MemoryValueFromFieldElement(&utils.FeltOne)
+				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
-				v = mem.MemoryValueFromFieldElement(&utils.FeltZero)
+				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
 			}
 
 			return vm.Memory.WriteToAddress(&apAddr, &v)
@@ -1100,7 +1099,7 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			valueX := mem.MemoryValueFromFieldElement(xFelt)
+			valueX := memory.MemoryValueFromFieldElement(xFelt)
 
 			err = vm.Memory.WriteToAddress(&pXAddr, &valueX)
 			if err != nil {
@@ -1124,7 +1123,7 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 			resultFelt := new(fp.Element).SetBigInt(resultBigInt)
-			resultMv := mem.MemoryValueFromFieldElement(resultFelt)
+			resultMv := memory.MemoryValueFromFieldElement(resultFelt)
 			return vm.Memory.WriteToAddress(&pYAddr, &resultMv)
 		},
 	}
@@ -1246,8 +1245,8 @@ func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
 
 					sXFelt := new(fp.Element).SetBigInt(x)
 					sYFelt := new(fp.Element).SetBigInt(y)
-					sXMv := mem.MemoryValueFromFieldElement(sXFelt)
-					sYMv := mem.MemoryValueFromFieldElement(sYFelt)
+					sXMv := memory.MemoryValueFromFieldElement(sXFelt)
+					sYMv := memory.MemoryValueFromFieldElement(sYFelt)
 
 					err = vm.Memory.WriteToNthStructField(sAddr, sXMv, 0)
 					if err != nil {
