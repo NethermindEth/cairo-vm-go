@@ -1344,6 +1344,11 @@ func newEcRecoverProductModHint(a, b, m hinter.ResOperander) hinter.Hinter {
 			valueBig := new(big.Int)
 			valueBig.Set(resBig)
 
+			err = ctx.ScopeManager.AssignVariable("m", &mPackedBig)
+			if err != nil {
+				return err
+			}
+
 			err = ctx.ScopeManager.AssignVariable("product", productBig)
 			if err != nil {
 				return err
