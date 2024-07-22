@@ -1100,6 +1100,102 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
+		"EcRecoverDivModNPacked": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n.x", Kind: apRelative, Value: feltUint64(177)},
+					{Name: "n.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "n.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "x.x", Kind: apRelative, Value: feltUint64(25)},
+					{Name: "x.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "x.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "s.x", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "s.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "s.z", Kind: apRelative, Value: feltUint64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcRecoverDivModNPackedHint(
+						ctx.operanders["n.x"],
+						ctx.operanders["x.x"],
+						ctx.operanders["s.x"],
+					)
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": big.NewInt(5),
+					"res":   big.NewInt(5),
+				}),
+			},
+		},
+		"EcRecoverSubAB": {
+			{
+				operanders: []*hintOperander{
+					{Name: "a.x", Kind: apRelative, Value: feltUint64(100)},
+					{Name: "a.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "a.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.x", Kind: apRelative, Value: feltUint64(25)},
+					{Name: "b.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.z", Kind: apRelative, Value: feltUint64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcRecoverSubABHint(
+						ctx.operanders["a.x"],
+						ctx.operanders["b.x"],
+					)
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": big.NewInt(75),
+					"res":   big.NewInt(75),
+				}),
+			},
+		},
+		"EcRecoverProductMod": {
+			{
+				operanders: []*hintOperander{
+					{Name: "a.x", Kind: apRelative, Value: feltUint64(60)},
+					{Name: "a.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "a.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.x", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "b.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "m.x", Kind: apRelative, Value: feltUint64(100)},
+					{Name: "m.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "m.z", Kind: apRelative, Value: feltUint64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcRecoverProductModHint(
+						ctx.operanders["a.x"],
+						ctx.operanders["b.x"],
+						ctx.operanders["m.x"],
+					)
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value":   big.NewInt(20),
+					"res":     big.NewInt(20),
+					"product": big.NewInt(120),
+					"m":       big.NewInt(100),
+				}),
+			},
+		},
+		"EcRecoverProductDivM": {
+			{
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					productBig := big.NewInt(120)
+					mBig := big.NewInt(100)
+
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"product": productBig, "m": mBig})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcRecoverProductDivMHint()
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": big.NewInt(1),
+					"k":     big.NewInt(1),
+				}),
+			},
+		},
 	},
 	)
 }
