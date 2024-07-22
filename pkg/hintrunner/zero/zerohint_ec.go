@@ -128,9 +128,8 @@ func createDivModNSafeDivPlusOneHinter() (hinter.Hinter, error) {
 	return newDivModNSafeDivPlusOneHint(), nil
 }
 
-// DivModNPackedDivModExternalN finds a nonnegative integer 0 <= x < p
-// such that (m * x) % p == n.
-// `newDivModNPackedDivModExternalN` takes 2 operander as argument
+// DivModNPackedDivModExternalN computes the div_mod operation for a given packed value.
+// `newDivModNPackedDivModExternalN` takes 2 operander as arguments
 //   - `a` is the value that will be packed and taken prime
 //   - `b` is the value that will be packed and taken prime
 //
