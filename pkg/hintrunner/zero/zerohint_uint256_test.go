@@ -413,5 +413,61 @@ func TestZeroHintUint256(t *testing.T) {
 				}),
 			},
 		},
+		"Uint256Sub": {
+			{
+				// equal values
+				operanders: []*hintOperander{
+					{Name: "a.low", Kind: apRelative, Value: feltUint64(11)},
+					{Name: "a.high", Kind: apRelative, Value: feltUint64(11)},
+					{Name: "b.low", Kind: apRelative, Value: feltUint64(11)},
+					{Name: "b.high", Kind: apRelative, Value: feltUint64(11)},
+					{Name: "res.low", Kind: uninitialized},
+					{Name: "res.high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint256SubHint(ctx.operanders["a.low"], ctx.operanders["b.low"], ctx.operanders["res.low"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"res.low":  feltUint64(0),
+					"res.high": feltUint64(0),
+				}),
+			},
+			{
+				// random values
+				operanders: []*hintOperander{
+					{Name: "a.low", Kind: apRelative, Value: feltUint64(12345)},
+					{Name: "a.high", Kind: apRelative, Value: feltUint64(67890)},
+					{Name: "b.low", Kind: apRelative, Value: feltUint64(11111)},
+					{Name: "b.high", Kind: apRelative, Value: feltUint64(22222)},
+					{Name: "res.low", Kind: uninitialized},
+					{Name: "res.high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint256SubHint(ctx.operanders["a.low"], ctx.operanders["b.low"], ctx.operanders["res.low"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"res.low":  feltUint64(1234),
+					"res.high": feltUint64(45668),
+				}),
+			},
+			{
+				// smaller value - bigger value
+				operanders: []*hintOperander{
+					{Name: "a.low", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "a.high", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "b.low", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "b.high", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "res.low", Kind: uninitialized},
+					{Name: "res.high", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint256SubHint(ctx.operanders["a.low"], ctx.operanders["b.low"], ctx.operanders["res.low"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"res.low":  feltString("340282366920938463463374607431768211455"),
+					"res.high": feltUint64(0),
+				}),
+			},
+		},
 	})
 }

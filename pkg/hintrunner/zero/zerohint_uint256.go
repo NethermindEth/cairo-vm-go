@@ -506,6 +506,101 @@ func createUint256MulDivModHinter(resolver hintReferenceResolver) (hinter.Hinter
 	return newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder), nil
 }
 
+
+// Uint256Sub hint computes the difference of two `uint256` variables in the field of integers modulo 2**256. Then it splits the result into `low` and `high` parts and stores them in memory.
+//
+// `newUint256SubHint` takes 3 operanders as arguments
+//   - `a` and `b` are the `uint256` variables that will be subtracted
+//   - `res` is the variable that will store the result of the subtraction in memory
+func newUint256SubHint(a, b, res hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Uint256Sub",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			// def split(num: int, num_bits_shift: int = 128, length: int = 2):
+			//     a = []
+			//     for _ in range(length):
+			//         a.append( num & ((1 << num_bits_shift) - 1) )
+			//         num = num >> num_bits_shift
+			//     return tuple(a)
+
+			// def pack(z, num_bits_shift: int = 128) -> int:
+			//     limbs = (z.low, z.high)
+			//     return sum(limb << (num_bits_shift * i) for i, limb in enumerate(limbs))
+
+			// a = pack(ids.a)
+			// b = pack(ids.b)
+			// res = (a - b)%2**256
+			// res_split = split(res)
+			// ids.res.low = res_split[0]
+			// ids.res.high = res_split[1]
+
+			aLow, aHigh, err := GetUint256AsFelts(vm, a)
+			if err != nil {
+				return err
+			}
+			bLow, bHigh, err := GetUint256AsFelts(vm, b)
+			if err != nil {
+				return err
+			}
+
+			pack := func(low, high *fp.Element, numBitsShift int) big.Int {
+				var lowBig, highBig big.Int
+				low.BigInt(&lowBig)
+				high.BigInt(&highBig)
+
+				return *new(big.Int).Add(new(big.Int).Lsh(&highBig, uint(numBitsShift)), &lowBig)
+			}
+
+			a := pack(aLow, aHigh, 128)
+			b := pack(bLow, bHigh, 128)
+
+			modulus := new(big.Int).Lsh(big.NewInt(1), 256)
+			resBig := new(big.Int).Sub(&a, &b)
+			resBig.Mod(resBig, modulus)
+
+			split := func(num big.Int, numBitsShift uint16, length int) []fp.Element {
+				a := make([]fp.Element, length)
+				mask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), uint(numBitsShift)), big.NewInt(1))
+
+				for i := 0; i < length; i++ {
+					a[i] = *new(fp.Element).SetBigInt(new(big.Int).And(&num, mask))
+					num.Rsh(&num, uint(numBitsShift))
+				}
+
+				return a
+			}
+
+			resSplit := split(*resBig, 128, 2)
+			resAddr, err := res.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteUint256ToAddress(resAddr, &resSplit[0], &resSplit[1])
+		},
+	}
+}
+
+func createUint256SubHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := resolver.GetResOperander("res")
+	if err != nil {
+		return nil, err
+	}
+
+	return newUint256SubHint(a, b, res), nil
+}
+
+
 // Uint128Add hint computes the result of the sum of parts of
 // two `uint128` variables(`a` & `b`)  and checks for overflow
 //
@@ -575,3 +670,6 @@ func createUint128AddHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	}
 	return newUint128AddHint(a, b, carry), nil
 }
+
+
+
