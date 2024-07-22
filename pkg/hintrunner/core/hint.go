@@ -1021,14 +1021,15 @@ func (hint *ShouldSkipSquashLoop) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 		return fmt.Errorf("get should skip loop address: %w", err)
 	}
 
-	var shouldSkipLoop f.Element
+	shouldSkipLoop := &f.Element{}
+	shouldSkipLoop.SetOne()
 	if lastIndices, err := ctx.SquashedDictionaryManager.LastIndices(); err == nil && len(lastIndices) > 1 {
-		shouldSkipLoop.SetOne()
+		shouldSkipLoop.SetZero()
 	} else if err != nil {
 		return fmt.Errorf("get last indices: %w", err)
 	}
 
-	mv := mem.MemoryValueFromFieldElement(&shouldSkipLoop)
+	mv := mem.MemoryValueFromFieldElement(shouldSkipLoop)
 	return vm.Memory.WriteToAddress(&shouldSkipLoopAddr, &mv)
 }
 
