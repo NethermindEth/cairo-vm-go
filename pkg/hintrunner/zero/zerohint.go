@@ -122,6 +122,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createVerifyZeroHinter(resolver)
 	case verifyZeroV2Code:
 		return createVerifyZeroHinter(resolver)
+	case verifyZeroV3Code:
+		return createVerifyZeroV3Hinter(resolver)
 	case verifyZeroAltCode:
 		return createVerifyZeroHinter(resolver)
 	case divModNPackedDivmodV1Code:
