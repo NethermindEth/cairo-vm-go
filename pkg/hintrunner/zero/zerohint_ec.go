@@ -1094,3 +1094,119 @@ func createRandomEcPointHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 
 	return newRandomEcPointHint(p, m, q, s), nil
 }
+
+func newEcRecoverDivModNPackedHint(n, x, s hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcRecoverDivModNPacked",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> from starkware.python.math_utils import div_mod, safe_div
+			//>
+			//> N = pack(ids.n, PRIME)
+			//> x = pack(ids.x, PRIME) % N
+			//> s = pack(ids.s, PRIME) % N
+			//> value = res = div_mod(x, s, N)
+			return nil
+		},
+	}
+}
+
+func createEcRecoverDivModNPackedHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	n, err := resolver.GetResOperander("n")
+	if err != nil {
+		return nil, err
+	}
+
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+
+	s, err := resolver.GetResOperander("s")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcRecoverDivModNPackedHint(n, x, s), nil
+}
+
+func newEcRecoverSubABHint(a, b hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcRecoverSubAB",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> from starkware.python.math_utils import div_mod, safe_div
+			//>
+			//> a = pack(ids.a, PRIME)
+			//> b = pack(ids.b, PRIME)
+			//>
+			//> value = res = a - b
+			return nil
+		},
+	}
+}
+
+func createEcRecoverSubABHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcRecoverSubABHint(a, b), nil
+}
+
+func newEcRecoverProductModHint(a, b, m hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcRecoverProductMod",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> from starkware.python.math_utils import div_mod, safe_div
+			//>
+			//> a = pack(ids.a, PRIME)
+			//> b = pack(ids.b, PRIME)
+			//> product = a * b
+			//> m = pack(ids.m, PRIME)
+			//>
+			//> value = res = product % m
+			return nil
+		},
+	}
+}
+
+func createEcRecoverProductModHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+
+	m, err := resolver.GetResOperander("m")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcRecoverProductModHint(a, b, m), nil
+}
+
+func newEcRecoverProductDivMHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcRecoverProductDivM",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> value = k = product // m
+			return nil
+		},
+	}
+}
+
+func createEcRecoverProductDivMHinter() (hinter.Hinter, error) {
+	return newEcRecoverProductDivMHint(), nil
+}
