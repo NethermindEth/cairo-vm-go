@@ -1383,7 +1383,29 @@ func newEcRecoverProductDivMHint() hinter.Hinter {
 		Name: "EcRecoverProductDivM",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> value = k = product // m
-			return nil
+
+			productBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "product")
+			if err != nil {
+				return err
+			}
+
+			mBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "m")
+			if err != nil {
+				return err
+			}
+
+			kBig := new(big.Int)
+			kBig.Div(productBig, mBig)
+
+			valueBig := new(big.Int)
+			valueBig.Set(kBig)
+
+			err = ctx.ScopeManager.AssignVariable("k", kBig)
+			if err != nil {
+				return err
+			}
+
+			return ctx.ScopeManager.AssignVariable("value", valueBig)
 		},
 	}
 }
