@@ -118,8 +118,7 @@ func newDivModNSafeDivPlusOneHint() hinter.Hinter {
 			}
 
 			newValueBig.Add(&newValueBig, big.NewInt(1))
-
-			return ctx.ScopeManager.AssignVariable("value", &newValueBig)
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &newValueBig, "k_plus_one": &newValueBig})
 		},
 	}
 }
