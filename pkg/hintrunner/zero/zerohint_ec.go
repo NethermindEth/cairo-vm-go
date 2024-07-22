@@ -147,12 +147,27 @@ func createNondetBigint3V1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 // It also assigns `slope`, `x0`, `y0` and `new_x` in the current scope
 // so that they are available in the current scope for FastEcAddAssignNewY hint
 //
-// There are 3 versions of FastEcAddAssignNewX hint, this one corresponds to V1
-func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinter.Hinter {
+// There are 3 versions of FastEcAddAssignNewX hint
+// V1 uses Secp256k1 curve
+// V2 uses Curve25519 curve with SECP_P = 2**255 - 19
+// V3 is similar to V1 but uses `pt0` and `pt1` for operanders where V1 and V2 use `point0` and `point1`
+func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander, secPBig big.Int) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "FastEcAddAssignNewX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			// V1
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//>
+			//> slope = pack(ids.slope, PRIME)
+			//> x0 = pack(ids.point0.x, PRIME)
+			//> x1 = pack(ids.point1.x, PRIME)
+			//> y0 = pack(ids.point0.y, PRIME)
+			//>
+			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
+
+			// V2
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> SECP_P = 2**255 - 19
 			//>
 			//> slope = pack(ids.slope, PRIME)
 			//> x0 = pack(ids.point0.x, PRIME)
@@ -226,12 +241,6 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			}
 
 			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
-
-			secPBig, ok := secp_utils.GetSecPBig()
-			if !ok {
-				return fmt.Errorf("GetSecPBig failed")
-			}
-
 			new_xBig := new(big.Int)
 			new_xBig.Exp(&slopeBig, big.NewInt(2), &secPBig)
 			new_xBig.Sub(new_xBig, &x0Big)
@@ -262,118 +271,12 @@ func createFastEcAddAssignNewXHinter(resolver hintReferenceResolver) (hinter.Hin
 		return nil, err
 	}
 
-	return newFastEcAddAssignNewXHint(slope, point0, point1), nil
-}
-
-// FastEcAddAssignNewXV2 hint computes a new x-coordinate for fast elliptic curve addition
-//
-// `newFastEcAddAssignNewXV2Hint` takes 3 operanders as arguments
-//   - `slope` is the slope of the line connecting `point0` and `point1`
-//   - `point0` and `point1` are 2 points on an elliptic curve
-//
-// `newFastEcAddAssignNewXV2Hint` assigns the new x-coordinate as `value` in the current scope
-// It also assigns `slope`, `x0`, `y0` and `new_x` in the current scope
-// so that they are available in the current scope for FastEcAddAssignNewY hint
-//
-// There are 3 versions of FastEcAddAssignNewX hint, this one corresponds to V2
-// This version uses Curve25519 curve with SECP_P = 2**255 - 19
-func newFastEcAddAssignNewXV2Hint(slope, point0, point1 hinter.ResOperander) hinter.Hinter {
-	return &GenericZeroHinter{
-		Name: "FastEcAddAssignNewXV2",
-		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
-			//> SECP_P = 2**255-19
-			//>
-			//> slope = pack(ids.slope, PRIME)
-			//> x0 = pack(ids.point0.x, PRIME)
-			//> x1 = pack(ids.point1.x, PRIME)
-			//> y0 = pack(ids.point0.y, PRIME)
-			//>
-			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
-
-			slopeAddr, err := slope.GetAddress(vm)
-			if err != nil {
-				return err
-			}
-
-			point0Addr, err := point0.GetAddress(vm)
-			if err != nil {
-				return err
-			}
-
-			point1Addr, err := point1.GetAddress(vm)
-			if err != nil {
-				return err
-			}
-
-			point0YAddr, err := point0Addr.AddOffset(3)
-			if err != nil {
-				return err
-			}
-
-			slopeValues, err := vm.Memory.ResolveAsBigInt3(slopeAddr)
-			if err != nil {
-				return err
-			}
-
-			point0XValues, err := vm.Memory.ResolveAsBigInt3(point0Addr)
-			if err != nil {
-				return err
-			}
-
-			point1XValues, err := vm.Memory.ResolveAsBigInt3(point1Addr)
-			if err != nil {
-				return err
-			}
-
-			point0YValues, err := vm.Memory.ResolveAsBigInt3(point0YAddr)
-			if err != nil {
-				return err
-			}
-
-			//> slope = pack(ids.slope, PRIME)
-			slopeBig, err := secp_utils.SecPPacked(slopeValues)
-			if err != nil {
-				return err
-			}
-
-			//> x0 = pack(ids.point0.x, PRIME)
-			x0Big, err := secp_utils.SecPPacked(point0XValues)
-			if err != nil {
-				return err
-			}
-
-			//> x1 = pack(ids.point1.x, PRIME)
-			x1Big, err := secp_utils.SecPPacked(point1XValues)
-			if err != nil {
-				return err
-			}
-
-			//> y0 = pack(ids.point0.y, PRIME)
-			y0Big, err := secp_utils.SecPPacked(point0YValues)
-			if err != nil {
-				return err
-			}
-
-			//> SECP_P = 2**255-19
-			secPBig, ok := secp_utils.GetCurve25519PBig()
-			if !ok {
-				return fmt.Errorf("GetSecPBig failed")
-			}
-
-			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
-			new_xBig := new(big.Int)
-			new_xBig.Exp(&slopeBig, big.NewInt(2), &secPBig)
-			new_xBig.Sub(new_xBig, &x0Big)
-			new_xBig.Sub(new_xBig, &x1Big)
-			new_xBig.Mod(new_xBig, &secPBig)
-
-			valueBig := new(big.Int)
-			valueBig.Set(new_xBig)
-
-			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": &slopeBig, "x0": &x0Big, "y0": &y0Big, "new_x": new_xBig, "value": valueBig, "SECP_P": &secPBig})
-		},
+	secPBig, ok := secp_utils.GetSecPBig()
+	if !ok {
+		return nil, fmt.Errorf("GetSecPBig failed")
 	}
+
+	return newFastEcAddAssignNewXHint(slope, point0, point1, secPBig), nil
 }
 
 func createFastEcAddAssignNewXV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
@@ -392,116 +295,13 @@ func createFastEcAddAssignNewXV2Hinter(resolver hintReferenceResolver) (hinter.H
 		return nil, err
 	}
 
-	return newFastEcAddAssignNewXV2Hint(slope, point0, point1), nil
-}
-
-// FastEcAddAssignNewXV3 hint computes a new x-coordinate for fast elliptic curve addition
-//
-// `newFastEcAddAssignNewXV3Hint` takes 3 operanders as arguments
-//   - `slope` is the slope of the line connecting `point0` and `point1`
-//   - `point0` and `point1` are 2 points on an elliptic curve
-//
-// `newFastEcAddAssignNewXV3Hint` assigns the new x-coordinate as `value` in the current scope
-// It also assigns `slope`, `x0`, `y0` and `new_x` in the current scope
-// so that they are available in the current scope for FastEcAddAssignNewY hint
-//
-// There are 3 versions of FastEcAddAssignNewX hint, this one corresponds to V3
-func newFastEcAddAssignNewXV3Hint(slope, point0, point1 hinter.ResOperander) hinter.Hinter {
-	return &GenericZeroHinter{
-		Name: "FastEcAddAssignNewXV3",
-		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
-			//>
-			//> slope = pack(ids.slope, PRIME)
-			//> x0 = pack(ids.pt0.x, PRIME)
-			//> x1 = pack(ids.pt1.x, PRIME)
-			//> y0 = pack(ids.pt0.y, PRIME)
-			//>
-			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
-
-			slopeAddr, err := slope.GetAddress(vm)
-			if err != nil {
-				return err
-			}
-
-			point0Addr, err := point0.GetAddress(vm)
-			if err != nil {
-				return err
-			}
-
-			point1Addr, err := point1.GetAddress(vm)
-			if err != nil {
-				return err
-			}
-
-			point0YAddr, err := point0Addr.AddOffset(3)
-			if err != nil {
-				return err
-			}
-
-			slopeValues, err := vm.Memory.ResolveAsBigInt3(slopeAddr)
-			if err != nil {
-				return err
-			}
-
-			point0XValues, err := vm.Memory.ResolveAsBigInt3(point0Addr)
-			if err != nil {
-				return err
-			}
-
-			point1XValues, err := vm.Memory.ResolveAsBigInt3(point1Addr)
-			if err != nil {
-				return err
-			}
-
-			point0YValues, err := vm.Memory.ResolveAsBigInt3(point0YAddr)
-			if err != nil {
-				return err
-			}
-
-			//> slope = pack(ids.slope, PRIME)
-			slopeBig, err := secp_utils.SecPPacked(slopeValues)
-			if err != nil {
-				return err
-			}
-
-			//> x0 = pack(ids.point0.x, PRIME)
-			x0Big, err := secp_utils.SecPPacked(point0XValues)
-			if err != nil {
-				return err
-			}
-
-			//> x1 = pack(ids.point1.x, PRIME)
-			x1Big, err := secp_utils.SecPPacked(point1XValues)
-			if err != nil {
-				return err
-			}
-
-			//> y0 = pack(ids.point0.y, PRIME)
-			y0Big, err := secp_utils.SecPPacked(point0YValues)
-			if err != nil {
-				return err
-			}
-
-			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
-
-			secPBig, ok := secp_utils.GetSecPBig()
-			if !ok {
-				return fmt.Errorf("GetSecPBig failed")
-			}
-
-			new_xBig := new(big.Int)
-			new_xBig.Exp(&slopeBig, big.NewInt(2), &secPBig)
-			new_xBig.Sub(new_xBig, &x0Big)
-			new_xBig.Sub(new_xBig, &x1Big)
-			new_xBig.Mod(new_xBig, &secPBig)
-
-			valueBig := new(big.Int)
-			valueBig.Set(new_xBig)
-
-			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": &slopeBig, "x0": &x0Big, "y0": &y0Big, "new_x": new_xBig, "value": valueBig, "SECP_P": &secPBig})
-		},
+	//> SECP_P = 2**255-19
+	secPBig, ok := secp_utils.GetCurve25519PBig()
+	if !ok {
+		return nil, fmt.Errorf("GetSecPBig failed")
 	}
+
+	return newFastEcAddAssignNewXHint(slope, point0, point1, secPBig), nil
 }
 
 func createFastEcAddAssignNewXV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
@@ -520,7 +320,12 @@ func createFastEcAddAssignNewXV3Hinter(resolver hintReferenceResolver) (hinter.H
 		return nil, err
 	}
 
-	return newFastEcAddAssignNewXV3Hint(slope, point0, point1), nil
+	secPBig, ok := secp_utils.GetSecPBig()
+	if !ok {
+		return nil, fmt.Errorf("GetSecPBig failed")
+	}
+
+	return newFastEcAddAssignNewXHint(slope, point0, point1, secPBig), nil
 }
 
 // FastEcAddAssignNewY hint computes a new y-coordinate for fast elliptic curve addition
