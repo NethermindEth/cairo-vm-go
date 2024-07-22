@@ -1163,11 +1163,14 @@ func newEcRecoverDivModNPackedHint(n, x, s hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("res", resBig)
+			err = ctx.ScopeManager.AssignVariable("res", &resBig)
 			if err != nil {
 				return err
 			}
-			return ctx.ScopeManager.AssignVariable("value", resBig)
+
+			valueBig := new(big.Int)
+			valueBig.Set(&resBig)
+			return ctx.ScopeManager.AssignVariable("value", valueBig)
 		},
 	}
 }
@@ -1202,7 +1205,54 @@ func newEcRecoverSubABHint(a, b hinter.ResOperander) hinter.Hinter {
 			//> b = pack(ids.b, PRIME)
 			//>
 			//> value = res = a - b
-			return nil
+
+			aAddr, err := a.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			bAddr, err := b.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			aValues, err := vm.Memory.ResolveAsBigInt3(aAddr)
+			if err != nil {
+				return err
+			}
+
+			bValues, err := vm.Memory.ResolveAsBigInt3(bAddr)
+			if err != nil {
+				return err
+			}
+
+			//> a = pack(ids.a, PRIME)
+			aPackedBig, err := secp_utils.SecPPacked(aValues)
+			if err != nil {
+				return err
+			}
+
+			//> b = pack(ids.b, PRIME)
+			bPackedBig, err := secp_utils.SecPPacked(bValues)
+			if err != nil {
+				return err
+			}
+
+			//> value = res = a - b
+			resBig := new(big.Int)
+			resBig.Sub(&aPackedBig, &bPackedBig)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("res", resBig)
+			if err != nil {
+				return err
+			}
+
+			valueBig := new(big.Int)
+			valueBig.Set(resBig)
+			return ctx.ScopeManager.AssignVariable("value", valueBig)
 		},
 	}
 }
