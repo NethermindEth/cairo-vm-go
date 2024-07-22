@@ -396,7 +396,7 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 //   - `x` is the packed value to be reduced
 //
 // `newReduceHint` assigns the result as `value` in the current scope
-// This implementation is valid for ReduceV1 and ReduceV1
+// This implementation is valid for ReduceV1 and ReduceV2
 func newReduceHint(x hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Reduce",
@@ -452,7 +452,8 @@ func newReduceEd25519Hint(x hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "ReduceEd25519",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack (V1) //> from starkware.cairo.common.cairo_secp.secp_utils import pack (V2)
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> SECP_P=2**255-19
 			//>
 			//> value = pack(ids.x, PRIME) % SECP_P
 
