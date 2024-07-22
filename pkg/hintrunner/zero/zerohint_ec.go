@@ -1284,7 +1284,77 @@ func newEcRecoverProductModHint(a, b, m hinter.ResOperander) hinter.Hinter {
 			//> m = pack(ids.m, PRIME)
 			//>
 			//> value = res = product % m
-			return nil
+
+			aAddr, err := a.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			bAddr, err := b.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			mAddr, err := m.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			aValues, err := vm.Memory.ResolveAsBigInt3(aAddr)
+			if err != nil {
+				return err
+			}
+
+			bValues, err := vm.Memory.ResolveAsBigInt3(bAddr)
+			if err != nil {
+				return err
+			}
+
+			mValues, err := vm.Memory.ResolveAsBigInt3(mAddr)
+			if err != nil {
+				return err
+			}
+
+			//> a = pack(ids.a, PRIME)
+			aPackedBig, err := secp_utils.SecPPacked(aValues)
+			if err != nil {
+				return err
+			}
+
+			//> b = pack(ids.b, PRIME)
+			bPackedBig, err := secp_utils.SecPPacked(bValues)
+			if err != nil {
+				return err
+			}
+
+			//> m = pack(ids.m, PRIME)
+			mPackedBig, err := secp_utils.SecPPacked(mValues)
+			if err != nil {
+				return err
+			}
+
+			//> product = a * b
+			productBig := new(big.Int)
+			productBig.Mul(&aPackedBig, &bPackedBig)
+
+			//> value = res = product % m
+			resBig := new(big.Int)
+			resBig.Mod(productBig, &mPackedBig)
+
+			valueBig := new(big.Int)
+			valueBig.Set(resBig)
+
+			err = ctx.ScopeManager.AssignVariable("product", productBig)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("res", resBig)
+			if err != nil {
+				return err
+			}
+
+			return ctx.ScopeManager.AssignVariable("value", valueBig)
 		},
 	}
 }
