@@ -118,7 +118,8 @@ func createBlake2sAddUint256Hinter(resolver hintReferenceResolver, bigend bool) 
 	return newBlake2sAddUint256Hint(low, high, data, bigend), nil
 }
 
-// Blake2sFinalize hint finalizes the Blake2s hash computation
+// Blake2sFinalize hint finalizes the Blake2s hash computation, ie it verifies
+// that the results of blake2s() are valid
 //
 // `newBlake2sFinalizeHint` takes 1 operander as argument
 //   - `blake2sPtrEnd` is a pointer to the address where to write the result
@@ -202,7 +203,8 @@ func createBlake2sFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter,
 	return newBlake2sFinalizeHint(blake2sPtrEnd), nil
 }
 
-// Blake2sFinalizeV3 hint finalizes the Blake2s hash computation
+// Blake2sFinalizeV3 hint finalizes the Blake2s hash computation, ie it verifies
+// that the results of blake2s() are valid
 //
 // `newBlake2sFinalizeV3Hint` takes 1 operander as argument
 //   - `blake2sPtrEnd` is a pointer to the address where to write the result
