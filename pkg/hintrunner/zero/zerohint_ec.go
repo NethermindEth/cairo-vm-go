@@ -44,24 +44,24 @@ func newBigIntToUint256Hint(low, x hinter.ResOperander) hinter.Hinter {
 			}
 
 			var xD0Big big.Int
-			(*xBigInt[0]).BigInt(&xD0Big)
-
 			var xD1Big big.Int
-			(*xBigInt[1]).BigInt(&xD1Big)
+
+			xBigInt[0].BigInt(&xD0Big)
+			xBigInt[1].BigInt(&xD1Big)
 
 			baseBig, ok := secp_utils.GetBaseBig()
 			if !ok {
 				return fmt.Errorf("getBaseBig failed")
 			}
 
-			var operand *big.Int
+			var operand big.Int
 			operand.Mul(&xD1Big, &baseBig)
-			operand.Add(operand, &xD0Big)
+			operand.Add(&operand, &xD0Big)
 
 			mask := new(big.Int).Lsh(big.NewInt(1), 128)
 			mask = new(big.Int).Sub(mask, big.NewInt(1))
 
-			lowBigInt := new(big.Int).And(operand, mask)
+			lowBigInt := new(big.Int).And(&operand, mask)
 			lowValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(lowBigInt))
 
 			err = vm.Memory.WriteToAddress(&lowAddr, &lowValue)
