@@ -1106,7 +1106,68 @@ func newEcRecoverDivModNPackedHint(n, x, s hinter.ResOperander) hinter.Hinter {
 			//> x = pack(ids.x, PRIME) % N
 			//> s = pack(ids.s, PRIME) % N
 			//> value = res = div_mod(x, s, N)
-			return nil
+
+			nAddr, err := n.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			xAddr, err := x.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			sAddr, err := s.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			nValues, err := vm.Memory.ResolveAsBigInt3(nAddr)
+			if err != nil {
+				return err
+			}
+
+			xValues, err := vm.Memory.ResolveAsBigInt3(xAddr)
+			if err != nil {
+				return err
+			}
+
+			sValues, err := vm.Memory.ResolveAsBigInt3(sAddr)
+			if err != nil {
+				return err
+			}
+
+			//> N = pack(ids.n, PRIME)
+			nPackedBig, err := secp_utils.SecPPacked(nValues)
+			if err != nil {
+				return err
+			}
+
+			//> x = pack(ids.x, PRIME) % N
+			xPackedBig, err := secp_utils.SecPPacked(xValues)
+			if err != nil {
+				return err
+			}
+			xPackedBig.Mod(&xPackedBig, &nPackedBig)
+
+			//> s = pack(ids.s, PRIME) % N
+			sPackedBig, err := secp_utils.SecPPacked(sValues)
+			if err != nil {
+				return err
+			}
+			sPackedBig.Mod(&sPackedBig, &nPackedBig)
+
+			//> value = res = div_mod(x, s, N)
+			resBig, err := secp_utils.Divmod(&xPackedBig, &sPackedBig, &nPackedBig)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("res", resBig)
+			if err != nil {
+				return err
+			}
+			return ctx.ScopeManager.AssignVariable("value", resBig)
 		},
 	}
 }
