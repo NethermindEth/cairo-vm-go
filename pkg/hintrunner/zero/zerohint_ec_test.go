@@ -164,9 +164,6 @@ func TestZeroHintEc(t *testing.T) {
 		},
 		"DivModNSafeDivPlusOne": {
 			{
-				operanders: []*hintOperander{
-					{Name: "value", Kind: uninitialized},
-				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
 					resBig := big.NewInt(100)
 					aBig := big.NewInt(200)
