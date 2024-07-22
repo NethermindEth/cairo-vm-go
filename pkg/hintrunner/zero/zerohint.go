@@ -120,8 +120,12 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createImportSecp256R1PHinter()
 	case verifyZeroCode:
 		return createVerifyZeroHinter(resolver)
-	case verifyZeroV3Code:
+	case verifyZeroV2Code:
+		return createVerifyZeroHinter(resolver)
+  case verifyZeroV3Code:
 		return createVerifyZeroV3Hinter(resolver)
+	case verifyZeroAltCode:
+		return createVerifyZeroHinter(resolver)
 	case divModNPackedDivmodV1Code:
 		return createDivModNPackedDivmodV1Hinter(resolver)
 	// EC hints
@@ -172,6 +176,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case keccakWriteArgsCode:
 		return createKeccakWriteArgsHinter(resolver)
 	case cairoKeccakFinalizeCode:
+		return createCairoKeccakFinalizeHinter(resolver)
+	case cairoKeccakFinalizeBlockSize1000Code:
 		return createCairoKeccakFinalizeHinter(resolver)
 	case unsafeKeccakCode:
 		return createUnsafeKeccakHinter(resolver)
