@@ -582,7 +582,7 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
-		"EcDoubleAssignNewXV1": {
+		"EcDoubleAssignNewX": {
 			{
 				operanders: []*hintOperander{
 					{Name: "slope.d0", Kind: apRelative, Value: &utils.FeltZero},
