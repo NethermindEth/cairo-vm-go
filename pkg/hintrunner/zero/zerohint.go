@@ -124,6 +124,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createVerifyZeroHinter(resolver)
 	case verifyZeroV2Code:
 		return createVerifyZeroHinter(resolver)
+	case verifyZeroV3Code:
+		return createVerifyZeroV3Hinter(resolver)
 	case verifyZeroAltCode:
 		return createVerifyZeroHinter(resolver)
 	case divModNPackedDivmodV1Code:
@@ -135,12 +137,20 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createNondetBigint3V1Hinter(resolver)
 	case fastEcAddAssignNewXCode:
 		return createFastEcAddAssignNewXHinter(resolver)
+	case fastEcAddAssignNewXV2Code:
+		return createFastEcAddAssignNewXV2Hinter(resolver)
+	case fastEcAddAssignNewXV3Code:
+		return createFastEcAddAssignNewXV3Hinter(resolver)
 	case fastEcAddAssignNewYCode:
 		return createFastEcAddAssignNewYHinter()
 	case ecDoubleSlopeV1Code:
 		return createEcDoubleSlopeV1Hinter(resolver)
 	case reduceV1Code:
-		return createReduceV1Hinter(resolver)
+		return createReduceHinter(resolver)
+	case reduceV2Code:
+		return createReduceHinter(resolver)
+	case reduceEd25519Code:
+		return createReduceEd25519Hinter(resolver)
 	case computeSlopeV1Code:
 		return createComputeSlopeV1Hinter(resolver)
 	case ecDoubleAssignNewXV1Code:
