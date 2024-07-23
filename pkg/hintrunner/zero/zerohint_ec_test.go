@@ -178,7 +178,7 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDivModNSafeDivPlusOneHint()
 				},
-				check:  varValueInScopeEquals("value", big.NewInt(986)),
+				check: varValueInScopeEquals("value", big.NewInt(986)),
 			},
 		},
 		"DivModNPackedDivModExternalN": {
