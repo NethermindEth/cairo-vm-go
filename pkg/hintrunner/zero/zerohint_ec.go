@@ -566,8 +566,8 @@ func createReduceEd25519Hinter(resolver hintReferenceResolver) (hinter.Hinter, e
 // It also assigns `slope`, `x`, `y` and `new_x` in the current scope
 // so that they are available in the current scope for EcDoubleAssignNewYV1 hint
 //
-// This implementation is valid for both EcDoubleAssignNewX V1 and V4, only the operander differs
-// with `point` used for V1 and `pt` used for V4
+// This implementation is valid for EcDoubleAssignNewX V1,V2 and V4, only the operander differs
+// with `point` used for V1,V2 and `pt` used for V4
 func newEcDoubleAssignNewXHint(slope, point hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcDoubleAssignNewX",
@@ -580,6 +580,16 @@ func newEcDoubleAssignNewXHint(slope, point hinter.ResOperander) hinter.Hinter {
 			//> y = pack(ids.point.y, PRIME)
 			//>
 			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
+
+			// V2
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//>
+			//> slope = pack(ids.slope, PRIME)
+			//> x = pack(ids.point.x, PRIME)
+			//> y = pack(ids.point.y, PRIME)
+			//>
+			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
+
 
 			// V4
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
@@ -689,97 +699,6 @@ func createEcDoubleAssignNewXV4Hinter(resolver hintReferenceResolver) (hinter.Hi
 }
 
 
-// EcDoubleAssignNewXV2 hint computes a new x-coordinate for a point being doubled on an elliptic curve
-//
-// `newEcDoubleAssignNewXV2Hint` takes 2 operanders as arguments
-//   - `slope` is the slope for doubling a point, computed with EcDoubleSlopeV1 hint
-//   - `point` is the point on an elliptic curve to operate on
-//
-// `newEcDoubleAssignNewXV2Hint` assigns the `new_x` result as `value` in the current scope
-// It also assigns `slope`, `x`, `y` and `new_x` in the current scope
-// so that they are available in the current scope for EcDoubleAssignNewYV1 hint
-func newEcDoubleAssignNewXV2Hint(slope, point hinter.ResOperander) hinter.Hinter {
-	return &GenericZeroHinter{
-		Name: "EcDoubleAssignNewXV2",
-		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
-			//>
-			//> slope = pack(ids.slope, PRIME)
-			//> x = pack(ids.point.x, PRIME)
-			//> y = pack(ids.point.y, PRIME)
-			//>
-			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
-
-			slopeAddr, err := slope.GetAddress(vm)
-			if err != nil {
-				return err
-			}
-
-			pointAddr, err := point.GetAddress(vm)
-			if err != nil {
-				return err
-			}
-
-			pointYAddr, err := pointAddr.AddOffset(3)
-			if err != nil {
-				return err
-			}
-
-			slopeValues, err := vm.Memory.ResolveAsBigInt3(slopeAddr)
-			if err != nil {
-				return err
-			}
-
-			pointXValues, err := vm.Memory.ResolveAsBigInt3(pointAddr)
-			if err != nil {
-				return err
-			}
-
-			pointYValues, err := vm.Memory.ResolveAsBigInt3(pointYAddr)
-			if err != nil {
-				return err
-			}
-
-			//> slope = pack(ids.slope, PRIME)
-			slopeBig, err := secp_utils.SecPPacked(slopeValues)
-			if err != nil {
-				return err
-			}
-
-			//> x = pack(ids.point.x, PRIME)
-			xBig, err := secp_utils.SecPPacked(pointXValues)
-			if err != nil {
-				return err
-			}
-
-			//> y = pack(ids.point.y, PRIME)
-			yBig, err := secp_utils.SecPPacked(pointYValues)
-			if err != nil {
-				return err
-			}
-
-			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
-			secPBig, ok := secp_utils.GetSecPBig()
-			if !ok {
-				return fmt.Errorf("GetSecPBig failed")
-			}
-
-			multRes := new(big.Int)
-			multRes.Mul(big.NewInt(2), &xBig)
-
-			new_xBig := new(big.Int)
-			new_xBig.Exp(&slopeBig, big.NewInt(2), &secPBig)
-			new_xBig.Sub(new_xBig, multRes)
-			new_xBig.Mod(new_xBig, &secPBig)
-
-			valueBig := new(big.Int)
-			valueBig.Set(new_xBig)
-
-			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": &slopeBig, "x": &xBig, "y": &yBig, "new_x": new_xBig, "value": valueBig, "SECP_P": &secPBig})
-		},
-	}
-}
-
 func createEcDoubleAssignNewXV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	slope, err := resolver.GetResOperander("slope")
 	if err != nil {
@@ -791,7 +710,7 @@ func createEcDoubleAssignNewXV2Hinter(resolver hintReferenceResolver) (hinter.Hi
 		return nil, err
 	}
 
-	return newEcDoubleAssignNewXV1Hint(slope, point), nil
+	return newEcDoubleAssignNewXHint(slope, point), nil
 }
 
 // EcDoubleAssignNewYV1 hint computes a new y-coordinate when doubling a point
