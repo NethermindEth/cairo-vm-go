@@ -276,6 +276,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createVMEnterScopeHinter()
 	case vmExitScopeCode:
 		return createVMExitScopeHinter()
+	case getFeltBitLengthCode:
+		return createGetFeltBitLengthHinter(resolver)
 	case setAddCode:
 		return createSetAddHinter(resolver)
 	case testAssignCode:
