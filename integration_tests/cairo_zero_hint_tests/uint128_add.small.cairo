@@ -3,6 +3,17 @@
 // Source: https://github.com/NethermindEth/research-basic-Cairo-operations-big-integers/blob/fe1ddf69549354a4f241074486db4cd9fb259d51/lib/uint256_improvements.cairo
 
 
+from starkware.cairo.common.uint256 import (
+    Uint256,
+    SHIFT,
+    HALF_SHIFT,
+    split_64,
+    uint256_check,
+    uint256_add,
+    uint256_le,
+    uint256_lt,
+)
+
 
 // assumes inputs are <2**128
 func uint128_add{range_check_ptr}(a: felt, b: felt) -> (result: Uint256) {
@@ -23,7 +34,11 @@ func uint128_add{range_check_ptr}(a: felt, b: felt) -> (result: Uint256) {
 
 
 func main{range_check_ptr}() {
-    test_uint128_add();
+
+    let a = 2**64-1;
+    let b = 2**64-1;
+
+    uint128_add(a, b);
 
     return ();
 }
