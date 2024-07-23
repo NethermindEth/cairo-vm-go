@@ -596,7 +596,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point.y.d2", Kind: apRelative, Value: &utils.FeltZero},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
+					return newEcDoubleAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"slope": bigIntString("0", 10),
@@ -620,7 +620,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point.y.d2", Kind: apRelative, Value: feltString("6837128718738732781737")},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
+					return newEcDoubleAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"x":     bigIntString("46003884165973832456933262296354598115596485770084020998681742081", 10),
@@ -644,7 +644,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point.y.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
+					return newEcDoubleAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"x":     bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
