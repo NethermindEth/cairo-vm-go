@@ -32,7 +32,7 @@ To run the VM you need to have a compiled Cairo file using the Cairo Zero compil
 
 First, make sure you have [Python 3.9.11](https://www.python.org/downloads/release/python-3911/) installed in your machine. Since this version is quite old and can cause problem with your system's Python we suggest the use of [pyenv](https://github.com/pyenv/pyenv) to manage different Python versions.
 
-Then, install cairo-lang package latest version with the following command:
+Then, install the latest version fo the cairo-lang package with the following command:
 
 ```bash
 pip install cairo-lang==0.13.1
