@@ -344,16 +344,21 @@ func (mv *MemoryValue) addrUnsafe() *MemoryAddress {
 
 func (memory *Memory) GetConsecutiveMemoryValues(addr MemoryAddress, size uint64) ([]MemoryValue, error) {
 	values := make([]MemoryValue, size)
+
 	for i := uint64(0); i < size; i++ {
-		nAddr, err := addr.AddOffset(int16(i))
+		{
+			v, err := memory.ReadFromAddress(&addr)
+			if err != nil {
+				return nil, err
+			}
+			values[i] = v
+		}
+
+		var err error
+		addr, err = addr.AddOffset(int16(1))
 		if err != nil {
 			return nil, err
 		}
-		v, err := memory.ReadFromAddress(&nAddr)
-		if err != nil {
-			return nil, err
-		}
-		values[i] = v
 	}
 	return values, nil
 }
