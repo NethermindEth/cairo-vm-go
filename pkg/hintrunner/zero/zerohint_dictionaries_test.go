@@ -249,7 +249,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "loop_temps.should_continue", Kind: apRelative, Value: feltInt64(0)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(3), *feltUint64(2)}, "current_access_index": *feltUint64(1)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(3), *feltUint64(2)}, "current_access_index": feltUint64(1)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -270,7 +270,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "loop_temps.should_continue", Kind: apRelative, Value: feltInt64(0)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(97), *feltUint64(76), *feltUint64(54), *feltUint64(51), *feltUint64(44), *feltUint64(43)}, "current_access_index": *feltUint64(19)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(97), *feltUint64(76), *feltUint64(54), *feltUint64(51), *feltUint64(44), *feltUint64(43)}, "current_access_index": feltUint64(19)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -346,7 +346,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "range_check_ptr", Kind: fpRelative, Value: addr(6)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(2), *feltUint64(1), *feltUint64(3)}}, "key": *feltUint64(0)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(2), *feltUint64(1), *feltUint64(3)}}, "key": feltUint64(0)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -364,7 +364,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "range_check_ptr", Kind: fpRelative, Value: addr(6)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(22), *feltUint64(76), *feltUint64(94), *feltUint64(55), *feltUint64(18), *feltUint64(92)}}, "key": *feltUint64(1)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(22), *feltUint64(76), *feltUint64(94), *feltUint64(55), *feltUint64(18), *feltUint64(92)}}, "key": feltUint64(1)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -374,7 +374,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					valueAtAddressEquals(*addr(6), feltUint64(18))(t, ctx)
-					allVarValueInScopeEquals(map[string]any{"current_access_indices": []fp.Element{*feltUint64(94), *feltUint64(92), *feltUint64(76), *feltUint64(55), *feltUint64(22)}, "current_access_index": feltUint64(18), "access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(22), *feltUint64(76), *feltUint64(94), *feltUint64(55), *feltUint64(18), *feltUint64(92)}}, "key": *feltUint64(1)})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"current_access_indices": []fp.Element{*feltUint64(94), *feltUint64(92), *feltUint64(76), *feltUint64(55), *feltUint64(22)}, "current_access_index": feltUint64(18), "access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(22), *feltUint64(76), *feltUint64(94), *feltUint64(55), *feltUint64(18), *feltUint64(92)}}, "key": feltUint64(1)})(t, ctx)
 				},
 			},
 			{
@@ -382,7 +382,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "range_check_ptr", Kind: fpRelative, Value: addr(6)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(22)}, *feltUint64(1): {*feltUint64(5), *feltUint64(28)}, *feltUint64(2): {*feltUint64(543), *feltUint64(323), *feltUint64(324), *feltUint64(999), *feltUint64(888), *feltUint64(777)}}, "key": *feltUint64(2)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(22)}, *feltUint64(1): {*feltUint64(5), *feltUint64(28)}, *feltUint64(2): {*feltUint64(543), *feltUint64(323), *feltUint64(324), *feltUint64(999), *feltUint64(888), *feltUint64(777)}}, "key": feltUint64(2)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -516,7 +516,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(0)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(0)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": feltUint64(0)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -531,7 +531,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(0)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(1)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": feltUint64(1)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -546,7 +546,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(3)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(1)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": feltUint64(1)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -561,7 +561,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(3)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(0)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": feltUint64(0)})
 					if err != nil {
 						t.Fatal(err)
 					}
