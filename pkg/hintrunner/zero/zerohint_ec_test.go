@@ -1113,6 +1113,40 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
+		"ChainedEcOp": {
+			{
+				operanders: []*hintOperander{
+					{Name: "len", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "p.x", Kind: apRelative, Value: feltString("3004956058830981475544150447242655232275382685012344776588097793621230049020")},
+					{Name: "p.y", Kind: apRelative, Value: feltString("3232266734070744637901977159303149980795588196503166389060831401046564401743")},
+					{Name: "m", Kind: apRelative, Value: addr(8)},
+					{Name: "m_value", Kind: apRelative, Value: feltUint64(34)},
+					{Name: "m_value", Kind: apRelative, Value: feltUint64(34)},
+					{Name: "m_value", Kind: apRelative, Value: feltUint64(34)},
+					{Name: "q.q1.x", Kind: apRelative, Value: feltString("2864041794633455918387139831609347757720597354645583729611044800117714995244")},
+					{Name: "q.q1.y", Kind: apRelative, Value: feltString("2252415379535459416893084165764951913426528160630388985542241241048300343256")},
+					{Name: "q.q2.x", Kind: apRelative, Value: feltString("2864041794633455918387139831609347757720597354645583729611044800117714995244")},
+					{Name: "q.q2.y", Kind: apRelative, Value: feltString("2252415379535459416893084165764951913426528160630388985542241241048300343256")},
+					{Name: "q.q3.x", Kind: apRelative, Value: feltString("2864041794633455918387139831609347757720597354645583729611044800117714995244")},
+					{Name: "q.q3.y", Kind: apRelative, Value: feltString("2252415379535459416893084165764951913426528160630388985542241241048300343256")},
+					{Name: "q", Kind: apRelative, Value: addrWithSegment(1, 11)},
+					{Name: "s", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newChainedEcOpHint(
+						ctx.operanders["len"],
+						ctx.operanders["p.x"],
+						ctx.operanders["m"],
+						ctx.operanders["q"],
+						ctx.operanders["s"],
+					)
+				},
+				check: consecutiveVarValueEquals("s", []*fp.Element{
+					feltString("1354562415074475070179359167082942891834423311678180448592849484844152837347"),
+					feltString("907662328694455187848008017177970257426839229889571025406355869359245158736"),
+				}),
+			},
+		},
 	},
 	)
 }
