@@ -28,9 +28,9 @@ After completing these steps, you can find the compiled VM in `bin/cairo-vm`.
 
 ### Run The VM
 
-To run the VM you need to have a compiled Cairo file using the Cairo compiler at [cairo-lang](https://github.com/starkware-libs/cairo-lang).
+To run the VM you need to have a compiled Cairo file using the Cairo Zero compiler at [cairo-lang](https://github.com/starkware-libs/cairo-lang).
 
-First of all, make sure you have Python 3 installed, with version 3.9.11. Indeed, many Python versions are not compatible with the latest version of the cairo-lang repository. You can find the link to download Python 3.9.11 [here](https://www.python.org/downloads/release/python-3911/).
+First, make sure you have [Python 3.9.11](https://www.python.org/downloads/release/python-3911/) installed in your machine. Since this version is quite old and can cause problem with your system's Python we suggest the use of [pyenv](https://github.com/pyenv/pyenv) to manage different Python versions.
 
 Then, install cairo-lang package latest version with the following command:
 
