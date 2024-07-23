@@ -664,7 +664,7 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 //
 // `newPowHint` takes 2 operanders as arguments
 //   - `locs` is the variable that will store the result
-//   - `prevLocs` is the the variable used to calculate the exponent
+//   - `prevLocs` is the variable used to calculate the exponent
 //
 // `newPowHint` writes to the memory address of `locs` variable the value of the least
 // significant bit of the exponent of `prevLocs` variable module a prime field
