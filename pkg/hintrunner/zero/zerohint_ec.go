@@ -115,7 +115,7 @@ func newDivModNSafeDivPlusOneHint() hinter.Hinter {
 			}
 
 			newValueBig.Add(&newValueBig, big.NewInt(1))
-			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &newValueBig, "k_plus_one": &newValueBig})
+			return ctx.ScopeManager.AssignVariable("value", &newValueBig)
 		},
 	}
 }
@@ -180,7 +180,7 @@ func newDivModNPackedDivModExternalN(a, b hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &newValueBig, "res": &newValueBig})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &newValueBig, "res": &newValueBig, "a": &aBig, "b":bBig})
 		},
 	}
 }

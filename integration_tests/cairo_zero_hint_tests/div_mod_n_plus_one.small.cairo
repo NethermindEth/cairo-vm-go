@@ -67,14 +67,6 @@ func div_mod_n_alt{range_check_ptr}(a: BigInt3, b: BigInt3) -> (res: BigInt3) {
         value = res = div_mod(a, b, N)
     %}
 
-    %{
-        from starkware.cairo.common.cairo_secp.secp_utils import pack
-        from starkware.python.math_utils import div_mod, safe_div
-
-        a = pack(ids.a, PRIME)
-        b = pack(ids.b, PRIME)
-        value = res = div_mod(a, b, N)
-    %}
     let (res) = nondet_bigint3();
 
     %{ value = k_plus_one = safe_div(res * b - a, N) + 1 %}
