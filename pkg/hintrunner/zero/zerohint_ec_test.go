@@ -366,7 +366,12 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point1.y.d2", Kind: apRelative, Value: feltUint64(211245645)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
+
+					secPBig, ok := secp_utils.GetSecPBig()
+					if !ok {
+						return nil
+					}
+					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"], secPBig)
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"slope": bigIntString("99065496658741969395000079476826955370154683653966841736214499259699304892273", 10),
@@ -395,7 +400,11 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point1.y.d2", Kind: apRelative, Value: &utils.FeltZero},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
+					secPBig, ok := secp_utils.GetSecPBig()
+					if !ok {
+						return nil
+					}
+					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"], secPBig)
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"slope": bigIntString("0", 10),
@@ -425,7 +434,11 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point1.y.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
+					secPBig, ok := secp_utils.GetSecPBig()
+					if !ok {
+						return nil
+					}
+					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"], secPBig)
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"slope": bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
