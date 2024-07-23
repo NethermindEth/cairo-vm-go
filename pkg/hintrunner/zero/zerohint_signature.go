@@ -88,6 +88,86 @@ func createVerifyZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	return newVerifyZeroHint(val, q), nil
 }
 
+// VerifyZeroV3 hint verifies that a packed value is zero modulo the Curve25519 prime
+// and stores in memory the quotient of the modular divison of the packed value by
+// Curve25519 prime
+//
+// `newVerifyZeroV3Hint` takes 2 operanders as arguments
+//   - `value` is the value that will be verified
+//   - `q` is the variable that will store the quotient of the modular division
+//
+// `newVerifyZeroV3Hint` writes the quotient of the modular division of the packed value
+// by Curve25519 prime to the memory address corresponding to `q`
+func newVerifyZeroV3Hint(val, q hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "VerifyZeroV3",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> SECP_P = 2**255-19
+			//> to_assert = pack(ids.val, PRIME)
+			//> q, r = divmod(pack(ids.val, PRIME), SECP_P)
+			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
+			//> ids.q = q % PRIME
+
+			valAddr, err := val.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			valValues, err := vm.Memory.ResolveAsBigInt3(valAddr)
+			if err != nil {
+				return err
+			}
+
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			packedValue, err := secp_utils.SecPPacked(valValues)
+			if err != nil {
+				return err
+			}
+
+			//> SECP_P = 2**255-19
+			secPBig, ok := secp_utils.GetCurve25519PBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			//> q, r = divmod(pack(ids.val, PRIME), SECP_P)
+			qBig, rBig := new(big.Int), new(big.Int)
+			qBig.DivMod(&packedValue, &secPBig, rBig)
+
+			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
+			if rBig.Cmp(big.NewInt(0)) != 0 {
+				return fmt.Errorf("verify_zero: Invalid input (%v, %v, %v)", valValues[0], valValues[1], valValues[2])
+			}
+
+			//> ids.q = q % PRIME
+			qBig.Mod(qBig, fp.Modulus())
+			qFelt := new(fp.Element).SetBigInt(qBig)
+			qAddr, err := q.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			qMv := mem.MemoryValueFromFieldElement(qFelt)
+			return vm.Memory.WriteToAddress(&qAddr, &qMv)
+		},
+	}
+}
+
+func createVerifyZeroV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	val, err := resolver.GetResOperander("val")
+	if err != nil {
+		return nil, err
+	}
+
+	q, err := resolver.GetResOperander("q")
+	if err != nil {
+		return nil, err
+	}
+
+	return newVerifyZeroV3Hint(val, q), nil
+}
+
 // VerifyECDSASignature hint writes an ECDSA signature to a given address
 //
 // `newVerifyECDSASignatureHint` takes 3 operanders as arguments
