@@ -109,6 +109,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUint256SqrtHinter(resolver)
 	case uint256MulDivModCode:
 		return createUint256MulDivModHinter(resolver)
+	case uint256SubCode:
+		return createUint256SubHinter(resolver)
 	// Signature hints
 	case verifyECDSASignatureCode:
 		return createVerifyECDSASignatureHinter(resolver)
@@ -122,6 +124,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createVerifyZeroHinter(resolver)
 	case verifyZeroV2Code:
 		return createVerifyZeroHinter(resolver)
+	case verifyZeroV3Code:
+		return createVerifyZeroV3Hinter(resolver)
 	case verifyZeroAltCode:
 		return createVerifyZeroHinter(resolver)
 	case divModNPackedDivmodV1Code:
@@ -142,7 +146,11 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	case ecDoubleSlopeV1Code:
 		return createEcDoubleSlopeV1Hinter(resolver)
 	case reduceV1Code:
-		return createReduceV1Hinter(resolver)
+		return createReduceHinter(resolver)
+	case reduceV2Code:
+		return createReduceHinter(resolver)
+	case reduceEd25519Code:
+		return createReduceEd25519Hinter(resolver)
 	case computeSlopeV1Code:
 		return createComputeSlopeV1Hinter(resolver)
 	case ecDoubleAssignNewXV1Code:
