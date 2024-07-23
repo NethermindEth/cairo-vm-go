@@ -1133,15 +1133,6 @@ func newChainedEcOpHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			var RangeFelts []*fp.Element
-			for _, element := range firstRange {
-				RangeFelts = append(RangeFelts, &(element.Felt))
-			}
-			for _, element := range secondRange {
-				feltCopy := element.Felt
-				RangeFelts = append(RangeFelts, &feltCopy)
-			}
-
 			var bytesArray []byte
 
 			writeFeltToBytesArray := func(n *fp.Element) {
@@ -1153,8 +1144,13 @@ func newChainedEcOpHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
 			for _, felt := range pValues {
 				writeFeltToBytesArray(felt)
 			}
-			for _, felt := range RangeFelts {
-				writeFeltToBytesArray(felt)
+
+			for _, element := range firstRange {
+				writeFeltToBytesArray(&element.Felt)
+			}
+			for _, element := range secondRange {
+				writeFeltToBytesArray(&element.Felt)
+
 			}
 
 			sAddr, err := s.GetAddress(vm)
