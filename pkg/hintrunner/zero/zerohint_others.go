@@ -2,6 +2,7 @@ package zero
 
 import (
 	"fmt"
+	"math/big"
 	"reflect"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
@@ -145,6 +146,53 @@ func createMemEnterScopeHinter(resolver hintReferenceResolver, memset bool) (hin
 		return nil, err
 	}
 	return newMemEnterScopeHint(value, memset), nil
+}
+
+// GetFeltBitLength hint assigns to `bit_length` the bit length of `x` variable
+//
+// `newGetFeltBitLengthHint` takes 2 operanders as arguments
+//   - `x` is a felt variable
+//   - `bit_length` is the variable that will store the bit length of x
+func newGetFeltBitLengthHint(x, bitLength hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "GetFeltBitLength",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> x = ids.x
+			//> ids.bit_length = x.bit_length()
+
+			bitLengthAddr, err := bitLength.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			xVal, err := hinter.ResolveAsFelt(vm, x)
+			if err != nil {
+				return err
+			}
+
+			var xBig big.Int
+			xVal.BigInt(&xBig)
+
+			bitLen := xBig.BitLen()
+			bitLenMv := memory.MemoryValueFromInt(bitLen)
+
+			return vm.Memory.WriteToAddress(&bitLengthAddr, &bitLenMv)
+		},
+	}
+}
+
+func createGetFeltBitLengthHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+
+	bitLength, err := resolver.GetResOperander("bit_length")
+	if err != nil {
+		return nil, err
+	}
+
+	return newGetFeltBitLengthHint(x, bitLength), nil
 }
 
 // FindElement hint finds element in the array by given key. It either returns element at index provided by __find_element_index or searches for the key in the array, returning error if key wasn't found.
@@ -387,7 +435,7 @@ func newSetAddHint(elmSize, elmPtr, setPtr, setEndPtr, index, isElmInSet hinter.
 			}
 
 			//> elm_list = memory.get_range(ids.elm_ptr, ids.elm_size)
-			elmList, err := vm.Memory.GetConsecutiveMemoryValues(*elmPtr, int16(elmSize))
+			elmList, err := vm.Memory.GetConsecutiveMemoryValues(*elmPtr, elmSize)
 			if err != nil {
 				return err
 			}
@@ -402,7 +450,7 @@ func newSetAddHint(elmSize, elmPtr, setPtr, setEndPtr, index, isElmInSet hinter.
 			isElmInSetFelt := utils.FeltZero
 			totalSetLength := setEndPtr.Offset - setPtr.Offset
 			for i := uint64(0); i < totalSetLength; i += elmSize {
-				memoryElmList, err := vm.Memory.GetConsecutiveMemoryValues(*setPtr, int16(elmSize))
+				memoryElmList, err := vm.Memory.GetConsecutiveMemoryValues(*setPtr, elmSize)
 				if err != nil {
 					return err
 				}

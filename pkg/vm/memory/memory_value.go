@@ -238,7 +238,7 @@ func (mv *MemoryValue) Equal(other *MemoryValue) bool {
 	return false
 }
 
-// Adds two memory values is the second one is a Felt
+// Adds two memory values if the second one is a Felt
 func (mv *MemoryValue) Add(lhs, rhs *MemoryValue) error {
 	if lhs.IsAddress() {
 		if !rhs.IsFelt() {
@@ -284,7 +284,14 @@ func (mv *MemoryValue) subAddress(lhs *MemoryAddress, rhs *MemoryValue) error {
 				rhsAddr.SegmentIndex, lhs.SegmentIndex)
 		}
 		mv.Kind = feltMemoryValue
-		mv.Felt.SetUint64(lhs.Offset - rhsAddr.Offset)
+		if lhs.Offset >= rhsAddr.Offset {
+			mv.Felt.SetUint64(lhs.Offset - rhsAddr.Offset)
+		} else {
+			// There can be an issue here as difference can be upto
+			// -uint64.max which int64 cant accommodate. But such
+			// offsets aren't expected.
+			mv.Felt.SetInt64(-int64(rhsAddr.Offset - lhs.Offset))
+		}
 		return nil
 	}
 
@@ -326,7 +333,7 @@ func (mv MemoryValue) String() string {
 	return mv.Felt.String()
 }
 
-// Retuns a MemoryValue holding a felt as uint if it fits
+// Returns a MemoryValue holding a felt as uint if it fits
 func (mv *MemoryValue) Uint64() (uint64, error) {
 	if mv.IsAddress() {
 		return 0, fmt.Errorf("cannot convert a memory address into uint64: %s", *mv)
@@ -342,24 +349,29 @@ func (mv *MemoryValue) addrUnsafe() *MemoryAddress {
 	return (*MemoryAddress)(unsafe.Pointer(&mv.Felt))
 }
 
-func (memory *Memory) GetConsecutiveMemoryValues(addr MemoryAddress, size int16) ([]MemoryValue, error) {
+func (memory *Memory) GetConsecutiveMemoryValues(addr MemoryAddress, size uint64) ([]MemoryValue, error) {
 	values := make([]MemoryValue, size)
-	for i := int16(0); i < size; i++ {
-		nAddr, err := addr.AddOffset(i)
+
+	for i := uint64(0); i < size; i++ {
+		{
+			v, err := memory.ReadFromAddress(&addr)
+			if err != nil {
+				return nil, err
+			}
+			values[i] = v
+		}
+
+		var err error
+		addr, err = addr.AddOffset(int16(1))
 		if err != nil {
 			return nil, err
 		}
-		v, err := memory.ReadFromAddress(&nAddr)
-		if err != nil {
-			return nil, err
-		}
-		values[i] = v
 	}
 	return values, nil
 }
 
 func (memory *Memory) ResolveAsBigInt3(valAddr MemoryAddress) ([3]*f.Element, error) {
-	valMemoryValues, err := memory.GetConsecutiveMemoryValues(valAddr, int16(3))
+	valMemoryValues, err := memory.GetConsecutiveMemoryValues(valAddr, uint64(3))
 	if err != nil {
 		return [3]*f.Element{}, err
 	}
@@ -377,7 +389,7 @@ func (memory *Memory) ResolveAsBigInt3(valAddr MemoryAddress) ([3]*f.Element, er
 }
 
 func (memory *Memory) ResolveAsEcPoint(valAddr MemoryAddress) ([2]*f.Element, error) {
-	valMemoryValues, err := memory.GetConsecutiveMemoryValues(valAddr, int16(2))
+	valMemoryValues, err := memory.GetConsecutiveMemoryValues(valAddr, uint64(2))
 	if err != nil {
 		return [2]*f.Element{}, err
 	}
