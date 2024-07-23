@@ -32,7 +32,7 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64][]hinter.Hinter, 
 		}
 
 		for _, rawHint := range rawHints {
-			hint, err := GetHintFromCode(cairoZeroJson, rawHint, pc)
+			hint, err := GetHintFromCode(cairoZeroJson, rawHint)
 			if err != nil {
 				return nil, err
 			}
@@ -44,8 +44,8 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64][]hinter.Hinter, 
 	return hints, nil
 }
 
-func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64) (hinter.Hinter, error) {
-	resolver, err := getParameters(program, rawHint, hintPC)
+func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinter, error) {
+	resolver, err := getParameters(program, rawHint)
 	if err != nil {
 		return nil, err
 	}
@@ -293,7 +293,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	}
 }
 
-func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) (hintReferenceResolver, error) {
+func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint) (hintReferenceResolver, error) {
 	resolver := NewReferenceResolver()
 
 	for referenceName, id := range hint.FlowTrackingData.ReferenceIds {
