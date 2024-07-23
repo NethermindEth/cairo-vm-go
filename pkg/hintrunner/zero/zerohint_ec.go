@@ -180,7 +180,12 @@ func newDivModNPackedDivModExternalN(a, b hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"res": &newValueBig, "a": &aBig, "b": &bBig})
+			resBig, err := secp_utils.Divmod(&aBig, &bBig, nBig)
+			if err != nil {
+				return err
+			}
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &newValueBig, "res": &resBig, "a": &aBig, "b": &bBig})
 		},
 	}
 }
