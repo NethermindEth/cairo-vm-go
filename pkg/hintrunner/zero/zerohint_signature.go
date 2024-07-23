@@ -446,23 +446,23 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			if err := ctx.ScopeManager.AssignVariable("res", resBig); err != nil {
+			if err := ctx.ScopeManager.AssignVariable("res", &resBig); err != nil {
 				return err
 			}
 
-			if err := ctx.ScopeManager.AssignVariable("a", aPackedBig); err != nil {
+			if err := ctx.ScopeManager.AssignVariable("a", &aPackedBig); err != nil {
 				return err
 			}
 
-			if err := ctx.ScopeManager.AssignVariable("b", bPackedBig); err != nil {
+			if err := ctx.ScopeManager.AssignVariable("b", &bPackedBig); err != nil {
 				return err
 			}
 
-			if err := ctx.ScopeManager.AssignVariable("N", nBig); err != nil {
+			if err := ctx.ScopeManager.AssignVariable("N", &nBig); err != nil {
 				return err
 			}
 
-			return ctx.ScopeManager.AssignVariable("value", resBig)
+			return ctx.ScopeManager.AssignVariable("value", &resBig)
 		},
 	}
 }
