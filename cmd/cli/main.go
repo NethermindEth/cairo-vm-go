@@ -133,8 +133,9 @@ func main() {
 					}
 
 					if proofmode {
-						runner.EndRun()
-
+						if err := runner.EndRun(); err != nil {
+							return fmt.Errorf("cannot end run: %w", err)
+						}
 						if err := runner.FinalizeSegments(); err != nil {
 							return fmt.Errorf("cannot finalize segments: %w", err)
 						}
