@@ -590,7 +590,6 @@ func newEcDoubleAssignNewXHint(slope, point hinter.ResOperander) hinter.Hinter {
 			//>
 			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
 
-
 			// V4
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 			//>
@@ -697,7 +696,6 @@ func createEcDoubleAssignNewXV4Hinter(resolver hintReferenceResolver) (hinter.Hi
 
 	return newEcDoubleAssignNewXHint(slope, point), nil
 }
-
 
 func createEcDoubleAssignNewXV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 	slope, err := resolver.GetResOperander("slope")
