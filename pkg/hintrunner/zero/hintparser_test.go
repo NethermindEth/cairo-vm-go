@@ -68,6 +68,16 @@ func TestHintParser(t *testing.T) {
 				Rhs:      hinter.Immediate{18446744073709551521, 18446744073709551615, 18446744073709551615, 576460752303421872},
 			},
 		},
+		{
+			Parameter:            "cast(7, felt)",
+			ExpectedCellRefer:    nil,
+			ExpectedResOperander: hinter.Immediate(*feltInt64((7))),
+		},
+		{
+			Parameter:            "cast([[ap + 2] + (-5)], felt)",
+			ExpectedCellRefer:    nil,
+			ExpectedResOperander: hinter.Immediate(*feltInt64((7))),
+		},
 	}
 
 	for _, test := range testSet {
