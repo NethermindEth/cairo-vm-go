@@ -12,6 +12,68 @@ import (
 
 func TestZeroHintEc(t *testing.T) {
 	runHinterTests(t, map[string][]hintTestCase{
+		"BigIntToUint256": {
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltUint64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("1")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltUint64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("1")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltString("77371252455336267181195264")),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("1")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("1")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltString("77371252455336267181195265")),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("2")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltString("154742504910672534362390528")),
+			},
+		},
 		"EcNegate": {
 			{
 				operanders: []*hintOperander{
