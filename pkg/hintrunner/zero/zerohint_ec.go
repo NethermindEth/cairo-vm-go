@@ -567,7 +567,8 @@ func createReduceEd25519Hinter(resolver hintReferenceResolver) (hinter.Hinter, e
 // so that they are available in the current scope for EcDoubleAssignNewYV1 hint
 //
 // This implementation is valid for EcDoubleAssignNewX V1,V2 and V4, only the operander differs
-// with `point` used for V1,V2 and `pt` used for V4
+// with `point` used for V1,V2 and `pt` used for V4 and for V2 SECP_P has to be already in scope
+// contrary to V1
 func newEcDoubleAssignNewXHint(slope, point hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcDoubleAssignNewX",
