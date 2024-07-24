@@ -1,9 +1,6 @@
 package zero
 
 import (
-	"crypto/sha256"
-	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"math/big"
 
@@ -217,11 +214,28 @@ func createNondetBigint3V1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 // `newFastEcAddAssignNewXHint` assigns the new x-coordinate as `value` in the current scope
 // It also assigns `slope`, `x0`, `y0` and `new_x` in the current scope
 // so that they are available in the current scope for FastEcAddAssignNewY hint
-func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinter.Hinter {
+//
+// There are 3 versions of FastEcAddAssignNewX hint
+// V1 uses Secp256k1 curve
+// V2 uses Curve25519 curve with SECP_P = 2**255 - 19
+// V3 is similar to V1 but uses `pt0` and `pt1` for operanders where V1 and V2 use `point0` and `point1`
+func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander, secPBig big.Int) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "FastEcAddAssignNewX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			// V1
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//>
+			//> slope = pack(ids.slope, PRIME)
+			//> x0 = pack(ids.point0.x, PRIME)
+			//> x1 = pack(ids.point1.x, PRIME)
+			//> y0 = pack(ids.point0.y, PRIME)
+			//>
+			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
+
+			// V2
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> SECP_P = 2**255 - 19
 			//>
 			//> slope = pack(ids.slope, PRIME)
 			//> x0 = pack(ids.point0.x, PRIME)
@@ -295,12 +309,6 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			}
 
 			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
-
-			secPBig, ok := secp_utils.GetSecPBig()
-			if !ok {
-				return fmt.Errorf("GetSecPBig failed")
-			}
-
 			new_xBig := new(big.Int)
 			new_xBig.Exp(&slopeBig, big.NewInt(2), &secPBig)
 			new_xBig.Sub(new_xBig, &x0Big)
@@ -310,7 +318,7 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander) hinte
 			valueBig := new(big.Int)
 			valueBig.Set(new_xBig)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": &slopeBig, "x0": &x0Big, "y0": &y0Big, "new_x": new_xBig, "value": valueBig})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"slope": &slopeBig, "x0": &x0Big, "y0": &y0Big, "new_x": new_xBig, "value": valueBig, "SECP_P": &secPBig})
 		},
 	}
 }
@@ -331,7 +339,61 @@ func createFastEcAddAssignNewXHinter(resolver hintReferenceResolver) (hinter.Hin
 		return nil, err
 	}
 
-	return newFastEcAddAssignNewXHint(slope, point0, point1), nil
+	secPBig, ok := secp_utils.GetSecPBig()
+	if !ok {
+		return nil, fmt.Errorf("GetSecPBig failed")
+	}
+
+	return newFastEcAddAssignNewXHint(slope, point0, point1, secPBig), nil
+}
+
+func createFastEcAddAssignNewXV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	slope, err := resolver.GetResOperander("slope")
+	if err != nil {
+		return nil, err
+	}
+
+	point0, err := resolver.GetResOperander("point0")
+	if err != nil {
+		return nil, err
+	}
+
+	point1, err := resolver.GetResOperander("point1")
+	if err != nil {
+		return nil, err
+	}
+
+	//> SECP_P = 2**255-19
+	secPBig, ok := secp_utils.GetCurve25519PBig()
+	if !ok {
+		return nil, fmt.Errorf("GetSecPBig failed")
+	}
+
+	return newFastEcAddAssignNewXHint(slope, point0, point1, secPBig), nil
+}
+
+func createFastEcAddAssignNewXV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	slope, err := resolver.GetResOperander("slope")
+	if err != nil {
+		return nil, err
+	}
+
+	point0, err := resolver.GetResOperander("pt0")
+	if err != nil {
+		return nil, err
+	}
+
+	point1, err := resolver.GetResOperander("pt1")
+	if err != nil {
+		return nil, err
+	}
+
+	secPBig, ok := secp_utils.GetSecPBig()
+	if !ok {
+		return nil, fmt.Errorf("GetSecPBig failed")
+	}
+
+	return newFastEcAddAssignNewXHint(slope, point0, point1, secPBig), nil
 }
 
 // FastEcAddAssignNewY hint computes a new y-coordinate for fast elliptic curve addition
@@ -565,24 +627,37 @@ func createReduceEd25519Hinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	return newReduceEd25519Hint(x), nil
 }
 
-// EcDoubleAssignNewXV1 hint computes a new x-coordinate for a point being doubled on an elliptic curve
+// EcDoubleAssignNewX hint computes a new x-coordinate for a point being doubled on an elliptic curve
 //
-// `newEcDoubleAssignNewXV1Hint` takes 2 operanders as arguments
+// `newEcDoubleAssignNewXHint` takes 2 operanders as arguments
 //   - `slope` is the slope for doubling a point, computed with EcDoubleSlopeV1 hint
-//   - `point` is the point on an elliptic curve to operate on
+//   - `point` is the point on an elliptic curve to operate on for V1, `pt` for V2
 //
-// `newEcDoubleAssignNewXV1Hint` assigns the `new_x` result as `value` in the current scope
+// `newEcDoubleAssignNewXHint` assigns the `new_x` result as `value` in the current scope
 // It also assigns `slope`, `x`, `y` and `new_x` in the current scope
 // so that they are available in the current scope for EcDoubleAssignNewYV1 hint
-func newEcDoubleAssignNewXV1Hint(slope, point hinter.ResOperander) hinter.Hinter {
+//
+// This implementation is valid for both EcDoubleAssignNewX V1 and V4, only the operander differs
+// with `point` used for V1 and `pt` used for V4
+func newEcDoubleAssignNewXHint(slope, point hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "EcDoubleAssignNewXV1",
+		Name: "EcDoubleAssignNewX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			// V1
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 			//>
 			//> slope = pack(ids.slope, PRIME)
 			//> x = pack(ids.point.x, PRIME)
 			//> y = pack(ids.point.y, PRIME)
+			//>
+			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
+
+			// V4
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//>
+			//> slope = pack(ids.slope, PRIME)
+			//> x = pack(ids.pt.x, PRIME)
+			//> y = pack(ids.pt.y, PRIME)
 			//>
 			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
 
@@ -667,7 +742,21 @@ func createEcDoubleAssignNewXV1Hinter(resolver hintReferenceResolver) (hinter.Hi
 		return nil, err
 	}
 
-	return newEcDoubleAssignNewXV1Hint(slope, point), nil
+	return newEcDoubleAssignNewXHint(slope, point), nil
+}
+
+func createEcDoubleAssignNewXV4Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	slope, err := resolver.GetResOperander("slope")
+	if err != nil {
+		return nil, err
+	}
+
+	point, err := resolver.GetResOperander("pt")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcDoubleAssignNewXHint(slope, point), nil
 }
 
 // EcDoubleAssignNewYV1 hint computes a new y-coordinate when doubling a point
@@ -1196,7 +1285,7 @@ func createRecoverYHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newRecoverYHint(x, p), nil
 }
 
-// RandomEcPoint hint returns a random non-zero point on the elliptic curve
+// RandomEcPoint hint returns a random non-zero point on the STARK curve
 // y^2 = x^3 + alpha * x + beta (mod field_prime).
 // The point is created deterministically from the seed.
 //
@@ -1258,58 +1347,13 @@ func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
 			for _, felt := range qValues {
 				writeFeltToBytesArray(felt)
 			}
-			seed := sha256.Sum256(bytesArray)
 
-			alphaBig := new(big.Int)
-			utils.Alpha.BigInt(alphaBig)
-			betaBig := new(big.Int)
-			utils.Beta.BigInt(betaBig)
-			fieldPrime, ok := secp_utils.GetCairoPrime()
-			if !ok {
-				return fmt.Errorf("GetCairoPrime failed")
+			sAddr, err := s.GetAddress(vm)
+			if err != nil {
+				return err
 			}
 
-			for i := uint64(0); i < 100; i++ {
-				iBytes := make([]byte, 10)
-				binary.LittleEndian.PutUint64(iBytes, i)
-				concatenated := append(seed[1:], iBytes...)
-				hash := sha256.Sum256(concatenated)
-				hashHex := hex.EncodeToString(hash[:])
-				x := new(big.Int)
-				x.SetString(hashHex, 16)
-
-				yCoef := big.NewInt(1)
-				if seed[0]&1 == 1 {
-					yCoef.Neg(yCoef)
-				}
-
-				// Try to recover y
-				if !ok {
-					return fmt.Errorf("failed to get field prime value")
-				}
-				if y, err := secp_utils.RecoverY(x, betaBig, &fieldPrime); err == nil {
-					y.Mul(yCoef, y)
-					y.Mod(y, &fieldPrime)
-
-					sAddr, err := s.GetAddress(vm)
-					if err != nil {
-						return err
-					}
-
-					sXFelt := new(fp.Element).SetBigInt(x)
-					sYFelt := new(fp.Element).SetBigInt(y)
-					sXMv := memory.MemoryValueFromFieldElement(sXFelt)
-					sYMv := memory.MemoryValueFromFieldElement(sYFelt)
-
-					err = vm.Memory.WriteToNthStructField(sAddr, sXMv, 0)
-					if err != nil {
-						return err
-					}
-					return vm.Memory.WriteToNthStructField(sAddr, sYMv, 1)
-				}
-			}
-
-			return fmt.Errorf("could not find a point on the curve")
+			return secp_utils.RandomEcPoint(vm, bytesArray, sAddr)
 		},
 	}
 }
@@ -1336,4 +1380,149 @@ func createRandomEcPointHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	}
 
 	return newRandomEcPointHint(p, m, q, s), nil
+}
+
+// ChainedEcOp hint returns a random non-zero point on the STARK curve
+// in the context of chained ecop operations.
+// The point is created deterministically from the seed.
+//
+// `newChainedEcOpHint` takes 5 operanders as arguments
+//   - `len` is the number of chained elements in the chained ecop operation
+//   - `p` is an EC point used for seed generation
+//   - `m` the multiplication coefficient of Q used for seed generation
+//   - `q` an EC point used for seed generation
+//   - `s` is where the generated random EC point is written to
+func newChainedEcOpHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "ChainedEcOp",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME
+			//> from starkware.python.math_utils import random_ec_point
+			//> from starkware.python.utils import to_bytes
+			//>
+			//> n_elms = ids.len
+			//> assert isinstance(n_elms, int) and n_elms >= 0, \
+			//> 	f'Invalid value for len. Got: {n_elms}.'
+			//> if '__chained_ec_op_max_len' in globals():
+			//> 	assert n_elms <= __chained_ec_op_max_len, \
+			//> 		f'chained_ec_op() can only be used with len<={__chained_ec_op_max_len}. ' \
+			//> 		f'Got: n_elms={n_elms}.'
+			//>
+			//> # Define a seed for random_ec_point that's dependent on all the input, so that:
+			//> #   (1) The added point s is deterministic.
+			//> #   (2) It's hard to choose inputs for which the builtin will fail.
+			//> seed = b"".join(
+			//> 	map(
+			//> 		to_bytes,
+			//> 		[
+			//> 			ids.p.x,
+			//> 			ids.p.y,
+			//> 			*memory.get_range(ids.m, n_elms),
+			//> 			*memory.get_range(ids.q.address_, 2 * n_elms),
+			//> 		],
+			//> 	)
+			//> )
+			//> ids.s.x, ids.s.y = random_ec_point(FIELD_PRIME, ALPHA, BETA, seed)
+
+			nElms, err := hinter.ResolveAsUint64(vm, len)
+			if err != nil {
+				return err
+			}
+
+			if nElms == 0 {
+				return fmt.Errorf("invalid value for len. Got: %v", nElms)
+			}
+
+			chainedEcOpMaxLen := uint64(1000)
+			if nElms > chainedEcOpMaxLen {
+				return fmt.Errorf("f'chained_ec_op() can only be used with len<=%d.\n Got: n_elms=%d", chainedEcOpMaxLen, nElms)
+			}
+
+			pAddr, err := p.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			mAddr, err := hinter.ResolveAsAddress(vm, m)
+			if err != nil {
+				return err
+			}
+
+			qAddr, err := hinter.ResolveAsAddress(vm, q)
+			if err != nil {
+				return err
+			}
+
+			pValues, err := vm.Memory.ResolveAsEcPoint(pAddr)
+			if err != nil {
+				return err
+			}
+
+			firstRange, err := vm.Memory.GetConsecutiveMemoryValues(*mAddr, nElms)
+			if err != nil {
+				return err
+			}
+
+			secondRange, err := vm.Memory.GetConsecutiveMemoryValues(*qAddr, 2*nElms)
+			if err != nil {
+				return err
+			}
+
+			var bytesArray []byte
+
+			writeFeltToBytesArray := func(n *fp.Element) {
+				for _, byteValue := range n.Bytes() {
+					bytesArray = append(bytesArray, byteValue)
+				}
+			}
+
+			for _, felt := range pValues {
+				writeFeltToBytesArray(felt)
+			}
+
+			for _, element := range firstRange {
+				writeFeltToBytesArray(&element.Felt)
+			}
+			for _, element := range secondRange {
+				writeFeltToBytesArray(&element.Felt)
+
+			}
+
+			sAddr, err := s.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			return secp_utils.RandomEcPoint(vm, bytesArray, sAddr)
+		},
+	}
+}
+
+func createChainedEcOpHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	len, err := resolver.GetResOperander("len")
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := resolver.GetResOperander("p")
+	if err != nil {
+		return nil, err
+	}
+
+	m, err := resolver.GetResOperander("m")
+	if err != nil {
+		return nil, err
+	}
+
+	q, err := resolver.GetResOperander("q")
+	if err != nil {
+		return nil, err
+	}
+
+	s, err := resolver.GetResOperander("s")
+	if err != nil {
+		return nil, err
+	}
+
+	return newChainedEcOpHint(len, p, m, q, s), nil
 }

@@ -32,7 +32,7 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64][]hinter.Hinter, 
 		}
 
 		for _, rawHint := range rawHints {
-			hint, err := GetHintFromCode(cairoZeroJson, rawHint, pc)
+			hint, err := GetHintFromCode(cairoZeroJson, rawHint)
 			if err != nil {
 				return nil, err
 			}
@@ -44,8 +44,8 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64][]hinter.Hinter, 
 	return hints, nil
 }
 
-func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64) (hinter.Hinter, error) {
-	resolver, err := getParameters(program, rawHint, hintPC)
+func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinter, error) {
+	resolver, err := getParameters(program, rawHint)
 	if err != nil {
 		return nil, err
 	}
@@ -139,6 +139,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createNondetBigint3V1Hinter(resolver)
 	case fastEcAddAssignNewXCode:
 		return createFastEcAddAssignNewXHinter(resolver)
+	case fastEcAddAssignNewXV2Code:
+		return createFastEcAddAssignNewXV2Hinter(resolver)
+	case fastEcAddAssignNewXV3Code:
+		return createFastEcAddAssignNewXV3Hinter(resolver)
 	case fastEcAddAssignNewYCode:
 		return createFastEcAddAssignNewYHinter()
 	case ecDoubleSlopeV1Code:
@@ -155,6 +159,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createComputeSlopeV2Hinter(resolver)
 	case ecDoubleAssignNewXV1Code:
 		return createEcDoubleAssignNewXV1Hinter(resolver)
+	case ecDoubleAssignNewXV4Code:
+		return createEcDoubleAssignNewXV4Hinter(resolver)
 	case ecDoubleAssignNewYV1Code:
 		return createEcDoubleAssignNewYV1Hinter()
 	case ecMulInnerCode:
@@ -169,6 +175,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createRecoverYHinter(resolver)
 	case randomEcPointCode:
 		return createRandomEcPointHinter(resolver)
+	case chainedEcOpCode:
+		return createChainedEcOpHinter(resolver)
 	// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
@@ -276,6 +284,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createVMEnterScopeHinter()
 	case vmExitScopeCode:
 		return createVMExitScopeHinter()
+	case getFeltBitLengthCode:
+		return createGetFeltBitLengthHinter(resolver)
 	case setAddCode:
 		return createSetAddHinter(resolver)
 	case testAssignCode:
@@ -286,12 +296,14 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createNondetElementsOverXHinter(resolver, 2)
 	case nondetElementsOverTenCode:
 		return createNondetElementsOverXHinter(resolver, 10)
+	case normalizeAddressCode:
+		return createNormalizeAddressHinter(resolver)
 	default:
 		return nil, fmt.Errorf("not identified hint")
 	}
 }
 
-func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) (hintReferenceResolver, error) {
+func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint) (hintReferenceResolver, error) {
 	resolver := NewReferenceResolver()
 
 	for referenceName, id := range hint.FlowTrackingData.ReferenceIds {

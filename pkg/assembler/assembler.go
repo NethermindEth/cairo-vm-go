@@ -33,7 +33,7 @@ func CasmToBytecode(code string) ([]*f.Element, error) {
 	return encodeInstructionListToBytecode(wordList)
 }
 
-// Given an a CASM ast it returns a list of instructions
+// Given a CASM ast it returns a list of instructions
 func astToInstruction(ast *CasmProgram) ([]Word, error) {
 	n := len(ast.InstructionList)
 	wordList := make([]Word, 0, n)
