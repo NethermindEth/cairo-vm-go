@@ -52,7 +52,7 @@ func (f *Filter) filtered(testFile string) bool {
 	return false
 }
 
-var zerobench = flag.Bool("zerobench", false, "run Integration tests and generates benchmarks file")
+var zerobench = flag.Bool("zerobench", false, "run integration tests and generate benchmarks file")
 
 func TestCairoZeroFiles(t *testing.T) {
 	roots := []string{
