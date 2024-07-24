@@ -893,7 +893,7 @@ func createEcDoubleAssignNewYV1Hinter() (hinter.Hinter, error) {
 	return newEcDoubleAssignNewYV1Hint(), nil
 }
 
-// ComputeSlopeV1 hint computes the slope between two points on an elliptic curve
+// ComputeSlopeV1 hint computes the slope between two points on the Secp256k1 elliptic curve
 //
 // `newComputeSlopeV1Hint` takes 2 operanders as arguments
 //   - `point0` is the first point on an elliptic curve to operate on
@@ -1143,7 +1143,7 @@ func createComputeSlopeV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	return newComputeSlopeV2Hint(point0, point1), nil
 }
 
-// ComputeSlopeV3 hint computes the slope between two points on an elliptic curve
+// ComputeSlopeV3 hint computes the slope between two points on the Secp256k1 elliptic curve
 //
 // `newComputeSlopeV3Hint` takes 2 operanders as arguments
 //   - `pt0` is the first point on an elliptic curve to operate on
