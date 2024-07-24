@@ -1,3 +1,5 @@
+// This file has been borrowed from https://github.com/mateocapon/criptografia-tp3/blob/7021d130f1af1a5904b03deeec03fe447ddcc118/euclidean_algo.cairo#L4
+
 %builtins range_check
 
 from starkware.cairo.common.math_cmp import is_le
