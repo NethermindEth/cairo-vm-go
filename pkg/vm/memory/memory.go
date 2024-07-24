@@ -347,7 +347,7 @@ func (memory *Memory) RelocationOffsets() ([]uint64, uint64) {
 
 	// segmentsOffsets[0] = 1
 	// segmentsOffsets[1] = 1 + len(segment[0])
-	// segmentsOffsets[N] = 1 + len(segment[n-1]) + sum of segements[n-1-i] for i in [1, n-1]
+	// segmentsOffsets[N] = 1 + len(segment[n-1]) + sum of segments[n-1-i] for i in [1, n-1]
 	segmentsOffsets := make([]uint64, uint64(len(memory.Segments))+1)
 	segmentsOffsets[0] = 1
 	for i, segment := range memory.Segments {
