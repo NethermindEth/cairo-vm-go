@@ -13,7 +13,6 @@ import (
 	"github.com/holiman/uint256"
 )
 
-
 // BigIntToUint256 hint guesses the low part of the result uint256 variable
 //
 // `newBigIntToUint256Hint` takes 2 operanders as arguments
@@ -59,7 +58,7 @@ func newBigIntToUint256Hint(low, x hinter.ResOperander) hinter.Hinter {
 			mask = new(big.Int).Sub(mask, big.NewInt(1))
 
 			lowBigInt := new(big.Int).And(&operand, mask)
-			lowValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(lowBigInt))
+			lowValue := mem.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(lowBigInt))
 
 			err = vm.Memory.WriteToAddress(&lowAddr, &lowValue)
 			if err != nil {
@@ -1111,6 +1110,13 @@ func newComputeSlopeV2Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			}
 
 			// value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
+
+			modValue := new(big.Int).Mod(new(big.Int).Sub(&x0Big, &x1Big), &secPBig)
+
+			if modValue.Cmp(big.NewInt(0)) == 0 {
+				return fmt.Errorf("the slope of the line is invalid")
+			}
+
 			slopeBig, err := secp_utils.LineSlope(&x0Big, &y0Big, &x1Big, &y1Big, &secPBig)
 			if err != nil {
 				return err
