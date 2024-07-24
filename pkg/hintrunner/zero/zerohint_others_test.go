@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -57,6 +58,48 @@ func TestZeroHintOthers(t *testing.T) {
 					return newMemEnterScopeHint(ctx.operanders["len"], false)
 				},
 				check: varValueInScopeEquals("n", uint64(1)),
+			},
+		},
+		"GetFeltBitLength": {
+			{
+				operanders: []*hintOperander{
+					{Name: "x", Kind: apRelative, Value: feltUint64(1)},
+					{Name: "bit_length", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newGetFeltBitLengthHint(ctx.operanders["x"], ctx.operanders["bit_length"])
+				},
+				check: varValueEquals("bit_length", feltUint64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "bit_length", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newGetFeltBitLengthHint(ctx.operanders["x"], ctx.operanders["bit_length"])
+				},
+				check: varValueEquals("bit_length", feltUint64(2)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x", Kind: apRelative, Value: &utils.FeltMax128},
+					{Name: "bit_length", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newGetFeltBitLengthHint(ctx.operanders["x"], ctx.operanders["bit_length"])
+				},
+				check: varValueEquals("bit_length", feltUint64(129)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x", Kind: apRelative, Value: &utils.FeltUpperBound},
+					{Name: "bit_length", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newGetFeltBitLengthHint(ctx.operanders["x"], ctx.operanders["bit_length"])
+				},
+				check: varValueEquals("bit_length", feltUint64(251)),
 			},
 		},
 		"SearchSortedLower": {
