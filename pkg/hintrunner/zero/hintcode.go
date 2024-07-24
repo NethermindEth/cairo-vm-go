@@ -110,7 +110,7 @@ const (
 
 	// ------ Sha256 Hash hints related code ------
 
-	packedSha256Code string = ""
+	packedSha256Code string = "from starkware.cairo.common.cairo_sha256.sha256_utils import (\n    IV, compute_message_schedule, sha2_compress_function)\n\n_sha256_input_chunk_size_felts = int(ids.SHA256_INPUT_CHUNK_SIZE_FELTS)\nassert 0 <= _sha256_input_chunk_size_felts < 100\n\nw = compute_message_schedule(memory.get_range(\n    ids.sha256_start, _sha256_input_chunk_size_felts))\nnew_state = sha2_compress_function(IV, w)\nsegments.write_arg(ids.output, new_state)"
 
 	// ------ Keccak hints related code ------
 	unsafeKeccakFinalizeCode             string = "from eth_hash.auto import keccak\nkeccak_input = bytearray()\nn_elms = ids.keccak_state.end_ptr - ids.keccak_state.start_ptr\nfor word in memory.get_range(ids.keccak_state.start_ptr, n_elms):\n    keccak_input += word.to_bytes(16, 'big')\nhashed = keccak(keccak_input)\nids.high = int.from_bytes(hashed[:16], 'big')\nids.low = int.from_bytes(hashed[16:32], 'big')"
