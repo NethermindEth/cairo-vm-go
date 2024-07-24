@@ -568,7 +568,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			if err != nil {
 				return err
 			}
-			return ctx.ScopeManager.AssignVariable("key", firstKeyValue)
+			return ctx.ScopeManager.AssignVariable("key", &firstKeyValue)
 		},
 	}
 }
@@ -667,12 +667,12 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 				return err
 			}
 
-			currentAccessIndex, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, "current_access_index")
+			currentAccessIndex, err := hinter.GetVariableAs[*fp.Element](&ctx.ScopeManager, "current_access_index")
 			if err != nil {
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("current_access_index", newAccessIndex)
+			err = ctx.ScopeManager.AssignVariable("current_access_index", &newAccessIndex)
 			if err != nil {
 				return err
 			}
@@ -683,7 +683,7 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 			}
 
 			var result fp.Element
-			result.Sub(&newAccessIndex, &currentAccessIndex)
+			result.Sub(&newAccessIndex, currentAccessIndex)
 			result.Sub(&result, &utils.FeltOne)
 
 			resultMem := memory.MemoryValueFromFieldElement(&result)
@@ -776,7 +776,7 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 			//> current_access_index = current_access_indices.pop()
 			//> memory[ids.range_check_ptr] = current_access_index
 
-			key, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, "key")
+			key, err := hinter.GetVariableAs[*fp.Element](&ctx.ScopeManager, "key")
 			if err != nil {
 				return err
 			}
@@ -786,7 +786,7 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 				return err
 			}
 
-			accessIndicesAtKey := accessIndices[key]
+			accessIndicesAtKey := accessIndices[*key]
 
 			accessIndicesAtKeyCopy := make([]fp.Element, len(accessIndicesAtKey))
 			copy(accessIndicesAtKeyCopy, accessIndicesAtKey)
@@ -807,7 +807,7 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("current_access_index", currentAccessIndex)
+			err = ctx.ScopeManager.AssignVariable("current_access_index", &currentAccessIndex)
 			if err != nil {
 				return err
 			}
@@ -937,7 +937,7 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("key", newKey)
+			err = ctx.ScopeManager.AssignVariable("key", &newKey)
 			if err != nil {
 				return err
 			}
@@ -979,12 +979,12 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 				return err
 			}
 
-			key, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, "key")
+			key, err := hinter.GetVariableAs[*fp.Element](&ctx.ScopeManager, "key")
 			if err != nil {
 				return err
 			}
 
-			accessIndicesAtKeyLen := uint64(len(accessIndices[key]))
+			accessIndicesAtKeyLen := uint64(len(accessIndices[*key]))
 
 			nUsedAccesses, err := hinter.ResolveAsUint64(vm, nUsedAccesses)
 			if err != nil {
