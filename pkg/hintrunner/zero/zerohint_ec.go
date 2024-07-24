@@ -1095,6 +1095,12 @@ func createRandomEcPointHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	return newRandomEcPointHint(p, m, q, s), nil
 }
 
+// EcRecoverDivModNPacked hint
+//
+// `newEcRecoverDivModNPackedHint` takes 3 operanders as arguments
+//   - `n`
+//   - `x`
+//   - `s`
 func newEcRecoverDivModNPackedHint(n, x, s hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcRecoverDivModNPacked",
@@ -1190,6 +1196,11 @@ func createEcRecoverDivModNPackedHinter(resolver hintReferenceResolver) (hinter.
 	return newEcRecoverDivModNPackedHint(n, x, s), nil
 }
 
+// EcRecoverSubAB hint
+//
+// `newEcRecoverSubABHint` takes 2 operanders as arguments
+//   - `a`
+//   - `b`
 func newEcRecoverSubABHint(a, b hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcRecoverSubAB",
@@ -1263,6 +1274,12 @@ func createEcRecoverSubABHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	return newEcRecoverSubABHint(a, b), nil
 }
 
+// EcRecoverProductMod hint
+//
+// `newEcRecoverProductModHint` takes 3 operanders as arguments
+//   - `a`
+//   - `b`
+//   - `m`
 func newEcRecoverProductModHint(a, b, m hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcRecoverProductMod",
@@ -1360,6 +1377,10 @@ func createEcRecoverProductModHinter(resolver hintReferenceResolver) (hinter.Hin
 	return newEcRecoverProductModHint(a, b, m), nil
 }
 
+// EcRecoverProductDivM hint fetches product and m scope variables
+// and stores the result of their division in scope variables value and k
+//
+// `newEcRecoverProductDivMHint` takes no arguments
 func newEcRecoverProductDivMHint() hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcRecoverProductDivM",
