@@ -433,6 +433,10 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> value = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)
+			if new(big.Int).Mod(&yBig, &secPBig).Cmp(big.NewInt(0)) == 0 {
+				return fmt.Errorf("point[1] modulo p == 0")
+			}
+
 			valueBig, err := secp_utils.EcDoubleSlope(&xBig, &yBig, big.NewInt(0), &secPBig)
 			if err != nil {
 				return err
@@ -511,10 +515,7 @@ func newEcDoubleSlopeV3Hint(point hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> value = slope = div_mod(3 * x ** 2, 2 * y, SECP_P)
-			numerator := new(big.Int).Mul(big.NewInt(3), new(big.Int).Mul(&xBig, &xBig))
-			denominator := new(big.Int).Mul(big.NewInt(2), &yBig)
-
-			valueBig, err := secp_utils.Divmod(numerator, denominator, &secPBig)
+			valueBig, err := secp_utils.EcDoubleSlope(&xBig, &yBig, big.NewInt(0), &secPBig)
 			if err != nil {
 				return err
 			}
@@ -912,6 +913,13 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			}
 
 			// value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
+
+			modValue := new(big.Int).Mod(new(big.Int).Sub(&x0Big, &x1Big), &secPBig)
+
+			if modValue.Cmp(big.NewInt(0)) == 0 {
+				return fmt.Errorf("the slope of the line is invalid")
+			}
+
 			slopeBig, err := secp_utils.LineSlope(&x0Big, &y0Big, &x1Big, &y1Big, &secPBig)
 			if err != nil {
 				return err
@@ -1033,17 +1041,12 @@ func newComputeSlopeV3Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> value = slope = div_mod(y0 - y1, x0 - x1, SECP_P)
-			numerator := new(big.Int).Sub(&y0Big, &y1Big)
-			denominator := new(big.Int).Sub(&x0Big, &x1Big)
-
-			slopeBig, err := secp_utils.Divmod(numerator, denominator, &secPBig)
+			slopeBig, err := secp_utils.LineSlope(&x0Big, &y0Big, &x1Big, &y1Big, &secPBig)
 			if err != nil {
 				return err
 			}
 
-			value := new(big.Int).Set(&slopeBig)
-
-			return ctx.ScopeManager.AssignVariables(map[string]any{"value": value})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &slopeBig})
 		},
 	}
 }
