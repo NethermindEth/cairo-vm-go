@@ -8,10 +8,11 @@ import (
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
 )
+
 
 // BigIntToUint256 hint guesses the low part of the result uint256 variable
 //
@@ -183,7 +184,7 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 				}
 
 				valueFelt := new(fp.Element).SetBigInt(&values[i])
-				valueMv := memory.MemoryValueFromFieldElement(valueFelt)
+				valueMv := mem.MemoryValueFromFieldElement(valueFelt)
 
 				err = vm.Memory.WriteToAddress(&valueAddr, &valueMv)
 				if err != nil {
@@ -504,6 +505,10 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> value = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)
+			if new(big.Int).Mod(&yBig, &secPBig).Cmp(big.NewInt(0)) == 0 {
+				return fmt.Errorf("point[1] modulo p == 0")
+			}
+
 			valueBig, err := secp_utils.EcDoubleSlope(&xBig, &yBig, big.NewInt(0), &secPBig)
 			if err != nil {
 				return err
@@ -521,6 +526,84 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 	}
 
 	return newEcDoubleSlopeV1Hint(point), nil
+}
+
+// EcDoubleSlopeV3 hint computes the slope for doubling a point on the elliptic curve
+//
+// `newEcDoubleSlopeV3Hint` takes 1 operander as argument
+//   - `pt` is the point on an elliptic curve to operate on
+//
+// `newEcDoubleSlopeV3Hint` assigns the `slope` result as `value` in the current scope
+// This version differs from EcDoubleSlopeV1 by the name of the operander (`point` for V1, `pt` for V3)
+// and the computation of the slope : V1 uses a dedicated utility function with an additionnal check
+// while V3 executes the modular division directly
+func newEcDoubleSlopeV3Hint(point hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcDoubleSlopeV3",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> from starkware.python.math_utils import div_mod
+			//>
+			//> # Compute the slope.
+			//> x = pack(ids.pt.x, PRIME)
+			//> y = pack(ids.pt.y, PRIME)
+			//> value = slope = div_mod(3 * x ** 2, 2 * y, SECP_P)
+
+			pointAddr, err := point.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			pointYAddr, err := pointAddr.AddOffset(3)
+			if err != nil {
+				return err
+			}
+
+			pointXValues, err := vm.Memory.ResolveAsBigInt3(pointAddr)
+			if err != nil {
+				return err
+			}
+
+			pointYValues, err := vm.Memory.ResolveAsBigInt3(pointYAddr)
+			if err != nil {
+				return err
+			}
+
+			//> x = pack(ids.pt.x, PRIME)
+			xBig, err := secp_utils.SecPPacked(pointXValues)
+			if err != nil {
+				return err
+			}
+
+			//> y = pack(ids.pt.y, PRIME)
+			yBig, err := secp_utils.SecPPacked(pointYValues)
+			if err != nil {
+				return err
+			}
+
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			//> value = slope = div_mod(3 * x ** 2, 2 * y, SECP_P)
+			valueBig, err := secp_utils.EcDoubleSlope(&xBig, &yBig, big.NewInt(0), &secPBig)
+			if err != nil {
+				return err
+			}
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &valueBig})
+		},
+	}
+}
+
+func createEcDoubleSlopeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	point, err := resolver.GetResOperander("pt")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcDoubleSlopeV3Hint(point), nil
 }
 
 // Reduce hint reduces a packed value modulo the SECP256K1 prime
@@ -902,6 +985,13 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			}
 
 			// value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
+
+			modValue := new(big.Int).Mod(new(big.Int).Sub(&x0Big, &x1Big), &secPBig)
+
+			if modValue.Cmp(big.NewInt(0)) == 0 {
+				return fmt.Errorf("the slope of the line is invalid")
+			}
+
 			slopeBig, err := secp_utils.LineSlope(&x0Big, &y0Big, &x1Big, &y1Big, &secPBig)
 			if err != nil {
 				return err
@@ -1047,6 +1137,125 @@ func createComputeSlopeV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	return newComputeSlopeV2Hint(point0, point1), nil
 }
 
+// ComputeSlopeV3 hint computes the slope between two points on an elliptic curve
+//
+// `newComputeSlopeV3Hint` takes 2 operanders as arguments
+//   - `pt0` is the first point on an elliptic curve to operate on
+//   - `pt1` is the second point on an elliptic curve to operate on
+//
+// `newComputeSlopeV3Hint` assigns the `slope` result as `value` in the current scope
+//
+// This version differs from ComputeSlopeV1 by the name of the operanders (`point0` and `point1` for V1, `pt0` and `pt1` for V3)
+// and the computation of the slope : V1 uses a dedicated utility function with an additionnal check while V3 executes
+// the modular division directly
+func newComputeSlopeV3Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "ComputeSlopeV3",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> from starkware.python.math_utils import div_mod
+			//>
+			//> # Compute the slope.
+			//> x0 = pack(ids.pt0.x, PRIME)
+			//> y0 = pack(ids.pt0.y, PRIME)
+			//> x1 = pack(ids.pt1.x, PRIME)
+			//> y1 = pack(ids.pt1.y, PRIME)
+			//> value = slope = div_mod(y0 - y1, x0 - x1, SECP_P)
+
+			point0XAddr, err := point0.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			point1XAddr, err := point1.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			point0YAddr, err := point0XAddr.AddOffset(3)
+			if err != nil {
+				return err
+			}
+
+			point1YAddr, err := point1XAddr.AddOffset(3)
+			if err != nil {
+				return err
+			}
+
+			point0XValues, err := vm.Memory.ResolveAsBigInt3(point0XAddr)
+			if err != nil {
+				return err
+			}
+
+			point1XValues, err := vm.Memory.ResolveAsBigInt3(point1XAddr)
+			if err != nil {
+				return err
+			}
+
+			point0YValues, err := vm.Memory.ResolveAsBigInt3(point0YAddr)
+			if err != nil {
+				return err
+			}
+
+			point1YValues, err := vm.Memory.ResolveAsBigInt3(point1YAddr)
+			if err != nil {
+				return err
+			}
+
+			//> x0 = pack(ids.point0.x, PRIME)
+			x0Big, err := secp_utils.SecPPacked(point0XValues)
+			if err != nil {
+				return err
+			}
+
+			//> x1 = pack(ids.point1.x, PRIME)
+			x1Big, err := secp_utils.SecPPacked(point1XValues)
+			if err != nil {
+				return err
+			}
+
+			//> y0 = pack(ids.point0.y, PRIME)
+			y0Big, err := secp_utils.SecPPacked(point0YValues)
+			if err != nil {
+				return err
+			}
+
+			//> y1 = pack(ids.point0.y, PRIME)
+			y1Big, err := secp_utils.SecPPacked(point1YValues)
+			if err != nil {
+				return err
+			}
+
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			//> value = slope = div_mod(y0 - y1, x0 - x1, SECP_P)
+			slopeBig, err := secp_utils.LineSlope(&x0Big, &y0Big, &x1Big, &y1Big, &secPBig)
+			if err != nil {
+				return err
+			}
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &slopeBig})
+		},
+	}
+}
+
+func createComputeSlopeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	point0, err := resolver.GetResOperander("pt0")
+	if err != nil {
+		return nil, err
+	}
+
+	point1, err := resolver.GetResOperander("pt1")
+	if err != nil {
+		return nil, err
+	}
+
+	return newComputeSlopeV3Hint(point0, point1), nil
+}
+
 func newEcMulInnerHint(scalar hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcMulInner",
@@ -1063,7 +1272,7 @@ func newEcMulInnerHint(scalar hinter.ResOperander) hinter.Hinter {
 			resultUint256 := new(uint256.Int).SetBytes(scalarBytes[:])
 			resultUint256.Mod(resultUint256, uint256.NewInt(2))
 			resultFelt := new(fp.Element).SetBytes(resultUint256.Bytes())
-			resultMv := memory.MemoryValueFromFieldElement(resultFelt)
+			resultMv := mem.MemoryValueFromFieldElement(resultFelt)
 			apAddr := vm.Context.AddressAp()
 
 			return vm.Memory.WriteToAddress(&apAddr, &resultMv)
@@ -1100,12 +1309,12 @@ func newIsZeroNondetHint() hinter.Hinter {
 
 			apAddr := vm.Context.AddressAp()
 
-			var v memory.MemoryValue
+			var v mem.MemoryValue
 
 			if x.Cmp(big.NewInt(0)) == 0 {
-				v = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+				v = mem.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
-				v = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+				v = mem.MemoryValueFromFieldElement(&utils.FeltZero)
 			}
 
 			return vm.Memory.WriteToAddress(&apAddr, &v)
@@ -1241,7 +1450,7 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			valueX := memory.MemoryValueFromFieldElement(xFelt)
+			valueX := mem.MemoryValueFromFieldElement(xFelt)
 
 			err = vm.Memory.WriteToAddress(&pXAddr, &valueX)
 			if err != nil {
@@ -1265,7 +1474,7 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 			resultFelt := new(fp.Element).SetBigInt(resultBigInt)
-			resultMv := memory.MemoryValueFromFieldElement(resultFelt)
+			resultMv := mem.MemoryValueFromFieldElement(resultFelt)
 			return vm.Memory.WriteToAddress(&pYAddr, &resultMv)
 		},
 	}

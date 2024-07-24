@@ -147,6 +147,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createFastEcAddAssignNewYHinter()
 	case ecDoubleSlopeV1Code:
 		return createEcDoubleSlopeV1Hinter(resolver)
+	case ecDoubleSlopeV3Code:
+		return createEcDoubleSlopeV3Hinter(resolver)
 	case reduceV1Code:
 		return createReduceHinter(resolver)
 	case reduceV2Code:
@@ -157,6 +159,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createComputeSlopeV1Hinter(resolver)
 	case computeSlopeV2Code:
 		return createComputeSlopeV2Hinter(resolver)
+	case computeSlopeV3Code:
+		return createComputeSlopeV3Hinter(resolver)
 	case ecDoubleAssignNewXV1Code:
 		return createEcDoubleAssignNewXV1Hinter(resolver)
 	case ecDoubleAssignNewXV4Code:
