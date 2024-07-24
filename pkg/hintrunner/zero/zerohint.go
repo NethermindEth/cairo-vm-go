@@ -190,6 +190,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createBlake2sFinalizeV3Hinter(resolver)
 	case blake2sComputeCode:
 		return createBlake2sComputeHinter(resolver)
+	// Sha256 hints
+	case packedSha256Code:
+		return createPackedSha256Hinter(resolver)
 	// Keccak hints
 	case keccakWriteArgsCode:
 		return createKeccakWriteArgsHinter(resolver)
