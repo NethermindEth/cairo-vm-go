@@ -65,7 +65,7 @@ const (
 	usortVerifyMultiplicityBodyCode   string = "current_pos = positions.pop()\nids.next_item_index = current_pos - last_pos\nlast_pos = current_pos + 1"
 
 	// ------ Elliptic Curve hints related code ------
-  divModNSafeDivPlusOneCode        string = "value = k_plus_one = safe_div(res * b - a, N) + 1"
+	divModNSafeDivPlusOneCode        string = "value = k_plus_one = safe_div(res * b - a, N) + 1"
 	divModNPackedDivModExternalNCode string = "from starkware.cairo.common.cairo_secp.secp_utils import pack\nfrom starkware.python.math_utils import div_mod, safe_div\n\na = pack(ids.a, PRIME)\nb = pack(ids.b, PRIME)\nvalue = res = div_mod(a, b, N)"
 	ecNegateCode                     string = "from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\ny = pack(ids.point.y, PRIME) % SECP_P\n# The modulo operation in python always returns a nonnegative number.\nvalue = (-y) % SECP_P"
 	nondetBigint3V1Code              string = "from starkware.cairo.common.cairo_secp.secp_utils import split\n\nsegments.write_arg(ids.res.address_, split(value))"
