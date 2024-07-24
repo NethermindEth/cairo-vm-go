@@ -607,6 +607,7 @@ func TestZeroHintOthers(t *testing.T) {
 		"NormalizeAddress": {
 			{
 				operanders: []*hintOperander{
+					// 2 ** 251 - 256
 					{Name: "addr", Kind: apRelative, Value: feltString("3618502788666131106986593281521497120414687020801267626233049500247285300992")},
 					{Name: "is_small", Kind: uninitialized},
 				},
@@ -619,6 +620,7 @@ func TestZeroHintOthers(t *testing.T) {
 				check: varValueEquals("is_small", feltUint64(0)),
 			},
 			{
+				// 2 ** 251 - 256 - 1
 				operanders: []*hintOperander{
 					{Name: "addr", Kind: apRelative, Value: feltString("3618502788666131106986593281521497120414687020801267626233049500247285300991")},
 					{Name: "is_small", Kind: uninitialized},
