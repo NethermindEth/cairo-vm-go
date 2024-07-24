@@ -145,6 +145,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createFastEcAddAssignNewYHinter()
 	case ecDoubleSlopeV1Code:
 		return createEcDoubleSlopeV1Hinter(resolver)
+	case ecDoubleSlopeV3Code:
+		return createEcDoubleSlopeV3Hinter(resolver)
 	case reduceV1Code:
 		return createReduceHinter(resolver)
 	case reduceV2Code:
@@ -153,6 +155,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createReduceEd25519Hinter(resolver)
 	case computeSlopeV1Code:
 		return createComputeSlopeV1Hinter(resolver)
+	case computeSlopeV3Code:
+		return createComputeSlopeV3Hinter(resolver)
 	case ecDoubleAssignNewXV1Code:
 		return createEcDoubleAssignNewXV1Hinter(resolver)
 	case ecDoubleAssignNewXV2Code:
@@ -294,6 +298,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createNondetElementsOverXHinter(resolver, 2)
 	case nondetElementsOverTenCode:
 		return createNondetElementsOverXHinter(resolver, 10)
+	case normalizeAddressCode:
+		return createNormalizeAddressHinter(resolver)
 	default:
 		return nil, fmt.Errorf("not identified hint")
 	}
