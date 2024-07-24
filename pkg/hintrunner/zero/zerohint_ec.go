@@ -648,14 +648,24 @@ func createReduceEd25519Hinter(resolver hintReferenceResolver) (hinter.Hinter, e
 // It also assigns `slope`, `x`, `y` and `new_x` in the current scope
 // so that they are available in the current scope for EcDoubleAssignNewYV1 hint
 //
-// This implementation is valid for both EcDoubleAssignNewX V1 and V4, only the operander differs
-// with `point` used for V1 and `pt` used for V4
+// This implementation is valid for EcDoubleAssignNewX V1,V2 and V4, only the operander differs
+// with `point` used for V1,V2 and `pt` used for V4 and for V2 SECP_P has to be already in scope
+// contrary to V1
 func newEcDoubleAssignNewXHint(slope, point hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcDoubleAssignNewX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			// V1
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//>
+			//> slope = pack(ids.slope, PRIME)
+			//> x = pack(ids.point.x, PRIME)
+			//> y = pack(ids.point.y, PRIME)
+			//>
+			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
+
+			// V2
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
 			//>
 			//> slope = pack(ids.slope, PRIME)
 			//> x = pack(ids.point.x, PRIME)
@@ -763,6 +773,20 @@ func createEcDoubleAssignNewXV4Hinter(resolver hintReferenceResolver) (hinter.Hi
 	}
 
 	point, err := resolver.GetResOperander("pt")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcDoubleAssignNewXHint(slope, point), nil
+}
+
+func createEcDoubleAssignNewXV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	slope, err := resolver.GetResOperander("slope")
+	if err != nil {
+		return nil, err
+	}
+
+	point, err := resolver.GetResOperander("point")
 	if err != nil {
 		return nil, err
 	}
