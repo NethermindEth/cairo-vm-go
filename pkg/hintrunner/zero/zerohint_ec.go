@@ -459,8 +459,8 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 //
 // `newEcDoubleSlopeV3Hint` assigns the `slope` result as `value` in the current scope
 // This version differs from EcDoubleSlopeV1 by the name of the operander (`point` for V1, `pt` for V3)
-// and the computation of the slope : V1 uses a dedicated utility function while V3 executes
-// the modular division directly
+// and the computation of the slope : V1 uses a dedicated utility function with an additionnal check
+// while V3 executes the modular division directly
 func newEcDoubleSlopeV3Hint(point hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcDoubleSlopeV3",
@@ -947,7 +947,7 @@ func createComputeSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, 
 // `newComputeSlopeV3Hint` assigns the `slope` result as `value` in the current scope
 //
 // This version differs from ComputeSlopeV1 by the name of the operanders (`point0` and `point1` for V1, `pt0` and `pt1` for V3)
-// and the computation of the slope : V1 uses a dedicated utility function while V3 executes
+// and the computation of the slope : V1 uses a dedicated utility function with an additionnal check while V3 executes
 // the modular division directly
 func newComputeSlopeV3Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{

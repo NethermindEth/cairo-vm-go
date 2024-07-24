@@ -582,6 +582,59 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
+		"EcDoubleSlopeV3": {
+			{
+				operanders: []*hintOperander{
+					// values are random
+					{Name: "pt.x.d0", Kind: apRelative, Value: feltUint64(51215)},
+					{Name: "pt.x.d1", Kind: apRelative, Value: feltUint64(368485485484584)},
+					{Name: "pt.x.d2", Kind: apRelative, Value: feltUint64(4564564687987)},
+					{Name: "pt.y.d0", Kind: apRelative, Value: feltUint64(26362)},
+					{Name: "pt.y.d1", Kind: apRelative, Value: feltUint64(263724839599)},
+					{Name: "pt.y.d2", Kind: apRelative, Value: feltString("1321654896123789784652346")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleSlopeV3Hint(ctx.operanders["pt.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": bigIntString("8532480558268366897328020348259450788170980412191993744326748439943456131995", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					// 2**80
+					{Name: "pt.x.d0", Kind: apRelative, Value: feltString("1208925819614629174706176")},
+					{Name: "pt.x.d1", Kind: apRelative, Value: feltString("1208925819614629174706176")},
+					{Name: "pt.x.d2", Kind: apRelative, Value: feltString("1208925819614629174706176")},
+					// 2**40
+					{Name: "pt.y.d0", Kind: apRelative, Value: feltUint64(1099511627776)},
+					{Name: "pt.y.d1", Kind: apRelative, Value: feltUint64(1099511627776)},
+					{Name: "pt.y.d2", Kind: apRelative, Value: feltUint64(1099511627776)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleSlopeV3Hint(ctx.operanders["pt.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": bigIntString("154266052248863066452028362858593603519505739480817180031844352", 10),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "pt.x.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "pt.x.d1", Kind: apRelative, Value: &utils.FeltOne},
+					{Name: "pt.x.d2", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "pt.y.d0", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "pt.y.d1", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "pt.y.d2", Kind: apRelative, Value: feltUint64(5)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcDoubleSlopeV1Hint(ctx.operanders["pt.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": bigIntString("35023503208535022533116513151423452638642669107476233313413226008091253006355", 10),
+				}),
+			},
+		},
 		"EcDoubleAssignNewX": {
 			{
 				operanders: []*hintOperander{
@@ -761,6 +814,32 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 
 					return newComputeSlopeV1Hint(ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": bigIntString("41419765295989780131385135514529906223027172305400087935755859001910844026631", 10),
+				}),
+			},
+		},
+		"ComputeSlopeV3": {
+			{
+				operanders: []*hintOperander{
+					// random values
+					{Name: "pt0.x.d0", Kind: apRelative, Value: feltInt64(134)},
+					{Name: "pt0.x.d1", Kind: apRelative, Value: feltInt64(5123)},
+					{Name: "pt0.x.d2", Kind: apRelative, Value: feltInt64(140)},
+					{Name: "pt0.y.d0", Kind: apRelative, Value: feltInt64(1232)},
+					{Name: "pt0.y.d1", Kind: apRelative, Value: feltInt64(4652)},
+					{Name: "pt0.y.d2", Kind: apRelative, Value: feltInt64(720)},
+					{Name: "pt1.x.d0", Kind: apRelative, Value: feltInt64(156)},
+					{Name: "pt1.x.d1", Kind: apRelative, Value: feltInt64(6545)},
+					{Name: "pt1.x.d2", Kind: apRelative, Value: feltInt64(100010)},
+					{Name: "pt1.y.d0", Kind: apRelative, Value: feltInt64(1123)},
+					{Name: "pt1.y.d1", Kind: apRelative, Value: feltInt64(1325)},
+					{Name: "pt1.y.d2", Kind: apRelative, Value: feltInt64(910)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+
+					return newComputeSlopeV3Hint(ctx.operanders["pt0.x.d0"], ctx.operanders["pt1.x.d0"])
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"value": bigIntString("41419765295989780131385135514529906223027172305400087935755859001910844026631", 10),
