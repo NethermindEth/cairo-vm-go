@@ -56,6 +56,11 @@ bench:
 	@echo "Running benchmarks..."
 	@go run scripts/benchmark.go --pkg=${PKG_NAME} --test=${TEST}
 
+zerobench:
+	@echo "Running integration benchmarks..."
+	@go test integration_tests/cairozero_test.go -v -zerobench;
+
+
 # Use the same version of the golangci-lint as in our CI linting config.
 lint:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3

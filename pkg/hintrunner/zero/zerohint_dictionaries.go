@@ -48,7 +48,7 @@ func newDictNewHint() hinter.Hinter {
 				}
 			}
 
-			initialDict, err := hinter.GetVariableAs[map[fp.Element]memory.MemoryValue](&ctx.ScopeManager, "initial_dict")
+			initialDict, err := hinter.GetVariableAs[map[memory.MemoryValue]memory.MemoryValue](&ctx.ScopeManager, "initial_dict")
 			if err != nil {
 				return err
 			}
@@ -101,13 +101,12 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> memory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)
-			defaultValue, err := hinter.ResolveAsFelt(vm, defaultValue)
+			defaultValue, err := defaultValue.Resolve(vm)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", defaultValue, err)
 			}
 
-			defaultValueMv := memory.MemoryValueFromFieldElement(defaultValue)
-			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, defaultValueMv)
+			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, defaultValue)
 			newDefaultDictionaryAddrMv := memory.MemoryValueFromMemoryAddress(&newDefaultDictionaryAddr)
 			apAddr := vm.Context.AddressAp()
 
@@ -151,11 +150,11 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> ids.value = dict_tracker.data[ids.key]
-			key, err := hinter.ResolveAsFelt(vm, key)
+			key, err := key.Resolve(vm)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", key, err)
 			}
-			keyValue, err := dictionaryManager.At(*dictPtr, *key)
+			keyValue, err := dictionaryManager.At(*dictPtr, key)
 			if err != nil {
 				return err
 			}
@@ -225,18 +224,21 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 				return err
 			}
 
-			dictionaryDataCopy := make(map[fp.Element]memory.MemoryValue)
+			dictionaryDataCopy := make(map[memory.MemoryValue]memory.MemoryValue)
 			for k, v := range *dictionary.Data {
 				// Copy the key
-				keyCopy := fp.Element{}
-				keyCopy.Set(&k)
+				keyFeltCopy := fp.Element{}
+				keyFeltCopy.Set(&k.Felt)
+				keyCopy := memory.MemoryValue{
+					Felt: keyFeltCopy,
+					Kind: k.Kind,
+				}
 
 				// Copy the value
-				feltCopy := fp.Element{}
-				feltCopy.Set(&v.Felt)
-
+				valueFeltCopy := fp.Element{}
+				valueFeltCopy.Set(&v.Felt)
 				valueCopy := memory.MemoryValue{
-					Felt: feltCopy,
+					Felt: valueFeltCopy,
 					Kind: v.Kind,
 				}
 
@@ -285,9 +287,9 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 				return fmt.Errorf("__dict_manager not in scope")
 			}
 
-			key, err := hinter.ResolveAsFelt(vm, key)
+			key, err := key.Resolve(vm)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", key, err)
 			}
 
 			//> ids.dict_ptr.prev_value = dict_tracker.data[ids.key]
@@ -297,7 +299,7 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 			//> 	prev_value: felt,
 			//> 	new_value: felt,
 			//> }
-			prevKeyValue, err := dictionaryManager.At(*dictPtr, *key)
+			prevKeyValue, err := dictionaryManager.At(*dictPtr, key)
 			if err != nil {
 				return err
 			}
@@ -307,12 +309,11 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 			}
 
 			//> dict_tracker.data[ids.key] = ids.new_value
-			newValue, err := hinter.ResolveAsFelt(vm, newValue)
+			newValue, err := newValue.Resolve(vm)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", newValue, err)
 			}
-			newValueMv := memory.MemoryValueFromFieldElement(newValue)
-			err = dictionaryManager.Set(*dictPtr, *key, newValueMv)
+			err = dictionaryManager.Set(*dictPtr, key, newValue)
 			if err != nil {
 				return err
 			}
@@ -372,39 +373,34 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hi
 				return fmt.Errorf("__dict_manager not in scope")
 			}
 
-			key, err := hinter.ResolveAsFelt(vm, key)
+			key, err := key.Resolve(vm)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", key, err)
 			}
 
 			//> current_value = dict_tracker.data[ids.key]
-			currentValueMv, err := dictionaryManager.At(*dictPtr, *key)
+			currentValue, err := dictionaryManager.At(*dictPtr, key)
 			if err != nil {
-				return err
-			}
-			currentValue, err := currentValueMv.FieldElement()
-			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", key, err)
 			}
 
 			//> assert current_value == ids.prev_value, \
 			//>     f'Wrong previous value in dict. Got {ids.prev_value}, expected {current_value}.'
-			prevValue, err := hinter.ResolveAsFelt(vm, prevValue)
+			prevValue, err := prevValue.Resolve(vm)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", prevValue, err)
 			}
-			if !currentValue.Equal(prevValue) {
+			if !currentValue.Equal(&prevValue) {
 				return fmt.Errorf("wrong previous value in dict. Got %s, expected %s", prevValue, currentValue)
 			}
 
 			//> # Update value.
 			//> dict_tracker.data[ids.key] = ids.new_value
-			newValue, err := hinter.ResolveAsFelt(vm, newValue)
+			newValue, err := newValue.Resolve(vm)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", newValue, err)
 			}
-			newValueMv := memory.MemoryValueFromFieldElement(newValue)
-			err = dictionaryManager.Set(*dictPtr, *key, newValueMv)
+			err = dictionaryManager.Set(*dictPtr, key, newValue)
 			if err != nil {
 				return err
 			}
@@ -572,7 +568,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			if err != nil {
 				return err
 			}
-			return ctx.ScopeManager.AssignVariable("key", firstKeyValue)
+			return ctx.ScopeManager.AssignVariable("key", &firstKeyValue)
 		},
 	}
 }
@@ -671,12 +667,12 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 				return err
 			}
 
-			currentAccessIndex, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, "current_access_index")
+			currentAccessIndex, err := hinter.GetVariableAs[*fp.Element](&ctx.ScopeManager, "current_access_index")
 			if err != nil {
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("current_access_index", newAccessIndex)
+			err = ctx.ScopeManager.AssignVariable("current_access_index", &newAccessIndex)
 			if err != nil {
 				return err
 			}
@@ -687,7 +683,7 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 			}
 
 			var result fp.Element
-			result.Sub(&newAccessIndex, &currentAccessIndex)
+			result.Sub(&newAccessIndex, currentAccessIndex)
 			result.Sub(&result, &utils.FeltOne)
 
 			resultMem := memory.MemoryValueFromFieldElement(&result)
@@ -780,7 +776,7 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 			//> current_access_index = current_access_indices.pop()
 			//> memory[ids.range_check_ptr] = current_access_index
 
-			key, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, "key")
+			key, err := hinter.GetVariableAs[*fp.Element](&ctx.ScopeManager, "key")
 			if err != nil {
 				return err
 			}
@@ -790,7 +786,7 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 				return err
 			}
 
-			accessIndicesAtKey := accessIndices[key]
+			accessIndicesAtKey := accessIndices[*key]
 
 			accessIndicesAtKeyCopy := make([]fp.Element, len(accessIndicesAtKey))
 			copy(accessIndicesAtKeyCopy, accessIndicesAtKey)
@@ -811,7 +807,7 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("current_access_index", currentAccessIndex)
+			err = ctx.ScopeManager.AssignVariable("current_access_index", &currentAccessIndex)
 			if err != nil {
 				return err
 			}
@@ -941,7 +937,7 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("key", newKey)
+			err = ctx.ScopeManager.AssignVariable("key", &newKey)
 			if err != nil {
 				return err
 			}
@@ -983,12 +979,12 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 				return err
 			}
 
-			key, err := hinter.GetVariableAs[fp.Element](&ctx.ScopeManager, "key")
+			key, err := hinter.GetVariableAs[*fp.Element](&ctx.ScopeManager, "key")
 			if err != nil {
 				return err
 			}
 
-			accessIndicesAtKeyLen := uint64(len(accessIndices[key]))
+			accessIndicesAtKeyLen := uint64(len(accessIndices[*key]))
 
 			nUsedAccesses, err := hinter.ResolveAsUint64(vm, nUsedAccesses)
 			if err != nil {

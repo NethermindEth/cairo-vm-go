@@ -560,7 +560,7 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
-		"EcDoubleSlopeV1": {
+		"EcDoubleSlope": {
 			{
 				operanders: []*hintOperander{
 					{Name: "point.x.d0", Kind: apRelative, Value: &utils.FeltZero},
@@ -573,7 +573,7 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
 				},
-				errCheck: errorTextContains("point[1] % p == 0"),
+				errCheck: errorTextContains("point[1] modulo p == 0"),
 			},
 			{
 				operanders: []*hintOperander{
@@ -766,7 +766,7 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
-		"ComputeSlopeV1": {
+		"ComputeSlope": {
 			{
 				operanders: []*hintOperander{
 					{Name: "point0.x.d0", Kind: apRelative, Value: &utils.FeltZero},

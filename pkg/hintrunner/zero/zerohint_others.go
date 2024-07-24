@@ -694,3 +694,60 @@ func createNondetElementsOverXHinter(resolver hintReferenceResolver, x uint64) (
 
 	return newNondetElementsOverXHint(elementsEnd, elements, x), nil
 }
+
+// NormalizeAddress hint checks if given addr value is less than ADDR_BOUND or not
+// and writes the result as 1 or 0 to is_small
+//
+// `newNormalizeAddressHint` takes 2 arguments
+//   - `isSmall` represents the address where the result of the comparison is stored
+//   - `addr` represents the address whose value is checked against ADDR_BOUND
+func newNormalizeAddressHint(isSmall, addr hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "NormalizeAddress",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> # Verify the assumptions on the relationship between 2**250, ADDR_BOUND and PRIME.
+			//> ADDR_BOUND = ids.ADDR_BOUND % PRIME
+			//> assert (2**250 < ADDR_BOUND <= 2**251) and (2 * 2**250 < PRIME) and (
+			//>         ADDR_BOUND * 2 > PRIME), \
+			//>    'normalize_address() cannot be used with the current constants.'
+			//> ids.is_small = 1 if ids.addr < ADDR_BOUND else 0
+
+			// ADDR_BOUND and PRIME are constants: https://github.com/starkware-libs/cairo-lang/blob/0e4dab8a6065d80d1c726394f5d9d23cb451706a/src/starkware/starknet/common/storage.cairo#L6
+			// so the assert check is skipped as the constants satisfy them
+
+			// 2 ** 251 - 256
+			addrBoundFelt := fp.Element{18446743986131443745, 160989183, 18446744073709255680, 576459263475590224}
+
+			addrFelt, err := hinter.ResolveAsFelt(vm, addr)
+			if err != nil {
+				return err
+			}
+			isSmallAddr, err := isSmall.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			//> ids.is_small = 1 if ids.addr < ADDR_BOUND else 0
+			var resultMv memory.MemoryValue
+			if addrFelt.Cmp(&addrBoundFelt) < 0 {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+			return vm.Memory.WriteToAddress(&isSmallAddr, &resultMv)
+		},
+	}
+}
+
+func createNormalizeAddressHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	isSmall, err := resolver.GetResOperander("is_small")
+	if err != nil {
+		return nil, err
+	}
+	addr, err := resolver.GetResOperander("addr")
+	if err != nil {
+		return nil, err
+	}
+
+	return newNormalizeAddressHint(isSmall, addr), nil
+}
