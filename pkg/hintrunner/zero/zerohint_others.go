@@ -2,7 +2,6 @@ package zero
 
 import (
 	"fmt"
-	"math/big"
 	"reflect"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
@@ -668,14 +667,8 @@ func newNormalizeAddressHint(isSmall, addr hinter.ResOperander) hinter.Hinter {
 			// ADDR_BOUND and PRIME are constants: https://github.com/starkware-libs/cairo-lang/blob/0e4dab8a6065d80d1c726394f5d9d23cb451706a/src/starkware/starknet/common/storage.cairo#L6
 			// so the assert check is skipped as the constants satisfy them
 
-			// 2 ** 251 -256
-			// TODO: directly set the felt limbs to save time?
-			addrBoundBig, ok := new(big.Int).SetString("3618502788666131106986593281521497120414687020801267626233049500247285300992", 10)
-			if !ok {
-				return fmt.Errorf("invalid value for ADDR_BOUND")
-			}
-			addrBoundFelt := new(fp.Element)
-			addrBoundFelt.SetBigInt(addrBoundBig)
+			// 2 ** 251 - 256
+			addrBoundFelt := fp.Element{18446743986131443745, 160989183, 18446744073709255680, 576459263475590224}
 
 			addrFelt, err := hinter.ResolveAsFelt(vm, addr)
 			if err != nil {
@@ -688,7 +681,7 @@ func newNormalizeAddressHint(isSmall, addr hinter.ResOperander) hinter.Hinter {
 
 			//> ids.is_small = 1 if ids.addr < ADDR_BOUND else 0
 			var resultMv memory.MemoryValue
-			if addrFelt.Cmp(addrBoundFelt) < 0 {
+			if addrFelt.Cmp(&addrBoundFelt) < 0 {
 				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
 			} else {
 				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
