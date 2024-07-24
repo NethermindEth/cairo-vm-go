@@ -32,7 +32,7 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64][]hinter.Hinter, 
 		}
 
 		for _, rawHint := range rawHints {
-			hint, err := GetHintFromCode(cairoZeroJson, rawHint, pc)
+			hint, err := GetHintFromCode(cairoZeroJson, rawHint)
 			if err != nil {
 				return nil, err
 			}
@@ -44,8 +44,8 @@ func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64][]hinter.Hinter, 
 	return hints, nil
 }
 
-func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64) (hinter.Hinter, error) {
-	resolver, err := getParameters(program, rawHint, hintPC)
+func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinter, error) {
+	resolver, err := getParameters(program, rawHint)
 	if err != nil {
 		return nil, err
 	}
@@ -109,6 +109,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUint256SqrtHinter(resolver)
 	case uint256MulDivModCode:
 		return createUint256MulDivModHinter(resolver)
+	case uint256SubCode:
+		return createUint256SubHinter(resolver)
 	// Signature hints
 	case verifyECDSASignatureCode:
 		return createVerifyECDSASignatureHinter(resolver)
@@ -120,6 +122,12 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createImportSecp256R1PHinter()
 	case verifyZeroCode:
 		return createVerifyZeroHinter(resolver)
+	case verifyZeroV2Code:
+		return createVerifyZeroHinter(resolver)
+	case verifyZeroV3Code:
+		return createVerifyZeroV3Hinter(resolver)
+	case verifyZeroAltCode:
+		return createVerifyZeroHinter(resolver)
 	case divModNPackedDivmodV1Code:
 		return createDivModNPackedDivmodV1Hinter(resolver)
 	// EC hints
@@ -129,16 +137,26 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createNondetBigint3V1Hinter(resolver)
 	case fastEcAddAssignNewXCode:
 		return createFastEcAddAssignNewXHinter(resolver)
+	case fastEcAddAssignNewXV2Code:
+		return createFastEcAddAssignNewXV2Hinter(resolver)
+	case fastEcAddAssignNewXV3Code:
+		return createFastEcAddAssignNewXV3Hinter(resolver)
 	case fastEcAddAssignNewYCode:
 		return createFastEcAddAssignNewYHinter()
 	case ecDoubleSlopeV1Code:
 		return createEcDoubleSlopeV1Hinter(resolver)
 	case reduceV1Code:
-		return createReduceV1Hinter(resolver)
+		return createReduceHinter(resolver)
+	case reduceV2Code:
+		return createReduceHinter(resolver)
+	case reduceEd25519Code:
+		return createReduceEd25519Hinter(resolver)
 	case computeSlopeV1Code:
 		return createComputeSlopeV1Hinter(resolver)
 	case ecDoubleAssignNewXV1Code:
 		return createEcDoubleAssignNewXV1Hinter(resolver)
+	case ecDoubleAssignNewXV4Code:
+		return createEcDoubleAssignNewXV4Hinter(resolver)
 	case ecDoubleAssignNewYV1Code:
 		return createEcDoubleAssignNewYV1Hinter()
 	case ecMulInnerCode:
@@ -153,6 +171,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createRecoverYHinter(resolver)
 	case randomEcPointCode:
 		return createRandomEcPointHinter(resolver)
+	case chainedEcOpCode:
+		return createChainedEcOpHinter(resolver)
 	// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
@@ -160,12 +180,18 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createBlake2sAddUint256Hinter(resolver, false)
 	case blake2sFinalizeCode:
 		return createBlake2sFinalizeHinter(resolver)
+	case blake2sFinalizeV2Code:
+		return createBlake2sFinalizeHinter(resolver)
+	case blake2sFinalizeV3Code:
+		return createBlake2sFinalizeV3Hinter(resolver)
 	case blake2sComputeCode:
 		return createBlake2sComputeHinter(resolver)
 	// Keccak hints
 	case keccakWriteArgsCode:
 		return createKeccakWriteArgsHinter(resolver)
 	case cairoKeccakFinalizeCode:
+		return createCairoKeccakFinalizeHinter(resolver)
+	case cairoKeccakFinalizeBlockSize1000Code:
 		return createCairoKeccakFinalizeHinter(resolver)
 	case unsafeKeccakCode:
 		return createUnsafeKeccakHinter(resolver)
@@ -254,6 +280,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createVMEnterScopeHinter()
 	case vmExitScopeCode:
 		return createVMExitScopeHinter()
+	case getFeltBitLengthCode:
+		return createGetFeltBitLengthHinter(resolver)
 	case setAddCode:
 		return createSetAddHinter(resolver)
 	case testAssignCode:
@@ -269,10 +297,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 	}
 }
 
-func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64) (hintReferenceResolver, error) {
+func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint) (hintReferenceResolver, error) {
 	resolver := NewReferenceResolver()
 
-	for referenceName := range hint.FlowTrackingData.ReferenceIds {
+	for referenceName, id := range hint.FlowTrackingData.ReferenceIds {
 		rawIdentifier, ok := zeroProgram.Identifiers[referenceName]
 		if !ok {
 			return resolver, fmt.Errorf("missing identifier %s", referenceName)
@@ -281,21 +309,10 @@ func getParameters(zeroProgram *zero.ZeroProgram, hint zero.Hint, hintPC uint64)
 		if len(rawIdentifier.References) == 0 {
 			return resolver, fmt.Errorf("identifier %s should have at least one reference", referenceName)
 		}
-		references := rawIdentifier.References
-
-		// Go through the references in reverse order to get the one with biggest pc smaller or equal to the hint pc
-		var reference zero.Reference
-		ok = false
-		for i := len(references) - 1; i >= 0; i-- {
-			if references[i].Pc <= hintPC {
-				reference = references[i]
-				ok = true
-				break
-			}
+		if int(id) >= len(zeroProgram.ReferenceManager.References) {
+			return resolver, fmt.Errorf("invalid reference id %d", id)
 		}
-		if !ok {
-			return resolver, fmt.Errorf("identifier %s should have a reference with pc smaller or equal than %d", referenceName, hintPC)
-		}
+		reference := zeroProgram.ReferenceManager.References[id]
 
 		param, err := ParseIdentifier(reference.Value)
 		if err != nil {
