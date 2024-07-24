@@ -506,7 +506,6 @@ func createUint256MulDivModHinter(resolver hintReferenceResolver) (hinter.Hinter
 	return newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder), nil
 }
 
-
 // Uint256Sub hint computes the difference of two `uint256` variables in the field of integers modulo 2**256. Then it splits the result into `low` and `high` parts and stores them in memory.
 //
 // `newUint256SubHint` takes 3 operanders as arguments
@@ -600,7 +599,6 @@ func createUint256SubHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	return newUint256SubHint(a, b, res), nil
 }
 
-
 // Uint128Add hint computes the result of the sum of parts of
 // two `uint128` variables(`a` & `b`)  and checks for overflow
 //
@@ -670,6 +668,3 @@ func createUint128AddHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	}
 	return newUint128AddHint(a, b, carry), nil
 }
-
-
-

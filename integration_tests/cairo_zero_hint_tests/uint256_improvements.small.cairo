@@ -59,6 +59,24 @@ func uint256_sub{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256, sign
     return (res, 1 - inv_sign);
 }
 
+// assumes inputs are <2**128
+func uint128_add{range_check_ptr}(a: felt, b: felt) -> (result: Uint256) {
+    alloc_locals;
+    local carry: felt;
+    %{
+        res = ids.a + ids.b
+        ids.carry = 1 if res >= ids.SHIFT else 0
+    %}
+    // Either 0 or 1
+    assert carry * carry = carry;
+    local res = a + b - carry * SHIFT;
+    [range_check_ptr] = res;
+    let range_check_ptr = range_check_ptr + 1;
+
+    return (result=Uint256(low=res, high=carry));
+}
+
+
 func main{range_check_ptr}() {
     let x = Uint256(421, 5135);
     let y = Uint256(787, 968);
@@ -76,6 +94,12 @@ func main{range_check_ptr}() {
     assert res = Uint256(366, 340282366920938463463374607431768207289);
     // y - x < 0
     assert sign = 0;
+
+    let a = 2**64-1;
+    let b = 2**64-1;
+
+    uint128_add(a, b);
+
 
     return ();
 }
