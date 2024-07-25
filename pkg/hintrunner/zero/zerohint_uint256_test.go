@@ -480,5 +480,22 @@ func TestZeroHintUint256(t *testing.T) {
 				}),
 			},
 		},
+		"SplitXX": {
+			{
+				operanders: []*hintOperander{
+					{Name: "x.low", Kind: uninitialized},
+					{Name: "x.high", Kind: uninitialized},
+					{Name: "xx.low", Kind: apRelative, Value: feltString("19681161376707505956807079304988542015446066515923890162744021073123829784752")},
+					{Name: "xx.high", Kind: apRelative, Value: feltUint64(1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitXXHint(ctx.operanders["x.low"], ctx.operanders["xx.low"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"x.low":  feltString("31967510603135814718935067919817634170"),
+					"x.high": feltString("136383360823982924942210781858056431457"),
+				}),
+			},
+		},
 	})
 }
