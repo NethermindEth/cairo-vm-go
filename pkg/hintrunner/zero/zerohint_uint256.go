@@ -615,7 +615,7 @@ func newSplitXXHint(x, xx hinter.ResOperander) hinter.Hinter {
 			//> ids.x.low = x & ((1<<128)-1)
 			//> ids.x.high = x >> 128
 
-			PRIME, ok := new(big.Int).SetString("57896044618658097711785492504343953926634992332820282019728792003956564819967", 10)
+			PRIME, ok := new(big.Int).SetString("57896044618658097711785492504343953926634992332820282019728792003956564819949", 10)
 			if !ok {
 				return fmt.Errorf("invalid value for PRIME")
 			}
@@ -650,14 +650,14 @@ func newSplitXXHint(x, xx hinter.ResOperander) hinter.Hinter {
 			//> 	x = (x * II) % PRIME
 			xSquare := new(big.Int).Mul(xBig, xBig)
 			cmpSub := new(big.Int).Sub(xSquare, xx)
-			if new(big.Int).Mod(cmpSub, PRIME).Cmp(big.NewInt(2)) != 0 {
-				xBig = new(big.Int).Mul(xBig, II)
+			if new(big.Int).Mod(cmpSub, PRIME).Cmp(big.NewInt(0)) != 0 {
+				xBig.Mul(xBig, II)
 				xBig.Mod(xBig, PRIME)
 			}
 			//> if x % 2 != 0:
 			//>   	x = PRIME - x
 			if new(big.Int).Mod(xBig, big.NewInt(2)).Cmp(big.NewInt(0)) != 0 {
-				xBig = new(big.Int).Sub(PRIME, xBig)
+				xBig.Sub(PRIME, xBig)
 			}
 
 			//> ids.x.low = x & ((1<<128)-1)
@@ -670,7 +670,6 @@ func newSplitXXHint(x, xx hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-
 			return vm.Memory.WriteUint256ToAddress(xAddr, xLow, xHigh)
 		},
 	}
