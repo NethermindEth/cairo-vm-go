@@ -131,7 +131,7 @@ func TestCairoZeroFiles(t *testing.T) {
 
 	benchmarkMap := make(map[string][2]int)
 
-	sem := make(chan struct{}, 5) // semaphore to limit concurrency to 20
+	sem := make(chan struct{}, 5) // semaphore to limit concurrency
 	var wg sync.WaitGroup         // WaitGroup to wait for all goroutines to finish
 
 	for _, root := range roots {
