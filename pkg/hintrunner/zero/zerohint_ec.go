@@ -74,6 +74,133 @@ func createEcNegateHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newEcNegateHint(point), nil
 }
 
+// DivModeNSafeDivPlusOne performs a safe division of the result obtained from
+// the multiplication of `res` and `b` subtracted by `a`, by `N`. It then adds 1
+// to the final result to ensure safety and prevent division by zero errors.
+//
+// `DivModeNSafeDivPlusOne` assigns the result as `value` in the current scope.
+func newDivModNSafeDivPlusOneHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DivModNSafeDivPlusOne",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> value = k_plus_one = safe_div(res * b - a, N) + 1
+			valueBig := new(big.Int)
+
+			resBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "res")
+			if err != nil {
+				return err
+			}
+
+			aBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "a")
+			if err != nil {
+				return err
+			}
+
+			bBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "b")
+			if err != nil {
+				return err
+			}
+
+			nBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "N")
+			if err != nil {
+				return err
+			}
+
+			valueBig.Mul(resBig, bBig)
+			valueBig.Sub(valueBig, aBig)
+
+			newValueBig, err := secp_utils.SafeDiv(valueBig, nBig)
+			if err != nil {
+				return err
+			}
+
+			newValueBig.Add(&newValueBig, big.NewInt(1))
+			return ctx.ScopeManager.AssignVariable("value", &newValueBig)
+		},
+	}
+}
+
+func createDivModNSafeDivPlusOneHinter() (hinter.Hinter, error) {
+	return newDivModNSafeDivPlusOneHint(), nil
+}
+
+// DivModNPackedDivModExternalN computes the div_mod operation for a given packed value.
+// `newDivModNPackedDivModExternalN` takes 2 operander as arguments
+//   - `a` is the value that will be packed and taken prime
+//   - `b` is the value that will be packed and taken prime
+//
+// `DivModNPackedDivModExternalN` assigns the result as `value` in the current scope.
+func newDivModNPackedDivModExternalN(a, b hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DivModNPackedDivModExternalN",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> from starkware.python.math_utils import div_mod, safe_div
+			//> a = pack(ids.a, PRIME)
+			//> b = pack(ids.b, PRIME)
+			//> value = res = div_mod(a, b, N)
+
+			aAddr, err := a.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			aValues, err := vm.Memory.ResolveAsBigInt3(aAddr)
+			if err != nil {
+				return err
+			}
+
+			aBig, err := secp_utils.SecPPacked(aValues)
+			if err != nil {
+				return err
+			}
+
+			bAddr, err := b.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			bValues, err := vm.Memory.ResolveAsBigInt3(bAddr)
+			if err != nil {
+				return err
+			}
+
+			bBig, err := secp_utils.SecPPacked(bValues)
+			if err != nil {
+				return err
+			}
+
+			nBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "N")
+			if err != nil {
+				return err
+			}
+
+			newValueBig, err := secp_utils.Divmod(&aBig, &bBig, nBig)
+			if err != nil {
+				return err
+			}
+
+			resBig := new(big.Int).Set(&newValueBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &newValueBig, "res": resBig, "a": &aBig, "b": &bBig})
+		},
+	}
+}
+
+func createDivModNPackedDivModExternalNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+
+	return newDivModNPackedDivModExternalN(a, b), nil
+}
+
 // NondetBigint3V1 hint writes a value to a specified segment of memory
 //
 // `newNondetBigint3V1Hint` takes 1 operander as argument
@@ -433,6 +560,10 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> value = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)
+			if new(big.Int).Mod(&yBig, &secPBig).Cmp(big.NewInt(0)) == 0 {
+				return fmt.Errorf("point[1] modulo p == 0")
+			}
+
 			valueBig, err := secp_utils.EcDoubleSlope(&xBig, &yBig, big.NewInt(0), &secPBig)
 			if err != nil {
 				return err
@@ -450,6 +581,84 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 	}
 
 	return newEcDoubleSlopeV1Hint(point), nil
+}
+
+// EcDoubleSlopeV3 hint computes the slope for doubling a point on the elliptic curve
+//
+// `newEcDoubleSlopeV3Hint` takes 1 operander as argument
+//   - `pt` is the point on an elliptic curve to operate on
+//
+// `newEcDoubleSlopeV3Hint` assigns the `slope` result as `value` in the current scope
+// This version differs from EcDoubleSlopeV1 by the name of the operander (`point` for V1, `pt` for V3)
+// and the computation of the slope : V1 uses a dedicated utility function with an additionnal check
+// while V3 executes the modular division directly
+func newEcDoubleSlopeV3Hint(point hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcDoubleSlopeV3",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> from starkware.python.math_utils import div_mod
+			//>
+			//> # Compute the slope.
+			//> x = pack(ids.pt.x, PRIME)
+			//> y = pack(ids.pt.y, PRIME)
+			//> value = slope = div_mod(3 * x ** 2, 2 * y, SECP_P)
+
+			pointAddr, err := point.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			pointYAddr, err := pointAddr.AddOffset(3)
+			if err != nil {
+				return err
+			}
+
+			pointXValues, err := vm.Memory.ResolveAsBigInt3(pointAddr)
+			if err != nil {
+				return err
+			}
+
+			pointYValues, err := vm.Memory.ResolveAsBigInt3(pointYAddr)
+			if err != nil {
+				return err
+			}
+
+			//> x = pack(ids.pt.x, PRIME)
+			xBig, err := secp_utils.SecPPacked(pointXValues)
+			if err != nil {
+				return err
+			}
+
+			//> y = pack(ids.pt.y, PRIME)
+			yBig, err := secp_utils.SecPPacked(pointYValues)
+			if err != nil {
+				return err
+			}
+
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			//> value = slope = div_mod(3 * x ** 2, 2 * y, SECP_P)
+			valueBig, err := secp_utils.EcDoubleSlope(&xBig, &yBig, big.NewInt(0), &secPBig)
+			if err != nil {
+				return err
+			}
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &valueBig})
+		},
+	}
+}
+
+func createEcDoubleSlopeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	point, err := resolver.GetResOperander("pt")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcDoubleSlopeV3Hint(point), nil
 }
 
 // Reduce hint reduces a packed value modulo the SECP256K1 prime
@@ -566,14 +775,24 @@ func createReduceEd25519Hinter(resolver hintReferenceResolver) (hinter.Hinter, e
 // It also assigns `slope`, `x`, `y` and `new_x` in the current scope
 // so that they are available in the current scope for EcDoubleAssignNewYV1 hint
 //
-// This implementation is valid for both EcDoubleAssignNewX V1 and V4, only the operander differs
-// with `point` used for V1 and `pt` used for V4
+// This implementation is valid for EcDoubleAssignNewX V1,V2 and V4, only the operander differs
+// with `point` used for V1,V2 and `pt` used for V4 and for V2 SECP_P has to be already in scope
+// contrary to V1
 func newEcDoubleAssignNewXHint(slope, point hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcDoubleAssignNewX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			// V1
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//>
+			//> slope = pack(ids.slope, PRIME)
+			//> x = pack(ids.point.x, PRIME)
+			//> y = pack(ids.point.y, PRIME)
+			//>
+			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
+
+			// V2
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
 			//>
 			//> slope = pack(ids.slope, PRIME)
 			//> x = pack(ids.point.x, PRIME)
@@ -681,6 +900,20 @@ func createEcDoubleAssignNewXV4Hinter(resolver hintReferenceResolver) (hinter.Hi
 	}
 
 	point, err := resolver.GetResOperander("pt")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcDoubleAssignNewXHint(slope, point), nil
+}
+
+func createEcDoubleAssignNewXV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	slope, err := resolver.GetResOperander("slope")
+	if err != nil {
+		return nil, err
+	}
+
+	point, err := resolver.GetResOperander("point")
 	if err != nil {
 		return nil, err
 	}
@@ -831,6 +1064,13 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			}
 
 			// value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
+
+			modValue := new(big.Int).Mod(new(big.Int).Sub(&x0Big, &x1Big), &secPBig)
+
+			if modValue.Cmp(big.NewInt(0)) == 0 {
+				return fmt.Errorf("the slope of the line is invalid")
+			}
+
 			slopeBig, err := secp_utils.LineSlope(&x0Big, &y0Big, &x1Big, &y1Big, &secPBig)
 			if err != nil {
 				return err
@@ -855,6 +1095,125 @@ func createComputeSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	}
 
 	return newComputeSlopeV1Hint(point0, point1), nil
+}
+
+// ComputeSlopeV3 hint computes the slope between two points on an elliptic curve
+//
+// `newComputeSlopeV3Hint` takes 2 operanders as arguments
+//   - `pt0` is the first point on an elliptic curve to operate on
+//   - `pt1` is the second point on an elliptic curve to operate on
+//
+// `newComputeSlopeV3Hint` assigns the `slope` result as `value` in the current scope
+//
+// This version differs from ComputeSlopeV1 by the name of the operanders (`point0` and `point1` for V1, `pt0` and `pt1` for V3)
+// and the computation of the slope : V1 uses a dedicated utility function with an additionnal check while V3 executes
+// the modular division directly
+func newComputeSlopeV3Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "ComputeSlopeV3",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//> from starkware.python.math_utils import div_mod
+			//>
+			//> # Compute the slope.
+			//> x0 = pack(ids.pt0.x, PRIME)
+			//> y0 = pack(ids.pt0.y, PRIME)
+			//> x1 = pack(ids.pt1.x, PRIME)
+			//> y1 = pack(ids.pt1.y, PRIME)
+			//> value = slope = div_mod(y0 - y1, x0 - x1, SECP_P)
+
+			point0XAddr, err := point0.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			point1XAddr, err := point1.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			point0YAddr, err := point0XAddr.AddOffset(3)
+			if err != nil {
+				return err
+			}
+
+			point1YAddr, err := point1XAddr.AddOffset(3)
+			if err != nil {
+				return err
+			}
+
+			point0XValues, err := vm.Memory.ResolveAsBigInt3(point0XAddr)
+			if err != nil {
+				return err
+			}
+
+			point1XValues, err := vm.Memory.ResolveAsBigInt3(point1XAddr)
+			if err != nil {
+				return err
+			}
+
+			point0YValues, err := vm.Memory.ResolveAsBigInt3(point0YAddr)
+			if err != nil {
+				return err
+			}
+
+			point1YValues, err := vm.Memory.ResolveAsBigInt3(point1YAddr)
+			if err != nil {
+				return err
+			}
+
+			//> x0 = pack(ids.point0.x, PRIME)
+			x0Big, err := secp_utils.SecPPacked(point0XValues)
+			if err != nil {
+				return err
+			}
+
+			//> x1 = pack(ids.point1.x, PRIME)
+			x1Big, err := secp_utils.SecPPacked(point1XValues)
+			if err != nil {
+				return err
+			}
+
+			//> y0 = pack(ids.point0.y, PRIME)
+			y0Big, err := secp_utils.SecPPacked(point0YValues)
+			if err != nil {
+				return err
+			}
+
+			//> y1 = pack(ids.point0.y, PRIME)
+			y1Big, err := secp_utils.SecPPacked(point1YValues)
+			if err != nil {
+				return err
+			}
+
+			secPBig, ok := secp_utils.GetSecPBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			//> value = slope = div_mod(y0 - y1, x0 - x1, SECP_P)
+			slopeBig, err := secp_utils.LineSlope(&x0Big, &y0Big, &x1Big, &y1Big, &secPBig)
+			if err != nil {
+				return err
+			}
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &slopeBig})
+		},
+	}
+}
+
+func createComputeSlopeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	point0, err := resolver.GetResOperander("pt0")
+	if err != nil {
+		return nil, err
+	}
+
+	point1, err := resolver.GetResOperander("pt1")
+	if err != nil {
+		return nil, err
+	}
+
+	return newComputeSlopeV3Hint(point0, point1), nil
 }
 
 func newEcMulInnerHint(scalar hinter.ResOperander) hinter.Hinter {

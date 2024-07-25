@@ -333,7 +333,7 @@ func (mv MemoryValue) String() string {
 	return mv.Felt.String()
 }
 
-// Retuns a MemoryValue holding a felt as uint if it fits
+// Returns a MemoryValue holding a felt as uint if it fits
 func (mv *MemoryValue) Uint64() (uint64, error) {
 	if mv.IsAddress() {
 		return 0, fmt.Errorf("cannot convert a memory address into uint64: %s", *mv)

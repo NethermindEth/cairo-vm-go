@@ -1,6 +1,7 @@
 package integrationtests
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -51,7 +52,9 @@ func (f *Filter) filtered(testFile string) bool {
 	return false
 }
 
-func TestCairoFiles(t *testing.T) {
+var zerobench = flag.Bool("zerobench", false, "run integration tests and generate benchmarks file")
+
+func TestCairoZeroFiles(t *testing.T) {
 	roots := []string{
 		"./cairo_zero_hint_tests/",
 		"./cairo_zero_file_tests/",
@@ -142,7 +145,9 @@ func TestCairoFiles(t *testing.T) {
 		clean(root)
 	}
 
-	WriteBenchMarksToFile(benchmarkMap)
+	if *zerobench {
+		WriteBenchMarksToFile(benchmarkMap)
+	}
 }
 
 // Save the Benchmarks for the integration tests in `BenchMarks.txt`

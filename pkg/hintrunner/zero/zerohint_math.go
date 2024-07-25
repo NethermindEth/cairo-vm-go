@@ -501,7 +501,7 @@ func createIsNNOutOfRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 //
 // `newIsPositiveHint` takes 2 operanders as arguments
 //   - `value` is the value that will be evaluated
-//   - `dst` is the address where to write the result in memmory
+//   - `dst` is the address where to write the result in memory
 //
 // `newIsPositiveHint` writes 1 or 0 to `dest` address, depending on
 // whether `value` is positive or negative in the context, respectively
