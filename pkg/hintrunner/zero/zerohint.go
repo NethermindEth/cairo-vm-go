@@ -304,6 +304,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createNondetElementsOverXHinter(resolver, 10)
 	case normalizeAddressCode:
 		return createNormalizeAddressHinter(resolver)
+	case Sha256AndBlake2sInput:
+		return createSha256AndBlake2sInputHinter(resolver)
 	default:
 		return nil, fmt.Errorf("not identified hint")
 	}

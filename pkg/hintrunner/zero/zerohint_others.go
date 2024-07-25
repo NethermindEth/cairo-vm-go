@@ -751,3 +751,16 @@ func createNormalizeAddressHinter(resolver hintReferenceResolver) (hinter.Hinter
 
 	return newNormalizeAddressHint(isSmall, addr), nil
 }
+
+func newSha256AndBlake2sInputHint(low, high, value hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Sha256AndBlake2sInput",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+
+		},
+	}
+}
+
+func createSha256AndBlake2sInputHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	return newSha256AndBlake2sInputHint()
+}
