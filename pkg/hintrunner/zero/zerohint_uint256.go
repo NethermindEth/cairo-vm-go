@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -599,6 +600,10 @@ func createUint256SubHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	return newUint256SubHint(a, b, res), nil
 }
 
+// SplitXX computes the square root of a 256-bit integer modulo the prime 2^255 - 19, ensures the result is even, and splits it into two 128-bit integers.
+// newSplitXXHint takes 2 operanders as arguments:
+//   - `xx` is the `uint256` variable that will be used to calculate the square root
+//   - `x` is the variable that will store the result of the hint in memory
 func newSplitXXHint(x, xx hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitXX",
@@ -615,7 +620,7 @@ func newSplitXXHint(x, xx hinter.ResOperander) hinter.Hinter {
 			//> ids.x.low = x & ((1<<128)-1)
 			//> ids.x.high = x >> 128
 
-			PRIME, ok := new(big.Int).SetString("57896044618658097711785492504343953926634992332820282019728792003956564819949", 10)
+			PRIME, ok := secp_utils.GetCurve25519PBig()
 			if !ok {
 				return fmt.Errorf("invalid value for PRIME")
 			}
@@ -644,20 +649,20 @@ func newSplitXXHint(x, xx hinter.ResOperander) hinter.Hinter {
 			xx := new(big.Int).Add(new(big.Int).Lsh(&xxHighBig, 128), &xxLowBig)
 
 			//> x = pow(xx, (PRIME + 3) // 8, PRIME)
-			xBig := new(big.Int).Exp(xx, modifiedPRIME, PRIME)
+			xBig := new(big.Int).Exp(xx, modifiedPRIME, &PRIME)
 
 			//> if (x * x - xx) % PRIME != 0:
 			//> 	x = (x * II) % PRIME
 			xSquare := new(big.Int).Mul(xBig, xBig)
 			cmpSub := new(big.Int).Sub(xSquare, xx)
-			if new(big.Int).Mod(cmpSub, PRIME).Cmp(big.NewInt(0)) != 0 {
+			if new(big.Int).Mod(cmpSub, &PRIME).Cmp(big.NewInt(0)) != 0 {
 				xBig.Mul(xBig, II)
-				xBig.Mod(xBig, PRIME)
+				xBig.Mod(xBig, &PRIME)
 			}
 			//> if x % 2 != 0:
 			//>   	x = PRIME - x
 			if new(big.Int).Mod(xBig, big.NewInt(2)).Cmp(big.NewInt(0)) != 0 {
-				xBig.Sub(PRIME, xBig)
+				xBig.Sub(&PRIME, xBig)
 			}
 
 			//> ids.x.low = x & ((1<<128)-1)
