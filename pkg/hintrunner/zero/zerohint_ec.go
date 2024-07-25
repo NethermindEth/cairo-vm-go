@@ -13,6 +13,60 @@ import (
 	"github.com/holiman/uint256"
 )
 
+// Function to create the getHighLen Hinter
+func newGetHighLenHint() hinter.Hinter {
+	return &hinter.GenericZeroHinter{
+		Name: "getHighLen",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			scalarU, err := hinter.GetVariableAs[int](&ctx.ScopeManager, "scalar_u.d2")
+			if err != nil {
+				return fmt.Errorf("failed to resolve scalar_u.d2: %w", err)
+			}
+
+			scalarV, err := hinter.GetVariableAs[int](&ctx.ScopeManager, "scalar_v.d2")
+			if err != nil {
+				return fmt.Errorf("failed to resolve scalar_v.d2: %w", err)
+			}
+
+			// Calculate the highest bit length
+			lenHi := max(bitLength(scalarU), bitLength(scalarV)) - 1
+
+			// Assign the result to ids.len_hi
+			if err := ctx.ScopeManager.AssignVariable("len_hi", lenHi); err != nil {
+				return fmt.Errorf("failed to assign len_hi: %w", err)
+			}
+
+			return nil
+		},
+	}
+}
+
+// Function to create the hinter with the resolver
+func createGetHighLenHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	return newGetHighLenHint(), nil
+}
+
+// Function to get the bit length of an integer
+func bitLength(value int) int {
+	if value == 0 {
+		return 1
+	}
+	length := 0
+	for value > 0 {
+		length++
+		value >>= 1
+	}
+	return length
+}
+
+// Function to get the maximum of two integers
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 // EcNegate hint negates the y-coordinate of a point on an elliptic curve modulo SECP_P
 //
 // `newEcNegateHint` takes 1 operander as argument
