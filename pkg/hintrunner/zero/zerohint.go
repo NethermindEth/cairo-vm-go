@@ -133,6 +133,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 	// EC hints
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)
+	case divModNSafeDivPlusOneCode:
+		return createDivModNSafeDivPlusOneHinter()
+	case divModNPackedDivModExternalNCode:
+		return createDivModNPackedDivModExternalNHinter(resolver)
 	case nondetBigint3V1Code:
 		return createNondetBigint3V1Hinter(resolver)
 	case fastEcAddAssignNewXCode:
