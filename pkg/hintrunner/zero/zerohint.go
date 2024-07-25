@@ -135,6 +135,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createBigIntToUint256Hinter(resolver)
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)
+	case divModNSafeDivPlusOneCode:
+		return createDivModNSafeDivPlusOneHinter()
+	case divModNPackedDivModExternalNCode:
+		return createDivModNPackedDivModExternalNHinter(resolver)
 	case nondetBigint3V1Code:
 		return createNondetBigint3V1Hinter(resolver)
 	case fastEcAddAssignNewXCode:
@@ -163,6 +167,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createComputeSlopeV3Hinter(resolver)
 	case ecDoubleAssignNewXV1Code:
 		return createEcDoubleAssignNewXV1Hinter(resolver)
+	case ecDoubleAssignNewXV2Code:
+		return createEcDoubleAssignNewXV2Hinter(resolver)
 	case ecDoubleAssignNewXV4Code:
 		return createEcDoubleAssignNewXV4Hinter(resolver)
 	case ecDoubleAssignNewYV1Code:
