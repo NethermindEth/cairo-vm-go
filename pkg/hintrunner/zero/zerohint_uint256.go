@@ -732,12 +732,7 @@ func newUint128AddHint(a, b, carry hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			err = vm.Memory.WriteToAddress(&addrCarry, &cValue)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return vm.Memory.WriteToAddress(&addrCarry, &cValue)
 
 		},
 	}

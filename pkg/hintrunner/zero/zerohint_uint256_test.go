@@ -20,9 +20,7 @@ func TestZeroHintUint256(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUint128AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry"])
 				},
-				check: allVarValueEquals(map[string]*fp.Element{
-					"carry": feltUint64(1),
-				}),
+				check: varValueEquals("carry", feltUint64(1)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -33,9 +31,7 @@ func TestZeroHintUint256(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUint128AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry"])
 				},
-				check: allVarValueEquals(map[string]*fp.Element{
-					"carry": feltUint64(0),
-				}),
+				check: varValueEquals("carry", feltUint64(0)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -46,9 +42,7 @@ func TestZeroHintUint256(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUint128AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry"])
 				},
-				check: allVarValueEquals(map[string]*fp.Element{
-					"carry": feltUint64(0),
-				}),
+				check: varValueEquals("carry", feltUint64(0)),
 			},
 			{
 				operanders: []*hintOperander{
@@ -59,9 +53,7 @@ func TestZeroHintUint256(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUint128AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry"])
 				},
-				check: allVarValueEquals(map[string]*fp.Element{
-					"carry": feltUint64(0),
-				}),
+				check: varValueEquals("carry", feltUint64(0)),
 			},
 		},
 		"Uint256Add": {
