@@ -249,7 +249,7 @@ func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.ResOperander) hin
 
 			//> keccak_input = bytearray()
 			keccakInput := make([]byte, 0)
-			memoryValuesInRange, err := vm.Memory.GetConsecutiveMemoryValues(*startPtr, int16(nElems))
+			memoryValuesInRange, err := vm.Memory.GetConsecutiveMemoryValues(*startPtr, nElems)
 			if err != nil {
 				return err
 			}
@@ -489,7 +489,7 @@ func newBlockPermutationHint(keccakPtr hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			inputValuesInRange, err := vm.Memory.GetConsecutiveMemoryValues(readAddr, offset)
+			inputValuesInRange, err := vm.Memory.GetConsecutiveMemoryValues(readAddr, uint64(offset))
 			if err != nil {
 				return err
 			}
