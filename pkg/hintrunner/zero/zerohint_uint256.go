@@ -411,11 +411,20 @@ func newUint256UnsignedDivRemExpandedHint(a, div, quotient, remainder hinter.Res
 			var aHighBig big.Int
 			aHigh.BigInt(&aHighBig)
 
-			divB01, divB23, err := GetUint256AsFelts(vm, div)
+			//> struct Uint256_expand {
+			//> 	B0: felt,
+			//> 	b01: felt,
+			//> 	b12: felt,
+			//> 	b23: felt,
+			//> 	b3: felt,
+			//> }
+
+			divUint256Expanded, err := GetUint256ExpandAsFelts(vm, div)
 			if err != nil {
 				return err
 			}
 
+			divB01, divB23 := divUint256Expanded[1], divUint256Expanded[3]
 			var divB23Big big.Int
 			divB23.BigInt(&divB23Big)
 			var divB01Big big.Int
