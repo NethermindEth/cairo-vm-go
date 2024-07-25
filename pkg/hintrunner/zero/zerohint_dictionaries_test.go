@@ -15,13 +15,19 @@ func TestZeroHintDictionaries(t *testing.T) {
 			{
 				operanders: []*hintOperander{},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					key1 := memory.MemoryValueFromUint(uint(10))
+					key2 := memory.MemoryValueFromUint(uint(20))
+					key3 := memory.MemoryValueFromSegmentAndOffset(1, 20)
+					key4 := memory.MemoryValueFromSegmentAndOffset(2, 60)
 					value1 := memory.MemoryValueFromUint(uint(1000))
-					value2 := memory.MemoryValueFromUint(uint(2000))
-					value3 := memory.MemoryValueFromUint(uint(3000))
-					err := ctx.ScopeManager.AssignVariable("initial_dict", map[fp.Element]memory.MemoryValue{
-						*feltUint64(10): value1,
-						*feltUint64(20): value2,
-						*feltUint64(30): value3,
+					value2 := memory.MemoryValueFromSegmentAndOffset(10, 40)
+					value3 := memory.MemoryValueFromUint(uint(2000))
+					value4 := memory.MemoryValueFromSegmentAndOffset(100, 1)
+					err := ctx.ScopeManager.AssignVariable("initial_dict", map[memory.MemoryValue]memory.MemoryValue{
+						key1: value1,
+						key2: value2,
+						key3: value3,
+						key4: value4,
 					})
 					if err != nil {
 						t.Fatal(err)
@@ -50,19 +56,29 @@ func TestZeroHintDictionaries(t *testing.T) {
 						t.Fatalf("__dict_manager missing")
 					}
 
-					for _, key := range []fp.Element{*feltUint64(10), *feltUint64(20), *feltUint64(30)} {
+					keys := []memory.MemoryValue{
+						memory.MemoryValueFromUint(uint(10)),
+						memory.MemoryValueFromUint(uint(20)),
+						memory.MemoryValueFromSegmentAndOffset(1, 20),
+						memory.MemoryValueFromSegmentAndOffset(2, 60),
+					}
+					expectedValues := []memory.MemoryValue{
+						memory.MemoryValueFromUint(uint(1000)),
+						memory.MemoryValueFromSegmentAndOffset(10, 40),
+						memory.MemoryValueFromUint(uint(2000)),
+						memory.MemoryValueFromSegmentAndOffset(100, 1),
+					}
+
+					for i := 0; i < len(keys); i++ {
+						key := keys[i]
 						value, err := dictionaryManager.At(dictAddr, key)
 						if err != nil {
 							t.Fatalf("error fetching value for key: %v", key)
 						}
-						valueFelt, err := value.FieldElement()
-						if err != nil {
-							t.Fatalf("mv: %s cannot be converted to felt", value)
-						}
-						expectedValueFelt := new(fp.Element).Mul(&key, feltUint64(100))
+						expectedValue := expectedValues[i]
 
-						if !valueFelt.Equal(expectedValueFelt) {
-							t.Fatalf("at key: %v expected: %s actual: %s", key, expectedValueFelt, valueFelt)
+						if !value.Equal(&expectedValue) {
+							t.Fatalf("at key: %v expected: %s actual: %s", key, expectedValue, value)
 						}
 					}
 				},
@@ -71,7 +87,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 		"DefaultDictNew": {
 			{
 				operanders: []*hintOperander{
-					{Name: "default_value", Kind: apRelative, Value: feltUint64(12345)},
+					{Name: "default_value", Kind: apRelative, Value: addrWithSegment(10, 22)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newDefaultDictNewHint(ctx.operanders["default_value"])
@@ -88,19 +104,15 @@ func TestZeroHintDictionaries(t *testing.T) {
 						t.Fatalf("error reading dictionary address from ap")
 					}
 
-					key := fp.NewElement(100)
+					key := memory.MemoryValueFromMemoryAddress(addrWithSegment(4, 16))
 					value, err := dictionaryManager.At(dictAddr, key)
 					if err != nil {
 						t.Fatalf("error fetching value from dictionary")
 					}
-					valueFelt, err := value.FieldElement()
-					if err != nil {
-						t.Fatalf("mv: %s cannot be converted to felt", value)
-					}
-					expectedValueFelt := fp.NewElement(12345)
+					expectedValue := memory.MemoryValueFromMemoryAddress(addrWithSegment(10, 22))
 
-					if !valueFelt.Equal(&expectedValueFelt) {
-						t.Fatalf("at key: %v expected: %s actual: %s", key, &expectedValueFelt, valueFelt)
+					if !value.Equal(&expectedValue) {
+						t.Fatalf("at key: %v expected: %s actual: %s", key, &expectedValue, value)
 					}
 				},
 			},
@@ -126,7 +138,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					varValueEquals("value", feltUint64(12345))(t, ctx)
 
 					dictPtr := addrWithSegment(2, 0)
-					expectedData := map[fp.Element]memory.MemoryValue{}
+					expectedData := map[memory.MemoryValue]memory.MemoryValue{}
 					expectedDefaultValue := memory.MemoryValueFromInt(12345)
 					expectedFreeOffset := uint64(3)
 					zeroDictInScopeEquals(*dictPtr, expectedData, expectedDefaultValue, expectedFreeOffset)(t, ctx)
@@ -159,7 +171,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 						})(t, ctx)
 
 					dictPtr := addrWithSegment(2, 0)
-					expectedData := map[fp.Element]memory.MemoryValue{*feltUint64(100): memory.MemoryValueFromInt(9999)}
+					expectedData := map[memory.MemoryValue]memory.MemoryValue{memory.MemoryValueFromInt(100): memory.MemoryValueFromInt(9999)}
 					expectedDefaultValue := memory.MemoryValueFromInt(12345)
 					expectedFreeOffset := uint64(3)
 					zeroDictInScopeEquals(*dictPtr, expectedData, expectedDefaultValue, expectedFreeOffset)(t, ctx)
@@ -205,7 +217,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					dictPtr := addrWithSegment(2, 0)
-					expectedData := map[fp.Element]memory.MemoryValue{*feltUint64(100): memory.MemoryValueFromInt(4)}
+					expectedData := map[memory.MemoryValue]memory.MemoryValue{memory.MemoryValueFromInt(100): memory.MemoryValueFromInt(4)}
 					expectedDefaultValue := memory.MemoryValueFromInt(1)
 					expectedFreeOffset := uint64(3)
 					zeroDictInScopeEquals(*dictPtr, expectedData, expectedDefaultValue, expectedFreeOffset)(t, ctx)
@@ -249,7 +261,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "loop_temps.should_continue", Kind: apRelative, Value: feltInt64(0)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(3), *feltUint64(2)}, "current_access_index": *feltUint64(1)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(3), *feltUint64(2)}, "current_access_index": feltUint64(1)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -259,7 +271,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					varValueEquals("loop_temps.index_delta_minus1", feltUint64(0))(t, ctx)
-					allVarValueInScopeEquals(map[string]any{"current_access_index": *feltUint64(2), "current_access_indices": []fp.Element{*feltUint64(3)}})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"current_access_index": feltUint64(2), "current_access_indices": []fp.Element{*feltUint64(3)}})(t, ctx)
 				},
 			},
 			{
@@ -270,7 +282,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "loop_temps.should_continue", Kind: apRelative, Value: feltInt64(0)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(97), *feltUint64(76), *feltUint64(54), *feltUint64(51), *feltUint64(44), *feltUint64(43)}, "current_access_index": *feltUint64(19)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"current_access_indices": []fp.Element{*feltUint64(97), *feltUint64(76), *feltUint64(54), *feltUint64(51), *feltUint64(44), *feltUint64(43)}, "current_access_index": feltUint64(19)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -280,7 +292,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					varValueEquals("loop_temps.index_delta_minus1", feltUint64(23))(t, ctx)
-					allVarValueInScopeEquals(map[string]any{"current_access_index": *feltUint64(43), "current_access_indices": []fp.Element{*feltUint64(97), *feltUint64(76), *feltUint64(54), *feltUint64(51), *feltUint64(44)}})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"current_access_index": feltUint64(43), "current_access_indices": []fp.Element{*feltUint64(97), *feltUint64(76), *feltUint64(54), *feltUint64(51), *feltUint64(44)}})(t, ctx)
 				},
 			},
 			{
@@ -346,7 +358,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "range_check_ptr", Kind: fpRelative, Value: addr(6)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(2), *feltUint64(1), *feltUint64(3)}}, "key": *feltUint64(0)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(2), *feltUint64(1), *feltUint64(3)}}, "key": feltUint64(0)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -356,7 +368,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					valueAtAddressEquals(*addr(6), feltUint64(1))(t, ctx)
-					allVarValueInScopeEquals(map[string]any{"current_access_indices": []fp.Element{*feltUint64(3), *feltUint64(2)}, "current_access_index": *feltUint64(1), "access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(2), *feltUint64(1), *feltUint64(3)}}})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"current_access_indices": []fp.Element{*feltUint64(3), *feltUint64(2)}, "current_access_index": feltUint64(1), "access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(2), *feltUint64(1), *feltUint64(3)}}})(t, ctx)
 				},
 			},
 			{
@@ -364,7 +376,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "range_check_ptr", Kind: fpRelative, Value: addr(6)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(22), *feltUint64(76), *feltUint64(94), *feltUint64(55), *feltUint64(18), *feltUint64(92)}}, "key": *feltUint64(1)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(22), *feltUint64(76), *feltUint64(94), *feltUint64(55), *feltUint64(18), *feltUint64(92)}}, "key": feltUint64(1)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -374,7 +386,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					valueAtAddressEquals(*addr(6), feltUint64(18))(t, ctx)
-					allVarValueInScopeEquals(map[string]any{"current_access_indices": []fp.Element{*feltUint64(94), *feltUint64(92), *feltUint64(76), *feltUint64(55), *feltUint64(22)}, "current_access_index": *feltUint64(18), "access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(22), *feltUint64(76), *feltUint64(94), *feltUint64(55), *feltUint64(18), *feltUint64(92)}}, "key": *feltUint64(1)})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"current_access_indices": []fp.Element{*feltUint64(94), *feltUint64(92), *feltUint64(76), *feltUint64(55), *feltUint64(22)}, "current_access_index": feltUint64(18), "access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(22), *feltUint64(76), *feltUint64(94), *feltUint64(55), *feltUint64(18), *feltUint64(92)}}, "key": feltUint64(1)})(t, ctx)
 				},
 			},
 			{
@@ -382,7 +394,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "range_check_ptr", Kind: fpRelative, Value: addr(6)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(22)}, *feltUint64(1): {*feltUint64(5), *feltUint64(28)}, *feltUint64(2): {*feltUint64(543), *feltUint64(323), *feltUint64(324), *feltUint64(999), *feltUint64(888), *feltUint64(777)}}, "key": *feltUint64(2)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {*feltUint64(22)}, *feltUint64(1): {*feltUint64(5), *feltUint64(28)}, *feltUint64(2): {*feltUint64(543), *feltUint64(323), *feltUint64(324), *feltUint64(999), *feltUint64(888), *feltUint64(777)}}, "key": feltUint64(2)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -393,7 +405,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				check: func(t *testing.T, ctx *hintTestContext) {
 					valueAtAddressEquals(*addr(6), feltUint64(323))(t, ctx)
 					varValueInScopeEquals("current_access_indices", []fp.Element{*feltUint64(999), *feltUint64(888), *feltUint64(777), *feltUint64(543), *feltUint64(324)})(t, ctx)
-					varValueInScopeEquals("current_access_index", *feltUint64(323))(t, ctx)
+					varValueInScopeEquals("current_access_index", feltUint64(323))(t, ctx)
 				},
 			},
 		},
@@ -487,7 +499,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newSquashDictInnerNextKeyHint(ctx.operanders["next_key"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					allVarValueInScopeEquals(map[string]any{"keys": []fp.Element{*feltUint64(3), *feltUint64(2)}, "key": *feltUint64((1))})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"keys": []fp.Element{*feltUint64(3), *feltUint64(2)}, "key": feltUint64((1))})(t, ctx)
 					varValueEquals("next_key", feltUint64(1))(t, ctx)
 				},
 			},
@@ -505,7 +517,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					return newSquashDictInnerNextKeyHint(ctx.operanders["next_key"])
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
-					allVarValueInScopeEquals(map[string]any{"keys": []fp.Element{*feltUint64(15), *feltUint64(12), *feltUint64(9), *feltUint64(7), *feltUint64(6)}, "key": *feltUint64((4))})(t, ctx)
+					allVarValueInScopeEquals(map[string]any{"keys": []fp.Element{*feltUint64(15), *feltUint64(12), *feltUint64(9), *feltUint64(7), *feltUint64(6)}, "key": feltUint64((4))})(t, ctx)
 					varValueEquals("next_key", feltUint64(4))(t, ctx)
 				},
 			},
@@ -516,7 +528,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(0)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(0)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": feltUint64(0)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -531,7 +543,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(0)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(1)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": feltUint64(1)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -546,7 +558,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(3)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(1)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": feltUint64(1)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -561,7 +573,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 					{Name: "n_used_accesses", Kind: apRelative, Value: feltInt64(3)},
 				},
 				ctxInit: func(ctx *hinter.HintRunnerContext) {
-					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": *feltUint64(0)})
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"access_indices": map[fp.Element][]fp.Element{*feltUint64(0): {}, *feltUint64(1): {*feltUint64(1), *feltUint64(2), *feltUint64(3)}}, "key": feltUint64(0)})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -673,7 +685,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 							*feltUint64(6):  {*feltUint64(4)},
 						},
 						"keys": []fp.Element{*feltUint64(22), *feltUint64(21), *feltUint64(8), *feltUint64(6)},
-						"key":  *feltUint64(1),
+						"key":  feltUint64(1),
 					})(t, ctx)
 				},
 			},
@@ -725,7 +737,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 							*feltUint64(6):   {*feltUint64(4)},
 						},
 						"keys": []fp.Element{utils.FeltMax128, *feltUint64(21), *feltUint64(8), *feltUint64(6)},
-						"key":  *feltUint64(1),
+						"key":  feltUint64(1),
 					})(t, ctx)
 				},
 			},
@@ -776,7 +788,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 							utils.FeltUpperBound: {*feltUint64(3)},
 						},
 						"keys": []fp.Element{utils.FeltUpperBound, *feltUint64(210), *feltUint64(80)},
-						"key":  *feltUint64(29),
+						"key":  feltUint64(29),
 					})(t, ctx)
 				},
 			},
@@ -803,7 +815,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 				},
 				check: func(t *testing.T, ctx *hintTestContext) {
 					dictPtr := addrWithSegment(2, 0)
-					expectedData := map[fp.Element]memory.MemoryValue{}
+					expectedData := map[memory.MemoryValue]memory.MemoryValue{}
 					expectedDefaultValue := memory.MemoryValueFromInt(12345)
 					expectedFreeOffset := uint64(8)
 					zeroDictInScopeEquals(*dictPtr, expectedData, expectedDefaultValue, expectedFreeOffset)(t, ctx)
@@ -851,7 +863,7 @@ func TestZeroHintDictionaries(t *testing.T) {
 
 					return newDictSquashCopyDictHint(ctx.operanders["dict_accesses_end"])
 				},
-				check: varValueInScopeEquals("initial_dict", make(map[fp.Element]memory.MemoryValue)),
+				check: varValueInScopeEquals("initial_dict", make(map[memory.MemoryValue]memory.MemoryValue)),
 			},
 		},
 	})

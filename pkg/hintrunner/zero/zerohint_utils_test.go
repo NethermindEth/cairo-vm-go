@@ -231,10 +231,10 @@ func varValueInScopeEquals(varName string, expected any) func(t *testing.T, ctx 
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
 			}
-		case map[fp.Element]memory.MemoryValue:
+		case map[memory.MemoryValue]memory.MemoryValue:
 			{
-				value := value.(map[fp.Element]memory.MemoryValue)
-				expected := expected.(map[fp.Element]memory.MemoryValue)
+				value := value.(map[memory.MemoryValue]memory.MemoryValue)
+				expected := expected.(map[memory.MemoryValue]memory.MemoryValue)
 				if !reflect.DeepEqual(value, expected) {
 					t.Fatalf("%s scope value mismatch:\nhave: %v\nwant: %v", varName, value, expected)
 				}
@@ -280,7 +280,7 @@ func varListInScopeEquals(expectedValues map[string]any) func(t *testing.T, ctx 
 	}
 }
 
-func zeroDictInScopeEquals(dictAddress memory.MemoryAddress, expectedData map[fp.Element]memory.MemoryValue, expectedDefaultValue memory.MemoryValue, expectedFreeOffset uint64) func(t *testing.T, ctx *hintTestContext) {
+func zeroDictInScopeEquals(dictAddress memory.MemoryAddress, expectedData map[memory.MemoryValue]memory.MemoryValue, expectedDefaultValue memory.MemoryValue, expectedFreeOffset uint64) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
 		dictionaryManager, ok := ctx.runnerContext.ScopeManager.GetZeroDictionaryManager()
 		if !ok {
