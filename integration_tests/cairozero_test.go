@@ -55,9 +55,6 @@ func (f *Filter) filtered(testFile string) bool {
 
 func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[string][2]int, zerobench bool) {
 	t.Logf("testing: %s\n", path)
-	if path == "cairo_zero_hint_tests/hintrefs.cairo" {
-		return
-	}
 
 	errorExpected := false
 	if name == "range_check.small.cairo" {
@@ -70,7 +67,7 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		return
 	}
 
-	elapsedPy, pyTraceFile, pyMemoryFile, err := runRustVm(name, compiledOutput)
+	elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(name, compiledOutput)
 	if errorExpected {
 		// we let the code go on so that we can check if the go vm also raises an error
 		assert.Error(t, err, path)
@@ -191,7 +188,7 @@ func WriteBenchMarksToFile(benchmarkMap map[string][2]int) {
 	w := tabwriter.NewWriter(&sb, 40, 0, 0, ' ', tabwriter.Debug)
 
 	sb.WriteString(border + "\n")
-	fmt.Fprintln(w, "| File \t RustVM (ms) \t GoVM (ms) \t")
+	fmt.Fprintln(w, "| File \t PythonVM (ms) \t GoVM (ms) \t")
 	w.Flush()
 	sb.WriteString(border + "\n")
 
@@ -237,13 +234,11 @@ func WriteBenchMarksToFile(benchmarkMap map[string][2]int) {
 }
 
 const (
-	compiledSuffix   = "_compiled.json"
-	pyTraceSuffix    = "_py_trace"
-	pyMemorySuffix   = "_py_memory"
-	rustTraceSuffix  = "_rust_trace"
-	rustMemorySuffix = "_rust_memory"
-	traceSuffix      = "_trace"
-	memorySuffix     = "_memory"
+	compiledSuffix = "_compiled.json"
+	pyTraceSuffix  = "_py_trace"
+	pyMemorySuffix = "_py_memory"
+	traceSuffix    = "_trace"
+	memorySuffix   = "_memory"
 )
 
 // given a path to a cairo zero file, it compiles it
@@ -309,50 +304,6 @@ func runPythonVm(testFilename, path string) (time.Duration, string, string, erro
 	if err != nil {
 		return 0, "", "", fmt.Errorf(
 			"cairo-run %s: %w\n%s", path, err, string(res),
-		)
-	}
-
-	return elapsed, traceOutput, memoryOutput, nil
-}
-
-// given a path to a compiled cairo zero file, execute it using the
-// rust vm and returns the trace and memory files location
-func runRustVm(testFilename, path string) (time.Duration, string, string, error) {
-	traceOutput := swapExtenstion(path, rustTraceSuffix)
-	memoryOutput := swapExtenstion(path, rustMemorySuffix)
-
-	// If any other layouts are needed, add the suffix checks here.
-	// The convention would be: ".$layout.cairo"
-	// A file without this suffix will use the default ("plain") layout.
-	layout := "plain"
-	if strings.HasSuffix(testFilename, ".small.cairo") {
-		layout = "small"
-	} else if strings.HasSuffix(testFilename, ".starknet_with_keccak.cairo") {
-		layout = "starknet_with_keccak"
-	}
-
-	args := []string{
-		"--proof_mode",
-		"--trace_file",
-		traceOutput,
-		"--memory_file",
-		memoryOutput,
-		"--layout",
-		layout,
-		path,
-	}
-
-	cmd := exec.Command("../../lambdaworks_cairo-vm/target/release/cairo-vm-cli", args...)
-
-	start := time.Now()
-
-	res, err := cmd.CombinedOutput()
-
-	elapsed := time.Since(start)
-
-	if err != nil {
-		return 0, "", "", fmt.Errorf(
-			"cairo-vm-cli %s: %w\n%s", path, err, string(res),
 		)
 	}
 
