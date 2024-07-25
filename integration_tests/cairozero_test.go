@@ -53,13 +53,8 @@ func (f *Filter) filtered(testFile string) bool {
 	return false
 }
 
-func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[string][2]int, zerobench bool) {
+func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[string][2]int, benchmark bool, errorExpected bool) {
 	t.Logf("testing: %s\n", path)
-
-	errorExpected := false
-	if name == "range_check.small.cairo" {
-		errorExpected = true
-	}
 
 	compiledOutput, err := compileZeroCode(path)
 	if err != nil {
@@ -89,8 +84,7 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		}
 	}
 
-	// we don't want benchmarks when tests are run concurrently
-	if zerobench {
+	if benchmark {
 		benchmarkMap[name] = [2]int{int(elapsedPy.Milliseconds()), int(elapsedGo.Milliseconds())}
 	}
 
@@ -146,7 +140,12 @@ func TestCairoZeroFiles(t *testing.T) {
 			name := dirEntry.Name()
 			path := filepath.Join(root, name)
 
-			if !filter.filtered(dirEntry.Name()) {
+			errorExpected := false
+			if name == "range_check.small.cairo" {
+				errorExpected = true
+			}
+
+			if !filter.filtered(name) {
 				continue
 			}
 
@@ -158,10 +157,10 @@ func TestCairoZeroFiles(t *testing.T) {
 				go func(path, name string) {
 					defer wg.Done()
 					defer func() { <-sem }() // release the semaphore slot when done
-					runAndTestFile(t, path, name, benchmarkMap, *zerobench)
+					runAndTestFile(t, path, name, benchmarkMap, *zerobench, errorExpected)
 				}(path, name)
 			} else {
-				runAndTestFile(t, path, name, benchmarkMap, *zerobench)
+				runAndTestFile(t, path, name, benchmarkMap, *zerobench, errorExpected)
 			}
 		}
 	}
