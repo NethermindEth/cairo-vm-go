@@ -111,6 +111,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint, hintPC uint64
 		return createUint256MulDivModHinter(resolver)
 	case uint256SubCode:
 		return createUint256SubHinter(resolver)
+	case splitXXCode:
+		return createSplitXXHinter(resolver)
 	// Signature hints
 	case verifyECDSASignatureCode:
 		return createVerifyECDSASignatureHinter(resolver)

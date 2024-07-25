@@ -598,3 +598,92 @@ func createUint256SubHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 
 	return newUint256SubHint(a, b, res), nil
 }
+
+func newSplitXXHint(x, xx hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitXX",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> PRIME = 2**255 - 19
+			//> II = pow(2, (PRIME - 1) // 4, PRIME)
+			//>
+			//> xx = ids.xx.low + (ids.xx.high<<128)
+			//> x = pow(xx, (PRIME + 3) // 8, PRIME)
+			//> if (x * x - xx) % PRIME != 0:
+			//> 	x = (x * II) % PRIME
+			//> if x % 2 != 0:
+			//>   	x = PRIME - x
+			//> ids.x.low = x & ((1<<128)-1)
+			//> ids.x.high = x >> 128
+
+			PRIME, ok := new(big.Int).SetString("57896044618658097711785492504343953926634992332820282019728792003956564819967", 10)
+			if !ok {
+				return fmt.Errorf("invalid value for PRIME")
+			}
+
+			II, ok := new(big.Int).SetString("19681161376707505956807079304988542015446066515923890162744021073123829784752", 10)
+			if !ok {
+				return fmt.Errorf("invalid value for II")
+			}
+
+			//> (PRIME + 3) // 8
+			modifiedPRIME, ok := new(big.Int).SetString("7237005577332262213973186563042994240829374041602535252466099000494570602494", 10)
+			if !ok {
+				return fmt.Errorf("invalid value for (PRIME + 3) // 8")
+			}
+
+			xxLow, xxHigh, err := GetUint256AsFelts(vm, xx)
+			if err != nil {
+				return err
+			}
+
+			var xxLowBig, xxHighBig big.Int
+			xxLow.BigInt(&xxLowBig)
+			xxHigh.BigInt(&xxHighBig)
+
+			//> xx = ids.xx.low + (ids.xx.high<<128)
+			xx := new(big.Int).Add(new(big.Int).Lsh(&xxHighBig, 128), &xxLowBig)
+
+			//> x = pow(xx, (PRIME + 3) // 8, PRIME)
+			xBig := new(big.Int).Exp(xx, modifiedPRIME, PRIME)
+
+			//> if (x * x - xx) % PRIME != 0:
+			//> 	x = (x * II) % PRIME
+			xSquare := new(big.Int).Mul(xBig, xBig)
+			cmpSub := new(big.Int).Sub(xSquare, xx)
+			if new(big.Int).Mod(cmpSub, PRIME).Cmp(big.NewInt(2)) != 0 {
+				xBig = new(big.Int).Mul(xBig, II)
+				xBig.Mod(xBig, PRIME)
+			}
+			//> if x % 2 != 0:
+			//>   	x = PRIME - x
+			if new(big.Int).Mod(xBig, big.NewInt(2)).Cmp(big.NewInt(0)) != 0 {
+				xBig = new(big.Int).Sub(PRIME, xBig)
+			}
+
+			//> ids.x.low = x & ((1<<128)-1)
+			//> ids.x.high = x >> 128
+			mask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
+			xLow := new(fp.Element).SetBigInt(new(big.Int).And(xBig, mask))
+			xHigh := new(fp.Element).SetBigInt(new(big.Int).Rsh(xBig, 128))
+
+			xAddr, err := x.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteUint256ToAddress(xAddr, xLow, xHigh)
+		},
+	}
+}
+
+func createSplitXXHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+	xx, err := resolver.GetResOperander("xx")
+	if err != nil {
+		return nil, err
+	}
+	return newSplitXXHint(x, xx), nil
+}
