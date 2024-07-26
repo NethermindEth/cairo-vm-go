@@ -12,7 +12,8 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-tye disasmProgram struct {
+// disasmProgram implements a "disasm" subcommand.
+type disasmProgram struct {
 	pathToFile  string
 	bytecodeKey string
 
