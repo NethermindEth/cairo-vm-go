@@ -13,6 +13,10 @@ const (
 	P_HIGH = "64323764613183177041862057485226039389"
 )
 
+// InvModPUint512 hint computes the inverse modulo a prime number `p` of 512 bits
+// `newInvModPUint512Hint` takes 2 operanders as arguments
+//   - `x` is the `uint512` variable that will be inverted modulo `p`
+//   - `x_inverse_mod_p` is the variable that will store the result of the hint in memory
 func newInvModPUint512Hint(x, xInverseModP hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "InvModPUint512",
@@ -29,22 +33,6 @@ func newInvModPUint512Hint(x, xInverseModP hinter.ResOperander) hinter.Hinter {
 			//>
 			//> ids.x_inverse_mod_p.low = x_inverse_mod_p_split[0]
 			//> ids.x_inverse_mod_p.high = x_inverse_mod_p_split[1]
-			pack512 := func(lolow, loHigh, hiLow, hiHigh *fp.Element, numBitsShift int) big.Int {
-				var loLowBig, loHighBig, hiLowBig, hiHighBig big.Int
-				lolow.BigInt(&loLowBig)
-				loHigh.BigInt(&loHighBig)
-				hiLow.BigInt(&hiLowBig)
-				hiHigh.BigInt(&hiHighBig)
-
-				return *new(big.Int).Add(new(big.Int).Lsh(&hiHighBig, uint(numBitsShift)), &loLowBig).Add(new(big.Int).Lsh(&hiLowBig, uint(numBitsShift)), &loHighBig)
-			}
-			pack := func(low, high *fp.Element, numBitsShift int) big.Int {
-				var lowBig, highBig big.Int
-				low.BigInt(&lowBig)
-				high.BigInt(&highBig)
-
-				return *new(big.Int).Add(new(big.Int).Lsh(&highBig, uint(numBitsShift)), &lowBig)
-			}
 
 			xLoLow, xLoHigh, xHiLow, xHiHigh, err := GetUint512AsFelts(vm, x)
 			if err != nil {
@@ -59,8 +47,8 @@ func newInvModPUint512Hint(x, xInverseModP hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			x := pack512(xLoLow, xLoHigh, xHiLow, xHiHigh, 128)
-			p := pack(pLow, pHigh, 128)
+			x := Pack(128, xLoLow, xLoHigh, xHiLow, xHiHigh)
+			p := Pack(128, pLow, pHigh)
 
 			xInverseModPBig := new(big.Int).Exp(&x, big.NewInt(-1), &p)
 

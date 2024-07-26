@@ -121,7 +121,6 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createUint256UnsignedDivRemExpandedHinter(resolver)
 	case splitXXCode:
 		return createSplitXXHinter(resolver)
-	// Uint512 hints
 	case invModPUint512Code:
 		return createInvModPUint512Hinter(resolver)
 	// Signature hints
