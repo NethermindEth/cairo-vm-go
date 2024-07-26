@@ -12,7 +12,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-type disasmProgram struct {
+tye disasmProgram struct {
 	pathToFile  string
 	bytecodeKey string
 
