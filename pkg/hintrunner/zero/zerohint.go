@@ -187,6 +187,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createRandomEcPointHinter(resolver)
 	case chainedEcOpCode:
 		return createChainedEcOpHinter(resolver)
+	case bigIntPackDivModCode:
+		return createBigIntPackDivModHinter(resolver)
+	case bigIntSaveDivCode:
+		return createBigIntSaveDivHinter()
 	// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
