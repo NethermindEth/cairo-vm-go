@@ -99,6 +99,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 	case is250BitsCode:
 		return createIs250BitsHinter(resolver)
 	// Uint256 hints
+	case uint128AddCode:
+		return createUint128AddHinter(resolver)
 	case uint256AddCode:
 		return createUint256AddHinter(resolver)
 	case split64Code:
@@ -113,6 +115,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createUint256MulDivModHinter(resolver)
 	case uint256SubCode:
 		return createUint256SubHinter(resolver)
+	case splitXXCode:
+		return createSplitXXHinter(resolver)
 	// Signature hints
 	case verifyECDSASignatureCode:
 		return createVerifyECDSASignatureHinter(resolver)
@@ -135,6 +139,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 	// EC hints
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)
+	case divModNSafeDivPlusOneCode:
+		return createDivModNSafeDivPlusOneHinter()
+	case divModNPackedDivModExternalNCode:
+		return createDivModNPackedDivModExternalNHinter(resolver)
 	case nondetBigint3V1Code:
 		return createNondetBigint3V1Hinter(resolver)
 	case fastEcAddAssignNewXCode:
@@ -161,6 +169,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createComputeSlopeV3Hinter(resolver)
 	case ecDoubleAssignNewXV1Code:
 		return createEcDoubleAssignNewXV1Hinter(resolver)
+	case ecDoubleAssignNewXV2Code:
+		return createEcDoubleAssignNewXV2Hinter(resolver)
 	case ecDoubleAssignNewXV4Code:
 		return createEcDoubleAssignNewXV4Hinter(resolver)
 	case ecDoubleAssignNewYV1Code:
