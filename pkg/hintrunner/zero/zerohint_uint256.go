@@ -691,3 +691,66 @@ func createSplitXXHinter(resolver hintReferenceResolver) (hinter.Hinter, error) 
 	}
 	return newSplitXXHint(x, xx), nil
 }
+
+// Uint128Add hint computes the result of the sum of parts of
+// two `uint128` variables(`a` & `b`)  and checks for overflow
+// `newUint128AddHint` takes 3 operanders as arguments
+//   - `a` and `b` are the two `uint128` variables that will be added
+//   - `carry` represent the potential extra bit that needs to be carried
+//     if the res of the sum of `a` and `b` exceeds 2**64 - 1
+func newUint128AddHint(a, b, carry hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Uint128Add",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//>res = ids.a + ids.b
+			//>ids.carry = 1 if res >= ids.SHIFT else 0
+
+			a, err := hinter.ResolveAsFelt(vm, a)
+			if err != nil {
+				return err
+			}
+
+			b, err := hinter.ResolveAsFelt(vm, b)
+			if err != nil {
+				return err
+			}
+
+			// Calculate `carry` memory value
+			res := new(fp.Element).Add(a, b)
+			var c *fp.Element
+			if utils.FeltLe(&utils.FeltMax128, res) {
+				c = &utils.FeltOne
+			} else {
+				c = &utils.FeltZero
+			}
+
+			cValue := memory.MemoryValueFromFieldElement(c)
+
+			// Save `carry` value in address
+			addrCarry, err := carry.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&addrCarry, &cValue)
+
+		},
+	}
+
+}
+
+func createUint128AddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+	carry, err := resolver.GetResOperander("carry")
+	if err != nil {
+		return nil, err
+	}
+	return newUint128AddHint(a, b, carry), nil
+}
