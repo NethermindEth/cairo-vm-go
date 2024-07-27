@@ -11,6 +11,8 @@ import (
 const (
 	P_LOW  = "201385395114098847380338600778089168199"
 	P_HIGH = "64323764613183177041862057485226039389"
+
+	BITSHIFT = 128
 )
 
 // InvModPUint512 hint computes the inverse modulo a prime number `p` of 512 bits
@@ -47,24 +49,18 @@ func newInvModPUint512Hint(x, xInverseModP hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			x := Pack(128, xLoLow, xLoHigh, xHiLow, xHiHigh)
-			p := Pack(128, pLow, pHigh)
+			x := Pack(BITSHIFT, xLoLow, xLoHigh, xHiLow, xHiHigh)
+			p := Pack(BITSHIFT, pLow, pHigh)
 
 			xInverseModPBig := new(big.Int).Exp(&x, big.NewInt(-1), &p)
 
-			split := func(num big.Int, numBitsShift uint16, length int) []fp.Element {
-				a := make([]fp.Element, length)
-				mask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), uint(numBitsShift)), big.NewInt(1))
+			// split big.Int into two fp.Elements
+			xInverseModPSplit := make([]fp.Element, 2)
+			mask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), uint(BITSHIFT)), big.NewInt(1))
 
-				for i := 0; i < length; i++ {
-					a[i] = *new(fp.Element).SetBigInt(new(big.Int).And(&num, mask))
-					num.Rsh(&num, uint(numBitsShift))
-				}
-
-				return a
-			}
-
-			xInverseModPSplit := split(*xInverseModPBig, 128, 2)
+			xInverseModPSplit[0] = *new(fp.Element).SetBigInt(new(big.Int).And(xInverseModPBig, mask))
+			xInverseModPBig.Rsh(xInverseModPBig, uint(BITSHIFT))
+			xInverseModPSplit[1] = *new(fp.Element).SetBigInt(xInverseModPBig)
 
 			resAddr, err := xInverseModP.GetAddress(vm)
 			if err != nil {

@@ -76,6 +76,7 @@ func GetUint256ExpandAsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) ([]
 		}
 	}
 	return uint256Expanded, nil
+}
 
 func GetUint512AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Element, *fp.Element, *fp.Element, *fp.Element, error) {
 	var fps [4]*fp.Element
