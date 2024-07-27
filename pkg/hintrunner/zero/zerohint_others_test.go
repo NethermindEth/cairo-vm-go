@@ -6,6 +6,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -632,6 +633,45 @@ func TestZeroHintOthers(t *testing.T) {
 					)
 				},
 				check: varValueEquals("is_small", feltUint64(1)),
+			},
+		},
+		"Sha256AndBlake2sInput": {
+			{
+				operanders: []*hintOperander{
+					{Name: "input", Kind: apRelative, Value: feltUint64(42)},
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(4)},
+					{Name: "n_words", Kind: apRelative, Value: feltUint64(1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSha256AndBlake2sInputHint(
+						ctx.operanders["input"],
+						ctx.operanders["n_bytes"],
+						ctx.operanders["n_words"],
+					)
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					expectedOutput := memory.MemoryValue{Kind: 42}                   //Expected value on memory after hint execution
+					blake2sAddr, err := ctx.operanders["n_words"].GetAddress(ctx.vm) //Get memory address
+					if err != nil {
+						t.Fatalf("Failed to get blake2sAddr: %v", err)
+					}
+					actualOutput, err := ctx.vm.Memory.ReadFromAddress(&blake2sAddr) //Read memory value of blake2sAddr
+					if err != nil {
+						t.Fatalf("Failed to read from blake2sAddr: %v", err)
+					}
+					if actualOutput != expectedOutput { //Compare values
+						t.Errorf("Expected %v, got %v", expectedOutput, actualOutput)
+					}
+					// Check the zero-filled words
+					blake2sAddr.Offset++                                            //Increment to find next memory value
+					actualOutput, err = ctx.vm.Memory.ReadFromAddress(&blake2sAddr) //Read next memory value and assign to actualOutput variable
+					if err != nil {
+						t.Fatalf("Failed to read from blake2sAddr: %v", err)
+					}
+					if actualOutput.Kind != 0 {
+						t.Errorf("expected zero-filled word, got %v", actualOutput)
+					}
+				},
 			},
 		},
 	})

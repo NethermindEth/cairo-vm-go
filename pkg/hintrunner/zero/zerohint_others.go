@@ -1,6 +1,7 @@
 package zero
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -752,15 +753,126 @@ func createNormalizeAddressHinter(resolver hintReferenceResolver) (hinter.Hinter
 	return newNormalizeAddressHint(isSmall, addr), nil
 }
 
-func newSha256AndBlake2sInputHint(low, high, value hinter.ResOperander) hinter.Hinter {
+// Function to create Sha256AndBlake2sInput Hint
+func newSha256AndBlake2sInputHint(input, n_bytes, n_words hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Sha256AndBlake2sInput",
-		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 
+			nBytesValue, err := n_bytes.Resolve(vm)
+			if err != nil {
+				return err
+			}
+			nBytes := int(nBytesValue.Kind)
+
+			fullWord := 0
+			if nBytes >= 4 {
+				fullWord = 1
+			}
+
+			inputAddr, err := input.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			blake2sAddr, err := n_words.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			var processInput func(inputAddr, blake2sAddr memory.MemoryAddress, nBytes, nWords int) error
+			processInput = func(inputAddr, blake2sAddr memory.MemoryAddress, nBytes, nWords int) error {
+				if fullWord != 0 && nBytes >= 4 {
+					val, err := vm.Memory.ReadFromAddress(&inputAddr)
+					if err != nil {
+						return err
+					}
+					existingVal, err := vm.Memory.ReadFromAddress(&blake2sAddr)
+					if err != nil {
+						return err
+					}
+					if existingVal.Kind != 0 && existingVal.Kind != val.Kind {
+						return fmt.Errorf("segment %d, offset %d: rewriting value: old value: %d, new value: %d", blake2sAddr.SegmentIndex, blake2sAddr.Offset, existingVal.Kind, val.Kind)
+					}
+					if err := vm.Memory.WriteToAddress(&blake2sAddr, &val); err != nil {
+						return err
+					}
+					inputAddr.Offset++
+					blake2sAddr.Offset++
+					return processInput(inputAddr, blake2sAddr, nBytes-4, nWords-1)
+				}
+
+				if nBytes == 0 {
+					for i := 0; i < nWords; i++ {
+						existingVal, err := vm.Memory.ReadFromAddress(&blake2sAddr)
+						if err != nil {
+							return err
+						}
+						if existingVal.Kind != 0 {
+							continue
+						}
+						if err := vm.Memory.WriteToAddress(&blake2sAddr, &memory.MemoryValue{Kind: 0}); err != nil {
+							return err
+						}
+						blake2sAddr.Offset++
+					}
+					return nil
+				}
+
+				if nBytes > 3 {
+					return errors.New("n_bytes should be less than or equal to 3")
+				}
+
+				val, err := vm.Memory.ReadFromAddress(&inputAddr)
+				if err != nil {
+					return err
+				}
+				existingVal, err := vm.Memory.ReadFromAddress(&blake2sAddr)
+				if err != nil {
+					return err
+				}
+				if existingVal.Kind != 0 && existingVal.Kind != val.Kind {
+					return fmt.Errorf("segment %d, offset %d: rewriting value: old value: %d, new value: %d", blake2sAddr.SegmentIndex, blake2sAddr.Offset, existingVal.Kind, val.Kind)
+				}
+				if err := vm.Memory.WriteToAddress(&blake2sAddr, &val); err != nil {
+					return err
+				}
+				blake2sAddr.Offset++
+
+				for i := 1; i < nWords; i++ {
+					existingVal, err := vm.Memory.ReadFromAddress(&blake2sAddr)
+					if err != nil {
+						return err
+					}
+					if existingVal.Kind != 0 {
+						continue
+					}
+					if err := vm.Memory.WriteToAddress(&blake2sAddr, &memory.MemoryValue{Kind: 0}); err != nil {
+						return err
+					}
+					blake2sAddr.Offset++
+				}
+				return nil
+			}
+
+			return processInput(inputAddr, blake2sAddr, nBytes, 1)
 		},
 	}
 }
 
+// Function to create Sha256AndBlake2sInput Hinter
 func createSha256AndBlake2sInputHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	return newSha256AndBlake2sInputHint()
+	input, err := resolver.GetResOperander("input")
+	if err != nil {
+		return nil, err
+	}
+	n_bytes, err := resolver.GetResOperander("n_bytes")
+	if err != nil {
+		return nil, err
+	}
+	n_words, err := resolver.GetResOperander("n_words")
+	if err != nil {
+		return nil, err
+	}
+	return newSha256AndBlake2sInputHint(input, n_bytes, n_words), nil
 }
