@@ -10,6 +10,52 @@ import (
 
 func TestZeroHintUint256(t *testing.T) {
 	runHinterTests(t, map[string][]hintTestCase{
+		"Uint128Add": {
+			{
+				operanders: []*hintOperander{
+					{Name: "a", Kind: fpRelative, Value: &utils.Felt127},
+					{Name: "b", Kind: apRelative, Value: &utils.Felt127},
+					{Name: "carry", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint128AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry"])
+				},
+				check: varValueEquals("carry", feltUint64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "a", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "b", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "carry", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint128AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry"])
+				},
+				check: varValueEquals("carry", feltUint64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "a", Kind: fpRelative, Value: &utils.Felt127},
+					{Name: "b", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "carry", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint128AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry"])
+				},
+				check: varValueEquals("carry", feltUint64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "a", Kind: fpRelative, Value: feltUint64(0)},
+					{Name: "b", Kind: apRelative, Value: &utils.Felt127},
+					{Name: "carry", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint128AddHint(ctx.operanders["a"], ctx.operanders["b"], ctx.operanders["carry"])
+				},
+				check: varValueEquals("carry", feltUint64(0)),
+			},
+		},
 		"Uint256Add": {
 			{
 				operanders: []*hintOperander{
@@ -412,6 +458,23 @@ func TestZeroHintUint256(t *testing.T) {
 				check: allVarValueEquals(map[string]*fp.Element{
 					"res.low":  feltString("340282366920938463463374607431768211455"),
 					"res.high": feltUint64(0),
+				}),
+			},
+		},
+		"SplitXX": {
+			{
+				operanders: []*hintOperander{
+					{Name: "x.low", Kind: uninitialized},
+					{Name: "x.high", Kind: uninitialized},
+					{Name: "xx.low", Kind: apRelative, Value: feltString("19681161376707505956807079304988542015446066515923890162744021073123829784752")},
+					{Name: "xx.high", Kind: apRelative, Value: feltUint64(1)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplitXXHint(ctx.operanders["x.low"], ctx.operanders["xx.low"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"x.low":  feltString("31967510603135814718935067919817634170"),
+					"x.high": feltString("136383360823982924942210781858056431457"),
 				}),
 			},
 		},
