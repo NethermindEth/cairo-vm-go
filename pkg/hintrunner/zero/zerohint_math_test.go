@@ -902,5 +902,19 @@ func TestZeroHintMath(t *testing.T) {
 				check: varValueEquals("y", feltString("1484343478756640997457155271309092907848857951878936388435701743478603286656")),
 			},
 		},
+		"Is250Bits": {
+			{
+				operanders: []*hintOperander{
+					{Name: "is_250", Kind: uninitialized},
+					{Name: "addr", Kind: apRelative, Value: feltString("5")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIs250BitsHint(ctx.operanders["is_250"], ctx.operanders["addr"])
+				},
+				check: func(t *testing.T, ctx *hintTestContext) {
+					varValueEquals("is_250", feltInt64(1))
+				},
+			},
+		},
 	})
 }

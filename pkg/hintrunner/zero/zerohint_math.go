@@ -1189,3 +1189,46 @@ func createIsQuadResidueHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 
 	return newIsQuadResidueHint(x, y), nil
 }
+
+func newIs250BitsHint(is_250, addr hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Is250Bits",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> ids.is_250 = 1 if ids.addr < 2**250 else 0
+
+			addr, err := hinter.ResolveAsFelt(vm, addr)
+			if err != nil {
+				return err
+			}
+
+			is250Addr, err := is_250.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			var is250Mv memory.MemoryValue
+
+			if addr.Cmp(&utils.FeltUpperBound) < 0 {
+				is250Mv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				is250Mv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+
+			return vm.Memory.WriteToAddress(&is250Addr, &is250Mv)
+		},
+	}
+}
+
+func createIs250BitsHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	is_250, err := resolver.GetResOperander("is_250")
+	if err != nil {
+		return nil, err
+	}
+
+	addr, err := resolver.GetResOperander("addr")
+	if err != nil {
+		return nil, err
+	}
+
+	return newIs250BitsHint(is_250, addr), nil
+}
