@@ -489,6 +489,7 @@ func newBlake2sCompressHint(output, blake2s_start hinter.ResOperander) hinter.Hi
 				messageUint32 = append(messageUint32, value)
 			}
 			h := utils.IV()
+			h[0] = h[0] ^ 0x01010020
 			new_state := utils.Blake2sCompress(messageUint32, h, 0, 0, 0xffffffff, 0)
 
 			//> segments.write_arg(ids.output, new_state)
