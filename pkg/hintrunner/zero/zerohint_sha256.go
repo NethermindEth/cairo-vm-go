@@ -2,9 +2,9 @@ package zero
 
 import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	hintrunnerUtils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 )
@@ -26,17 +26,6 @@ func newPackedSha256Hint(sha256Start, output hinter.ResOperander) hinter.Hinter 
 
 			Sha256InputChunkSize := uint64(16)
 
-			IV := []uint32{
-				0x6A09E667,
-				0xBB67AE85,
-				0x3C6EF372,
-				0xA54FF53A,
-				0x510E527F,
-				0x9B05688C,
-				0x1F83D9AB,
-				0x5BE0CD19,
-			}
-
 			sha256Start, err := hinter.ResolveAsAddress(vm, sha256Start)
 			if err != nil {
 				return err
@@ -47,13 +36,17 @@ func newPackedSha256Hint(sha256Start, output hinter.ResOperander) hinter.Hinter 
 				return err
 			}
 
-			var wFelts []fp.Element
-			for _, element := range w {
-				wFelts = append(wFelts, element.Felt)
+			var wUint32 []uint32
+			for i := 0; i < len(w); i++ {
+				value, err := hintrunnerUtils.ToSafeUint32(&w[i])
+				if err != nil {
+					return err
+				}
+				wUint32[i] = value
 			}
 
-			messageSchedule := utils.ComputeMessageSchedule(wFelts)
-			newState := utils.Sha256Compress(IV, messageSchedule)
+			messageSchedule := utils.ComputeMessageSchedule(wUint32)
+			newState := utils.Sha256Compress(utils.IV(), messageSchedule)
 
 			output, err := hinter.ResolveAsAddress(vm, output)
 			if err != nil {
@@ -61,7 +54,7 @@ func newPackedSha256Hint(sha256Start, output hinter.ResOperander) hinter.Hinter 
 			}
 
 			for i := 0; i < len(newState); i++ {
-				newStateValue := mem.MemoryValueFromFieldElement(&newState[i])
+				newStateValue := mem.MemoryValueFromInt(newState[i])
 				memoryOffset := uint64(i)
 
 				err = vm.Memory.Write(output.SegmentIndex, output.Offset+memoryOffset, &newStateValue)
