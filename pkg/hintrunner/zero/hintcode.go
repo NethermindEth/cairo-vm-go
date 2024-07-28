@@ -52,6 +52,7 @@ const (
 
 	// ------ Uint256 hints related code ------
 	uint128AddCode                    string = "res = ids.a + ids.b\nids.carry = 1 if res >= ids.SHIFT else 0"
+	uint128SqrtCode                   string = "from starkware.python.math_utils import isqrt\nn = (ids.n.high << 128) + ids.n.low\nroot = isqrt(n)\nassert 0 <= root < 2 ** 128\nids.root = root"
 	uint256AddCode                    string = "sum_low = ids.a.low + ids.b.low\nids.carry_low = 1 if sum_low >= ids.SHIFT else 0\nsum_high = ids.a.high + ids.b.high + ids.carry_low\nids.carry_high = 1 if sum_high >= ids.SHIFT else 0"
 	split64Code                       string = "ids.low = ids.a & ((1<<64) - 1)\nids.high = ids.a >> 64"
 	uint256SignedNNCode               string = "memory[ap] = 1 if 0 <= (ids.a.high % PRIME) < 2 ** 127 else 0"

@@ -56,6 +56,41 @@ func TestZeroHintUint256(t *testing.T) {
 				check: varValueEquals("carry", feltUint64(0)),
 			},
 		},
+		"Uint128Sqrt": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n.low", Kind: fpRelative, Value: &utils.FeltZero},
+					{Name: "n.high", Kind: fpRelative, Value: &utils.FeltZero},
+					{Name: "root", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint128SqrtHint(ctx.operanders["n.low"], ctx.operanders["root"])
+				},
+				check: varValueEquals("root", feltUint64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n.low", Kind: fpRelative, Value: feltUint64(260)},
+					{Name: "n.high", Kind: fpRelative, Value: &utils.FeltZero},
+					{Name: "root", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint128SqrtHint(ctx.operanders["n.low"], ctx.operanders["root"])
+				},
+				check: varValueEquals("root", feltUint64(16)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n.low", Kind: fpRelative, Value: &utils.FeltMax128},
+					{Name: "n.high", Kind: fpRelative, Value: feltUint64(15)},
+					{Name: "root", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint128SqrtHint(ctx.operanders["n.low"], ctx.operanders["root"])
+				},
+				check: varValueEquals("root", feltString("73786976294838206464")),
+			},
+		},
 		"Uint256Add": {
 			{
 				operanders: []*hintOperander{

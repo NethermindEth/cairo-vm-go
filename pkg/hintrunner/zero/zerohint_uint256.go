@@ -844,7 +844,6 @@ func newUint128AddHint(a, b, carry hinter.ResOperander) hinter.Hinter {
 
 		},
 	}
-
 }
 
 func createUint128AddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
@@ -861,4 +860,57 @@ func createUint128AddHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 		return nil, err
 	}
 	return newUint128AddHint(a, b, carry), nil
+}
+
+// Uint128Sqrt hint computes the result of the sum of parts of
+// two `uint128` variables(`a` & `b`)  and checks for overflow
+// `newUint128AddHint` takes 3 operanders as arguments
+//   - `a` and `b` are the two `uint128` variables that will be added
+//   - `carry` represent the potential extra bit that needs to be carried
+//     if the res of the sum of `a` and `b` exceeds 2**64 - 1
+func newUint128SqrtHint(n, root hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Uint128Sqrt",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.python.math_utils import isqrt
+			//> n = (ids.n.high << 128) + ids.n.low
+			//> root = isqrt(n)
+			//> assert 0 <= root < 2 ** 128
+			//> ids.root = root
+
+			nSmall, nHigh, err := GetUint256AsFelts(vm, n)
+			if err != nil {
+				return err
+			}
+			var nSmallBig, nHighBig big.Int
+			nSmall.BigInt(&nSmallBig)
+			nHigh.BigInt(&nHighBig)
+
+			nBig := new(big.Int).Add(new(big.Int).Lsh(&nHighBig, 128), &nSmallBig)
+
+			rootBig := new(big.Int).Sqrt(nBig)
+			rootFelt := new(fp.Element).SetBigInt(rootBig)
+			if rootFelt.Cmp(&utils.FeltMax128) > -1 {
+				return fmt.Errorf("root %v is out range 0 <= root < 2 ** 128", rootFelt)
+			}
+			rootMV := memory.MemoryValueFromFieldElement(rootFelt)
+			rootAddr, err := root.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			return vm.Memory.WriteToAddress(&rootAddr, &rootMV)
+		},
+	}
+}
+
+func createUint128SqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	n, err := resolver.GetResOperander("n")
+	if err != nil {
+		return nil, err
+	}
+	root, err := resolver.GetResOperander("root")
+	if err != nil {
+		return nil, err
+	}
+	return newUint128SqrtHint(n, root), nil
 }
