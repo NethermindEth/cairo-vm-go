@@ -99,6 +99,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 	case split128Code:
 		return createSplit128Hinter(resolver)
 	// Uint256 hints
+	case uint128AddCode:
+		return createUint128AddHinter(resolver)
 	case uint256AddCode:
 		return createUint256AddHinter(resolver)
 	case split64Code:
