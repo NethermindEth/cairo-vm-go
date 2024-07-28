@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -597,4 +598,159 @@ func createUint256SubHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	}
 
 	return newUint256SubHint(a, b, res), nil
+}
+
+// SplitXX computes the square root of a 256-bit integer modulo the prime 2^255 - 19, ensures the result is even, and splits it into two 128-bit integers.
+// newSplitXXHint takes 2 operanders as arguments:
+//   - `xx` is the `uint256` variable that will be used to calculate the square root
+//   - `x` is the variable that will store the result of the hint in memory
+func newSplitXXHint(x, xx hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitXX",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> PRIME = 2**255 - 19
+			//> II = pow(2, (PRIME - 1) // 4, PRIME)
+			//>
+			//> xx = ids.xx.low + (ids.xx.high<<128)
+			//> x = pow(xx, (PRIME + 3) // 8, PRIME)
+			//> if (x * x - xx) % PRIME != 0:
+			//> 	x = (x * II) % PRIME
+			//> if x % 2 != 0:
+			//>   	x = PRIME - x
+			//> ids.x.low = x & ((1<<128)-1)
+			//> ids.x.high = x >> 128
+
+			PRIME, ok := secp_utils.GetCurve25519PBig()
+			if !ok {
+				return fmt.Errorf("invalid value for PRIME")
+			}
+
+			II, ok := new(big.Int).SetString("19681161376707505956807079304988542015446066515923890162744021073123829784752", 10)
+			if !ok {
+				return fmt.Errorf("invalid value for II")
+			}
+
+			//> (PRIME + 3) // 8
+			modifiedPRIME, ok := new(big.Int).SetString("7237005577332262213973186563042994240829374041602535252466099000494570602494", 10)
+			if !ok {
+				return fmt.Errorf("invalid value for (PRIME + 3) // 8")
+			}
+
+			xxLow, xxHigh, err := GetUint256AsFelts(vm, xx)
+			if err != nil {
+				return err
+			}
+
+			var xxLowBig, xxHighBig big.Int
+			xxLow.BigInt(&xxLowBig)
+			xxHigh.BigInt(&xxHighBig)
+
+			//> xx = ids.xx.low + (ids.xx.high<<128)
+			xx := new(big.Int).Add(new(big.Int).Lsh(&xxHighBig, 128), &xxLowBig)
+
+			//> x = pow(xx, (PRIME + 3) // 8, PRIME)
+			xBig := new(big.Int).Exp(xx, modifiedPRIME, &PRIME)
+
+			//> if (x * x - xx) % PRIME != 0:
+			//> 	x = (x * II) % PRIME
+			xSquare := new(big.Int).Mul(xBig, xBig)
+			cmpSub := new(big.Int).Sub(xSquare, xx)
+			if new(big.Int).Mod(cmpSub, &PRIME).Cmp(big.NewInt(0)) != 0 {
+				xBig.Mul(xBig, II)
+				xBig.Mod(xBig, &PRIME)
+			}
+			//> if x % 2 != 0:
+			//>   	x = PRIME - x
+			if new(big.Int).Mod(xBig, big.NewInt(2)).Cmp(big.NewInt(0)) != 0 {
+				xBig.Sub(&PRIME, xBig)
+			}
+
+			//> ids.x.low = x & ((1<<128)-1)
+			//> ids.x.high = x >> 128
+			mask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
+			xLow := new(fp.Element).SetBigInt(new(big.Int).And(xBig, mask))
+			xHigh := new(fp.Element).SetBigInt(new(big.Int).Rsh(xBig, 128))
+
+			xAddr, err := x.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			return vm.Memory.WriteUint256ToAddress(xAddr, xLow, xHigh)
+		},
+	}
+}
+
+func createSplitXXHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+	xx, err := resolver.GetResOperander("xx")
+	if err != nil {
+		return nil, err
+	}
+	return newSplitXXHint(x, xx), nil
+}
+
+// Uint128Add hint computes the result of the sum of parts of
+// two `uint128` variables(`a` & `b`)  and checks for overflow
+// `newUint128AddHint` takes 3 operanders as arguments
+//   - `a` and `b` are the two `uint128` variables that will be added
+//   - `carry` represent the potential extra bit that needs to be carried
+//     if the res of the sum of `a` and `b` exceeds 2**64 - 1
+func newUint128AddHint(a, b, carry hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Uint128Add",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//>res = ids.a + ids.b
+			//>ids.carry = 1 if res >= ids.SHIFT else 0
+
+			a, err := hinter.ResolveAsFelt(vm, a)
+			if err != nil {
+				return err
+			}
+
+			b, err := hinter.ResolveAsFelt(vm, b)
+			if err != nil {
+				return err
+			}
+
+			// Calculate `carry` memory value
+			res := new(fp.Element).Add(a, b)
+			var c *fp.Element
+			if utils.FeltLe(&utils.FeltMax128, res) {
+				c = &utils.FeltOne
+			} else {
+				c = &utils.FeltZero
+			}
+
+			cValue := memory.MemoryValueFromFieldElement(c)
+
+			// Save `carry` value in address
+			addrCarry, err := carry.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&addrCarry, &cValue)
+
+		},
+	}
+
+}
+
+func createUint128AddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+	carry, err := resolver.GetResOperander("carry")
+	if err != nil {
+		return nil, err
+	}
+	return newUint128AddHint(a, b, carry), nil
 }
