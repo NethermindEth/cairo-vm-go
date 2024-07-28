@@ -13,7 +13,7 @@ func TestZeroHintSha256(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "sha256_start", Kind: apRelative, Value: addr(6)},
-					{Name: "output", Kind: apRelative, Value: addr(40)},
+					{Name: "output", Kind: apRelative, Value: addr(22)},
 					{Name: "buffer", Kind: apRelative, Value: feltUint64(0)},
 					{Name: "buffer", Kind: apRelative, Value: feltUint64(0)},
 					{Name: "buffer", Kind: apRelative, Value: feltUint64(0)},
