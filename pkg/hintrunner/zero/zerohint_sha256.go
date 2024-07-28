@@ -36,7 +36,7 @@ func newPackedSha256Hint(sha256Start, output hinter.ResOperander) hinter.Hinter 
 				return err
 			}
 
-			var wUint32 []uint32
+			wUint32 := make([]uint32, len(w))
 			for i := 0; i < len(w); i++ {
 				value, err := hintrunnerUtils.ToSafeUint32(&w[i])
 				if err != nil {
