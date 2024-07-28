@@ -1,6 +1,7 @@
 package zero
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -89,6 +90,17 @@ func TestZeroHintUint256(t *testing.T) {
 					return newUint128SqrtHint(ctx.operanders["n.low"], ctx.operanders["root"])
 				},
 				check: varValueEquals("root", feltString("73786976294838206464")),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "n.low", Kind: fpRelative, Value: &utils.FeltMax128},
+					{Name: "n.high", Kind: fpRelative, Value: &utils.FeltMax128},
+					{Name: "root", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newUint128SqrtHint(ctx.operanders["n.low"], ctx.operanders["root"])
+				},
+				errCheck: errorTextContains(fmt.Sprintf("root %v is out range 0 <= root < 2 ** 128", &utils.FeltMax128)),
 			},
 		},
 		"Uint256Add": {
