@@ -94,6 +94,40 @@ func uint256_square{range_check_ptr}(a: Uint256) -> (low: Uint256, high: Uint256
     return (low=Uint256(low=res0, high=res2), high=Uint256(low=res4, high=a3 * a3 + carry));
 }
 
+// Returns the floor value of the square root of a uint256 integer.
+func uint256_sqrt{range_check_ptr}(n: Uint256) -> (res: Uint256) {
+    alloc_locals;
+    local root: felt;
+
+    %{
+        from starkware.python.math_utils import isqrt
+        n = (ids.n.high << 128) + ids.n.low
+        root = isqrt(n)
+        assert 0 <= root < 2 ** 128
+        ids.root = root
+    %}
+
+    // Verify that 0 <= root < 2**128.
+    [range_check_ptr] = root;
+    let range_check_ptr = range_check_ptr + 1;
+
+    // Verify that n >= root**2.
+    let (root_squared) = uint128_square(root);
+    let (check_lower_bound) = uint256_le(root_squared, n);
+    assert check_lower_bound = 1;
+
+    // Verify that n <= (root+1)**2 - 1.
+    // Note that (root+1)**2 - 1 = root**2 + 2*root.
+    // In the case where root = 2**128 - 1,
+    // Since (root+1)**2 = 2**256, next_root_squared_minus_one = 2**256 - 1, as desired.
+    let (twice_root) = uint128_add(root, root);
+    let (next_root_squared_minus_one, _) = uint256_add(root_squared, twice_root);
+    let (check_upper_bound) = uint256_le(n, next_root_squared_minus_one);
+    assert check_upper_bound = 1;
+
+    return (res=Uint256(low=root, high=0));
+}
+
 // Uses new uint256_mul, also uses no_uint256_check version of add
 func uint256_unsigned_div_rem{range_check_ptr}(a: Uint256, div: Uint256) -> (
     quotient: Uint256, remainder: Uint256
@@ -161,6 +195,23 @@ func uint256_sub{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256, sign
     let (aa, inv_sign) = _uint256_add_no_uint256_check(res, b);
     assert aa = a;
     return (res, 1 - inv_sign);
+}
+
+// assumes inputs are <2**128
+func uint128_add{range_check_ptr}(a: felt, b: felt) -> (result: Uint256) {
+    alloc_locals;
+    local carry: felt;
+    %{
+        res = ids.a + ids.b
+        ids.carry = 1 if res >= ids.SHIFT else 0
+    %}
+    // Either 0 or 1
+    assert carry * carry = carry;
+    local res = a + b - carry * SHIFT;
+    [range_check_ptr] = res;
+    let range_check_ptr = range_check_ptr + 1;
+
+    return (result=Uint256(low=res, high=carry));
 }
 
 // assumes inputs are <2**128
@@ -276,22 +327,6 @@ func test_udiv_expanded{range_check_ptr}() {
     return ();
 }
 
-func uint128_add{range_check_ptr}(a: felt, b: felt) -> (result: Uint256) {
-    alloc_locals;
-    local carry: felt;
-    %{
-        res = ids.a + ids.b
-        ids.carry = 1 if res >= ids.SHIFT else 0
-    %}
-    // Either 0 or 1
-    assert carry * carry = carry;
-    local res = a + b - carry * SHIFT;
-    [range_check_ptr] = res;
-    let range_check_ptr = range_check_ptr + 1;
-
-    return (result=Uint256(low=res, high=carry));
-}
-
 func test_uint256_sub{range_check_ptr}() {
     let x = Uint256(421, 5135);
     let y = Uint256(787, 968);
@@ -310,11 +345,10 @@ func test_uint256_sub{range_check_ptr}() {
     // y - x < 0
     assert sign = 0;
 
-    let a = 2**64-1;
-    let b = 2**64-1;
+    return ();
+}
 
-    uint128_add(a, b);
-
+func test_uint128_add{range_check_ptr}() {
     let (res) = uint128_add(5, 66);
 
     assert res = Uint256(71, 0);
@@ -324,12 +358,33 @@ func test_uint256_sub{range_check_ptr}() {
     );
 
     assert res = Uint256(340282366920938463463374607431768211454, 1);
+
+    return ();
+}
+
+func test_uint256_sqrt{range_check_ptr}() {
+    let n = Uint256(8, 0);
+
+    let (res) = uint256_sqrt(n);
+
+    assert res = Uint256(2, 0);
+
+    let n = Uint256(
+        340282366920938463463374607431768211455, 21267647932558653966460912964485513215
+    );
+
+    let (res) = uint256_sqrt(n);
+
+    assert res = Uint256(85070591730234615865843651857942052863, 0);
+
     return ();
 }
 
 func main{range_check_ptr}() {
     test_udiv_expanded();
     test_uint256_sub();
+    test_uint128_add();
+    test_uint256_sqrt();
 
     return ();
 }
