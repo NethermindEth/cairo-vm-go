@@ -96,9 +96,13 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createUnsignedDivRemHinter(resolver)
 	case isQuadResidueCode:
 		return createIsQuadResidueHinter(resolver)
+	case split128Code:
+		return createSplit128Hinter(resolver)
 	// Uint256 hints
 	case uint128AddCode:
 		return createUint128AddHinter(resolver)
+	case uint128SqrtCode:
+		return createUint128SqrtHinter(resolver)
 	case uint256AddCode:
 		return createUint256AddHinter(resolver)
 	case split64Code:
@@ -113,6 +117,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createUint256MulDivModHinter(resolver)
 	case uint256SubCode:
 		return createUint256SubHinter(resolver)
+	case uint256UnsignedDivRemExpandedCode:
+		return createUint256UnsignedDivRemExpandedHinter(resolver)
 	case splitXXCode:
 		return createSplitXXHinter(resolver)
 	// Signature hints
@@ -309,7 +315,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 	case normalizeAddressCode:
 		return createNormalizeAddressHinter(resolver)
 	default:
-		return nil, fmt.Errorf("not identified hint")
+		return nil, fmt.Errorf("not identified hint: \n%s", rawHint.Code)
 	}
 }
 
