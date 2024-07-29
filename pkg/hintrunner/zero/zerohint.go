@@ -121,6 +121,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createUint256UnsignedDivRemExpandedHinter(resolver)
 	case splitXXCode:
 		return createSplitXXHinter(resolver)
+	case invModPUint512Code:
+		return createInvModPUint512Hinter(resolver)
 	// Signature hints
 	case verifyECDSASignatureCode:
 		return createVerifyECDSASignatureHinter(resolver)
@@ -213,7 +215,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 	// Sha256 hints
 	case packedSha256Code:
 		return createPackedSha256Hinter(resolver)
-	case sha256ChunkCode:
+	case finalizeSha256Code:
+		return createFinalizeSha256Hinter(resolver)
+   	case sha256ChunkCode:
 		return createSha256ChunkHinter(resolver)
 	// Keccak hints
 	case keccakWriteArgsCode:

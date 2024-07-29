@@ -651,16 +651,8 @@ func newUint256SubHint(a, b, res hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			pack := func(low, high *fp.Element, numBitsShift int) big.Int {
-				var lowBig, highBig big.Int
-				low.BigInt(&lowBig)
-				high.BigInt(&highBig)
-
-				return *new(big.Int).Add(new(big.Int).Lsh(&highBig, uint(numBitsShift)), &lowBig)
-			}
-
-			a := pack(aLow, aHigh, 128)
-			b := pack(bLow, bHigh, 128)
+			a := Pack(128, aLow, aHigh)
+			b := Pack(128, bLow, bHigh)
 
 			modulus := new(big.Int).Lsh(big.NewInt(1), 256)
 			resBig := new(big.Int).Sub(&a, &b)
