@@ -141,6 +141,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 	case divModNPackedDivmodV1Code:
 		return createDivModNPackedDivmodV1Hinter(resolver)
 	// EC hints
+	case bigIntToUint256Code:
+		return createBigIntToUint256Hinter(resolver)
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)
 	case divModNSafeDivPlusOneCode:
@@ -169,6 +171,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createReduceEd25519Hinter(resolver)
 	case computeSlopeV1Code:
 		return createComputeSlopeV1Hinter(resolver)
+	case computeSlopeV2Code:
+		return createComputeSlopeV2Hinter(resolver)
 	case computeSlopeV3Code:
 		return createComputeSlopeV3Hinter(resolver)
 	case ecDoubleAssignNewXV1Code:
