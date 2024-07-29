@@ -9,6 +9,12 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 )
 
+// PackedSha256 hint computes the sha2 compress operation on some input and writes
+// the new state at `output` address
+//
+// `newPackedSha256Hint` takes 2 operanders as arguments
+//   - `sha256Start` is the address where to start reading the input for the `compute_message_schedule` function
+//   - `output` is the address where to write the new state in memory
 func newPackedSha256Hint(sha256Start, output hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "PackedSha256",
@@ -88,6 +94,13 @@ func createPackedSha256Hinter(resolver hintReferenceResolver) (hinter.Hinter, er
 	return newPackedSha256Hint(sha256Start, output), nil
 }
 
+// Sha256Chunk hint computes the sha2 compress operation on some input using a given state
+// and writes the new state at `output` address
+//
+// `newSha256ChunkHint` takes 3 operanders as arguments
+//   - `sha256Start` is the address where to start reading the input for `sha2_compress_function`
+//   - `state` is the current that will be passed to compute the next state
+//   - `output` is the address where to write the new state in memory
 func newSha256ChunkHint(sha256Start, state, output hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Sha256Chunk",
@@ -195,6 +208,11 @@ func createSha256ChunkHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	return newSha256ChunkHint(sha256Start, state, output), nil
 }
 
+// FinalizeSha256 hint computes the sha2 compress operation using a padding
+// and writes the result at `sha256PtrEnd` address
+//
+// `newFinalizeSha256Hint` takes 1 operander as argument
+//   - `sha256PtrEnd` is the address where to write the new state in memory
 func newFinalizeSha256Hint(sha256PtrEnd hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "FinalizeSha256",
