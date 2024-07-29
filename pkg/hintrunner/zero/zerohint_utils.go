@@ -48,6 +48,36 @@ func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Elem
 	return low, high, nil
 }
 
+func GetUint256ExpandAsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) ([]*fp.Element, error) {
+	//> struct Uint256_expand {
+	//> 	B0: felt,
+	//> 	b01: felt,
+	//> 	b12: felt,
+	//> 	b23: felt,
+	//> 	b3: felt,
+	//> }
+	refAddr, err := ref.GetAddress(vm)
+	if err != nil {
+		return nil, err
+	}
+	uint256Expanded := make([]*fp.Element, 6)
+	for i := 0; i < 5; i++ {
+		refValMV, err := vm.Memory.ReadFromAddress(&refAddr)
+		if err != nil {
+			return nil, err
+		}
+		uint256Expanded[i], err = refValMV.FieldElement()
+		if err != nil {
+			return nil, err
+		}
+		refAddr, err = refAddr.AddOffset(1)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return uint256Expanded, nil
+}
+
 // This helper function is used in FastEcAddAssignNewY and
 // EcDoubleAssignNewYV1 hints to compute the y-coordinate of
 // a point on an elliptic curve

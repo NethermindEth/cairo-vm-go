@@ -902,5 +902,53 @@ func TestZeroHintMath(t *testing.T) {
 				check: varValueEquals("y", feltString("1484343478756640997457155271309092907848857951878936388435701743478603286656")),
 			},
 		},
+
+		"Split128": {
+			// a is 0
+			{
+				operanders: []*hintOperander{
+					{Name: "low", Kind: uninitialized},
+					{Name: "high", Kind: uninitialized},
+					{Name: "a", Kind: fpRelative, Value: feltInt64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplit128Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["a"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"low":  feltUint64(0),
+					"high": feltUint64(0),
+				}),
+			},
+			// a is smaller than (1 << 128)
+			{
+				operanders: []*hintOperander{
+					{Name: "low", Kind: uninitialized},
+					{Name: "high", Kind: uninitialized},
+					{Name: "a", Kind: fpRelative, Value: feltUint64(15)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplit128Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["a"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"low":  feltUint64(15),
+					"high": feltUint64(0),
+				}),
+			},
+			// a is than (1 << 128) + 5
+			{
+				operanders: []*hintOperander{
+					{Name: "low", Kind: uninitialized},
+					{Name: "high", Kind: uninitialized},
+					{Name: "a", Kind: fpRelative, Value: feltString("340282366920938463463374607431768211461")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSplit128Hint(ctx.operanders["low"], ctx.operanders["high"], ctx.operanders["a"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"low":  feltUint64(5),
+					"high": feltUint64(1),
+				}),
+			},
+		},
 	})
 }
