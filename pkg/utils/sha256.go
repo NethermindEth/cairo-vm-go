@@ -17,13 +17,15 @@ func ComputeMessageSchedule(input []uint32) ([]uint32, error) {
 		return nil, fmt.Errorf("input length must be 16, got %d", len(input))
 	}
 
+	fmt.Println((input))
+
 	w := make([]uint32, 64)
 	copy(w, input)
 
 	for i := 16; i < 64; i++ {
 		s0 := RightRot(w[i-15], 7) ^ RightRot(w[i-15], 18) ^ (w[i-15] >> 3)
 		s1 := RightRot(w[i-2], 17) ^ RightRot(w[i-2], 19) ^ (w[i-2] >> 10)
-		w[i] = w[i-16] + s0 + w[i-7] + s1
+		w[i] = (w[i-16] + s0 + w[i-7] + s1)
 	}
 
 	return w, nil
