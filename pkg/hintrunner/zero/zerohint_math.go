@@ -1190,6 +1190,14 @@ func createIsQuadResidueHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	return newIsQuadResidueHint(x, y), nil
 }
 
+// is250Bits hint compares if an address is greater than 2**250 or not and
+// it will return an is_250 variable whose value could be 1 or 0 depends on the value of the address
+//
+// `newIs250Bits` takes 2 operanders as arguments
+//   - `is_250` represents the address where the result of the comparison is stored
+//   - `addr` is the address that will be compared to 2**250
+//
+// `newIs250Bits` writes `is_250` values to its respective memory address
 func newIs250BitsHint(is_250, addr hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Is250Bits",
