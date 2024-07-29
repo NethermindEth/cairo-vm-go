@@ -87,3 +87,84 @@ func createPackedSha256Hinter(resolver hintReferenceResolver) (hinter.Hinter, er
 
 	return newPackedSha256Hint(sha256Start, output), nil
 }
+
+func newFinalizeSha256Hint(sha256PtrEnd hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "FinalizeSha256",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> # Add dummy pairs of input and output.
+			//> from starkware.cairo.common.cairo_sha256.sha256_utils import (
+			//>     IV, compute_message_schedule, sha2_compress_function)
+			//>
+			//> _block_size = int(ids.BLOCK_SIZE)
+			//> assert 0 <= _block_size < 20
+			//> _sha256_input_chunk_size_felts = int(ids.SHA256_INPUT_CHUNK_SIZE_FELTS)
+			//> assert 0 <= _sha256_input_chunk_size_felts < 100
+			//>
+			//> message = [0] * _sha256_input_chunk_size_felts
+			//> w = compute_message_schedule(message)
+			//> output = sha2_compress_function(IV, w)
+			//> padding = (message + IV + output) * (_block_size - 1)
+			//> segments.write_arg(ids.sha256_ptr_end, padding)
+
+			//> _block_size = int(ids.BLOCK_SIZE)
+			//> assert 0 <= _block_size < 20
+			blockSize := 7
+
+			//> _sha256_input_chunk_size_felts = int(ids.SHA256_INPUT_CHUNK_SIZE_FELTS)
+			//> assert 0 <= _sha256_input_chunk_size_felts < 100
+			sha256InputChunkSize := 16
+
+			//> message = [0] * _sha256_input_chunk_size_felts
+			message := make([]uint32, sha256InputChunkSize)
+
+			//> w = compute_message_schedule(message)
+			w, err := utils.ComputeMessageSchedule(message)
+			if err != nil {
+				return err
+			}
+
+			//> output = sha2_compress_function(IV, w)
+			iv := utils.IV()
+			output := utils.Sha256Compress(iv, w)
+
+			//> padding = (message + IV + output) * (_block_size - 1)
+			paddingSize := (len(message) + len(iv) + len(output)) * (blockSize - 1)
+			padding := make([]uint32, 0, paddingSize)
+			for i := 0; i < blockSize-1; i++ {
+				padding = append(padding, message...)
+				padding = append(padding, iv[:]...)
+				padding = append(padding, output...)
+			}
+
+			//> segments.write_arg(ids.sha256_ptr_end, padding)
+			sha256PtrEnd, err := hinter.ResolveAsAddress(vm, sha256PtrEnd)
+			if err != nil {
+				return err
+			}
+			for i := 0; i < paddingSize; i++ {
+				paddingValue := mem.MemoryValueFromInt(padding[i])
+				paddingOffset, err := sha256PtrEnd.AddOffset(int16(i))
+				if err != nil {
+					return err
+				}
+
+				err = vm.Memory.WriteToAddress(&paddingOffset, &paddingValue)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	}
+}
+
+func createFinalizeSha256Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	sha256PtrEnd, err := resolver.GetResOperander("sha256_ptr_end")
+	if err != nil {
+		return nil, err
+	}
+
+	return newFinalizeSha256Hint(sha256PtrEnd), nil
+}
