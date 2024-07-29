@@ -2077,7 +2077,7 @@ func newBigIntSafeDivHint(flag hinter.ResOperander) hinter.Hinter {
 
 			flagValue := mem.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(flagBigInt))
 
-			err = ctx.ScopeManager.AssignVariables(map[string]any{"value": value})
+			err = ctx.ScopeManager.AssignVariable("value", value)
 			if err != nil {
 				return err
 			}
