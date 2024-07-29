@@ -58,9 +58,12 @@ func newPackedSha256Hint(sha256Start, output hinter.ResOperander) hinter.Hinter 
 
 			for i := 0; i < len(newState); i++ {
 				newStateValue := mem.MemoryValueFromInt(newState[i])
-				memoryOffset := uint64(i)
+				outputOffset, err := output.AddOffset(int16(i))
+				if err != nil {
+					return err
+				}
 
-				err = vm.Memory.Write(output.SegmentIndex, output.Offset+memoryOffset, &newStateValue)
+				err = vm.Memory.WriteToAddress(&outputOffset, &newStateValue)
 				if err != nil {
 					return err
 				}
