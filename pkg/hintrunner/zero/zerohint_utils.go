@@ -80,12 +80,11 @@ func GetUint256ExpandAsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) ([]
 
 func GetUint512AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Element, *fp.Element, *fp.Element, *fp.Element, error) {
 	var fps [4]*fp.Element
+	firstRefAddr, err := ref.GetAddress(vm)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
 	for i := 0; i < 4; i++ {
-		firstRefAddr, err := ref.GetAddress(vm)
-		if err != nil {
-			return nil, nil, nil, nil, err
-		}
-
 		addr, err := firstRefAddr.AddOffset(int16(i))
 		if err != nil {
 			return nil, nil, nil, nil, err
