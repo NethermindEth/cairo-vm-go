@@ -30,19 +30,15 @@ func SIGMA() [10][16]uint8 {
 	}
 }
 
-func rightRot(value uint32, n uint32) uint32 {
-	return (value >> n) | ((value & ((1 << n) - 1)) << (32 - n))
-}
-
 func mix(a uint32, b uint32, c uint32, d uint32, m0 uint32, m1 uint32) (uint32, uint32, uint32, uint32) {
 	a = a + b + m0
-	d = rightRot(d^a, 16)
+	d = RightRot(d^a, 16)
 	c = c + d
-	b = rightRot(b^c, 12)
+	b = RightRot(b^c, 12)
 	a = a + b + m1
-	d = rightRot(d^a, 8)
+	d = RightRot(d^a, 8)
 	c = c + d
-	b = rightRot(b^c, 7)
+	b = RightRot(b^c, 7)
 	return a, b, c, d
 }
 
