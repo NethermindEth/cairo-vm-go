@@ -1248,7 +1248,7 @@ func newComputeSlopeV2Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			//> y1 = pack(ids.point0.y, PRIME)
+			//> y1 = pack(ids.point1.y, PRIME)
 			y1Big, err := secp_utils.SecPPacked(point1YValues)
 			if err != nil {
 				return err
