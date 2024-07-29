@@ -206,6 +206,9 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createBlake2sFinalizeV3Hinter(resolver)
 	case blake2sComputeCode:
 		return createBlake2sComputeHinter(resolver)
+	// Sha256 hints
+	case packedSha256Code:
+		return createPackedSha256Hinter(resolver)
 	// Keccak hints
 	case keccakWriteArgsCode:
 		return createKeccakWriteArgsHinter(resolver)
@@ -314,6 +317,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createNondetElementsOverXHinter(resolver, 10)
 	case normalizeAddressCode:
 		return createNormalizeAddressHinter(resolver)
+	case sha256AndBlake2sInputCode:
+		return createSha256AndBlake2sInputHinter(resolver)
 	default:
 		return nil, fmt.Errorf("not identified hint: \n%s", rawHint.Code)
 	}
