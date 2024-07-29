@@ -2001,7 +2001,9 @@ func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &res, "res": &res})
+			var value = new(big.Int).Set(&res)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": value, "res": &res})
 		},
 	}
 }
