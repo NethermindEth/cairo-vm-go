@@ -1095,12 +1095,12 @@ func createRandomEcPointHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	return newRandomEcPointHint(p, m, q, s), nil
 }
 
-// EcRecoverDivModNPacked hint
+// EcRecoverDivModNPacked hint stores the value of div_mod(x, s, N) to scope.
 //
 // `newEcRecoverDivModNPackedHint` takes 3 operanders as arguments
-//   - `n`
-//   - `x`
-//   - `s`
+//   - `n` is an EC point
+//   - `x` is an EC point
+//   - `s` is an EC point
 func newEcRecoverDivModNPackedHint(n, x, s hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcRecoverDivModNPacked",
@@ -1196,11 +1196,11 @@ func createEcRecoverDivModNPackedHinter(resolver hintReferenceResolver) (hinter.
 	return newEcRecoverDivModNPackedHint(n, x, s), nil
 }
 
-// EcRecoverSubAB hint
+// EcRecoverSubAB hint stores the value of a - b to scope.
 //
 // `newEcRecoverSubABHint` takes 2 operanders as arguments
-//   - `a`
-//   - `b`
+//   - `a` is an EC point
+//   - `b` is an EC point
 func newEcRecoverSubABHint(a, b hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcRecoverSubAB",
@@ -1274,12 +1274,12 @@ func createEcRecoverSubABHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	return newEcRecoverSubABHint(a, b), nil
 }
 
-// EcRecoverProductMod hint
+// EcRecoverProductMod hint stores the value of (a * b) % m to scope.
 //
 // `newEcRecoverProductModHint` takes 3 operanders as arguments
-//   - `a`
-//   - `b`
-//   - `m`
+//   - `a` is an EC point
+//   - `b` is an EC point
+//   - `m` is an EC point
 func newEcRecoverProductModHint(a, b, m hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcRecoverProductMod",
