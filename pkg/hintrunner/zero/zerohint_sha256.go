@@ -45,7 +45,10 @@ func newPackedSha256Hint(sha256Start, output hinter.ResOperander) hinter.Hinter 
 				wUint32[i] = value
 			}
 
-			messageSchedule := utils.ComputeMessageSchedule(wUint32)
+			messageSchedule, err := utils.ComputeMessageSchedule(wUint32)
+			if err != nil {
+				return err
+			}
 			newState := utils.Sha256Compress(utils.IV(), messageSchedule)
 
 			output, err := hinter.ResolveAsAddress(vm, output)

@@ -1,6 +1,8 @@
 package utils
 
-func ComputeMessageSchedule(input []uint32) []uint32 {
+import "fmt"
+
+func ComputeMessageSchedule(input []uint32) ([]uint32, error) {
 	// def compute_message_schedule(message: List[int]) -> List[int]:
 	// w = list(message)
 	// assert len(w) == 16
@@ -11,6 +13,10 @@ func ComputeMessageSchedule(input []uint32) []uint32 {
 	//     w.append((w[i - 16] + s0 + w[i - 7] + s1) % 2**32)
 
 	// return w
+	if len(input) != 16 {
+		return nil, fmt.Errorf("input length must be 16, got %d", len(input))
+	}
+
 	w := make([]uint32, 64)
 	copy(w, input)
 
@@ -20,7 +26,7 @@ func ComputeMessageSchedule(input []uint32) []uint32 {
 		w[i] = w[i-16] + s0 + w[i-7] + s1
 	}
 
-	return w
+	return w, nil
 }
 
 func Sha256Compress(state [8]uint32, w []uint32) []uint32 {
