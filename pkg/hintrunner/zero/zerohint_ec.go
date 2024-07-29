@@ -1930,12 +1930,7 @@ func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			xValues, err := vm.Memory.ResolveAsBigInt3(xAddr)
-			if err != nil {
-				return err
-			}
-
-			xValues5, err := vm.Memory.ResolveAsBigInt5(xAddr)
+			xValues, err := vm.Memory.ResolveAsBigInt5(xAddr)
 			if err != nil {
 				return err
 			}
@@ -1953,8 +1948,8 @@ func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 			var xD3Big big.Int
 			var xD4Big big.Int
 
-			xValues5[3].BigInt(&xD3Big)
-			xValues5[4].BigInt(&xD4Big)
+			xValues[3].BigInt(&xD3Big)
+			xValues[4].BigInt(&xD4Big)
 
 			base, ok := secp_utils.GetBaseBig()
 			if !ok {
@@ -1968,7 +1963,7 @@ func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> x = pack(ids.x, PRIME) + as_int(ids.x.d3, PRIME) * ids.BASE ** 3 + as_int(ids.x.d4, PRIME) * ids.BASE ** 4
-			xPacked, err := secp_utils.SecPPacked(xValues)
+			xPacked, err := secp_utils.SecPPackedBigInt5(xValues)
 			if err != nil {
 				return err
 			}
