@@ -1262,6 +1262,8 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "x.d0", Kind: apRelative, Value: feltString("0xe28d959f2815b16f81798")},
 					{Name: "x.d1", Kind: apRelative, Value: feltString("0xa573a1c2c1c0a6ff36cb7")},
 					{Name: "x.d2", Kind: apRelative, Value: feltString("0x79be667ef9dcbbac55a06")},
+					{Name: "x.d3", Kind: apRelative, Value: feltString("0xe28d959f2815b16f81798")},
+					{Name: "x.d4", Kind: apRelative, Value: feltString("0xa573a1c2c1c0a6ff36cb7")},
 					{Name: "y.d0", Kind: apRelative, Value: feltString("0x554199c47d08ffb10d4b8")},
 					{Name: "y.d1", Kind: apRelative, Value: feltString("0x2ff0384422a3f45ed1229a")},
 					{Name: "y.d2", Kind: apRelative, Value: feltString("0x483ada7726a3c4655da4f")},
@@ -1269,7 +1271,10 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newBigIntPackDivModHint(ctx.operanders["x.d0"], ctx.operanders["y.d0"], ctx.operanders["p.x"])
 				},
-				check: varValueInScopeEquals("value", bigIntString("16632677622707316824187502098381657896165024547818554895907883504738364867084586839639947127492100631", 10)),
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": bigIntString("16632677622707316824187502098381657896165024547818554895907883504738364867084586839639947127492100631", 10),
+					"res":   bigIntString("16632677622707316824187502098381657896165024547818554895907883504738364867084586839639947127492100631", 10),
+				}),
 			},
 			{
 				operanders: []*hintOperander{

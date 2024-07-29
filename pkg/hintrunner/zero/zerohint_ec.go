@@ -1935,6 +1935,11 @@ func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
+			xValues5, err := vm.Memory.ResolveAsBigInt5(xAddr)
+			if err != nil {
+				return err
+			}
+
 			yAddr, err := y.GetAddress(vm)
 			if err != nil {
 				return err
@@ -1948,8 +1953,8 @@ func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 			var xD3Big big.Int
 			var xD4Big big.Int
 
-			xValues[0].BigInt(&xD3Big)
-			xValues[1].BigInt(&xD4Big)
+			xValues5[3].BigInt(&xD3Big)
+			xValues5[4].BigInt(&xD4Big)
 
 			base, ok := secp_utils.GetBaseBig()
 			if !ok {
@@ -1957,7 +1962,7 @@ func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> p = pack(ids.P, PRIME)
-			pBig, err := secp_utils.SecPPacked(pValues)
+			pPacked, err := secp_utils.SecPPacked(pValues)
 			if err != nil {
 				return err
 			}
@@ -1985,22 +1990,18 @@ func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 			xBig.Add(xBig, &xPacked)
 
 			//> y = pack(ids.y, PRIME)
-			yBig, err := secp_utils.SecPPacked(yValues)
+			yPacked, err := secp_utils.SecPPacked(yValues)
 			if err != nil {
 				return err
 			}
 
 			//> value = res = div_mod(x, y, p)
-			res, err := secp_utils.Divmod(xBig, &yBig, &pBig)
+			res, err := secp_utils.Divmod(xBig, &yPacked, &pPacked)
 			if err != nil {
 				return err
 			}
 
-			fmt.Println(xBig)
-			fmt.Println(&yBig)
-			fmt.Println(&pBig)
-
-			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &res})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &res, "res": &res})
 		},
 	}
 }
