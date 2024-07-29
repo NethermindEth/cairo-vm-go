@@ -1254,6 +1254,82 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
+		"BigIntPackDivMod": {
+			{
+				operanders: []*hintOperander{
+					{Name: "p.x", Kind: apRelative, Value: feltString("3004956058830981475544150447242655232275382685012344776588097793621230049020")},
+					{Name: "p.y", Kind: apRelative, Value: feltString("3232266734070744637901977159303149980795588196503166389060831401046564401743")},
+					{Name: "x.d0", Kind: apRelative, Value: feltString("0xe28d959f2815b16f81798")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0xa573a1c2c1c0a6ff36cb7")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0x79be667ef9dcbbac55a06")},
+					{Name: "y.d0", Kind: apRelative, Value: feltString("0x554199c47d08ffb10d4b8")},
+					{Name: "y.d1", Kind: apRelative, Value: feltString("0x2ff0384422a3f45ed1229a")},
+					{Name: "y.d2", Kind: apRelative, Value: feltString("0x483ada7726a3c4655da4f")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntPackDivModHint(ctx.operanders["x.d0"], ctx.operanders["y.d0"], ctx.operanders["p.x"])
+				},
+				check: varValueInScopeEquals("value", bigIntString("16632677622707316824187502098381657896165024547818554895907883504738364867084586839639947127492100631", 10)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "p.x", Kind: apRelative, Value: feltString("3004956058830981475544150447242655232275382685012344776588097793621230049020")},
+					{Name: "p.y", Kind: apRelative, Value: feltString("3232266734070744637901977159303149980795588196503166389060831401046564401743")},
+					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "x.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "x.d2", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "y.d0", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "y.d1", Kind: apRelative, Value: &utils.FeltZero},
+					{Name: "y.d2", Kind: apRelative, Value: &utils.FeltZero},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntPackDivModHint(ctx.operanders["x.d0"], ctx.operanders["y.d0"], ctx.operanders["p.x"])
+				},
+				errCheck: errorTextContains("no solution exists (gcd(m, p) != 1)"),
+			},
+		},
+		"SafeDiv": {
+			{
+				operanders: []*hintOperander{
+					{Name: "flag", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					xBig := big.NewInt(20)
+					pBig := big.NewInt(40)
+					yBig := big.NewInt(50)
+					resBig := big.NewInt(80)
+
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"x": xBig, "y": yBig, "p": pBig, "res": resBig})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntSafeDivHint(ctx.operanders["flag"])
+				},
+				check: varValueInScopeEquals("value", bigIntString("99", 10)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "flag", Kind: uninitialized},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					xBig := big.NewInt(20)
+					pBig := big.NewInt(40)
+					yBig := big.NewInt(50)
+					resBig := big.NewInt(80)
+
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"x": xBig, "y": yBig, "p": pBig, "res": resBig})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntSafeDivHint(ctx.operanders["flag"])
+				},
+				check: varValueEquals("flag", feltUint64(1)),
+			},
+		},
 	},
 	)
 }

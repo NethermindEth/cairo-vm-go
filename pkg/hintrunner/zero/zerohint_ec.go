@@ -1996,6 +1996,10 @@ func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
+			fmt.Println(xBig)
+			fmt.Println(&yBig)
+			fmt.Println(&pBig)
+
 			return ctx.ScopeManager.AssignVariables(map[string]any{"value": &res})
 		},
 	}
@@ -2025,13 +2029,18 @@ func createBigIntPackDivModHinter(resolver hintReferenceResolver) (hinter.Hinter
 // `newSafeDivHint` does not take any arguments
 //
 // `newSafeDivHint` assigns the result as `value` and sets `flag` based on the result in the current scope
-func newBigIntSafeDivHint() hinter.Hinter {
+func newBigIntSafeDivHint(flag hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SafeDiv",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> k = safe_div(res * y - x, p)
 			//> value = k if k > 0 else 0 - k
 			//> ids.flag = 1 if k > 0 else 0
+
+			flagAddr, err := flag.GetAddress(vm)
+			if err != nil {
+				return err
+			}
 
 			x, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "x")
 			if err != nil {
@@ -2063,12 +2072,19 @@ func newBigIntSafeDivHint() hinter.Hinter {
 			value := new(big.Int).Abs(k)
 
 			//> ids.flag = 1 if k > 0 else 0
-			flag := big.NewInt(0)
+			flagBigInt := big.NewInt(0)
 			if k.Sign() > 0 {
-				flag.SetInt64(1)
+				flagBigInt.SetInt64(1)
 			}
 
-			err = ctx.ScopeManager.AssignVariables(map[string]any{"value": value, "flag": flag})
+			flagValue := mem.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(flagBigInt))
+
+			err = ctx.ScopeManager.AssignVariables(map[string]any{"value": value})
+			if err != nil {
+				return err
+			}
+
+			err = vm.Memory.WriteToAddress(&flagAddr, &flagValue)
 			if err != nil {
 				return err
 			}
@@ -2078,6 +2094,11 @@ func newBigIntSafeDivHint() hinter.Hinter {
 	}
 }
 
-func createBigIntSaveDivHinter() (hinter.Hinter, error) {
-	return newBigIntSafeDivHint(), nil
+func createBigIntSaveDivHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	flag, err := resolver.GetResOperander("flag")
+	if err != nil {
+		return nil, err
+	}
+
+	return newBigIntSafeDivHint(flag), nil
 }

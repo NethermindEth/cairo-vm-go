@@ -200,7 +200,7 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 	case bigIntPackDivModCode:
 		return createBigIntPackDivModHinter(resolver)
 	case bigIntSaveDivCode:
-		return createBigIntSaveDivHinter()
+		return createBigIntSaveDivHinter(resolver)
 	// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
