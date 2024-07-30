@@ -1893,6 +1893,323 @@ func createChainedEcOpHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	return newChainedEcOpHint(len, p, m, q, s), nil
 }
 
+// EcRecoverDivModNPacked hint stores the value of div_mod(x, s, N) to scope.
+//
+// `newEcRecoverDivModNPackedHint` takes 3 operanders as arguments
+//   - `n` is an EC point
+//   - `x` is an EC point
+//   - `s` is an EC point
+func newEcRecoverDivModNPackedHint(n, x, s hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcRecoverDivModNPacked",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> from starkware.python.math_utils import div_mod, safe_div
+			//>
+			//> N = pack(ids.n, PRIME)
+			//> x = pack(ids.x, PRIME) % N
+			//> s = pack(ids.s, PRIME) % N
+			//> value = res = div_mod(x, s, N)
+
+			nAddr, err := n.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			xAddr, err := x.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			sAddr, err := s.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			nValues, err := vm.Memory.ResolveAsBigInt3(nAddr)
+			if err != nil {
+				return err
+			}
+
+			xValues, err := vm.Memory.ResolveAsBigInt3(xAddr)
+			if err != nil {
+				return err
+			}
+      
+			sValues, err := vm.Memory.ResolveAsBigInt3(sAddr)
+			if err != nil {
+				return err
+			}
+
+			//> N = pack(ids.n, PRIME)
+			nPackedBig, err := secp_utils.SecPPacked(nValues)
+			if err != nil {
+				return err
+			}
+
+			//> x = pack(ids.x, PRIME) % N
+			xPackedBig, err := secp_utils.SecPPacked(xValues)
+			if err != nil {
+				return err
+			}
+			xPackedBig.Mod(&xPackedBig, &nPackedBig)
+
+			//> s = pack(ids.s, PRIME) % N
+			sPackedBig, err := secp_utils.SecPPacked(sValues)
+			if err != nil {
+				return err
+			}
+			sPackedBig.Mod(&sPackedBig, &nPackedBig)
+
+			//> value = res = div_mod(x, s, N)
+			resBig, err := secp_utils.Divmod(&xPackedBig, &sPackedBig, &nPackedBig)
+			if err != nil {
+				return err
+			}
+
+			valueBig := new(big.Int)
+			valueBig.Set(&resBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"res": &resBig, "value": valueBig})
+		},
+	}
+}
+
+func createEcRecoverDivModNPackedHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	n, err := resolver.GetResOperander("n")
+	if err != nil {
+		return nil, err
+	}
+
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+
+	s, err := resolver.GetResOperander("s")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcRecoverDivModNPackedHint(n, x, s), nil
+}
+
+// EcRecoverSubAB hint stores the value of a - b to scope.
+//
+// `newEcRecoverSubABHint` takes 2 operanders as arguments
+//   - `a` is an EC point
+//   - `b` is an EC point
+func newEcRecoverSubABHint(a, b hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcRecoverSubAB",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> from starkware.python.math_utils import div_mod, safe_div
+			//>
+			//> a = pack(ids.a, PRIME)
+			//> b = pack(ids.b, PRIME)
+			//>
+			//> value = res = a - b
+
+			aAddr, err := a.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			bAddr, err := b.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			aValues, err := vm.Memory.ResolveAsBigInt3(aAddr)
+			if err != nil {
+				return err
+			}
+
+			bValues, err := vm.Memory.ResolveAsBigInt3(bAddr)
+			if err != nil {
+				return err
+			}
+
+			//> a = pack(ids.a, PRIME)
+			aPackedBig, err := secp_utils.SecPPacked(aValues)
+			if err != nil {
+				return err
+			}
+
+			//> b = pack(ids.b, PRIME)
+			bPackedBig, err := secp_utils.SecPPacked(bValues)
+			if err != nil {
+				return err
+			}
+
+			//> value = res = a - b
+			resBig := new(big.Int)
+			resBig.Sub(&aPackedBig, &bPackedBig)
+			if err != nil {
+				return err
+			}
+
+			valueBig := new(big.Int)
+			valueBig.Set(resBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"res": resBig, "value": valueBig})
+		},
+	}
+}
+
+func createEcRecoverSubABHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+  
+	return newEcRecoverSubABHint(a, b), nil
+}
+
+// EcRecoverProductMod hint stores the value of (a * b) % m to scope.
+//
+// `newEcRecoverProductModHint` takes 3 operanders as arguments
+//   - `a` is an EC point
+//   - `b` is an EC point
+//   - `m` is an EC point
+func newEcRecoverProductModHint(a, b, m hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcRecoverProductMod",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> from starkware.python.math_utils import div_mod, safe_div
+			//>
+			//> a = pack(ids.a, PRIME)
+			//> b = pack(ids.b, PRIME)
+			//> product = a * b
+			//> m = pack(ids.m, PRIME)
+			//>
+			//> value = res = product % m
+
+			aAddr, err := a.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			bAddr, err := b.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			mAddr, err := m.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			aValues, err := vm.Memory.ResolveAsBigInt3(aAddr)
+			if err != nil {
+				return err
+			}
+
+			bValues, err := vm.Memory.ResolveAsBigInt3(bAddr)
+			if err != nil {
+				return err
+			}
+
+			mValues, err := vm.Memory.ResolveAsBigInt3(mAddr)
+			if err != nil {
+				return err
+			}
+
+			//> a = pack(ids.a, PRIME)
+			aPackedBig, err := secp_utils.SecPPacked(aValues)
+			if err != nil {
+				return err
+			}
+
+			//> b = pack(ids.b, PRIME)
+			bPackedBig, err := secp_utils.SecPPacked(bValues)
+			if err != nil {
+				return err
+			}
+      
+			//> m = pack(ids.m, PRIME)
+			mPackedBig, err := secp_utils.SecPPacked(mValues)
+			if err != nil {
+				return err
+			}
+      
+			//> product = a * b
+			productBig := new(big.Int)
+			productBig.Mul(&aPackedBig, &bPackedBig)
+
+			//> value = res = product % m
+			resBig := new(big.Int)
+			resBig.Mod(productBig, &mPackedBig)
+
+			valueBig := new(big.Int)
+			valueBig.Set(resBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"m": &mPackedBig, "product": productBig, "res": resBig, "value": valueBig})
+		},
+	}
+}
+
+func createEcRecoverProductModHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+  
+	m, err := resolver.GetResOperander("m")
+	if err != nil {
+		return nil, err
+	}
+
+	return newEcRecoverProductModHint(a, b, m), nil
+}
+
+// EcRecoverProductDivM hint fetches product and m scope variables
+// and stores the result of their division in scope variables value and k
+//
+// `newEcRecoverProductDivMHint` takes no arguments
+func newEcRecoverProductDivMHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "EcRecoverProductDivM",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> value = k = product // m
+
+			productBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "product")
+			if err != nil {
+				return err
+			}
+
+			mBig, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "m")
+			if err != nil {
+				return err
+			}
+
+			kBig := new(big.Int)
+			kBig.Div(productBig, mBig)
+
+			valueBig := new(big.Int)
+			valueBig.Set(kBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"k": kBig, "value": valueBig})
+		},
+	}
+}
+
+func createEcRecoverProductDivMHinter() (hinter.Hinter, error) {
+	return newEcRecoverProductDivMHint(), nil
+}
+
 // BigIntPackDivMod hint divides two values modulo a prime number
 //
 // `newBigIntPackDivModHint` takes 3 operanders as arguments
@@ -2100,3 +2417,4 @@ func createBigIntSaveDivHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 
 	return newBigIntSafeDivHint(flag), nil
 }
+
