@@ -1246,14 +1246,14 @@ func createSplit128Hinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 	return newSplit128Hint(low, high, a), nil
 }
 
-// is250Bits hint compares if an address is greater than 2**250 or not and
-// it will return an is_250 variable whose value could be 1 or 0 depends on the value of the address
+// is250Bits hint checks whether an address is lower than 2**250 or not and
+// it assigns 1 or 0 to `is_250` variable, respectively
 //
 // `newIs250Bits` takes 2 operanders as arguments
-//   - `is_250` represents the address where the result of the comparison is stored
+//   - `is_250` represents the variable that will store the result of the comparison
 //   - `addr` is the address that will be compared to 2**250
 //
-// `newIs250Bits` writes `is_250` values to its respective memory address
+// `newIs250Bits` writes 1 or 0 to the memory address of `is_250` variable
 func newIs250BitsHint(is_250, addr hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Is250Bits",
