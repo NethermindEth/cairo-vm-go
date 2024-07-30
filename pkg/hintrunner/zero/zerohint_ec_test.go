@@ -12,6 +12,68 @@ import (
 
 func TestZeroHintEc(t *testing.T) {
 	runHinterTests(t, map[string][]hintTestCase{
+		"BigIntToUint256": {
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltUint64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("1")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltUint64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("1")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltString("77371252455336267181195264")),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("1")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("1")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltString("77371252455336267181195265")),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("2")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltString("154742504910672534362390528")),
+			},
+		},
 		"EcNegate": {
 			{
 				operanders: []*hintOperander{
@@ -1189,6 +1251,102 @@ func TestZeroHintEc(t *testing.T) {
 				check: consecutiveVarValueEquals("s", []*fp.Element{
 					feltString("1354562415074475070179359167082942891834423311678180448592849484844152837347"),
 					feltString("907662328694455187848008017177970257426839229889571025406355869359245158736"),
+				}),
+			},
+		},
+		"EcRecoverDivModNPacked": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n.x", Kind: apRelative, Value: feltUint64(177)},
+					{Name: "n.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "n.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "x.x", Kind: apRelative, Value: feltUint64(25)},
+					{Name: "x.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "x.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "s.x", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "s.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "s.z", Kind: apRelative, Value: feltUint64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcRecoverDivModNPackedHint(
+						ctx.operanders["n.x"],
+						ctx.operanders["x.x"],
+						ctx.operanders["s.x"],
+					)
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": big.NewInt(5),
+					"res":   big.NewInt(5),
+				}),
+			},
+		},
+		"EcRecoverSubAB": {
+			{
+				operanders: []*hintOperander{
+					{Name: "a.x", Kind: apRelative, Value: feltUint64(100)},
+					{Name: "a.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "a.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.x", Kind: apRelative, Value: feltUint64(25)},
+					{Name: "b.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.z", Kind: apRelative, Value: feltUint64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcRecoverSubABHint(
+						ctx.operanders["a.x"],
+						ctx.operanders["b.x"],
+					)
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": big.NewInt(75),
+					"res":   big.NewInt(75),
+				}),
+			},
+		},
+		"EcRecoverProductMod": {
+			{
+				operanders: []*hintOperander{
+					{Name: "a.x", Kind: apRelative, Value: feltUint64(60)},
+					{Name: "a.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "a.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.x", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "b.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "m.x", Kind: apRelative, Value: feltUint64(100)},
+					{Name: "m.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "m.z", Kind: apRelative, Value: feltUint64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcRecoverProductModHint(
+						ctx.operanders["a.x"],
+						ctx.operanders["b.x"],
+						ctx.operanders["m.x"],
+					)
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value":   big.NewInt(20),
+					"res":     big.NewInt(20),
+					"product": big.NewInt(120),
+					"m":       big.NewInt(100),
+				}),
+			},
+		},
+		"EcRecoverProductDivM": {
+			{
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					productBig := big.NewInt(120)
+					mBig := big.NewInt(100)
+
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"product": productBig, "m": mBig})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcRecoverProductDivMHint()
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": big.NewInt(1),
+					"k":     big.NewInt(1),
 				}),
 			},
 		},

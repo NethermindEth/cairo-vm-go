@@ -125,3 +125,7 @@ func FeltDivRem(a, b *fp.Element) (div fp.Element, rem fp.Element) {
 
 	return div, rem
 }
+
+func RightRot(value uint32, n uint32) uint32 {
+	return (value >> n) | ((value & ((1 << n) - 1)) << (32 - n))
+}

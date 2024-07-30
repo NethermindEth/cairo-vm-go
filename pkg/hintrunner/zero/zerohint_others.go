@@ -751,3 +751,50 @@ func createNormalizeAddressHinter(resolver hintReferenceResolver) (hinter.Hinter
 
 	return newNormalizeAddressHint(isSmall, addr), nil
 }
+
+// Sha256AndBlake2sInput hint writes 1 or 0 at `full_word` address, wether `n_bytes“
+// is greater than or equal to 4 or not
+//
+// `newSha256AndBlake2sInputHint` takes 2 arguments
+//   - `full_word` represents the address where the result of the comparison is stored
+//   - `n_bytes` represents the value that will be compared to 4
+func newSha256AndBlake2sInputHint(fullWord, nbytes hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Sha256AndBlake2sInput",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> ids.full_word = int(ids.n_bytes >= 4)
+
+			n_bytes, err := hinter.ResolveAsFelt(vm, nbytes)
+			if err != nil {
+				return err
+			}
+
+			fullWordAddr, err := fullWord.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			var resultMv memory.MemoryValue
+			if n_bytes.Cmp(new(fp.Element).SetUint64(4)) >= 0 {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				resultMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+			return vm.Memory.WriteToAddress(&fullWordAddr, &resultMv)
+		},
+	}
+}
+
+func createSha256AndBlake2sInputHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	fullWord, err := resolver.GetResOperander("full_word")
+	if err != nil {
+		return nil, err
+	}
+
+	nBytes, err := resolver.GetResOperander("n_bytes")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSha256AndBlake2sInputHint(fullWord, nBytes), nil
+}
