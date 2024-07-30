@@ -106,7 +106,7 @@ Output: {(key1, 0, 5), (key2, 4, 2)}
 
 ### Hint usage in `usort` functions
 
-Overall, `usort` requires 5 hints to be executed:
+Overall, `usort` Cairo function requires 5 hints to be executed:
 
 **UsortEnterScope**
 
