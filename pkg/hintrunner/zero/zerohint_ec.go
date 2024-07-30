@@ -1935,7 +1935,7 @@ func newEcRecoverDivModNPackedHint(n, x, s hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-      
+
 			sValues, err := vm.Memory.ResolveAsBigInt3(sAddr)
 			if err != nil {
 				return err
@@ -2046,10 +2046,6 @@ func newEcRecoverSubABHint(a, b hinter.ResOperander) hinter.Hinter {
 			//> value = res = a - b
 			resBig := new(big.Int)
 			resBig.Sub(&aPackedBig, &bPackedBig)
-			if err != nil {
-				return err
-			}
-
 			valueBig := new(big.Int)
 			valueBig.Set(resBig)
 
@@ -2068,7 +2064,7 @@ func createEcRecoverSubABHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	if err != nil {
 		return nil, err
 	}
-  
+
 	return newEcRecoverSubABHint(a, b), nil
 }
 
@@ -2133,13 +2129,13 @@ func newEcRecoverProductModHint(a, b, m hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-      
+
 			//> m = pack(ids.m, PRIME)
 			mPackedBig, err := secp_utils.SecPPacked(mValues)
 			if err != nil {
 				return err
 			}
-      
+
 			//> product = a * b
 			productBig := new(big.Int)
 			productBig.Mul(&aPackedBig, &bPackedBig)
@@ -2166,7 +2162,7 @@ func createEcRecoverProductModHinter(resolver hintReferenceResolver) (hinter.Hin
 	if err != nil {
 		return nil, err
 	}
-  
+
 	m, err := resolver.GetResOperander("m")
 	if err != nil {
 		return nil, err
@@ -2315,7 +2311,7 @@ func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 
 			var value = new(big.Int).Set(&res)
 
-			return ctx.ScopeManager.AssignVariables(map[string]any{"value": value, "res": &res})
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": value, "res": &res, "x": xBig, "y": &yPacked, "p": &pPacked})
 		},
 	}
 }
@@ -2417,4 +2413,3 @@ func createBigIntSaveDivHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 
 	return newBigIntSafeDivHint(flag), nil
 }
-

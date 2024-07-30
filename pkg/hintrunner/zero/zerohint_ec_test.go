@@ -1347,10 +1347,10 @@ func TestZeroHintEc(t *testing.T) {
 				check: allVarValueInScopeEquals(map[string]any{
 					"value": big.NewInt(1),
 					"k":     big.NewInt(1),
-				})
+				}),
 			},
 		},
-    "BigIntPackDivMod": {
+		"BigIntPackDivMod": {
 			{
 				operanders: []*hintOperander{
 					{Name: "p.x", Kind: apRelative, Value: feltString("3004956058830981475544150447242655232275382685012344776588097793621230049020")},
