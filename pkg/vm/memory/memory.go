@@ -12,6 +12,7 @@ type BuiltinRunner interface {
 	fmt.Stringer
 	CheckWrite(segment *Segment, offset uint64, value *MemoryValue) error
 	InferValue(segment *Segment, offset uint64) error
+	GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error)
 }
 
 type NoBuiltin struct{}
@@ -26,6 +27,10 @@ func (b *NoBuiltin) InferValue(segment *Segment, offset uint64) error {
 
 func (b *NoBuiltin) String() string {
 	return "no builtin"
+}
+
+func (b *NoBuiltin) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
+	return 0, nil
 }
 
 type Segment struct {
@@ -143,6 +148,10 @@ func (segment *Segment) IncreaseSegmentSize(newSize uint64) {
 		copy(newSegmentData, segmentData)
 	}
 	segment.Data = newSegmentData
+}
+
+func (segment *Segment) Finalize(newSize uint64) {
+	segment.LastIndex = int(newSize - 1)
 }
 
 //func (segment *Segment) String() string {
@@ -338,7 +347,7 @@ func (memory *Memory) RelocationOffsets() ([]uint64, uint64) {
 
 	// segmentsOffsets[0] = 1
 	// segmentsOffsets[1] = 1 + len(segment[0])
-	// segmentsOffsets[N] = 1 + len(segment[n-1]) + sum of segements[n-1-i] for i in [1, n-1]
+	// segmentsOffsets[N] = 1 + len(segment[n-1]) + sum of segments[n-1-i] for i in [1, n-1]
 	segmentsOffsets := make([]uint64, uint64(len(memory.Segments))+1)
 	segmentsOffsets[0] = 1
 	for i, segment := range memory.Segments {

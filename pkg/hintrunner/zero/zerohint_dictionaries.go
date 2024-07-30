@@ -9,7 +9,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"golang.org/x/exp/maps"
 )
 
 //	struct DictAccess {
@@ -48,13 +48,9 @@ func newDictNewHint() hinter.Hinter {
 				}
 			}
 
-			initialDictValue, err := ctx.ScopeManager.GetVariableValue("initial_dict")
+			initialDict, err := hinter.GetVariableAs[map[memory.MemoryValue]memory.MemoryValue](&ctx.ScopeManager, "initial_dict")
 			if err != nil {
 				return err
-			}
-			initialDict, ok := initialDictValue.(map[f.Element]memory.MemoryValue)
-			if !ok {
-				return fmt.Errorf("value: %s is not a map[f.Element]mem.MemoryValue", initialDictValue)
 			}
 
 			//> memory[ap] = __dict_manager.new_dict(segments, initial_dict)
@@ -105,14 +101,15 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 			}
 
 			//> memory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)
-			defaultValue, err := hinter.ResolveAsFelt(vm, defaultValue)
+			defaultValue, err := defaultValue.Resolve(vm)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", defaultValue, err)
 			}
-			defaultValueMv := memory.MemoryValueFromFieldElement(defaultValue)
-			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, defaultValueMv)
+
+			newDefaultDictionaryAddr := dictionaryManager.NewDefaultDictionary(vm, defaultValue)
 			newDefaultDictionaryAddrMv := memory.MemoryValueFromMemoryAddress(&newDefaultDictionaryAddr)
 			apAddr := vm.Context.AddressAp()
+
 			return vm.Memory.WriteToAddress(&apAddr, &newDefaultDictionaryAddrMv)
 		},
 	}
@@ -123,6 +120,7 @@ func createDefaultDictNewHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	if err != nil {
 		return nil, err
 	}
+
 	return newDefaultDictNewHint(defaultValue), nil
 }
 
@@ -151,18 +149,12 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("__dict_manager not in scope")
 			}
 
-			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
-			err = dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
-			if err != nil {
-				return err
-			}
-
 			//> ids.value = dict_tracker.data[ids.key]
-			key, err := hinter.ResolveAsFelt(vm, key)
+			key, err := key.Resolve(vm)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", key, err)
 			}
-			keyValue, err := dictionaryManager.At(*dictPtr, *key)
+			keyValue, err := dictionaryManager.At(*dictPtr, key)
 			if err != nil {
 				return err
 			}
@@ -170,7 +162,13 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			return vm.Memory.WriteToAddress(&valueAddr, &keyValue)
+			err = vm.Memory.WriteToAddress(&valueAddr, &keyValue)
+			if err != nil {
+				return err
+			}
+
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+			return dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
 		},
 	}
 }
@@ -189,6 +187,78 @@ func createDictReadHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 		return nil, err
 	}
 	return newDictReadHint(dictPtr, key, value), nil
+}
+
+// DictSquashCopyDict hint prepares arguments for creating a new dictionary
+// with `dict_new` by copying the existing one in the context of squashing
+//
+// `newDictSquashCopyDictHint` takes 1 operander as argument
+//   - `dict_accesses_end` variable is a memory address that allows access to the dictionary
+//
+// `newDictSquashCopyDictHint`assigns `initial_dict` to the retrieved dictionary in the current scope
+func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DictSquashCopyDict",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> # Prepare arguments for dict_new. In particular, the same dictionary values should be copied
+			//> # to the new (squashed) dictionary.
+			//> vm_enter_scope({
+			//> 	# Make __dict_manager accessible.
+			//> 	'__dict_manager': __dict_manager,
+			//> 	# Create a copy of the dict, in case it changes in the future.
+			//> 	'initial_dict': dict(__dict_manager.get_dict(ids.dict_accesses_end)),
+			//> })
+
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
+			if !ok {
+				return fmt.Errorf("__dict_manager not in scope")
+			}
+
+			dictAccessesEnd_, err := hinter.ResolveAsAddress(vm, dictAccessesEnd)
+			if err != nil {
+				return err
+			}
+
+			dictionary, err := dictionaryManager.GetDictionary(*dictAccessesEnd_)
+			if err != nil {
+				return err
+			}
+
+			dictionaryDataCopy := make(map[memory.MemoryValue]memory.MemoryValue)
+			for k, v := range *dictionary.Data {
+				// Copy the key
+				keyFeltCopy := fp.Element{}
+				keyFeltCopy.Set(&k.Felt)
+				keyCopy := memory.MemoryValue{
+					Felt: keyFeltCopy,
+					Kind: k.Kind,
+				}
+
+				// Copy the value
+				valueFeltCopy := fp.Element{}
+				valueFeltCopy.Set(&v.Felt)
+				valueCopy := memory.MemoryValue{
+					Felt: valueFeltCopy,
+					Kind: v.Kind,
+				}
+
+				dictionaryDataCopy[keyCopy] = valueCopy
+			}
+
+			ctx.ScopeManager.EnterScope(map[string]any{"__dict_manager": dictionaryManager, "initial_dict": dictionaryDataCopy})
+
+			return nil
+		},
+	}
+}
+
+func createDictSquashCopyDictHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	dictAccessesEnd, err := resolver.GetResOperander("dict_accesses_end")
+	if err != nil {
+		return nil, err
+	}
+
+	return newDictSquashCopyDictHint(dictAccessesEnd), nil
 }
 
 // DictWrite hint writes a value for a given key in a dictionary
@@ -217,15 +287,9 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 				return fmt.Errorf("__dict_manager not in scope")
 			}
 
-			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
-			err = dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
+			key, err := key.Resolve(vm)
 			if err != nil {
-				return err
-			}
-
-			key, err := hinter.ResolveAsFelt(vm, key)
-			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", key, err)
 			}
 
 			//> ids.dict_ptr.prev_value = dict_tracker.data[ids.key]
@@ -235,7 +299,7 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 			//> 	prev_value: felt,
 			//> 	new_value: felt,
 			//> }
-			prevKeyValue, err := dictionaryManager.At(*dictPtr, *key)
+			prevKeyValue, err := dictionaryManager.At(*dictPtr, key)
 			if err != nil {
 				return err
 			}
@@ -245,12 +309,17 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 			}
 
 			//> dict_tracker.data[ids.key] = ids.new_value
-			newValue, err := hinter.ResolveAsFelt(vm, newValue)
+			newValue, err := newValue.Resolve(vm)
+			if err != nil {
+				return fmt.Errorf("%s: %w", newValue, err)
+			}
+			err = dictionaryManager.Set(*dictPtr, key, newValue)
 			if err != nil {
 				return err
 			}
-			newValueMv := memory.MemoryValueFromFieldElement(newValue)
-			return dictionaryManager.Set(*dictPtr, *key, newValueMv)
+
+			//> dict_tracker.current_ptr += ids.DictAccess.SIZE
+			return dictionaryManager.IncrementFreeOffset(*dictPtr, DictAccessSize)
 		},
 	}
 }
@@ -304,39 +373,34 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hi
 				return fmt.Errorf("__dict_manager not in scope")
 			}
 
-			key, err := hinter.ResolveAsFelt(vm, key)
+			key, err := key.Resolve(vm)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", key, err)
 			}
 
 			//> current_value = dict_tracker.data[ids.key]
-			currentValueMv, err := dictionaryManager.At(*dictPtr, *key)
+			currentValue, err := dictionaryManager.At(*dictPtr, key)
 			if err != nil {
-				return err
-			}
-			currentValue, err := currentValueMv.FieldElement()
-			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", key, err)
 			}
 
 			//> assert current_value == ids.prev_value, \
 			//>     f'Wrong previous value in dict. Got {ids.prev_value}, expected {current_value}.'
-			prevValue, err := hinter.ResolveAsFelt(vm, prevValue)
+			prevValue, err := prevValue.Resolve(vm)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", prevValue, err)
 			}
-			if !currentValue.Equal(prevValue) {
-				return fmt.Errorf("Wrong previous value in dict. Got %s, expected %s.", prevValue, currentValue)
+			if !currentValue.Equal(&prevValue) {
+				return fmt.Errorf("wrong previous value in dict. Got %s, expected %s", prevValue, currentValue)
 			}
 
 			//> # Update value.
 			//> dict_tracker.data[ids.key] = ids.new_value
-			newValue, err := hinter.ResolveAsFelt(vm, newValue)
+			newValue, err := newValue.Resolve(vm)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w", newValue, err)
 			}
-			newValueMv := memory.MemoryValueFromFieldElement(newValue)
-			err = dictionaryManager.Set(*dictPtr, *key, newValueMv)
+			err = dictionaryManager.Set(*dictPtr, key, newValue)
 			if err != nil {
 				return err
 			}
@@ -367,6 +431,173 @@ func createDictUpdateHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	return newDictUpdateHint(dictPtr, key, newValue, prevValue), nil
 }
 
+// SquashDict hint as part of the larger dict_squash cairo function does data validation
+// and writes to scope a set of variables which indicate the largest used key in the dict,
+// a map from key to the list of indices accessing it
+// and a descending list of used keys except the largest key.
+// It also writes to a cairo variable the largest used key
+// and a boolean indicating if any of the keys used were bigger than the range_check
+//
+// `newSquashDictHint` takes 5 operanders as arguments
+//   - `dictAccesses` variable will be a pointer to the beginning of an array of DictAccess instances. The format of
+//     each entry is a triplet (key, prev_value, new_value)
+//   - `ptrDiff` variable will be the size of the above dictAccesses array
+//   - `nAccesses` variable will have a value indicating the number of times the dict was accessed
+//   - `bigKeys` variable will be written a value of 1 if the keys used are bigger than the range_check and 0 otherwise
+//   - `firstKey` variable will be written the value of the largest used key after the hint is run
+func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SquashDict",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> dict_access_size = ids.DictAccess.SIZE
+			//> address = ids.dict_accesses.address_
+			//> assert ids.ptr_diff % dict_access_size == 0, \
+			//>     'Accesses array size must be divisible by DictAccess.SIZE'
+			//> n_accesses = ids.n_accesses
+			//> if '__squash_dict_max_size' in globals():
+			//>     assert n_accesses <= __squash_dict_max_size, \
+			//>         f'squash_dict() can only be used with n_accesses<={__squash_dict_max_size}. ' \
+			//>         f'Got: n_accesses={n_accesses}.'
+			//> # A map from key to the list of indices accessing it.
+			//> access_indices = {}
+			//> for i in range(n_accesses):
+			//>     key = memory[address + dict_access_size * i]
+			//>     access_indices.setdefault(key, []).append(i)
+			//> # Descending list of keys.
+			//> keys = sorted(access_indices.keys(), reverse=True)
+			//> # Are the keys used bigger than range_check bound.
+			//> ids.big_keys = 1 if keys[0] >= range_check_builtin.bound else 0
+			//> ids.first_key = key = keys.pop()
+
+			//> address = ids.dict_accesses.address_
+			address, err := hinter.ResolveAsAddress(vm, dictAccesses)
+			if err != nil {
+				return err
+			}
+
+			//> assert ids.ptr_diff % dict_access_size == 0, \
+			//>     'Accesses array size must be divisible by DictAccess.SIZE'
+			ptrDiffValue, err := hinter.ResolveAsUint64(vm, ptrDiff)
+			if err != nil {
+				return err
+			}
+			if ptrDiffValue%DictAccessSize != 0 {
+				return fmt.Errorf("accesses array size must be divisible by DictAccess.SIZE")
+			}
+
+			//> n_accesses = ids.n_accesses
+			nAccessesValue, err := hinter.ResolveAsUint64(vm, nAccesses)
+			if err != nil {
+				return err
+			}
+
+			//> if '__squash_dict_max_size' in globals():
+			//>     assert n_accesses <= __squash_dict_max_size, \
+			//>         f'squash_dict() can only be used with n_accesses<={__squash_dict_max_size}. ' \
+			//>         f'Got: n_accesses={n_accesses}.'
+			//  __squash_dict_max_size is always in scope and has a value of 2**20,
+			squashDictMaxSize := uint64(1048576)
+			if nAccessesValue > squashDictMaxSize {
+				return fmt.Errorf("squash_dict() can only be used with n_accesses<={%d}. Got: n_accesses={%d}", squashDictMaxSize, nAccessesValue)
+			}
+
+			//> # A map from key to the list of indices accessing it.
+			//> access_indices = {}
+			//> for i in range(n_accesses):
+			//>     key = memory[address + dict_access_size * i]
+			//>     access_indices.setdefault(key, []).append(i)
+			accessIndices := make(map[fp.Element][]fp.Element)
+			for i := uint64(0); i < nAccessesValue; i++ {
+				memoryAddress, err := address.AddOffset(int16(DictAccessSize * i))
+				if err != nil {
+					return err
+				}
+				key, err := vm.Memory.ReadFromAddressAsElement(&memoryAddress)
+				if err != nil {
+					return err
+				}
+				accessIndices[key] = append(accessIndices[key], fp.NewElement(i))
+			}
+
+			//> # Descending list of keys.
+			//> keys = sorted(access_indices.keys(), reverse=True)
+			keys := maps.Keys(accessIndices)
+			if len(keys) == 0 {
+				return fmt.Errorf("empty keys array")
+			}
+			sort.Slice(keys, func(i, j int) bool {
+				return keys[i].Cmp(&keys[j]) > 0
+			})
+
+			//> ids.big_keys = 1 if keys[0] >= range_check_builtin.bound else 0
+			bigKeysAddr, err := bigKeys.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			var bigKeysMv memory.MemoryValue
+			if utils.FeltIsPositive(&keys[0]) {
+				bigKeysMv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			} else {
+				bigKeysMv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			}
+			err = vm.Memory.WriteToAddress(&bigKeysAddr, &bigKeysMv)
+			if err != nil {
+				return err
+			}
+
+			//> ids.first_key = key = keys.pop()
+			firstKeyAddr, err := firstKey.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			firstKeyValue, err := utils.Pop(&keys)
+			if err != nil {
+				return err
+			}
+			firstKeyMv := memory.MemoryValueFromFieldElement(&firstKeyValue)
+			err = vm.Memory.WriteToAddress(&firstKeyAddr, &firstKeyMv)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("access_indices", accessIndices)
+			if err != nil {
+				return err
+			}
+			err = ctx.ScopeManager.AssignVariable("keys", keys)
+			if err != nil {
+				return err
+			}
+			return ctx.ScopeManager.AssignVariable("key", &firstKeyValue)
+		},
+	}
+}
+
+func createSquashDictHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	dictAccesses, err := resolver.GetResOperander("dict_accesses")
+	if err != nil {
+		return nil, err
+	}
+	ptrDiff, err := resolver.GetResOperander("ptr_diff")
+	if err != nil {
+		return nil, err
+	}
+	nAccesses, err := resolver.GetResOperander("n_accesses")
+	if err != nil {
+		return nil, err
+	}
+	bigKeys, err := resolver.GetResOperander("big_keys")
+	if err != nil {
+		return nil, err
+	}
+	firstKey, err := resolver.GetResOperander("first_key")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey), nil
+}
+
 // SquashDictInnerAssertLenKeys hint asserts that the length
 // of the `keys` descending list is zero during the squashing process
 //
@@ -377,12 +608,11 @@ func newSquashDictInnerAssertLenKeysHint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> assert len(keys) == 0
 
-			keys_, err := ctx.ScopeManager.GetVariableValue("keys")
+			keys, err := hinter.GetVariableAs[[]fp.Element](&ctx.ScopeManager, "keys")
 			if err != nil {
 				return err
 			}
 
-			keys := keys_.([]f.Element)
 			if len(keys) != 0 {
 				return fmt.Errorf("assertion `len(keys) == 0` failed")
 			}
@@ -396,11 +626,98 @@ func createSquashDictInnerAssertLenKeysHinter() (hinter.Hinter, error) {
 	return newSquashDictInnerAssertLenKeysHint(), nil
 }
 
+// SquashDictInnerCheckAccessIndex hint updates the access index
+// during the dictionary squashing process
+//
+// `newSquashDictInnerCheckAccessIndexHint` takes 1 operander as argument
+//
+//   - `loopTemps` variable is a struct containing `index_delta_minus1` as
+//     a first field
+//
+//     struct LoopTemps {
+//     index_delta_minus1: felt,
+//     index_delta: felt,
+//     ptr_delta: felt,
+//     should_continue: felt,
+//     }
+//
+// `newSquashDictInnerCheckAccessIndexHint` writes to the first field `index_delta_minus1`
+// of the `loop_temps` struct the result of `new_access_index - current_access_index - 1`
+// and assigns `new_access_index` to `current_access_index` in the scope
+func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SquashDictInnerCheckAccessIndex",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> new_access_index = current_access_indices.pop()
+			//> ids.loop_temps.index_delta_minus1 = new_access_index - current_access_index - 1
+			//> current_access_index = new_access_index
+
+			currentAccessIndices, err := hinter.GetVariableAs[[]fp.Element](&ctx.ScopeManager, "current_access_indices")
+			if err != nil {
+				return err
+			}
+
+			newAccessIndex, err := utils.Pop(&currentAccessIndices)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("current_access_indices", currentAccessIndices)
+			if err != nil {
+				return err
+			}
+
+			currentAccessIndex, err := hinter.GetVariableAs[*fp.Element](&ctx.ScopeManager, "current_access_index")
+			if err != nil {
+				return err
+			}
+
+			err = ctx.ScopeManager.AssignVariable("current_access_index", &newAccessIndex)
+			if err != nil {
+				return err
+			}
+
+			loopTempsAddr, err := loopTemps.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			var result fp.Element
+			result.Sub(&newAccessIndex, currentAccessIndex)
+			result.Sub(&result, &utils.FeltOne)
+
+			resultMem := memory.MemoryValueFromFieldElement(&result)
+
+			// We use `WriteToAddress` function as we write to the first field of the `loop_temps` struct
+			return vm.Memory.WriteToAddress(&loopTempsAddr, &resultMem)
+		},
+	}
+}
+
+func createSquashDictInnerCheckAccessIndexHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	loopTemps, err := resolver.GetCellRefer("loop_temps")
+	if err != nil {
+		return nil, err
+	}
+
+	loopTempsRes := hinter.Deref{Deref: loopTemps}
+
+	return newSquashDictInnerCheckAccessIndexHint(loopTempsRes), nil
+}
+
 // SquashDictInnerContinueLoop hint determines if the loop should continue
 // based on remaining access indices
 //
 // `newSquashDictInnerContinueLoopHint` takes 1 operander as argument
+//
 //   - `loopTemps` variable is a struct containing a `should_continue` field
+//
+//     struct LoopTemps {
+//     index_delta_minus1: felt,
+//     index_delta: felt,
+//     ptr_delta: felt,
+//     should_continue: felt,
+//     }
 //
 // `newSquashDictInnerContinueLoopHint`writes 0 or 1 in the `should_continue` field
 // depending on whether the `current_access_indices` array contains items or not
@@ -410,14 +727,9 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hi
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> ids.loop_temps.should_continue = 1 if current_access_indices else 0
 
-			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			currentAccessIndices, err := hinter.GetVariableAs[[]fp.Element](&ctx.ScopeManager, "current_access_indices")
 			if err != nil {
 				return err
-			}
-
-			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
-			if !ok {
-				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
 			}
 
 			loopTempsAddr, err := loopTemps.GetAddress(vm)
@@ -428,7 +740,6 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hi
 			if len(currentAccessIndices) == 0 {
 				resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
 				return vm.Memory.WriteToNthStructField(loopTempsAddr, resultMemZero, int16(3))
-
 			} else {
 				resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
 				return vm.Memory.WriteToNthStructField(loopTempsAddr, resultMemOne, int16(3))
@@ -438,12 +749,14 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hi
 }
 
 func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	loopTemps, err := resolver.GetResOperander("loop_temps")
+	loopTemps, err := resolver.GetCellRefer("loop_temps")
 	if err != nil {
 		return nil, err
 	}
 
-	return newSquashDictInnerContinueLoopHint(loopTemps), nil
+	loopTempsRes := hinter.Deref{Deref: loopTemps}
+
+	return newSquashDictInnerContinueLoopHint(loopTempsRes), nil
 }
 
 // SquashDictInnerFirstIteration hint sets up the first iteration
@@ -463,27 +776,17 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 			//> current_access_index = current_access_indices.pop()
 			//> memory[ids.range_check_ptr] = current_access_index
 
-			key_, err := ctx.ScopeManager.GetVariableValue("key")
+			key, err := hinter.GetVariableAs[*fp.Element](&ctx.ScopeManager, "key")
 			if err != nil {
 				return err
 			}
 
-			accessIndices_, err := ctx.ScopeManager.GetVariableValue("access_indices")
+			accessIndices, err := hinter.GetVariableAs[map[fp.Element][]fp.Element](&ctx.ScopeManager, "access_indices")
 			if err != nil {
 				return err
 			}
 
-			accessIndices, ok := accessIndices_.(map[fp.Element][]fp.Element)
-			if !ok {
-				return fmt.Errorf("cannot cast access_indices_ to a mapping of felts")
-			}
-
-			key, ok := key_.(fp.Element)
-			if !ok {
-				return fmt.Errorf("cannot cast key_ to felt")
-			}
-
-			accessIndicesAtKey := accessIndices[key]
+			accessIndicesAtKey := accessIndices[*key]
 
 			accessIndicesAtKeyCopy := make([]fp.Element, len(accessIndicesAtKey))
 			copy(accessIndicesAtKeyCopy, accessIndicesAtKey)
@@ -504,7 +807,7 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("current_access_index", currentAccessIndex)
+			err = ctx.ScopeManager.AssignVariable("current_access_index", &currentAccessIndex)
 			if err != nil {
 				return err
 			}
@@ -542,14 +845,9 @@ func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.ResOperander) hinter.H
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> ids.should_skip_loop = 0 if current_access_indices else 1
 
-			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			currentAccessIndices, err := hinter.GetVariableAs[[]fp.Element](&ctx.ScopeManager, "current_access_indices")
 			if err != nil {
 				return err
-			}
-
-			currentAccessIndices, ok := currentAccessIndices_.([]fp.Element)
-			if !ok {
-				return fmt.Errorf("casting currentAccessIndices_ into an array of felts failed")
 			}
 
 			shouldSkipLoopAddr, err := shouldSkipLoop.GetAddress(vm)
@@ -560,7 +858,6 @@ func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.ResOperander) hinter.H
 			if len(currentAccessIndices) == 0 {
 				resultMemOne := memory.MemoryValueFromFieldElement(&utils.FeltOne)
 				return vm.Memory.WriteToAddress(&shouldSkipLoopAddr, &resultMemOne)
-
 			} else {
 				resultMemZero := memory.MemoryValueFromFieldElement(&utils.FeltZero)
 				return vm.Memory.WriteToAddress(&shouldSkipLoopAddr, &resultMemZero)
@@ -591,12 +888,11 @@ func newSquashDictInnerLenAssertHint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> assert len(current_access_indices) == 0
 
-			currentAccessIndices_, err := ctx.ScopeManager.GetVariableValue("current_access_indices")
+			currentAccessIndices, err := hinter.GetVariableAs[[]fp.Element](&ctx.ScopeManager, "current_access_indices")
 			if err != nil {
 				return err
 			}
 
-			currentAccessIndices := currentAccessIndices_.([]f.Element)
 			if len(currentAccessIndices) != 0 {
 				return fmt.Errorf("assertion `len(current_access_indices) == 0` failed")
 			}
@@ -622,12 +918,11 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
 			//> assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'
 			//> ids.next_key = key = keys.pop()
 
-			keys_, err := ctx.ScopeManager.GetVariableValue("keys")
+			keys, err := hinter.GetVariableAs[[]fp.Element](&ctx.ScopeManager, "keys")
 			if err != nil {
 				return err
 			}
 
-			keys := keys_.([]f.Element)
 			if len(keys) == 0 {
 				return fmt.Errorf("no keys left but remaining_accesses > 0")
 			}
@@ -642,7 +937,7 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			err = ctx.ScopeManager.AssignVariable("key", newKey)
+			err = ctx.ScopeManager.AssignVariable("key", &newKey)
 			if err != nil {
 				return err
 			}
@@ -669,7 +964,7 @@ func createSquashDictInnerNextKeyHinter(resolver hintReferenceResolver) (hinter.
 }
 
 // SquashDictInnerUsedAccessesAssert hint checks that `n_used_accesses` Cairo local variable
-// is equal to the the number of used accesses for a key during dictionary squashing
+// is equal to the number of used accesses for a key during dictionary squashing
 //
 // `newSquashDictInnerUsedAccessesAssertHint` takes one operander as argument
 //   - `nUsedAccesses` represents the number of used accesses for a given key
@@ -678,27 +973,18 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 		Name: "SquashDictInnerUsedAccessesAssert",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> assert ids.n_used_accesses == len(access_indices[key])
-			accessIndices_, err := ctx.ScopeManager.GetVariableValue("access_indices")
+
+			accessIndices, err := hinter.GetVariableAs[map[fp.Element][]fp.Element](&ctx.ScopeManager, "access_indices")
 			if err != nil {
 				return err
 			}
 
-			accessIndices, ok := accessIndices_.(map[fp.Element][]fp.Element)
-			if !ok {
-				return fmt.Errorf("cannot cast access_indices_ to a mapping of felts")
-			}
-
-			key_, err := ctx.ScopeManager.GetVariableValue("key")
+			key, err := hinter.GetVariableAs[*fp.Element](&ctx.ScopeManager, "key")
 			if err != nil {
 				return err
 			}
 
-			key, ok := key_.(fp.Element)
-			if !ok {
-				return fmt.Errorf("cannot cast key_ to felt")
-			}
-
-			accessIndicesAtKeyLen := uint64(len(accessIndices[key]))
+			accessIndicesAtKeyLen := uint64(len(accessIndices[*key]))
 
 			nUsedAccesses, err := hinter.ResolveAsUint64(vm, nUsedAccesses)
 			if err != nil {
@@ -721,4 +1007,48 @@ func createSquashDictInnerUsedAccessesAssertHinter(resolver hintReferenceResolve
 	}
 
 	return newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses), nil
+}
+
+// DictSquashUpdatePtr updates the DictTracker's current_ptr to point to the end of the squashed dict
+//
+// `newDictSquashUpdatePtrHint` takes two operanders as arguments
+//   - `squashed_dict_start` pointer to the dictionary whose current_ptr should be updated
+//   - `squashed_dict_end` new current_ptr of the dictionary
+func newDictSquashUpdatePtrHint(squashedDictStart, squashedDictEnd hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "DictSquashUpdatePtr",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> __dict_manager.get_tracker(ids.squashed_dict_start).current_ptr = ids.squashed_dict_end.address_
+
+			squashedDictStart, err := hinter.ResolveAsAddress(vm, squashedDictStart)
+			if err != nil {
+				return err
+			}
+			squashedDictEnd, err := hinter.ResolveAsAddress(vm, squashedDictEnd)
+			if err != nil {
+				return err
+			}
+
+			dictionaryManager, ok := ctx.ScopeManager.GetZeroDictionaryManager()
+			if !ok {
+				return fmt.Errorf("__dict_manager not in scope")
+			}
+
+			// TODO: figure out if its ever possible for squashedDictEnd segment to be different from the dictionary segment
+			return dictionaryManager.SetFreeOffset(*squashedDictStart, squashedDictEnd.Offset)
+		},
+	}
+}
+
+func createDictSquashUpdatePtrHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	squashedDictStart, err := resolver.GetResOperander("squashed_dict_start")
+	if err != nil {
+		return nil, err
+	}
+	squashedDictEnd, err := resolver.GetResOperander("squashed_dict_end")
+	if err != nil {
+		return nil, err
+	}
+
+	return newDictSquashUpdatePtrHint(squashedDictStart, squashedDictEnd), nil
 }

@@ -1,12 +1,16 @@
 package integrationtests
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"text/tabwriter"
+	"time"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -48,69 +52,158 @@ func (f *Filter) filtered(testFile string) bool {
 	return false
 }
 
+var zerobench = flag.Bool("zerobench", false, "run integration tests and generate benchmarks file")
+
 func TestCairoZeroFiles(t *testing.T) {
-	root := "./cairo_files/"
-	testFiles, err := os.ReadDir(root)
-	require.NoError(t, err)
+	roots := []string{
+		"./cairo_zero_hint_tests/",
+		"./cairo_zero_file_tests/",
+		"./builtin_tests/",
+	}
 
 	// filter is for debugging purposes
 	filter := Filter{}
 	filter.init()
 
-	for _, dirEntry := range testFiles {
-		if dirEntry.IsDir() || isGeneratedFile(dirEntry.Name()) {
-			continue
-		}
+	benchmarkMap := make(map[string][2]int)
 
-		path := filepath.Join(root, dirEntry.Name())
+	for _, root := range roots {
+		testFiles, err := os.ReadDir(root)
+		require.NoError(t, err)
 
-		if !filter.filtered(dirEntry.Name()) {
-			continue
-		}
+		for _, dirEntry := range testFiles {
+			if dirEntry.IsDir() || isGeneratedFile(dirEntry.Name()) {
+				continue
+			}
 
-		t.Logf("testing: %s\n", path)
+			name := dirEntry.Name()
 
-		compiledOutput, err := compileZeroCode(path)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+			errorExpected := false
+			if name == "range_check.small.cairo" {
+				errorExpected = true
+			}
 
-		pyTraceFile, pyMemoryFile, err := runPythonVm(dirEntry.Name(), compiledOutput)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+			path := filepath.Join(root, name)
 
-		traceFile, memoryFile, _, err := runVm(compiledOutput)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+			if !filter.filtered(dirEntry.Name()) {
+				continue
+			}
 
-		pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+			t.Logf("testing: %s\n", path)
 
-		trace, memory, err := decodeProof(traceFile, memoryFile)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+			compiledOutput, err := compileZeroCode(path)
+			if err != nil {
+				t.Error(err)
+				continue
+			}
 
-		if !assert.Equal(t, pyTrace, trace) {
-			t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
-			t.Logf("trace:\n%s\n", traceRepr(trace))
+			elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(name, compiledOutput)
+			if errorExpected {
+				// we let the code go on so that we can check if the go vm also raises an error
+				assert.Error(t, err, path)
+			} else {
+				if err != nil {
+					t.Error(err)
+					continue
+				}
+			}
+
+			elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput)
+			if errorExpected {
+				assert.Error(t, err, path)
+				continue
+			} else {
+				if err != nil {
+					t.Error(err)
+					continue
+				}
+			}
+
+			benchmarkMap[dirEntry.Name()] = [2]int{int(elapsedPy.Milliseconds()), int(elapsedGo.Milliseconds())}
+
+			pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
+			if err != nil {
+				t.Error(err)
+				continue
+			}
+
+			trace, memory, err := decodeProof(traceFile, memoryFile)
+			if err != nil {
+				t.Error(err)
+				continue
+			}
+
+			if !assert.Equal(t, pyTrace, trace) {
+				t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
+				t.Logf("trace:\n%s\n", traceRepr(trace))
+			}
+			if !assert.Equal(t, pyMemory, memory) {
+				t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
+				t.Logf("memory;\n%s\n", memoryRepr(memory))
+			}
 		}
-		if !assert.Equal(t, pyMemory, memory) {
-			t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
-			t.Logf("memory;\n%s\n", memoryRepr(memory))
-		}
+		clean(root)
 	}
 
-	clean(root)
+	if *zerobench {
+		WriteBenchMarksToFile(benchmarkMap)
+	}
+}
+
+// Save the Benchmarks for the integration tests in `BenchMarks.txt`
+func WriteBenchMarksToFile(benchmarkMap map[string][2]int) {
+	totalWidth := 123
+
+	border := strings.Repeat("=", totalWidth)
+	separator := strings.Repeat("-", totalWidth)
+
+	var sb strings.Builder
+	w := tabwriter.NewWriter(&sb, 40, 0, 0, ' ', tabwriter.Debug)
+
+	sb.WriteString(border + "\n")
+	fmt.Fprintln(w, "| File \t PythonVM (ms) \t GoVM (ms) \t")
+	w.Flush()
+	sb.WriteString(border + "\n")
+
+	iterator := 0
+	totalFiles := len(benchmarkMap)
+
+	for key, values := range benchmarkMap {
+		row := "| " + key + "\t "
+
+		for iter, value := range values {
+			row = row + strconv.Itoa(value) + "\t"
+			if iter == 0 {
+				row = row + " "
+			}
+		}
+
+		fmt.Fprintln(w, row)
+		w.Flush()
+
+		if iterator < totalFiles-1 {
+			sb.WriteString(separator + "\n")
+		}
+
+		iterator++
+	}
+
+	sb.WriteString(border + "\n")
+
+	fileName := "BenchMarks.txt"
+	file, err := os.Create(fileName)
+	if err != nil {
+		fmt.Println("Error creating file: ", err)
+		return
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(sb.String())
+	if err != nil {
+		fmt.Println("Error writing to file: ", err)
+	} else {
+		fmt.Println("Benchmarks successfully written to:", fileName)
+	}
 }
 
 const (
@@ -150,7 +243,7 @@ func compileZeroCode(path string) (string, error) {
 
 // given a path to a compiled cairo zero file, execute it using the
 // python vm and returns the trace and memory files location
-func runPythonVm(testFilename, path string) (string, string, error) {
+func runPythonVm(testFilename, path string) (time.Duration, string, string, error) {
 	traceOutput := swapExtenstion(path, pyTraceSuffix)
 	memoryOutput := swapExtenstion(path, pyMemorySuffix)
 
@@ -169,25 +262,42 @@ func runPythonVm(testFilename, path string) (string, string, error) {
 	// A file without this suffix will use the default ("plain") layout.
 	if strings.HasSuffix(testFilename, ".small.cairo") {
 		args = append(args, "--layout", "small")
+	} else if strings.HasSuffix(testFilename, ".starknet_with_keccak.cairo") {
+		args = append(args, "--layout", "starknet_with_keccak")
 	}
 
 	cmd := exec.Command("cairo-run", args...)
 
+	start := time.Now()
+
 	res, err := cmd.CombinedOutput()
+
+	elapsed := time.Since(start)
+
 	if err != nil {
-		return "", "", fmt.Errorf(
+		return 0, "", "", fmt.Errorf(
 			"cairo-run %s: %w\n%s", path, err, string(res),
 		)
 	}
 
-	return traceOutput, memoryOutput, nil
+	return elapsed, traceOutput, memoryOutput, nil
 }
 
 // given a path to a compiled cairo zero file, execute
 // it using our vm
-func runVm(path string) (string, string, string, error) {
+func runVm(path string) (time.Duration, string, string, string, error) {
 	traceOutput := swapExtenstion(path, traceSuffix)
 	memoryOutput := swapExtenstion(path, memorySuffix)
+
+	// If any other layouts are needed, add the suffix checks here.
+	// The convention would be: ".$layout.cairo"
+	// A file without this suffix will use the default ("plain") layout, which is a layout with no builtins included"
+	layout := "plain"
+	if strings.Contains(path, ".small") {
+		layout = "small"
+	} else if strings.Contains(path, ".starknet_with_keccak") {
+		layout = "starknet_with_keccak"
+	}
 
 	cmd := exec.Command(
 		"../bin/cairo-vm",
@@ -197,17 +307,24 @@ func runVm(path string) (string, string, string, error) {
 		traceOutput,
 		"--memoryfile",
 		memoryOutput,
+		"--layout",
+		layout,
 		path,
 	)
 
+	start := time.Now()
+
 	res, err := cmd.CombinedOutput()
+
+	elapsed := time.Since(start)
+
 	if err != nil {
-		return "", "", string(res), fmt.Errorf(
+		return 0, "", "", string(res), fmt.Errorf(
 			"cairo-vm run %s: %w\n%s", path, err, string(res),
 		)
 	}
 
-	return traceOutput, memoryOutput, string(res), nil
+	return elapsed, traceOutput, memoryOutput, string(res), nil
 
 }
 
@@ -280,67 +397,4 @@ func memoryRepr(memory []*fp.Element) string {
 	}
 	return strings.Join(repr, ", ")
 
-}
-
-func TestFailingRangeCheck(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/range_check.cairo")
-	require.NoError(t, err)
-
-	_, _, _, err = runVm(compiledOutput)
-	require.ErrorContains(t, err, "check write: 2**128 <")
-
-	clean("./builtin_tests/")
-}
-
-func TestBitwise(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/bitwise_builtin_test.cairo")
-	require.NoError(t, err)
-
-	_, _, _, err = runVm(compiledOutput)
-	require.NoError(t, err)
-
-	clean("./builtin_tests/")
-}
-
-func TestPedersen(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/pedersen_test.cairo")
-	require.NoError(t, err)
-
-	_, _, output, err := runVm(compiledOutput)
-	require.NoError(t, err)
-	require.Contains(t, output, "Program output:\n  2089986280348253421170679821480865132823066470938446095505822317253594081284")
-
-	clean("./builtin_tests/")
-}
-
-func TestECDSA(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/ecdsa_test.cairo")
-	require.NoError(t, err)
-
-	_, _, _, err = runVm(compiledOutput)
-	require.NoError(t, err)
-
-	clean("./builtin_tests/")
-}
-
-func TestEcOp(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/ecop.cairo")
-	require.NoError(t, err)
-
-	_, _, _, err = runVm(compiledOutput)
-	// todo(rodro): This test is failing due to the lack of hint processing. It should be address soon
-	require.Error(t, err)
-
-	clean("./builtin_tests/")
-}
-
-func TestKeccak(t *testing.T) {
-	compiledOutput, err := compileZeroCode("./builtin_tests/keccak_test.cairo")
-	require.NoError(t, err)
-
-	_, _, output, err := runVm(compiledOutput)
-	require.NoError(t, err)
-	require.Contains(t, output, "Program output:\n  1304102964824333531548398680304964155037696012322029952943772\n  688749063493959345342507274897412933692859993314608487848187\n  986714560881445649520443980361539218531403996118322524237197\n  1184757872753521629808292433475729390634371625298664050186717\n  719230200744669084408849842242045083289669818920073250264351\n  1543031433416778513637578850638598357854418012971636697855068\n  63644822371671650271181212513090078620238279557402571802224\n  879446821229338092940381117330194802032344024906379963157761\n")
-
-	clean("./builtin_tests/")
 }

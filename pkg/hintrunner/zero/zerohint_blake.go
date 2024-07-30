@@ -1,7 +1,6 @@
 package zero
 
 import (
-	"fmt"
 	"math"
 	"math/big"
 
@@ -119,15 +118,22 @@ func createBlake2sAddUint256Hinter(resolver hintReferenceResolver, bigend bool) 
 	return newBlake2sAddUint256Hint(low, high, data, bigend), nil
 }
 
-func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt hinter.ResOperander) hinter.Hinter {
-	name := "Blake2sFinalize"
+// Blake2sFinalize hint finalizes the Blake2s hash computation, ie it verifies
+// that the results of blake2s() are valid
+//
+// `newBlake2sFinalizeHint` takes 1 operander as argument
+//   - `blake2sPtrEnd` is a pointer to the address where to write the result
+//
+// There are 3 versions of Blake2sFinalize hint, this implementation corresponds to V1 and V2
+func newBlake2sFinalizeHint(blake2sPtrEnd hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: name,
+		Name: "Blake2sFinalize",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> # Add dummy pairs of input and output.
 			//> from starkware.cairo.common.cairo_blake2s.blake2s_utils import IV, blake2s_compress
 			//> _n_packed_instances = int(ids.N_PACKED_INSTANCES)
 			//> assert 0 <= _n_packed_instances < 20
-			//> _blake2s_input_chunk_size_felts = int(ids.INPUT_BLOCK_FELTS)
+			//> _blake2s_input_chunk_size_felts = int(ids.INPUT_BLOCK_FELTS) (V1) //> _blake2s_input_chunk_size_felts = int(ids.BLAKE2S_INPUT_CHUNK_SIZE_FELTS) (V2)
 			//> assert 0 <= _blake2s_input_chunk_size_felts < 100
 			//>
 			//> message = [0] * _blake2s_input_chunk_size_felts
@@ -147,26 +153,14 @@ func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt hint
 			if err != nil {
 				return err
 			}
-			nPackedInstances, err := hinter.ResolveAsUint64(vm, nPackedInstances)
-			if err != nil {
-				return err
-			}
 
-			// assert 0 <= _n_packed_instances < 20
-			if nPackedInstances >= 20 {
-				return fmt.Errorf("n_packed_instances should be in range [0, 20), got %d", nPackedInstances)
-			}
+			//> assert 0 <= _n_packed_instances < 20
+			// as N_PACKED_INSTANCES is a constant of 7, this can be skipped
 
-			blake2sInputChunkSizeFelts, err := hinter.ResolveAsUint64(vm, inputBlockFelt)
-			if err != nil {
-				return err
-			}
+			//> assert 0 <= _blake2s_input_chunk_size_felts < 100
+			// as INPUT_BLOCK_FELTS (or BLAKE2S_INPUT_CHUNK_SIZE_FELTS) is a constant of 16, this can be skipped
 
-			if blake2sInputChunkSizeFelts >= 100 {
-				return fmt.Errorf("inputBlockFelt should be in range [0, 100), got %d", blake2sInputChunkSizeFelts)
-			}
-
-			message := make([]uint32, blake2sInputChunkSizeFelts)
+			message := make([]uint32, utils.INPUT_BLOCK_FELTS)
 			modifiedIv := utils.IV()
 			modifiedIv[0] = modifiedIv[0] ^ 0x01010020
 			output := utils.Blake2sCompress(message, modifiedIv, 0, 0, 0xffffffff, 0)
@@ -175,7 +169,7 @@ func newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt hint
 			padding = append(padding, 0, 0xffffffff)
 			padding = append(padding, output[:]...)
 			fullPadding := []uint32{}
-			for i := uint64(0); i < nPackedInstances-1; i++ {
+			for i := uint64(0); i < utils.N_PACKED_INSTANCES-1; i++ {
 				fullPadding = append(fullPadding, padding...)
 			}
 
@@ -205,16 +199,94 @@ func createBlake2sFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter,
 	if err != nil {
 		return nil, err
 	}
-	nPackedInstances, err := resolver.GetResOperander("N_PACKED_INSTANCES")
-	if err != nil {
-		return nil, err
+
+	return newBlake2sFinalizeHint(blake2sPtrEnd), nil
+}
+
+// Blake2sFinalizeV3 hint finalizes the Blake2s hash computation, ie it verifies
+// that the results of blake2s() are valid
+//
+// `newBlake2sFinalizeV3Hint` takes 1 operander as argument
+//   - `blake2sPtrEnd` is a pointer to the address where to write the result
+//
+// There are 3 versions of Blake2sFinalize hint, this is the V3 implementation, with a slightly
+// modification in the way padding is done compared to V1 and V2
+func newBlake2sFinalizeV3Hint(blake2sPtrEnd hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Blake2sFinalizeV3",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> # Add dummy pairs of input and output.
+			//> from starkware.cairo.common.cairo_blake2s.blake2s_utils import IV, blake2s_compress
+			//> _n_packed_instances = int(ids.N_PACKED_INSTANCES)
+			//> assert 0 <= _n_packed_instances < 20
+			//> _blake2s_input_chunk_size_felts = int(ids.BLAKE2S_INPUT_CHUNK_SIZE_FELTS)
+			//> assert 0 <= _blake2s_input_chunk_size_felts < 100
+			//>
+			//> message = [0] * _blake2s_input_chunk_size_felts
+			//> modified_iv = [IV[0] ^ 0x01010020] + IV[1:]
+			//> output = blake2s_compress(
+			//>     message=message,
+			//>     h=modified_iv,
+			//>     t0=0,
+			//>     t1=0,
+			//>     f0=0xffffffff,
+			//>     f1=0,
+			//> )
+			//> padding = (message + modified_iv + [0, 0xffffffff] + output) * (_n_packed_instances - 1)
+			//> segments.write_arg(ids.blake2s_ptr_end, padding)
+
+			blake2sPtrEnd, err := hinter.ResolveAsAddress(vm, blake2sPtrEnd)
+			if err != nil {
+				return err
+			}
+
+			//> assert 0 <= _n_packed_instances < 20
+			// as N_PACKED_INSTANCES is a constant of 7, this can be skipped
+
+			//> assert 0 <= _blake2s_input_chunk_size_felts < 100
+			// as BLAKE2S_INPUT_CHUNK_SIZE_FELTS is a constant of 16, this can be skipped
+
+			message := make([]uint32, utils.INPUT_BLOCK_FELTS)
+			modifiedIv := utils.IV()
+			modifiedIv[0] = modifiedIv[0] ^ 0x01010020
+			output := utils.Blake2sCompress(message, modifiedIv, 0, 0, 0xffffffff, 0)
+			padding := message[:]
+			padding = append(padding, modifiedIv[:]...)
+			padding = append(padding, 0, 0xffffffff)
+			padding = append(padding, output[:]...)
+			fullPadding := []uint32{}
+			for i := uint64(0); i < utils.N_PACKED_INSTANCES-1; i++ {
+				fullPadding = append(fullPadding, padding...)
+			}
+
+			for _, val := range fullPadding {
+				mv := mem.MemoryValueFromInt(val)
+				if err != nil {
+					return err
+				}
+				err = vm.Memory.WriteToAddress(blake2sPtrEnd, &mv)
+				if err != nil {
+					return err
+				}
+				temp, err := blake2sPtrEnd.AddOffset(1)
+				if err != nil {
+					return err
+				}
+				*blake2sPtrEnd = temp
+
+			}
+			return nil
+		},
 	}
-	inputBlockFelt, err := resolver.GetResOperander("INPUT_BLOCK_FELTS")
+}
+
+func createBlake2sFinalizeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	blake2sPtrEnd, err := resolver.GetResOperander("blake2s_ptr_end")
 	if err != nil {
 		return nil, err
 	}
 
-	return newBlake2sFinalizeHint(blake2sPtrEnd, nPackedInstances, inputBlockFelt), nil
+	return newBlake2sFinalizeV3Hint(blake2sPtrEnd), nil
 }
 
 // Blake2sCompute hint computes the blake2s compress function and fills the value in the right position.

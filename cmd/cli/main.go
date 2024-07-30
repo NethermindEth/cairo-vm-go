@@ -13,11 +13,13 @@ import (
 
 func main() {
 	var proofmode bool
+	var buildMemory bool
+	var collectTrace bool
 	var maxsteps uint64
 	var entrypointOffset uint64
 	var traceLocation string
 	var memoryLocation string
-
+	var layoutName string
 	app := &cli.App{
 		Name:                 "cairo-vm",
 		Usage:                "A cairo virtual machine",
@@ -49,17 +51,35 @@ func main() {
 						Value:       0,
 						Destination: &entrypointOffset,
 					},
+					&cli.BoolFlag{
+						Name:        "collect_trace",
+						Usage:       "collects the trace and builds the relocated trace after execution",
+						Required:    false,
+						Destination: &collectTrace,
+					},
 					&cli.StringFlag{
 						Name:        "tracefile",
 						Usage:       "location to store the relocated trace",
 						Required:    false,
 						Destination: &traceLocation,
 					},
+					&cli.BoolFlag{
+						Name:        "build_memory",
+						Usage:       "builds the relocated memory after execution",
+						Required:    false,
+						Destination: &buildMemory,
+					},
 					&cli.StringFlag{
 						Name:        "memoryfile",
 						Usage:       "location to store the relocated memory",
 						Required:    false,
 						Destination: &memoryLocation,
+					},
+					&cli.StringFlag{
+						Name:        "layout",
+						Usage:       "specifies the set of builtins to be used",
+						Required:    false,
+						Destination: &layoutName,
 					},
 				},
 				Action: func(ctx *cli.Context) error {
@@ -76,10 +96,12 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
+
 					cairoZeroJson, err := zero.ZeroProgramFromJSON(content)
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
+
 					program, err := runnerzero.LoadCairoZeroProgram(cairoZeroJson)
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
@@ -91,7 +113,7 @@ func main() {
 					}
 
 					fmt.Println("Running....")
-					runner, err := runnerzero.NewRunner(program, hints, proofmode, maxsteps)
+					runner, err := runnerzero.NewRunner(program, hints, proofmode, maxsteps, layoutName)
 					if err != nil {
 						return fmt.Errorf("cannot create runner: %w", err)
 					}
@@ -111,15 +133,33 @@ func main() {
 					}
 
 					if proofmode {
-						trace, memory, err := runner.BuildProof()
-						if err != nil {
-							return fmt.Errorf("cannot build proof: %w", err)
+						if err := runner.EndRun(); err != nil {
+							return fmt.Errorf("cannot end run: %w", err)
 						}
+						if err := runner.FinalizeSegments(); err != nil {
+							return fmt.Errorf("cannot finalize segments: %w", err)
+						}
+					}
+
+					if proofmode || collectTrace {
+						trace, err := runner.BuildTrace()
+						if err != nil {
+							return fmt.Errorf("cannot build trace: %w", err)
+						}
+
 						if traceLocation != "" {
 							if err := os.WriteFile(traceLocation, trace, 0644); err != nil {
 								return fmt.Errorf("cannot write relocated trace: %w", err)
 							}
 						}
+					}
+
+					if proofmode || buildMemory {
+						memory, err := runner.BuildMemory()
+						if err != nil {
+							return fmt.Errorf("cannot build memory: %w", err)
+						}
+
 						if memoryLocation != "" {
 							if err := os.WriteFile(memoryLocation, memory, 0644); err != nil {
 								return fmt.Errorf("cannot write relocated memory: %w", err)

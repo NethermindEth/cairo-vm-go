@@ -5,6 +5,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/alecthomas/participle/v2"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp](participle.UseLookahead(10))
@@ -146,16 +147,12 @@ func (expression CastExp) Evaluate() (hinter.Reference, error) {
 	case hinter.Deref:
 		return result, nil
 	case DerefOffset:
+		rhsFelt := fp.NewElement(uint64(*result.Offset))
 		return hinter.BinaryOp{
 			Operator: result.Op,
 			Lhs:      result.Deref.Deref,
 			// TODO: why we're not using something like f.NewElement here?
-			Rhs: hinter.Immediate{
-				uint64(0),
-				uint64(0),
-				uint64(0),
-				uint64(*result.Offset),
-			},
+			Rhs: hinter.Immediate(rhsFelt),
 		}, nil
 	case DerefDeref:
 		return hinter.BinaryOp{
@@ -218,7 +215,7 @@ func (expression OffsetExp) Evaluate() (*int, error) {
 		negNumber := -*expression.NegNumber
 		return &negNumber, nil
 	default:
-		return nil, fmt.Errorf("Expected a number")
+		return nil, fmt.Errorf("expected a number")
 	}
 }
 
@@ -229,7 +226,7 @@ func (expression DerefExp) Evaluate() (any, error) {
 	}
 	cellRef, ok := cellRefExp.(hinter.CellRefer)
 	if !ok {
-		return nil, fmt.Errorf("Expected a CellRefer expression but got %s", cellRefExp)
+		return nil, fmt.Errorf("expected a CellRefer expression but got %s", cellRefExp)
 	}
 	return hinter.Deref{Deref: cellRef}, nil
 }
@@ -304,7 +301,7 @@ func (expression LeftExp) Evaluate() (any, error) {
 	case expression.DerefExp != nil:
 		return expression.DerefExp.Evaluate()
 	}
-	return nil, fmt.Errorf("Unexpected left expression in binary operation")
+	return nil, fmt.Errorf("unexpected left expression in binary operation")
 }
 
 func (expression RightExp) Evaluate() (any, error) {
@@ -314,7 +311,7 @@ func (expression RightExp) Evaluate() (any, error) {
 	case expression.Offset != nil:
 		return expression.Offset.Evaluate()
 	}
-	return nil, fmt.Errorf("Unexpected right expression in binary operation")
+	return nil, fmt.Errorf("unexpected right expression in binary operation")
 }
 
 func ParseIdentifier(value string) (hinter.Reference, error) {

@@ -11,10 +11,6 @@ import (
 func EcDoubleSlope(pointX, pointY, alpha, prime *big.Int) (big.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/python/math_utils.py#L151
 
-	if new(big.Int).Mod(pointY, prime).Cmp(big.NewInt(0)) == 0 {
-		return *big.NewInt(0), errors.New("point[1] % p == 0")
-	}
-
 	n := big.NewInt(3)
 	n.Mul(n, pointX)
 	n.Mul(n, pointX)
@@ -28,12 +24,6 @@ func EcDoubleSlope(pointX, pointY, alpha, prime *big.Int) (big.Int, error) {
 
 func LineSlope(point_aX, point_aY, point_bX, point_bY, prime *big.Int) (big.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/python/math_utils.py#L130
-
-	modValue := new(big.Int).Mod(new(big.Int).Sub(point_aX, point_bX), prime)
-
-	if modValue.Cmp(big.NewInt(0)) == 0 {
-		return *big.NewInt(0), errors.New("the slope of the line is invalid")
-	}
 
 	// Compute the difference of y-coordinates
 	n := new(big.Int).Sub(point_aY, point_bY)
@@ -129,10 +119,59 @@ func sign(n *big.Int) (int, big.Int) {
 
 func SafeDiv(x, y *big.Int) (big.Int, error) {
 	if y.Cmp(big.NewInt(0)) == 0 {
-		return *big.NewInt(0), fmt.Errorf("Division by zero.")
+		return *big.NewInt(0), fmt.Errorf("division by zero")
 	}
 	if new(big.Int).Mod(x, y).Cmp(big.NewInt(0)) != 0 {
-		return *big.NewInt(0), fmt.Errorf("%v is not divisible by %v.", x, y)
+		return *big.NewInt(0), fmt.Errorf("%v is not divisible by %v", x, y)
 	}
 	return *new(big.Int).Div(x, y), nil
+}
+
+func IsQuadResidue(x *fp.Element) bool {
+	// Implementation adapted from sympy implementation which can be found here :
+	// https://github.com/sympy/sympy/blob/d91b8ad6d36a59a879cc70e5f4b379da5fdd46ce/sympy/ntheory/residue_ntheory.py#L689
+	// We have omitted the prime as it will be CAIRO_PRIME
+
+	return x.IsZero() || x.IsOne() || x.Legendre() == 1
+}
+
+func ySquaredFromX(x, beta, fieldPrime *big.Int) *big.Int {
+	// Computes y^2 using the curve equation:
+	// y^2 = x^3 + alpha * x + beta (mod field_prime)
+	// We ignore alpha as it is a constant with a value of 1
+
+	ySquaredBigInt := new(big.Int).Set(x)
+	ySquaredBigInt.Mul(ySquaredBigInt, x).Mod(ySquaredBigInt, fieldPrime)
+	ySquaredBigInt.Mul(ySquaredBigInt, x).Mod(ySquaredBigInt, fieldPrime)
+	ySquaredBigInt.Add(ySquaredBigInt, x).Mod(ySquaredBigInt, fieldPrime)
+	ySquaredBigInt.Add(ySquaredBigInt, beta).Mod(ySquaredBigInt, fieldPrime)
+
+	return ySquaredBigInt
+}
+
+func Sqrt(x, p *big.Int) *big.Int {
+	// Finds the minimum non-negative integer m such that (m*m) % p == x.
+
+	halfPrimeBigInt := new(big.Int).Rsh(p, 1)
+	m := new(big.Int).ModSqrt(x, p)
+
+	if m.Cmp(halfPrimeBigInt) > 0 {
+		m.Sub(p, m)
+	}
+
+	return m
+}
+
+func RecoverY(x, beta, fieldPrime *big.Int) (*big.Int, error) {
+	ySquared := ySquaredFromX(x, beta, fieldPrime)
+	if IsQuadResidue(new(fp.Element).SetBigInt(ySquared)) {
+		return Sqrt(ySquared, fieldPrime), nil
+	}
+	return nil, fmt.Errorf("%s does not represent the x coordinate of a point on the curve", ySquared.String())
+}
+
+func GetCairoPrime() (big.Int, bool) {
+	// 2**251 + 17 * 2**192 + 1
+	cairoPrime, ok := new(big.Int).SetString("3618502788666131213697322783095070105623107215331596699973092056135872020481", 10)
+	return *cairoPrime, ok
 }

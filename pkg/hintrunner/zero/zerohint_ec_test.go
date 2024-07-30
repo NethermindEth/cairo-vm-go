@@ -12,6 +12,68 @@ import (
 
 func TestZeroHintEc(t *testing.T) {
 	runHinterTests(t, map[string][]hintTestCase{
+		"BigIntToUint256": {
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltUint64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("1")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltUint64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("1")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltString("77371252455336267181195264")),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("1")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("1")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltString("77371252455336267181195265")),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("2")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+					{Name: "low", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBigIntToUint256Hint(ctx.operanders["low"], ctx.operanders["x.d0"])
+				},
+				check: varValueEquals("low", feltString("154742504910672534362390528")),
+			},
+		},
 		"EcNegate": {
 			{
 				operanders: []*hintOperander{
@@ -160,6 +222,51 @@ func TestZeroHintEc(t *testing.T) {
 					return newEcNegateHint(ctx.operanders["x.d0"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("115792089237316195423511115915312127562362008772591693155831694873530722155557", 10)),
+			},
+		},
+		"DivModNSafeDivPlusOne": {
+			{
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					resBig := big.NewInt(100)
+					aBig := big.NewInt(200)
+					bBig := big.NewInt(199)
+					nBig := big.NewInt(20)
+
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"res": resBig, "a": aBig, "b": bBig, "N": nBig})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDivModNSafeDivPlusOneHint()
+				},
+				check: varValueInScopeEquals("value", big.NewInt(986)),
+			},
+		},
+		"DivModNPackedDivModExternalN": {
+			{
+				operanders: []*hintOperander{
+					{Name: "a.d0", Kind: apRelative, Value: feltString("986")},
+					{Name: "a.d1", Kind: apRelative, Value: feltString("23")},
+					{Name: "a.d2", Kind: apRelative, Value: feltString("43")},
+					{Name: "b.d0", Kind: apRelative, Value: feltString("657")},
+					{Name: "b.d1", Kind: apRelative, Value: feltString("45")},
+					{Name: "b.d2", Kind: apRelative, Value: feltString("2167")},
+				},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					value := bigIntString("45", 10)
+					err := ctx.ScopeManager.AssignVariable("N", value)
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newDivModNPackedDivModExternalN(ctx.operanders["a.d0"], ctx.operanders["b.d0"])
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": big.NewInt(14),
+					"res":   big.NewInt(14),
+				}),
 			},
 		},
 		"NondetBigint3V1": {
@@ -366,7 +473,12 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point1.y.d2", Kind: apRelative, Value: feltUint64(211245645)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
+
+					secPBig, ok := secp_utils.GetSecPBig()
+					if !ok {
+						return nil
+					}
+					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"], secPBig)
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"slope": bigIntString("99065496658741969395000079476826955370154683653966841736214499259699304892273", 10),
@@ -395,7 +507,11 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point1.y.d2", Kind: apRelative, Value: &utils.FeltZero},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
+					secPBig, ok := secp_utils.GetSecPBig()
+					if !ok {
+						return nil
+					}
+					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"], secPBig)
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"slope": bigIntString("0", 10),
@@ -425,7 +541,11 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point1.y.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"])
+					secPBig, ok := secp_utils.GetSecPBig()
+					if !ok {
+						return nil
+					}
+					return newFastEcAddAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point0.x.d0"], ctx.operanders["point1.x.d0"], secPBig)
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"slope": bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
@@ -502,7 +622,7 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
-		"EcDoubleSlopeV1": {
+		"EcDoubleSlope": {
 			{
 				operanders: []*hintOperander{
 					{Name: "point.x.d0", Kind: apRelative, Value: &utils.FeltZero},
@@ -515,7 +635,7 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newEcDoubleSlopeV1Hint(ctx.operanders["point.x.d0"])
 				},
-				errCheck: errorTextContains("point[1] % p == 0"),
+				errCheck: errorTextContains("point[1] modulo p == 0"),
 			},
 			{
 				operanders: []*hintOperander{
@@ -569,7 +689,7 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
-		"EcDoubleAssignNewXV1": {
+		"EcDoubleAssignNewX": {
 			{
 				operanders: []*hintOperander{
 					{Name: "slope.d0", Kind: apRelative, Value: &utils.FeltZero},
@@ -583,7 +703,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point.y.d2", Kind: apRelative, Value: &utils.FeltZero},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
+					return newEcDoubleAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"slope": bigIntString("0", 10),
@@ -607,7 +727,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point.y.d2", Kind: apRelative, Value: feltString("6837128718738732781737")},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
+					return newEcDoubleAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"x":     bigIntString("46003884165973832456933262296354598115596485770084020998681742081", 10),
@@ -631,7 +751,7 @@ func TestZeroHintEc(t *testing.T) {
 					{Name: "point.y.d2", Kind: apRelative, Value: feltString("115792089237316195423570985008687907853269984665640564039457584007908834671663")},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newEcDoubleAssignNewXV1Hint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
+					return newEcDoubleAssignNewXHint(ctx.operanders["slope.d0"], ctx.operanders["point.x.d0"])
 				},
 				check: allVarValueInScopeEquals(map[string]any{
 					"x":     bigIntString("-20441714640463444415550039378657358828977094550744864608392924301285287608509921726516187492362679433566942659569", 10),
@@ -708,7 +828,7 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
-		"ComputeSlopeV1": {
+		"ComputeSlope": {
 			{
 				operanders: []*hintOperander{
 					{Name: "point0.x.d0", Kind: apRelative, Value: &utils.FeltZero},
@@ -754,7 +874,7 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
-		"ReduceV1": {
+		"Reduce": {
 			{
 				operanders: []*hintOperander{
 					{Name: "x.d0", Kind: apRelative, Value: &utils.FeltZero},
@@ -765,7 +885,7 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newReduceV1Hint(ctx.operanders["x.d0"])
+					return newReduceHint(ctx.operanders["x.d0"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("0", 10)),
 			},
@@ -779,7 +899,7 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newReduceV1Hint(ctx.operanders["x.d0"])
+					return newReduceHint(ctx.operanders["x.d0"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("1", 10)),
 			},
@@ -793,7 +913,7 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newReduceV1Hint(ctx.operanders["x.d0"])
+					return newReduceHint(ctx.operanders["x.d0"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("10", 10)),
 			},
@@ -807,7 +927,7 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newReduceV1Hint(ctx.operanders["x.d0"])
+					return newReduceHint(ctx.operanders["x.d0"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("17958932119522135058886879379160190656204633450479617", 10)),
 			},
@@ -821,7 +941,7 @@ func TestZeroHintEc(t *testing.T) {
 					hinter.InitializeScopeManager(ctx, map[string]any{})
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newReduceV1Hint(ctx.operanders["x.d0"])
+					return newReduceHint(ctx.operanders["x.d0"])
 				},
 				check: varValueInScopeEquals("value", bigIntString("17958932119522135058886879379160190656204633450479616", 10)),
 			},
@@ -844,6 +964,390 @@ func TestZeroHintEc(t *testing.T) {
 					return newEcMulInnerHint(ctx.operanders["scalar"])
 				},
 				check: apValueEquals(&utils.FeltOne),
+			},
+		},
+		"IsZeroNondet": {
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("0", 10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroNondetHint()
+				},
+				check: apValueEquals(feltUint64(1)),
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("42", 10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroNondetHint()
+				},
+				check: apValueEquals(feltUint64(0)),
+			},
+		},
+		"IsZeroPack": {
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("42")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroPackHint(ctx.operanders["x.d0"])
+				},
+				check: varValueInScopeEquals("x", big.NewInt(42)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("100")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("99")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("88")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroPackHint(ctx.operanders["x.d0"])
+				},
+				check: varValueInScopeEquals("x", bigIntString("526795342172649295060681798242672774947232024188944484", 10)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("77371252455336262886226991")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("77371252455336267181195263")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("19342813113834066795298815")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroPackHint(ctx.operanders["x.d0"])
+				},
+				check: varValueInScopeEquals("x", big.NewInt(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x.d0", Kind: apRelative, Value: feltString("3618502788666131213697322783095070105623107215331596699973092056135872020481")},
+					{Name: "x.d1", Kind: apRelative, Value: feltString("0")},
+					{Name: "x.d2", Kind: apRelative, Value: feltString("0")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroPackHint(ctx.operanders["x.d0"])
+				},
+				check: varValueInScopeEquals("x", big.NewInt(0)),
+			},
+		},
+		"IsZeroDivMod": {
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("1", 10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroDivModHint()
+				},
+				check: varValueInScopeEquals("value", bigIntString("1", 10)),
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("115792089237316195423570985008687907853269984665640564039457584007908834671664", 10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroDivModHint()
+				},
+				check: varValueInScopeEquals("value", bigIntString("1", 10)),
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("57662894568246526582652685623", 10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroDivModHint()
+				},
+				check: varValueInScopeEquals("value", bigIntString("77726902514058095204421112730928006705863972015508190238152451720695936255632", 10)),
+			},
+			{
+				operanders: []*hintOperander{},
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					err := ctx.ScopeManager.AssignVariable("x", bigIntString("28948022309329048855892746252171976963317496166410141009864396001977208667916", 10))
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIsZeroDivModHint()
+				},
+				check: varValueInScopeEquals("value", bigIntString("4", 10)),
+			},
+		},
+		"RecoverY": {
+			{
+				operanders: []*hintOperander{
+					{Name: "x", Kind: apRelative, Value: feltString("2497468900767850684421727063357792717599762502387246235265616708902555305129")},
+					{Name: "p.x", Kind: uninitialized},
+					{Name: "p.y", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newRecoverYHint(ctx.operanders["x"], ctx.operanders["p.x"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"p.x": feltString("2497468900767850684421727063357792717599762502387246235265616708902555305129"),
+					"p.y": feltString("205857351767627712295703269674687767888261140702556021834663354704341414042"),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x", Kind: apRelative, Value: feltString("205857351767627712295703269674687767888261140702556021834663354704341414042")},
+					{Name: "p.x", Kind: uninitialized},
+					{Name: "p.y", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newRecoverYHint(ctx.operanders["x"], ctx.operanders["p.x"])
+				},
+				errCheck: errorTextContains("does not represent the x coordinate of a point on the curve"),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x", Kind: apRelative, Value: feltString("3004956058830981475544150447242655232275382685012344776588097793621230049020")},
+					{Name: "p.x", Kind: uninitialized},
+					{Name: "p.y", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newRecoverYHint(ctx.operanders["x"], ctx.operanders["p.x"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"p.x": feltString("3004956058830981475544150447242655232275382685012344776588097793621230049020"),
+					"p.y": feltString("386236054595386575795345623791920124827519018828430310912260655089307618738"),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x", Kind: apRelative, Value: feltString("138597138396302485058562442936200017709939129389766076747102238692717075504")},
+					{Name: "p.x", Kind: uninitialized},
+					{Name: "p.y", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newRecoverYHint(ctx.operanders["x"], ctx.operanders["p.x"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"p.x": feltString("138597138396302485058562442936200017709939129389766076747102238692717075504"),
+					"p.y": feltString("1116947097676727397390632683964789044871379304271794004325353078455954290524"),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x", Kind: apRelative, Value: feltString("71635783675677659163985681365816684268526846280467284682674852685628658265882465826464572245")},
+					{Name: "p.x", Kind: uninitialized},
+					{Name: "p.y", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newRecoverYHint(ctx.operanders["x"], ctx.operanders["p.x"])
+				},
+				check: allVarValueEquals(map[string]*fp.Element{
+					"p.x": feltString("71635783675677659163985681365816684268526846280467284682674852685628658265882465826464572245"),
+					"p.y": feltString("903372048565605391120071143811887302063650776015287438589675702929494830362"),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "x", Kind: apRelative, Value: feltString("42424242424242424242")},
+					{Name: "p.x", Kind: uninitialized},
+					{Name: "p.y", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newRecoverYHint(ctx.operanders["x"], ctx.operanders["p.x"])
+				},
+				errCheck: errorTextContains("does not represent the x coordinate of a point on the curve"),
+			},
+		},
+		"RandomEcPoint": {
+			{
+				operanders: []*hintOperander{
+					{Name: "p.x", Kind: apRelative, Value: feltString("3004956058830981475544150447242655232275382685012344776588097793621230049020")},
+					{Name: "p.y", Kind: apRelative, Value: feltString("3232266734070744637901977159303149980795588196503166389060831401046564401743")},
+					{Name: "m", Kind: apRelative, Value: feltUint64(34)},
+					{Name: "q.x", Kind: apRelative, Value: feltString("2864041794633455918387139831609347757720597354645583729611044800117714995244")},
+					{Name: "q.y", Kind: apRelative, Value: feltString("2252415379535459416893084165764951913426528160630388985542241241048300343256")},
+					{Name: "s.x", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newRandomEcPointHint(
+						ctx.operanders["p.x"],
+						ctx.operanders["m"],
+						ctx.operanders["q.x"],
+						ctx.operanders["s.x"],
+					)
+				},
+				check: consecutiveVarValueEquals("s.x", []*fp.Element{
+					feltString("96578541406087262240552119423829615463800550101008760434566010168435227837635"),
+					feltString("3412645436898503501401619513420382337734846074629040678138428701431530606439"),
+				}),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "p.x", Kind: apRelative, Value: feltUint64(12345)},
+					{Name: "p.y", Kind: apRelative, Value: feltUint64(6789)},
+					{Name: "m", Kind: apRelative, Value: feltUint64(101)},
+					{Name: "q.x", Kind: apRelative, Value: feltUint64(98765)},
+					{Name: "q.y", Kind: apRelative, Value: feltUint64(4321)},
+					{Name: "s.x", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newRandomEcPointHint(
+						ctx.operanders["p.x"],
+						ctx.operanders["m"],
+						ctx.operanders["q.x"],
+						ctx.operanders["s.x"],
+					)
+				},
+				check: consecutiveVarValueEquals("s.x", []*fp.Element{
+					feltString("39190969885360777615413526676655883809466222002423777590585892821354159079496"),
+					feltString("533983185449702770508526175744869430974740140562200547506631069957329272485"),
+				}),
+			},
+		},
+		"ChainedEcOp": {
+			{
+				operanders: []*hintOperander{
+					{Name: "len", Kind: apRelative, Value: feltUint64(3)},
+					{Name: "p.x", Kind: apRelative, Value: feltString("3004956058830981475544150447242655232275382685012344776588097793621230049020")},
+					{Name: "p.y", Kind: apRelative, Value: feltString("3232266734070744637901977159303149980795588196503166389060831401046564401743")},
+					{Name: "m", Kind: apRelative, Value: addr(8)},
+					{Name: "m_value", Kind: apRelative, Value: feltUint64(34)},
+					{Name: "m_value", Kind: apRelative, Value: feltUint64(34)},
+					{Name: "m_value", Kind: apRelative, Value: feltUint64(34)},
+					{Name: "q.q1.x", Kind: apRelative, Value: feltString("2864041794633455918387139831609347757720597354645583729611044800117714995244")},
+					{Name: "q.q1.y", Kind: apRelative, Value: feltString("2252415379535459416893084165764951913426528160630388985542241241048300343256")},
+					{Name: "q.q2.x", Kind: apRelative, Value: feltString("2864041794633455918387139831609347757720597354645583729611044800117714995244")},
+					{Name: "q.q2.y", Kind: apRelative, Value: feltString("2252415379535459416893084165764951913426528160630388985542241241048300343256")},
+					{Name: "q.q3.x", Kind: apRelative, Value: feltString("2864041794633455918387139831609347757720597354645583729611044800117714995244")},
+					{Name: "q.q3.y", Kind: apRelative, Value: feltString("2252415379535459416893084165764951913426528160630388985542241241048300343256")},
+					{Name: "q", Kind: apRelative, Value: addrWithSegment(1, 11)},
+					{Name: "s", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newChainedEcOpHint(
+						ctx.operanders["len"],
+						ctx.operanders["p.x"],
+						ctx.operanders["m"],
+						ctx.operanders["q"],
+						ctx.operanders["s"],
+					)
+				},
+				check: consecutiveVarValueEquals("s", []*fp.Element{
+					feltString("1354562415074475070179359167082942891834423311678180448592849484844152837347"),
+					feltString("907662328694455187848008017177970257426839229889571025406355869359245158736"),
+				}),
+			},
+		},
+		"EcRecoverDivModNPacked": {
+			{
+				operanders: []*hintOperander{
+					{Name: "n.x", Kind: apRelative, Value: feltUint64(177)},
+					{Name: "n.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "n.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "x.x", Kind: apRelative, Value: feltUint64(25)},
+					{Name: "x.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "x.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "s.x", Kind: apRelative, Value: feltUint64(5)},
+					{Name: "s.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "s.z", Kind: apRelative, Value: feltUint64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcRecoverDivModNPackedHint(
+						ctx.operanders["n.x"],
+						ctx.operanders["x.x"],
+						ctx.operanders["s.x"],
+					)
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": big.NewInt(5),
+					"res":   big.NewInt(5),
+				}),
+			},
+		},
+		"EcRecoverSubAB": {
+			{
+				operanders: []*hintOperander{
+					{Name: "a.x", Kind: apRelative, Value: feltUint64(100)},
+					{Name: "a.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "a.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.x", Kind: apRelative, Value: feltUint64(25)},
+					{Name: "b.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.z", Kind: apRelative, Value: feltUint64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcRecoverSubABHint(
+						ctx.operanders["a.x"],
+						ctx.operanders["b.x"],
+					)
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": big.NewInt(75),
+					"res":   big.NewInt(75),
+				}),
+			},
+		},
+		"EcRecoverProductMod": {
+			{
+				operanders: []*hintOperander{
+					{Name: "a.x", Kind: apRelative, Value: feltUint64(60)},
+					{Name: "a.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "a.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.x", Kind: apRelative, Value: feltUint64(2)},
+					{Name: "b.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "b.z", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "m.x", Kind: apRelative, Value: feltUint64(100)},
+					{Name: "m.y", Kind: apRelative, Value: feltUint64(0)},
+					{Name: "m.z", Kind: apRelative, Value: feltUint64(0)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcRecoverProductModHint(
+						ctx.operanders["a.x"],
+						ctx.operanders["b.x"],
+						ctx.operanders["m.x"],
+					)
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value":   big.NewInt(20),
+					"res":     big.NewInt(20),
+					"product": big.NewInt(120),
+					"m":       big.NewInt(100),
+				}),
+			},
+		},
+		"EcRecoverProductDivM": {
+			{
+				ctxInit: func(ctx *hinter.HintRunnerContext) {
+					productBig := big.NewInt(120)
+					mBig := big.NewInt(100)
+
+					err := ctx.ScopeManager.AssignVariables(map[string]any{"product": productBig, "m": mBig})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newEcRecoverProductDivMHint()
+				},
+				check: allVarValueInScopeEquals(map[string]any{
+					"value": big.NewInt(1),
+					"k":     big.NewInt(1),
+				}),
 			},
 		},
 	},

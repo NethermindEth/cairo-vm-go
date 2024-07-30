@@ -3,6 +3,7 @@ package vm
 import (
 	"encoding/binary"
 	"fmt"
+	"math"
 
 	a "github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -70,8 +71,11 @@ type Trace struct {
 
 // This type represents the current execution context of the vm
 type VirtualMachineConfig struct {
-	// If true, the vm outputs the trace and the relocated memory at the end of execution
+	// If true, the vm outputs the trace and the relocated memory at the end of execution and finalize segments
+	// in order for the prover to create a proof
 	ProofMode bool
+	// If true, the vm collects the relocated trace at the end of execution, without finalizing segments
+	CollectTrace bool
 }
 
 type VirtualMachine struct {
@@ -82,15 +86,19 @@ type VirtualMachine struct {
 	config  VirtualMachineConfig
 	// instructions cache
 	instructions map[uint64]*a.Instruction
+	// RcLimitsMin and RcLimitsMax define the range of values of instructions offsets, used for checking the number of potential range checks holes
+	RcLimitsMin uint16
+	RcLimitsMax uint16
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
 func NewVirtualMachine(
 	initialContext Context, memory *mem.Memory, config VirtualMachineConfig,
 ) (*VirtualMachine, error) {
+
 	// Initialize the trace if necesary
 	var trace []Context
-	if config.ProofMode {
+	if config.ProofMode || config.CollectTrace {
 		trace = make([]Context, 0)
 	}
 
@@ -100,6 +108,8 @@ func NewVirtualMachine(
 		Trace:        trace,
 		config:       config,
 		instructions: make(map[uint64]*a.Instruction),
+		RcLimitsMin:  math.MaxUint16,
+		RcLimitsMax:  0,
 	}, nil
 }
 
@@ -131,7 +141,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 	}
 
 	// store the trace before state change
-	if vm.config.ProofMode {
+	if vm.config.ProofMode || vm.config.CollectTrace {
 		vm.Trace = append(vm.Trace, vm.Context)
 	}
 
@@ -144,7 +154,18 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 	return nil
 }
 
+const RC_OFFSET_BITS = 16
+
 func (vm *VirtualMachine) RunInstruction(instruction *a.Instruction) error {
+
+	var off0 int = int(instruction.OffDest) + 1<<(RC_OFFSET_BITS-1)
+	var off1 int = int(instruction.OffOp0) + (1 << (RC_OFFSET_BITS - 1))
+	var off2 int = int(instruction.OffOp1) + (1 << (RC_OFFSET_BITS - 1))
+
+	value := uint16(utils.Max(off0, utils.Max(off1, off2)))
+	vm.RcLimitsMax = utils.Max(vm.RcLimitsMax, value)
+	value = uint16(utils.Min(off0, utils.Min(off1, off2)))
+	vm.RcLimitsMin = utils.Min(vm.RcLimitsMin, value)
 	dstAddr, err := vm.getDstAddr(instruction)
 	if err != nil {
 		return fmt.Errorf("dst cell: %w", err)
@@ -196,15 +217,6 @@ func (vm *VirtualMachine) RunInstruction(instruction *a.Instruction) error {
 	vm.Context.Fp = nextFp
 
 	return nil
-}
-
-// It returns the current trace entry, the public memory, and the occurrence of an error
-func (vm *VirtualMachine) ExecutionTrace() ([]Trace, error) {
-	if !vm.config.ProofMode {
-		return nil, fmt.Errorf("proof mode is off")
-	}
-
-	return vm.relocateTrace(), nil
 }
 
 func (vm *VirtualMachine) getDstAddr(instruction *a.Instruction) (mem.MemoryAddress, error) {
@@ -519,8 +531,10 @@ func (vm *VirtualMachine) updateFp(instruction *a.Instruction, dstAddr *mem.Memo
 	}
 }
 
-func (vm *VirtualMachine) relocateTrace() []Trace {
-	// one is added, because prover expect that the first element to be on
+// It returns the trace after relocation, i.e, relocates pc, ap and fp for each step
+// to be their real address value
+func (vm *VirtualMachine) RelocateTrace() []Trace {
+	// one is added, because prover expect that the first element to be
 	// indexed on 1 instead of 0
 	relocatedTrace := make([]Trace, len(vm.Trace))
 	totalBytecode := vm.Memory.Segments[ProgramSegment].Len() + 1
@@ -540,7 +554,7 @@ func (vm *VirtualMachine) RelocateMemory() []*f.Element {
 	// returned has nil as its first element.
 	relocatedMemory := make([]*f.Element, maxMemoryUsed)
 	for i, segment := range vm.Memory.Segments {
-		for j := uint64(0); j < segment.Len(); j++ {
+		for j := uint64(0); j < segment.RealLen(); j++ {
 			cell := segment.Data[j]
 			if !cell.Known() {
 				continue
@@ -553,7 +567,6 @@ func (vm *VirtualMachine) RelocateMemory() []*f.Element {
 			} else {
 				felt, _ = cell.FieldElement()
 			}
-
 			relocatedMemory[segmentsOffsets[i]+j] = felt
 		}
 	}

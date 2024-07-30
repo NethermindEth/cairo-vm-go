@@ -12,26 +12,25 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-// VerifyZero hint verifies that a packed value is zero modulo the SECP256R1 prime
+// VerifyZero hint verifies that a packed value is zero modulo the secp256k1 prime
 // and stores in memory the quotient of the modular divison of the packed value by
-// SECP256R1 prime
+// secp256k1 prime
 //
 // `newVerifyZeroHint` takes 2 operanders as arguments
 //   - `value` is the value that will be verified
 //   - `q` is the variable that will store the quotient of the modular division
 //
 // `newVerifyZeroHint` writes the quotient of the modular division of the packed value
-// by SECP256R1 prime to the memory address corresponding to `q`
+// by secp256k1 prime to the memory address corresponding to `q`
 func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "VerifyZero",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//>
 			//> q, r = divmod(pack(ids.val, PRIME), SECP_P)
 			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
 			//> ids.q = q % PRIME
-
-			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 
 			valAddr, err := val.GetAddress(vm)
 			if err != nil {
@@ -43,6 +42,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
+			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
 			secPBig, ok := secp_utils.GetSecPBig()
 			if !ok {
 				return fmt.Errorf("GetSecPBig failed")
@@ -68,6 +68,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			qMv := mem.MemoryValueFromFieldElement(qFelt)
 			return vm.Memory.WriteToAddress(&qAddr, &qMv)
 		},
@@ -88,6 +89,86 @@ func createVerifyZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	return newVerifyZeroHint(val, q), nil
 }
 
+// VerifyZeroV3 hint verifies that a packed value is zero modulo the Curve25519 prime
+// and stores in memory the quotient of the modular divison of the packed value by
+// Curve25519 prime
+//
+// `newVerifyZeroV3Hint` takes 2 operanders as arguments
+//   - `value` is the value that will be verified
+//   - `q` is the variable that will store the quotient of the modular division
+//
+// `newVerifyZeroV3Hint` writes the quotient of the modular division of the packed value
+// by Curve25519 prime to the memory address corresponding to `q`
+func newVerifyZeroV3Hint(val, q hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "VerifyZeroV3",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> SECP_P = 2**255-19
+			//> to_assert = pack(ids.val, PRIME)
+			//> q, r = divmod(pack(ids.val, PRIME), SECP_P)
+			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
+			//> ids.q = q % PRIME
+
+			valAddr, err := val.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			valValues, err := vm.Memory.ResolveAsBigInt3(valAddr)
+			if err != nil {
+				return err
+			}
+
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			packedValue, err := secp_utils.SecPPacked(valValues)
+			if err != nil {
+				return err
+			}
+
+			//> SECP_P = 2**255-19
+			secPBig, ok := secp_utils.GetCurve25519PBig()
+			if !ok {
+				return fmt.Errorf("GetSecPBig failed")
+			}
+
+			//> q, r = divmod(pack(ids.val, PRIME), SECP_P)
+			qBig, rBig := new(big.Int), new(big.Int)
+			qBig.DivMod(&packedValue, &secPBig, rBig)
+
+			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
+			if rBig.Cmp(big.NewInt(0)) != 0 {
+				return fmt.Errorf("verify_zero: Invalid input (%v, %v, %v)", valValues[0], valValues[1], valValues[2])
+			}
+
+			//> ids.q = q % PRIME
+			qBig.Mod(qBig, fp.Modulus())
+			qFelt := new(fp.Element).SetBigInt(qBig)
+			qAddr, err := q.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			qMv := mem.MemoryValueFromFieldElement(qFelt)
+			return vm.Memory.WriteToAddress(&qAddr, &qMv)
+		},
+	}
+}
+
+func createVerifyZeroV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	val, err := resolver.GetResOperander("val")
+	if err != nil {
+		return nil, err
+	}
+
+	q, err := resolver.GetResOperander("q")
+	if err != nil {
+		return nil, err
+	}
+
+	return newVerifyZeroV3Hint(val, q), nil
+}
+
 // VerifyECDSASignature hint writes an ECDSA signature to a given address
 //
 // `newVerifyECDSASignatureHint` takes 3 operanders as arguments
@@ -101,22 +182,27 @@ func newVerifyECDSASignatureHint(ecdsaPtr, signature_r, signature_s hinter.ResOp
 		Name: "VerifyECDSASignature",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ecdsa_builtin.add_signature(ids.ecdsa_ptr.address_, (ids.signature_r, ids.signature_s))
+
 			ecdsaPtrAddr, err := hinter.ResolveAsAddress(vm, ecdsaPtr)
 			if err != nil {
 				return err
 			}
+
 			signature_rFelt, err := hinter.ResolveAsFelt(vm, signature_r)
 			if err != nil {
 				return err
 			}
+
 			signature_sFelt, err := hinter.ResolveAsFelt(vm, signature_s)
 			if err != nil {
 				return err
 			}
+
 			ECDSA_segment, ok := vm.Memory.FindSegmentWithBuiltin(builtins.ECDSAName)
 			if !ok {
 				return fmt.Errorf("ECDSA segment not found")
 			}
+
 			ECDSA_builtinRunner := (ECDSA_segment.BuiltinRunner).(*builtins.ECDSA)
 			return ECDSA_builtinRunner.AddSignature(ecdsaPtrAddr.Offset, signature_rFelt, signature_sFelt)
 		},
@@ -159,9 +245,10 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 			//> y_square_int = (x_cube_int + ids.BETA) % SECP_P
 			//> y = pow(y_square_int, (SECP_P + 1) // 4, SECP_P)
 			//> if ids.v % 2 == y % 2:
-			//>	 value = y
+			//>		value = y
 			//> else:
-			//>	 value = (-y) % SECP_P
+			//>		value = (-y) % SECP_P
+
 			xCubeAddr, err := xCube.GetAddress(vm)
 			if err != nil {
 				return err
@@ -184,6 +271,7 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
+
 			xCubeIntBig.Mod(&xCubeIntBig, &secpBig)
 
 			//> y_square_int = (x_cube_int + ids.BETA) % SECP_P
@@ -206,6 +294,7 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 			} else {
 				value.Mod(value.Neg(y), &secpBig)
 			}
+
 			return ctx.ScopeManager.AssignVariable("value", value)
 		},
 	}
@@ -236,6 +325,7 @@ func newImportSecp256R1PHint() hinter.Hinter {
 		Name: "ImportSecp256R1P",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp256r1_utils import SECP256R1_P as SECP_P
+
 			SECP256R1_PBig, ok := secp_utils.GetSecp256R1_P()
 			if !ok {
 				return fmt.Errorf("SECP256R1_P failed")
@@ -261,22 +351,22 @@ func newDivModSafeDivHint() hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> value = k = safe_div(res * b - a, N)
 
-			res, err := ctx.ScopeManager.GetVariableValueAsBigInt("res")
+			res, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "res")
 			if err != nil {
 				return err
 			}
 
-			a, err := ctx.ScopeManager.GetVariableValueAsBigInt("a")
+			a, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "a")
 			if err != nil {
 				return err
 			}
 
-			b, err := ctx.ScopeManager.GetVariableValueAsBigInt("b")
+			b, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "b")
 			if err != nil {
 				return err
 			}
 
-			N, err := ctx.ScopeManager.GetVariableValueAsBigInt("N")
+			N, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "N")
 			if err != nil {
 				return err
 			}
@@ -309,6 +399,7 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import N, pack
 			//> from starkware.python.math_utils import div_mod, safe_div
+			//>
 			//> a = pack(ids.a, PRIME)
 			//> b = pack(ids.b, PRIME)
 			//> value = res = div_mod(a, b, N)
@@ -355,9 +446,10 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			valueBig := new(big.Int).Set(&resBig)
 
-			return ctx.ScopeManager.AssignVariable("value", valueBig)
+			value_Big := new(big.Int).Set(&resBig)
+
+			return ctx.ScopeManager.AssignVariables(map[string](any){"value": value_Big, "res": &resBig, "a": &aPackedBig, "b": &bPackedBig, "N": &nBig})
 		},
 	}
 }

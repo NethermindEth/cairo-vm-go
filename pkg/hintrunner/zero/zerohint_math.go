@@ -501,11 +501,11 @@ func createIsNNOutOfRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 //
 // `newIsPositiveHint` takes 2 operanders as arguments
 //   - `value` is the value that will be evaluated
-//   - `dst` is the address where to write the result in memmory
+//   - `dst` is the address where to write the result in memory
 //
 // `newIsPositiveHint` writes 1 or 0 to `dest` address, depending on
 // whether `value` is positive or negative in the context, respectively
-func newIsPositiveHint(value, dst hinter.ResOperander) hinter.Hinter {
+func newIsPositiveHint(value, isPositive hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsPositive",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -513,7 +513,7 @@ func newIsPositiveHint(value, dst hinter.ResOperander) hinter.Hinter {
 			//> ids.is_positive = 1 if is_positive(
 			//>     value=ids.value, prime=PRIME, rc_bound=range_check_builtin.bound) else 0
 
-			isPositiveAddr, err := dst.GetAddress(vm)
+			isPositiveAddr, err := isPositive.GetAddress(vm)
 			if err != nil {
 				return err
 			}
@@ -541,12 +541,12 @@ func createIsPositiveHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 		return nil, err
 	}
 
-	output, err := resolver.GetResOperander("output")
+	isPositive, err := resolver.GetResOperander("is_positive")
 	if err != nil {
 		return nil, err
 	}
 
-	return newIsPositiveHint(value, output), nil
+	return newIsPositiveHint(value, isPositive), nil
 }
 
 // SplitIntAssertRange hint asserts that the value to split in `SplitInt`
@@ -598,12 +598,12 @@ func createSplitIntAssertRangeHinter(resolver hintReferenceResolver) (hinter.Hin
 // and writes to the `output` memory address the calculated limb
 func newSplitIntHint(output, value, base, bound hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "SplitIntHint",
+		Name: "SplitInt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> memory[ids.output] = res = (int(ids.value) % PRIME) % ids.base
 			//> assert res < ids.bound, f'split_int(): Limb {res} is out of range.'
 
-			outputAddr, err := output.GetAddress(vm)
+			outputPtr, err := hinter.ResolveAsAddress(vm, output)
 			if err != nil {
 				return err
 			}
@@ -630,7 +630,7 @@ func newSplitIntHint(output, value, base, bound hinter.ResOperander) hinter.Hint
 
 			v := memory.MemoryValueFromFieldElement(&result)
 
-			return vm.Memory.WriteToAddress(&outputAddr, &v)
+			return vm.Memory.WriteToAddress(outputPtr, &v)
 		},
 	}
 }
@@ -664,7 +664,7 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 //
 // `newPowHint` takes 2 operanders as arguments
 //   - `locs` is the variable that will store the result
-//   - `prevLocs` is the the variable used to calculate the exponent
+//   - `prevLocs` is the variable used to calculate the exponent
 //
 // `newPowHint` writes to the memory address of `locs` variable the value of the least
 // significant bit of the exponent of `prevLocs` variable module a prime field
@@ -867,13 +867,21 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 		Name: "SignedDivRem",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.math_utils import as_int, assert_integer
+			//>
 			//> assert_integer(ids.div)
-			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, f'div={hex(ids.div)} is out of the valid range.'
+			//> assert 0 < ids.div <= PRIME // range_check_builtin.bound, \
+			//> 	f'div={hex(ids.div)} is out of the valid range.'
+			//>
 			//> assert_integer(ids.bound)
-			//> assert ids.bound <= range_check_builtin.bound // 2, f'bound={hex(ids.bound)} is out of the valid range.'
+			//> assert ids.bound <= range_check_builtin.bound // 2, \
+			//> 	f'bound={hex(ids.bound)} is out of the valid range.'
+			//>
 			//> int_value = as_int(ids.value, PRIME)
 			//> q, ids.r = divmod(int_value, ids.div)
-			//> assert -ids.bound <= q < ids.bound, f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
+			//>
+			//> assert -ids.bound <= q < ids.bound, \
+			//> 	f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'
+			//>
 			//> ids.biased_q = q + ids.bound
 
 			//> assert_integer(ids.div)
@@ -1039,7 +1047,6 @@ func createSqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 //   - `r` is the variable that will store the remainder of the modular division
 //
 // `newUnsignedDivRemHinter` writes `q` and `r` values to their respective memory address
-
 func newUnsignedDivRemHint(value, div, q, r hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UnsignedDivRem",
@@ -1145,40 +1152,25 @@ func newIsQuadResidueHint(x, y hinter.ResOperander) hinter.Hinter {
 			xBigInt := math_utils.AsInt(x)
 
 			var value = memory.MemoryValue{}
+			var result *fp.Element = new(fp.Element)
 
-			if x.IsZero() || x.IsOne() {
-				value = memory.MemoryValueFromFieldElement(x)
+			primeBigInt, ok := math_utils.GetCairoPrime()
+			if !ok {
+				return fmt.Errorf("GetCairoPrime failed")
+			}
 
+			if math_utils.IsQuadResidue(x) {
+				result.SetBigInt(math_utils.Sqrt(&xBigInt, &primeBigInt))
 			} else {
-				var result *fp.Element = new(fp.Element)
-
-				if x.Legendre() == 1 {
-					// result = x.Sqrt(x)
-
-					const primeString = "3618502788666131213697322783095070105623107215331596699973092056135872020481"
-					primeBigInt, ok := new(big.Int).SetString(primeString, 10)
-					if !ok {
-						panic("failed to convert prime string to big.Int")
-					}
-
-					// divide primeBigInt by 2
-					halfPrimeBigInt := new(big.Int).Rsh(primeBigInt, 1)
-
-					tempResult := new(big.Int).ModSqrt(&xBigInt, primeBigInt)
-
-					// ensures that tempResult is the smaller of the two possible square roots in the prime field.
-					if tempResult.Cmp(halfPrimeBigInt) > 0 {
-						tempResult.Sub(primeBigInt, tempResult)
-					}
-
-					result.SetBigInt(tempResult)
-
-				} else {
-					result = x.Sqrt(new(fp.Element).Div(x, new(fp.Element).SetUint64(3)))
+				y, err := math_utils.Divmod(&xBigInt, big.NewInt(3), &primeBigInt)
+				if err != nil {
+					return err
 				}
 
-				value = memory.MemoryValueFromFieldElement(result)
+				result.SetBigInt(math_utils.Sqrt(&y, &primeBigInt))
 			}
+
+			value = memory.MemoryValueFromFieldElement(result)
 
 			return vm.Memory.WriteToAddress(&yAddr, &value)
 		},
@@ -1196,4 +1188,60 @@ func createIsQuadResidueHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	}
 
 	return newIsQuadResidueHint(x, y), nil
+}
+
+// Split128 hint splits a field element value into two 128-bit values, low and high
+//
+// `newSplit128Hint` takes 3 operanders as arguments
+//   - `low` and `high` are the variables that will store the low and high components
+//   - `a` is the variable to split
+func newSplit128Hint(low, high, a hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Split128",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.low = ids.a & ((1<<128) - 1)
+			//> ids.high = ids.a >> 128
+
+			lowAddr, err := low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			highAddr, err := high.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			aValue, err := hinter.ResolveAsFelt(vm, a)
+			if err != nil {
+				return err
+			}
+			var aValueBig big.Int
+			aValue.BigInt(&aValueBig)
+			lowMV := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(new(big.Int).And(&aValueBig, new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1)))))
+			highMV := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(new(big.Int).Rsh(&aValueBig, 128)))
+			if err := vm.Memory.WriteToAddress(&lowAddr, &lowMV); err != nil {
+				return err
+			}
+			return vm.Memory.WriteToAddress(&highAddr, &highMV)
+
+		},
+	}
+}
+
+func createSplit128Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	low, err := resolver.GetResOperander("low")
+	if err != nil {
+		return nil, err
+	}
+
+	high, err := resolver.GetResOperander("high")
+	if err != nil {
+		return nil, err
+	}
+
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplit128Hint(low, high, a), nil
 }
