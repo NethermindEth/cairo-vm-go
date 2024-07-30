@@ -2216,7 +2216,7 @@ func createEcRecoverProductDivMHinter() (hinter.Hinter, error) {
 // `newBigIntPackDivModHint` assigns the result as `value` in the current scope
 func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "DivMod",
+		Name: "BigIntPackDivMod",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
 			//> from starkware.cairo.common.math_utils import as_int
@@ -2335,14 +2335,14 @@ func createBigIntPackDivModHinter(resolver hintReferenceResolver) (hinter.Hinter
 	return newBigIntPackDivModHint(x, y, p), nil
 }
 
-// SafeDiv hint safely divides two numbers and assigns the result based on a condition
+// BigIntSafeDiv hint safely divides two numbers and assigns the result based on a condition
 //
-// `newSafeDivHint` does not take any arguments
+// `newBigIntSafeDivHint` does not take any arguments
 //
-// `newSafeDivHint` assigns the result as `value` and sets `flag` based on the result in the current scope
+// `newBigIntSafeDivHint` assigns the result as `value` and sets `flag` based on the result in the current scope
 func newBigIntSafeDivHint(flag hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "SafeDiv",
+		Name: "BigIntSafeDiv",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> k = safe_div(res * y - x, p)
 			//> value = k if k > 0 else 0 - k

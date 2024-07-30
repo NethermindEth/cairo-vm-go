@@ -1389,7 +1389,7 @@ func TestZeroHintEc(t *testing.T) {
 				errCheck: errorTextContains("no solution exists (gcd(m, p) != 1)"),
 			},
 		},
-		"SafeDiv": {
+		"BigIntSafeDiv": {
 			{
 				operanders: []*hintOperander{
 					{Name: "flag", Kind: uninitialized},
