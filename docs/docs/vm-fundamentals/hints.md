@@ -134,4 +134,18 @@ Checks that the array of positions in scope doesn't contain any value. This hint
 
 Extracts a specific value of the sorted array with `pop`, updating indices for the verification of the next value in the recursive call.
 
+## Blake2s Hash Function
+
+## Keccak Hash Function
+
+## Sha256 Hash Function
+
+## Uint256
+
+## Math Operations
+
+## Elliptic Curve Operations and Signatures
+
+## Other Hints for Various Operations
+
 # Cairo One Hints
