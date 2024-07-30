@@ -501,7 +501,7 @@ func createIsNNOutOfRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 //
 // `newIsPositiveHint` takes 2 operanders as arguments
 //   - `value` is the value that will be evaluated
-//   - `dst` is the address where to write the result in memmory
+//   - `dst` is the address where to write the result in memory
 //
 // `newIsPositiveHint` writes 1 or 0 to `dest` address, depending on
 // whether `value` is positive or negative in the context, respectively
@@ -664,7 +664,7 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 //
 // `newPowHint` takes 2 operanders as arguments
 //   - `locs` is the variable that will store the result
-//   - `prevLocs` is the the variable used to calculate the exponent
+//   - `prevLocs` is the variable used to calculate the exponent
 //
 // `newPowHint` writes to the memory address of `locs` variable the value of the least
 // significant bit of the exponent of `prevLocs` variable module a prime field
@@ -1188,4 +1188,60 @@ func createIsQuadResidueHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	}
 
 	return newIsQuadResidueHint(x, y), nil
+}
+
+// Split128 hint splits a field element value into two 128-bit values, low and high
+//
+// `newSplit128Hint` takes 3 operanders as arguments
+//   - `low` and `high` are the variables that will store the low and high components
+//   - `a` is the variable to split
+func newSplit128Hint(low, high, a hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Split128",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.low = ids.a & ((1<<128) - 1)
+			//> ids.high = ids.a >> 128
+
+			lowAddr, err := low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			highAddr, err := high.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			aValue, err := hinter.ResolveAsFelt(vm, a)
+			if err != nil {
+				return err
+			}
+			var aValueBig big.Int
+			aValue.BigInt(&aValueBig)
+			lowMV := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(new(big.Int).And(&aValueBig, new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1)))))
+			highMV := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(new(big.Int).Rsh(&aValueBig, 128)))
+			if err := vm.Memory.WriteToAddress(&lowAddr, &lowMV); err != nil {
+				return err
+			}
+			return vm.Memory.WriteToAddress(&highAddr, &highMV)
+
+		},
+	}
+}
+
+func createSplit128Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	low, err := resolver.GetResOperander("low")
+	if err != nil {
+		return nil, err
+	}
+
+	high, err := resolver.GetResOperander("high")
+	if err != nil {
+		return nil, err
+	}
+
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplit128Hint(low, high, a), nil
 }

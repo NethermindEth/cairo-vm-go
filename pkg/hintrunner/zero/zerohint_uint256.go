@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -297,6 +298,7 @@ func newUint256UnsignedDivRemHint(a, div, quotient, remainder hinter.ResOperande
 			//> a = (ids.a.high << 128) + ids.a.low
 			//> div = (ids.div.high << 128) + ids.div.low
 			//> quotient, remainder = divmod(a, div)
+			//>
 			//> ids.quotient.low = quotient & ((1 << 128) - 1)
 			//> ids.quotient.high = quotient >> 128
 			//> ids.remainder.low = remainder & ((1 << 128) - 1)
@@ -377,6 +379,113 @@ func createUint256UnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.H
 	}
 
 	return newUint256UnsignedDivRemHint(a, div, quotient, remainder), nil
+}
+
+// Uint256UnsignedDivRemExpanded hint computes the division and modulus operations
+// on `uint256` variables, combining the `high`, `low` and `b23` (high), `b01` (low) parts of the dividend and divisor
+//
+// `newUint256UnsignedDivRemExpandedHint` takes 4 operanders as arguments
+//   - `a` is the `uint256` variable that will be divided
+//   - `div` is the `uint256` variable that will divide `a`, consists of `b23` (high) parts and `b01` (low)
+//   - `quotient` is the quotient of the Euclidean division of `a` by `div`
+//   - `remainder` is the remainder of the Euclidean division of `a` by `div`
+func newUint256UnsignedDivRemExpandedHint(a, div, quotient, remainder hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Uint256UnsignedDivRemExpanded",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> a = (ids.a.high << 128) + ids.a.low
+			//> div = (ids.div.b23 << 128) + ids.div.b01
+			//> quotient, remainder = divmod(a, div)
+			//>
+			//> ids.quotient.low = quotient & ((1 << 128) - 1)
+			//> ids.quotient.high = quotient >> 128
+			//> ids.remainder.low = remainder & ((1 << 128) - 1)
+			//> ids.remainder.high = remainder >> 128
+
+			aLow, aHigh, err := GetUint256AsFelts(vm, a)
+			if err != nil {
+				return err
+			}
+
+			var aLowBig big.Int
+			aLow.BigInt(&aLowBig)
+			var aHighBig big.Int
+			aHigh.BigInt(&aHighBig)
+
+			//> struct Uint256_expand {
+			//> 	B0: felt,
+			//> 	b01: felt,
+			//> 	b12: felt,
+			//> 	b23: felt,
+			//> 	b3: felt,
+			//> }
+
+			divUint256Expanded, err := GetUint256ExpandAsFelts(vm, div)
+			if err != nil {
+				return err
+			}
+
+			divB01, divB23 := divUint256Expanded[1], divUint256Expanded[3]
+			var divB23Big big.Int
+			divB23.BigInt(&divB23Big)
+			var divB01Big big.Int
+			divB01.BigInt(&divB01Big)
+
+			aBig := new(big.Int).Add(new(big.Int).Lsh(&aHighBig, 128), &aLowBig)
+			divBig := new(big.Int).Add(new(big.Int).Lsh(&divB23Big, 128), &divB01Big)
+			quotBig := new(big.Int).Div(aBig, divBig)
+			remBig := new(big.Int).Mod(aBig, divBig)
+
+			mask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
+
+			lowQuot := new(fp.Element).SetBigInt(new(big.Int).And(quotBig, mask))
+			highQuot := new(fp.Element).SetBigInt(new(big.Int).Rsh(quotBig, 128))
+
+			lowRem := new(fp.Element).SetBigInt(new(big.Int).And(remBig, mask))
+			highRem := new(fp.Element).SetBigInt(new(big.Int).Rsh(remBig, 128))
+
+			quotientAddr, err := quotient.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			err = vm.Memory.WriteUint256ToAddress(quotientAddr, lowQuot, highQuot)
+			if err != nil {
+				return err
+			}
+
+			remainderAddr, err := remainder.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteUint256ToAddress(remainderAddr, lowRem, highRem)
+		},
+	}
+}
+
+func createUint256UnsignedDivRemExpandedHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	div, err := resolver.GetResOperander("div")
+	if err != nil {
+		return nil, err
+	}
+
+	quotient, err := resolver.GetResOperander("quotient")
+	if err != nil {
+		return nil, err
+	}
+
+	remainder, err := resolver.GetResOperander("remainder")
+	if err != nil {
+		return nil, err
+	}
+
+	return newUint256UnsignedDivRemExpandedHint(a, div, quotient, remainder), nil
 }
 
 // Uint256MulDivMod hint multiplies two `uint256` variables, divides the result
@@ -504,4 +613,296 @@ func createUint256MulDivModHinter(resolver hintReferenceResolver) (hinter.Hinter
 	}
 
 	return newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder), nil
+}
+
+// Uint256Sub hint computes the difference of two `uint256` variables in the field of integers modulo 2**256. Then it splits the result into `low` and `high` parts and stores them in memory.
+//
+// `newUint256SubHint` takes 3 operanders as arguments
+//   - `a` and `b` are the `uint256` variables that will be subtracted
+//   - `res` is the variable that will store the result of the subtraction in memory
+func newUint256SubHint(a, b, res hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Uint256Sub",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			// def split(num: int, num_bits_shift: int = 128, length: int = 2):
+			//     a = []
+			//     for _ in range(length):
+			//         a.append( num & ((1 << num_bits_shift) - 1) )
+			//         num = num >> num_bits_shift
+			//     return tuple(a)
+
+			// def pack(z, num_bits_shift: int = 128) -> int:
+			//     limbs = (z.low, z.high)
+			//     return sum(limb << (num_bits_shift * i) for i, limb in enumerate(limbs))
+
+			// a = pack(ids.a)
+			// b = pack(ids.b)
+			// res = (a - b)%2**256
+			// res_split = split(res)
+			// ids.res.low = res_split[0]
+			// ids.res.high = res_split[1]
+
+			aLow, aHigh, err := GetUint256AsFelts(vm, a)
+			if err != nil {
+				return err
+			}
+			bLow, bHigh, err := GetUint256AsFelts(vm, b)
+			if err != nil {
+				return err
+			}
+
+			a := Pack(128, aLow, aHigh)
+			b := Pack(128, bLow, bHigh)
+
+			modulus := new(big.Int).Lsh(big.NewInt(1), 256)
+			resBig := new(big.Int).Sub(&a, &b)
+			resBig.Mod(resBig, modulus)
+
+			split := func(num big.Int, numBitsShift uint16, length int) []fp.Element {
+				a := make([]fp.Element, length)
+				mask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), uint(numBitsShift)), big.NewInt(1))
+
+				for i := 0; i < length; i++ {
+					a[i] = *new(fp.Element).SetBigInt(new(big.Int).And(&num, mask))
+					num.Rsh(&num, uint(numBitsShift))
+				}
+
+				return a
+			}
+
+			resSplit := split(*resBig, 128, 2)
+			resAddr, err := res.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteUint256ToAddress(resAddr, &resSplit[0], &resSplit[1])
+		},
+	}
+}
+
+func createUint256SubHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := resolver.GetResOperander("res")
+	if err != nil {
+		return nil, err
+	}
+
+	return newUint256SubHint(a, b, res), nil
+}
+
+// SplitXX computes the square root of a 256-bit integer modulo the prime 2^255 - 19, ensures the result is even, and splits it into two 128-bit integers.
+// newSplitXXHint takes 2 operanders as arguments:
+//   - `xx` is the `uint256` variable that will be used to calculate the square root
+//   - `x` is the variable that will store the result of the hint in memory
+func newSplitXXHint(x, xx hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "SplitXX",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> PRIME = 2**255 - 19
+			//> II = pow(2, (PRIME - 1) // 4, PRIME)
+			//>
+			//> xx = ids.xx.low + (ids.xx.high<<128)
+			//> x = pow(xx, (PRIME + 3) // 8, PRIME)
+			//> if (x * x - xx) % PRIME != 0:
+			//> 	x = (x * II) % PRIME
+			//> if x % 2 != 0:
+			//>   	x = PRIME - x
+			//> ids.x.low = x & ((1<<128)-1)
+			//> ids.x.high = x >> 128
+
+			PRIME, ok := secp_utils.GetCurve25519PBig()
+			if !ok {
+				return fmt.Errorf("invalid value for PRIME")
+			}
+
+			II, ok := new(big.Int).SetString("19681161376707505956807079304988542015446066515923890162744021073123829784752", 10)
+			if !ok {
+				return fmt.Errorf("invalid value for II")
+			}
+
+			//> (PRIME + 3) // 8
+			modifiedPRIME, ok := new(big.Int).SetString("7237005577332262213973186563042994240829374041602535252466099000494570602494", 10)
+			if !ok {
+				return fmt.Errorf("invalid value for (PRIME + 3) // 8")
+			}
+
+			xxLow, xxHigh, err := GetUint256AsFelts(vm, xx)
+			if err != nil {
+				return err
+			}
+
+			var xxLowBig, xxHighBig big.Int
+			xxLow.BigInt(&xxLowBig)
+			xxHigh.BigInt(&xxHighBig)
+
+			//> xx = ids.xx.low + (ids.xx.high<<128)
+			xx := new(big.Int).Add(new(big.Int).Lsh(&xxHighBig, 128), &xxLowBig)
+
+			//> x = pow(xx, (PRIME + 3) // 8, PRIME)
+			xBig := new(big.Int).Exp(xx, modifiedPRIME, &PRIME)
+
+			//> if (x * x - xx) % PRIME != 0:
+			//> 	x = (x * II) % PRIME
+			xSquare := new(big.Int).Mul(xBig, xBig)
+			cmpSub := new(big.Int).Sub(xSquare, xx)
+			if new(big.Int).Mod(cmpSub, &PRIME).Cmp(big.NewInt(0)) != 0 {
+				xBig.Mul(xBig, II)
+				xBig.Mod(xBig, &PRIME)
+			}
+			//> if x % 2 != 0:
+			//>   	x = PRIME - x
+			if new(big.Int).Mod(xBig, big.NewInt(2)).Cmp(big.NewInt(0)) != 0 {
+				xBig.Sub(&PRIME, xBig)
+			}
+
+			//> ids.x.low = x & ((1<<128)-1)
+			//> ids.x.high = x >> 128
+			mask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
+			xLow := new(fp.Element).SetBigInt(new(big.Int).And(xBig, mask))
+			xHigh := new(fp.Element).SetBigInt(new(big.Int).Rsh(xBig, 128))
+
+			xAddr, err := x.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			return vm.Memory.WriteUint256ToAddress(xAddr, xLow, xHigh)
+		},
+	}
+}
+
+func createSplitXXHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+	xx, err := resolver.GetResOperander("xx")
+	if err != nil {
+		return nil, err
+	}
+	return newSplitXXHint(x, xx), nil
+}
+
+// Uint128Add hint computes the result of the sum of parts of
+// two `uint128` variables(`a` & `b`)  and checks for overflow
+// `newUint128AddHint` takes 3 operanders as arguments
+//   - `a` and `b` are the two `uint128` variables that will be added
+//   - `carry` represent the potential extra bit that needs to be carried
+//     if the res of the sum of `a` and `b` exceeds 2**64 - 1
+func newUint128AddHint(a, b, carry hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Uint128Add",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//>res = ids.a + ids.b
+			//>ids.carry = 1 if res >= ids.SHIFT else 0
+
+			a, err := hinter.ResolveAsFelt(vm, a)
+			if err != nil {
+				return err
+			}
+
+			b, err := hinter.ResolveAsFelt(vm, b)
+			if err != nil {
+				return err
+			}
+
+			// Calculate `carry` memory value
+			res := new(fp.Element).Add(a, b)
+			var c *fp.Element
+			if utils.FeltLe(&utils.FeltMax128, res) {
+				c = &utils.FeltOne
+			} else {
+				c = &utils.FeltZero
+			}
+
+			cValue := memory.MemoryValueFromFieldElement(c)
+
+			// Save `carry` value in address
+			addrCarry, err := carry.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			return vm.Memory.WriteToAddress(&addrCarry, &cValue)
+
+		},
+	}
+}
+
+func createUint128AddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+	b, err := resolver.GetResOperander("b")
+	if err != nil {
+		return nil, err
+	}
+	carry, err := resolver.GetResOperander("carry")
+	if err != nil {
+		return nil, err
+	}
+	return newUint128AddHint(a, b, carry), nil
+}
+
+// Uint128Sqrt hint computes the result of the sum of parts of
+// two `uint128` variables(`a` & `b`)  and checks for overflow
+// `newUint128AddHint` takes 3 operanders as arguments
+//   - `a` and `b` are the two `uint128` variables that will be added
+//   - `carry` represent the potential extra bit that needs to be carried
+//     if the res of the sum of `a` and `b` exceeds 2**64 - 1
+func newUint128SqrtHint(n, root hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Uint128Sqrt",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> from starkware.python.math_utils import isqrt
+			//> n = (ids.n.high << 128) + ids.n.low
+			//> root = isqrt(n)
+			//> assert 0 <= root < 2 ** 128
+			//> ids.root = root
+
+			nSmall, nHigh, err := GetUint256AsFelts(vm, n)
+			if err != nil {
+				return err
+			}
+			var nSmallBig, nHighBig big.Int
+			nSmall.BigInt(&nSmallBig)
+			nHigh.BigInt(&nHighBig)
+
+			nBig := new(big.Int).Add(new(big.Int).Lsh(&nHighBig, 128), &nSmallBig)
+
+			rootBig := new(big.Int).Sqrt(nBig)
+			rootFelt := new(fp.Element).SetBigInt(rootBig)
+			if rootFelt.Cmp(&utils.FeltMax128) > -1 {
+				return fmt.Errorf("root %v is out range 0 <= root < 2 ** 128", rootFelt)
+			}
+			rootMV := memory.MemoryValueFromFieldElement(rootFelt)
+			rootAddr, err := root.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			return vm.Memory.WriteToAddress(&rootAddr, &rootMV)
+		},
+	}
+}
+
+func createUint128SqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	n, err := resolver.GetResOperander("n")
+	if err != nil {
+		return nil, err
+	}
+	root, err := resolver.GetResOperander("root")
+	if err != nil {
+		return nil, err
+	}
+	return newUint128SqrtHint(n, root), nil
 }
