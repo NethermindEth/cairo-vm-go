@@ -8,7 +8,7 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func getBaseBig() (big.Int, bool) {
+func GetBaseBig() (big.Int, bool) {
 	// 2**86
 	base, ok := new(big.Int).SetString("77371252455336267181195264", 10)
 	return *base, ok
@@ -35,7 +35,7 @@ func GetN() (big.Int, bool) {
 func SecPPacked(limbs [3]*fp.Element) (big.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L28
 
-	baseBig, ok := getBaseBig()
+	baseBig, ok := GetBaseBig()
 	if !ok {
 		return *big.NewInt(0), fmt.Errorf("getBaseBig failed")
 	}
@@ -60,7 +60,7 @@ func SecPSplit(num *big.Int) ([]big.Int, error) {
 
 	split := make([]big.Int, 3)
 
-	baseBig, ok := getBaseBig()
+	baseBig, ok := GetBaseBig()
 	if !ok {
 		return nil, fmt.Errorf("GetBaseBig failed")
 	}
