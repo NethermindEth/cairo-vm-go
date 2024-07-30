@@ -201,6 +201,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createRandomEcPointHinter(resolver)
 	case chainedEcOpCode:
 		return createChainedEcOpHinter(resolver)
+	case bigIntPackDivModCode:
+		return createBigIntPackDivModHinter(resolver)
+	case bigIntSaveDivCode:
+		return createBigIntSaveDivHinter(resolver)
 	case ecRecoverDivModNPackedCode:
 		return createEcRecoverDivModNPackedHinter(resolver)
 	case ecRecoverSubABCode:
