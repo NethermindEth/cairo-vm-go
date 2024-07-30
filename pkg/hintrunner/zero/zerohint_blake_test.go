@@ -540,5 +540,29 @@ func TestZeroHintBlake(t *testing.T) {
 					}),
 			},
 		},
+		"Blake2sCompress": {
+			{
+				operanders: []*hintOperander{
+					{Name: "output", Kind: apRelative, Value: addrWithSegment(3, 25)},
+					{Name: "n_bytes", Kind: apRelative, Value: addr(7)},
+					{Name: "blake2s_start", Kind: apRelative, Value: addr(7)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBlake2sCompressHint(ctx.operanders["n_bytes"], ctx.operanders["output"], ctx.operanders["blake2s_start"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"output",
+					[]*fp.Element{
+						feltUint64(1503208424),
+						feltUint64(3786571270),
+						feltUint64(625865791),
+						feltUint64(657700341),
+						feltUint64(3174522044),
+						feltUint64(3976146666),
+						feltUint64(3581823059),
+						feltUint64(2049603206),
+					}),
+			},
+		},
 	})
 }

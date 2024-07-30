@@ -431,13 +431,13 @@ func createBlake2sComputeHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 
 // Blake2sCompute hint computes the blake2s compress function and fills the value in the right position.
 //
-// `newBlake2sComputeHint` takes 1 operander as an argument
+// `newBlake2sCompressHint` takes 1 operander as an argument
 //   - `output` should point to the middle of an instance, right after initial_state, message, t, f,
 //     which should all have a value at this point, and right before the output portion which will be
 //     written by this function.
-func newBlake2sCompressHint(output, blake2s_start hinter.ResOperander) hinter.Hinter {
+func newBlake2sCompressHint(n_bytes, output, blake2s_start hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
-		Name: "Blake2sCompute",
+		Name: "Blake2sCompress",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			// > from starkware.cairo.common.cairo_blake2s.blake2s_utils import IV, blake2s_compress
 			// >
@@ -464,6 +464,22 @@ func newBlake2sCompressHint(output, blake2s_start hinter.ResOperander) hinter.Hi
 			if err != nil {
 				return err
 			}
+
+			n, err := hinter.ResolveAsAddress(vm, n_bytes)
+			if err != nil {
+				return err
+			}
+
+			nAddr, err := vm.Memory.ReadFromAddress(n)
+			if err != nil {
+				return err
+			}
+
+			nUint32, err := hintrunnerUtils.ToSafeUint32(&nAddr)
+			if err != nil {
+				return err
+			}
+
 			//> _blake2s_input_chunk_size_felts = int(ids.BLAKE2S_INPUT_CHUNK_SIZE_FELTS)
 			//> assert 0 <= _blake2s_input_chunk_size_felts < 100
 			// as BLAKE2S_INPUT_CHUNK_SIZE_FELTS is a constant of 16, this can be skipped
@@ -490,23 +506,20 @@ func newBlake2sCompressHint(output, blake2s_start hinter.ResOperander) hinter.Hi
 			}
 			h := utils.IV()
 			h[0] = h[0] ^ 0x01010020
-			new_state := utils.Blake2sCompress(messageUint32, h, 0, 0, 0xffffffff, 0)
+			newState := utils.Blake2sCompress(messageUint32, h, nUint32, 0, 0xffffffff, 0)
 
 			//> segments.write_arg(ids.output, new_state)
-			for _, val := range new_state {
-				mv := mem.MemoryValueFromInt(val)
+			for i := 0; i < len(newState); i++ {
+				state := newState[i]
+				stateMv := mem.MemoryValueFromUint(state)
+				err := vm.Memory.WriteToAddress(output, &stateMv)
 				if err != nil {
 					return err
 				}
-				err = vm.Memory.WriteToAddress(output, &mv)
+				*output, err = output.AddOffset(1)
 				if err != nil {
 					return err
 				}
-				temp, err := output.AddOffset(1)
-				if err != nil {
-					return err
-				}
-				*output = temp
 			}
 
 			return nil
@@ -525,5 +538,10 @@ func createBlake2sCompressHinter(resolver hintReferenceResolver) (hinter.Hinter,
 		return nil, err
 	}
 
-	return newBlake2sCompressHint(output, blake2s_start), nil
+	n, err := resolver.GetResOperander("n")
+	if err != nil {
+		return nil, err
+	}
+
+	return newBlake2sCompressHint(n, output, blake2s_start), nil
 }
