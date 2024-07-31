@@ -48,6 +48,76 @@ func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Elem
 	return low, high, nil
 }
 
+func GetUint256ExpandAsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) ([]*fp.Element, error) {
+	//> struct Uint256_expand {
+	//> 	B0: felt,
+	//> 	b01: felt,
+	//> 	b12: felt,
+	//> 	b23: felt,
+	//> 	b3: felt,
+	//> }
+	refAddr, err := ref.GetAddress(vm)
+	if err != nil {
+		return nil, err
+	}
+	uint256Expanded := make([]*fp.Element, 6)
+	for i := 0; i < 5; i++ {
+		refValMV, err := vm.Memory.ReadFromAddress(&refAddr)
+		if err != nil {
+			return nil, err
+		}
+		uint256Expanded[i], err = refValMV.FieldElement()
+		if err != nil {
+			return nil, err
+		}
+		refAddr, err = refAddr.AddOffset(1)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return uint256Expanded, nil
+}
+
+func GetUint512AsFelts(vm *VM.VirtualMachine, ref hinter.ResOperander) (*fp.Element, *fp.Element, *fp.Element, *fp.Element, error) {
+	var fps [4]*fp.Element
+	firstRefAddr, err := ref.GetAddress(vm)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	for i := 0; i < 4; i++ {
+		addr, err := firstRefAddr.AddOffset(int16(i))
+		if err != nil {
+			return nil, nil, nil, nil, err
+		}
+
+		mv, err := vm.Memory.ReadFromAddress(&addr)
+		if err != nil {
+			return nil, nil, nil, nil, err
+		}
+
+		fp, err := mv.FieldElement()
+		if err != nil {
+			return nil, nil, nil, nil, err
+		}
+		fps[i] = fp
+	}
+
+	return fps[0], fps[1], fps[2], fps[3], nil
+}
+
+func Pack(numBitsShift int, limbs ...*fp.Element) big.Int {
+	result := new(big.Int)
+
+	for i, limb := range limbs {
+		limbBig := limb.BigInt(new(big.Int))
+		shiftAmount := big.NewInt(int64(numBitsShift * i))
+		shiftedLimb := new(big.Int).Lsh(limbBig, uint(shiftAmount.Uint64()))
+		result.Or(result, shiftedLimb)
+	}
+
+	return *result
+}
+
 // This helper function is used in FastEcAddAssignNewY and
 // EcDoubleAssignNewYV1 hints to compute the y-coordinate of
 // a point on an elliptic curve

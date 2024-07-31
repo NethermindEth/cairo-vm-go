@@ -96,9 +96,15 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createUnsignedDivRemHinter(resolver)
 	case isQuadResidueCode:
 		return createIsQuadResidueHinter(resolver)
+	case split128Code:
+		return createSplit128Hinter(resolver)
+	case is250BitsCode:
+		return createIs250BitsHinter(resolver)
 	// Uint256 hints
 	case uint128AddCode:
 		return createUint128AddHinter(resolver)
+	case uint128SqrtCode:
+		return createUint128SqrtHinter(resolver)
 	case uint256AddCode:
 		return createUint256AddHinter(resolver)
 	case split64Code:
@@ -113,8 +119,12 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createUint256MulDivModHinter(resolver)
 	case uint256SubCode:
 		return createUint256SubHinter(resolver)
+	case uint256UnsignedDivRemExpandedCode:
+		return createUint256UnsignedDivRemExpandedHinter(resolver)
 	case splitXXCode:
 		return createSplitXXHinter(resolver)
+	case invModPUint512Code:
+		return createInvModPUint512Hinter(resolver)
 	// Signature hints
 	case verifyECDSASignatureCode:
 		return createVerifyECDSASignatureHinter(resolver)
@@ -135,6 +145,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 	case divModNPackedDivmodV1Code:
 		return createDivModNPackedDivmodV1Hinter(resolver)
 	// EC hints
+	case bigIntToUint256Code:
+		return createBigIntToUint256Hinter(resolver)
 	case ecNegateCode:
 		return createEcNegateHinter(resolver)
 	case divModNSafeDivPlusOneCode:
@@ -163,6 +175,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createReduceEd25519Hinter(resolver)
 	case computeSlopeV1Code:
 		return createComputeSlopeV1Hinter(resolver)
+	case computeSlopeV2Code:
+		return createComputeSlopeV2Hinter(resolver)
 	case computeSlopeV3Code:
 		return createComputeSlopeV3Hinter(resolver)
 	case ecDoubleAssignNewXV1Code:
@@ -187,6 +201,18 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createRandomEcPointHinter(resolver)
 	case chainedEcOpCode:
 		return createChainedEcOpHinter(resolver)
+	case bigIntPackDivModCode:
+		return createBigIntPackDivModHinter(resolver)
+	case bigIntSaveDivCode:
+		return createBigIntSaveDivHinter(resolver)
+	case ecRecoverDivModNPackedCode:
+		return createEcRecoverDivModNPackedHinter(resolver)
+	case ecRecoverSubABCode:
+		return createEcRecoverSubABHinter(resolver)
+	case ecRecoverProductModCode:
+		return createEcRecoverProductModHinter(resolver)
+	case ecRecoverProductDivMCode:
+		return createEcRecoverProductDivMHinter()
 	// Blake hints
 	case blake2sAddUint256BigendCode:
 		return createBlake2sAddUint256Hinter(resolver, true)
@@ -202,6 +228,11 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createBlake2sComputeHinter(resolver)
 	case blake2sCompressCode:
 		return createBlake2sCompressHinter(resolver)
+	// Sha256 hints
+	case packedSha256Code:
+		return createPackedSha256Hinter(resolver)
+	case finalizeSha256Code:
+		return createFinalizeSha256Hinter(resolver)
 	// Keccak hints
 	case keccakWriteArgsCode:
 		return createKeccakWriteArgsHinter(resolver)
@@ -310,8 +341,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createNondetElementsOverXHinter(resolver, 10)
 	case normalizeAddressCode:
 		return createNormalizeAddressHinter(resolver)
+	case sha256AndBlake2sInputCode:
+		return createSha256AndBlake2sInputHinter(resolver)
 	default:
-		return nil, fmt.Errorf("not identified hint")
+		return nil, fmt.Errorf("not identified hint: \n%s", rawHint.Code)
 	}
 }
 
