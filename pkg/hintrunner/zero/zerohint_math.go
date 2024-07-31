@@ -1245,3 +1245,52 @@ func createSplit128Hinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 
 	return newSplit128Hint(low, high, a), nil
 }
+
+// is250Bits hint checks whether an address is lower than 2**250 or not and
+// it assigns 1 or 0 to `is_250` variable, respectively
+//
+// `newIs250Bits` takes 2 operanders as arguments
+//   - `is_250` represents the variable that will store the result of the comparison
+//   - `addr` is the address that will be compared to 2**250
+//
+// `newIs250Bits` writes 1 or 0 to the memory address of `is_250` variable
+func newIs250BitsHint(is_250, addr hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Is250Bits",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> ids.is_250 = 1 if ids.addr < 2**250 else 0
+
+			addr, err := hinter.ResolveAsFelt(vm, addr)
+			if err != nil {
+				return err
+			}
+
+			is250Addr, err := is_250.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			var is250Mv memory.MemoryValue
+
+			if addr.Cmp(&utils.FeltUpperBound) < 0 {
+				is250Mv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				is250Mv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+
+			return vm.Memory.WriteToAddress(&is250Addr, &is250Mv)
+		},
+	}
+}
+
+func createIs250BitsHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	is_250, err := resolver.GetResOperander("is_250")
+	if err != nil {
+		return nil, err
+	}
+	addr, err := resolver.GetResOperander("addr")
+	if err != nil {
+		return nil, err
+	}
+	return newIs250BitsHint(is_250, addr), nil
+}

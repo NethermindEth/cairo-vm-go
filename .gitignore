@@ -4,6 +4,7 @@ benchmarks
 cov.out
 cpu.out
 *.test
+integration_tests/BenchMarks.txt
 
 # Local Env Specific
 .python-version

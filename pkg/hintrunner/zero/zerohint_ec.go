@@ -2046,10 +2046,6 @@ func newEcRecoverSubABHint(a, b hinter.ResOperander) hinter.Hinter {
 			//> value = res = a - b
 			resBig := new(big.Int)
 			resBig.Sub(&aPackedBig, &bPackedBig)
-			if err != nil {
-				return err
-			}
-
 			valueBig := new(big.Int)
 			valueBig.Set(resBig)
 
@@ -2208,4 +2204,212 @@ func newEcRecoverProductDivMHint() hinter.Hinter {
 
 func createEcRecoverProductDivMHinter() (hinter.Hinter, error) {
 	return newEcRecoverProductDivMHint(), nil
+}
+
+// BigIntPackDivMod hint divides two values modulo a prime number
+//
+// `newBigIntPackDivModHint` takes 3 operanders as arguments
+//   - `P` is the prime modulus
+//   - `x` is the numerator
+//   - `y` is the denominator
+//
+// `newBigIntPackDivModHint` assigns the result as `value` in the current scope
+func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "BigIntPackDivMod",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp_utils import pack
+			//> from starkware.cairo.common.math_utils import as_int
+			//> from starkware.python.math_utils import div_mod, safe_div
+			//>
+			//> p = pack(ids.P, PRIME)
+			//> x = pack(ids.x, PRIME) + as_int(ids.x.d3, PRIME) * ids.BASE ** 3 + as_int(ids.x.d4, PRIME) * ids.BASE ** 4
+			//> y = pack(ids.y, PRIME)
+			//>
+			//> value = res = div_mod(x, y, p)
+
+			pAddr, err := p.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			pValues, err := vm.Memory.ResolveAsBigInt3(pAddr)
+			if err != nil {
+				return err
+			}
+
+			xAddr, err := x.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			xValues, err := vm.Memory.ResolveAsBigInt5(xAddr)
+			if err != nil {
+				return err
+			}
+
+			yAddr, err := y.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			yValues, err := vm.Memory.ResolveAsBigInt3(yAddr)
+			if err != nil {
+				return err
+			}
+
+			var xD3Big big.Int
+			var xD4Big big.Int
+
+			xValues[3].BigInt(&xD3Big)
+			xValues[4].BigInt(&xD4Big)
+
+			base, ok := secp_utils.GetBaseBig()
+			if !ok {
+				return fmt.Errorf("getBaseBig failed")
+			}
+
+			//> p = pack(ids.P, PRIME)
+			pPacked, err := secp_utils.SecPPacked(pValues)
+			if err != nil {
+				return err
+			}
+
+			//> x = pack(ids.x, PRIME) + as_int(ids.x.d3, PRIME) * ids.BASE ** 3 + as_int(ids.x.d4, PRIME) * ids.BASE ** 4
+			xPacked, err := secp_utils.SecPPackedBigInt5(xValues)
+			if err != nil {
+				return err
+			}
+
+			base3Big := new(big.Int)
+
+			base3Big.Exp(&base, big.NewInt(3), big.NewInt(0))
+
+			base4Big := new(big.Int)
+
+			base4Big.Exp(&base, big.NewInt(4), big.NewInt(0))
+
+			xBig := new(big.Int)
+
+			xBig.Mul(&xD3Big, base3Big)
+
+			xBig.Add(xBig, xBig.Mul(&xD4Big, base4Big))
+
+			xBig.Add(xBig, &xPacked)
+
+			//> y = pack(ids.y, PRIME)
+			yPacked, err := secp_utils.SecPPacked(yValues)
+			if err != nil {
+				return err
+			}
+
+			//> value = res = div_mod(x, y, p)
+			res, err := secp_utils.Divmod(xBig, &yPacked, &pPacked)
+			if err != nil {
+				return err
+			}
+
+			var value = new(big.Int).Set(&res)
+
+			return ctx.ScopeManager.AssignVariables(map[string]any{"value": value, "res": &res, "x": xBig, "y": &yPacked, "p": &pPacked})
+		},
+	}
+}
+
+func createBigIntPackDivModHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	x, err := resolver.GetResOperander("x")
+	if err != nil {
+		return nil, err
+	}
+
+	y, err := resolver.GetResOperander("y")
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := resolver.GetResOperander("P")
+	if err != nil {
+		return nil, err
+	}
+
+	return newBigIntPackDivModHint(x, y, p), nil
+}
+
+// BigIntSafeDiv hint safely divides two numbers and assigns the result based on a condition
+//
+// `newBigIntSafeDivHint` does not take any arguments
+//
+// `newBigIntSafeDivHint` assigns the result as `value` and sets `flag` based on the result in the current scope
+func newBigIntSafeDivHint(flag hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "BigIntSafeDiv",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> k = safe_div(res * y - x, p)
+			//> value = k if k > 0 else 0 - k
+			//> ids.flag = 1 if k > 0 else 0
+
+			flagAddr, err := flag.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			x, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "x")
+			if err != nil {
+				return err
+			}
+
+			y, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "y")
+			if err != nil {
+				return err
+			}
+
+			p, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "p")
+			if err != nil {
+				return err
+			}
+
+			res, err := hinter.GetVariableAs[*big.Int](&ctx.ScopeManager, "res")
+			if err != nil {
+				return err
+			}
+
+			//> k = safe_div(res * y - x, p)
+			tmp := new(big.Int)
+			tmp.Mul(res, y)
+			tmp.Sub(tmp, x)
+			k := new(big.Int).Div(tmp, p)
+
+			//> value = k if k > 0 else 0 - k
+			value := new(big.Int).Abs(k)
+
+			//> ids.flag = 1 if k > 0 else 0
+			flagBigInt := big.NewInt(0)
+			if k.Sign() > 0 {
+				flagBigInt.SetInt64(1)
+			}
+
+			flagValue := mem.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(flagBigInt))
+
+			err = ctx.ScopeManager.AssignVariable("value", value)
+			if err != nil {
+				return err
+			}
+
+			err = vm.Memory.WriteToAddress(&flagAddr, &flagValue)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+}
+
+func createBigIntSaveDivHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	flag, err := resolver.GetResOperander("flag")
+	if err != nil {
+		return nil, err
+	}
+
+	return newBigIntSafeDivHint(flag), nil
 }
