@@ -1147,6 +1147,30 @@ func TestZeroHintEc(t *testing.T) {
 				}),
 			},
 		},
+		"GetHighLen": {
+			{
+				operanders: []*hintOperander{
+					{Name: "len_hi", Kind: uninitialized},
+					{Name: "scalar_u.d2", Kind: apRelative, Value: feltString("10")}, 
+					{Name: "scalar_v.d2", Kind: apRelative, Value: feltString("5")}, 
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newGetHighLenHint(ctx.operanders["len_hi"], ctx.operanders["scalar_u.d2"], ctx.operanders["scalar_v.d2"])
+				},
+				check: varValueEquals("len_hi", feltInt64(3)), 
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "len_hi", Kind: uninitialized},
+					{Name: "scalar_u.d2", Kind: apRelative, Value: feltString("1024")}, 
+					{Name: "scalar_v.d2", Kind: apRelative, Value: feltString("32")},  
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newGetHighLenHint(ctx.operanders["len_hi"], ctx.operanders["scalar_u.d2"], ctx.operanders["scalar_v.d2"])
+				},
+				check: varValueEquals("len_hi", feltInt64(10)), 
+			},
+		},
 	},
 	)
 }

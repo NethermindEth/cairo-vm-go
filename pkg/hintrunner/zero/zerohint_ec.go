@@ -13,58 +13,63 @@ import (
 	"github.com/holiman/uint256"
 )
 
-// Function to create the getHighLen Hinter
-func newGetHighLenHint() hinter.Hinter {
-	return &hinter.GenericZeroHinter{
-		Name: "getHighLen",
-		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-			scalarU, err := hinter.GetVariableAs[int](&ctx.ScopeManager, "scalar_u.d2")
-			if err != nil {
-				return fmt.Errorf("failed to resolve scalar_u.d2: %w", err)
-			}
 
-			scalarV, err := hinter.GetVariableAs[int](&ctx.ScopeManager, "scalar_v.d2")
-			if err != nil {
-				return fmt.Errorf("failed to resolve scalar_v.d2: %w", err)
-			}
+// getHighLen calculates the highest bit length of `scalar_u.d2` and `scalar_v.d2`,
+// subtracts 1 from the result, and assigns it to `ids.len_hi`. 
+//
+// `newGetHighLenHint` takes three operanders as arguments:
+//   - `len_hi`: the variable that will store the result of the bit-length calculation.
+//   - `scalar_u.d2`: the first scalar value.
+//   - `scalar_v.d2`: the second scalar value.
+//
+// The function resolves these operanders, calculates the maximum bit length of `scalar_u.d2` and `scalar_v.d2`,
+// and assigns the result (bit_length - 1) to `len_hi`.
+func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.ResOperander) hinter.Hinter {
+    return &hinter.GenericZeroHinter{
+        Name: "GetHighLen",
+        Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+            //> ids.len_hi = max(ids.scalar_u.d2.bit_length(), ids.scalar_v.d2.bit_length())-1
 
-			// Calculate the highest bit length
-			lenHi := max(bitLength(scalarU), bitLength(scalarV)) - 1
+            scalarU, err := hinter.ResolveAsFelt(vm, scalar_u)
+            if err != nil {
+                return fmt.Errorf("failed to resolve scalar_u.d2: %w", err)
+            }
 
-			// Assign the result to ids.len_hi
-			if err := ctx.ScopeManager.AssignVariable("len_hi", lenHi); err != nil {
-				return fmt.Errorf("failed to assign len_hi: %w", err)
-			}
+            scalarV, err := hinter.ResolveAsFelt(vm, scalar_v)
+            if err != nil {
+                return fmt.Errorf("failed to resolve scalar_v.d2: %w", err)
+            }
 
-			return nil
-		},
-	}
+            bitLenU := scalarU.BitLen()
+            bitLenV := scalarV.BitLen()
+            lenHi := utils.Max(bitLenU, bitLenV) - 1
+
+            lenHiAddr, err := len_hi.GetAddress(vm)
+            if err != nil {
+                return fmt.Errorf("failed to get address of len_hi: %w", err)
+            }
+
+            lenHiMv := memory.MemoryValueFromInt(lenHi)
+
+            return vm.Memory.WriteToAddress(&lenHiAddr, &lenHiMv)
+        },
+    }
 }
 
-// Function to create the hinter with the resolver
 func createGetHighLenHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	return newGetHighLenHint(), nil
-}
-
-// Function to get the bit length of an integer
-func bitLength(value int) int {
-	if value == 0 {
-		return 1
-	}
-	length := 0
-	for value > 0 {
-		length++
-		value >>= 1
-	}
-	return length
-}
-
-// Function to get the maximum of two integers
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
+    len_hi, err := resolver.GetResOperander("len_hi")
+    if err != nil {
+        return nil, err
+    }
+    scalar_u, err := resolver.GetResOperander("scalar_u.d2")
+    if err != nil {
+        return nil, err
+    }
+    scalar_v, err := resolver.GetResOperander("scalar_v.d2")
+    if err != nil {
+        return nil, err
+    }
+    return newGetHighLenHint(len_hi, scalar_u, scalar_v), nil
 }
 
 // EcNegate hint negates the y-coordinate of a point on an elliptic curve modulo SECP_P
