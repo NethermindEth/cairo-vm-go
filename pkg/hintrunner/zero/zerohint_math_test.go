@@ -950,5 +950,37 @@ func TestZeroHintMath(t *testing.T) {
 				}),
 			},
 		},
+		"Is250Bits": {
+			{
+				operanders: []*hintOperander{
+					{Name: "is_250", Kind: uninitialized},
+					{Name: "addr", Kind: apRelative, Value: feltString("5")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIs250BitsHint(ctx.operanders["is_250"], ctx.operanders["addr"])
+				},
+				check: varValueEquals("is_250", feltInt64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "is_250", Kind: uninitialized},
+					{Name: "addr", Kind: apRelative, Value: feltString("1809251394333065553493296640760748560207343510400633813116524750123642650624")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIs250BitsHint(ctx.operanders["is_250"], ctx.operanders["addr"])
+				},
+				check: varValueEquals("is_250", feltInt64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "is_250", Kind: uninitialized},
+					{Name: "addr", Kind: apRelative, Value: feltString("1809251394333065553493296640760748560207343510400633813116524750123642650625")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newIs250BitsHint(ctx.operanders["is_250"], ctx.operanders["addr"])
+				},
+				check: varValueEquals("is_250", feltInt64(0)),
+			},
+		},
 	})
 }

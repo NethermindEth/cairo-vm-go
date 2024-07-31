@@ -98,6 +98,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createIsQuadResidueHinter(resolver)
 	case split128Code:
 		return createSplit128Hinter(resolver)
+	case is250BitsCode:
+		return createIs250BitsHinter(resolver)
 	// Uint256 hints
 	case uint128AddCode:
 		return createUint128AddHinter(resolver)
@@ -199,6 +201,10 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createRandomEcPointHinter(resolver)
 	case chainedEcOpCode:
 		return createChainedEcOpHinter(resolver)
+	case bigIntPackDivModCode:
+		return createBigIntPackDivModHinter(resolver)
+	case bigIntSaveDivCode:
+		return createBigIntSaveDivHinter(resolver)
 	case ecRecoverDivModNPackedCode:
 		return createEcRecoverDivModNPackedHinter(resolver)
 	case ecRecoverSubABCode:
