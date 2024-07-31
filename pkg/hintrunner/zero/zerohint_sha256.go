@@ -129,8 +129,8 @@ func newSha256ChunkHint(sha256Start, state, output hinter.ResOperander) hinter.H
 				return err
 			}
 
-			wUint32 := make([]uint32, len(w))
-			for i := 0; i < len(w); i++ {
+			wUint32 := make([]uint32, Sha256InputChunkSize)
+			for i := 0; i < int(Sha256InputChunkSize); i++ {
 				value, err := hintrunnerUtils.ToSafeUint32(&w[i])
 				if err != nil {
 					return err
@@ -156,7 +156,7 @@ func newSha256ChunkHint(sha256Start, state, output hinter.ResOperander) hinter.H
 			}
 
 			var stateValues [8]uint32
-			for i := 0; i < len(stateValues); i++ {
+			for i := 0; i < int(Sha256StateSize); i++ {
 				value, err := hintrunnerUtils.ToSafeUint32(&stateValuesMv[i])
 				if err != nil {
 					return err
