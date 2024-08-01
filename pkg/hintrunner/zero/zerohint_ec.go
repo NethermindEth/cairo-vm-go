@@ -22,26 +22,24 @@ import (
 //   - `scalar_u.d2`: the first scalar value.
 //   - `scalar_v.d2`: the second scalar value.
 //
-// The function resolves these operanders, calculates the maximum bit length of `scalar_u.d2` and `scalar_v.d2`,
-// and assigns the result (bit_length - 1) to `len_hi`.
 func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.ResOperander) hinter.Hinter {
     return &hinter.GenericZeroHinter{
         Name: "GetHighLen",
         Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
             //> ids.len_hi = max(ids.scalar_u.d2.bit_length(), ids.scalar_v.d2.bit_length())-1
 
-            scalarU, err := hinter.ResolveAsFelt(vm, scalar_u)
+            scalarUValues, err := vm.Memory.ResolveAsBigInt3(scalar_u)
             if err != nil {
                 return fmt.Errorf("failed to resolve scalar_u.d2: %w", err)
             }
 
-            scalarV, err := hinter.ResolveAsFelt(vm, scalar_v)
+            scalarVValues, err := vm.Memory.ResolveAsBigInt3(scalar_v)
             if err != nil {
                 return fmt.Errorf("failed to resolve scalar_v.d2: %w", err)
             }
 
-            bitLenU := scalarU.BitLen()
-            bitLenV := scalarV.BitLen()
+            bitLenU := scalarUValues[2].BitLen()
+            bitLenV := scalarVValues[2].BitLen()
             lenHi := utils.Max(bitLenU, bitLenV) - 1
 
             lenHiAddr, err := len_hi.GetAddress(vm)
@@ -61,11 +59,11 @@ func createGetHighLenHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
     if err != nil {
         return nil, err
     }
-    scalar_u, err := resolver.GetResOperander("scalar_u.d2")
+    scalar_u, err := resolver.GetResOperander("scalar_u")
     if err != nil {
         return nil, err
     }
-    scalar_v, err := resolver.GetResOperander("scalar_v.d2")
+    scalar_v, err := resolver.GetResOperander("scalar_v")
     if err != nil {
         return nil, err
     }
