@@ -429,13 +429,15 @@ func createBlake2sComputeHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	return newBlake2sComputeHint(output), nil
 }
 
-// Blake2sCompute hint computes the blake2s compress function and fills the value in the right position.
+// Blake2sCompress hint computes the blake2s compress function and fills the value in the right position.
 //
-// `newBlake2sCompressHint` takes 1 operander as an argument
-//   - `output` should point to the middle of an instance, right after initial_state, message, t, f,
-//     which should all have a value at this point, and right before the output portion which will be
+// `newBlake2sCompressHint` takes 3 operander as an argument
+//   - `n_bytes` should holds t0 value.
+//   - `output` should be the portion which will be
 //     written by this function.
-func newBlake2sCompressHint(n_bytes, output, blake2s_start hinter.ResOperander) hinter.Hinter {
+//   - `blake2s_start` should point to the middle of an instance, right after initial_state, message, t, f,
+//     which should all have a value at this point.
+func newBlake2sCompressHint(nBytes, output, blake2sStart hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Blake2sCompress",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -460,22 +462,12 @@ func newBlake2sCompressHint(n_bytes, output, blake2s_start hinter.ResOperander) 
 				return err
 			}
 
-			blake2s_start, err := hinter.ResolveAsAddress(vm, blake2s_start)
+			blake2sStart, err := hinter.ResolveAsAddress(vm, blake2sStart)
 			if err != nil {
 				return err
 			}
 
-			n, err := hinter.ResolveAsAddress(vm, n_bytes)
-			if err != nil {
-				return err
-			}
-
-			nAddr, err := vm.Memory.ReadFromAddress(n)
-			if err != nil {
-				return err
-			}
-
-			nUint32, err := hintrunnerUtils.ToSafeUint32(&nAddr)
+			n, err := hinter.ResolveAsFelt(vm, nBytes)
 			if err != nil {
 				return err
 			}
@@ -492,11 +484,12 @@ func newBlake2sCompressHint(n_bytes, output, blake2s_start hinter.ResOperander) 
 			//>       f0=0xffffffff,
 			//>	      f1=0,
 			//>    )
-			message, err := vm.Memory.GetConsecutiveMemoryValues(*blake2s_start, 16)
+			message, err := vm.Memory.GetConsecutiveMemoryValues(*blake2sStart, 16)
 			if err != nil {
 				return err
 			}
 			var messageUint32 []uint32
+
 			for i := 0; i < 16; i++ {
 				value, err := hintrunnerUtils.ToSafeUint32(&message[i])
 				if err != nil {
@@ -504,9 +497,21 @@ func newBlake2sCompressHint(n_bytes, output, blake2s_start hinter.ResOperander) 
 				}
 				messageUint32 = append(messageUint32, value)
 			}
+
 			h := utils.IV()
 			h[0] = h[0] ^ 0x01010020
-			newState := utils.Blake2sCompress(messageUint32, h, nUint32, 0, 0xffffffff, 0)
+
+			nValue, err := mem.MemoryValueFromAny(n)
+			if err != nil {
+				return err
+			}
+
+			t0, err := hintrunnerUtils.ToSafeUint32(&nValue)
+			if err != nil {
+				return err
+			}
+
+			newState := utils.Blake2sCompress(messageUint32, h, t0, 0, 0xffffffff, 0)
 
 			//> segments.write_arg(ids.output, new_state)
 			for i := 0; i < len(newState); i++ {
@@ -528,20 +533,20 @@ func newBlake2sCompressHint(n_bytes, output, blake2s_start hinter.ResOperander) 
 }
 
 func createBlake2sCompressHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	nBytes, err := resolver.GetResOperander("n_bytes")
+	if err != nil {
+		return nil, err
+	}
+
 	output, err := resolver.GetResOperander("output")
 	if err != nil {
 		return nil, err
 	}
 
-	blake2s_start, err := resolver.GetResOperander("blake2s_start")
+	blake2sStart, err := resolver.GetResOperander("blake2s_start")
 	if err != nil {
 		return nil, err
 	}
 
-	n, err := resolver.GetResOperander("n")
-	if err != nil {
-		return nil, err
-	}
-
-	return newBlake2sCompressHint(n, output, blake2s_start), nil
+	return newBlake2sCompressHint(nBytes, output, blake2sStart), nil
 }
