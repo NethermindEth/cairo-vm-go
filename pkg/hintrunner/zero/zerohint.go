@@ -146,6 +146,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createVerifyZeroHinter(resolver)
 	case divModNPackedDivmodV1Code:
 		return createDivModNPackedDivmodV1Hinter(resolver)
+	case importSECP256R1NCode:
+		return createImportSECP256R1NHinter()
 	// EC hints
 	case bigIntToUint256Code:
 		return createBigIntToUint256Hinter(resolver)
