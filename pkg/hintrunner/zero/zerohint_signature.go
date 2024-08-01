@@ -467,3 +467,27 @@ func createDivModNPackedDivmodV1Hinter(resolver hintReferenceResolver) (hinter.H
 
 	return newDivModNPackedDivmodV1Hint(a, b), nil
 }
+
+// ImportSecp256R1N hint imports the `SECP256R1_N` constant from SECP256R1
+// curve utilities in the current scope
+//
+// `newImportSecp256R1NHint` doesn't take any operander as argument
+func newImportSecp256R1NHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "ImportSecp256R1N",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp256r1_utils import SECP256R1_N as N
+
+			SECP256R1_NBig, ok := secp_utils.GetSecp256R1_N()
+			if !ok {
+				return fmt.Errorf("SECP256R1_N failed")
+			}
+
+			return ctx.ScopeManager.AssignVariable("N", &SECP256R1_NBig)
+		},
+	}
+}
+
+func createImportSECP256R1NHinter() (hinter.Hinter, error) {
+	return newImportSecp256R1NHint(), nil
+}
