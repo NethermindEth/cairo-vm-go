@@ -248,5 +248,14 @@ func TestVerifyZeroHint(t *testing.T) {
 				}),
 			},
 		},
+		"ImportSecp256R1N": {
+			{
+				operanders: []*hintOperander{},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newImportSecp256R1NHint()
+				},
+				check: varValueInScopeEquals("N", bigIntString("115792089210356248762697446949407573529996955224135760342422259061068512044369", 10)),
+			},
+		},
 	})
 }
