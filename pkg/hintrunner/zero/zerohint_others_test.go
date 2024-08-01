@@ -604,5 +604,76 @@ func TestZeroHintOthers(t *testing.T) {
 				check: apValueEquals(feltUint64(0)),
 			},
 		},
+		"NormalizeAddress": {
+			{
+				operanders: []*hintOperander{
+					// 2 ** 251 - 256
+					{Name: "addr", Kind: apRelative, Value: feltString("3618502788666131106986593281521497120414687020801267626233049500247285300992")},
+					{Name: "is_small", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNormalizeAddressHint(
+						ctx.operanders["is_small"],
+						ctx.operanders["addr"],
+					)
+				},
+				check: varValueEquals("is_small", feltUint64(0)),
+			},
+			{
+				// 2 ** 251 - 256 - 1
+				operanders: []*hintOperander{
+					{Name: "addr", Kind: apRelative, Value: feltString("3618502788666131106986593281521497120414687020801267626233049500247285300991")},
+					{Name: "is_small", Kind: uninitialized},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newNormalizeAddressHint(
+						ctx.operanders["is_small"],
+						ctx.operanders["addr"],
+					)
+				},
+				check: varValueEquals("is_small", feltUint64(1)),
+			},
+		},
+		"Sha256AndBlake2sInput": {
+			{
+				operanders: []*hintOperander{
+					{Name: "full_word", Kind: uninitialized},
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(3)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSha256AndBlake2sInputHint(
+						ctx.operanders["full_word"],
+						ctx.operanders["n_bytes"],
+					)
+				},
+				check: varValueEquals("full_word", feltUint64(0)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "full_word", Kind: uninitialized},
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(4)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSha256AndBlake2sInputHint(
+						ctx.operanders["full_word"],
+						ctx.operanders["n_bytes"],
+					)
+				},
+				check: varValueEquals("full_word", feltUint64(1)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "full_word", Kind: uninitialized},
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(5)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newSha256AndBlake2sInputHint(
+						ctx.operanders["full_word"],
+						ctx.operanders["n_bytes"],
+					)
+				},
+				check: varValueEquals("full_word", feltUint64(1)),
+			},
+		},
 	})
 }
