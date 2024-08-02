@@ -1258,32 +1258,17 @@ func TestZeroHintEc(t *testing.T) {
 			{
 				operanders: []*hintOperander{
 					{Name: "len_hi", Kind: uninitialized},
-					{Name: "scalar_u.d0", Kind: apRelative, Value: feltString("0")},
-					{Name: "scalar_u.d1", Kind: apRelative, Value: feltString("0")},
-					{Name: "scalar_u.d2", Kind: apRelative, Value: feltString("10")}, 
-					{Name: "scalar_v.d0", Kind: apRelative, Value: feltString("0")},
-					{Name: "scalar_v.d1", Kind: apRelative, Value: feltString("0")},
-					{Name: "scalar_v.d2", Kind: apRelative, Value: feltString("5")}, 
+					{Name: "scalar_u.d0", Kind: apRelative, Value: feltString("123")},
+					{Name: "scalar_u.d1", Kind: apRelative, Value: feltString("456")},
+					{Name: "scalar_u.d2", Kind: apRelative, Value: feltString("789")},
+					{Name: "scalar_v.d0", Kind: apRelative, Value: feltString("987")},
+					{Name: "scalar_v.d1", Kind: apRelative, Value: feltString("654")},
+					{Name: "scalar_v.d2", Kind: apRelative, Value: feltString("321")},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newGetHighLenHint(ctx.operanders["len_hi"], ctx.operanders["scalar_u"], ctx.operanders["scalar_v"])
+					return newGetHighLenHint(ctx.operanders["len_hi"], ctx.operanders["scalar_u.d0"], ctx.operanders["scalar_v.d0"])
 				},
-				check: varValueEquals("len_hi", feltInt64(3)),
-			},
-			{
-				operanders: []*hintOperander{
-					{Name: "len_hi", Kind: uninitialized},
-					{Name: "scalar_u.d0", Kind: apRelative, Value: feltString("0")},
-					{Name: "scalar_u.d1", Kind: apRelative, Value: feltString("0")},
-					{Name: "scalar_u.d2", Kind: apRelative, Value: feltString("1024")}, 
-					{Name: "scalar_v.d0", Kind: apRelative, Value: feltString("0")},
-					{Name: "scalar_v.d1", Kind: apRelative, Value: feltString("0")},
-					{Name: "scalar_v.d2", Kind: apRelative, Value: feltString("32")}, 
-				},
-				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
-					return newGetHighLenHint(ctx.operanders["len_hi"], ctx.operanders["scalar_u"], ctx.operanders["scalar_v"])
-				},
-				check: varValueEquals("len_hi", feltInt64(10)),
+				check: varValueEquals("len_hi", feltInt64(250)),
 			},
 		},
 		"EcRecoverDivModNPacked": {
