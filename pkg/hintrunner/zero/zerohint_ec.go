@@ -21,17 +21,27 @@ import (
 //   - `scalar_u.d2`: the first scalar value.
 //   - `scalar_v.d2`: the second scalar value.
 func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.ResOperander) hinter.Hinter {
-    return &hinter.GenericZeroHinter{
+    return &GenericZeroHinter{
         Name: "GetHighLen",
         Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
             //> ids.len_hi = max(ids.scalar_u.d2.bit_length(), ids.scalar_v.d2.bit_length())-1
 
-            scalarUValues, err := vm.Memory.ResolveAsBigInt3(scalar_u)
+			scalarUAddr, err := scalar_u.GetAddress(vm)
+            if err != nil {
+                return fmt.Errorf("failed to resolve scalar_u address: %w", err)
+            }
+
+            scalarVAddr, err := scalar_v.GetAddress(vm)
+            if err != nil {
+                return fmt.Errorf("failed to resolve scalar_v address: %w", err)
+            }
+
+            scalarUValues, err := vm.Memory.ResolveAsBigInt3(scalarUAddr)
             if err != nil {
                 return fmt.Errorf("failed to resolve scalar_u.d2: %w", err)
             }
 
-            scalarVValues, err := vm.Memory.ResolveAsBigInt3(scalar_v)
+            scalarVValues, err := vm.Memory.ResolveAsBigInt3(scalarVAddr)
             if err != nil {
                 return fmt.Errorf("failed to resolve scalar_v.d2: %w", err)
             }
@@ -45,7 +55,7 @@ func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.ResOperander) hinter.Hi
                 return fmt.Errorf("failed to get address of len_hi: %w", err)
             }
 
-            lenHiMv := memory.MemoryValueFromInt(lenHi)
+            lenHiMv := mem.MemoryValueFromInt(lenHi)
 
             return vm.Memory.WriteToAddress(&lenHiAddr, &lenHiMv)
         },
@@ -66,6 +76,7 @@ func createGetHighLenHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
         return nil, err
     }
     return newGetHighLenHint(len_hi, scalar_u, scalar_v), nil
+}
 
 // BigIntToUint256 hint guesses the low part of the result uint256 variable
 //
