@@ -1268,7 +1268,22 @@ func TestZeroHintEc(t *testing.T) {
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newGetHighLenHint(ctx.operanders["len_hi"], ctx.operanders["scalar_u.d0"], ctx.operanders["scalar_v.d0"])
 				},
-				check: varValueEquals("len_hi", feltInt64(250)),
+				check: varValueEquals("len_hi", feltInt64(9)),
+			},
+			{
+				operanders: []*hintOperander{
+					{Name: "len_hi", Kind: uninitialized},
+					{Name: "scalar_u.d0", Kind: apRelative, Value: feltString("23")},
+					{Name: "scalar_u.d1", Kind: apRelative, Value: feltString("98")},
+					{Name: "scalar_u.d2", Kind: apRelative, Value: feltString("333")},
+					{Name: "scalar_v.d0", Kind: apRelative, Value: feltString("64")},
+					{Name: "scalar_v.d1", Kind: apRelative, Value: feltString("95")},
+					{Name: "scalar_v.d2", Kind: apRelative, Value: feltString("123")},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newGetHighLenHint(ctx.operanders["len_hi"], ctx.operanders["scalar_u.d0"], ctx.operanders["scalar_v.d0"])
+				},
+				check: varValueEquals("len_hi", feltInt64(8)),
 			},
 		},
 		"EcRecoverDivModNPacked": {
