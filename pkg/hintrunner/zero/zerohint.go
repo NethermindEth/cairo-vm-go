@@ -96,6 +96,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 		return createUnsignedDivRemHinter(resolver)
 	case isQuadResidueCode:
 		return createIsQuadResidueHinter(resolver)
+	case getHighLenCode:
+		return createGetHighLenHinter(resolver)
 	case split128Code:
 		return createSplit128Hinter(resolver)
 	case is250BitsCode:

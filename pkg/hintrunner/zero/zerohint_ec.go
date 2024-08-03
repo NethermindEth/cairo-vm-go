@@ -13,6 +13,78 @@ import (
 	"github.com/holiman/uint256"
 )
 
+// getHighLen calculates the highest bit length of `scalar_u.d2` and `scalar_v.d2`,
+// subtracts 1 from the result, and assigns it to `ids.len_hi`.
+//
+// `newGetHighLenHint` takes three operanders as arguments:
+//   - `len_hi`: the variable that will store the result of the bit-length calculation.
+//   - `scalar_u.d2`: the first scalar value.
+//   - `scalar_v.d2`: the second scalar value.
+func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "GetHighLen",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> ids.len_hi = max(ids.scalar_u.d2.bit_length(), ids.scalar_v.d2.bit_length())-1
+
+			scalarUAddr, err := scalar_u.GetAddress(vm)
+			if err != nil {
+				return fmt.Errorf("failed to resolve scalar_u address: %w", err)
+			}
+
+			scalarVAddr, err := scalar_v.GetAddress(vm)
+			if err != nil {
+				return fmt.Errorf("failed to resolve scalar_v address: %w", err)
+			}
+
+			scalarUValues, err := vm.Memory.ResolveAsBigInt3(scalarUAddr)
+			if err != nil {
+				return fmt.Errorf("failed to resolve scalar_u.d2: %w", err)
+			}
+
+			scalarVValues, err := vm.Memory.ResolveAsBigInt3(scalarVAddr)
+			if err != nil {
+				return fmt.Errorf("failed to resolve scalar_v.d2: %w", err)
+			}
+
+			var scalarUD2 big.Int
+			scalarUD2 = *scalarUValues[2].BigInt(&scalarUD2)
+
+			var scalarVD2 big.Int
+			scalarVD2 = *scalarVValues[2].BigInt(&scalarVD2)
+
+			bitLenU := scalarUD2.BitLen()
+			bitLenV := scalarVD2.BitLen()
+
+			lenHi := utils.Max(bitLenU, bitLenV) - 1
+
+			lenHiAddr, err := len_hi.GetAddress(vm)
+			if err != nil {
+				return fmt.Errorf("failed to get address of len_hi: %w", err)
+			}
+
+			lenHiMv := mem.MemoryValueFromInt(lenHi)
+
+			return vm.Memory.WriteToAddress(&lenHiAddr, &lenHiMv)
+		},
+	}
+}
+
+func createGetHighLenHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	len_hi, err := resolver.GetResOperander("len_hi")
+	if err != nil {
+		return nil, err
+	}
+	scalar_u, err := resolver.GetResOperander("scalar_u")
+	if err != nil {
+		return nil, err
+	}
+	scalar_v, err := resolver.GetResOperander("scalar_v")
+	if err != nil {
+		return nil, err
+	}
+	return newGetHighLenHint(len_hi, scalar_u, scalar_v), nil
+}
+
 // BigIntToUint256 hint guesses the low part of the result uint256 variable
 //
 // `newBigIntToUint256Hint` takes 2 operanders as arguments
