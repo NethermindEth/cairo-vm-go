@@ -273,8 +273,8 @@ func newBlake2sFinalizeV3Hint(blake2sPtrEnd hinter.ResOperander) hinter.Hinter {
 					return err
 				}
 				*blake2sPtrEnd = temp
-
 			}
+
 			return nil
 		},
 	}

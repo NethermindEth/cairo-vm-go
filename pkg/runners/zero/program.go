@@ -5,12 +5,12 @@ import (
 
 	sn "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type Program struct {
 	// the bytecode in string format
-	Bytecode []*f.Element
+	Bytecode []*fp.Element
 	// given a string it returns the pc for that function call
 	Entrypoints map[string]uint64
 	// it stores the start and end label pcs
@@ -21,9 +21,9 @@ type Program struct {
 
 func LoadCairoZeroProgram(cairoZeroJson *zero.ZeroProgram) (*Program, error) {
 	// bytecode
-	bytecode := make([]*f.Element, len(cairoZeroJson.Data))
+	bytecode := make([]*fp.Element, len(cairoZeroJson.Data))
 	for i := range cairoZeroJson.Data {
-		felt, err := new(f.Element).SetString(cairoZeroJson.Data[i])
+		felt, err := new(fp.Element).SetString(cairoZeroJson.Data[i])
 		if err != nil {
 			return nil, fmt.Errorf(
 				"cannot read bytecode %s at position %d: %w",
