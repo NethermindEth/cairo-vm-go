@@ -14,6 +14,7 @@ const instancesPerComponentPoseidon = 1
 
 type Poseidon struct {
 	ratio uint64
+	cache map[uint64]mem.MemoryValue
 }
 
 func (p *Poseidon) CheckWrite(segment *mem.Segment, offset uint64, value *mem.MemoryValue) error {
@@ -21,6 +22,10 @@ func (p *Poseidon) CheckWrite(segment *mem.Segment, offset uint64, value *mem.Me
 }
 
 func (p *Poseidon) InferValue(segment *mem.Segment, offset uint64) error {
+	val, ok := p.cache[offset]
+	if ok {
+		return segment.Write(offset, &val)
+	}
 	poseidonIndex := offset % cellsPerPoseidon
 	if poseidonIndex < inputCellsPerPoseidon {
 		return errors.New("cannot infer value")
@@ -43,13 +48,10 @@ func (p *Poseidon) InferValue(segment *mem.Segment, offset uint64) error {
 	hash := PoseidonPerm(poseidonInputValues[0], poseidonInputValues[1], poseidonInputValues[2])
 	for i := 0; i < 3; i++ {
 		hashValue := mem.MemoryValueFromFieldElement(&hash[i])
-		err := segment.Write(baseOffset+uint64(i+3), &hashValue)
-		if err != nil {
-			return err
-		}
-
+		p.cache[offset+uint64(i)] = hashValue
 	}
-	return nil
+	value := p.cache[offset]
+	return segment.Write(offset, &value)
 }
 
 func (p *Poseidon) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {

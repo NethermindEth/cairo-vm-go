@@ -45,7 +45,7 @@ func getStarknetWithKeccakLayout() Layout {
 		{Runner: &Bitwise{ratio: 64}, Builtin: starknet.Bitwise},
 		{Runner: &EcOp{ratio: 1024}, Builtin: starknet.ECOP},
 		{Runner: &Keccak{ratio: 2048}, Builtin: starknet.Keccak},
-		{Runner: &Poseidon{ratio: 32}, Builtin: starknet.Poseidon},
+		{Runner: &Poseidon{ratio: 32, cache: make(map[uint64]memory.MemoryValue)}, Builtin: starknet.Poseidon},
 	}}
 }
 
