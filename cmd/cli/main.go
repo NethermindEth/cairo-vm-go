@@ -113,7 +113,7 @@ func main() {
 					}
 
 					fmt.Println("Running....")
-					runner, err := runnerzero.NewRunner(program, hints, proofmode, maxsteps, layoutName)
+					runner, err := runnerzero.NewRunner(program, hints, proofmode, collectTrace, maxsteps, layoutName)
 					if err != nil {
 						return fmt.Errorf("cannot create runner: %w", err)
 					}

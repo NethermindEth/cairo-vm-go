@@ -29,18 +29,19 @@ type ZeroRunner struct {
 }
 
 // Creates a new Runner of a Cairo Zero program
-func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, proofmode bool, maxsteps uint64, layoutName string) (ZeroRunner, error) {
+func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, proofmode bool, collectTrace bool, maxsteps uint64, layoutName string) (ZeroRunner, error) {
 	hintrunner := hintrunner.NewHintRunner(hints)
 	layout, err := builtins.GetLayout(layoutName)
 	if err != nil {
 		return ZeroRunner{}, err
 	}
 	return ZeroRunner{
-		program:    program,
-		hintrunner: hintrunner,
-		proofmode:  proofmode,
-		maxsteps:   maxsteps,
-		layout:     layout,
+		program:      program,
+		hintrunner:   hintrunner,
+		proofmode:    proofmode,
+		collectTrace: collectTrace,
+		maxsteps:     maxsteps,
+		layout:       layout,
 	}, nil
 }
 
@@ -56,11 +57,16 @@ func (runner *ZeroRunner) RunEntryPoint(pc uint64) error {
 		return err
 	}
 
+	stack, err := runner.initializeBuiltins(memory)
+	if err != nil {
+		return err
+	}
+
 	// Builtins are initialized as a part of initializeEntrypoint().
 
 	returnFp := memory.AllocateEmptySegment()
 	mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
-	end, err := runner.initializeEntrypoint(pc, nil, &mvReturnFp, memory)
+	end, err := runner.initializeEntrypoint(pc, nil, &mvReturnFp, memory, stack)
 	if err != nil {
 		return err
 	}
@@ -117,6 +123,11 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) 
 		return mem.UnknownAddress, err
 	}
 
+	stack, err := runner.initializeBuiltins(memory)
+	if err != nil {
+		return mem.UnknownAddress, err
+	}
+
 	if runner.proofmode {
 		initialPCOffset, ok := runner.program.Labels["__start__"]
 		if !ok {
@@ -129,10 +140,6 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) 
 				errors.New("end label not found. Try compiling with `--proof_mode`")
 		}
 
-		stack, err := runner.initializeBuiltins(memory)
-		if err != nil {
-			return mem.UnknownAddress, err
-		}
 		// Add the dummy last fp and pc to the public memory, so that the verifier can enforce [fp - 2] = fp.
 		stack = append([]mem.MemoryValue{mem.MemoryValueFromSegmentAndOffset(
 			vm.ProgramSegment,
@@ -158,16 +165,12 @@ func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) 
 	if !ok {
 		return mem.UnknownAddress, errors.New("can't find an entrypoint for main")
 	}
-	return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory)
+	return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack)
 }
 
 func (runner *ZeroRunner) initializeEntrypoint(
-	initialPCOffset uint64, arguments []*fp.Element, returnFp *mem.MemoryValue, memory *mem.Memory,
+	initialPCOffset uint64, arguments []*fp.Element, returnFp *mem.MemoryValue, memory *mem.Memory, stack []mem.MemoryValue,
 ) (mem.MemoryAddress, error) {
-	stack, err := runner.initializeBuiltins(memory)
-	if err != nil {
-		return mem.UnknownAddress, err
-	}
 	for i := range arguments {
 		stack = append(stack, mem.MemoryValueFromFieldElement(arguments[i]))
 	}
@@ -379,7 +382,7 @@ func (runner *ZeroRunner) BuildMemory() ([]byte, error) {
 	return vm.EncodeMemory(relocatedMemory), nil
 }
 
-// BuildMemory relocates the trace and returns it
+// BuildTrace relocates the trace and returns it
 func (runner *ZeroRunner) BuildTrace() ([]byte, error) {
 	relocatedTrace := runner.vm.RelocateTrace()
 	return vm.EncodeTrace(relocatedTrace), nil
