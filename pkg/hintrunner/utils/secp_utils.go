@@ -37,7 +37,26 @@ func SecPPacked(limbs [3]*fp.Element) (big.Int, error) {
 
 	baseBig, ok := GetBaseBig()
 	if !ok {
-		return *big.NewInt(0), fmt.Errorf("getBaseBig failed")
+		return *big.NewInt(0), fmt.Errorf("GetBaseBig failed")
+	}
+
+	packedBig := new(big.Int)
+	for idx, limb := range limbs {
+		limbBig := AsInt(limb)
+		valueToAddBig := new(big.Int).Exp(&baseBig, big.NewInt(int64(idx)), nil)
+		valueToAddBig.Mul(valueToAddBig, &limbBig)
+		packedBig.Add(packedBig, valueToAddBig)
+	}
+
+	return *packedBig, nil
+}
+
+func SecPPackedBigInt5(limbs [5]*fp.Element) (big.Int, error) {
+	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/cairo_secp/secp_utils.py#L28
+
+	baseBig, ok := GetBaseBig()
+	if !ok {
+		return *big.NewInt(0), fmt.Errorf("GetBaseBig failed")
 	}
 
 	packedBig := new(big.Int)
@@ -83,4 +102,10 @@ func GetSecp256R1_P() (big.Int, bool) {
 	// 2**256 - 2**224 + 2**192 + 2**96 - 1
 	secp256R1_P, ok := new(big.Int).SetString("115792089210356248762697446949407573530086143415290314195533631308867097853951", 10)
 	return *secp256R1_P, ok
+}
+
+func GetSecp256R1_N() (big.Int, bool) {
+	// 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
+	secp256R1_N, ok := new(big.Int).SetString("115792089210356248762697446949407573529996955224135760342422259061068512044369", 10)
+	return *secp256R1_N, ok
 }

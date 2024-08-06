@@ -540,5 +540,45 @@ func TestZeroHintBlake(t *testing.T) {
 					}),
 			},
 		},
+		"Blake2sCompress": {
+			{
+				operanders: []*hintOperander{
+					{Name: "output", Kind: apRelative, Value: addrWithSegment(1, 31)},
+					{Name: "n_bytes", Kind: apRelative, Value: feltUint64(11)},
+					{Name: "blake2s_start", Kind: apRelative, Value: addr(7)},
+					{Name: "message.1", Kind: apRelative, Value: feltUint64(9)},
+					{Name: "message.2", Kind: apRelative, Value: feltUint64(10)},
+					{Name: "message.3", Kind: apRelative, Value: feltUint64(11)},
+					{Name: "message.4", Kind: apRelative, Value: feltUint64(12)},
+					{Name: "message.5", Kind: apRelative, Value: feltUint64(13)},
+					{Name: "message.6", Kind: apRelative, Value: feltUint64(14)},
+					{Name: "message.7", Kind: apRelative, Value: feltUint64(15)},
+					{Name: "message.8", Kind: apRelative, Value: feltUint64(16)},
+					{Name: "message.9", Kind: apRelative, Value: feltUint64(17)},
+					{Name: "message.10", Kind: apRelative, Value: feltUint64(18)},
+					{Name: "message.11", Kind: apRelative, Value: feltUint64(19)},
+					{Name: "message.12", Kind: apRelative, Value: feltUint64(20)},
+					{Name: "message.13", Kind: apRelative, Value: feltUint64(21)},
+					{Name: "message.14", Kind: apRelative, Value: feltUint64(22)},
+					{Name: "message.15", Kind: apRelative, Value: feltUint64(23)},
+					{Name: "message.16", Kind: apRelative, Value: feltUint64(24)},
+				},
+				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
+					return newBlake2sCompressHint(ctx.operanders["n_bytes"], ctx.operanders["output"], ctx.operanders["blake2s_start"])
+				},
+				check: consecutiveVarAddrResolvedValueEquals(
+					"output",
+					[]*fp.Element{
+						feltUint64(2704942682),
+						feltUint64(2092659084),
+						feltUint64(1629836399),
+						feltUint64(3290618174),
+						feltUint64(1028451196),
+						feltUint64(699175555),
+						feltUint64(780579485),
+						feltUint64(1407030473),
+					}),
+			},
+		},
 	})
 }

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type Builtin uint8
@@ -80,9 +80,9 @@ func (b *Builtin) UnmarshalJSON(data []byte) error {
 }
 
 type EntryPointInfo struct {
-	Selector f.Element `json:"selector"`
-	Offset   f.Element `json:"offset"`
-	Builtins []Builtin `json:"builtins"`
+	Selector fp.Element `json:"selector"`
+	Offset   fp.Element `json:"offset"`
+	Builtins []Builtin  `json:"builtins"`
 }
 
 type EntryPointByType struct {
@@ -133,7 +133,7 @@ func (hints *Hints) MarshalJSON() ([]byte, error) {
 
 type StarknetProgram struct {
 	// Prime is fixed to be 0x800000000000011000000000000000000000000000000000000000000000001 and wont fit in a f.Felt
-	Bytecode        []f.Element      `json:"bytecode"`
+	Bytecode        []fp.Element     `json:"bytecode"`
 	CompilerVersion string           `json:"compiler_version"`
 	EntryPoints     EntryPointByType `json:"entry_points_by_type"`
 	Hints           []Hints          `json:"hints" validate:"required"`
