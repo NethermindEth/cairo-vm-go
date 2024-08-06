@@ -1,7 +1,7 @@
 package disasm
 
 import (
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type Program struct {
@@ -14,7 +14,7 @@ type Line struct {
 }
 
 type Config struct {
-	Bytecode []*f.Element
+	Bytecode []*fp.Element
 
 	Indent int
 }

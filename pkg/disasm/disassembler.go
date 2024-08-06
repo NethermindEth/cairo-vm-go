@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type disassembler struct {
-	bytecode []*f.Element
+	bytecode []*fp.Element
 
 	config Config
 
@@ -161,7 +161,7 @@ func (d *disassembler) collectInstComments(inst casmInstruction) ([]string, erro
 			// > assert [fp+1] = [fp] * 2894802230932904970957858226476056084498485772265277359978473644908697616385 // div 5
 			imm := inst.arg
 			if inst.Res == assembler.MulOperands && !imm.IsUint64() {
-				dividend := f.NewElement(0)
+				dividend := fp.NewElement(0)
 				dividend.Inverse(imm)
 				// If divident is a very large number, then we could got it wrong.
 				if dividend.IsUint64() {

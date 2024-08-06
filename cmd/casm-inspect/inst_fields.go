@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/urfave/cli/v2"
 )
 
@@ -18,7 +18,7 @@ func (p *instFieldsProgram) Action(ctx *cli.Context) error {
 		return errors.New("expected 1 non-empty positional argument")
 	}
 
-	felt, err := new(f.Element).SetString(s)
+	felt, err := new(fp.Element).SetString(s)
 	if err != nil {
 		return fmt.Errorf("parsing %q argument: %w", s, err)
 	}
