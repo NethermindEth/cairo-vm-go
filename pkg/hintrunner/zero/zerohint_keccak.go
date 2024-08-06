@@ -45,10 +45,12 @@ func newCairoKeccakFinalizeHint(keccakPtrEnd hinter.ResOperander) hinter.Hinter 
 			for i := uint64(0); i < blockSizeVal; i++ {
 				result = append(result, padding...)
 			}
+
 			keccakPtrEnd, err := hinter.ResolveAsAddress(vm, keccakPtrEnd)
 			if err != nil {
 				return err
 			}
+
 			for i := 0; i < len(result); i++ {
 				resultMV := memory.MemoryValueFromUint(result[i])
 				err = vm.Memory.WriteToAddress(keccakPtrEnd, &resultMV)
@@ -61,6 +63,7 @@ func newCairoKeccakFinalizeHint(keccakPtrEnd hinter.ResOperander) hinter.Hinter 
 				}
 				keccakPtrEnd = &keccakPtrEndIncremented
 			}
+
 			return nil
 		},
 	}
@@ -71,6 +74,7 @@ func createCairoKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hin
 	if err != nil {
 		return nil, err
 	}
+
 	return newCairoKeccakFinalizeHint(keccakPtrEnd), nil
 }
 
@@ -149,6 +153,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 					return err
 				}
 			}
+
 			hash := sha3.NewLegacyKeccak256()
 			hash.Write(keccakInput)
 			//>	hashed = keccak(keccak_input)
@@ -160,15 +165,18 @@ func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hin
 				return err
 			}
 			hashedHighMV := memory.MemoryValueFromFieldElement(hashedHigh)
+
 			//>	ids.high = int.from_bytes(hashed[:16], 'big')
 			err = vm.Memory.WriteToAddress(&highAddr, &hashedHighMV)
 			if err != nil {
 				return err
 			}
+
 			lowAddr, err := low.GetAddress(vm)
 			if err != nil {
 				return err
 			}
+
 			hashedLowMV := memory.MemoryValueFromFieldElement(hashedLow)
 			//>	ids.low = int.from_bytes(hashed[16:32], 'big')
 			return vm.Memory.WriteToAddress(&lowAddr, &hashedLowMV)
@@ -181,18 +189,22 @@ func createUnsafeKeccakHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 	if err != nil {
 		return nil, err
 	}
+
 	length, err := resolver.GetResOperander("length")
 	if err != nil {
 		return nil, err
 	}
+
 	high, err := resolver.GetResOperander("high")
 	if err != nil {
 		return nil, err
 	}
+
 	low, err := resolver.GetResOperander("low")
 	if err != nil {
 		return nil, err
 	}
+
 	return newUnsafeKeccakHint(data, length, high, low), nil
 }
 
@@ -302,14 +314,17 @@ func createUnsafeKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hi
 	if err != nil {
 		return nil, err
 	}
+
 	high, err := resolver.GetResOperander("high")
 	if err != nil {
 		return nil, err
 	}
+
 	low, err := resolver.GetResOperander("low")
 	if err != nil {
 		return nil, err
 	}
+
 	return newUnsafeKeccakFinalizeHint(keccak_state, high, low), nil
 }
 

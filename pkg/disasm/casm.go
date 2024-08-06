@@ -2,13 +2,13 @@ package disasm
 
 import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type casmInstruction struct {
 	*assembler.Instruction
 
-	arg            *f.Element
+	arg            *fp.Element
 	bytecodeOffset int64
 }
 
