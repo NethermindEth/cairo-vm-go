@@ -36,12 +36,12 @@ func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, proofmode boo
 		return ZeroRunner{}, err
 	}
 	return ZeroRunner{
-		program:    program,
-		hintrunner: hintrunner,
-		proofmode:  proofmode,
-        collectTrace: collectTrace,
-		maxsteps:   maxsteps,
-		layout:     layout,
+		program:      program,
+		hintrunner:   hintrunner,
+		proofmode:    proofmode,
+		collectTrace: collectTrace,
+		maxsteps:     maxsteps,
+		layout:       layout,
 	}, nil
 }
 
