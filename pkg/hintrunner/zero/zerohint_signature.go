@@ -27,6 +27,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 		Name: "VerifyZero",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack
+			//>
 			//> q, r = divmod(pack(ids.val, PRIME), SECP_P)
 			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
 			//> ids.q = q % PRIME
@@ -447,28 +448,8 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			}
 
 			value_Big := new(big.Int).Set(&resBig)
-			res_Big := new(big.Int).Set(&resBig)
-			a_Big := new(big.Int).Set(&aPackedBig)
-			b_Big := new(big.Int).Set(&bPackedBig)
-			n_Big := new(big.Int).Set(&nBig)
 
-			if err := ctx.ScopeManager.AssignVariable("res", res_Big); err != nil {
-				return err
-			}
-
-			if err := ctx.ScopeManager.AssignVariable("a", a_Big); err != nil {
-				return err
-			}
-
-			if err := ctx.ScopeManager.AssignVariable("b", b_Big); err != nil {
-				return err
-			}
-
-			if err := ctx.ScopeManager.AssignVariable("N", n_Big); err != nil {
-				return err
-			}
-
-			return ctx.ScopeManager.AssignVariable("value", value_Big)
+			return ctx.ScopeManager.AssignVariables(map[string](any){"value": value_Big, "res": &resBig, "a": &aPackedBig, "b": &bPackedBig, "N": &nBig})
 		},
 	}
 }
@@ -485,4 +466,28 @@ func createDivModNPackedDivmodV1Hinter(resolver hintReferenceResolver) (hinter.H
 	}
 
 	return newDivModNPackedDivmodV1Hint(a, b), nil
+}
+
+// ImportSecp256R1N hint imports the `SECP256R1_N` constant from SECP256R1
+// curve utilities in the current scope
+//
+// `newImportSecp256R1NHint` doesn't take any operander as argument
+func newImportSecp256R1NHint() hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "ImportSecp256R1N",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> from starkware.cairo.common.cairo_secp.secp256r1_utils import SECP256R1_N as N
+
+			SECP256R1_NBig, ok := secp_utils.GetSecp256R1_N()
+			if !ok {
+				return fmt.Errorf("SECP256R1_N failed")
+			}
+
+			return ctx.ScopeManager.AssignVariable("N", &SECP256R1_NBig)
+		},
+	}
+}
+
+func createImportSECP256R1NHinter() (hinter.Hinter, error) {
+	return newImportSecp256R1NHint(), nil
 }

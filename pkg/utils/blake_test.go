@@ -51,7 +51,7 @@ func TestRightRot(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := rightRot(tc.value, tc.n)
+			result := RightRot(tc.value, tc.n)
 			if result != tc.expected {
 				t.Errorf("Expected %08X, got %08X", tc.expected, result)
 			}

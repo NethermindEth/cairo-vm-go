@@ -388,6 +388,24 @@ func (memory *Memory) ResolveAsBigInt3(valAddr MemoryAddress) ([3]*f.Element, er
 	return valValues, nil
 }
 
+func (memory *Memory) ResolveAsBigInt5(valAddr MemoryAddress) ([5]*f.Element, error) {
+	valMemoryValues, err := memory.GetConsecutiveMemoryValues(valAddr, uint64(5))
+	if err != nil {
+		return [5]*f.Element{}, err
+	}
+
+	var valValues [5]*f.Element
+	for i := 0; i < 5; i++ {
+		valValue, err := valMemoryValues[i].FieldElement()
+		if err != nil {
+			return [5]*f.Element{}, err
+		}
+		valValues[i] = valValue
+	}
+
+	return valValues, nil
+}
+
 func (memory *Memory) ResolveAsEcPoint(valAddr MemoryAddress) ([2]*f.Element, error) {
 	valMemoryValues, err := memory.GetConsecutiveMemoryValues(valAddr, uint64(2))
 	if err != nil {

@@ -1,4 +1,5 @@
 %builtins range_check bitwise keccak
+
 from starkware.cairo.common.cairo_builtins import KeccakBuiltin, BitwiseBuiltin
 from starkware.cairo.common.builtin_keccak.keccak import keccak_uint256s
 from starkware.cairo.common.alloc import alloc
