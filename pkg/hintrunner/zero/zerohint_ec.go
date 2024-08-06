@@ -13,13 +13,13 @@ import (
 	"github.com/holiman/uint256"
 )
 
-// getHighLen calculates the highest bit length of `scalar_u.d2` and `scalar_v.d2`,
-// subtracts 1 from the result, and assigns it to `ids.len_hi`.
+// GetHighLen hint calculates the highest bit length between `scalar_u.d2` and `scalar_v.d2`,
+// subtracts 1 from the result, and assigns it to `ids.len_hi`
 //
-// `newGetHighLenHint` takes three operanders as arguments:
-//   - `len_hi`: the variable that will store the result of the bit-length calculation.
-//   - `scalar_u.d2`: the first scalar value.
-//   - `scalar_v.d2`: the second scalar value.
+// `newGetHighLenHint` takes 3 operanders as arguments:
+//   - `len_hi`: the variable that will store the result of the bit-length calculation
+//   - `scalar_u.d2`: the first scalar value
+//   - `scalar_v.d2`: the second scalar value
 func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.ResOperander) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "GetHighLen",
@@ -47,10 +47,10 @@ func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.ResOperander) hinter.Hi
 			}
 
 			var scalarUD2 big.Int
-			scalarUD2 = *scalarUValues[2].BigInt(&scalarUD2)
+			_ = *scalarUValues[2].BigInt(&scalarUD2)
 
 			var scalarVD2 big.Int
-			scalarVD2 = *scalarVValues[2].BigInt(&scalarVD2)
+			_ = *scalarVValues[2].BigInt(&scalarVD2)
 
 			bitLenU := scalarUD2.BitLen()
 			bitLenV := scalarVD2.BitLen()
@@ -74,18 +74,21 @@ func createGetHighLenHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 	if err != nil {
 		return nil, err
 	}
+
 	scalar_u, err := resolver.GetResOperander("scalar_u")
 	if err != nil {
 		return nil, err
 	}
+
 	scalar_v, err := resolver.GetResOperander("scalar_v")
 	if err != nil {
 		return nil, err
 	}
+
 	return newGetHighLenHint(len_hi, scalar_u, scalar_v), nil
 }
 
-// BigIntToUint256 hint guesses the low part of the result uint256 variable
+// BigIntToUint256 hint guesses the low part of the `x` uint256 variable
 //
 // `newBigIntToUint256Hint` takes 2 operanders as arguments
 //   - `low` is the variable that will store the low part of the uint256 result
@@ -220,6 +223,8 @@ func createEcNegateHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 // DivModeNSafeDivPlusOne performs a safe division of the result obtained from
 // the multiplication of `res` and `b` subtracted by `a`, by `N`. It then adds 1
 // to the final result to ensure safety and prevent division by zero errors.
+//
+// `newDivModNSafeDivPlusOneHint` doens't take any operander as argument
 //
 // `DivModeNSafeDivPlusOne` assigns the result as `value` in the current scope.
 func newDivModNSafeDivPlusOneHint() hinter.Hinter {
