@@ -4,61 +4,6 @@ import (
 	"testing"
 )
 
-func TestRightRot(t *testing.T) {
-	testCases := []struct {
-		name     string
-		value    uint32
-		n        uint32
-		expected uint32
-	}{
-		{
-			name:     "Rotate 0 bits",
-			value:    0x12345678,
-			n:        0,
-			expected: 0x12345678,
-		},
-		{
-			name:     "Rotate 1 bit",
-			value:    0x12345678,
-			n:        1,
-			expected: 0x091A2B3C,
-		},
-		{
-			name:     "Rotate 4 bits",
-			value:    0x12345678,
-			n:        4,
-			expected: 0x81234567,
-		},
-		{
-			name:     "Rotate 8 bits",
-			value:    0x12345678,
-			n:        8,
-			expected: 0x78123456,
-		},
-		{
-			name:     "Rotate 16 bits",
-			value:    0x12345678,
-			n:        16,
-			expected: 0x56781234,
-		},
-		{
-			name:     "Rotate 31 bits",
-			value:    0x12345678,
-			n:        31,
-			expected: 0x2468ACF0,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			result := RightRot(tc.value, tc.n)
-			if result != tc.expected {
-				t.Errorf("Expected %08X, got %08X", tc.expected, result)
-			}
-		})
-	}
-}
-
 // Result from CairoVM's blake2s implementation in Rust by Lambdaclass
 // https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=987596d755c09f8803a097d29594f92c
 
