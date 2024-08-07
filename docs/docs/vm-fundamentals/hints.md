@@ -118,7 +118,7 @@ This hint is used to potentially set a maximum length to the array to be sorted.
 
 **UsortBody**
 
-Core hint that does most of the sorting operation computation. It uses a dictionnary to group input elements and their positions Then, it sorts the unique elements and generates the output array and multiplicities.
+Core hint that does most of the sorting operation computation. It uses a dictionnary to group input elements and their positions. Then, it sorts the unique elements and generates the output array and multiplicities, with multiplicities being the number of times a given value appeared in the input.
 
 After execution this hint, the Cairo code will call `verify_usort` recursive function, which ensures correctness of the sorting and multiplicity counting.
 
