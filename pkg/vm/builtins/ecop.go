@@ -6,7 +6,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
 )
 
@@ -15,7 +15,7 @@ const cellsPerEcOp = 7
 const inputCellsPerEcOp = 5
 const instancesPerComponentEcOp = 1
 
-var feltThree f.Element = f.Element(
+var feltThree fp.Element = fp.Element(
 	[]uint64{
 		18446744073709551521,
 		18446744073709551615,
@@ -25,6 +25,7 @@ var feltThree f.Element = f.Element(
 
 type EcOp struct {
 	ratio uint64
+	cache map[uint64]fp.Element
 }
 
 func (e *EcOp) String() string {
@@ -36,6 +37,12 @@ func (e *EcOp) CheckWrite(segment *mem.Segment, offset uint64, value *mem.Memory
 }
 
 func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
+	// check if the value is already in the cache
+	value, ok := e.cache[offset]
+	if ok {
+		mv := mem.MemoryValueFromFieldElement(&value)
+		return segment.Write(offset, &mv)
+	}
 	// get the current slot index and verify it is an output cell
 	ecopIndex := offset % cellsPerEcOp
 	if ecopIndex < inputCellsPerEcOp {
@@ -62,7 +69,7 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 	}
 
 	// unwrap the values as felts
-	inputsFelt := [5]*f.Element{}
+	inputsFelt := [5]*fp.Element{}
 	for i := range inputs {
 		felt, err := inputs[i].FieldElement()
 		if err != nil {
@@ -94,15 +101,13 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 	// store the resulting point `r`
 	outputOff := inputOff + inputCellsPerEcOp
 
-	rxMV := mem.MemoryValueFromFieldElement(&r.X)
-	err = segment.Write(outputOff, &rxMV)
-	if err != nil {
-		return err
-	}
+	// store the x and y coordinates of the resulting point
+	e.cache[outputOff] = r.X
+	e.cache[outputOff+1] = r.Y
 
-	ryMV := mem.MemoryValueFromFieldElement(&r.Y)
-	err = segment.Write(outputOff+1, &ryMV)
-	return err
+	value = e.cache[offset]
+	mv := mem.MemoryValueFromFieldElement(&value)
+	return segment.Write(offset, &mv)
 }
 
 func (e *EcOp) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
@@ -111,22 +116,22 @@ func (e *EcOp) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (u
 
 // structure to represent a point in the elliptic curve
 type point struct {
-	X, Y f.Element
+	X, Y fp.Element
 }
 
 // returns true if a point `p` belongs to the `ec` curve ruled by the params `alpha` and
 // `beta`. In other words, true if  y^2 = x^3 + alpha * x + beta
-func (p *point) onCurve(alpha, beta *f.Element) bool {
+func (p *point) onCurve(alpha, beta *fp.Element) bool {
 	// calculate lhs
-	y2 := f.Element{}
+	y2 := fp.Element{}
 	y2.Square(&p.Y)
 
 	// calculate rhs
-	x3 := f.Element{}
+	x3 := fp.Element{}
 	x3.Square(&p.X)
 	x3.Mul(&x3, &p.X)
 
-	ax := f.Element{}
+	ax := fp.Element{}
 	ax.Mul(alpha, &p.X)
 
 	x3.Add(&x3, &ax)
@@ -138,7 +143,7 @@ func (p *point) onCurve(alpha, beta *f.Element) bool {
 
 // returns the result of the ecop operation on points `P` and `Q` with scalar
 // `m` and param `alpha`. The resulting point `R` is equal to  P + m * Q
-func ecop(p *point, q *point, m, alpha *f.Element) (point, error) {
+func ecop(p *point, q *point, m, alpha *fp.Element) (point, error) {
 	partialSum := *p
 	doublePoint := *q
 
@@ -178,20 +183,20 @@ func ecop(p *point, q *point, m, alpha *f.Element) (point, error) {
 // always different
 func ecadd(p *point, q *point) point {
 	// get the slope between the two points
-	slope := f.Element{}
+	slope := fp.Element{}
 	slope.Sub(&p.Y, &q.Y)
-	denom := f.Element{}
+	denom := fp.Element{}
 	denom.Sub(&p.X, &q.X)
 	slope.Div(&slope, &denom)
 
 	// get the x coordinate: x = slope^2 - p.X - q.X
-	x := f.Element{}
+	x := fp.Element{}
 	x.Square(&slope)
 	x.Sub(&x, &p.X)
 	x.Sub(&x, &q.X)
 
 	// get the y coordinate: y = slope * (p.X - x) - p.Y
-	y := f.Element{}
+	y := fp.Element{}
 	y.Sub(&p.X, &x)
 	y.Mul(&y, &slope)
 	y.Sub(&y, &p.Y)
@@ -201,28 +206,28 @@ func ecadd(p *point, q *point) point {
 
 // performs elliptic curve doubling over a point. Assumes `y` coordinate
 // is different than 0
-func ecdouble(p *point, alpha *f.Element) point {
+func ecdouble(p *point, alpha *fp.Element) point {
 	// get the double slope
-	doubleSlope := f.Element{}
+	doubleSlope := fp.Element{}
 	doubleSlope.Square(&p.X)
 	doubleSlope.Mul(
 		&doubleSlope,
 		&feltThree,
 	)
 	doubleSlope.Add(&doubleSlope, alpha)
-	denom := f.Element{}
+	denom := fp.Element{}
 	denom.Double(&p.Y)
 	doubleSlope.Div(&doubleSlope, &denom)
 
 	// get the x coordinate: x = slope^2 - 2 * p.X
-	x := f.Element{}
+	x := fp.Element{}
 	x.Square(&doubleSlope)
-	doublePx := f.Element{}
+	doublePx := fp.Element{}
 	doublePx.Double(&p.X)
 	x.Sub(&x, &doublePx)
 
 	// get the y coordinates: y =  slope * (p.X - x) - p.Y
-	y := f.Element{}
+	y := fp.Element{}
 	y.Sub(&p.X, &x)
 	y.Mul(&y, &doubleSlope)
 	y.Sub(&y, &p.Y)
