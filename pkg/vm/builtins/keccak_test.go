@@ -10,7 +10,7 @@ import (
 )
 
 func TestKeccakBuiltin(t *testing.T) {
-	keccak := &Keccak{}
+	keccak := &Keccak{ratio: 2048, cache: make(map[uint64]fp.Element)}
 	segment := memory.EmptySegmentWithLength(9)
 	segment.WithBuiltinRunner(keccak)
 

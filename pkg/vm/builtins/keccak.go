@@ -24,6 +24,7 @@ const instancesPerComponentKeccak = 16
 
 type Keccak struct {
 	ratio uint64
+	cache map[uint64]fp.Element
 }
 
 func (k *Keccak) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
@@ -31,6 +32,11 @@ func (k *Keccak) CheckWrite(segment *memory.Segment, offset uint64, value *memor
 }
 
 func (k *Keccak) InferValue(segment *memory.Segment, offset uint64) error {
+	value, ok := k.cache[offset]
+	if ok {
+		mv := memory.MemoryValueFromFieldElement(&value)
+		return segment.Write(offset, &mv)
+	}
 	hashIndex := offset % cellsPerKeccak
 	if hashIndex < inputCellsPerKeccak {
 		return errors.New("cannot infer value")
@@ -69,13 +75,11 @@ func (k *Keccak) InferValue(segment *memory.Segment, offset uint64) error {
 		copy(bytes[:], output[i*25:i*25+25])
 		//This is 25*8 bits which is smaller than max felt 252 bits so no need to check the error
 		v, _ := fp.LittleEndian.Element(&bytes)
-		mv := memory.MemoryValueFromFieldElement(&v)
-		err := segment.Write(startOffset+inputCellsPerKeccak+uint64(i), &mv)
-		if err != nil {
-			return err
-		}
+		k.cache[startOffset+inputCellsPerKeccak+uint64(i)] = v
 	}
-	return nil
+	value = k.cache[offset]
+	mv := memory.MemoryValueFromFieldElement(&value)
+	return segment.Write(offset, &mv)
 }
 
 func (k *Keccak) String() string {

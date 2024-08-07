@@ -11,7 +11,7 @@ import (
 )
 
 func TestPoseidon(t *testing.T) {
-	poseidon := &Poseidon{ratio: 32, cache: make(map[uint64]memory.MemoryValue)}
+	poseidon := &Poseidon{ratio: 32, cache: make(map[uint64]fp.Element)}
 	segment := memory.EmptySegmentWithLength(3)
 	segment.WithBuiltinRunner(poseidon)
 	inputState := []string{

@@ -25,6 +25,7 @@ var feltThree f.Element = f.Element(
 
 type EcOp struct {
 	ratio uint64
+	cache map[uint64]f.Element
 }
 
 func (e *EcOp) String() string {
@@ -36,6 +37,12 @@ func (e *EcOp) CheckWrite(segment *mem.Segment, offset uint64, value *mem.Memory
 }
 
 func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
+	// check if the value is already in the cache
+	value, ok := e.cache[offset]
+	if ok {
+		mv := mem.MemoryValueFromFieldElement(&value)
+		return segment.Write(offset, &mv)
+	}
 	// get the current slot index and verify it is an output cell
 	ecopIndex := offset % cellsPerEcOp
 	if ecopIndex < inputCellsPerEcOp {
@@ -94,15 +101,13 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 	// store the resulting point `r`
 	outputOff := inputOff + inputCellsPerEcOp
 
-	rxMV := mem.MemoryValueFromFieldElement(&r.X)
-	err = segment.Write(outputOff, &rxMV)
-	if err != nil {
-		return err
-	}
+	// store the x and y coordinates of the resulting point
+	e.cache[outputOff] = r.X
+	e.cache[outputOff+1] = r.Y
 
-	ryMV := mem.MemoryValueFromFieldElement(&r.Y)
-	err = segment.Write(outputOff+1, &ryMV)
-	return err
+	value = e.cache[offset]
+	mv := mem.MemoryValueFromFieldElement(&value)
+	return segment.Write(offset, &mv)
 }
 
 func (e *EcOp) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
