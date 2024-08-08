@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Run gofmt.
+echo "Running gofmt..."
+gofmt -w .
+
+# Check if any files were modified by gofmt.
+if ! git diff --exit-code > /dev/null; then
+  echo "Some files were automatically formatted by gofmt. Adding them to the commit."
+  git add .
+fi
+
+exit 0
