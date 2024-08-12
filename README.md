@@ -32,6 +32,7 @@ To ensure code quality and consistency, this project uses a custom pre-commit ho
 Run the setup script to install the pre-commit hook:
 
 ```bash
+chmod +x ./setup-hooks.sh
 ./setup-hooks.sh
 ```
 
