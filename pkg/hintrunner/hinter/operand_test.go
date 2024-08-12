@@ -127,19 +127,20 @@ func TestResolveAddOp(t *testing.T) {
 		memory.MemoryValueFromInt(30),
 	)
 
-	// lhs
+	// Lhs
 	var ap ApCellRef = 7
+	lhs := Deref{ap}
 
 	// Rhs
 	var fp FpCellRef = 20
-	deref := Deref{fp}
+	rhs := Deref{fp}
 
 	operator := Add
 
 	bop := BinaryOp{
 		Operator: operator,
-		Lhs:      ap,
-		Rhs:      deref,
+		Lhs:      lhs,
+		Rhs:      rhs,
 	}
 
 	res, err := bop.Resolve(vm)
@@ -164,19 +165,20 @@ func TestResolveMulOp(t *testing.T) {
 		memory.MemoryValueFromInt(5),
 	)
 
-	// lhs
+	// Lhs
 	var ap ApCellRef = 7
+	lhs := Deref{ap}
 
 	// Rhs
 	var fp FpCellRef = 20
-	deref := Deref{fp}
+	rhs := Deref{fp}
 
 	operator := Mul
 
 	bop := BinaryOp{
 		Operator: operator,
-		Lhs:      ap,
-		Rhs:      deref,
+		Lhs:      lhs,
+		Rhs:      rhs,
 	}
 
 	res, err := bop.Resolve(vm)

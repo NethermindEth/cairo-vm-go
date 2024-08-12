@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"fmt"
+	"math"
 	"math/big"
 	"math/bits"
 
@@ -124,4 +126,26 @@ func FeltDivRem(a, b *fp.Element) (div fp.Element, rem fp.Element) {
 	rem.SetBigInt(&tmpRem)
 
 	return div, rem
+}
+
+func Int16FromFelt(n *fp.Element) (int16, error) {
+	bigN := n.BigInt(new(big.Int))
+	mod := fp.Modulus()
+	negN := new(big.Int).Sub(mod, bigN)
+	maxInt16 := new(big.Int).SetInt64(int64(math.MaxInt16))
+
+	var result int64
+	if bigN.Cmp(negN) == 1 {
+		if negN.Cmp(maxInt16) == 1 {
+			return 0, fmt.Errorf("felt number does not fit in int16")
+		}
+		result = -negN.Int64()
+	} else {
+		if bigN.Cmp(maxInt16) == 1 {
+			return 0, fmt.Errorf("felt number does not fit in int16")
+		}
+		result = bigN.Int64()
+	}
+
+	return int16(result), nil
 }

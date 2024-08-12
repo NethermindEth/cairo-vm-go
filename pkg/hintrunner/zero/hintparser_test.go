@@ -1,6 +1,7 @@
 package zero
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -42,7 +43,9 @@ func TestHintParser(t *testing.T) {
 			ExpectedCellRefer: nil,
 			ExpectedResOperander: hinter.BinaryOp{
 				Operator: hinter.Add,
-				Lhs:      hinter.ApCellRef(2),
+				Lhs: hinter.Deref{
+					Deref: hinter.ApCellRef(2),
+				},
 				Rhs: hinter.Deref{
 					Deref: hinter.ApCellRef(0),
 				},
@@ -53,7 +56,9 @@ func TestHintParser(t *testing.T) {
 			ExpectedCellRefer: nil,
 			ExpectedResOperander: hinter.BinaryOp{
 				Operator: hinter.Mul,
-				Lhs:      hinter.ApCellRef(-5),
+				Lhs: hinter.Deref{
+					Deref: hinter.ApCellRef(-5),
+				},
 				Rhs: hinter.Deref{
 					Deref: hinter.ApCellRef(-1),
 				},
@@ -64,8 +69,10 @@ func TestHintParser(t *testing.T) {
 			ExpectedCellRefer: nil,
 			ExpectedResOperander: hinter.BinaryOp{
 				Operator: hinter.Mul,
-				Lhs:      hinter.ApCellRef(0),
-				Rhs:      hinter.Immediate{18446744073709551521, 18446744073709551615, 18446744073709551615, 576460752303421872},
+				Lhs: hinter.Deref{
+					Deref: hinter.ApCellRef(0),
+				},
+				Rhs: hinter.Immediate{18446744073709551521, 18446744073709551615, 18446744073709551615, 576460752303421872},
 			},
 		},
 		{
@@ -74,14 +81,20 @@ func TestHintParser(t *testing.T) {
 			ExpectedResOperander: hinter.Immediate(*feltInt64((7))),
 		},
 		{
-			Parameter:            "cast([[ap + 2] + (-5)], felt)",
-			ExpectedCellRefer:    nil,
-			ExpectedResOperander: hinter.Immediate(*feltInt64((7))),
+			Parameter:         "cast([[ap + 2] + (-5)], felt)",
+			ExpectedCellRefer: nil,
+			ExpectedResOperander: hinter.DoubleDeref{
+				Deref: hinter.Deref{
+					Deref: hinter.ApCellRef(2),
+				},
+				Offset: int16(-5),
+			},
 		},
 	}
 
 	for _, test := range testSet {
 		output, err := ParseIdentifier(test.Parameter)
+		fmt.Println(test.Parameter)
 		require.NoError(t, err)
 
 		if test.ExpectedCellRefer != nil {

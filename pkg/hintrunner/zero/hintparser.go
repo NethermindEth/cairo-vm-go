@@ -4,29 +4,21 @@ import (
 	"fmt"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/alecthomas/participle/v2"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp](participle.UseLookahead(10))
+// Grammar for hint references:
+//
+// [cast(expr, type)]
+// arithExp => term | addTerm
+// addTerm => term (+|-) arithExp
+// term => Exp | ProdExp
+// prodExp => Exp * Exp
+// exp => cellRef | deref | dderef | int
 
-// Possible cases extracted from https://github.com/lambdaclass/cairo-vm_in_go/blob/main/pkg/hints/hint_utils/hint_reference.go#L41
-// Immediate: cast(number, type)
-// Reference no deref 1 offset: cast(reg + off, type)
-// Reference no deref 2 offsets: cast(reg + off1 + off2, type)
-// Reference with deref 1 offset: cast([reg + off1], type)
-// Reference with deref 2 offsets: cast([reg + off1] + off2, type)
-// Two references with deref: cast([reg + off1] + [reg + off2], type)
-// Reference off omitted: cast(reg, type)
-// Reference with deref off omitted: cast([reg], type)
-// Reference with deref 2 offsets off1 omitted: cast([reg] + off2, type)
-// 2 dereferences off1 omitted: cast([reg] + [reg + off2], type)
-// 2 dereferences off2 omitted: cast([reg + off1] + [reg], type)
-// 2 dereferences both offs omitted: cast([reg] + [reg], type)
-// 2 dereferences with multiplication: cast([reg + off1] * [reg + off2], felt)
-// Reference no dereference 2 offsets - + : cast(reg - off1 + off2, type)
-
-// Note: The same cases apply with an external dereference. Example: [cast(number, type)]
+var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp](participle.UseLookahead(20))
 
 type IdentifierExp struct {
 	DerefCastExp *DerefCastExp `@@ |`
@@ -38,18 +30,46 @@ type DerefCastExp struct {
 }
 
 type CastExp struct {
-	ValueExpr *Expression `"cast" "(" @@ ","`
-	CastType  []string    `@Ident ("." @Ident)* ("*")? ("*")? ")"`
+	ValueExp *ArithExp `"cast" "(" @@ ","`
+	CastType []string  `@Ident ("." @Ident)* ("*")? ("*")? ")"`
+}
+
+type ArithExp struct {
+	AddExp  *AddExp  `@@ |`
+	TermExp *TermExp `@@`
+}
+
+type AddExp struct {
+	LeftExp  *TermExp  `@@`
+	Operator string    `@("+" | "-")`
+	RightExp *ArithExp `@@`
+}
+
+type TermExp struct {
+	ProdExp *ProdExp    `@@ |`
+	Exp     *Expression `@@`
+}
+
+type ProdExp struct {
+	LeftExp  *Expression `@@`
+	Operator string      `"*"`
+	RightExp *Expression `@@`
 }
 
 type Expression struct {
-	BinOpExp   *BinOpExp   `@@ |`
-	CellRefExp *CellRefExp `"(" @@ ")" | @@ |`
-	DerefExp   *DerefExp   `@@`
+	IntExp     *OffsetExp  `@@ |`
+	CellRefExp *CellRefExp `@@ |`
+	DerefExp   *DerefExp   `@@ |`
+	DDerefExp  *DDerefExp  `@@`
+}
+
+type CellRefSimple struct {
+	RegisterOffset *RegisterOffset `@@ |`
+	Register       string          `@("ap" | "fp")`
 }
 
 type CellRefExp struct {
-	RegisterOffset *RegisterOffset `@@ |`
+	RegisterOffset *RegisterOffset `"(" @@ ")" |`
 	Register       string          `@("ap" | "fp")`
 }
 
@@ -59,40 +79,24 @@ type RegisterOffset struct {
 	Offset   *OffsetExp `@@`
 }
 
-type DerefExp struct {
-	CellRefExp *CellRefExp `"[" @@ "]"`
-}
-
-type BinOpExp struct {
-	LeftExp  *LeftExp  `@@`
-	Operator string    `@("+" | "*")`
-	RightExp *RightExp `@@`
-}
-
 type OffsetExp struct {
 	Number    *int `@Int |`
 	NegNumber *int `"(" "-" @Int ")"`
 }
 
-type LeftExp struct {
-	CellRefExp *RegisterOffset `@@ |`
-	DerefExp   *DerefExp       `@@`
+type DerefExp struct {
+	CellRefExp *CellRefSimple `"[" @@ "]"`
 }
 
-type RightExp struct {
-	DerefExp *DerefExp  `@@ |`
+type DerefOffsetExp struct {
+	DerefExp *DerefExp  `@@`
+	Operator string     `@("+" | "-")`
 	Offset   *OffsetExp `@@`
 }
 
-type DerefOffset struct {
-	Deref  hinter.Deref
-	Op     hinter.Operator
-	Offset *int
-}
-type DerefDeref struct {
-	LeftDeref  hinter.Deref
-	Op         hinter.Operator
-	RightDeref hinter.Deref
+type DDerefExp struct {
+	DerefExp       *DerefExp       `"[" @@ "]" |`
+	DerefOffsetExp *DerefOffsetExp `"[" @@ "]"`
 }
 
 // AST Functionality
@@ -108,7 +112,7 @@ func (expression IdentifierExp) Evaluate() (hinter.Reference, error) {
 }
 
 func (expression DerefCastExp) Evaluate() (hinter.Reference, error) {
-	value, err := expression.CastExp.ValueExpr.Evaluate()
+	value, err := expression.CastExp.ValueExp.Evaluate()
 	if err != nil {
 		return nil, err
 	}
@@ -122,63 +126,163 @@ func (expression DerefCastExp) Evaluate() (hinter.Reference, error) {
 				Offset: 0,
 			},
 			nil
-	case DerefOffset:
-		return hinter.DoubleDeref{
-				Deref: hinter.Deref{
-					Deref: result.Deref.Deref,
-				},
-				Offset: int16(*result.Offset),
-			},
-			nil
+	case hinter.BinaryOp:
+		if left, ok := result.Lhs.(hinter.Deref); ok {
+			if right, ok := result.Rhs.(hinter.Immediate); ok {
+				offset, err := utils.Int16FromFelt((*fp.Element)(&right))
+				if err == nil {
+					return hinter.DoubleDeref{
+							Deref:  left,
+							Offset: offset,
+						},
+						nil
+				}
+			}
+		}
+		return nil, fmt.Errorf("invalid binary operation inside a deref")
 	default:
-		return nil, fmt.Errorf("unexpected identifier value")
+		return nil, fmt.Errorf("unexpected deref expression")
 	}
 }
 
 func (expression CastExp) Evaluate() (hinter.Reference, error) {
-	value, err := expression.ValueExpr.Evaluate()
-	if err != nil {
-		return nil, err
-	}
+	return expression.ValueExp.Evaluate()
+}
 
-	switch result := value.(type) {
-	case hinter.CellRefer:
-		return result, nil
-	case hinter.Deref:
-		return result, nil
-	case DerefOffset:
-		rhsFelt := fp.NewElement(uint64(*result.Offset))
-		return hinter.BinaryOp{
-			Operator: result.Op,
-			Lhs:      result.Deref.Deref,
-			// TODO: why we're not using something like f.NewElement here?
-			Rhs: hinter.Immediate(rhsFelt),
-		}, nil
-	case DerefDeref:
-		return hinter.BinaryOp{
-			Operator: result.Op,
-			Lhs:      result.LeftDeref.Deref,
-			Rhs:      result.RightDeref,
-		}, nil
+func (expression ArithExp) Evaluate() (hinter.Reference, error) {
+	switch {
+	case expression.AddExp != nil:
+		return expression.AddExp.Evaluate()
+	case expression.TermExp != nil:
+		return expression.TermExp.Evaluate()
 	default:
 		return nil, fmt.Errorf("unexpected identifier value")
 	}
 }
 
-func (expression Expression) Evaluate() (any, error) {
+func (expression AddExp) Evaluate() (hinter.Reference, error) {
+	leftExp, err := expression.LeftExp.Evaluate()
+	if err != nil {
+		return nil, err
+	}
+	rightExp, err := expression.RightExp.Evaluate()
+	if err != nil {
+		return nil, err
+	}
+
+	if rightResult, ok := rightExp.(hinter.Immediate); ok {
+		switch leftResult := leftExp.(type) {
+		case hinter.CellRefer:
+			off, err := utils.Int16FromFelt((*fp.Element)(&rightResult))
+			if err == nil {
+				if expression.Operator == "-" {
+					off = -off
+				}
+
+				switch cellRef := leftResult.(type) {
+				case hinter.ApCellRef:
+					oldOffset := int16(cellRef)
+					return hinter.ApCellRef(off + oldOffset), nil
+				case hinter.FpCellRef:
+					oldOffset := int16(cellRef)
+					return hinter.FpCellRef(off + oldOffset), nil
+				}
+			}
+		case hinter.Immediate:
+			lFelt := (*fp.Element)(&leftResult)
+			rFelt := (*fp.Element)(&rightResult)
+			result := new(fp.Element).Add(lFelt, rFelt)
+			return hinter.Immediate(*result), nil
+		}
+	}
+
+	operator, err := parseOperator(expression.Operator)
+	if err != nil {
+		return nil, err
+	}
+
+	// This is necesary since leftExp and rightExp are References and BinaryOp requires ResOperanders
+	if leftOp, ok := leftExp.(hinter.ResOperander); ok {
+		if rightOp, ok := rightExp.(hinter.ResOperander); ok {
+			return hinter.BinaryOp{
+				Operator: operator,
+				Lhs:      leftOp,
+				Rhs:      rightOp,
+			}, nil
+		}
+	}
+	return nil, fmt.Errorf("unexpected addition expression")
+}
+
+func (expression TermExp) Evaluate() (hinter.Reference, error) {
 	switch {
+	case expression.ProdExp != nil:
+		return expression.ProdExp.Evaluate()
+	case expression.Exp != nil:
+		return expression.Exp.Evaluate()
+	default:
+		return nil, fmt.Errorf("unexpected identifier value")
+	}
+}
+
+func (expression ProdExp) Evaluate() (hinter.Reference, error) {
+	leftExp, err := expression.LeftExp.Evaluate()
+	if err != nil {
+		return nil, err
+	}
+	rightExp, err := expression.RightExp.Evaluate()
+	if err != nil {
+		return nil, err
+	}
+
+	if leftOp, ok := leftExp.(hinter.ResOperander); ok {
+		if rightOp, ok := rightExp.(hinter.ResOperander); ok {
+			return hinter.BinaryOp{
+				Operator: hinter.Mul,
+				Lhs:      leftOp,
+				Rhs:      rightOp,
+			}, nil
+		}
+	}
+	return nil, fmt.Errorf("unexpected product expression")
+}
+
+func (expression Expression) Evaluate() (hinter.Reference, error) {
+	switch {
+	case expression.IntExp != nil:
+		intExp, err := expression.IntExp.Evaluate()
+		if err != nil {
+			return nil, err
+		}
+		return hinter.Immediate(*new(fp.Element).SetInt64(int64(*intExp))), nil
 	case expression.CellRefExp != nil:
 		return expression.CellRefExp.Evaluate()
 	case expression.DerefExp != nil:
 		return expression.DerefExp.Evaluate()
-	case expression.BinOpExp != nil:
-		return expression.BinOpExp.Evaluate()
+	case expression.DDerefExp != nil:
+		return expression.DDerefExp.Evaluate()
 	default:
 		return nil, fmt.Errorf("unexpected expression value")
 	}
 }
 
-func (expression RegisterOffset) Evaluate() (any, error) {
+func (expression CellRefSimple) Evaluate() (hinter.CellRefer, error) {
+	if expression.RegisterOffset != nil {
+		return expression.RegisterOffset.Evaluate()
+	}
+
+	return EvaluateRegister(expression.Register, 0)
+}
+
+func (expression CellRefExp) Evaluate() (hinter.CellRefer, error) {
+	if expression.RegisterOffset != nil {
+		return expression.RegisterOffset.Evaluate()
+	}
+
+	return EvaluateRegister(expression.Register, 0)
+}
+
+func (expression RegisterOffset) Evaluate() (hinter.CellRefer, error) {
 	offsetValue, _ := expression.Offset.Evaluate()
 	offset := int16(*offsetValue)
 	if expression.Operator == "-" {
@@ -186,14 +290,6 @@ func (expression RegisterOffset) Evaluate() (any, error) {
 	}
 
 	return EvaluateRegister(expression.Register, offset)
-}
-
-func (expression CellRefExp) Evaluate() (any, error) {
-	if expression.RegisterOffset != nil {
-		return expression.RegisterOffset.Evaluate()
-	}
-
-	return EvaluateRegister(expression.Register, 0)
 }
 
 func EvaluateRegister(register string, offset int16) (hinter.CellRefer, error) {
@@ -219,99 +315,50 @@ func (expression OffsetExp) Evaluate() (*int, error) {
 	}
 }
 
-func (expression DerefExp) Evaluate() (any, error) {
+func (expression DerefExp) Evaluate() (hinter.Deref, error) {
 	cellRefExp, err := expression.CellRefExp.Evaluate()
 	if err != nil {
-		return nil, err
+		return hinter.Deref{}, err
 	}
 	cellRef, ok := cellRefExp.(hinter.CellRefer)
 	if !ok {
-		return nil, fmt.Errorf("expected a CellRefer expression but got %s", cellRefExp)
+		return hinter.Deref{}, fmt.Errorf("expected a CellRefer expression but got %s", cellRefExp)
 	}
 	return hinter.Deref{Deref: cellRef}, nil
 }
 
-func (expression BinOpExp) Evaluate() (any, error) {
-	leftExp, err := expression.LeftExp.Evaluate()
-	if err != nil {
-		return nil, err
-	}
-
-	rightExp, err := expression.RightExp.Evaluate()
-	if err != nil {
-		return nil, err
-	}
-
-	operation, err := parseOperator(expression.Operator)
-	if err != nil {
-		return nil, err
-	}
-
-	switch lResult := leftExp.(type) {
-	case hinter.CellRefer:
-		// Right now we assume that there is no expression like `reg - off1 * off2`,
-		// but if there are, we would need to come up with an idea how to handle it.
-		// Right now we only cover `off1 + off2` expressions here.
-		offset, ok := rightExp.(*int)
-		if !ok {
-			return nil, fmt.Errorf("invalid type operation")
-		}
-		offsetValue := int16(*offset)
-
-		var cellRefOffset int16
-		switch register := lResult.(type) {
-		case hinter.ApCellRef:
-			cellRefOffset = int16(register)
-		case hinter.FpCellRef:
-			cellRefOffset = int16(register)
-		}
-
-		offsetValue = offsetValue + cellRefOffset
-		switch lResult.(type) {
-		case hinter.ApCellRef:
-			return hinter.ApCellRef(offsetValue), nil
-		case hinter.FpCellRef:
-			return hinter.FpCellRef(offsetValue), nil
-		}
-
-	case hinter.Deref:
-		switch rResult := rightExp.(type) {
-		case hinter.Deref:
-			return DerefDeref{
-				lResult,
-				operation,
-				rResult,
-			}, nil
-		case *int:
-			return DerefOffset{
-				lResult,
-				operation,
-				rResult,
-			}, nil
-		}
-	}
-
-	return nil, fmt.Errorf("invalid binary operation")
-}
-
-func (expression LeftExp) Evaluate() (any, error) {
-	switch {
-	case expression.CellRefExp != nil:
-		return expression.CellRefExp.Evaluate()
-	case expression.DerefExp != nil:
-		return expression.DerefExp.Evaluate()
-	}
-	return nil, fmt.Errorf("unexpected left expression in binary operation")
-}
-
-func (expression RightExp) Evaluate() (any, error) {
+func (expression DDerefExp) Evaluate() (hinter.DoubleDeref, error) {
 	switch {
 	case expression.DerefExp != nil:
-		return expression.DerefExp.Evaluate()
-	case expression.Offset != nil:
-		return expression.Offset.Evaluate()
+		derefExp, err := expression.DerefExp.Evaluate()
+		if err != nil {
+			return hinter.DoubleDeref{}, err
+		}
+		return hinter.DoubleDeref{
+			Deref:  derefExp,
+			Offset: 0,
+		}, nil
+	case expression.DerefOffsetExp != nil:
+		derefExp, err := expression.DerefOffsetExp.DerefExp.Evaluate()
+		if err != nil {
+			return hinter.DoubleDeref{}, err
+		}
+		offsetValue, err := expression.DerefOffsetExp.Offset.Evaluate()
+		if err != nil {
+			return hinter.DoubleDeref{}, err
+		}
+		offset := int16(*offsetValue)
+		if expression.DerefOffsetExp.Operator == "-" {
+			offset = -offset
+		}
+		return hinter.DoubleDeref{
+			Deref:  derefExp,
+			Offset: offset,
+		}, nil
+
+	default:
+		return hinter.DoubleDeref{}, fmt.Errorf("unexpected double deref expression")
 	}
-	return nil, fmt.Errorf("unexpected right expression in binary operation")
 }
 
 func ParseIdentifier(value string) (hinter.Reference, error) {
