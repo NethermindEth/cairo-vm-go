@@ -2,19 +2,23 @@
 sidebar_position: 3
 ---
 
-# Hints
+# Cairo Zero Hints
 
-There are several hints, explain each of them here. How they interact with the VM and affect it.
+Cairo Zero relies on hints to optimize various operations. To ensure compatibility across different Cairo Virtual Machine, Starkware maintains a list of [whitelisted hints](https://github.com/starkware-libs/cairo-lang/tree/0e4dab8a6065d80d1c726394f5d9d23cb451706a/src/starkware/starknet/security/whitelists) that any Cairo VM needs to implement. These hints are essential for the proper functioning of Cairo Zero programs.
+
+In this section, we will explore the critical role of hints in Cairo Zero, focusing on two main aspects:
+- High-level operations: description of the various computations that necessitate the use of Cairo Zero hints
+- Detailed hint analysis: in-depth look at all hints, explaining their purpose
 
 ## Dictionaries
 
 In the Cairo VM, dictionaries are represented by memory segments managed by the **ZeroDictionaryManager** within a scope handled by the **ScopeManager**.
 
-**ZeroDictionaryManager**
+### ZeroDictionaryManager
 
 A **ZeroDictionaryManager** maps a segment index to a **ZeroDictionary**. Different dictionary managers can exist in various scopes.
 
-**ZeroDictionary**
+### ZeroDictionary
 
 A **ZeroDictionary** consists of three fields:
 
@@ -27,7 +31,7 @@ A dictionary segment writes data in sets of three values:
 2. **Previous Value**
 3. **New Value**
 
-For example, if key k1 has a value v1 and is updated to value v2, the dictionary segment will write three values: k1, v1, and v2 in consecutive offsets. Any dictionary access operation, such as reading or writing, will similarly add data to the segment. For instance, a read operation on key k1 with value v1 will write k1, v1, and v1 to consecutive offsets.
+For example, if key `k1` has a value `v1` and is updated to value `v2`, the dictionary segment will write three values: `k1`, `v1`, and `v2` in consecutive offsets. Any dictionary access operation, such as reading or writing, will similarly add data to the segment. For instance, a read operation on key `k1` with value `v1` will write `k1`, `v1`, and `v1` to consecutive offsets.
 
 Dictionary operations in Cairo are covered in two library files:
 1. [dict.cairo](https://github.com/starkware-libs/cairo-lang/blob/master/src/starkware/cairo/common/dict.cairo)
@@ -35,7 +39,8 @@ Dictionary operations in Cairo are covered in two library files:
 
 These functions require specific hints to be implemented in the VM.
 
-**Dict functions:**
+### Dict functions
+
 1. dict_new
 2. default_dict_new
 3. dict_read
@@ -43,7 +48,7 @@ These functions require specific hints to be implemented in the VM.
 5. dict_update
 6. dict_squash
 
-**Hint usage in dict functions:**
+### Hint usage in dict functions
 
 | Hint                              | Usage                 |
 |-----------------------------------|-----------------------|
@@ -94,3 +99,53 @@ Example:
 Input: {(key1, 0, 2), (key1, 2, 7), (key2, 4, 1), (key1, 7, 5), (key2, 1, 2)}
 
 Output: {(key1, 0, 5), (key2, 4, 2)} 
+
+## Usort
+
+`usort` Cairo [function](https://github.com/starkware-libs/cairo-lang/blob/0e4dab8a6065d80d1c726394f5d9d23cb451706a/src/starkware/cairo/common/usort.cairo#L8) is used to sort an array of field elements while removing duplicates. It returns the sorted array in ascending order and its length along with the multiplicities of each unique element.
+
+### Hint usage in `usort` functions
+
+Overall, `usort` Cairo function requires 5 hints to be executed:
+
+**UsortEnterScope**
+
+Enters a new scope with `__usort_max_size` set to either:
+- `0` if `__usort_max_size` variable is not found in `globals()` scope
+- `1 << 20` if `__usort_max_size` variable is found `globals()` scope
+
+This hint is used to potentially set a maximum length to the array to be sorted.
+
+**UsortBody**
+
+Core hint that does most of the sorting operation computation. It uses a dictionnary to group input elements and their positions. Then, it sorts the unique elements and generates the output array and multiplicities, with multiplicities being the number of times a given value appeared in the input.
+
+After execution this hint, the Cairo code will call `verify_usort` recursive function, which ensures correctness of the sorting and multiplicity counting.
+
+**UsortVerify**
+
+Prepares for the verification of the multiplicity of the current value in the sorted output.
+
+**UsortVerifyMultiplicityAssert**
+
+Checks that the array of positions in scope doesn't contain any value. This hint actually implements the base case for the `verify_multiplicity` Cairo recursive function.
+
+**UsortVerifyMultiplicityBody** 
+
+Extracts a specific value of the sorted array with `pop`, updating indices for the verification of the next value in the recursive call.
+
+## Blake2s Hash Function
+
+## Keccak Hash Function
+
+## Sha256 Hash Function
+
+## Uint256
+
+## Math Operations
+
+## Elliptic Curve Operations and Signatures
+
+## Other Hints for Various Operations
+
+# Cairo One Hints

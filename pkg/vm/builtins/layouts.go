@@ -5,6 +5,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type LayoutBuiltin struct {
@@ -43,9 +44,9 @@ func getStarknetWithKeccakLayout() Layout {
 		{Runner: &RangeCheck{ratio: 16}, Builtin: starknet.RangeCheck},
 		{Runner: &ECDSA{ratio: 2048}, Builtin: starknet.ECDSA},
 		{Runner: &Bitwise{ratio: 64}, Builtin: starknet.Bitwise},
-		{Runner: &EcOp{ratio: 1024}, Builtin: starknet.ECOP},
-		{Runner: &Keccak{ratio: 2048}, Builtin: starknet.Keccak},
-		{Runner: &Poseidon{ratio: 32}, Builtin: starknet.Poseidon},
+		{Runner: &EcOp{ratio: 1024, cache: make(map[uint64]fp.Element)}, Builtin: starknet.ECOP},
+		{Runner: &Keccak{ratio: 2048, cache: make(map[uint64]fp.Element)}, Builtin: starknet.Keccak},
+		{Runner: &Poseidon{ratio: 32, cache: make(map[uint64]fp.Element)}, Builtin: starknet.Poseidon},
 	}}
 }
 

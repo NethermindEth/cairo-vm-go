@@ -28,7 +28,7 @@ func TestEcOp(t *testing.T) {
 	r := ecadd(&point{*px, *py}, &mult)
 
 	segment := memory.EmptySegmentWithLength(cellsPerEcOp)
-	ecop := &EcOp{}
+	ecop := &EcOp{ratio: 1024, cache: make(map[uint64]fp.Element)}
 	segment.WithBuiltinRunner(ecop)
 
 	// write P to segment
