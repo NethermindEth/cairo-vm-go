@@ -26,6 +26,26 @@ Currently, it is only possible to use it by building it from source by following
 
 After completing these steps, you can find the compiled VM in `bin/cairo-vm`.
 
+## Setting Up Git Hooks
+To ensure code quality and consistency, this project uses a custom pre-commit hook. Follow these steps to set up the pre-commit hook:
+
+Run the setup script to install the pre-commit hook:
+
+```bash
+chmod +x ./setup-hooks.sh
+./setup-hooks.sh
+```
+
+This script will copy the pre-commit hook from the githooks directory to your local .git/hooks directory.
+
+Verify that the pre-commit hook is installed and executable by running:
+
+```bash
+ls -l .git/hooks/pre-commit
+```
+
+You should see that the pre-commit file is listed and has executable permissions.
+
 ### Run The VM
 
 To run the VM you need to have a compiled Cairo file using the Cairo Zero compiler at [cairo-lang](https://github.com/starkware-libs/cairo-lang).
