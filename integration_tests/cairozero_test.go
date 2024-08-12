@@ -1,12 +1,14 @@
 package integrationtests
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"text/tabwriter"
 	"time"
@@ -51,7 +53,66 @@ func (f *Filter) filtered(testFile string) bool {
 	return false
 }
 
-func TestCairoFiles(t *testing.T) {
+func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[string][2]int, benchmark bool, errorExpected bool) {
+	t.Logf("testing: %s\n", path)
+
+	compiledOutput, err := compileZeroCode(path)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(name, compiledOutput)
+	if errorExpected {
+		// we let the code go on so that we can check if the go vm also raises an error
+		assert.Error(t, err, path)
+	} else {
+		if err != nil {
+			t.Error(err)
+			return
+		}
+	}
+
+	elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput)
+	if errorExpected {
+		assert.Error(t, err, path)
+		return
+	} else {
+		if err != nil {
+			t.Error(err)
+			return
+		}
+	}
+
+	if benchmark {
+		benchmarkMap[name] = [2]int{int(elapsedPy.Milliseconds()), int(elapsedGo.Milliseconds())}
+	}
+
+	pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	trace, memory, err := decodeProof(traceFile, memoryFile)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if !assert.Equal(t, pyTrace, trace) {
+		t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
+		t.Logf("trace:\n%s\n", traceRepr(trace))
+	}
+	if !assert.Equal(t, pyMemory, memory) {
+		t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
+		t.Logf("memory;\n%s\n", memoryRepr(memory))
+	}
+}
+
+var zerobench = flag.Bool("zerobench", false, "run integration tests and generate benchmarks file")
+
+func TestCairoZeroFiles(t *testing.T) {
 	roots := []string{
 		"./cairo_zero_hint_tests/",
 		"./cairo_zero_file_tests/",
@@ -64,6 +125,9 @@ func TestCairoFiles(t *testing.T) {
 
 	benchmarkMap := make(map[string][2]int)
 
+	sem := make(chan struct{}, 5) // semaphore to limit concurrency
+	var wg sync.WaitGroup         // WaitGroup to wait for all goroutines to finish
+
 	for _, root := range roots {
 		testFiles, err := os.ReadDir(root)
 		require.NoError(t, err)
@@ -74,75 +138,42 @@ func TestCairoFiles(t *testing.T) {
 			}
 
 			name := dirEntry.Name()
+			path := filepath.Join(root, name)
 
 			errorExpected := false
 			if name == "range_check.small.cairo" {
 				errorExpected = true
 			}
 
-			path := filepath.Join(root, name)
-
-			if !filter.filtered(dirEntry.Name()) {
+			if !filter.filtered(name) {
 				continue
 			}
 
-			t.Logf("testing: %s\n", path)
+			// we run tests concurrently if we don't need benchmarks
+			if !*zerobench {
+				sem <- struct{}{} // acquire a semaphore slot
+				wg.Add(1)
 
-			compiledOutput, err := compileZeroCode(path)
-			if err != nil {
-				t.Error(err)
-				continue
-			}
-
-			elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(name, compiledOutput)
-			if errorExpected {
-				// we let the code go on so that we can check if the go vm also raises an error
-				assert.Error(t, err, path)
+				go func(path, name string) {
+					defer wg.Done()
+					defer func() { <-sem }() // release the semaphore slot when done
+					runAndTestFile(t, path, name, benchmarkMap, *zerobench, errorExpected)
+				}(path, name)
 			} else {
-				if err != nil {
-					t.Error(err)
-					continue
-				}
-			}
-
-			elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput)
-			if errorExpected {
-				assert.Error(t, err, path)
-				continue
-			} else {
-				if err != nil {
-					t.Error(err)
-					continue
-				}
-			}
-
-			benchmarkMap[dirEntry.Name()] = [2]int{int(elapsedPy.Milliseconds()), int(elapsedGo.Milliseconds())}
-
-			pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
-			if err != nil {
-				t.Error(err)
-				continue
-			}
-
-			trace, memory, err := decodeProof(traceFile, memoryFile)
-			if err != nil {
-				t.Error(err)
-				continue
-			}
-
-			if !assert.Equal(t, pyTrace, trace) {
-				t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
-				t.Logf("trace:\n%s\n", traceRepr(trace))
-			}
-			if !assert.Equal(t, pyMemory, memory) {
-				t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
-				t.Logf("memory;\n%s\n", memoryRepr(memory))
+				runAndTestFile(t, path, name, benchmarkMap, *zerobench, errorExpected)
 			}
 		}
+	}
+
+	wg.Wait() // wait for all goroutines to finish
+
+	for _, root := range roots {
 		clean(root)
 	}
 
-	WriteBenchMarksToFile(benchmarkMap)
+	if *zerobench {
+		WriteBenchMarksToFile(benchmarkMap)
+	}
 }
 
 // Save the Benchmarks for the integration tests in `BenchMarks.txt`

@@ -3,10 +3,10 @@ package disasm
 import (
 	"strconv"
 
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func feltToInt64(felt *f.Element) int64 {
+func feltToInt64(felt *fp.Element) int64 {
 	// This would not be correct: int64(felt.Uint64)
 	// since signed values will reside in more than one 64-bit word.
 	//

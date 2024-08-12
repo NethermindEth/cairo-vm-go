@@ -149,3 +149,7 @@ func Int16FromFelt(n *fp.Element) (int16, error) {
 
 	return int16(result), nil
 }
+
+func RightRot(value uint32, n uint32) uint32 {
+	return (value >> n) | ((value & ((1 << n) - 1)) << (32 - n))
+}

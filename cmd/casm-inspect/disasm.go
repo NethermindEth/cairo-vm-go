@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/disasm"
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 
 	"github.com/urfave/cli/v2"
 )
@@ -19,7 +19,7 @@ type disasmProgram struct {
 
 	rawCasm map[string]any
 
-	bytecode []*f.Element
+	bytecode []*fp.Element
 
 	disassembled *disasm.Program
 }
@@ -78,13 +78,13 @@ func (p *disasmProgram) loadBytecodeStep() error {
 		return fmt.Errorf("%q: expected a slice of strings", p.bytecodeKey)
 	}
 
-	p.bytecode = make([]*f.Element, 0, len(slice))
+	p.bytecode = make([]*fp.Element, 0, len(slice))
 	for i, s := range slice {
 		s, ok := s.(string)
 		if !ok {
 			return fmt.Errorf("%q: expected a slice of strings, found %T", p.bytecodeKey, slice[i])
 		}
-		felt, err := new(f.Element).SetString(s)
+		felt, err := new(fp.Element).SetString(s)
 		if err != nil {
 			return fmt.Errorf("%q[%d]: parse %q: %w", p.bytecodeKey, i, s, err)
 		}

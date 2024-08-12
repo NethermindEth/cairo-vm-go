@@ -501,7 +501,7 @@ func createIsNNOutOfRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 //
 // `newIsPositiveHint` takes 2 operanders as arguments
 //   - `value` is the value that will be evaluated
-//   - `dst` is the address where to write the result in memmory
+//   - `dst` is the address where to write the result in memory
 //
 // `newIsPositiveHint` writes 1 or 0 to `dest` address, depending on
 // whether `value` is positive or negative in the context, respectively
@@ -1188,4 +1188,109 @@ func createIsQuadResidueHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	}
 
 	return newIsQuadResidueHint(x, y), nil
+}
+
+// Split128 hint splits a field element value into two 128-bit values, low and high
+//
+// `newSplit128Hint` takes 3 operanders as arguments
+//   - `low` and `high` are the variables that will store the low and high components
+//   - `a` is the variable to split
+func newSplit128Hint(low, high, a hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Split128",
+		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+			//> ids.low = ids.a & ((1<<128) - 1)
+			//> ids.high = ids.a >> 128
+
+			lowAddr, err := low.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			highAddr, err := high.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+			aValue, err := hinter.ResolveAsFelt(vm, a)
+			if err != nil {
+				return err
+			}
+			var aValueBig big.Int
+			aValue.BigInt(&aValueBig)
+			lowMV := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(new(big.Int).And(&aValueBig, new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1)))))
+			highMV := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(new(big.Int).Rsh(&aValueBig, 128)))
+			if err := vm.Memory.WriteToAddress(&lowAddr, &lowMV); err != nil {
+				return err
+			}
+			return vm.Memory.WriteToAddress(&highAddr, &highMV)
+
+		},
+	}
+}
+
+func createSplit128Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	low, err := resolver.GetResOperander("low")
+	if err != nil {
+		return nil, err
+	}
+
+	high, err := resolver.GetResOperander("high")
+	if err != nil {
+		return nil, err
+	}
+
+	a, err := resolver.GetResOperander("a")
+	if err != nil {
+		return nil, err
+	}
+
+	return newSplit128Hint(low, high, a), nil
+}
+
+// is250Bits hint checks whether an address is lower than 2**250 or not and
+// it assigns 1 or 0 to `is_250` variable, respectively
+//
+// `newIs250Bits` takes 2 operanders as arguments
+//   - `is_250` represents the variable that will store the result of the comparison
+//   - `addr` is the address that will be compared to 2**250
+//
+// `newIs250Bits` writes 1 or 0 to the memory address of `is_250` variable
+func newIs250BitsHint(is_250, addr hinter.ResOperander) hinter.Hinter {
+	return &GenericZeroHinter{
+		Name: "Is250Bits",
+		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+			//> ids.is_250 = 1 if ids.addr < 2**250 else 0
+
+			addr, err := hinter.ResolveAsFelt(vm, addr)
+			if err != nil {
+				return err
+			}
+
+			is250Addr, err := is_250.GetAddress(vm)
+			if err != nil {
+				return err
+			}
+
+			var is250Mv memory.MemoryValue
+
+			if addr.Cmp(&utils.FeltUpperBound) < 0 {
+				is250Mv = memory.MemoryValueFromFieldElement(&utils.FeltOne)
+			} else {
+				is250Mv = memory.MemoryValueFromFieldElement(&utils.FeltZero)
+			}
+
+			return vm.Memory.WriteToAddress(&is250Addr, &is250Mv)
+		},
+	}
+}
+
+func createIs250BitsHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	is_250, err := resolver.GetResOperander("is_250")
+	if err != nil {
+		return nil, err
+	}
+	addr, err := resolver.GetResOperander("addr")
+	if err != nil {
+		return nil, err
+	}
+	return newIs250BitsHint(is_250, addr), nil
 }

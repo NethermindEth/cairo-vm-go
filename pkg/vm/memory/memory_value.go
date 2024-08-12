@@ -333,7 +333,7 @@ func (mv MemoryValue) String() string {
 	return mv.Felt.String()
 }
 
-// Retuns a MemoryValue holding a felt as uint if it fits
+// Returns a MemoryValue holding a felt as uint if it fits
 func (mv *MemoryValue) Uint64() (uint64, error) {
 	if mv.IsAddress() {
 		return 0, fmt.Errorf("cannot convert a memory address into uint64: %s", *mv)
@@ -381,6 +381,24 @@ func (memory *Memory) ResolveAsBigInt3(valAddr MemoryAddress) ([3]*f.Element, er
 		valValue, err := valMemoryValues[i].FieldElement()
 		if err != nil {
 			return [3]*f.Element{}, err
+		}
+		valValues[i] = valValue
+	}
+
+	return valValues, nil
+}
+
+func (memory *Memory) ResolveAsBigInt5(valAddr MemoryAddress) ([5]*f.Element, error) {
+	valMemoryValues, err := memory.GetConsecutiveMemoryValues(valAddr, uint64(5))
+	if err != nil {
+		return [5]*f.Element{}, err
+	}
+
+	var valValues [5]*f.Element
+	for i := 0; i < 5; i++ {
+		valValue, err := valMemoryValues[i].FieldElement()
+		if err != nil {
+			return [5]*f.Element{}, err
 		}
 		valValues[i] = valValue
 	}

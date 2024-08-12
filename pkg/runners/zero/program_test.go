@@ -1,9 +1,10 @@
 package zero
 
 import (
-	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
+	"github.com/stretchr/testify/require"
 
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 )
@@ -33,8 +34,8 @@ func TestLoadCairoZeroProgram(t *testing.T) {
         }
     `)
 
-	stringToFelt := func(bytecode string) *f.Element {
-		felt, err := new(f.Element).SetString(bytecode)
+	stringToFelt := func(bytecode string) *fp.Element {
+		felt, err := new(fp.Element).SetString(bytecode)
 		if err != nil {
 			panic(err)
 		}
@@ -50,7 +51,7 @@ func TestLoadCairoZeroProgram(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, &Program{
-		Bytecode: []*f.Element{
+		Bytecode: []*fp.Element{
 			stringToFelt("0x01"),
 			stringToFelt("0x02"),
 			stringToFelt("0x03"),
