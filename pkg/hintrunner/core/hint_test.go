@@ -1069,7 +1069,7 @@ func TestRandomEcPoint(t *testing.T) {
 		y: hinter.ApCellRef(1),
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 	require.NoError(t, err)
 
 	expectedX := mem.MemoryValueFromFieldElement(
@@ -1116,7 +1116,7 @@ func TestFieldSqrt(t *testing.T) {
 				sqrt: hinter.ApCellRef(0),
 			}
 
-			err := hint.Execute(vm)
+			err := hint.Execute(vm, nil)
 
 			require.NoError(t, err)
 			require.Equal(
