@@ -212,7 +212,7 @@ func main() {
 							if err != nil {
 								return err
 							}
-							airPrivateInputJson, err := json.MarshalIndent(airPrivateInput, "", "    ")
+							airPrivateInputJson, err := json.MarshalIndent(airPrivateInput, "", "  ")
 							if err != nil {
 								return err
 							}

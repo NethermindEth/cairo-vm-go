@@ -714,12 +714,47 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 				}
 			case "ecdsa":
 				{
+					ecdsaRunner, ok := bRunner.Runner.(*builtins.ECDSA)
+					if !ok {
+						return AirPrivateInput{}, fmt.Errorf("expected ECDSARunner")
+					}
+
+					builtinValues := make([]AirPrivateBuiltinECDSA, 0)
+					for addrOffset, signature := range ecdsaRunner.Signatures {
+						idx := addrOffset / builtins.CellsPerECDSA
+						pubKey, err := builtinSegment.Read(addrOffset)
+						if err != nil {
+							return AirPrivateInput{}, err
+						}
+						msg, err := builtinSegment.Read(addrOffset + 1)
+						if err != nil {
+							return AirPrivateInput{}, err
+						}
+
+						pubKeyBig := big.Int{}
+						msgBig := big.Int{}
+						pubKey.Felt.BigInt(&pubKeyBig)
+						msg.Felt.BigInt(&msgBig)
+						pubKeyHex := fmt.Sprintf("0x%x", &pubKeyBig)
+						msgHex := fmt.Sprintf("0x%x", &msgBig)
+
+						rBig := new(big.Int).SetBytes(signature.R[:])
+						sBig := new(big.Int).SetBytes(signature.S[:])
+						frModulusBig, _ := new(big.Int).SetString("3618502788666131213697322783095070105526743751716087489154079457884512865583", 10)
+						wBig := new(big.Int).ModInverse(sBig, frModulusBig)
+						signatureInput := AirPrivateBuiltinECDSASignatureInput{
+							R: fmt.Sprintf("0x%x", rBig),
+							W: fmt.Sprintf("0x%x", wBig),
+						}
+
+						builtinValues = append(builtinValues, AirPrivateBuiltinECDSA{Index: int(idx), PubKey: pubKeyHex, Msg: msgHex, SignatureInput: signatureInput})
+					}
+					airPrivateInput.Ecdsa = builtinValues
 				}
 			}
 		}
 	}
 
-	fmt.Println(airPrivateInput)
 	return airPrivateInput, nil
 }
 
@@ -728,7 +763,7 @@ type AirPrivateInput struct {
 	MemoryPath string                        `json:"memory_path"`
 	Pedersen   []AirPrivateBuiltinPedersen   `json:"pedersen"`
 	RangeCheck []AirPrivateBuiltinRangeCheck `json:"range_check"`
-	Ecdsa      []AirPrivateBuiltinRangeCheck `json:"ecdsa"`
+	Ecdsa      []AirPrivateBuiltinECDSA      `json:"ecdsa"`
 	Bitwise    []AirPrivateBuiltinBitwise    `json:"bitwise"`
 	EcOp       []AirPrivateBuiltinEcOp       `json:"ec_op"`
 	Keccak     []AirPrivateBuiltinKeccak     `json:"keccak"`
@@ -778,4 +813,16 @@ type AirPrivateBuiltinKeccak struct {
 	InputS5 string `json:"input_s5"`
 	InputS6 string `json:"input_s6"`
 	InputS7 string `json:"input_s7"`
+}
+
+type AirPrivateBuiltinECDSA struct {
+	Index          int                                  `json:"index"`
+	PubKey         string                               `json:"pubkey"`
+	Msg            string                               `json:"msg"`
+	SignatureInput AirPrivateBuiltinECDSASignatureInput `json:"signature_input"`
+}
+
+type AirPrivateBuiltinECDSASignatureInput struct {
+	R string `json:"r"`
+	W string `json:"w"`
 }

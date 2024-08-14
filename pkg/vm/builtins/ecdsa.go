@@ -12,18 +12,18 @@ import (
 
 const ECDSAName = "ecdsa"
 const inputCellsPerECDSA = 2
-const cellsPerECDSA = 2
+const CellsPerECDSA = 2
 
 const instancesPerComponentECDSA = 1
 
 type ECDSA struct {
-	signatures map[uint64]ecdsa.Signature
+	Signatures map[uint64]ecdsa.Signature
 	ratio      uint64
 }
 
 // verify_ecdsa_signature(message_hash, public_key, sig_r, sig_s)
 func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
-	ecdsaIndex := offset % cellsPerECDSA
+	ecdsaIndex := offset % CellsPerECDSA
 	pubOffset := offset - ecdsaIndex
 	msgOffset := pubOffset + 1
 
@@ -58,7 +58,7 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 	}
 
 	pubKey := &ecdsa.PublicKey{A: key}
-	sig, ok := e.signatures[pubOffset]
+	sig, ok := e.Signatures[pubOffset]
 	if !ok {
 		return fmt.Errorf("signature is missing from ECDSA builtin")
 	}
@@ -117,8 +117,8 @@ Hint that will call this function looks like this:
 	},
 */
 func (e *ECDSA) AddSignature(pubOffset uint64, r, s *fp.Element) error {
-	if e.signatures == nil {
-		e.signatures = make(map[uint64]ecdsa.Signature)
+	if e.Signatures == nil {
+		e.Signatures = make(map[uint64]ecdsa.Signature)
 	}
 	bytes := make([]byte, 0, 64)
 	rBytes := r.Bytes()
@@ -132,7 +132,7 @@ func (e *ECDSA) AddSignature(pubOffset uint64, r, s *fp.Element) error {
 		return err
 	}
 
-	e.signatures[pubOffset] = sig
+	e.Signatures[pubOffset] = sig
 	return nil
 }
 
@@ -141,7 +141,7 @@ func (e *ECDSA) String() string {
 }
 
 func (e *ECDSA) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, e.ratio, inputCellsPerECDSA, instancesPerComponentECDSA, cellsPerECDSA)
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, e.ratio, inputCellsPerECDSA, instancesPerComponentECDSA, CellsPerECDSA)
 }
 
 // recoverY recovers the y and -y coordinate of x. True y can be either y or -y
