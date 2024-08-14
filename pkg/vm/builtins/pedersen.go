@@ -9,7 +9,7 @@ import (
 )
 
 const PedersenName = "pedersen"
-const cellsPerPedersen = 3
+const CellsPerPedersen = 3
 const inputCellsPerPedersen = 2
 const instancesPerComponentPedersen = 1
 
@@ -22,7 +22,7 @@ func (p *Pedersen) CheckWrite(segment *mem.Segment, offset uint64, value *mem.Me
 }
 
 func (p *Pedersen) InferValue(segment *mem.Segment, offset uint64) error {
-	hashIndex := offset % cellsPerPedersen
+	hashIndex := offset % CellsPerPedersen
 	// input cell
 	if hashIndex < inputCellsPerPedersen {
 		return errors.New("cannot infer value")
@@ -61,5 +61,5 @@ func (p *Pedersen) String() string {
 }
 
 func (p *Pedersen) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, p.ratio, inputCellsPerPedersen, instancesPerComponentPedersen, cellsPerPedersen)
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, p.ratio, inputCellsPerPedersen, instancesPerComponentPedersen, CellsPerPedersen)
 }

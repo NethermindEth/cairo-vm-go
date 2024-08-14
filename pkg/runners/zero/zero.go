@@ -566,6 +566,48 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 
 					airPrivateInput.Poseidon = builtinValues
 				}
+			case "pedersen":
+				{
+					valueMapping := make(map[int]AirPrivateBuiltinPedersen)
+					for index, value := range builtinSegment.Data {
+						if !value.Known() {
+							continue
+						}
+						idx, typ := index/builtins.CellsPerPedersen, index%builtins.CellsPerPedersen
+						if typ == 2 {
+							continue
+						}
+
+						builtinValue, exists := valueMapping[idx]
+						if !exists {
+							builtinValue = AirPrivateBuiltinPedersen{Index: idx}
+						}
+
+						valueBig := big.Int{}
+						value.Felt.BigInt(&valueBig)
+						if typ == 0 {
+							builtinValue.X = fmt.Sprintf("0x%x", &valueBig)
+						} else {
+							builtinValue.Y = fmt.Sprintf("0x%x", &valueBig)
+						}
+						valueMapping[idx] = builtinValue
+					}
+
+					var builtinValues []AirPrivateBuiltinPedersen
+
+					sortedIndexes := make([]int, 0, len(valueMapping))
+					for index := range valueMapping {
+						sortedIndexes = append(sortedIndexes, index)
+					}
+					sort.Ints(sortedIndexes)
+					for _, index := range sortedIndexes {
+						builtinValue := valueMapping[index]
+						builtinValues = append(builtinValues, builtinValue)
+					}
+
+					airPrivateInput.Pedersen = builtinValues
+
+				}
 			}
 		}
 	}
@@ -577,7 +619,7 @@ type AirPrivateInput struct {
 	TracePath  string                        `json:"trace_path"`
 	MemoryPath string                        `json:"memory_path"`
 	Output     []AirPrivateBuiltinRangeCheck `json:"output,omitempty"`
-	Pedersen   []AirPrivateBuiltinRangeCheck `json:"pedersen,omitempty"`
+	Pedersen   []AirPrivateBuiltinPedersen   `json:"pedersen,omitempty"`
 	RangeCheck []AirPrivateBuiltinRangeCheck `json:"range_check,omitempty"`
 	Ecdsa      []AirPrivateBuiltinRangeCheck `json:"ecdsa,omitempty"`
 	Bitwise    []AirPrivateBuiltinBitwise    `json:"bitwise,omitempty"`
@@ -602,4 +644,10 @@ type AirPrivateBuiltinPoseidon struct {
 	InputS0 string `json:"input_s0"`
 	InputS1 string `json:"input_s1"`
 	InputS2 string `json:"input_s2"`
+}
+
+type AirPrivateBuiltinPedersen struct {
+	Index int    `json:"index"`
+	X     string `json:"x"`
+	Y     string `json:"y"`
 }
