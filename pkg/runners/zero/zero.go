@@ -418,3 +418,38 @@ func (runner *ZeroRunner) Output() []*fp.Element {
 	}
 	return output
 }
+
+func (runner *ZeroRunner) GetAirPublicInput() (AirPublicInput, error) {
+	rcMin, rcMax := runner.getPermRangeCheckLimits()
+	return AirPublicInput{
+		Layout: runner.layout.Name,
+		RcMin:  rcMin,
+		RcMax:  rcMax,
+		// optimise this away
+		NSteps:         len(runner.vm.RelocateTrace()),
+		DynamicParams:  nil,
+		MemorySegments: make(map[string]AirMemorySegmentEntry),
+		PublicMemory:   make([]AirPublicMemoryEntry, 0),
+	}, nil
+}
+
+type AirPublicInput struct {
+	Layout         string                           `json:"layout"`
+	RcMin          uint16                           `json:"rc_min"`
+	RcMax          uint16                           `json:"rc_max"`
+	NSteps         int                              `json:"n_steps"`
+	DynamicParams  interface{}                      `json:"dynamic_params"`
+	MemorySegments map[string]AirMemorySegmentEntry `json:"memory_segments"`
+	PublicMemory   []AirPublicMemoryEntry           `json:"public_memory"`
+}
+
+type AirMemorySegmentEntry struct {
+	BeginAddr int `json:"begin_addr"`
+	StopPtr   int `json:"stop_ptr"`
+}
+
+type AirPublicMemoryEntry struct {
+	Address uint16 `json:"address"`
+	Value   string `json:"value"`
+	Page    uint16 `json:"page"`
+}
