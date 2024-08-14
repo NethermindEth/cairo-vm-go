@@ -470,7 +470,7 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 			switch builtinName {
 			case "range_check":
 				{
-					var builtinValues []AirPrivateBuiltinRangeCheck
+					builtinValues := make([]AirPrivateBuiltinRangeCheck, 0)
 					for index, value := range builtinSegment.Data {
 						if !value.Known() {
 							continue
@@ -510,7 +510,7 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 						valueMapping[idx] = builtinValue
 					}
 
-					var builtinValues []AirPrivateBuiltinBitwise
+					builtinValues := make([]AirPrivateBuiltinBitwise, 0)
 
 					sortedIndexes := make([]int, 0, len(valueMapping))
 					for index := range valueMapping {
@@ -554,7 +554,7 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 						valueMapping[idx] = builtinValue
 					}
 
-					var builtinValues []AirPrivateBuiltinPoseidon
+					builtinValues := make([]AirPrivateBuiltinPoseidon, 0)
 
 					sortedIndexes := make([]int, 0, len(valueMapping))
 					for index := range valueMapping {
@@ -596,7 +596,7 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 						valueMapping[idx] = builtinValue
 					}
 
-					var builtinValues []AirPrivateBuiltinPedersen
+					builtinValues := make([]AirPrivateBuiltinPedersen, 0)
 
 					sortedIndexes := make([]int, 0, len(valueMapping))
 					for index := range valueMapping {
@@ -644,7 +644,7 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 						valueMapping[idx] = builtinValue
 					}
 
-					var builtinValues []AirPrivateBuiltinEcOp
+					builtinValues := make([]AirPrivateBuiltinEcOp, 0)
 
 					sortedIndexes := make([]int, 0, len(valueMapping))
 					for index := range valueMapping {
@@ -698,7 +698,7 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 						valueMapping[idx] = builtinValue
 					}
 
-					var builtinValues []AirPrivateBuiltinKeccak
+					builtinValues := make([]AirPrivateBuiltinKeccak, 0)
 
 					sortedIndexes := make([]int, 0, len(valueMapping))
 					for index := range valueMapping {
@@ -712,23 +712,27 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 
 					airPrivateInput.Keccak = builtinValues
 				}
+			case "ecdsa":
+				{
+				}
 			}
 		}
 	}
 
+	fmt.Println(airPrivateInput)
 	return airPrivateInput, nil
 }
 
 type AirPrivateInput struct {
 	TracePath  string                        `json:"trace_path"`
 	MemoryPath string                        `json:"memory_path"`
-	Pedersen   []AirPrivateBuiltinPedersen   `json:"pedersen,omitempty"`
-	RangeCheck []AirPrivateBuiltinRangeCheck `json:"range_check,omitempty"`
-	Ecdsa      []AirPrivateBuiltinRangeCheck `json:"ecdsa,omitempty"`
-	Bitwise    []AirPrivateBuiltinBitwise    `json:"bitwise,omitempty"`
-	EcOp       []AirPrivateBuiltinEcOp       `json:"ec_op,omitempty"`
-	Keccak     []AirPrivateBuiltinKeccak     `json:"keccak,omitempty"`
-	Poseidon   []AirPrivateBuiltinPoseidon   `json:"poseidon,omitempty"`
+	Pedersen   []AirPrivateBuiltinPedersen   `json:"pedersen"`
+	RangeCheck []AirPrivateBuiltinRangeCheck `json:"range_check"`
+	Ecdsa      []AirPrivateBuiltinRangeCheck `json:"ecdsa"`
+	Bitwise    []AirPrivateBuiltinBitwise    `json:"bitwise"`
+	EcOp       []AirPrivateBuiltinEcOp       `json:"ec_op"`
+	Keccak     []AirPrivateBuiltinKeccak     `json:"keccak"`
+	Poseidon   []AirPrivateBuiltinPoseidon   `json:"poseidon"`
 }
 
 type AirPrivateBuiltinRangeCheck struct {
