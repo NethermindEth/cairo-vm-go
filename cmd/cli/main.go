@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 
 	hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/zero"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
@@ -182,18 +183,43 @@ func main() {
 						}
 					}
 
-					if proofmode && airPublicInputLocation != "" {
-						airPublicInput, err := runner.GetAirPublicInput()
-						if err != nil {
-							return err
+					if proofmode {
+						if airPublicInputLocation != "" {
+							airPublicInput, err := runner.GetAirPublicInput()
+							if err != nil {
+								return err
+							}
+							airPublicInputJson, err := json.MarshalIndent(airPublicInput, "", "  ")
+							if err != nil {
+								return err
+							}
+							err = os.WriteFile(airPublicInputLocation, airPublicInputJson, 0644)
+							if err != nil {
+								return fmt.Errorf("cannot write air_public_input: %w", err)
+							}
 						}
-						airPublicInputJson, err := json.MarshalIndent(airPublicInput, "", "  ")
-						if err != nil {
-							return err
-						}
-						err = os.WriteFile(airPublicInputLocation, airPublicInputJson, 0644)
-						if err != nil {
-							return fmt.Errorf("cannot write air_public_input: %w", err)
+
+						if airPrivateInputLocation != "" {
+							tracePath, err := filepath.Abs(traceLocation)
+							if err != nil {
+								return err
+							}
+							memoryPath, err := filepath.Abs(memoryLocation)
+							if err != nil {
+								return err
+							}
+							airPrivateInput, err := runner.GetAirPrivateInput(tracePath, memoryPath)
+							if err != nil {
+								return err
+							}
+							airPrivateInputJson, err := json.MarshalIndent(airPrivateInput, "", "  ")
+							if err != nil {
+								return err
+							}
+							err = os.WriteFile(airPrivateInputLocation, airPrivateInputJson, 0644)
+							if err != nil {
+								return fmt.Errorf("cannot write air_private_input: %w", err)
+							}
 						}
 					}
 

@@ -3,6 +3,7 @@ package zero
 import (
 	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -452,4 +453,54 @@ type AirPublicMemoryEntry struct {
 	Address uint16 `json:"address"`
 	Value   string `json:"value"`
 	Page    uint16 `json:"page"`
+}
+
+func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirPrivateInput, error) {
+	airPrivateInput := AirPrivateInput{
+		TracePath:  tracePath,
+		MemoryPath: memoryPath,
+	}
+
+	for _, bRunner := range runner.layout.Builtins {
+		builtinName := bRunner.Runner.String()
+		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtinName)
+		if ok {
+			switch builtinName {
+			case "range_check":
+				{
+					var builtinValue []AirPrivateBuiltinValue
+					for index, value := range builtinSegment.Data {
+						// some checks might be missing here
+						if !value.Known() {
+							continue
+						}
+						valueBig := big.Int{}
+						value.Felt.BigInt(&valueBig)
+						builtinValue = append(builtinValue, AirPrivateBuiltinValue{Index: index, Value: fmt.Sprintf("0x%x", &valueBig)})
+					}
+					airPrivateInput.RangeCheck = builtinValue
+				}
+			}
+		}
+	}
+
+	return airPrivateInput, nil
+}
+
+type AirPrivateInput struct {
+	TracePath  string                   `json:"trace_path"`
+	MemoryPath string                   `json:"memory_path"`
+	Output     []AirPrivateBuiltinValue `json:"output,omitempty"`
+	Pedersen   []AirPrivateBuiltinValue `json:"pedersen,omitempty"`
+	RangeCheck []AirPrivateBuiltinValue `json:"range_check,omitempty"`
+	Ecdsa      []AirPrivateBuiltinValue `json:"ecdsa,omitempty"`
+	Bitwise    []AirPrivateBuiltinValue `json:"bitwise,omitempty"`
+	EcOp       []AirPrivateBuiltinValue `json:"ec_op,omitempty"`
+	Keccak     []AirPrivateBuiltinValue `json:"keccak,omitempty"`
+	Poseidon   []AirPrivateBuiltinValue `json:"poseidon,omitempty"`
+}
+
+type AirPrivateBuiltinValue struct {
+	Index int    `json:"index"`
+	Value string `json:"value"`
 }
