@@ -8,8 +8,8 @@ import (
 )
 
 const PoseidonName = "poseidon"
-const cellsPerPoseidon = 6
-const inputCellsPerPoseidon = 3
+const CellsPerPoseidon = 6
+const InputCellsPerPoseidon = 3
 const instancesPerComponentPoseidon = 1
 
 type Poseidon struct {
@@ -27,13 +27,13 @@ func (p *Poseidon) InferValue(segment *mem.Segment, offset uint64) error {
 		mv := mem.MemoryValueFromFieldElement(&value)
 		return segment.Write(offset, &mv)
 	}
-	poseidonIndex := offset % cellsPerPoseidon
-	if poseidonIndex < inputCellsPerPoseidon {
+	poseidonIndex := offset % CellsPerPoseidon
+	if poseidonIndex < InputCellsPerPoseidon {
 		return errors.New("cannot infer value")
 	}
 	baseOffset := offset - poseidonIndex
-	poseidonInputValues := make([]*fp.Element, inputCellsPerPoseidon)
-	for i := 0; i < inputCellsPerPoseidon; i++ {
+	poseidonInputValues := make([]*fp.Element, InputCellsPerPoseidon)
+	for i := 0; i < InputCellsPerPoseidon; i++ {
 		mv := segment.Peek(baseOffset + uint64(i))
 		if !mv.Known() {
 			return errors.New("cannot infer value")
@@ -56,7 +56,7 @@ func (p *Poseidon) InferValue(segment *mem.Segment, offset uint64) error {
 }
 
 func (p *Poseidon) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, p.ratio, inputCellsPerPoseidon, instancesPerComponentPoseidon, cellsPerPoseidon)
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, p.ratio, InputCellsPerPoseidon, instancesPerComponentPoseidon, CellsPerPoseidon)
 }
 
 func (p *Poseidon) String() string {

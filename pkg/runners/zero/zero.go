@@ -470,59 +470,101 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 			switch builtinName {
 			case "range_check":
 				{
-					var builtinValues []AirPrivateBuiltinIndexValue
+					var builtinValues []AirPrivateBuiltinRangeCheck
 					for index, value := range builtinSegment.Data {
 						if !value.Known() {
 							continue
 						}
 						valueBig := big.Int{}
 						value.Felt.BigInt(&valueBig)
-						builtinValues = append(builtinValues, AirPrivateBuiltinIndexValue{Index: index, Value: fmt.Sprintf("0x%x", &valueBig)})
+						builtinValues = append(builtinValues, AirPrivateBuiltinRangeCheck{Index: index, Value: fmt.Sprintf("0x%x", &valueBig)})
 					}
 					airPrivateInput.RangeCheck = builtinValues
 				}
 			case "bitwise":
 				{
-					{
-						valueMapping := make(map[int]AirPrivateBuiltinIndexXY)
-						for index, value := range builtinSegment.Data {
-							if !value.Known() {
-								continue
-							}
-							idx, typ := index/builtins.CellsPerBitwise, index%builtins.CellsPerBitwise
-							if typ >= 2 {
-								continue
-							}
-
-							builtinValue, exists := valueMapping[idx]
-							if !exists {
-								builtinValue = AirPrivateBuiltinIndexXY{Index: idx}
-							}
-
-							valueBig := big.Int{}
-							value.Felt.BigInt(&valueBig)
-							if typ == 0 {
-								builtinValue.X = fmt.Sprintf("0x%x", &valueBig)
-							} else {
-								builtinValue.Y = fmt.Sprintf("0x%x", &valueBig)
-							}
-							valueMapping[idx] = builtinValue
+					valueMapping := make(map[int]AirPrivateBuiltinBitwise)
+					for index, value := range builtinSegment.Data {
+						if !value.Known() {
+							continue
+						}
+						idx, typ := index/builtins.CellsPerBitwise, index%builtins.CellsPerBitwise
+						if typ >= 2 {
+							continue
 						}
 
-						var builtinValues []AirPrivateBuiltinIndexXY
-
-						sortedIndexes := make([]int, 0, len(valueMapping))
-						for index := range valueMapping {
-							sortedIndexes = append(sortedIndexes, index)
-						}
-						sort.Ints(sortedIndexes)
-						for _, index := range sortedIndexes {
-							builtinValue := valueMapping[index]
-							builtinValues = append(builtinValues, builtinValue)
+						builtinValue, exists := valueMapping[idx]
+						if !exists {
+							builtinValue = AirPrivateBuiltinBitwise{Index: idx}
 						}
 
-						airPrivateInput.Bitwise = builtinValues
+						valueBig := big.Int{}
+						value.Felt.BigInt(&valueBig)
+						if typ == 0 {
+							builtinValue.X = fmt.Sprintf("0x%x", &valueBig)
+						} else {
+							builtinValue.Y = fmt.Sprintf("0x%x", &valueBig)
+						}
+						valueMapping[idx] = builtinValue
 					}
+
+					var builtinValues []AirPrivateBuiltinBitwise
+
+					sortedIndexes := make([]int, 0, len(valueMapping))
+					for index := range valueMapping {
+						sortedIndexes = append(sortedIndexes, index)
+					}
+					sort.Ints(sortedIndexes)
+					for _, index := range sortedIndexes {
+						builtinValue := valueMapping[index]
+						builtinValues = append(builtinValues, builtinValue)
+					}
+
+					airPrivateInput.Bitwise = builtinValues
+
+				}
+			case "poseidon":
+				{
+					valueMapping := make(map[int]AirPrivateBuiltinPoseidon)
+					for index, value := range builtinSegment.Data {
+						if !value.Known() {
+							continue
+						}
+						idx, stateIndex := index/builtins.CellsPerPoseidon, index%builtins.CellsPerPoseidon
+						if stateIndex >= builtins.InputCellsPerPoseidon {
+							continue
+						}
+
+						builtinValue, exists := valueMapping[idx]
+						if !exists {
+							builtinValue = AirPrivateBuiltinPoseidon{Index: idx}
+						}
+
+						valueBig := big.Int{}
+						value.Felt.BigInt(&valueBig)
+						if stateIndex == 0 {
+							builtinValue.InputS0 = fmt.Sprintf("0x%x", &valueBig)
+						} else if stateIndex == 1 {
+							builtinValue.InputS1 = fmt.Sprintf("0x%x", &valueBig)
+						} else if stateIndex == 2 {
+							builtinValue.InputS2 = fmt.Sprintf("0x%x", &valueBig)
+						}
+						valueMapping[idx] = builtinValue
+					}
+
+					var builtinValues []AirPrivateBuiltinPoseidon
+
+					sortedIndexes := make([]int, 0, len(valueMapping))
+					for index := range valueMapping {
+						sortedIndexes = append(sortedIndexes, index)
+					}
+					sort.Ints(sortedIndexes)
+					for _, index := range sortedIndexes {
+						builtinValue := valueMapping[index]
+						builtinValues = append(builtinValues, builtinValue)
+					}
+
+					airPrivateInput.Poseidon = builtinValues
 				}
 			}
 		}
@@ -534,23 +576,30 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 type AirPrivateInput struct {
 	TracePath  string                        `json:"trace_path"`
 	MemoryPath string                        `json:"memory_path"`
-	Output     []AirPrivateBuiltinIndexValue `json:"output,omitempty"`
-	Pedersen   []AirPrivateBuiltinIndexValue `json:"pedersen,omitempty"`
-	RangeCheck []AirPrivateBuiltinIndexValue `json:"range_check,omitempty"`
-	Ecdsa      []AirPrivateBuiltinIndexValue `json:"ecdsa,omitempty"`
-	Bitwise    []AirPrivateBuiltinIndexXY    `json:"bitwise,omitempty"`
-	EcOp       []AirPrivateBuiltinIndexValue `json:"ec_op,omitempty"`
-	Keccak     []AirPrivateBuiltinIndexValue `json:"keccak,omitempty"`
-	Poseidon   []AirPrivateBuiltinIndexValue `json:"poseidon,omitempty"`
+	Output     []AirPrivateBuiltinRangeCheck `json:"output,omitempty"`
+	Pedersen   []AirPrivateBuiltinRangeCheck `json:"pedersen,omitempty"`
+	RangeCheck []AirPrivateBuiltinRangeCheck `json:"range_check,omitempty"`
+	Ecdsa      []AirPrivateBuiltinRangeCheck `json:"ecdsa,omitempty"`
+	Bitwise    []AirPrivateBuiltinBitwise    `json:"bitwise,omitempty"`
+	EcOp       []AirPrivateBuiltinRangeCheck `json:"ec_op,omitempty"`
+	Keccak     []AirPrivateBuiltinRangeCheck `json:"keccak,omitempty"`
+	Poseidon   []AirPrivateBuiltinPoseidon   `json:"poseidon,omitempty"`
 }
 
-type AirPrivateBuiltinIndexValue struct {
+type AirPrivateBuiltinRangeCheck struct {
 	Index int    `json:"index"`
 	Value string `json:"value"`
 }
 
-type AirPrivateBuiltinIndexXY struct {
+type AirPrivateBuiltinBitwise struct {
 	Index int    `json:"index"`
 	X     string `json:"x"`
 	Y     string `json:"y"`
+}
+
+type AirPrivateBuiltinPoseidon struct {
+	Index   int    `json:"index"`
+	InputS0 string `json:"input_s0"`
+	InputS1 string `json:"input_s1"`
+	InputS2 string `json:"input_s2"`
 }
