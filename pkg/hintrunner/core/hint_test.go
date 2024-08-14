@@ -181,6 +181,90 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 	)
 }
 
+func TestLessThanOrEqualAddressTrue(t *testing.T) {
+	// When address of lhs and rhs are the same
+	vm := VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	utils.WriteTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(23))
+
+	var dst hinter.ApCellRef = 1
+	var rhsRef hinter.FpCellRef = 0
+	var lhsRef hinter.FpCellRef = 0
+	rhs := hinter.Deref{Deref: rhsRef}
+	lhs := hinter.Deref{Deref: lhsRef}
+
+	hint := TestLessThanOrEqualAddress{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err := hint.Execute(vm, nil)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		mem.MemoryValueFromInt(1),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 1),
+	)
+
+	// When address of lhs is less than the address of rhs
+	vm = VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	utils.WriteTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(23))
+	utils.WriteTo(vm, VM.ExecutionSegment, 1, mem.MemoryValueFromInt(17))
+
+	dst = 2
+	rhsRef = 1
+	lhsRef = 0
+	rhs = hinter.Deref{Deref: rhsRef}
+	lhs = hinter.Deref{Deref: lhsRef}
+
+	hint = TestLessThanOrEqualAddress{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err = hint.Execute(vm, nil)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		mem.MemoryValueFromInt(1),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 2),
+	)
+}
+
+func TestLessThanOrEqualAddressFalse(t *testing.T) {
+	vm := VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	utils.WriteTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(23))
+	utils.WriteTo(vm, VM.ExecutionSegment, 1, mem.MemoryValueFromInt(17))
+
+	var dst hinter.ApCellRef = 2
+	var rhsRef hinter.FpCellRef = 0
+	var lhsRef hinter.FpCellRef = 1
+	rhs := hinter.Deref{Deref: rhsRef}
+	lhs := hinter.Deref{Deref: lhsRef}
+
+	hint := TestLessThanOrEqualAddress{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err := hint.Execute(vm, nil)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		mem.EmptyMemoryValueAsFelt(),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 2),
+		"Expected the hint to evaluate to False when address of lhs is larger",
+	)
+}
+
 func TestLinearSplit(t *testing.T) {
 	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0

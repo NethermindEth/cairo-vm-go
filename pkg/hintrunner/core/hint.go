@@ -140,6 +140,46 @@ func (hint *TestLessThanOrEqual) Execute(vm *VM.VirtualMachine, _ *hinter.HintRu
 	return nil
 }
 
+type TestLessThanOrEqualAddress struct {
+	dst hinter.CellRefer
+	lhs hinter.ResOperander
+	rhs hinter.ResOperander
+}
+
+func (hint *TestLessThanOrEqualAddress) String() string {
+	return "TestLessThanOrEqualAddress"
+}
+
+func (hint *TestLessThanOrEqualAddress) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+	lhsAddr, err := hint.lhs.GetAddress(vm)
+	if err != nil {
+		return fmt.Errorf("GetAddress lhs operand %s: %w", hint.lhs, err)
+	}
+
+	rhsAddr, err := hint.rhs.GetAddress(vm)
+	if err != nil {
+		return fmt.Errorf("GetAddress rhs operand %s: %w", hint.rhs, err)
+	}
+
+	resFelt := f.Element{}
+	if lhsAddr.SegmentIndex <= rhsAddr.SegmentIndex && lhsAddr.Offset <= rhsAddr.Offset {
+		resFelt.SetOne()
+	}
+
+	dstAddr, err := hint.dst.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get dst address %s: %w", dstAddr, err)
+	}
+
+	mv := mem.MemoryValueFromFieldElement(&resFelt)
+	err = vm.Memory.WriteToAddress(&dstAddr, &mv)
+	if err != nil {
+		return fmt.Errorf("write to dst address %s: %w", dstAddr, err)
+	}
+
+	return nil
+}
+
 type LinearSplit struct {
 	value  hinter.ResOperander
 	scalar hinter.ResOperander
