@@ -18,8 +18,8 @@ import (
 //
 
 const KeccakName = "keccak"
-const cellsPerKeccak = 16
-const inputCellsPerKeccak = 8
+const CellsPerKeccak = 16
+const InputCellsPerKeccak = 8
 const instancesPerComponentKeccak = 16
 
 type Keccak struct {
@@ -37,14 +37,14 @@ func (k *Keccak) InferValue(segment *memory.Segment, offset uint64) error {
 		mv := memory.MemoryValueFromFieldElement(&value)
 		return segment.Write(offset, &mv)
 	}
-	hashIndex := offset % cellsPerKeccak
-	if hashIndex < inputCellsPerKeccak {
+	hashIndex := offset % CellsPerKeccak
+	if hashIndex < InputCellsPerKeccak {
 		return errors.New("cannot infer value")
 	}
 
 	startOffset := offset - hashIndex
 	var data [200]byte
-	for i := uint64(0); i < inputCellsPerKeccak; i++ {
+	for i := uint64(0); i < InputCellsPerKeccak; i++ {
 		value := segment.Peek(startOffset + i)
 		if !value.Known() {
 			return fmt.Errorf("cannot infer value: input value at offset %d is unknown", startOffset+i)
@@ -70,12 +70,12 @@ func (k *Keccak) InferValue(segment *memory.Segment, offset uint64) error {
 		binary.LittleEndian.PutUint64(output[i*8:i*8+8], dataU64[i])
 	}
 
-	for i := 0; i < inputCellsPerKeccak; i++ {
+	for i := 0; i < InputCellsPerKeccak; i++ {
 		var bytes [32]byte
 		copy(bytes[:], output[i*25:i*25+25])
 		//This is 25*8 bits which is smaller than max felt 252 bits so no need to check the error
 		v, _ := fp.LittleEndian.Element(&bytes)
-		k.cache[startOffset+inputCellsPerKeccak+uint64(i)] = v
+		k.cache[startOffset+InputCellsPerKeccak+uint64(i)] = v
 	}
 	value = k.cache[offset]
 	mv := memory.MemoryValueFromFieldElement(&value)
@@ -87,5 +87,5 @@ func (k *Keccak) String() string {
 }
 
 func (k *Keccak) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, k.ratio, inputCellsPerKeccak, instancesPerComponentKeccak, cellsPerKeccak)
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, k.ratio, InputCellsPerKeccak, instancesPerComponentKeccak, CellsPerKeccak)
 }

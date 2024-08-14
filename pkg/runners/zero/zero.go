@@ -658,6 +658,60 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 
 					airPrivateInput.EcOp = builtinValues
 				}
+			case "keccak":
+				{
+					valueMapping := make(map[int]AirPrivateBuiltinKeccak)
+					for index, value := range builtinSegment.Data {
+						if !value.Known() {
+							continue
+						}
+						idx, stateIndex := index/builtins.CellsPerKeccak, index%builtins.CellsPerKeccak
+						if stateIndex >= builtins.InputCellsPerKeccak {
+							continue
+						}
+
+						builtinValue, exists := valueMapping[idx]
+						if !exists {
+							builtinValue = AirPrivateBuiltinKeccak{Index: idx}
+						}
+
+						valueBig := big.Int{}
+						value.Felt.BigInt(&valueBig)
+						valueHex := fmt.Sprintf("0x%x", &valueBig)
+						if stateIndex == 0 {
+							builtinValue.InputS0 = valueHex
+						} else if stateIndex == 1 {
+							builtinValue.InputS1 = valueHex
+						} else if stateIndex == 2 {
+							builtinValue.InputS2 = valueHex
+						} else if stateIndex == 3 {
+							builtinValue.InputS3 = valueHex
+						} else if stateIndex == 4 {
+							builtinValue.InputS4 = valueHex
+						} else if stateIndex == 5 {
+							builtinValue.InputS5 = valueHex
+						} else if stateIndex == 6 {
+							builtinValue.InputS6 = valueHex
+						} else if stateIndex == 7 {
+							builtinValue.InputS7 = valueHex
+						}
+						valueMapping[idx] = builtinValue
+					}
+
+					var builtinValues []AirPrivateBuiltinKeccak
+
+					sortedIndexes := make([]int, 0, len(valueMapping))
+					for index := range valueMapping {
+						sortedIndexes = append(sortedIndexes, index)
+					}
+					sort.Ints(sortedIndexes)
+					for _, index := range sortedIndexes {
+						builtinValue := valueMapping[index]
+						builtinValues = append(builtinValues, builtinValue)
+					}
+
+					airPrivateInput.Keccak = builtinValues
+				}
 			}
 		}
 	}
@@ -668,13 +722,12 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 type AirPrivateInput struct {
 	TracePath  string                        `json:"trace_path"`
 	MemoryPath string                        `json:"memory_path"`
-	Output     []AirPrivateBuiltinRangeCheck `json:"output,omitempty"`
 	Pedersen   []AirPrivateBuiltinPedersen   `json:"pedersen,omitempty"`
 	RangeCheck []AirPrivateBuiltinRangeCheck `json:"range_check,omitempty"`
 	Ecdsa      []AirPrivateBuiltinRangeCheck `json:"ecdsa,omitempty"`
 	Bitwise    []AirPrivateBuiltinBitwise    `json:"bitwise,omitempty"`
 	EcOp       []AirPrivateBuiltinEcOp       `json:"ec_op,omitempty"`
-	Keccak     []AirPrivateBuiltinRangeCheck `json:"keccak,omitempty"`
+	Keccak     []AirPrivateBuiltinKeccak     `json:"keccak,omitempty"`
 	Poseidon   []AirPrivateBuiltinPoseidon   `json:"poseidon,omitempty"`
 }
 
@@ -709,4 +762,16 @@ type AirPrivateBuiltinEcOp struct {
 	M     string `json:"m"`
 	QX    string `json:"q_x"`
 	QY    string `json:"q_y"`
+}
+
+type AirPrivateBuiltinKeccak struct {
+	Index   int    `json:"index"`
+	InputS0 string `json:"input_s0"`
+	InputS1 string `json:"input_s1"`
+	InputS2 string `json:"input_s2"`
+	InputS3 string `json:"input_s3"`
+	InputS4 string `json:"input_s4"`
+	InputS5 string `json:"input_s5"`
+	InputS6 string `json:"input_s6"`
+	InputS7 string `json:"input_s7"`
 }
