@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sort"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -465,20 +466,63 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 		builtinName := bRunner.Runner.String()
 		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtinName)
 		if ok {
+			// some checks might be missing here
 			switch builtinName {
 			case "range_check":
 				{
-					var builtinValue []AirPrivateBuiltinValue
+					var builtinValues []AirPrivateBuiltinIndexValue
 					for index, value := range builtinSegment.Data {
-						// some checks might be missing here
 						if !value.Known() {
 							continue
 						}
 						valueBig := big.Int{}
 						value.Felt.BigInt(&valueBig)
-						builtinValue = append(builtinValue, AirPrivateBuiltinValue{Index: index, Value: fmt.Sprintf("0x%x", &valueBig)})
+						builtinValues = append(builtinValues, AirPrivateBuiltinIndexValue{Index: index, Value: fmt.Sprintf("0x%x", &valueBig)})
 					}
-					airPrivateInput.RangeCheck = builtinValue
+					airPrivateInput.RangeCheck = builtinValues
+				}
+			case "bitwise":
+				{
+					{
+						valueMapping := make(map[int]AirPrivateBuiltinIndexXY)
+						for index, value := range builtinSegment.Data {
+							if !value.Known() {
+								continue
+							}
+							idx, typ := index/builtins.CellsPerBitwise, index%builtins.CellsPerBitwise
+							if typ >= 2 {
+								continue
+							}
+
+							builtinValue, exists := valueMapping[idx]
+							if !exists {
+								builtinValue = AirPrivateBuiltinIndexXY{Index: idx}
+							}
+
+							valueBig := big.Int{}
+							value.Felt.BigInt(&valueBig)
+							if typ == 0 {
+								builtinValue.X = fmt.Sprintf("0x%x", &valueBig)
+							} else {
+								builtinValue.Y = fmt.Sprintf("0x%x", &valueBig)
+							}
+							valueMapping[idx] = builtinValue
+						}
+
+						var builtinValues []AirPrivateBuiltinIndexXY
+
+						sortedIndexes := make([]int, 0, len(valueMapping))
+						for index := range valueMapping {
+							sortedIndexes = append(sortedIndexes, index)
+						}
+						sort.Ints(sortedIndexes)
+						for _, index := range sortedIndexes {
+							builtinValue := valueMapping[index]
+							builtinValues = append(builtinValues, builtinValue)
+						}
+
+						airPrivateInput.Bitwise = builtinValues
+					}
 				}
 			}
 		}
@@ -488,19 +532,25 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 }
 
 type AirPrivateInput struct {
-	TracePath  string                   `json:"trace_path"`
-	MemoryPath string                   `json:"memory_path"`
-	Output     []AirPrivateBuiltinValue `json:"output,omitempty"`
-	Pedersen   []AirPrivateBuiltinValue `json:"pedersen,omitempty"`
-	RangeCheck []AirPrivateBuiltinValue `json:"range_check,omitempty"`
-	Ecdsa      []AirPrivateBuiltinValue `json:"ecdsa,omitempty"`
-	Bitwise    []AirPrivateBuiltinValue `json:"bitwise,omitempty"`
-	EcOp       []AirPrivateBuiltinValue `json:"ec_op,omitempty"`
-	Keccak     []AirPrivateBuiltinValue `json:"keccak,omitempty"`
-	Poseidon   []AirPrivateBuiltinValue `json:"poseidon,omitempty"`
+	TracePath  string                        `json:"trace_path"`
+	MemoryPath string                        `json:"memory_path"`
+	Output     []AirPrivateBuiltinIndexValue `json:"output,omitempty"`
+	Pedersen   []AirPrivateBuiltinIndexValue `json:"pedersen,omitempty"`
+	RangeCheck []AirPrivateBuiltinIndexValue `json:"range_check,omitempty"`
+	Ecdsa      []AirPrivateBuiltinIndexValue `json:"ecdsa,omitempty"`
+	Bitwise    []AirPrivateBuiltinIndexXY    `json:"bitwise,omitempty"`
+	EcOp       []AirPrivateBuiltinIndexValue `json:"ec_op,omitempty"`
+	Keccak     []AirPrivateBuiltinIndexValue `json:"keccak,omitempty"`
+	Poseidon   []AirPrivateBuiltinIndexValue `json:"poseidon,omitempty"`
 }
 
-type AirPrivateBuiltinValue struct {
+type AirPrivateBuiltinIndexValue struct {
 	Index int    `json:"index"`
 	Value string `json:"value"`
+}
+
+type AirPrivateBuiltinIndexXY struct {
+	Index int    `json:"index"`
+	X     string `json:"x"`
+	Y     string `json:"y"`
 }

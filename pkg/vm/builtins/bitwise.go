@@ -10,7 +10,7 @@ import (
 
 const BitwiseName = "bitwise"
 
-const cellsPerBitwise = 5
+const CellsPerBitwise = 5
 const inputCellsPerBitwise = 2
 const instancesPerComponentBitwise = 1
 
@@ -25,7 +25,7 @@ func (b *Bitwise) CheckWrite(
 }
 
 func (b *Bitwise) InferValue(segment *memory.Segment, offset uint64) error {
-	bitwiseIndex := offset % cellsPerBitwise
+	bitwiseIndex := offset % CellsPerBitwise
 	// input cell
 	if bitwiseIndex < inputCellsPerBitwise {
 		return errors.New("cannot infer value from input cell")
@@ -98,5 +98,5 @@ func (b *Bitwise) String() string {
 }
 
 func (b *Bitwise) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, b.ratio, inputCellsPerBitwise, instancesPerComponentBitwise, cellsPerBitwise)
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, b.ratio, inputCellsPerBitwise, instancesPerComponentBitwise, CellsPerBitwise)
 }
