@@ -36,3 +36,24 @@ Please do not:
 ## Branch Naming
 
 Please name your branch using the `kebab-case` pattern and use common sense to name it, so that its purpose remains clear. For example, if introduces a new feature that adds the allocation hint: `feature-alloc-hint`.
+
+## Setting Up Git Hooks
+
+To ensure code quality and consistency, this project uses a custom pre-commit hook. Follow these steps to set up the pre-commit hook:
+
+Run the setup script to install the pre-commit hook:
+
+```bash
+chmod +x ./setup-hooks.sh
+./setup-hooks.sh
+```
+
+This script will copy the pre-commit hook from the githooks directory to your local .git/hooks directory.
+
+Verify that the pre-commit hook is installed and executable by running:
+
+```bash
+ls -l .git/hooks/pre-commit
+```
+
+You should see that the pre-commit file is listed and has executable permissions.
