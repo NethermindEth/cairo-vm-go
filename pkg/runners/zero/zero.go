@@ -477,7 +477,8 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 						}
 						valueBig := big.Int{}
 						value.Felt.BigInt(&valueBig)
-						builtinValues = append(builtinValues, AirPrivateBuiltinRangeCheck{Index: index, Value: fmt.Sprintf("0x%x", &valueBig)})
+						valueHex := fmt.Sprintf("0x%x", &valueBig)
+						builtinValues = append(builtinValues, AirPrivateBuiltinRangeCheck{Index: index, Value: valueHex})
 					}
 					airPrivateInput.RangeCheck = builtinValues
 				}
@@ -500,10 +501,11 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 
 						valueBig := big.Int{}
 						value.Felt.BigInt(&valueBig)
+						valueHex := fmt.Sprintf("0x%x", &valueBig)
 						if typ == 0 {
-							builtinValue.X = fmt.Sprintf("0x%x", &valueBig)
+							builtinValue.X = valueHex
 						} else {
-							builtinValue.Y = fmt.Sprintf("0x%x", &valueBig)
+							builtinValue.Y = valueHex
 						}
 						valueMapping[idx] = builtinValue
 					}
@@ -521,7 +523,6 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 					}
 
 					airPrivateInput.Bitwise = builtinValues
-
 				}
 			case "poseidon":
 				{
@@ -542,12 +543,13 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 
 						valueBig := big.Int{}
 						value.Felt.BigInt(&valueBig)
+						valueHex := fmt.Sprintf("0x%x", &valueBig)
 						if stateIndex == 0 {
-							builtinValue.InputS0 = fmt.Sprintf("0x%x", &valueBig)
+							builtinValue.InputS0 = valueHex
 						} else if stateIndex == 1 {
-							builtinValue.InputS1 = fmt.Sprintf("0x%x", &valueBig)
+							builtinValue.InputS1 = valueHex
 						} else if stateIndex == 2 {
-							builtinValue.InputS2 = fmt.Sprintf("0x%x", &valueBig)
+							builtinValue.InputS2 = valueHex
 						}
 						valueMapping[idx] = builtinValue
 					}
@@ -585,10 +587,11 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 
 						valueBig := big.Int{}
 						value.Felt.BigInt(&valueBig)
+						valueHex := fmt.Sprintf("0x%x", &valueBig)
 						if typ == 0 {
-							builtinValue.X = fmt.Sprintf("0x%x", &valueBig)
+							builtinValue.X = valueHex
 						} else {
-							builtinValue.Y = fmt.Sprintf("0x%x", &valueBig)
+							builtinValue.Y = valueHex
 						}
 						valueMapping[idx] = builtinValue
 					}
@@ -606,7 +609,54 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 					}
 
 					airPrivateInput.Pedersen = builtinValues
+				}
+			case "ec_op":
+				{
+					valueMapping := make(map[int]AirPrivateBuiltinEcOp)
+					for index, value := range builtinSegment.Data {
+						if !value.Known() {
+							continue
+						}
+						idx, typ := index/builtins.CellsPerEcOp, index%builtins.CellsPerEcOp
+						if typ >= builtins.InputCellsPerEcOp {
+							continue
+						}
 
+						builtinValue, exists := valueMapping[idx]
+						if !exists {
+							builtinValue = AirPrivateBuiltinEcOp{Index: idx}
+						}
+
+						valueBig := big.Int{}
+						value.Felt.BigInt(&valueBig)
+						valueHex := fmt.Sprintf("0x%x", &valueBig)
+						if typ == 0 {
+							builtinValue.PX = valueHex
+						} else if typ == 1 {
+							builtinValue.PY = valueHex
+						} else if typ == 2 {
+							builtinValue.QX = valueHex
+						} else if typ == 3 {
+							builtinValue.QY = valueHex
+						} else if typ == 4 {
+							builtinValue.M = valueHex
+						}
+						valueMapping[idx] = builtinValue
+					}
+
+					var builtinValues []AirPrivateBuiltinEcOp
+
+					sortedIndexes := make([]int, 0, len(valueMapping))
+					for index := range valueMapping {
+						sortedIndexes = append(sortedIndexes, index)
+					}
+					sort.Ints(sortedIndexes)
+					for _, index := range sortedIndexes {
+						builtinValue := valueMapping[index]
+						builtinValues = append(builtinValues, builtinValue)
+					}
+
+					airPrivateInput.EcOp = builtinValues
 				}
 			}
 		}
@@ -623,7 +673,7 @@ type AirPrivateInput struct {
 	RangeCheck []AirPrivateBuiltinRangeCheck `json:"range_check,omitempty"`
 	Ecdsa      []AirPrivateBuiltinRangeCheck `json:"ecdsa,omitempty"`
 	Bitwise    []AirPrivateBuiltinBitwise    `json:"bitwise,omitempty"`
-	EcOp       []AirPrivateBuiltinRangeCheck `json:"ec_op,omitempty"`
+	EcOp       []AirPrivateBuiltinEcOp       `json:"ec_op,omitempty"`
 	Keccak     []AirPrivateBuiltinRangeCheck `json:"keccak,omitempty"`
 	Poseidon   []AirPrivateBuiltinPoseidon   `json:"poseidon,omitempty"`
 }
@@ -650,4 +700,13 @@ type AirPrivateBuiltinPedersen struct {
 	Index int    `json:"index"`
 	X     string `json:"x"`
 	Y     string `json:"y"`
+}
+
+type AirPrivateBuiltinEcOp struct {
+	Index int    `json:"index"`
+	PX    string `json:"p_x"`
+	PY    string `json:"p_y"`
+	M     string `json:"m"`
+	QX    string `json:"q_x"`
+	QY    string `json:"q_y"`
 }

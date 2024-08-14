@@ -11,8 +11,8 @@ import (
 )
 
 const EcOpName = "ec_op"
-const cellsPerEcOp = 7
-const inputCellsPerEcOp = 5
+const CellsPerEcOp = 7
+const InputCellsPerEcOp = 5
 const instancesPerComponentEcOp = 1
 
 var feltThree fp.Element = fp.Element(
@@ -44,8 +44,8 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 		return segment.Write(offset, &mv)
 	}
 	// get the current slot index and verify it is an output cell
-	ecopIndex := offset % cellsPerEcOp
-	if ecopIndex < inputCellsPerEcOp {
+	ecopIndex := offset % CellsPerEcOp
+	if ecopIndex < InputCellsPerEcOp {
 		return errors.New("cannot infer value from input cell")
 	}
 
@@ -99,7 +99,7 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 	}
 
 	// store the resulting point `r`
-	outputOff := inputOff + inputCellsPerEcOp
+	outputOff := inputOff + InputCellsPerEcOp
 
 	// store the x and y coordinates of the resulting point
 	e.cache[outputOff] = r.X
@@ -111,7 +111,7 @@ func (e *EcOp) InferValue(segment *mem.Segment, offset uint64) error {
 }
 
 func (e *EcOp) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, e.ratio, inputCellsPerEcOp, instancesPerComponentEcOp, cellsPerEcOp)
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, e.ratio, InputCellsPerEcOp, instancesPerComponentEcOp, CellsPerEcOp)
 }
 
 // structure to represent a point in the elliptic curve
