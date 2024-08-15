@@ -140,6 +140,46 @@ func (hint *TestLessThanOrEqual) Execute(vm *VM.VirtualMachine, _ *hinter.HintRu
 	return nil
 }
 
+type TestLessThanOrEqualAddress struct {
+	dst hinter.CellRefer
+	lhs hinter.ResOperander
+	rhs hinter.ResOperander
+}
+
+func (hint *TestLessThanOrEqualAddress) String() string {
+	return "TestLessThanOrEqualAddress"
+}
+
+func (hint *TestLessThanOrEqualAddress) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+	lhsPtr, err := hinter.ResolveAsAddress(vm, hint.lhs)
+	if err != nil {
+		return fmt.Errorf("resolve lhs pointer: %w", err)
+	}
+
+	rhsPtr, err := hinter.ResolveAsAddress(vm, hint.rhs)
+	if err != nil {
+		return fmt.Errorf("resolve rhs pointer: %w", err)
+	}
+
+	resFelt := f.Element{}
+	if lhsPtr.Cmp(rhsPtr) <= 0 {
+		resFelt.SetOne()
+	}
+
+	dstAddr, err := hint.dst.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get dst address %s: %w", dstAddr, err)
+	}
+
+	mv := mem.MemoryValueFromFieldElement(&resFelt)
+	err = vm.Memory.WriteToAddress(&dstAddr, &mv)
+	if err != nil {
+		return fmt.Errorf("write to dst address %s: %w", dstAddr, err)
+	}
+
+	return nil
+}
+
 type LinearSplit struct {
 	value  hinter.ResOperander
 	scalar hinter.ResOperander

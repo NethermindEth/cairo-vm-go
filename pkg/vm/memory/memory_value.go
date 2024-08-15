@@ -24,6 +24,16 @@ func (address *MemoryAddress) Equal(other *MemoryAddress) bool {
 	return address.SegmentIndex == other.SegmentIndex && address.Offset == other.Offset
 }
 
+func (address *MemoryAddress) Cmp(other *MemoryAddress) int {
+	if address.SegmentIndex == other.SegmentIndex && address.Offset == other.Offset {
+		return 0
+	} else if address.SegmentIndex < other.SegmentIndex || (address.SegmentIndex == other.SegmentIndex && address.Offset < other.Offset) {
+		return -1
+	} else {
+		return 1
+	}
+}
+
 // It crates a new memory address with the modified offset
 func (address *MemoryAddress) AddOffset(offset int16) (MemoryAddress, error) {
 	newOffset, overflow := utils.SafeOffset(address.Offset, offset)
