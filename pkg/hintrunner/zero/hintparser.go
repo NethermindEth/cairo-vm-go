@@ -32,8 +32,6 @@ var (
 	)
 )
 
-// var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp](participle.UseLookahead(20))
-
 type IdentifierExp struct {
 	DerefCastExp *DerefCastExp `@@ |`
 	CastExp      *CastExp      `@@`
@@ -49,14 +47,13 @@ type CastExp struct {
 }
 
 type ArithExp struct {
-	AddExp  *AddExp  `@@ |`
 	TermExp *TermExp `@@`
+	AddExp  []AddExp `@@*`
 }
 
 type AddExp struct {
-	LeftExp  *TermExp  `@@`
-	Operator string    `@("+" | "-")`
-	RightExp *ArithExp `@@`
+	Operator string   `@("+" | "-")`
+	TermExp  *TermExp `@@`
 }
 
 type TermExp struct {
@@ -163,67 +160,82 @@ func (expression CastExp) Evaluate() (hinter.Reference, error) {
 }
 
 func (expression ArithExp) Evaluate() (hinter.Reference, error) {
-	switch {
-	case expression.AddExp != nil:
-		return expression.AddExp.Evaluate()
-	case expression.TermExp != nil:
-		return expression.TermExp.Evaluate()
-	default:
-		return nil, fmt.Errorf("unexpected identifier value")
-	}
-}
-
-func (expression AddExp) Evaluate() (hinter.Reference, error) {
-	leftExp, err := expression.LeftExp.Evaluate()
-	if err != nil {
-		return nil, err
-	}
-	rightExp, err := expression.RightExp.Evaluate()
+	leftExp, err := expression.TermExp.Evaluate()
 	if err != nil {
 		return nil, err
 	}
 
-	if rightResult, ok := rightExp.(hinter.Immediate); ok {
-		switch leftResult := leftExp.(type) {
-		case hinter.CellRefer:
-			if off, ok := utils.Int16FromFelt((*fp.Element)(&rightResult)); ok {
-				if expression.Operator == "-" {
-					off = -off
-				}
-
-				switch cellRef := leftResult.(type) {
-				case hinter.ApCellRef:
-					oldOffset := int16(cellRef)
-					return hinter.ApCellRef(off + oldOffset), nil
-				case hinter.FpCellRef:
-					oldOffset := int16(cellRef)
-					return hinter.FpCellRef(off + oldOffset), nil
-				}
+	if leftResult, ok := leftExp.(hinter.CellRefer); ok {
+		// Binary Operation does not support CellRef in the left hand side
+		// so the expression has to follow the pattern:
+		// reg + off + off + ... + off
+		for _, term := range expression.AddExp {
+			fmt.Println("entre")
+			fmt.Println(term)
+			rightExp, err := term.TermExp.Evaluate()
+			if err != nil {
+				return nil, err
 			}
-		case hinter.Immediate:
-			lFelt := (*fp.Element)(&leftResult)
-			rFelt := (*fp.Element)(&rightResult)
-			result := new(fp.Element).Add(lFelt, rFelt)
-			return hinter.Immediate(*result), nil
+			fmt.Println(rightExp)
+			rightResult, ok := rightExp.(hinter.Immediate)
+			if !ok {
+				return nil, fmt.Errorf("invalid arithmetic expression")
+			}
+
+			off, ok := utils.Int16FromFelt((*fp.Element)(&rightResult))
+			if !ok {
+				return nil, fmt.Errorf("invalid arithmetic expression")
+			}
+			fmt.Println(off)
+
+			if term.Operator == "-" {
+				off = -off
+			}
+			fmt.Println(off)
+
+			switch cellRef := leftResult.(type) {
+			case hinter.ApCellRef:
+				oldOffset := int16(cellRef)
+				fmt.Println(oldOffset)
+				leftResult = hinter.ApCellRef(off + oldOffset)
+				fmt.Println(leftExp)
+				continue
+			case hinter.FpCellRef:
+				oldOffset := int16(cellRef)
+				leftResult = hinter.FpCellRef(off + oldOffset)
+				continue
+			}
 		}
+		return leftResult, nil
+	} else {
+		for _, term := range expression.AddExp {
+			rightExp, err := term.TermExp.Evaluate()
+			if err != nil {
+				return nil, err
+			}
+
+			op, err := parseOperator(term.Operator)
+			if err != nil {
+				return nil, err
+			}
+
+			leftResult, ok := leftExp.(hinter.ResOperander)
+			if !ok {
+				return nil, fmt.Errorf("invalid arithmetic expression")
+			}
+			rightResult, ok := rightExp.(hinter.ResOperander)
+			if !ok {
+				return nil, fmt.Errorf("invalid arithmetic expression")
+			}
+			leftExp = hinter.BinaryOp{
+				Operator: op,
+				Lhs:      leftResult,
+				Rhs:      rightResult,
+			}
+		}
+		return leftExp, nil
 	}
 
-	operator, err := parseOperator(expression.Operator)
-	if err != nil {
-		return nil, err
-	}
-
-	// This is necesary since leftExp and rightExp are References and BinaryOp requires ResOperanders
-	if leftOp, ok := leftExp.(hinter.ResOperander); ok {
-		if rightOp, ok := rightExp.(hinter.ResOperander); ok {
-			return hinter.BinaryOp{
-				Operator: operator,
-				Lhs:      leftOp,
-				Rhs:      rightOp,
-			}, nil
-		}
-	}
-	return nil, fmt.Errorf("unexpected addition expression")
 }
 
 func (expression TermExp) Evaluate() (hinter.Reference, error) {
@@ -331,8 +343,7 @@ func (expression OffsetExp) Evaluate() (*big.Int, error) {
 		if !ok {
 			return nil, fmt.Errorf("expected a number")
 		}
-		mod := fp.Modulus()
-		negNumber := new(big.Int).Sub(mod, bigIntValue)
+		negNumber := bigIntValue.Neg(bigIntValue)
 		return negNumber, nil
 	default:
 		return nil, fmt.Errorf("expected a number")

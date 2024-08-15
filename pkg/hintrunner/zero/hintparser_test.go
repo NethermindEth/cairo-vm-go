@@ -100,6 +100,13 @@ func TestHintParser(t *testing.T) {
 				Rhs: hinter.Immediate(*feltInt64(18)),
 			},
 		},
+		{
+			Parameter:         "[cast(ap - 0 + (-1), felt*)]",
+			ExpectedCellRefer: nil,
+			ExpectedResOperander: hinter.Deref{
+				Deref: hinter.ApCellRef(-1),
+			},
+		},
 	}
 
 	for _, test := range testSet {
