@@ -658,12 +658,6 @@ func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 		if err != nil {
 			return fmt.Errorf("write to g0_or_no_inv address %s: %w", g0OrNoInvAddr, err)
 		}
-
-		mv = mem.MemoryValueFromFieldElement(&utils.FeltZero)
-		err = vm.Memory.WriteToAddress(&g1OptionAddr, &mv)
-		if err != nil {
-			return fmt.Errorf("write to g1_option address %s: %w", g1OptionAddr, err)
-		}
 	}
 
 	return nil
