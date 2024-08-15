@@ -561,7 +561,7 @@ func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 			return fmt.Errorf("write to G1Option address %s: %w", g1OptionAddr, err)
 		}
 	} else if g.Cmp(big.NewInt(1)) != 0 {
-		if new(big.Int).Rem(&g, big.NewInt(2)) == big.NewInt(0) {
+		if new(big.Int).Rem(&g, big.NewInt(2)).Cmp(big.NewInt(0)) == 0 {
 			g = *big.NewInt(2)
 		}
 
