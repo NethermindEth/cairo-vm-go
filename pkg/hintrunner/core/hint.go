@@ -626,11 +626,6 @@ func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 		}
 	}
 
-	// mv := mem.MemoryValueFromFieldElement(&resFelt)
-	// err = vm.Memory.WriteToAddress(&dstAddr, &mv)
-	// if err != nil {
-	// 	return fmt.Errorf("write to dst address %s: %w", dstAddr, err)
-	// }
 	return nil
 }
 
