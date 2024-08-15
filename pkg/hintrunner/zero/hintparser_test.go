@@ -1,7 +1,6 @@
 package zero
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -76,9 +75,9 @@ func TestHintParser(t *testing.T) {
 			},
 		},
 		{
-			Parameter:            "cast(7, felt)",
+			Parameter:            "cast(2389472938759290879897, felt)",
 			ExpectedCellRefer:    nil,
-			ExpectedResOperander: hinter.Immediate(*feltInt64((7))),
+			ExpectedResOperander: hinter.Immediate(*feltString("2389472938759290879897")),
 		},
 		{
 			Parameter:         "cast([[ap + 2] + (-5)], felt)",
@@ -90,11 +89,21 @@ func TestHintParser(t *testing.T) {
 				Offset: int16(-5),
 			},
 		},
+		{
+			Parameter:         "cast([fp + (-4)] * 18, felt)",
+			ExpectedCellRefer: nil,
+			ExpectedResOperander: hinter.BinaryOp{
+				Operator: hinter.Mul,
+				Lhs: hinter.Deref{
+					Deref: hinter.FpCellRef(-4),
+				},
+				Rhs: hinter.Immediate(*feltInt64(18)),
+			},
+		},
 	}
 
 	for _, test := range testSet {
 		output, err := ParseIdentifier(test.Parameter)
-		fmt.Println(test.Parameter)
 		require.NoError(t, err)
 
 		if test.ExpectedCellRefer != nil {

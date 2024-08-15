@@ -2,10 +2,12 @@ package zero
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/alecthomas/participle/v2"
+	"github.com/alecthomas/participle/v2/lexer"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -17,8 +19,20 @@ import (
 // term => Exp | ProdExp
 // prodExp => Exp * Exp
 // exp => cellRef | deref | dderef | int
+var (
+	basicLexer = lexer.MustSimple([]lexer.SimpleRule{
+		{"Number", `\d+`},
+		{"Ident", `[a-zA-Z_]\w*`},
+		{"Punct", `[-[!@#$%^&*()+_={}\|:;"'<,>.?/]|]`},
+		{"whitespace", `[ \t]+`},
+	})
+	parser = participle.MustBuild[IdentifierExp](
+		participle.Lexer(basicLexer),
+		participle.UseLookahead(20),
+	)
+)
 
-var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp](participle.UseLookahead(20))
+// var parser *participle.Parser[IdentifierExp] = participle.MustBuild[IdentifierExp](participle.UseLookahead(20))
 
 type IdentifierExp struct {
 	DerefCastExp *DerefCastExp `@@ |`
@@ -57,10 +71,10 @@ type ProdExp struct {
 }
 
 type Expression struct {
-	IntExp     *OffsetExp  `@@ |`
-	CellRefExp *CellRefExp `@@ |`
+	DDerefExp  *DDerefExp  `@@ |`
 	DerefExp   *DerefExp   `@@ |`
-	DDerefExp  *DDerefExp  `@@`
+	CellRefExp *CellRefExp `@@ |`
+	IntExp     *OffsetExp  `@@`
 }
 
 type CellRefSimple struct {
@@ -80,8 +94,8 @@ type RegisterOffset struct {
 }
 
 type OffsetExp struct {
-	Number    *int `@Int |`
-	NegNumber *int `"(" "-" @Int ")"`
+	Number    string `@Number |`
+	NegNumber string `"(" "-" @Number ")"`
 }
 
 type DerefExp struct {
@@ -95,8 +109,8 @@ type DerefOffsetExp struct {
 }
 
 type DDerefExp struct {
-	DerefExp       *DerefExp       `"[" @@ "]" |`
-	DerefOffsetExp *DerefOffsetExp `"[" @@ "]"`
+	DerefOffsetExp *DerefOffsetExp `"[" @@ "]" |`
+	DerefExp       *DerefExp       `"[" @@ "]"`
 }
 
 // AST Functionality
@@ -129,8 +143,7 @@ func (expression DerefCastExp) Evaluate() (hinter.Reference, error) {
 	case hinter.BinaryOp:
 		if left, ok := result.Lhs.(hinter.Deref); ok {
 			if right, ok := result.Rhs.(hinter.Immediate); ok {
-				offset, err := utils.Int16FromFelt((*fp.Element)(&right))
-				if err == nil {
+				if offset, ok := utils.Int16FromFelt((*fp.Element)(&right)); ok {
 					return hinter.DoubleDeref{
 							Deref:  left,
 							Offset: offset,
@@ -173,8 +186,7 @@ func (expression AddExp) Evaluate() (hinter.Reference, error) {
 	if rightResult, ok := rightExp.(hinter.Immediate); ok {
 		switch leftResult := leftExp.(type) {
 		case hinter.CellRefer:
-			off, err := utils.Int16FromFelt((*fp.Element)(&rightResult))
-			if err == nil {
+			if off, ok := utils.Int16FromFelt((*fp.Element)(&rightResult)); ok {
 				if expression.Operator == "-" {
 					off = -off
 				}
@@ -254,7 +266,7 @@ func (expression Expression) Evaluate() (hinter.Reference, error) {
 		if err != nil {
 			return nil, err
 		}
-		return hinter.Immediate(*new(fp.Element).SetInt64(int64(*intExp))), nil
+		return hinter.Immediate(*new(fp.Element).SetBigInt(intExp)), nil
 	case expression.CellRefExp != nil:
 		return expression.CellRefExp.Evaluate()
 	case expression.DerefExp != nil:
@@ -284,7 +296,10 @@ func (expression CellRefExp) Evaluate() (hinter.CellRefer, error) {
 
 func (expression RegisterOffset) Evaluate() (hinter.CellRefer, error) {
 	offsetValue, _ := expression.Offset.Evaluate()
-	offset := int16(*offsetValue)
+	offset, ok := utils.Int16FromBigInt(offsetValue)
+	if !ok {
+		return nil, fmt.Errorf("offset does not fit in int16")
+	}
 	if expression.Operator == "-" {
 		offset = -offset
 	}
@@ -303,26 +318,31 @@ func EvaluateRegister(register string, offset int16) (hinter.CellRefer, error) {
 	}
 }
 
-func (expression OffsetExp) Evaluate() (*int, error) {
+func (expression OffsetExp) Evaluate() (*big.Int, error) {
 	switch {
-	case expression.Number != nil:
-		return expression.Number, nil
-	case expression.NegNumber != nil:
-		negNumber := -*expression.NegNumber
-		return &negNumber, nil
+	case expression.Number != "":
+		bigIntValue, ok := new(big.Int).SetString(expression.Number, 10)
+		if !ok {
+			return nil, fmt.Errorf("expected a number")
+		}
+		return bigIntValue, nil
+	case expression.NegNumber != "":
+		bigIntValue, ok := new(big.Int).SetString(expression.NegNumber, 10)
+		if !ok {
+			return nil, fmt.Errorf("expected a number")
+		}
+		mod := fp.Modulus()
+		negNumber := new(big.Int).Sub(mod, bigIntValue)
+		return negNumber, nil
 	default:
 		return nil, fmt.Errorf("expected a number")
 	}
 }
 
 func (expression DerefExp) Evaluate() (hinter.Deref, error) {
-	cellRefExp, err := expression.CellRefExp.Evaluate()
+	cellRef, err := expression.CellRefExp.Evaluate()
 	if err != nil {
 		return hinter.Deref{}, err
-	}
-	cellRef, ok := cellRefExp.(hinter.CellRefer)
-	if !ok {
-		return hinter.Deref{}, fmt.Errorf("expected a CellRefer expression but got %s", cellRefExp)
 	}
 	return hinter.Deref{Deref: cellRef}, nil
 }
@@ -347,7 +367,10 @@ func (expression DDerefExp) Evaluate() (hinter.DoubleDeref, error) {
 		if err != nil {
 			return hinter.DoubleDeref{}, err
 		}
-		offset := int16(*offsetValue)
+		offset, ok := utils.Int16FromBigInt(offsetValue)
+		if !ok {
+			return hinter.DoubleDeref{}, fmt.Errorf("offset does not fit in int16")
+		}
 		if expression.DerefOffsetExp.Operator == "-" {
 			offset = -offset
 		}
