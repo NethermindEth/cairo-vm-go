@@ -435,8 +435,6 @@ func (hint U256InvModN) String() string {
 }
 
 func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
-	pow_2_128 := new(big.Int).Lsh(big.NewInt(1), 128)
-
 	B0, err := hint.B0.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve B0 operand %s: %v", hint.B0, err)
@@ -522,11 +520,9 @@ func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 	n := new(big.Int).Lsh(&N1BigInt, 128)
 	n.Add(n, &N0BigInt)
 
-	var x big.Int
-	var y big.Int
-	var g big.Int
-
-	g.GCD(&x, &y, n, b)
+	_, r, g := u.Igcdex(n, b)
+	mask := new(big.Int).Lsh(big.NewInt(1), 128)
+	mask.Sub(mask, big.NewInt(1))
 
 	if n.Cmp(big.NewInt(1)) == 0 {
 		mv := mem.MemoryValueFromFieldElement(B0Felt)
@@ -569,85 +565,70 @@ func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 			g = *big.NewInt(2)
 		}
 
-		limb1 := new(big.Int).Div(new(big.Int).Div(b, &g), pow_2_128)
-		limb0 := new(big.Int).Rem(new(big.Int).Div(b, &g), pow_2_128)
+		s := new(big.Int).Div(b, &g)
+		t := new(big.Int).Div(n, &g)
 
-		mv := mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb0))
+		mv := mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(s, mask)))
 		err = vm.Memory.WriteToAddress(&sOrR0Addr, &mv)
 		if err != nil {
 			return fmt.Errorf("write to SOrR0 address %s: %w", sOrR0Addr, err)
 		}
 
-		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb1))
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(s, 128)))
 		err = vm.Memory.WriteToAddress(&sOrR1Addr, &mv)
 		if err != nil {
 			return fmt.Errorf("write to SOrR1 address %s: %w", sOrR1Addr, err)
 		}
 
-		limb1 = new(big.Int).Div(new(big.Int).Div(n, &g), pow_2_128)
-		limb0 = new(big.Int).Rem(new(big.Int).Div(n, &g), pow_2_128)
-
-		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb0))
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(t, mask)))
 		err = vm.Memory.WriteToAddress(&tOrK0Addr, &mv)
 		if err != nil {
 			return fmt.Errorf("write to TOrK0 address %s: %w", tOrK0Addr, err)
 		}
 
-		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb1))
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(t, 128)))
 		err = vm.Memory.WriteToAddress(&tOrK1Addr, &mv)
 		if err != nil {
 			return fmt.Errorf("write to TOrK1 address %s: %w", tOrK1Addr, err)
 		}
 
-		limb1 = new(big.Int).Div(&g, pow_2_128)
-		limb0 = new(big.Int).Rem(&g, pow_2_128)
-
-		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb0))
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(&g, mask)))
 		err = vm.Memory.WriteToAddress(&g0OrNoInvAddr, &mv)
 		if err != nil {
 			return fmt.Errorf("write to G0OrNoInv address %s: %w", g0OrNoInvAddr, err)
 		}
 
-		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb1))
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(&g, 128)))
 		err = vm.Memory.WriteToAddress(&g1OptionAddr, &mv)
 		if err != nil {
 			return fmt.Errorf("write to G1Option address %s: %w", g1OptionAddr, err)
 		}
 	} else {
-		y.Rem(&y, n)
-		if y.Cmp(big.NewInt(0)) < 0 {
-			y.Add(&y, n)
-		}
+		r.Rem(&r, n)
 
-		k := new(big.Int).Mul(&y, b)
+		k := new(big.Int).Mul(&r, b)
 		k.Sub(k, big.NewInt(1))
 		k.Div(k, n)
 
-		limb1 := new(big.Int).Div(&y, pow_2_128)
-		limb0 := new(big.Int).Rem(&y, pow_2_128)
-
-		mv := mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb0))
+		mv := mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(&r, mask)))
 		err = vm.Memory.WriteToAddress(&sOrR0Addr, &mv)
 		if err != nil {
 			return fmt.Errorf("write to SOrR0 address %s: %w", sOrR0Addr, err)
 		}
 
-		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb1))
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(&r, 128)))
 		err = vm.Memory.WriteToAddress(&sOrR1Addr, &mv)
 		if err != nil {
 			return fmt.Errorf("write to SOrR1 address %s: %w", sOrR1Addr, err)
 		}
 
-		limb1 = new(big.Int).Div(k, pow_2_128)
-		limb0 = new(big.Int).Rem(k, pow_2_128)
-
-		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb0))
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(k, mask)))
 		err = vm.Memory.WriteToAddress(&tOrK0Addr, &mv)
 		if err != nil {
 			return fmt.Errorf("write to TOrK0 address %s: %w", tOrK0Addr, err)
 		}
 
-		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb1))
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(k, 128)))
 		err = vm.Memory.WriteToAddress(&tOrK1Addr, &mv)
 		if err != nil {
 			return fmt.Errorf("write to TOrK1 address %s: %w", tOrK1Addr, err)
