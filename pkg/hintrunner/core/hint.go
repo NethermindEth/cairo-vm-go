@@ -162,7 +162,7 @@ func (hint *TestLessThanOrEqualAddress) Execute(vm *VM.VirtualMachine, _ *hinter
 	}
 
 	resFelt := f.Element{}
-	if lhsPtr.SegmentIndex < rhsPtr.SegmentIndex || (lhsPtr.SegmentIndex == rhsPtr.SegmentIndex && lhsPtr.Offset <= rhsPtr.Offset) {
+	if lhsPtr.Cmp(rhsPtr) <= 0 {
 		resFelt.SetOne()
 	}
 
