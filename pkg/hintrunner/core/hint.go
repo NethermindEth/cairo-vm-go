@@ -151,18 +151,18 @@ func (hint *TestLessThanOrEqualAddress) String() string {
 }
 
 func (hint *TestLessThanOrEqualAddress) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
-	lhsAddr, err := hint.lhs.GetAddress(vm)
+	lhsPtr, err := hinter.ResolveAsAddress(vm, hint.lhs)
 	if err != nil {
-		return fmt.Errorf("GetAddress lhs operand %s: %w", hint.lhs, err)
+		return fmt.Errorf("resolve lhs pointer: %w", err)
 	}
 
-	rhsAddr, err := hint.rhs.GetAddress(vm)
+	rhsPtr, err := hinter.ResolveAsAddress(vm, hint.rhs)
 	if err != nil {
-		return fmt.Errorf("GetAddress rhs operand %s: %w", hint.rhs, err)
+		return fmt.Errorf("resolve rhs pointer: %w", err)
 	}
 
 	resFelt := f.Element{}
-	if lhsAddr.SegmentIndex <= rhsAddr.SegmentIndex && lhsAddr.Offset <= rhsAddr.Offset {
+	if lhsPtr.SegmentIndex < rhsPtr.SegmentIndex || (lhsPtr.SegmentIndex == rhsPtr.SegmentIndex && lhsPtr.Offset <= rhsPtr.Offset) {
 		resFelt.SetOne()
 	}
 

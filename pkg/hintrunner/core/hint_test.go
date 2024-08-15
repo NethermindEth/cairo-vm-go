@@ -182,17 +182,19 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 }
 
 func TestLessThanOrEqualAddressTrue(t *testing.T) {
-	// When address of lhs and rhs are the same
+	// Address of lhs and rhs are same (SegmentIndex and Offset)
 	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
-	utils.WriteTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(23))
+	addr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       23,
+	}
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&addr))
 
 	var dst hinter.ApCellRef = 1
-	var rhsRef hinter.FpCellRef = 0
-	var lhsRef hinter.FpCellRef = 0
-	rhs := hinter.Deref{Deref: rhsRef}
-	lhs := hinter.Deref{Deref: lhsRef}
+	rhs := hinter.Deref{Deref: hinter.ApCellRef(0)}
+	lhs := hinter.Deref{Deref: hinter.ApCellRef(0)}
 
 	hint := TestLessThanOrEqualAddress{
 		dst: dst,
@@ -208,18 +210,57 @@ func TestLessThanOrEqualAddressTrue(t *testing.T) {
 		utils.ReadFrom(vm, VM.ExecutionSegment, 1),
 	)
 
-	// When address of lhs is less than the address of rhs
+	// Address of lhs is less than the address of rhs (Offset)
 	vm = VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
-	utils.WriteTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(23))
-	utils.WriteTo(vm, VM.ExecutionSegment, 1, mem.MemoryValueFromInt(17))
+	rhsAddr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       23,
+	}
+	lhsAddr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       17,
+	}
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&rhsAddr))
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap+1, mem.MemoryValueFromMemoryAddress(&lhsAddr))
 
 	dst = 2
-	rhsRef = 1
-	lhsRef = 0
-	rhs = hinter.Deref{Deref: rhsRef}
-	lhs = hinter.Deref{Deref: lhsRef}
+	rhs = hinter.Deref{Deref: hinter.ApCellRef(0)}
+	lhs = hinter.Deref{Deref: hinter.ApCellRef(1)}
+
+	hint = TestLessThanOrEqualAddress{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err = hint.Execute(vm, nil)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		mem.MemoryValueFromInt(1),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 2),
+	)
+
+	// Address of lhs is less than the address of rhs (SegmentIndex)
+	vm = VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	rhsAddr = mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment + 1,
+		Offset:       17,
+	}
+	lhsAddr = mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       23,
+	}
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&rhsAddr))
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap+1, mem.MemoryValueFromMemoryAddress(&lhsAddr))
+
+	dst = 2
+	rhs = hinter.Deref{Deref: hinter.ApCellRef(0)}
+	lhs = hinter.Deref{Deref: hinter.ApCellRef(1)}
 
 	hint = TestLessThanOrEqualAddress{
 		dst: dst,
@@ -240,14 +281,20 @@ func TestLessThanOrEqualAddressFalse(t *testing.T) {
 	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
 	vm.Context.Fp = 0
-	utils.WriteTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(23))
-	utils.WriteTo(vm, VM.ExecutionSegment, 1, mem.MemoryValueFromInt(17))
+	rhsAddr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       17,
+	}
+	lhsAddr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       23,
+	}
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&rhsAddr))
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap+1, mem.MemoryValueFromMemoryAddress(&lhsAddr))
 
 	var dst hinter.ApCellRef = 2
-	var rhsRef hinter.FpCellRef = 0
-	var lhsRef hinter.FpCellRef = 1
-	rhs := hinter.Deref{Deref: rhsRef}
-	lhs := hinter.Deref{Deref: lhsRef}
+	rhs := hinter.Deref{Deref: hinter.ApCellRef(0)}
+	lhs := hinter.Deref{Deref: hinter.ApCellRef(1)}
 
 	hint := TestLessThanOrEqualAddress{
 		dst: dst,
