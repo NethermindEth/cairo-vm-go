@@ -418,16 +418,16 @@ func (hint DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) e
 }
 
 type U256InvModN struct {
-	b0           hinter.ResOperander
-	b1           hinter.ResOperander
-	n0           hinter.ResOperander
-	n1           hinter.ResOperander
-	g0_or_no_inv hinter.CellRefer
-	g1_option    hinter.CellRefer
-	s_or_r0      hinter.CellRefer
-	s_or_r1      hinter.CellRefer
-	t_or_k0      hinter.CellRefer
-	t_or_k1      hinter.CellRefer
+	B0        hinter.ResOperander
+	B1        hinter.ResOperander
+	N0        hinter.ResOperander
+	N1        hinter.ResOperander
+	G0OrNoInv hinter.CellRefer
+	G1Option  hinter.CellRefer
+	SOrR0     hinter.CellRefer
+	SOrR1     hinter.CellRefer
+	TOrK0     hinter.CellRefer
+	TOrK1     hinter.CellRefer
 }
 
 func (hint U256InvModN) String() string {
@@ -437,90 +437,90 @@ func (hint U256InvModN) String() string {
 func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	pow_2_128 := new(big.Int).Lsh(big.NewInt(1), 128)
 
-	b0, err := hint.b0.Resolve(vm)
+	B0, err := hint.B0.Resolve(vm)
 	if err != nil {
-		return fmt.Errorf("resolve b0 operand %s: %v", hint.b0, err)
+		return fmt.Errorf("resolve B0 operand %s: %v", hint.B0, err)
 	}
 
-	b1, err := hint.b1.Resolve(vm)
+	B1, err := hint.B1.Resolve(vm)
 	if err != nil {
-		return fmt.Errorf("resolve b1 operand %s: %v", hint.b1, err)
+		return fmt.Errorf("resolve B1 operand %s: %v", hint.B1, err)
 	}
 
-	n0, err := hint.n0.Resolve(vm)
+	N0, err := hint.N0.Resolve(vm)
 	if err != nil {
-		return fmt.Errorf("resolve n0 operand %s: %v", hint.n0, err)
+		return fmt.Errorf("resolve N0 operand %s: %v", hint.N0, err)
 	}
 
-	n1, err := hint.n1.Resolve(vm)
+	N1, err := hint.N1.Resolve(vm)
 	if err != nil {
-		return fmt.Errorf("resolve n1 operand %s: %v", hint.n1, err)
+		return fmt.Errorf("resolve N1 operand %s: %v", hint.N1, err)
 	}
 
-	g0OrNoInvAddr, err := hint.g0_or_no_inv.Get(vm)
+	g0OrNoInvAddr, err := hint.G0OrNoInv.Get(vm)
 	if err != nil {
-		return fmt.Errorf("get g0_or_no_inv address %s: %w", g0OrNoInvAddr, err)
+		return fmt.Errorf("get G0OrNoInv address %s: %w", g0OrNoInvAddr, err)
 	}
 
-	g1OptionAddr, err := hint.g1_option.Get(vm)
+	g1OptionAddr, err := hint.G1Option.Get(vm)
 	if err != nil {
-		return fmt.Errorf("get g1_option address %s: %w", g1OptionAddr, err)
+		return fmt.Errorf("get G1Option address %s: %w", g1OptionAddr, err)
 	}
 
-	sOrR0Addr, err := hint.s_or_r0.Get(vm)
+	sOrR0Addr, err := hint.SOrR0.Get(vm)
 	if err != nil {
-		return fmt.Errorf("get s_or_r0 address %s: %w", sOrR0Addr, err)
+		return fmt.Errorf("get SOrR0 address %s: %w", sOrR0Addr, err)
 	}
 
-	sOrR1Addr, err := hint.s_or_r1.Get(vm)
+	sOrR1Addr, err := hint.SOrR1.Get(vm)
 	if err != nil {
-		return fmt.Errorf("get s_or_r1 address %s: %w", sOrR1Addr, err)
+		return fmt.Errorf("get SOrR1 address %s: %w", sOrR1Addr, err)
 	}
 
-	tOrK0Addr, err := hint.t_or_k0.Get(vm)
+	tOrK0Addr, err := hint.TOrK0.Get(vm)
 	if err != nil {
-		return fmt.Errorf("get t_or_k0 address %s: %w", tOrK0Addr, err)
+		return fmt.Errorf("get TOrK0 address %s: %w", tOrK0Addr, err)
 	}
 
-	tOrK1Addr, err := hint.t_or_k1.Get(vm)
+	tOrK1Addr, err := hint.TOrK1.Get(vm)
 	if err != nil {
-		return fmt.Errorf("get t_or_k1 address %s: %w", tOrK1Addr, err)
+		return fmt.Errorf("get TOrK1 address %s: %w", tOrK1Addr, err)
 	}
 
-	b0Felt, err := b0.FieldElement()
-	if err != nil {
-		return err
-	}
-	b1Felt, err := b1.FieldElement()
+	B0Felt, err := B0.FieldElement()
 	if err != nil {
 		return err
 	}
-	n0Felt, err := n0.FieldElement()
+	B1Felt, err := B1.FieldElement()
 	if err != nil {
 		return err
 	}
-	n1Felt, err := n1.FieldElement()
+	N0Felt, err := N0.FieldElement()
+	if err != nil {
+		return err
+	}
+	N1Felt, err := N1.FieldElement()
 	if err != nil {
 		return err
 	}
 
-	var b0BigInt big.Int
-	b0Felt.BigInt(&b0BigInt)
+	var B0BigInt big.Int
+	B0Felt.BigInt(&B0BigInt)
 
-	var b1BigInt big.Int
-	b1Felt.BigInt(&b1BigInt)
+	var B1BigInt big.Int
+	B1Felt.BigInt(&B1BigInt)
 
-	var n0BigInt big.Int
-	n0Felt.BigInt(&n0BigInt)
+	var N0BigInt big.Int
+	N0Felt.BigInt(&N0BigInt)
 
-	var n1BigInt big.Int
-	n1Felt.BigInt(&n1BigInt)
+	var N1BigInt big.Int
+	N1Felt.BigInt(&N1BigInt)
 
-	b := new(big.Int).Lsh(&b1BigInt, 128)
-	b.Add(b, &b0BigInt)
+	b := new(big.Int).Lsh(&B1BigInt, 128)
+	b.Add(b, &B0BigInt)
 
-	n := new(big.Int).Lsh(&n1BigInt, 128)
-	n.Add(n, &n0BigInt)
+	n := new(big.Int).Lsh(&N1BigInt, 128)
+	n.Add(n, &N0BigInt)
 
 	var x big.Int
 	var y big.Int
@@ -529,40 +529,40 @@ func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 	g.GCD(&x, &y, n, b)
 
 	if n.Cmp(big.NewInt(1)) == 0 {
-		mv := mem.MemoryValueFromFieldElement(b0Felt)
+		mv := mem.MemoryValueFromFieldElement(B0Felt)
 		err = vm.Memory.WriteToAddress(&sOrR0Addr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to s_or_r0 address %s: %w", sOrR0Addr, err)
+			return fmt.Errorf("write to SOrR0 address %s: %w", sOrR0Addr, err)
 		}
 
-		mv = mem.MemoryValueFromFieldElement(b1Felt)
+		mv = mem.MemoryValueFromFieldElement(B1Felt)
 		err = vm.Memory.WriteToAddress(&sOrR1Addr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to s_or_r1 address %s: %w", sOrR1Addr, err)
+			return fmt.Errorf("write to SOrR1 address %s: %w", sOrR1Addr, err)
 		}
 
 		mv = mem.MemoryValueFromFieldElement(&utils.FeltOne)
 		err = vm.Memory.WriteToAddress(&tOrK0Addr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to t_or_k0 address %s: %w", tOrK0Addr, err)
+			return fmt.Errorf("write to TOrK0 address %s: %w", tOrK0Addr, err)
 		}
 
 		mv = mem.MemoryValueFromFieldElement(&utils.FeltZero)
 		err = vm.Memory.WriteToAddress(&tOrK1Addr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to t_or_k1 address %s: %w", tOrK1Addr, err)
+			return fmt.Errorf("write to TOrK1 address %s: %w", tOrK1Addr, err)
 		}
 
 		mv = mem.MemoryValueFromFieldElement(&utils.FeltOne)
 		err = vm.Memory.WriteToAddress(&g0OrNoInvAddr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to g0_or_no_inv address %s: %w", g0OrNoInvAddr, err)
+			return fmt.Errorf("write to G0OrNoInv address %s: %w", g0OrNoInvAddr, err)
 		}
 
 		mv = mem.MemoryValueFromFieldElement(&utils.FeltZero)
 		err = vm.Memory.WriteToAddress(&g1OptionAddr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to g1_option address %s: %w", g1OptionAddr, err)
+			return fmt.Errorf("write to G1Option address %s: %w", g1OptionAddr, err)
 		}
 	} else if g.Cmp(big.NewInt(1)) != 0 {
 		if new(big.Int).Rem(&g, big.NewInt(2)) == big.NewInt(0) {
@@ -575,13 +575,13 @@ func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 		mv := mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb0))
 		err = vm.Memory.WriteToAddress(&sOrR0Addr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to s_or_r0 address %s: %w", sOrR0Addr, err)
+			return fmt.Errorf("write to SOrR0 address %s: %w", sOrR0Addr, err)
 		}
 
 		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb1))
 		err = vm.Memory.WriteToAddress(&sOrR1Addr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to s_or_r1 address %s: %w", sOrR1Addr, err)
+			return fmt.Errorf("write to SOrR1 address %s: %w", sOrR1Addr, err)
 		}
 
 		limb1 = new(big.Int).Div(new(big.Int).Div(n, &g), pow_2_128)
@@ -590,13 +590,13 @@ func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb0))
 		err = vm.Memory.WriteToAddress(&tOrK0Addr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to t_or_k0 address %s: %w", tOrK0Addr, err)
+			return fmt.Errorf("write to TOrK0 address %s: %w", tOrK0Addr, err)
 		}
 
 		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb1))
 		err = vm.Memory.WriteToAddress(&tOrK1Addr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to t_or_k1 address %s: %w", tOrK1Addr, err)
+			return fmt.Errorf("write to TOrK1 address %s: %w", tOrK1Addr, err)
 		}
 
 		limb1 = new(big.Int).Div(&g, pow_2_128)
@@ -605,13 +605,13 @@ func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb0))
 		err = vm.Memory.WriteToAddress(&g0OrNoInvAddr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to g0_or_no_inv address %s: %w", g0OrNoInvAddr, err)
+			return fmt.Errorf("write to G0OrNoInv address %s: %w", g0OrNoInvAddr, err)
 		}
 
 		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb1))
 		err = vm.Memory.WriteToAddress(&g1OptionAddr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to g1_option address %s: %w", g1OptionAddr, err)
+			return fmt.Errorf("write to G1Option address %s: %w", g1OptionAddr, err)
 		}
 	} else {
 		y.Rem(&y, n)
@@ -629,13 +629,13 @@ func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 		mv := mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb0))
 		err = vm.Memory.WriteToAddress(&sOrR0Addr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to s_or_r0 address %s: %w", sOrR0Addr, err)
+			return fmt.Errorf("write to SOrR0 address %s: %w", sOrR0Addr, err)
 		}
 
 		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb1))
 		err = vm.Memory.WriteToAddress(&sOrR1Addr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to s_or_r1 address %s: %w", sOrR1Addr, err)
+			return fmt.Errorf("write to SOrR1 address %s: %w", sOrR1Addr, err)
 		}
 
 		limb1 = new(big.Int).Div(k, pow_2_128)
@@ -644,19 +644,19 @@ func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb0))
 		err = vm.Memory.WriteToAddress(&tOrK0Addr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to t_or_k0 address %s: %w", tOrK0Addr, err)
+			return fmt.Errorf("write to TOrK0 address %s: %w", tOrK0Addr, err)
 		}
 
 		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(limb1))
 		err = vm.Memory.WriteToAddress(&tOrK1Addr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to t_or_k1 address %s: %w", tOrK1Addr, err)
+			return fmt.Errorf("write to TOrK1 address %s: %w", tOrK1Addr, err)
 		}
 
 		mv = mem.MemoryValueFromFieldElement(&utils.FeltZero)
 		err = vm.Memory.WriteToAddress(&g0OrNoInvAddr, &mv)
 		if err != nil {
-			return fmt.Errorf("write to g0_or_no_inv address %s: %w", g0OrNoInvAddr, err)
+			return fmt.Errorf("write to G0OrNoInv address %s: %w", g0OrNoInvAddr, err)
 		}
 	}
 
