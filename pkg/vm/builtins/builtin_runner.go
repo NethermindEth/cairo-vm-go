@@ -15,6 +15,8 @@ func Runner(name starknetParser.Builtin) memory.BuiltinRunner {
 		return &Output{}
 	case starknetParser.RangeCheck:
 		return &RangeCheck{}
+	case starknetParser.RangeCheck96:
+		return &RangeCheck96{}
 	case starknetParser.Pedersen:
 		return &Pedersen{}
 	case starknetParser.ECDSA:
