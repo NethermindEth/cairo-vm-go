@@ -11,14 +11,20 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-// Grammar for hint references:
+// Hint references follow the format "cast(<expression>, <type>)". It also allows an
+// external dereference such as "[cast(<expression>, <type>)]". The <expression> in
+// the hint reference is interpreted as an arithmetic expression, so the root of the
+// grammar defined in this file would be `arithExp`
 //
-// [cast(expr, type)]
-// arithExp => term | addTerm
-// addTerm => term (+|-) arithExp
-// term => Exp | ProdExp
-// prodExp => Exp * Exp
-// exp => cellRef | deref | dderef | int
+// Grammar:
+// arithExp => term (('+'|'-') term)*
+// term     => exp | prodExp
+// prodExp  => exp '*' exp
+// exp      => cellRef | deref | dderef | int
+// cellRef  => ('ap'|'fp') ('+'|'-') int
+// deref    => [cellRef]
+// dderef   => [deref ('+'|'-') int]
+
 var (
 	basicLexer = lexer.MustSimple([]lexer.SimpleRule{
 		{"Number", `\d+`},
@@ -74,6 +80,11 @@ type Expression struct {
 	IntExp     *OffsetExp  `@@`
 }
 
+// CellRefSimple represents the structure of a CellRef in its natural form.
+// A CellRefSimple cannot be an Expression by itself if it has an offset,
+// since the parser will interpret this as a sum of terms instead.
+// That's why CellRefExp is also defined. Notice that in the case where there
+// is an offset, the whole expression is expected to be enclosed in parenthesis.
 type CellRefSimple struct {
 	RegisterOffset *RegisterOffset `@@ |`
 	Register       string          `@("ap" | "fp")`
@@ -170,13 +181,10 @@ func (expression ArithExp) Evaluate() (hinter.Reference, error) {
 		// so the expression has to follow the pattern:
 		// reg + off + off + ... + off
 		for _, term := range expression.AddExp {
-			fmt.Println("entre")
-			fmt.Println(term)
 			rightExp, err := term.TermExp.Evaluate()
 			if err != nil {
 				return nil, err
 			}
-			fmt.Println(rightExp)
 			rightResult, ok := rightExp.(hinter.Immediate)
 			if !ok {
 				return nil, fmt.Errorf("invalid arithmetic expression")
@@ -186,19 +194,15 @@ func (expression ArithExp) Evaluate() (hinter.Reference, error) {
 			if !ok {
 				return nil, fmt.Errorf("invalid arithmetic expression")
 			}
-			fmt.Println(off)
 
 			if term.Operator == "-" {
 				off = -off
 			}
-			fmt.Println(off)
 
 			switch cellRef := leftResult.(type) {
 			case hinter.ApCellRef:
 				oldOffset := int16(cellRef)
-				fmt.Println(oldOffset)
 				leftResult = hinter.ApCellRef(off + oldOffset)
-				fmt.Println(leftExp)
 				continue
 			case hinter.FpCellRef:
 				oldOffset := int16(cellRef)
@@ -219,19 +223,17 @@ func (expression ArithExp) Evaluate() (hinter.Reference, error) {
 				return nil, err
 			}
 
-			leftResult, ok := leftExp.(hinter.ResOperander)
-			if !ok {
-				return nil, fmt.Errorf("invalid arithmetic expression")
+			if leftResult, ok := leftExp.(hinter.ResOperander); ok {
+				if rightResult, ok := rightExp.(hinter.ResOperander); ok {
+					leftExp = hinter.BinaryOp{
+						Operator: op,
+						Lhs:      leftResult,
+						Rhs:      rightResult,
+					}
+					continue
+				}
 			}
-			rightResult, ok := rightExp.(hinter.ResOperander)
-			if !ok {
-				return nil, fmt.Errorf("invalid arithmetic expression")
-			}
-			leftExp = hinter.BinaryOp{
-				Operator: op,
-				Lhs:      leftResult,
-				Rhs:      rightResult,
-			}
+			return nil, fmt.Errorf("invalid arithmetic expression")
 		}
 		return leftExp, nil
 	}
