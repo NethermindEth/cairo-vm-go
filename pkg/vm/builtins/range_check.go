@@ -7,9 +7,9 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-const RangeCheckName = "range_check"
 const inputCellsPerRangeCheck = 1
 const cellsPerRangeCheck = 1
 const instancesPerComponentRangeCheck = 1
@@ -17,10 +17,10 @@ const instancesPerComponentRangeCheck = 1
 // Each range check instance consists of RANGE_CHECK_N_PARTS 16-bit parts. INNER_RC_BOUND_SHIFT and INNER_RC_BOUND_MASK are used to extract 16-bit parts from the field elements stored in the range check segment.
 const INNER_RC_BOUND_SHIFT = 16
 const INNER_RC_BOUND_MASK = (1 << 16) - 1
-const RANGE_CHECK_N_PARTS = 8
 
 type RangeCheck struct {
-	ratio uint64
+	ratio               uint64
+	RANGE_CHECK_N_PARTS uint64
 }
 
 func (r *RangeCheck) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
@@ -29,10 +29,24 @@ func (r *RangeCheck) CheckWrite(segment *memory.Segment, offset uint64, value *m
 		return fmt.Errorf("check write: %w", err)
 	}
 
-	// felt >= (2^128)
-	if felt.Cmp(&utils.FeltMax128) != -1 {
-		return fmt.Errorf("check write: 2**128 < %s", value)
+	if r.RANGE_CHECK_N_PARTS == 6 {
+		// 2**96
+		BOUND_96, err := new(fp.Element).SetString("79228162514264337593543950336")
+		if err != nil {
+			return fmt.Errorf("check write: %w", err)
+		}
+
+		// felt >= (2^96)
+		if felt.Cmp(BOUND_96) != -1 {
+			return fmt.Errorf("check write: 2**96 < %s", value)
+		}
+	} else {
+		// felt >= (2^128)
+		if felt.Cmp(&utils.FeltMax128) != -1 {
+			return fmt.Errorf("check write: 2**128 < %s", value)
+		}
 	}
+
 	return nil
 }
 
@@ -41,7 +55,11 @@ func (r *RangeCheck) InferValue(segment *memory.Segment, offset uint64) error {
 }
 
 func (r *RangeCheck) String() string {
-	return RangeCheckName
+	if r.RANGE_CHECK_N_PARTS == 6 {
+		return "range_check96"
+	} else {
+		return "range_check"
+	}
 }
 
 func (r *RangeCheck) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {

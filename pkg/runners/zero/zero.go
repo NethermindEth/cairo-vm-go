@@ -319,7 +319,7 @@ func (runner *ZeroRunner) checkRangeCheckUsage() error {
 					}
 					rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(rangeCheckRunner.String())
 					if ok {
-						rcUnitsUsedByBuiltins += rangeCheckSegment.Len() * builtins.RANGE_CHECK_N_PARTS
+						rcUnitsUsedByBuiltins += rangeCheckSegment.Len() * rangeCheckRunner.RANGE_CHECK_N_PARTS
 					}
 				}
 			}

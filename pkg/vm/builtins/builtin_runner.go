@@ -14,9 +14,9 @@ func Runner(name starknetParser.Builtin) memory.BuiltinRunner {
 	case starknetParser.Output:
 		return &Output{}
 	case starknetParser.RangeCheck:
-		return &RangeCheck{}
+		return &RangeCheck{0, 8}
 	case starknetParser.RangeCheck96:
-		return &RangeCheck96{}
+		return &RangeCheck{0, 6}
 	case starknetParser.Pedersen:
 		return &Pedersen{}
 	case starknetParser.ECDSA:
@@ -53,7 +53,7 @@ func GetBuiltinAllocatedInstances(ratio uint64, cellsPerInstance uint64, segment
 	}
 	minSteps := ratio * instancesPerComponent
 	if vmCurrentStep < minSteps {
-		return 0, fmt.Errorf("Number of steps must be at least %d. Current step: %d", minSteps, vmCurrentStep)
+		return 0, fmt.Errorf("number of steps must be at least %d. Current step: %d", minSteps, vmCurrentStep)
 	}
 	return vmCurrentStep / ratio, nil
 }

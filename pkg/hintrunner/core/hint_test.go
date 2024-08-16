@@ -1115,7 +1115,7 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		vm.Context.Ap = 0
 		vm.Context.Fp = 0
 		// The addr that the range check pointer will point to
-		addr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
+		addr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{RANGE_CHECK_N_PARTS: 8})
 		utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&addr))
 
 		hint := AssertLeFindSmallArc{

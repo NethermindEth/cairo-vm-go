@@ -368,7 +368,7 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 
 	rand := utils.DefaultRandGenerator()
 	ctx := hinter.SetContextWithScope(map[string]any{"excluded": 0})
-	rangeCheckPtr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
+	rangeCheckPtr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{RANGE_CHECK_N_PARTS: 8})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
