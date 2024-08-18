@@ -20,6 +20,7 @@ const (
 	AllocSegmentName                HintName = "AllocSegment"
 	TestLessThanName                HintName = "TestLessThan"
 	TestLessThanOrEqualName         HintName = "TestLessThanOrEqual"
+	TestLessThanOrEqualAddressName  HintName = "TestLessThanOrEqualAddress"
 	WideMul128Name                  HintName = "WideMul128"
 	DivModName                      HintName = "DivMod"
 	Uint256DivModName               HintName = "Uint256DivMod"
@@ -80,6 +81,12 @@ type TestLessThan struct {
 }
 
 type TestLessThanOrEqual struct {
+	Lhs ResOperand `json:"lhs" validate:"required"`
+	Rhs ResOperand `json:"rhs" validate:"required"`
+	Dst CellRef    `json:"dst" validate:"required"`
+}
+
+type TestLessThanOrEqualAddress struct {
 	Lhs ResOperand `json:"lhs" validate:"required"`
 	Rhs ResOperand `json:"rhs" validate:"required"`
 	Dst CellRef    `json:"dst" validate:"required"`
@@ -465,6 +472,8 @@ func (h *Hint) UnmarshalJSON(data []byte) error {
 			args = &TestLessThan{}
 		case TestLessThanOrEqualName:
 			args = &TestLessThanOrEqual{}
+		case TestLessThanOrEqualAddressName:
+			args = &TestLessThanOrEqualAddress{}
 		case WideMul128Name:
 			args = &WideMul128{}
 		case DivModName:

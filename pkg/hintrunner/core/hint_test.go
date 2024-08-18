@@ -181,6 +181,137 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 	)
 }
 
+func TestLessThanOrEqualAddressTrue(t *testing.T) {
+	// Address of lhs and rhs are same (SegmentIndex and Offset)
+	vm := VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	addr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       23,
+	}
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&addr))
+
+	var dst hinter.ApCellRef = 1
+	rhs := hinter.Deref{Deref: hinter.ApCellRef(0)}
+	lhs := hinter.Deref{Deref: hinter.ApCellRef(0)}
+
+	hint := TestLessThanOrEqualAddress{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err := hint.Execute(vm, nil)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		mem.MemoryValueFromInt(1),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 1),
+	)
+
+	// Address of lhs is less than the address of rhs (Offset)
+	vm = VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	rhsAddr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       23,
+	}
+	lhsAddr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       17,
+	}
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&rhsAddr))
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap+1, mem.MemoryValueFromMemoryAddress(&lhsAddr))
+
+	dst = 2
+	rhs = hinter.Deref{Deref: hinter.ApCellRef(0)}
+	lhs = hinter.Deref{Deref: hinter.ApCellRef(1)}
+
+	hint = TestLessThanOrEqualAddress{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err = hint.Execute(vm, nil)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		mem.MemoryValueFromInt(1),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 2),
+	)
+
+	// Address of lhs is less than the address of rhs (SegmentIndex)
+	vm = VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	rhsAddr = mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment + 1,
+		Offset:       17,
+	}
+	lhsAddr = mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       23,
+	}
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&rhsAddr))
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap+1, mem.MemoryValueFromMemoryAddress(&lhsAddr))
+
+	dst = 2
+	rhs = hinter.Deref{Deref: hinter.ApCellRef(0)}
+	lhs = hinter.Deref{Deref: hinter.ApCellRef(1)}
+
+	hint = TestLessThanOrEqualAddress{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err = hint.Execute(vm, nil)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		mem.MemoryValueFromInt(1),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 2),
+	)
+}
+
+func TestLessThanOrEqualAddressFalse(t *testing.T) {
+	vm := VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	rhsAddr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       17,
+	}
+	lhsAddr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       23,
+	}
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&rhsAddr))
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap+1, mem.MemoryValueFromMemoryAddress(&lhsAddr))
+
+	var dst hinter.ApCellRef = 2
+	rhs := hinter.Deref{Deref: hinter.ApCellRef(0)}
+	lhs := hinter.Deref{Deref: hinter.ApCellRef(1)}
+
+	hint := TestLessThanOrEqualAddress{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err := hint.Execute(vm, nil)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		mem.EmptyMemoryValueAsFelt(),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 2),
+		"Expected the hint to evaluate to False when address of lhs is larger",
+	)
+}
+
 func TestLinearSplit(t *testing.T) {
 	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
