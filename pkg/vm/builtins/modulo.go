@@ -11,9 +11,6 @@ import (
 )
 
 const ModuloName = "Mod"
-const cellsPerModulo = 16
-const inputCellsPerModulo = 8
-const instancesPerComponentModulo = 16
 
 const OFFSETS_PTR_OFFSET = 5
 const N_OFFSET = 6
@@ -72,7 +69,7 @@ func (k *ModBuiltin) String() string {
 }
 
 func (k *ModBuiltin) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, k.ratio, inputCellsPerKeccak, instancesPerComponentKeccak, cellsPerKeccak)
+	return 0, nil
 }
 
 func (m *ModBuiltin) readNWordsValue(memory *memory.Memory, addr memory.MemoryAddress) ([N_WORDS]fp.Element, big.Int, error) {
@@ -93,7 +90,7 @@ func (m *ModBuiltin) readNWordsValue(memory *memory.Memory, addr memory.MemoryAd
 		var word big.Int
 		wordFelt.BigInt(&word)
 		if word.Cmp(&m.shift) >= 0 {
-			return words, *value, fmt.Errorf("Word exceeds mod builtin word bit length") // Replace with proper RunnerError handling
+			return words, *value, fmt.Errorf("word exceeds mod builtin word bit length")
 		}
 
 		words[i] = wordFelt
@@ -351,15 +348,23 @@ func FillMemory(mem *memory.Memory, addModBuiltinAddr memory.MemoryAddress, nAdd
 	if err != nil {
 		return err
 	}
-	addModBuiltinRunner.fillInputs(mem, addModBuiltinAddr, *addModBuiltinInputs)
-	addModBuiltinRunner.fillOffsets(mem, addModBuiltinInputs.offsetsPtr, nAddModsIndex, addModBuiltinInputs.n-nAddModsIndex)
+	if err := addModBuiltinRunner.fillInputs(mem, addModBuiltinAddr, *addModBuiltinInputs); err != nil {
+		return err
+	}
+	if err := addModBuiltinRunner.fillOffsets(mem, addModBuiltinInputs.offsetsPtr, nAddModsIndex, addModBuiltinInputs.n-nAddModsIndex); err != nil {
+		return err
+	}
 
 	mulModBuiltinInputs, err := mulModBuiltinRunner.readInputs(mem, mulModBuiltinAddr)
 	if err != nil {
 		return err
 	}
-	mulModBuiltinRunner.fillInputs(mem, mulModBuiltinAddr, *mulModBuiltinInputs)
-	mulModBuiltinRunner.fillOffsets(mem, mulModBuiltinInputs.offsetsPtr, nMulModsIndex, mulModBuiltinInputs.n-nMulModsIndex)
+	if err := mulModBuiltinRunner.fillInputs(mem, mulModBuiltinAddr, *mulModBuiltinInputs); err != nil {
+		return err
+	}
+	if err := mulModBuiltinRunner.fillOffsets(mem, mulModBuiltinInputs.offsetsPtr, nMulModsIndex, mulModBuiltinInputs.n-nMulModsIndex); err != nil {
+		return err
+	}
 
 	addModIndex, mulModIndex := uint64(0), uint64(0)
 	for addModIndex < nAddModsIndex || mulModIndex < nMulModsIndex {
