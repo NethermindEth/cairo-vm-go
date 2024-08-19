@@ -41,7 +41,7 @@ pip install cairo-lang==0.13.1
 When the installation is completed, you can run the `cairo-compile` command:
 
 ```bash
-cairo-compile ./integration_tests/cairo_files/factorial.cairo --proof_mode --output ./factorial_compiled.json
+cairo-compile ./integration_tests/cairo_zero_file_tests/factorial.cairo --proof_mode --output ./factorial_compiled.json
 ```
 
 This will compile `factorial.cairo` and store the compilation result in `factorial_compiled.json`. The `--proof_mode` flag makes the compilation output contain special identifiers that allow the generation of a proof of execution from the VM later on. 
