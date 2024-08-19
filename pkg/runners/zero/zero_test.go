@@ -334,6 +334,52 @@ func TestRangeCheckBuiltinError(t *testing.T) {
 	require.ErrorContains(t, err, "cannot infer value")
 }
 
+func TestRangeCheck96Builtin(t *testing.T) {
+	// range_check96 is located at fp - 3 (fp - 2 and fp - 1 contain initialization vals)
+	// we write 5 and 2**96 - 1 to range check
+	// no error should come from this
+	runner := createRunner(`
+        [ap] = 5;
+        [ap] = [[fp - 3]];
+        [ap + 1] = 0xffffffffffffffffffffffff;
+        [ap + 1] = [[fp - 3] + 1];
+        ret;
+    `, "all_cairo", sn.RangeCheck96)
+
+	err := runner.Run()
+	require.NoError(t, err)
+
+	rangeCheck96, ok := runner.vm.Memory.FindSegmentWithBuiltin("range_check96")
+	require.True(t, ok)
+
+	felt := &fp.Element{}
+	felt, err = felt.SetString("0xffffffffffffffffffffffff")
+	require.NoError(t, err)
+
+	requireEqualSegments(t, createSegment(5, felt), rangeCheck96)
+}
+
+func TestRangeCheck96BuiltinError(t *testing.T) {
+	// first test fails due to out of bound check
+	runner := createRunner(`
+        [ap] = 0x1000000000000000000000000;
+        [ap] = [[fp - 3]];
+        ret;
+    `, "all_cairo", sn.RangeCheck96)
+
+	err := runner.Run()
+	require.ErrorContains(t, err, "check write: 2**96 <")
+
+	// second test fails due to reading unknown value
+	runner = createRunner(`
+        [ap] = [[fp - 3]];
+        ret;
+    `, "all_cairo", sn.RangeCheck96)
+
+	err = runner.Run()
+	require.ErrorContains(t, err, "cannot infer value")
+}
+
 func TestEcOpBuiltin(t *testing.T) {
 	// first, store P.x, P.y, Q.x, Q.y and m in the data segment
 	// then store them the EcOp builtin segment

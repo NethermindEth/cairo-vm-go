@@ -290,6 +290,8 @@ func runPythonVm(testFilename, path string) (time.Duration, string, string, erro
 		args = append(args, "--layout", "small")
 	} else if strings.HasSuffix(testFilename, ".starknet_with_keccak.cairo") {
 		args = append(args, "--layout", "starknet_with_keccak")
+	} else if strings.HasSuffix(testFilename, ".all_cairo.cairo") {
+		args = append(args, "--layout", "all_cairo")
 	}
 
 	cmd := exec.Command("cairo-run", args...)
@@ -323,6 +325,8 @@ func runVm(path string) (time.Duration, string, string, string, error) {
 		layout = "small"
 	} else if strings.Contains(path, ".starknet_with_keccak") {
 		layout = "starknet_with_keccak"
+	} else if strings.Contains(path, ".all_cairo") {
+		layout = "all_cairo"
 	}
 
 	cmd := exec.Command(
