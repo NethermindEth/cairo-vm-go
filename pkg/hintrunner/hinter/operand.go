@@ -147,12 +147,13 @@ type Operator uint8
 const (
 	Add Operator = iota
 	Mul
+	Sub
 )
 
 type BinaryOp struct {
 	Operator Operator
-	Lhs      CellRefer
-	Rhs      ResOperander // (except DoubleDeref and BinaryOp)
+	Lhs      ResOperander
+	Rhs      ResOperander
 }
 
 func (bop BinaryOp) String() string {
@@ -160,13 +161,9 @@ func (bop BinaryOp) String() string {
 }
 
 func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
-	lhsAddr, err := bop.Lhs.Get(vm)
+	lhs, err := bop.Lhs.Resolve(vm)
 	if err != nil {
-		return mem.UnknownValue, fmt.Errorf("get lhs address %s: %w", bop.Lhs, err)
-	}
-	lhs, err := vm.Memory.ReadFromAddress(&lhsAddr)
-	if err != nil {
-		return mem.UnknownValue, fmt.Errorf("read lhs address %s: %w", lhsAddr, err)
+		return mem.UnknownValue, fmt.Errorf("resolve lhs operand %s: %w", lhs, err)
 	}
 
 	rhs, err := bop.Rhs.Resolve(vm)
@@ -221,7 +218,7 @@ func (v DoubleDeref) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 }
 
 func (v BinaryOp) ApplyApTracking(hint, ref zero.ApTracking) Reference {
-	v.Lhs = v.Lhs.ApplyApTracking(hint, ref).(CellRefer)
+	v.Lhs = v.Lhs.ApplyApTracking(hint, ref).(ResOperander)
 	v.Rhs = v.Rhs.ApplyApTracking(hint, ref).(ResOperander)
 	return v
 }
