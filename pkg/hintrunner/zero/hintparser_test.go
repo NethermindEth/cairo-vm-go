@@ -42,7 +42,9 @@ func TestHintParser(t *testing.T) {
 			ExpectedCellRefer: nil,
 			ExpectedResOperander: hinter.BinaryOp{
 				Operator: hinter.Add,
-				Lhs:      hinter.ApCellRef(2),
+				Lhs: hinter.Deref{
+					Deref: hinter.ApCellRef(2),
+				},
 				Rhs: hinter.Deref{
 					Deref: hinter.ApCellRef(0),
 				},
@@ -53,7 +55,9 @@ func TestHintParser(t *testing.T) {
 			ExpectedCellRefer: nil,
 			ExpectedResOperander: hinter.BinaryOp{
 				Operator: hinter.Mul,
-				Lhs:      hinter.ApCellRef(-5),
+				Lhs: hinter.Deref{
+					Deref: hinter.ApCellRef(-5),
+				},
 				Rhs: hinter.Deref{
 					Deref: hinter.ApCellRef(-1),
 				},
@@ -64,8 +68,43 @@ func TestHintParser(t *testing.T) {
 			ExpectedCellRefer: nil,
 			ExpectedResOperander: hinter.BinaryOp{
 				Operator: hinter.Mul,
-				Lhs:      hinter.ApCellRef(0),
-				Rhs:      hinter.Immediate{18446744073709551521, 18446744073709551615, 18446744073709551615, 576460752303421872},
+				Lhs: hinter.Deref{
+					Deref: hinter.ApCellRef(0),
+				},
+				Rhs: hinter.Immediate{18446744073709551521, 18446744073709551615, 18446744073709551615, 576460752303421872},
+			},
+		},
+		{
+			Parameter:            "cast(2389472938759290879897, felt)",
+			ExpectedCellRefer:    nil,
+			ExpectedResOperander: hinter.Immediate(*feltString("2389472938759290879897")),
+		},
+		{
+			Parameter:         "cast([[ap + 2] + (-5)], felt)",
+			ExpectedCellRefer: nil,
+			ExpectedResOperander: hinter.DoubleDeref{
+				Deref: hinter.Deref{
+					Deref: hinter.ApCellRef(2),
+				},
+				Offset: int16(-5),
+			},
+		},
+		{
+			Parameter:         "cast([fp + (-4)] * 18, felt)",
+			ExpectedCellRefer: nil,
+			ExpectedResOperander: hinter.BinaryOp{
+				Operator: hinter.Mul,
+				Lhs: hinter.Deref{
+					Deref: hinter.FpCellRef(-4),
+				},
+				Rhs: hinter.Immediate(*feltInt64(18)),
+			},
+		},
+		{
+			Parameter:         "[cast(ap - 0 + (-1), felt*)]",
+			ExpectedCellRefer: nil,
+			ExpectedResOperander: hinter.Deref{
+				Deref: hinter.ApCellRef(-1),
 			},
 		},
 	}
