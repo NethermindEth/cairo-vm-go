@@ -312,8 +312,10 @@ func TestCairoHintParser(t *testing.T) {
 					&AllocFelt252Dict{
 						SegmentArenaPtr: hinter.BinaryOp{
 							Operator: hinter.Add,
-							Lhs:      hinter.FpCellRef(-4),
-							Rhs:      hinter.Immediate(*new(fp.Element).SetInt64(3)),
+							Lhs: hinter.Deref{
+								Deref: hinter.FpCellRef(-4),
+							},
+							Rhs: hinter.Immediate(*new(fp.Element).SetInt64(3)),
 						},
 					},
 				},
@@ -331,8 +333,10 @@ func TestCairoHintParser(t *testing.T) {
 					&Felt252DictEntryUpdate{
 						DictPtr: hinter.BinaryOp{
 							Operator: hinter.Add,
-							Lhs:      hinter.FpCellRef(2),
-							Rhs:      hinter.Immediate(*new(fp.Element).SetInt64(3)),
+							Lhs: hinter.Deref{
+								Deref: hinter.FpCellRef(2),
+							},
+							Rhs: hinter.Immediate(*new(fp.Element).SetInt64(3)),
 						},
 						Value: hinter.Deref{
 							Deref: hinter.ApCellRef(-1),
@@ -395,8 +399,10 @@ func TestCairoHintParser(t *testing.T) {
 					&AssertLeFindSmallArc{
 						RangeCheckPtr: hinter.BinaryOp{
 							Operator: hinter.Add,
-							Lhs:      hinter.ApCellRef(-4),
-							Rhs:      hinter.Immediate(*new(fp.Element).SetInt64(1)),
+							Lhs: hinter.Deref{
+								Deref: hinter.ApCellRef(-4),
+							},
+							Rhs: hinter.Immediate(*new(fp.Element).SetInt64(1)),
 						},
 						A: hinter.Deref{
 							Deref: hinter.FpCellRef(-6),

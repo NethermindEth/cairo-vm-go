@@ -46,7 +46,9 @@ func parseImmediate(ro starknet.ResOperand) hinter.Immediate {
 
 func parseBinOp(ro starknet.ResOperand) hinter.BinaryOp {
 	binOp := ro.ResOperand.(*starknet.BinOp).BinOp
-	a := parseCellRefer(binOp.A)
+	a := hinter.Deref{
+		Deref: parseCellRefer(binOp.A),
+	}
 	var b hinter.ResOperander = nil
 	switch binOp.B.Inner.(type) {
 	case *starknet.Deref:
