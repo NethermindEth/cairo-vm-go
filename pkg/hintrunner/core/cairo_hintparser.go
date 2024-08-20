@@ -49,11 +49,11 @@ func parseBinOp(ro starknet.ResOperand) hinter.BinaryOp {
 	a := parseCellRefer(binOp.A)
 	var b hinter.ResOperander = nil
 	switch binOp.B.Inner.(type) {
-	case starknet.Deref:
+	case *starknet.Deref:
 		b = &hinter.Deref{
 			Deref: parseCellRefer(binOp.B.Inner.(*starknet.Deref).Deref),
 		}
-	case starknet.Immediate:
+	case *starknet.Immediate:
 		val := binOp.B.Inner.(*starknet.Immediate).Immediate
 		valFelt := new(fp.Element).SetBigInt(val)
 		b = hinter.Immediate(*valFelt)

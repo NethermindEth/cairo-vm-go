@@ -191,7 +191,7 @@ type ShouldSkipSquashLoop struct {
 }
 
 type GetCurrentAccessDelta struct {
-	IndexDeltaMinus1 CellRef `json:"index_delta_minus_1" validate:"required"`
+	IndexDeltaMinus1 CellRef `json:"index_delta_minus1" validate:"required"`
 }
 
 type ShouldContinueSquashLoop struct {
