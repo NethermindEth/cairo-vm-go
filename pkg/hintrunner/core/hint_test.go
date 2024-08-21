@@ -491,8 +491,7 @@ func TestU256InvModN(t *testing.T) {
 		require.Nil(t, err)
 
 		G0OrNoInvVal := &f.Element{}
-		_, err = G0OrNoInvVal.SetString("1")
-		require.Nil(t, err)
+		G0OrNoInvVal.SetInt64(1)
 
 		require.Equal(
 			t,
@@ -519,8 +518,7 @@ func TestU256InvModN(t *testing.T) {
 		)
 
 		SOrR1Val := &f.Element{}
-		_, err = SOrR1Val.SetString("1")
-		require.Nil(t, err)
+		SOrR1Val.SetInt64(1)
 
 		require.Equal(
 			t,
@@ -529,8 +527,7 @@ func TestU256InvModN(t *testing.T) {
 		)
 
 		TOrK0Val := &f.Element{}
-		_, err = TOrK0Val.SetString("1")
-		require.Nil(t, err)
+		TOrK0Val.SetInt64(1)
 
 		require.Equal(
 			t,
@@ -583,8 +580,7 @@ func TestU256InvModN(t *testing.T) {
 		require.Nil(t, err)
 
 		G0OrNoInvVal := &f.Element{}
-		_, err = G0OrNoInvVal.SetString("2")
-		require.Nil(t, err)
+		G0OrNoInvVal.SetInt64(2)
 
 		require.Equal(
 			t,
@@ -602,8 +598,7 @@ func TestU256InvModN(t *testing.T) {
 		)
 
 		SOrR0Val := &f.Element{}
-		_, err = SOrR0Val.SetString("1002")
-		require.Nil(t, err)
+		SOrR0Val.SetInt64(1002)
 
 		require.Equal(
 			t,
@@ -621,8 +616,7 @@ func TestU256InvModN(t *testing.T) {
 		)
 
 		TOrK0Val := &f.Element{}
-		_, err = TOrK0Val.SetString("50")
-		require.Nil(t, err)
+		TOrK0Val.SetInt64(50)
 
 		require.Equal(
 			t,
@@ -684,8 +678,7 @@ func TestU256InvModN(t *testing.T) {
 		)
 
 		SOrR0Val := &f.Element{}
-		_, err = SOrR0Val.SetString("1")
-		require.Nil(t, err)
+		SOrR0Val.SetInt64(1)
 
 		require.Equal(
 			t,
@@ -703,8 +696,7 @@ func TestU256InvModN(t *testing.T) {
 		)
 
 		TOrK0Val := &f.Element{}
-		_, err = TOrK0Val.SetString("1")
-		require.Nil(t, err)
+		TOrK0Val.SetInt64(1)
 
 		require.Equal(
 			t,
@@ -755,8 +747,7 @@ func TestUint256DivMod(t *testing.T) {
 		require.Nil(t, err)
 
 		quotient0Val := &f.Element{}
-		_, err = quotient0Val.SetString("10")
-		require.Nil(t, err)
+		quotient0Val.SetInt64(10)
 
 		require.Equal(
 			t,
@@ -775,8 +766,7 @@ func TestUint256DivMod(t *testing.T) {
 		)
 
 		remainder0Val := &f.Element{}
-		_, err = remainder0Val.SetString("59")
-		require.Nil(t, err)
+		remainder0Val.SetInt64(59)
 
 		require.Equal(
 			t,
@@ -785,8 +775,7 @@ func TestUint256DivMod(t *testing.T) {
 		)
 
 		remainder1Val := &f.Element{}
-		_, err = remainder1Val.SetString("2")
-		require.Nil(t, err)
+		remainder1Val.SetInt64(2)
 
 		require.Equal(
 			t,
