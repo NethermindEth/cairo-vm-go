@@ -23,6 +23,7 @@ const (
 	TestLessThanOrEqualAddressName  HintName = "TestLessThanOrEqualAddress"
 	WideMul128Name                  HintName = "WideMul128"
 	DivModName                      HintName = "DivMod"
+	U256InvModName                  HintName = "U256InvMod"
 	Uint256DivModName               HintName = "Uint256DivMod"
 	Uint512DivModByUint256Name      HintName = "Uint512DivModByUint256"
 	SquareRootName                  HintName = "SquareRoot"
@@ -104,6 +105,19 @@ type DivMod struct {
 	Rhs       ResOperand `json:"rhs" validate:"required"`
 	Quotient  CellRef    `json:"quotient" validate:"required"`
 	Remainder CellRef    `json:"remainder" validate:"required"`
+}
+
+type U256InvMod struct {
+	B0        ResOperand `json:"b0" validate:"required"`
+	B1        ResOperand `json:"b1" validate:"required"`
+	N0        ResOperand `json:"n0" validate:"required"`
+	N1        ResOperand `json:"n1" validate:"required"`
+	G0OrNoInv CellRef    `json:"g0_or_no_inv" validate:"required"`
+	G1Option  CellRef    `json:"g1_option" validate:"required"`
+	SOrR0     CellRef    `json:"s_or_r0" validate:"required"`
+	SOrR1     CellRef    `json:"s_or_r1" validate:"required"`
+	TOrK0     CellRef    `json:"t_or_k0" validate:"required"`
+	TOrK1     CellRef    `json:"t_or_k1" validate:"required"`
 }
 
 type Uint256DivMod struct {
@@ -191,7 +205,7 @@ type ShouldSkipSquashLoop struct {
 }
 
 type GetCurrentAccessDelta struct {
-	IndexDeltaMinus1 CellRef `json:"index_delta_minus_1" validate:"required"`
+	IndexDeltaMinus1 CellRef `json:"index_delta_minus1" validate:"required"`
 }
 
 type ShouldContinueSquashLoop struct {
@@ -291,6 +305,7 @@ const (
 type Operand interface{}
 
 type ResOperand struct {
+	Name       ResOperandName
 	ResOperand Operand `validate:"required"`
 }
 
@@ -303,16 +318,21 @@ func (ro *ResOperand) UnmarshalJSON(data []byte) error {
 	}
 
 	var op any
+	var name ResOperandName
 	for k := range resOp {
 		switch ResOperandName(k) {
 		case DerefName:
 			op = &Deref{}
+			name = DerefName
 		case DoubleDerefName:
 			op = &DoubleDeref{}
+			name = DoubleDerefName
 		case ImmediateName:
 			op = &Immediate{}
+			name = ImmediateName
 		case BinOpName:
 			op = &BinOp{}
+			name = BinOpName
 		default:
 			return fmt.Errorf("unknown res operand %s", k)
 		}
@@ -324,6 +344,7 @@ func (ro *ResOperand) UnmarshalJSON(data []byte) error {
 	}
 
 	ro.ResOperand = op
+	ro.Name = name
 	return nil
 }
 
@@ -478,6 +499,8 @@ func (h *Hint) UnmarshalJSON(data []byte) error {
 			args = &WideMul128{}
 		case DivModName:
 			args = &DivMod{}
+		case U256InvModName:
+			args = &U256InvMod{}
 		case Uint256DivModName:
 			args = &Uint256DivMod{}
 		case Uint512DivModByUint256Name:

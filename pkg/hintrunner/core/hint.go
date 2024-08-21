@@ -9,12 +9,28 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	u "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
+
+func GetCairoHints(cairoProgramJson *starknet.StarknetProgram) (map[uint64][]hinter.Hinter, error) {
+	hints := make(map[uint64][]hinter.Hinter)
+	for _, hintsList := range cairoProgramJson.Hints {
+		for _, hint := range hintsList.Hints {
+			processedHint, err := GetHintByName(hint)
+			if err != nil {
+				return nil, err
+			}
+			hints[hintsList.Index] = append(hints[hintsList.Index], processedHint)
+		}
+	}
+
+	return hints, nil
+}
 
 type AllocSegment struct {
 	Dst hinter.CellRefer
@@ -187,6 +203,10 @@ type LinearSplit struct {
 	maxX   hinter.ResOperander
 	x      hinter.CellRefer
 	y      hinter.CellRefer
+}
+
+func (hint LinearSplit) String() string {
+	return "LinearSplit"
 }
 
 func (hint LinearSplit) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -418,6 +438,233 @@ func (hint DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) e
 	return nil
 }
 
+type U256InvModN struct {
+	B0        hinter.ResOperander
+	B1        hinter.ResOperander
+	N0        hinter.ResOperander
+	N1        hinter.ResOperander
+	G0OrNoInv hinter.CellRefer
+	G1Option  hinter.CellRefer
+	SOrR0     hinter.CellRefer
+	SOrR1     hinter.CellRefer
+	TOrK0     hinter.CellRefer
+	TOrK1     hinter.CellRefer
+}
+
+func (hint U256InvModN) String() string {
+	return "U256InvModN"
+}
+
+func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+	B0, err := hint.B0.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve B0 operand %s: %v", hint.B0, err)
+	}
+
+	B1, err := hint.B1.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve B1 operand %s: %v", hint.B1, err)
+	}
+
+	N0, err := hint.N0.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve N0 operand %s: %v", hint.N0, err)
+	}
+
+	N1, err := hint.N1.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve N1 operand %s: %v", hint.N1, err)
+	}
+
+	g0OrNoInvAddr, err := hint.G0OrNoInv.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get G0OrNoInv address %s: %w", g0OrNoInvAddr, err)
+	}
+
+	g1OptionAddr, err := hint.G1Option.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get G1Option address %s: %w", g1OptionAddr, err)
+	}
+
+	sOrR0Addr, err := hint.SOrR0.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get SOrR0 address %s: %w", sOrR0Addr, err)
+	}
+
+	sOrR1Addr, err := hint.SOrR1.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get SOrR1 address %s: %w", sOrR1Addr, err)
+	}
+
+	tOrK0Addr, err := hint.TOrK0.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get TOrK0 address %s: %w", tOrK0Addr, err)
+	}
+
+	tOrK1Addr, err := hint.TOrK1.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get TOrK1 address %s: %w", tOrK1Addr, err)
+	}
+
+	B0Felt, err := B0.FieldElement()
+	if err != nil {
+		return err
+	}
+	B1Felt, err := B1.FieldElement()
+	if err != nil {
+		return err
+	}
+	N0Felt, err := N0.FieldElement()
+	if err != nil {
+		return err
+	}
+	N1Felt, err := N1.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	var B0BigInt big.Int
+	B0Felt.BigInt(&B0BigInt)
+
+	var B1BigInt big.Int
+	B1Felt.BigInt(&B1BigInt)
+
+	var N0BigInt big.Int
+	N0Felt.BigInt(&N0BigInt)
+
+	var N1BigInt big.Int
+	N1Felt.BigInt(&N1BigInt)
+
+	b := new(big.Int).Lsh(&B1BigInt, 128)
+	b.Add(b, &B0BigInt)
+
+	n := new(big.Int).Lsh(&N1BigInt, 128)
+	n.Add(n, &N0BigInt)
+
+	_, r, g := u.Igcdex(n, b)
+	mask := new(big.Int).Lsh(big.NewInt(1), 128)
+	mask.Sub(mask, big.NewInt(1))
+
+	if n.Cmp(big.NewInt(1)) == 0 {
+		mv := mem.MemoryValueFromFieldElement(B0Felt)
+		err = vm.Memory.WriteToAddress(&sOrR0Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to SOrR0 address %s: %w", sOrR0Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(B1Felt)
+		err = vm.Memory.WriteToAddress(&sOrR1Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to SOrR1 address %s: %w", sOrR1Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(&utils.FeltOne)
+		err = vm.Memory.WriteToAddress(&tOrK0Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to TOrK0 address %s: %w", tOrK0Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(&utils.FeltZero)
+		err = vm.Memory.WriteToAddress(&tOrK1Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to TOrK1 address %s: %w", tOrK1Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(&utils.FeltOne)
+		err = vm.Memory.WriteToAddress(&g0OrNoInvAddr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to G0OrNoInv address %s: %w", g0OrNoInvAddr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(&utils.FeltZero)
+		err = vm.Memory.WriteToAddress(&g1OptionAddr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to G1Option address %s: %w", g1OptionAddr, err)
+		}
+	} else if g.Cmp(big.NewInt(1)) != 0 {
+		if new(big.Int).Rem(&g, big.NewInt(2)).Cmp(big.NewInt(0)) == 0 {
+			g = *big.NewInt(2)
+		}
+
+		s := new(big.Int).Div(b, &g)
+		t := new(big.Int).Div(n, &g)
+
+		mv := mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(s, mask)))
+		err = vm.Memory.WriteToAddress(&sOrR0Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to SOrR0 address %s: %w", sOrR0Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(s, 128)))
+		err = vm.Memory.WriteToAddress(&sOrR1Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to SOrR1 address %s: %w", sOrR1Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(t, mask)))
+		err = vm.Memory.WriteToAddress(&tOrK0Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to TOrK0 address %s: %w", tOrK0Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(t, 128)))
+		err = vm.Memory.WriteToAddress(&tOrK1Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to TOrK1 address %s: %w", tOrK1Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(&g, mask)))
+		err = vm.Memory.WriteToAddress(&g0OrNoInvAddr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to G0OrNoInv address %s: %w", g0OrNoInvAddr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(&g, 128)))
+		err = vm.Memory.WriteToAddress(&g1OptionAddr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to G1Option address %s: %w", g1OptionAddr, err)
+		}
+	} else {
+		r.Rem(&r, n)
+
+		k := new(big.Int).Mul(&r, b)
+		k.Sub(k, big.NewInt(1))
+		k.Div(k, n)
+
+		mv := mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(&r, mask)))
+		err = vm.Memory.WriteToAddress(&sOrR0Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to SOrR0 address %s: %w", sOrR0Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(&r, 128)))
+		err = vm.Memory.WriteToAddress(&sOrR1Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to SOrR1 address %s: %w", sOrR1Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(k, mask)))
+		err = vm.Memory.WriteToAddress(&tOrK0Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to TOrK0 address %s: %w", tOrK0Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(k, 128)))
+		err = vm.Memory.WriteToAddress(&tOrK1Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to TOrK1 address %s: %w", tOrK1Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(&utils.FeltZero)
+		err = vm.Memory.WriteToAddress(&g0OrNoInvAddr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to G0OrNoInv address %s: %w", g0OrNoInvAddr, err)
+		}
+	}
+
+	return nil
+}
+
 type Uint256DivMod struct {
 	dividend0  hinter.ResOperander
 	dividend1  hinter.ResOperander
@@ -545,6 +792,10 @@ func (hint Uint256DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerCon
 type DebugPrint struct {
 	start hinter.ResOperander
 	end   hinter.ResOperander
+}
+
+func (hint DebugPrint) String() string {
+	return "DebugPrint"
 }
 
 func (hint DebugPrint) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -1543,7 +1794,7 @@ func (hint *RandomEcPoint) String() string {
 	return "RandomEc"
 }
 
-func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
+func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	// Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic residue.
 
 	// Starkware's elliptic curve Beta value https://docs.starkware.co/starkex/crypto/stark-curve.html
@@ -1602,7 +1853,7 @@ func (hint *FieldSqrt) String() string {
 	return "FieldSqrt"
 }
 
-func (hint *FieldSqrt) Execute(vm *VM.VirtualMachine) error {
+func (hint *FieldSqrt) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	val, err := hint.val.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve val operand %s: %v", hint.val, err)

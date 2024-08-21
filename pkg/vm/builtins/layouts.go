@@ -28,7 +28,7 @@ func getSmallLayout() Layout {
 	return Layout{Name: "small", RcUnits: 16, Builtins: []LayoutBuiltin{
 		{Runner: &Output{}, Builtin: starknet.Output},
 		{Runner: &Pedersen{ratio: 8}, Builtin: starknet.Pedersen},
-		{Runner: &RangeCheck{ratio: 8}, Builtin: starknet.RangeCheck},
+		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
 		{Runner: &ECDSA{ratio: 512}, Builtin: starknet.ECDSA},
 	}}
 }
@@ -41,7 +41,7 @@ func getStarknetWithKeccakLayout() Layout {
 	return Layout{Name: "starknet_with_keccak", RcUnits: 4, Builtins: []LayoutBuiltin{
 		{Runner: &Output{}, Builtin: starknet.Output},
 		{Runner: &Pedersen{ratio: 32}, Builtin: starknet.Pedersen},
-		{Runner: &RangeCheck{ratio: 16}, Builtin: starknet.RangeCheck},
+		{Runner: &RangeCheck{ratio: 16, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
 		{Runner: &ECDSA{ratio: 2048}, Builtin: starknet.ECDSA},
 		{Runner: &Bitwise{ratio: 64}, Builtin: starknet.Bitwise},
 		{Runner: &EcOp{ratio: 1024, cache: make(map[uint64]fp.Element)}, Builtin: starknet.ECOP},
