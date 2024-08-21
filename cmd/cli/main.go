@@ -5,7 +5,11 @@ import (
 	"math"
 	"os"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/zero"
+	cairoversion "github.com/NethermindEth/cairo-vm-go/pkg/parsers/cairo_version"
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	runnerzero "github.com/NethermindEth/cairo-vm-go/pkg/runners/zero"
 	"github.com/urfave/cli/v2"
@@ -90,28 +94,36 @@ func main() {
 					if pathToFile == "" {
 						return fmt.Errorf("path to cairo file not set")
 					}
-
+					cairoVersion, err := cairoversion.GetCairoVersion(pathToFile)
+					if err != nil {
+						return fmt.Errorf("cannot get cairo version: %w", err)
+					}
 					fmt.Printf("Loading program at %s\n", pathToFile)
-					content, err := os.ReadFile(pathToFile)
+					zeroProgram, err := zero.ZeroProgramFromFile(pathToFile)
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
 
-					cairoZeroJson, err := zero.ZeroProgramFromJSON(content)
+					var hints map[uint64][]hinter.Hinter
+					if cairoVersion > 0 {
+						cairoProgram, err := starknet.StarknetProgramFromFile(pathToFile)
+						if err != nil {
+							return fmt.Errorf("cannot load program: %w", err)
+						}
+						hints, err = core.GetCairoHints(cairoProgram)
+						if err != nil {
+							return fmt.Errorf("cannot get hints: %w", err)
+						}
+					} else {
+						hints, err = hintrunner.GetZeroHints(zeroProgram)
+						if err != nil {
+							return fmt.Errorf("cannot create hints: %w", err)
+						}
+					}
+					program, err := runnerzero.LoadCairoZeroProgram(zeroProgram)
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
-
-					program, err := runnerzero.LoadCairoZeroProgram(cairoZeroJson)
-					if err != nil {
-						return fmt.Errorf("cannot load program: %w", err)
-					}
-
-					hints, err := hintrunner.GetZeroHints(cairoZeroJson)
-					if err != nil {
-						return fmt.Errorf("cannot create hints: %w", err)
-					}
-
 					fmt.Println("Running....")
 					runner, err := runnerzero.NewRunner(program, hints, proofmode, collectTrace, maxsteps, layoutName)
 					if err != nil {

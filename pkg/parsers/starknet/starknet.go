@@ -21,6 +21,7 @@ const (
 	ECOP
 	Poseidon
 	SegmentArena
+	RangeCheck96
 )
 
 func (b Builtin) MarshalJSON() ([]byte, error) {
@@ -29,6 +30,8 @@ func (b Builtin) MarshalJSON() ([]byte, error) {
 		return []byte("output"), nil
 	case RangeCheck:
 		return []byte("range_check"), nil
+	case RangeCheck96:
+		return []byte("range_check96"), nil
 	case Pedersen:
 		return []byte("pedersen"), nil
 	case ECDSA:
@@ -59,6 +62,8 @@ func (b *Builtin) UnmarshalJSON(data []byte) error {
 		*b = Output
 	case "range_check":
 		*b = RangeCheck
+	case "range_check96":
+		*b = RangeCheck96
 	case "pedersen":
 		*b = Pedersen
 	case "ecdsa":

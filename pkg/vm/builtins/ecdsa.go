@@ -156,7 +156,7 @@ func recoverY(x *fp.Element) (fp.Element, fp.Element, error) {
 	x2.Add(x2, &utils.Beta)
 	y := x2.Sqrt(x2)
 	if y == nil {
-		return fp.Element{}, fp.Element{}, fmt.Errorf("Invalid Public key")
+		return fp.Element{}, fp.Element{}, fmt.Errorf("invalid Public key")
 	}
 	negY := fp.Element{}
 	negY.Neg(y)
