@@ -9,11 +9,27 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	u "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
+
+func GetCairoHints(cairoProgramJson *starknet.StarknetProgram) (map[uint64][]hinter.Hinter, error) {
+	hints := make(map[uint64][]hinter.Hinter)
+	for _, hintsList := range cairoProgramJson.Hints {
+		for _, hint := range hintsList.Hints {
+			processedHint, err := GetHintByName(hint)
+			if err != nil {
+				return nil, err
+			}
+			hints[hintsList.Index] = append(hints[hintsList.Index], processedHint)
+		}
+	}
+
+	return hints, nil
+}
 
 type AllocSegment struct {
 	Dst hinter.CellRefer
@@ -186,6 +202,10 @@ type LinearSplit struct {
 	maxX   hinter.ResOperander
 	x      hinter.CellRefer
 	y      hinter.CellRefer
+}
+
+func (hint LinearSplit) String() string {
+	return "LinearSplit"
 }
 
 func (hint LinearSplit) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -544,6 +564,10 @@ func (hint Uint256DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerCon
 type DebugPrint struct {
 	start hinter.ResOperander
 	end   hinter.ResOperander
+}
+
+func (hint DebugPrint) String() string {
+	return "DebugPrint"
 }
 
 func (hint DebugPrint) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -1542,7 +1566,7 @@ func (hint *RandomEcPoint) String() string {
 	return "RandomEc"
 }
 
-func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
+func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	// Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic residue.
 
 	// Starkware's elliptic curve Beta value https://docs.starkware.co/starkex/crypto/stark-curve.html
@@ -1601,7 +1625,7 @@ func (hint *FieldSqrt) String() string {
 	return "FieldSqrt"
 }
 
-func (hint *FieldSqrt) Execute(vm *VM.VirtualMachine) error {
+func (hint *FieldSqrt) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	val, err := hint.val.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve val operand %s: %v", hint.val, err)

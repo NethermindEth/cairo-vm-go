@@ -191,7 +191,7 @@ type ShouldSkipSquashLoop struct {
 }
 
 type GetCurrentAccessDelta struct {
-	IndexDeltaMinus1 CellRef `json:"index_delta_minus_1" validate:"required"`
+	IndexDeltaMinus1 CellRef `json:"index_delta_minus1" validate:"required"`
 }
 
 type ShouldContinueSquashLoop struct {
@@ -291,6 +291,7 @@ const (
 type Operand interface{}
 
 type ResOperand struct {
+	Name       ResOperandName
 	ResOperand Operand `validate:"required"`
 }
 
@@ -303,16 +304,21 @@ func (ro *ResOperand) UnmarshalJSON(data []byte) error {
 	}
 
 	var op any
+	var name ResOperandName
 	for k := range resOp {
 		switch ResOperandName(k) {
 		case DerefName:
 			op = &Deref{}
+			name = DerefName
 		case DoubleDerefName:
 			op = &DoubleDeref{}
+			name = DoubleDerefName
 		case ImmediateName:
 			op = &Immediate{}
+			name = ImmediateName
 		case BinOpName:
 			op = &BinOp{}
+			name = BinOpName
 		default:
 			return fmt.Errorf("unknown res operand %s", k)
 		}
@@ -324,6 +330,7 @@ func (ro *ResOperand) UnmarshalJSON(data []byte) error {
 	}
 
 	ro.ResOperand = op
+	ro.Name = name
 	return nil
 }
 

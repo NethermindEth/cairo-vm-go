@@ -410,7 +410,7 @@ func BenchmarkRandomEcPoint(b *testing.B) {
 			y: hinter.ApCellRef(1),
 		}
 
-		err := hint.Execute(vm)
+		err := hint.Execute(vm, nil)
 		if err != nil {
 			b.Error(err)
 			break
@@ -433,7 +433,7 @@ func BenchmarkFieldSqrt(b *testing.B) {
 			sqrt: hinter.ApCellRef(0),
 		}
 
-		err := hint.Execute(vm)
+		err := hint.Execute(vm, nil)
 		if err != nil {
 			b.Error(err)
 			break
