@@ -159,7 +159,7 @@ func RightRot(value uint32, n uint32) uint32 {
 	return (value >> n) | ((value & ((1 << n) - 1)) << (32 - n))
 }
 
-func SafeDiv(x, y uint64) (uint64, error) {
+func SafeDivUint64(x, y uint64) (uint64, error) {
 	if y == 0 {
 		return 0, fmt.Errorf("cannot divide: y division is zero")
 	}

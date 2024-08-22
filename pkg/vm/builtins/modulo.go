@@ -12,12 +12,12 @@ import (
 
 const ModuloName = "Mod"
 
+const VALUES_PTR_OFFSET = 4
 const OFFSETS_PTR_OFFSET = 5
 const N_OFFSET = 6
 const N_WORDS = 4
 const CELLS_PER_MOD = 7
 const FILL_MEMORY_MAX = 100000
-const VALUES_PTR_OFFSET = 4
 
 type ModBuiltinInputs struct {
 	p          big.Int
@@ -52,23 +52,39 @@ type ModBuiltin struct {
 	shiftPowers    [N_WORDS]big.Int
 }
 
-func (k *ModBuiltin) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
+func NewModBuiltin(ratio uint64, modBuiltinType ModBuiltinType, wordBitLen uint64, batchSize uint64) *ModBuiltin {
+	shift := new(big.Int).Lsh(big.NewInt(1), uint(wordBitLen))
+	shiftPowers := [N_WORDS]big.Int{}
+	for i := 0; i < N_WORDS; i++ {
+		shiftPowers[i].Exp(shift, big.NewInt(int64(i)), nil)
+	}
+	return &ModBuiltin{
+		ratio:          ratio,
+		modBuiltinType: modBuiltinType,
+		wordBitLen:     wordBitLen,
+		batchSize:      batchSize,
+		shift:          *shift,
+		shiftPowers:    shiftPowers,
+	}
+}
+
+func (m *ModBuiltin) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
 	return nil
 }
 
-func (k *ModBuiltin) InferValue(segment *memory.Segment, offset uint64) error {
+func (m *ModBuiltin) InferValue(segment *memory.Segment, offset uint64) error {
 	return nil
 }
 
-func (k *ModBuiltin) String() string {
-	if k.modBuiltinType == Add {
+func (m *ModBuiltin) String() string {
+	if m.modBuiltinType == Add {
 		return string(Add) + ModuloName
 	} else {
 		return string(Mul) + ModuloName
 	}
 }
 
-func (k *ModBuiltin) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
+func (m *ModBuiltin) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
 	return 0, nil
 }
 
@@ -100,36 +116,36 @@ func (m *ModBuiltin) readNWordsValue(memory *memory.Memory, addr memory.MemoryAd
 	return words, *value, nil
 }
 
-func (m *ModBuiltin) readInputs(mem *memory.Memory, addr memory.MemoryAddress) (*ModBuiltinInputs, error) {
+func (m *ModBuiltin) readInputs(mem *memory.Memory, addr memory.MemoryAddress) (ModBuiltinInputs, error) {
 	valuesPtrAddr, err := addr.AddOffset(int16(VALUES_PTR_OFFSET))
 	if err != nil {
-		return nil, err
+		return ModBuiltinInputs{}, err
 	}
 	valuesPtr, err := mem.ReadAsAddress(&valuesPtrAddr)
 	if err != nil {
-		return nil, err
+		return ModBuiltinInputs{}, err
 	}
 	offsetsPtrAddr, err := addr.AddOffset(int16(OFFSETS_PTR_OFFSET))
 	if err != nil {
-		return nil, err
+		return ModBuiltinInputs{}, err
 	}
 	offsetsPtr, err := mem.ReadAsAddress(&offsetsPtrAddr)
 	if err != nil {
-		return nil, err
+		return ModBuiltinInputs{}, err
 	}
 	nFelt, err := mem.ReadAsElement(addr.SegmentIndex, addr.Offset+N_OFFSET)
 	if err != nil {
-		return nil, err
+		return ModBuiltinInputs{}, err
 	}
 	n := nFelt.Uint64()
 	if n < 1 {
-		return nil, fmt.Errorf("ModuloBuiltin: n must be at least 1")
+		return ModBuiltinInputs{}, fmt.Errorf("moduloBuiltin: n must be at least 1")
 	}
 	pValues, p, err := m.readNWordsValue(mem, addr)
 	if err != nil {
-		return nil, err
+		return ModBuiltinInputs{}, err
 	}
-	return &ModBuiltinInputs{
+	return ModBuiltinInputs{
 		p:          p,
 		pValues:    pValues,
 		valuesPtr:  valuesPtr,
@@ -143,7 +159,7 @@ func (m *ModBuiltin) fillInputs(mem *memory.Memory, builtinPtr memory.MemoryAddr
 		return fmt.Errorf("fill memory max exceeded")
 	}
 
-	nInstances, err := utils.SafeDiv(inputs.n, m.batchSize)
+	nInstances, err := utils.SafeDivUint64(inputs.n, m.batchSize)
 	if err != nil {
 		return err
 	}
@@ -232,9 +248,9 @@ func (m *ModBuiltin) fillOffsets(mem *memory.Memory, offsetsPtr memory.MemoryAdd
 	return nil
 }
 
-func (m *ModBuiltin) WriteNWordsValue(mem *memory.Memory, addr memory.MemoryAddress, value *big.Int) error {
+func (m *ModBuiltin) writeNWordsValue(mem *memory.Memory, addr memory.MemoryAddress, value big.Int) error {
 	for i := 0; i < N_WORDS; i++ {
-		word := new(big.Int).Mod(value, &m.shift)
+		word := new(big.Int).Mod(&value, &m.shift)
 		modAddr, err := addr.AddOffset(int16(i))
 		if err != nil {
 			return err
@@ -243,10 +259,10 @@ func (m *ModBuiltin) WriteNWordsValue(mem *memory.Memory, addr memory.MemoryAddr
 		if err := mem.WriteToAddress(&modAddr, &mv); err != nil {
 			return err
 		}
-		value.Div(value, &m.shift)
+		value.Div(&value, &m.shift)
 	}
 	if value.Sign() != 0 {
-		return fmt.Errorf("WriteNWordsValueNotZero")
+		return fmt.Errorf("writeNWordsValue: value should be zero")
 	}
 	return nil
 }
@@ -298,21 +314,21 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 	case a != nil && b != nil && c == nil:
 		value := applyOp(a, b, op)
 		value.Mod(&value, &inputs.p)
-		if err := m.WriteNWordsValue(mem, addresses[2], &value); err != nil {
+		if err := m.writeNWordsValue(mem, addresses[2], value); err != nil {
 			return false, err
 		}
 		return true, nil
 	case a != nil && b == nil && c != nil:
 		value := applyOp(c, a, invOp)
 		value.Mod(&value, &inputs.p)
-		if err := m.WriteNWordsValue(mem, addresses[1], &value); err != nil {
+		if err := m.writeNWordsValue(mem, addresses[1], value); err != nil {
 			return false, err
 		}
 		return true, nil
 	case a == nil && b != nil && c != nil:
 		value := applyOp(c, b, invOp)
 		value.Mod(&value, &inputs.p)
-		if err := m.WriteNWordsValue(mem, addresses[0], &value); err != nil {
+		if err := m.writeNWordsValue(mem, addresses[0], value); err != nil {
 			return false, err
 		}
 		return true, nil
@@ -348,7 +364,7 @@ func FillMemory(mem *memory.Memory, addModBuiltinAddr memory.MemoryAddress, nAdd
 	if err != nil {
 		return err
 	}
-	if err := addModBuiltinRunner.fillInputs(mem, addModBuiltinAddr, *addModBuiltinInputs); err != nil {
+	if err := addModBuiltinRunner.fillInputs(mem, addModBuiltinAddr, addModBuiltinInputs); err != nil {
 		return err
 	}
 	if err := addModBuiltinRunner.fillOffsets(mem, addModBuiltinInputs.offsetsPtr, nAddModsIndex, addModBuiltinInputs.n-nAddModsIndex); err != nil {
@@ -359,7 +375,7 @@ func FillMemory(mem *memory.Memory, addModBuiltinAddr memory.MemoryAddress, nAdd
 	if err != nil {
 		return err
 	}
-	if err := mulModBuiltinRunner.fillInputs(mem, mulModBuiltinAddr, *mulModBuiltinInputs); err != nil {
+	if err := mulModBuiltinRunner.fillInputs(mem, mulModBuiltinAddr, mulModBuiltinInputs); err != nil {
 		return err
 	}
 	if err := mulModBuiltinRunner.fillOffsets(mem, mulModBuiltinInputs.offsetsPtr, nMulModsIndex, mulModBuiltinInputs.n-nMulModsIndex); err != nil {
@@ -367,24 +383,25 @@ func FillMemory(mem *memory.Memory, addModBuiltinAddr memory.MemoryAddress, nAdd
 	}
 
 	addModIndex, mulModIndex := uint64(0), uint64(0)
-	for addModIndex < nAddModsIndex || mulModIndex < nMulModsIndex {
-		ok, err := addModBuiltinRunner.fillValue(mem, *addModBuiltinInputs, int(addModIndex), addOp, subOp)
+	for addModIndex < nAddModsIndex {
+		ok, err := addModBuiltinRunner.fillValue(mem, addModBuiltinInputs, int(addModIndex), addOp, subOp)
 		if err != nil {
 			return err
 		}
-		if addModIndex < nAddModsIndex && ok {
+		if ok {
 			addModIndex++
-			continue
-		}
-		ok, err = mulModBuiltinRunner.fillValue(mem, *mulModBuiltinInputs, int(mulModIndex), mulOp, divOp)
-		if err != nil {
-			return err
-		}
-		if mulModIndex < nMulModsIndex && ok {
-			mulModIndex++
 		}
 	}
 
+	for mulModIndex < nMulModsIndex {
+		ok, err = mulModBuiltinRunner.fillValue(mem, mulModBuiltinInputs, int(mulModIndex), mulOp, divOp)
+		if err != nil {
+			return err
+		}
+		if ok {
+			mulModIndex++
+		}
+	}
 	// POTENTIALY: add n_computed_mul_gates features in the future
 
 	return nil
