@@ -51,7 +51,7 @@ func getStarknetWithKeccakLayout() Layout {
 }
 
 func getAllCairoLayout() Layout {
-	return Layout{Name: "all_cairo", RcUnits: 16, Builtins: []LayoutBuiltin{
+	return Layout{Name: "all_cairo", RcUnits: 8, Builtins: []LayoutBuiltin{
 		{Runner: &Output{}, Builtin: starknet.Output},
 		{Runner: &Pedersen{ratio: 256}, Builtin: starknet.Pedersen},
 		{Runner: &RangeCheck{ratio: 8, RANGE_CHECK_N_PARTS: 8}, Builtin: starknet.RangeCheck},
