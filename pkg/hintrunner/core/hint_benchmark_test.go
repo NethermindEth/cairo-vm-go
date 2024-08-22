@@ -368,7 +368,7 @@ func BenchmarkAssertLeFindSmallArc(b *testing.B) {
 
 	rand := utils.DefaultRandGenerator()
 	ctx := hinter.SetContextWithScope(map[string]any{"excluded": 0})
-	rangeCheckPtr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{RANGE_CHECK_N_PARTS: 8})
+	rangeCheckPtr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{RangeCheckNParts: 8})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -410,7 +410,7 @@ func BenchmarkRandomEcPoint(b *testing.B) {
 			y: hinter.ApCellRef(1),
 		}
 
-		err := hint.Execute(vm)
+		err := hint.Execute(vm, nil)
 		if err != nil {
 			b.Error(err)
 			break
@@ -433,7 +433,7 @@ func BenchmarkFieldSqrt(b *testing.B) {
 			sqrt: hinter.ApCellRef(0),
 		}
 
-		err := hint.Execute(vm)
+		err := hint.Execute(vm, nil)
 		if err != nil {
 			b.Error(err)
 			break

@@ -14,13 +14,13 @@ const inputCellsPerRangeCheck = 1
 const cellsPerRangeCheck = 1
 const instancesPerComponentRangeCheck = 1
 
-// Each range check instance consists of RANGE_CHECK_N_PARTS 16-bit parts. INNER_RC_BOUND_SHIFT and INNER_RC_BOUND_MASK are used to extract 16-bit parts from the field elements stored in the range check segment.
+// Each range check instance consists of RangeCheckNParts 16-bit parts. INNER_RC_BOUND_SHIFT and INNER_RC_BOUND_MASK are used to extract 16-bit parts from the field elements stored in the range check segment.
 const INNER_RC_BOUND_SHIFT = 16
 const INNER_RC_BOUND_MASK = (1 << 16) - 1
 
 type RangeCheck struct {
-	ratio               uint64
-	RANGE_CHECK_N_PARTS uint64
+	ratio            uint64
+	RangeCheckNParts uint64
 }
 
 func (r *RangeCheck) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
@@ -29,7 +29,7 @@ func (r *RangeCheck) CheckWrite(segment *memory.Segment, offset uint64, value *m
 		return fmt.Errorf("check write: %w", err)
 	}
 
-	if r.RANGE_CHECK_N_PARTS == 6 {
+	if r.RangeCheckNParts == 6 {
 		// 2**96
 		BOUND_96, err := new(fp.Element).SetString("79228162514264337593543950336")
 		if err != nil {
@@ -55,7 +55,7 @@ func (r *RangeCheck) InferValue(segment *memory.Segment, offset uint64) error {
 }
 
 func (r *RangeCheck) String() string {
-	if r.RANGE_CHECK_N_PARTS == 6 {
+	if r.RangeCheckNParts == 6 {
 		return "range_check96"
 	} else {
 		return "range_check"
