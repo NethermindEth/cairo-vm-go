@@ -284,12 +284,12 @@ func newAssert250bitsHint(low, high, value hinter.Reference) hinter.Hinter {
 				return fmt.Errorf("assertion failed: %v is outside of the range [0, 2**250)", value)
 			}
 
-			lowAddr, err := low.GetAddress(vm)
+			lowAddr, err := low.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			highAddr, err := high.GetAddress(vm)
+			highAddr, err := high.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -513,7 +513,7 @@ func newIsPositiveHint(value, isPositive hinter.Reference) hinter.Hinter {
 			//> ids.is_positive = 1 if is_positive(
 			//>     value=ids.value, prime=PRIME, rc_bound=range_check_builtin.bound) else 0
 
-			isPositiveAddr, err := isPositive.GetAddress(vm)
+			isPositiveAddr, err := isPositive.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -683,12 +683,12 @@ func newPowHint(locs, prevLocs hinter.Reference) hinter.Hinter {
 			} */
 
 			const expStructOffset = 4
-			locsBitAddress, err := locs.GetAddress(vm)
+			locsBitAddress, err := locs.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			prevLocsBitAddress, err := prevLocs.GetAddress(vm)
+			prevLocsBitAddress, err := prevLocs.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -801,12 +801,12 @@ func newSplitFeltHint(low, high, value hinter.Reference) hinter.Hinter {
 
 			var valueBigInt big.Int
 			value.BigInt(&valueBigInt)
-			lowAddr, err := low.GetAddress(vm)
+			lowAddr, err := low.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			highAddr, err := high.GetAddress(vm)
+			highAddr, err := high.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -920,7 +920,7 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.Reference) hinter
 			boundFelt.BigInt(&boundBig)
 			qBig, rBig := new(big.Int).DivMod(&intValueBig, &divBig, new(big.Int))
 			rFelt := new(fp.Element).SetBigInt(rBig)
-			rAddr, err := r.GetAddress(vm)
+			rAddr, err := r.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -938,7 +938,7 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.Reference) hinter
 			//> ids.biased_q = q + ids.bound
 			biasedQBig := new(big.Int).Add(qBig, &boundBig)
 			biasedQ := new(fp.Element).SetBigInt(biasedQBig)
-			biasedQAddr, err := biased_q.GetAddress(vm)
+			biasedQAddr, err := biased_q.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -995,7 +995,7 @@ func newSqrtHint(root, value hinter.Reference) hinter.Hinter {
 			// assert 2 ** 250 < PRIME
 			// ids.root = isqrt(value)
 
-			rootAddr, err := root.GetAddress(vm)
+			rootAddr, err := root.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1067,12 +1067,12 @@ func newUnsignedDivRemHint(value, div, q, r hinter.Reference) hinter.Hinter {
 				return err
 			}
 
-			qAddr, err := q.GetAddress(vm)
+			qAddr, err := q.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			rAddr, err := r.GetAddress(vm)
+			rAddr, err := r.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1144,7 +1144,7 @@ func newIsQuadResidueHint(x, y hinter.Reference) hinter.Hinter {
 				return err
 			}
 
-			yAddr, err := y.GetAddress(vm)
+			yAddr, err := y.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1202,11 +1202,11 @@ func newSplit128Hint(low, high, a hinter.Reference) hinter.Hinter {
 			//> ids.low = ids.a & ((1<<128) - 1)
 			//> ids.high = ids.a >> 128
 
-			lowAddr, err := low.GetAddress(vm)
+			lowAddr, err := low.Get(vm)
 			if err != nil {
 				return err
 			}
-			highAddr, err := high.GetAddress(vm)
+			highAddr, err := high.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1265,7 +1265,7 @@ func newIs250BitsHint(is_250, addr hinter.Reference) hinter.Hinter {
 				return err
 			}
 
-			is250Addr, err := is_250.GetAddress(vm)
+			is250Addr, err := is_250.Get(vm)
 			if err != nil {
 				return err
 			}

@@ -160,7 +160,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.Reference) hinter.Hinter
 			hashedBytes := hash.Sum(nil)
 			hashedHigh := new(fp.Element).SetBytes(hashedBytes[:16])
 			hashedLow := new(fp.Element).SetBytes(hashedBytes[16:32])
-			highAddr, err := high.GetAddress(vm)
+			highAddr, err := high.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -172,7 +172,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.Reference) hinter.Hinter
 				return err
 			}
 
-			lowAddr, err := low.GetAddress(vm)
+			lowAddr, err := low.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -233,7 +233,7 @@ func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.Reference) hinter
 			//> hashed = keccak(keccak_input)
 			//> ids.high = int.from_bytes(hashed[:16], 'big')
 			//> ids.low = int.from_bytes(hashed[16:32], 'big')
-			keccakStateAddr, err := keccakState.GetAddress(vm)
+			keccakStateAddr, err := keccakState.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -287,7 +287,7 @@ func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.Reference) hinter
 			hashedBytes := hash.Sum(nil)
 			hashedHigh := new(fp.Element).SetBytes(hashedBytes[:16])
 			hashedLow := new(fp.Element).SetBytes(hashedBytes[16:32])
-			highAddr, err := high.GetAddress(vm)
+			highAddr, err := high.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -297,7 +297,7 @@ func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.Reference) hinter
 			if err != nil {
 				return err
 			}
-			lowAddr, err := low.GetAddress(vm)
+			lowAddr, err := low.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -604,12 +604,12 @@ func newSplitInput12Hint(high12, low12, inputs hinter.Reference) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.high12, ids.low12 = divmod(memory[ids.inputs + 12], 256 ** 4)
 
-			high12Addr, err := high12.GetAddress(vm)
+			high12Addr, err := high12.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			low12Addr, err := low12.GetAddress(vm)
+			low12Addr, err := low12.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -691,12 +691,12 @@ func newSplitInput15Hint(high15, low15, inputs hinter.Reference) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.high15, ids.low15 = divmod(memory[ids.inputs + 15], 256 ** 5)
 
-			high15Addr, err := high15.GetAddress(vm)
+			high15Addr, err := high15.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			low15Addr, err := low15.GetAddress(vm)
+			low15Addr, err := low15.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -781,17 +781,17 @@ func newSplitOutputMidLowHighHint(output1, output1Low, output1Mid, output1High h
 			//> tmp, ids.output1_low = divmod(ids.output1, 256 ** 7)
 			//> ids.output1_high, ids.output1_mid = divmod(tmp, 2 ** 128)
 
-			output1LowAddr, err := output1Low.GetAddress(vm)
+			output1LowAddr, err := output1Low.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			output1MidAddr, err := output1Mid.GetAddress(vm)
+			output1MidAddr, err := output1Mid.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			output1HighAddr, err := output1High.GetAddress(vm)
+			output1HighAddr, err := output1High.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -878,12 +878,12 @@ func newSplitOutput0Hint(output0Low, output0High, output0 hinter.Reference) hint
 			//> ids.output0_low = ids.output0 & ((1 << 128) - 1)
 			//> ids.output0_high = ids.output0 >> 128
 
-			output0LowAddr, err := output0Low.GetAddress(vm)
+			output0LowAddr, err := output0Low.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			output0HighAddr, err := output0High.GetAddress(vm)
+			output0HighAddr, err := output0High.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -955,12 +955,12 @@ func newSplitNBytesHint(nBytes, nWordsToCopy, nBytesLeft hinter.Reference) hinte
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.n_words_to_copy, ids.n_bytes_left = divmod(ids.n_bytes, ids.BYTES_IN_WORD)
 
-			nWordsToCopyAddr, err := nWordsToCopy.GetAddress(vm)
+			nWordsToCopyAddr, err := nWordsToCopy.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			nBytesLeftAddr, err := nBytesLeft.GetAddress(vm)
+			nBytesLeftAddr, err := nBytesLeft.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1031,12 +1031,12 @@ func newSplitInput3Hint(high3, low3, inputs hinter.Reference) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.high3, ids.low3 = divmod(memory[ids.inputs + 3], 256)
 
-			high3Addr, err := high3.GetAddress(vm)
+			high3Addr, err := high3.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			low3Addr, err := low3.GetAddress(vm)
+			low3Addr, err := low3.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1117,12 +1117,12 @@ func newSplitInput6Hint(high6, low6, inputs hinter.Reference) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.high6, ids.low6 = divmod(memory[ids.inputs + 6], 256 ** 2)
 
-			high6Addr, err := high6.GetAddress(vm)
+			high6Addr, err := high6.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			low6Addr, err := low6.GetAddress(vm)
+			low6Addr, err := low6.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1204,12 +1204,12 @@ func newSplitInput9Hint(high9, low9, inputs hinter.Reference) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.high9, ids.low9 = divmod(memory[ids.inputs + 9], 256 ** 3)
 
-			high9Addr, err := high9.GetAddress(vm)
+			high9Addr, err := high9.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			low9Addr, err := low9.GetAddress(vm)
+			low9Addr, err := low9.Get(vm)
 			if err != nil {
 				return err
 			}

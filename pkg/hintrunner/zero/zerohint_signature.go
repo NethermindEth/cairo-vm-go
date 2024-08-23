@@ -32,7 +32,7 @@ func newVerifyZeroHint(val, q hinter.Reference) hinter.Hinter {
 			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
 			//> ids.q = q % PRIME
 
-			valAddr, err := val.GetAddress(vm)
+			valAddr, err := val.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -64,7 +64,7 @@ func newVerifyZeroHint(val, q hinter.Reference) hinter.Hinter {
 			//> ids.q = q % PRIME
 			qBig.Mod(qBig, fp.Modulus())
 			qFelt := new(fp.Element).SetBigInt(qBig)
-			qAddr, err := q.GetAddress(vm)
+			qAddr, err := q.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -110,7 +110,7 @@ func newVerifyZeroV3Hint(val, q hinter.Reference) hinter.Hinter {
 			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
 			//> ids.q = q % PRIME
 
-			valAddr, err := val.GetAddress(vm)
+			valAddr, err := val.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -144,7 +144,7 @@ func newVerifyZeroV3Hint(val, q hinter.Reference) hinter.Hinter {
 			//> ids.q = q % PRIME
 			qBig.Mod(qBig, fp.Modulus())
 			qFelt := new(fp.Element).SetBigInt(qBig)
-			qAddr, err := q.GetAddress(vm)
+			qAddr, err := q.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -249,7 +249,7 @@ func newGetPointFromXHint(xCube, v hinter.Reference) hinter.Hinter {
 			//> else:
 			//>		value = (-y) % SECP_P
 
-			xCubeAddr, err := xCube.GetAddress(vm)
+			xCubeAddr, err := xCube.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -404,12 +404,12 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.Reference) hinter.Hinter {
 			//> b = pack(ids.b, PRIME)
 			//> value = res = div_mod(a, b, N)
 
-			aAddr, err := a.GetAddress(vm)
+			aAddr, err := a.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			bAddr, err := b.GetAddress(vm)
+			bAddr, err := b.Get(vm)
 			if err != nil {
 				return err
 			}

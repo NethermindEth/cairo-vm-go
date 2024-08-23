@@ -62,7 +62,7 @@ func newInvModPUint512Hint(x, xInverseModP hinter.Reference) hinter.Hinter {
 			xInverseModPBig.Rsh(xInverseModPBig, uint(BITSHIFT))
 			xInverseModPSplit[1] = *new(fp.Element).SetBigInt(xInverseModPBig)
 
-			resAddr, err := xInverseModP.GetAddress(vm)
+			resAddr, err := xInverseModP.Get(vm)
 			if err != nil {
 				return err
 			}

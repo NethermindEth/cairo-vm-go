@@ -119,7 +119,7 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 
 			sort.Sort(usortUtils.SortFelt(outputArray))
 
-			outputLenAddr, err := outputLen.GetAddress(vm)
+			outputLenAddr, err := outputLen.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -131,7 +131,7 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 			}
 
 			outputSegmentBaseAddr := vm.Memory.AllocateEmptySegment()
-			outputAddr, err := output.GetAddress(vm)
+			outputAddr, err := output.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -161,7 +161,7 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 			}
 
 			multiplicitesSegmentBaseAddr := vm.Memory.AllocateEmptySegment()
-			multiplicitiesAddr, err := multiplicities.GetAddress(vm)
+			multiplicitiesAddr, err := multiplicities.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -313,7 +313,7 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.Reference) hinter.H
 			newNextItemIndexMemoryValue := memory.MemoryValueFromUint(newNextItemIndexValue)
 
 			// Save `next_item_index` value in address
-			addrNextItemIndex, err := nextItemIndex.GetAddress(vm)
+			addrNextItemIndex, err := nextItemIndex.Get(vm)
 			if err != nil {
 				return err
 			}

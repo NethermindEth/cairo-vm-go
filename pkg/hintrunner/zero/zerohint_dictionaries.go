@@ -158,7 +158,7 @@ func newDictReadHint(dictPtr, key, value hinter.Reference) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			valueAddr, err := value.GetAddress(vm)
+			valueAddr, err := value.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -530,7 +530,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			})
 
 			//> ids.big_keys = 1 if keys[0] >= range_check_builtin.bound else 0
-			bigKeysAddr, err := bigKeys.GetAddress(vm)
+			bigKeysAddr, err := bigKeys.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -546,7 +546,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			}
 
 			//> ids.first_key = key = keys.pop()
-			firstKeyAddr, err := firstKey.GetAddress(vm)
+			firstKeyAddr, err := firstKey.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -677,7 +677,7 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.Reference) hinter.H
 				return err
 			}
 
-			loopTempsAddr, err := loopTemps.GetAddress(vm)
+			loopTempsAddr, err := loopTemps.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -732,7 +732,7 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.Reference) hinter.Hinte
 				return err
 			}
 
-			loopTempsAddr, err := loopTemps.GetAddress(vm)
+			loopTempsAddr, err := loopTemps.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -850,7 +850,7 @@ func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.Reference) hinter.Hint
 				return err
 			}
 
-			shouldSkipLoopAddr, err := shouldSkipLoop.GetAddress(vm)
+			shouldSkipLoopAddr, err := shouldSkipLoop.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -944,7 +944,7 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.Reference) hinter.Hinter {
 
 			newKeyMemoryValue := memory.MemoryValueFromFieldElement(&newKey)
 
-			addrNextKey, err := nextKey.GetAddress(vm)
+			addrNextKey, err := nextKey.Get(vm)
 			if err != nil {
 				return err
 			}

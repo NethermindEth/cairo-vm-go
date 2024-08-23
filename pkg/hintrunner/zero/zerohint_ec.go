@@ -26,12 +26,12 @@ func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.Reference) hinter.Hinte
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> ids.len_hi = max(ids.scalar_u.d2.bit_length(), ids.scalar_v.d2.bit_length())-1
 
-			scalarUAddr, err := scalar_u.GetAddress(vm)
+			scalarUAddr, err := scalar_u.Get(vm)
 			if err != nil {
 				return fmt.Errorf("failed to resolve scalar_u address: %w", err)
 			}
 
-			scalarVAddr, err := scalar_v.GetAddress(vm)
+			scalarVAddr, err := scalar_v.Get(vm)
 			if err != nil {
 				return fmt.Errorf("failed to resolve scalar_v address: %w", err)
 			}
@@ -57,7 +57,7 @@ func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.Reference) hinter.Hinte
 
 			lenHi := utils.Max(bitLenU, bitLenV) - 1
 
-			lenHiAddr, err := len_hi.GetAddress(vm)
+			lenHiAddr, err := len_hi.Get(vm)
 			if err != nil {
 				return fmt.Errorf("failed to get address of len_hi: %w", err)
 			}
@@ -99,12 +99,12 @@ func newBigIntToUint256Hint(low, x hinter.Reference) hinter.Hinter {
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> ids.low = (ids.x.d0 + ids.x.d1 * ids.BASE) & ((1 << 128) - 1)
 
-			lowAddr, err := low.GetAddress(vm)
+			lowAddr, err := low.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			xAddr, err := x.GetAddress(vm)
+			xAddr, err := x.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -180,7 +180,7 @@ func newEcNegateHint(point hinter.Reference) hinter.Hinter {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
-			pointAddr, err := point.GetAddress(vm)
+			pointAddr, err := point.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -288,7 +288,7 @@ func newDivModNPackedDivModExternalN(a, b hinter.Reference) hinter.Hinter {
 			//> b = pack(ids.b, PRIME)
 			//> value = res = div_mod(a, b, N)
 
-			aAddr, err := a.GetAddress(vm)
+			aAddr, err := a.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -303,7 +303,7 @@ func newDivModNPackedDivModExternalN(a, b hinter.Reference) hinter.Hinter {
 				return err
 			}
 
-			bAddr, err := b.GetAddress(vm)
+			bAddr, err := b.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -363,7 +363,7 @@ func newNondetBigint3V1Hint(res hinter.Reference) hinter.Hinter {
 			//>
 			//> segments.write_arg(ids.res.address_, split(value))
 
-			address, err := res.GetAddress(vm)
+			address, err := res.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -448,17 +448,17 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.Reference, secPBig 
 			//>
 			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
 
-			slopeAddr, err := slope.GetAddress(vm)
+			slopeAddr, err := slope.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			point0Addr, err := point0.GetAddress(vm)
+			point0Addr, err := point0.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			point1Addr, err := point1.GetAddress(vm)
+			point1Addr, err := point1.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -670,7 +670,7 @@ func newEcDoubleSlopeV1Hint(point hinter.Reference) hinter.Hinter {
 			//> y = pack(ids.point.y, PRIME)
 			//> value = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)
 
-			pointAddr, err := point.GetAddress(vm)
+			pointAddr, err := point.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -752,7 +752,7 @@ func newEcDoubleSlopeV3Hint(point hinter.Reference) hinter.Hinter {
 			//> y = pack(ids.pt.y, PRIME)
 			//> value = slope = div_mod(3 * x ** 2, 2 * y, SECP_P)
 
-			pointAddr, err := point.GetAddress(vm)
+			pointAddr, err := point.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -829,7 +829,7 @@ func newReduceHint(x hinter.Reference) hinter.Hinter {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
-			xAddr, err := x.GetAddress(vm)
+			xAddr, err := x.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -881,7 +881,7 @@ func newReduceEd25519Hint(x hinter.Reference) hinter.Hinter {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
-			xAddr, err := x.GetAddress(vm)
+			xAddr, err := x.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -957,12 +957,12 @@ func newEcDoubleAssignNewXHint(slope, point hinter.Reference) hinter.Hinter {
 			//>
 			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
 
-			slopeAddr, err := slope.GetAddress(vm)
+			slopeAddr, err := slope.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			pointAddr, err := point.GetAddress(vm)
+			pointAddr, err := point.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1142,12 +1142,12 @@ func newComputeSlopeV1Hint(point0, point1 hinter.Reference) hinter.Hinter {
 			//> y1 = pack(ids.point1.y, PRIME)
 			//> value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
 
-			point0XAddr, err := point0.GetAddress(vm)
+			point0XAddr, err := point0.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			point1XAddr, err := point1.GetAddress(vm)
+			point1XAddr, err := point1.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1267,12 +1267,12 @@ func newComputeSlopeV2Hint(point0, point1 hinter.Reference) hinter.Hinter {
 			//> y1 = pack(ids.point1.y, PRIME)
 			//> value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
 
-			point0XAddr, err := point0.GetAddress(vm)
+			point0XAddr, err := point0.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			point1XAddr, err := point1.GetAddress(vm)
+			point1XAddr, err := point1.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1396,12 +1396,12 @@ func newComputeSlopeV3Hint(point0, point1 hinter.Reference) hinter.Hinter {
 			//> y1 = pack(ids.pt1.y, PRIME)
 			//> value = slope = div_mod(y0 - y1, x0 - x1, SECP_P)
 
-			point0XAddr, err := point0.GetAddress(vm)
+			point0XAddr, err := point0.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			point1XAddr, err := point1.GetAddress(vm)
+			point1XAddr, err := point1.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1574,7 +1574,7 @@ func newIsZeroPackHint(x hinter.Reference) hinter.Hinter {
 			//>
 			//> x = pack(ids.x, PRIME) % SECP_P
 
-			xAddr, err := x.GetAddress(vm)
+			xAddr, err := x.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1669,7 +1669,7 @@ func newRecoverYHint(x, p hinter.Reference) hinter.Hinter {
 			//> # This raises an exception if `x` is not on the curve.
 			//> ids.p.y = recover_y(ids.x, ALPHA, BETA, FIELD_PRIME)
 
-			pXAddr, err := p.GetAddress(vm)
+			pXAddr, err := p.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1751,7 +1751,7 @@ func newRandomEcPointHint(p, m, q, s hinter.Reference) hinter.Hinter {
 			//> seed = b"".join(map(to_bytes, [ids.p.x, ids.p.y, ids.m, ids.q.x, ids.q.y]))
 			//> ids.s.x, ids.s.y = random_ec_point(FIELD_PRIME, ALPHA, BETA, seed)
 
-			pAddr, err := p.GetAddress(vm)
+			pAddr, err := p.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1766,7 +1766,7 @@ func newRandomEcPointHint(p, m, q, s hinter.Reference) hinter.Hinter {
 				return err
 			}
 
-			qAddr, err := q.GetAddress(vm)
+			qAddr, err := q.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1791,7 +1791,7 @@ func newRandomEcPointHint(p, m, q, s hinter.Reference) hinter.Hinter {
 				writeFeltToBytesArray(felt)
 			}
 
-			sAddr, err := s.GetAddress(vm)
+			sAddr, err := s.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1881,7 +1881,7 @@ func newChainedEcOpHint(len, p, m, q, s hinter.Reference) hinter.Hinter {
 				return fmt.Errorf("f'chained_ec_op() can only be used with len<=%d.\n Got: n_elms=%d", chainedEcOpMaxLen, nElms)
 			}
 
-			pAddr, err := p.GetAddress(vm)
+			pAddr, err := p.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1931,7 +1931,7 @@ func newChainedEcOpHint(len, p, m, q, s hinter.Reference) hinter.Hinter {
 
 			}
 
-			sAddr, err := s.GetAddress(vm)
+			sAddr, err := s.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1988,17 +1988,17 @@ func newEcRecoverDivModNPackedHint(n, x, s hinter.Reference) hinter.Hinter {
 			//> s = pack(ids.s, PRIME) % N
 			//> value = res = div_mod(x, s, N)
 
-			nAddr, err := n.GetAddress(vm)
+			nAddr, err := n.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			xAddr, err := x.GetAddress(vm)
+			xAddr, err := x.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			sAddr, err := s.GetAddress(vm)
+			sAddr, err := s.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -2088,12 +2088,12 @@ func newEcRecoverSubABHint(a, b hinter.Reference) hinter.Hinter {
 			//>
 			//> value = res = a - b
 
-			aAddr, err := a.GetAddress(vm)
+			aAddr, err := a.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			bAddr, err := b.GetAddress(vm)
+			bAddr, err := b.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -2165,17 +2165,17 @@ func newEcRecoverProductModHint(a, b, m hinter.Reference) hinter.Hinter {
 			//>
 			//> value = res = product % m
 
-			aAddr, err := a.GetAddress(vm)
+			aAddr, err := a.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			bAddr, err := b.GetAddress(vm)
+			bAddr, err := b.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			mAddr, err := m.GetAddress(vm)
+			mAddr, err := m.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -2305,7 +2305,7 @@ func newBigIntPackDivModHint(x, y, p hinter.Reference) hinter.Hinter {
 			//>
 			//> value = res = div_mod(x, y, p)
 
-			pAddr, err := p.GetAddress(vm)
+			pAddr, err := p.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -2315,7 +2315,7 @@ func newBigIntPackDivModHint(x, y, p hinter.Reference) hinter.Hinter {
 				return err
 			}
 
-			xAddr, err := x.GetAddress(vm)
+			xAddr, err := x.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -2325,7 +2325,7 @@ func newBigIntPackDivModHint(x, y, p hinter.Reference) hinter.Hinter {
 				return err
 			}
 
-			yAddr, err := y.GetAddress(vm)
+			yAddr, err := y.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -2425,7 +2425,7 @@ func newBigIntSafeDivHint(flag hinter.Reference) hinter.Hinter {
 			//> value = k if k > 0 else 0 - k
 			//> ids.flag = 1 if k > 0 else 0
 
-			flagAddr, err := flag.GetAddress(vm)
+			flagAddr, err := flag.Get(vm)
 			if err != nil {
 				return err
 			}

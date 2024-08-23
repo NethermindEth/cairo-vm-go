@@ -45,7 +45,7 @@ func newMemContinueHint(continueTarget hinter.Reference, memset bool) hinter.Hin
 			}
 
 			//> ids.continue_loop/continue_copying = 1 if n > 0 else 0
-			continueTargetAddr, err := continueTarget.GetAddress(vm)
+			continueTargetAddr, err := continueTarget.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -160,7 +160,7 @@ func newGetFeltBitLengthHint(x, bitLength hinter.Reference) hinter.Hinter {
 			//> x = ids.x
 			//> ids.bit_length = x.bit_length()
 
-			bitLengthAddr, err := bitLength.GetAddress(vm)
+			bitLengthAddr, err := bitLength.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -267,7 +267,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.Reference) h
 			if err == nil {
 				findElementIndexFelt := new(fp.Element).SetUint64(findElementIndex)
 				findElementIndexMemoryValue := memory.MemoryValueFromFieldElement(findElementIndexFelt)
-				indexValAddr, err := index.GetAddress(vm)
+				indexValAddr, err := index.Get(vm)
 				if err != nil {
 					return err
 				}
@@ -330,7 +330,7 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.Reference) h
 						return err
 					}
 					if val.Cmp(keyVal) == 0 {
-						indexValAddr, err := index.GetAddress(vm)
+						indexValAddr, err := index.Get(vm)
 						if err != nil {
 							return err
 						}
@@ -415,11 +415,11 @@ func newSetAddHint(elmSize, elmPtr, setPtr, setEndPtr, index, isElmInSet hinter.
 			if err != nil {
 				return err
 			}
-			indexAddr, err := index.GetAddress(vm)
+			indexAddr, err := index.Get(vm)
 			if err != nil {
 				return err
 			}
-			isElmInSetAddr, err := isElmInSet.GetAddress(vm)
+			isElmInSetAddr, err := isElmInSet.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -578,7 +578,7 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.Refere
 				return err
 			}
 
-			indexAddr, err := index.GetAddress(vm)
+			indexAddr, err := index.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -722,7 +722,7 @@ func newNormalizeAddressHint(isSmall, addr hinter.Reference) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			isSmallAddr, err := isSmall.GetAddress(vm)
+			isSmallAddr, err := isSmall.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -769,7 +769,7 @@ func newSha256AndBlake2sInputHint(fullWord, nbytes hinter.Reference) hinter.Hint
 				return err
 			}
 
-			fullWordAddr, err := fullWord.GetAddress(vm)
+			fullWordAddr, err := fullWord.Get(vm)
 			if err != nil {
 				return err
 			}

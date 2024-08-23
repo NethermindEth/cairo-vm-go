@@ -51,7 +51,7 @@ func newUint256AddHint(a, b, carryLow, carryHigh hinter.Reference) hinter.Hinter
 			cLowValue := memory.MemoryValueFromFieldElement(cLow)
 
 			// Save `carry_low` value in address
-			addrCarryLow, err := carryLow.GetAddress(vm)
+			addrCarryLow, err := carryLow.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -73,7 +73,7 @@ func newUint256AddHint(a, b, carryLow, carryHigh hinter.Reference) hinter.Hinter
 			cHighValue := memory.MemoryValueFromFieldElement(cHigh)
 
 			// Save `carry_high` value in address
-			addrCarryHigh, err := carryHigh.GetAddress(vm)
+			addrCarryHigh, err := carryHigh.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -136,7 +136,7 @@ func newSplit64Hint(a, low, high hinter.Reference) hinter.Hinter {
 			low64 := lowBig.Uint64()
 			lowValue := memory.MemoryValueFromUint(low64)
 
-			lowAddr, err := low.GetAddress(vm)
+			lowAddr, err := low.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -150,7 +150,7 @@ func newSplit64Hint(a, low, high hinter.Reference) hinter.Hinter {
 			highBig := new(big.Int).Rsh(&aBig, 64)
 			highValue := memory.MemoryValueFromFieldElement(new(fp.Element).SetBigInt(highBig))
 
-			highAddr, err := high.GetAddress(vm)
+			highAddr, err := high.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -217,7 +217,7 @@ func newUint256SqrtHint(n, root hinter.Reference) hinter.Hinter {
 				return fmt.Errorf("assertion failed: a = %v is out of range", calculatedUint256Root)
 			}
 
-			rootAddr, err := root.GetAddress(vm)
+			rootAddr, err := root.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -337,7 +337,7 @@ func newUint256UnsignedDivRemHint(a, div, quotient, remainder hinter.Reference) 
 			lowRem := new(fp.Element).SetBigInt(new(big.Int).And(remBig, mask))
 			highRem := new(fp.Element).SetBigInt(new(big.Int).Rsh(remBig, 128))
 
-			quotientAddr, err := quotient.GetAddress(vm)
+			quotientAddr, err := quotient.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -347,7 +347,7 @@ func newUint256UnsignedDivRemHint(a, div, quotient, remainder hinter.Reference) 
 				return err
 			}
 
-			remainderAddr, err := remainder.GetAddress(vm)
+			remainderAddr, err := remainder.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -444,7 +444,7 @@ func newUint256UnsignedDivRemExpandedHint(a, div, quotient, remainder hinter.Ref
 			lowRem := new(fp.Element).SetBigInt(new(big.Int).And(remBig, mask))
 			highRem := new(fp.Element).SetBigInt(new(big.Int).Rsh(remBig, 128))
 
-			quotientAddr, err := quotient.GetAddress(vm)
+			quotientAddr, err := quotient.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -454,7 +454,7 @@ func newUint256UnsignedDivRemExpandedHint(a, div, quotient, remainder hinter.Ref
 				return err
 			}
 
-			remainderAddr, err := remainder.GetAddress(vm)
+			remainderAddr, err := remainder.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -551,7 +551,7 @@ func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hin
 			highQuotHigh := new(fp.Element).SetBigInt(new(big.Int).Rsh(quot, 384))
 			lowRem := new(fp.Element).SetBigInt(new(big.Int).And(rem, mask))
 			highRem := new(fp.Element).SetBigInt(new(big.Int).Rsh(rem, 128))
-			quotientLowAddr, err := quotientLow.GetAddress(vm)
+			quotientLowAddr, err := quotientLow.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -561,7 +561,7 @@ func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hin
 				return err
 			}
 
-			quotientHighAddr, err := quotientHigh.GetAddress(vm)
+			quotientHighAddr, err := quotientHigh.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -571,7 +571,7 @@ func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hin
 				return err
 			}
 
-			remainderAddr, err := remainder.GetAddress(vm)
+			remainderAddr, err := remainder.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -671,7 +671,7 @@ func newUint256SubHint(a, b, res hinter.Reference) hinter.Hinter {
 			}
 
 			resSplit := split(*resBig, 128, 2)
-			resAddr, err := res.GetAddress(vm)
+			resAddr, err := res.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -771,7 +771,7 @@ func newSplitXXHint(x, xx hinter.Reference) hinter.Hinter {
 			xLow := new(fp.Element).SetBigInt(new(big.Int).And(xBig, mask))
 			xHigh := new(fp.Element).SetBigInt(new(big.Int).Rsh(xBig, 128))
 
-			xAddr, err := x.GetAddress(vm)
+			xAddr, err := x.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -827,7 +827,7 @@ func newUint128AddHint(a, b, carry hinter.Reference) hinter.Hinter {
 			cValue := memory.MemoryValueFromFieldElement(c)
 
 			// Save `carry` value in address
-			addrCarry, err := carry.GetAddress(vm)
+			addrCarry, err := carry.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -886,7 +886,7 @@ func newUint128SqrtHint(n, root hinter.Reference) hinter.Hinter {
 				return fmt.Errorf("root %v is out range 0 <= root < 2 ** 128", rootFelt)
 			}
 			rootMV := memory.MemoryValueFromFieldElement(rootFelt)
-			rootAddr, err := root.GetAddress(vm)
+			rootAddr, err := root.Get(vm)
 			if err != nil {
 				return err
 			}

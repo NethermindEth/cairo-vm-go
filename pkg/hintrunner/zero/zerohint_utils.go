@@ -15,7 +15,7 @@ import (
 // The low and high parts previously extracted from memory are then
 // converted to field elements and returned
 func GetUint256AsFelts(vm *VM.VirtualMachine, ref hinter.Reference) (*fp.Element, *fp.Element, error) {
-	lowRefAddr, err := ref.GetAddress(vm)
+	lowRefAddr, err := ref.Get(vm)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -56,7 +56,7 @@ func GetUint256ExpandAsFelts(vm *VM.VirtualMachine, ref hinter.Reference) ([]*fp
 	//> 	b23: felt,
 	//> 	b3: felt,
 	//> }
-	refAddr, err := ref.GetAddress(vm)
+	refAddr, err := ref.Get(vm)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func GetUint256ExpandAsFelts(vm *VM.VirtualMachine, ref hinter.Reference) ([]*fp
 
 func GetUint512AsFelts(vm *VM.VirtualMachine, ref hinter.Reference) (*fp.Element, *fp.Element, *fp.Element, *fp.Element, error) {
 	var fps [4]*fp.Element
-	firstRefAddr, err := ref.GetAddress(vm)
+	firstRefAddr, err := ref.Get(vm)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
