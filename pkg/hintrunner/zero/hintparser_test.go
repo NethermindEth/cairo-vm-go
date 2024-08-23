@@ -10,8 +10,8 @@ import (
 func TestHintParser(t *testing.T) {
 	type testSetType struct {
 		Parameter            string
-		ExpectedCellRefer    hinter.CellRefer
-		ExpectedResOperander hinter.ResOperander
+		ExpectedCellRefer    hinter.Reference
+		ExpectedResOperander hinter.Reference
 	}
 
 	testSet := []testSetType{

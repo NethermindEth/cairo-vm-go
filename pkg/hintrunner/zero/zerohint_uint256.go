@@ -20,7 +20,7 @@ import (
 //   - `a` and `b` are the two `uint256` variables that will be added
 //   - `carryLow` and `carryHigh` represent the potential extra bit that needs to be carried
 //     if the sum of the `low` or `high` parts exceeds 2**128 - 1
-func newUint256AddHint(a, b, carryLow, carryHigh hinter.ResOperander) hinter.Hinter {
+func newUint256AddHint(a, b, carryLow, carryHigh hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint256Add",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -116,7 +116,7 @@ func createUint256AddHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 // `newSplit64Hint` takes 3 operanders as arguments
 //   - `a` is the `felt` variable in range [0, 2^192) that will be splitted
 //   - `low` and `high` represent the `low` 64 bits and the `high` 128 bits of the `felt` variable
-func newSplit64Hint(a, low, high hinter.ResOperander) hinter.Hinter {
+func newSplit64Hint(a, low, high hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Split64",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -185,7 +185,7 @@ func createSplit64Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) 
 // `newUint256SqrtHint` takes 2 operanders as arguments
 //   - `n` represents the `uint256` variable for which we will calculate the square root
 //   - `root` is the variable that will store the result of the hint in memory
-func newUint256SqrtHint(n, root hinter.ResOperander) hinter.Hinter {
+func newUint256SqrtHint(n, root hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint256Sqrt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -248,7 +248,7 @@ func createUint256SqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 //
 // `newUint256SignedNNHint` takes 1 operander as argument
 //   - `a` represents the `uint256` variable that will be checked
-func newUint256SignedNNHint(a hinter.ResOperander) hinter.Hinter {
+func newUint256SignedNNHint(a hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint256SignedNN",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -291,7 +291,7 @@ func createUint256SignedNNHinter(resolver hintReferenceResolver) (hinter.Hinter,
 //   - `div` is the `uint256` variable that will divide `a`
 //   - `quotient` is the quotient of the Euclidean division of `a` by `div`
 //   - `remainder` is the remainder of the Euclidean division of `a` by `div`
-func newUint256UnsignedDivRemHint(a, div, quotient, remainder hinter.ResOperander) hinter.Hinter {
+func newUint256UnsignedDivRemHint(a, div, quotient, remainder hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint256UnsignedDivRem",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -389,7 +389,7 @@ func createUint256UnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.H
 //   - `div` is the `uint256` variable that will divide `a`, consists of `b23` (high) parts and `b01` (low)
 //   - `quotient` is the quotient of the Euclidean division of `a` by `div`
 //   - `remainder` is the remainder of the Euclidean division of `a` by `div`
-func newUint256UnsignedDivRemExpandedHint(a, div, quotient, remainder hinter.ResOperander) hinter.Hinter {
+func newUint256UnsignedDivRemExpandedHint(a, div, quotient, remainder hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint256UnsignedDivRemExpanded",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -496,7 +496,7 @@ func createUint256UnsignedDivRemExpandedHinter(resolver hintReferenceResolver) (
 //   - `div` is the `uint256` variable that will divide the result of `a * b`
 //   - `quotient` is the quotient of the Euclidean division of `a * b` by `div`
 //   - `remainder` is the remainder of the Euclidean division of `a * b` by `div`
-func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hinter.ResOperander) hinter.Hinter {
+func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint256MulDivMod",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -620,7 +620,7 @@ func createUint256MulDivModHinter(resolver hintReferenceResolver) (hinter.Hinter
 // `newUint256SubHint` takes 3 operanders as arguments
 //   - `a` and `b` are the `uint256` variables that will be subtracted
 //   - `res` is the variable that will store the result of the subtraction in memory
-func newUint256SubHint(a, b, res hinter.ResOperander) hinter.Hinter {
+func newUint256SubHint(a, b, res hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint256Sub",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -704,7 +704,7 @@ func createUint256SubHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 // newSplitXXHint takes 2 operanders as arguments:
 //   - `xx` is the `uint256` variable that will be used to calculate the square root
 //   - `x` is the variable that will store the result of the hint in memory
-func newSplitXXHint(x, xx hinter.ResOperander) hinter.Hinter {
+func newSplitXXHint(x, xx hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitXX",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -798,7 +798,7 @@ func createSplitXXHinter(resolver hintReferenceResolver) (hinter.Hinter, error) 
 //   - `a` and `b` are the two `uint128` variables that will be added
 //   - `carry` represent the potential extra bit that needs to be carried
 //     if the res of the sum of `a` and `b` exceeds 2**64 - 1
-func newUint128AddHint(a, b, carry hinter.ResOperander) hinter.Hinter {
+func newUint128AddHint(a, b, carry hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint128Add",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -860,7 +860,7 @@ func createUint128AddHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 //   - `a` and `b` are the two `uint128` variables that will be added
 //   - `carry` represent the potential extra bit that needs to be carried
 //     if the res of the sum of `a` and `b` exceeds 2**64 - 1
-func newUint128SqrtHint(n, root hinter.ResOperander) hinter.Hinter {
+func newUint128SqrtHint(n, root hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Uint128Sqrt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {

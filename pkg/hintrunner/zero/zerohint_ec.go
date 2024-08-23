@@ -20,7 +20,7 @@ import (
 //   - `len_hi`: the variable that will store the result of the bit-length calculation
 //   - `scalar_u.d2`: the first scalar value
 //   - `scalar_v.d2`: the second scalar value
-func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.ResOperander) hinter.Hinter {
+func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "GetHighLen",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -93,7 +93,7 @@ func createGetHighLenHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 // `newBigIntToUint256Hint` takes 2 operanders as arguments
 //   - `low` is the variable that will store the low part of the uint256 result
 //   - `x` is the BigInt variable to convert to uint256
-func newBigIntToUint256Hint(low, x hinter.ResOperander) hinter.Hinter {
+func newBigIntToUint256Hint(low, x hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "BigIntToUint256",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -165,7 +165,7 @@ func createBigIntToUint256Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 //   - `point` is the point on an elliptic curve to operate on
 //
 // `newEcNegateHint` assigns the result as `value` in the current scope
-func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
+func newEcNegateHint(point hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcNegate",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -278,7 +278,7 @@ func createDivModNSafeDivPlusOneHinter() (hinter.Hinter, error) {
 //   - `b` is the value that will be packed and taken prime
 //
 // `DivModNPackedDivModExternalN` assigns the result as `value` in the current scope.
-func newDivModNPackedDivModExternalN(a, b hinter.ResOperander) hinter.Hinter {
+func newDivModNPackedDivModExternalN(a, b hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DivModNPackedDivModExternalN",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -355,7 +355,7 @@ func createDivModNPackedDivModExternalNHinter(resolver hintReferenceResolver) (h
 //   - `res` is the location in memory where to write the result
 //
 // `newNondetBigint3V1Hint` uses `SecPSplit` to split the value in 3 felts and writes the result in memory
-func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
+func newNondetBigint3V1Hint(res hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "NondetBigint3V1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -423,7 +423,7 @@ func createNondetBigint3V1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 // V1 uses Secp256k1 curve
 // V2 uses Curve25519 curve with SECP_P = 2**255 - 19
 // V3 is similar to V1 but uses `pt0` and `pt1` for operanders where V1 and V2 use `point0` and `point1`
-func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander, secPBig big.Int) hinter.Hinter {
+func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.Reference, secPBig big.Int) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "FastEcAddAssignNewX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -658,7 +658,7 @@ func createFastEcAddAssignNewYHinter() (hinter.Hinter, error) {
 //   - `point` is the point on an elliptic curve to operate on
 //
 // `newEcDoubleSlopeV1Hint` assigns the `slope` result as `value` in the current scope
-func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
+func newEcDoubleSlopeV1Hint(point hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcDoubleSlopeV1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -740,7 +740,7 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 // This version differs from EcDoubleSlopeV1 by the name of the operander (`point` for V1, `pt` for V3)
 // and the computation of the slope : V1 uses a dedicated utility function with an additionnal check
 // while V3 executes the modular division directly
-func newEcDoubleSlopeV3Hint(point hinter.ResOperander) hinter.Hinter {
+func newEcDoubleSlopeV3Hint(point hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcDoubleSlopeV3",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -816,7 +816,7 @@ func createEcDoubleSlopeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 //
 // `newReduceHint` assigns the result as `value` in the current scope
 // This implementation is valid for ReduceV1 and ReduceV2
-func newReduceHint(x hinter.ResOperander) hinter.Hinter {
+func newReduceHint(x hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Reduce",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -867,7 +867,7 @@ func createReduceHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 //   - `x` is the packed value to be reduced
 //
 // `newReduceEd25519Hint` assigns the result as `value` in the current scope
-func newReduceEd25519Hint(x hinter.ResOperander) hinter.Hinter {
+func newReduceEd25519Hint(x hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "ReduceEd25519",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -926,7 +926,7 @@ func createReduceEd25519Hinter(resolver hintReferenceResolver) (hinter.Hinter, e
 // This implementation is valid for EcDoubleAssignNewX V1,V2 and V4, only the operander differs
 // with `point` used for V1,V2 and `pt` used for V4 and for V2 SECP_P has to be already in scope
 // contrary to V1
-func newEcDoubleAssignNewXHint(slope, point hinter.ResOperander) hinter.Hinter {
+func newEcDoubleAssignNewXHint(slope, point hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcDoubleAssignNewX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1128,7 +1128,7 @@ func createEcDoubleAssignNewYV1Hinter() (hinter.Hinter, error) {
 //   - `point1` is the second point on an elliptic curve to operate on
 //
 // `newComputeSlopeV1Hint` assigns the `slope` result as `value` in the current scope
-func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
+func newComputeSlopeV1Hint(point0, point1 hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "ComputeSlopeV1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1253,7 +1253,7 @@ func createComputeSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, 
 //
 // `newComputeSlopeV2Hint` assigns the `slope` result as `value` in the current scope
 // // This version uses Curve25519 curve with SECP_P = 2**255 - 19
-func newComputeSlopeV2Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
+func newComputeSlopeV2Hint(point0, point1 hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "ComputeSlopeV2",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1382,7 +1382,7 @@ func createComputeSlopeV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, 
 // This version differs from ComputeSlopeV1 by the name of the operanders (`point0` and `point1` for V1, `pt0` and `pt1` for V3)
 // and the computation of the slope : V1 uses a dedicated utility function with an additionnal check while V3 executes
 // the modular division directly
-func newComputeSlopeV3Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
+func newComputeSlopeV3Hint(point0, point1 hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "ComputeSlopeV3",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1490,7 +1490,7 @@ func createComputeSlopeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	return newComputeSlopeV3Hint(point0, point1), nil
 }
 
-func newEcMulInnerHint(scalar hinter.ResOperander) hinter.Hinter {
+func newEcMulInnerHint(scalar hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcMulInner",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -1566,7 +1566,7 @@ func createIsZeroNondetHinter() (hinter.Hinter, error) {
 //   - `x` is the value that will be packed and taken modulo SECP_P prime
 //
 // `newIsZeroPackHint` assigns the result as `x` in the current scope
-func newIsZeroPackHint(x hinter.ResOperander) hinter.Hinter {
+func newIsZeroPackHint(x hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsZeroPack",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1659,7 +1659,7 @@ func createIsZeroDivModHinter() (hinter.Hinter, error) {
 // `newRecoverYHint` takes 2 operanders as arguments
 //   - `x` is the x coordinate of an elliptic curve point
 //   - `p` is one of the two EC points with the given x coordinate (x, y)
-func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
+func newRecoverYHint(x, p hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "RecoverY",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1737,7 +1737,7 @@ func createRecoverYHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 //   - `m` the multiplication coefficient of Q used for seed generation
 //   - `q` an EC point used for seed generation
 //   - `s` is where the generated random EC point is written to
-func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
+func newRandomEcPointHint(p, m, q, s hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "RandomEcPoint",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1835,7 +1835,7 @@ func createRandomEcPointHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 //   - `m` the multiplication coefficient of Q used for seed generation
 //   - `q` an EC point used for seed generation
 //   - `s` is where the generated random EC point is written to
-func newChainedEcOpHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
+func newChainedEcOpHint(len, p, m, q, s hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "ChainedEcOp",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1976,7 +1976,7 @@ func createChainedEcOpHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 //   - `n` is an EC point
 //   - `x` is an EC point
 //   - `s` is an EC point
-func newEcRecoverDivModNPackedHint(n, x, s hinter.ResOperander) hinter.Hinter {
+func newEcRecoverDivModNPackedHint(n, x, s hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcRecoverDivModNPacked",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -2076,7 +2076,7 @@ func createEcRecoverDivModNPackedHinter(resolver hintReferenceResolver) (hinter.
 // `newEcRecoverSubABHint` takes 2 operanders as arguments
 //   - `a` is an EC point
 //   - `b` is an EC point
-func newEcRecoverSubABHint(a, b hinter.ResOperander) hinter.Hinter {
+func newEcRecoverSubABHint(a, b hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcRecoverSubAB",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -2151,7 +2151,7 @@ func createEcRecoverSubABHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 //   - `a` is an EC point
 //   - `b` is an EC point
 //   - `m` is an EC point
-func newEcRecoverProductModHint(a, b, m hinter.ResOperander) hinter.Hinter {
+func newEcRecoverProductModHint(a, b, m hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcRecoverProductMod",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -2291,7 +2291,7 @@ func createEcRecoverProductDivMHinter() (hinter.Hinter, error) {
 //   - `y` is the denominator
 //
 // `newBigIntPackDivModHint` assigns the result as `value` in the current scope
-func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
+func newBigIntPackDivModHint(x, y, p hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "BigIntPackDivMod",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -2417,7 +2417,7 @@ func createBigIntPackDivModHinter(resolver hintReferenceResolver) (hinter.Hinter
 // `newBigIntSafeDivHint` does not take any arguments
 //
 // `newBigIntSafeDivHint` assigns the result as `value` and sets `flag` based on the result in the current scope
-func newBigIntSafeDivHint(flag hinter.ResOperander) hinter.Hinter {
+func newBigIntSafeDivHint(flag hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "BigIntSafeDiv",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {

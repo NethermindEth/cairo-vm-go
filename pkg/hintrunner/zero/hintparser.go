@@ -140,7 +140,9 @@ func (expression DerefCastExp) Evaluate() (hinter.Reference, error) {
 	}
 
 	switch result := value.(type) {
-	case hinter.CellRefer:
+	case hinter.ApCellRef:
+		return hinter.Deref{Deref: result}, nil
+	case hinter.FpCellRef:
 		return hinter.Deref{Deref: result}, nil
 	case hinter.Deref:
 		return hinter.DoubleDeref{
@@ -176,7 +178,7 @@ func (expression ArithExp) Evaluate() (hinter.Reference, error) {
 		return nil, err
 	}
 
-	if leftResult, ok := leftExp.(hinter.CellRefer); ok {
+	if leftResult, ok := leftExp.(hinter.ApCellRef); ok {
 		// Binary Operation does not support CellRef in the left hand side
 		// so the expression has to follow the pattern:
 		// reg + off + off + ... + off
@@ -199,16 +201,35 @@ func (expression ArithExp) Evaluate() (hinter.Reference, error) {
 				off = -off
 			}
 
-			switch cellRef := leftResult.(type) {
-			case hinter.ApCellRef:
-				oldOffset := int16(cellRef)
-				leftResult = hinter.ApCellRef(off + oldOffset)
-				continue
-			case hinter.FpCellRef:
-				oldOffset := int16(cellRef)
-				leftResult = hinter.FpCellRef(off + oldOffset)
-				continue
+			oldOffset := int16(leftResult)
+			leftResult = hinter.ApCellRef(off + oldOffset)
+		}
+		return leftResult, nil
+	} else if leftResult, ok := leftExp.(hinter.FpCellRef); ok {
+		// Binary Operation does not support CellRef in the left hand side
+		// so the expression has to follow the pattern:
+		// reg + off + off + ... + off
+		for _, term := range expression.AddExp {
+			rightExp, err := term.TermExp.Evaluate()
+			if err != nil {
+				return nil, err
 			}
+			rightResult, ok := rightExp.(hinter.Immediate)
+			if !ok {
+				return nil, fmt.Errorf("invalid arithmetic expression")
+			}
+
+			off, ok := utils.Int16FromFelt((*fp.Element)(&rightResult))
+			if !ok {
+				return nil, fmt.Errorf("invalid arithmetic expression")
+			}
+
+			if term.Operator == "-" {
+				off = -off
+			}
+
+			oldOffset := int16(leftResult)
+			leftResult = hinter.FpCellRef(off + oldOffset)
 		}
 		return leftResult, nil
 	} else {
@@ -223,17 +244,11 @@ func (expression ArithExp) Evaluate() (hinter.Reference, error) {
 				return nil, err
 			}
 
-			if leftResult, ok := leftExp.(hinter.ResOperander); ok {
-				if rightResult, ok := rightExp.(hinter.ResOperander); ok {
-					leftExp = hinter.BinaryOp{
-						Operator: op,
-						Lhs:      leftResult,
-						Rhs:      rightResult,
-					}
-					continue
-				}
+			leftExp = hinter.BinaryOp{
+				Operator: op,
+				Lhs:      leftExp,
+				Rhs:      rightExp,
 			}
-			return nil, fmt.Errorf("invalid arithmetic expression")
 		}
 		return leftExp, nil
 	}
@@ -261,8 +276,8 @@ func (expression ProdExp) Evaluate() (hinter.Reference, error) {
 		return nil, err
 	}
 
-	if leftOp, ok := leftExp.(hinter.ResOperander); ok {
-		if rightOp, ok := rightExp.(hinter.ResOperander); ok {
+	if leftOp, ok := leftExp.(hinter.Reference); ok {
+		if rightOp, ok := rightExp.(hinter.Reference); ok {
 			return hinter.BinaryOp{
 				Operator: hinter.Mul,
 				Lhs:      leftOp,
@@ -292,7 +307,7 @@ func (expression Expression) Evaluate() (hinter.Reference, error) {
 	}
 }
 
-func (expression CellRefSimple) Evaluate() (hinter.CellRefer, error) {
+func (expression CellRefSimple) Evaluate() (hinter.Reference, error) {
 	if expression.RegisterOffset != nil {
 		return expression.RegisterOffset.Evaluate()
 	}
@@ -300,7 +315,7 @@ func (expression CellRefSimple) Evaluate() (hinter.CellRefer, error) {
 	return EvaluateRegister(expression.Register, 0)
 }
 
-func (expression CellRefExp) Evaluate() (hinter.CellRefer, error) {
+func (expression CellRefExp) Evaluate() (hinter.Reference, error) {
 	if expression.RegisterOffset != nil {
 		return expression.RegisterOffset.Evaluate()
 	}
@@ -308,7 +323,7 @@ func (expression CellRefExp) Evaluate() (hinter.CellRefer, error) {
 	return EvaluateRegister(expression.Register, 0)
 }
 
-func (expression RegisterOffset) Evaluate() (hinter.CellRefer, error) {
+func (expression RegisterOffset) Evaluate() (hinter.Reference, error) {
 	offsetValue, _ := expression.Offset.Evaluate()
 	offset, ok := utils.Int16FromBigInt(offsetValue)
 	if !ok {
@@ -321,7 +336,7 @@ func (expression RegisterOffset) Evaluate() (hinter.CellRefer, error) {
 	return EvaluateRegister(expression.Register, offset)
 }
 
-func EvaluateRegister(register string, offset int16) (hinter.CellRefer, error) {
+func EvaluateRegister(register string, offset int16) (hinter.Reference, error) {
 	switch register {
 	case "ap":
 		return hinter.ApCellRef(offset), nil

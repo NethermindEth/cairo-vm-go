@@ -46,7 +46,7 @@ func createUsortEnterScopeHinter() (hinter.Hinter, error) {
 //   - `output` is the pointer to the base of the output array of field elements
 //   - `outputLen` is the length of the output array
 //   - `multiplicities` is the pointer to the base of the multiplicities array of field elements
-func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.ResOperander) hinter.Hinter {
+func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortBody",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -229,7 +229,7 @@ func createUsortBodyHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 // `positions` is set to the reversed order list associated with `ids.value`
 // key in `positions_dict`
 // `newUsortVerifyHint` assigns `last_pos` and `positions` in the current scope
-func newUsortVerifyHint(value hinter.ResOperander) hinter.Hinter {
+func newUsortVerifyHint(value hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortVerify",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -280,7 +280,7 @@ func createUsortVerifyHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 //
 // `next_item_index` is set to `current_pos - last_pos` for the next iteration
 // `newUsortVerifyMultiplicityBodyHint` assigns `last_pos` in the current scope
-func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.ResOperander) hinter.Hinter {
+func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UsortVerifyMultiplicityBody",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {

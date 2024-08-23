@@ -22,7 +22,7 @@ import (
 //
 // `newVerifyZeroHint` writes the quotient of the modular division of the packed value
 // by secp256k1 prime to the memory address corresponding to `q`
-func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
+func newVerifyZeroHint(val, q hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "VerifyZero",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -99,7 +99,7 @@ func createVerifyZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 //
 // `newVerifyZeroV3Hint` writes the quotient of the modular division of the packed value
 // by Curve25519 prime to the memory address corresponding to `q`
-func newVerifyZeroV3Hint(val, q hinter.ResOperander) hinter.Hinter {
+func newVerifyZeroV3Hint(val, q hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "VerifyZeroV3",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -177,7 +177,7 @@ func createVerifyZeroV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, er
 //   - `signature_r` and `signature_s` are the r and s parts of the signature
 //
 // `newVerifyECDSASignatureHint` uses the ECDSA builtin to perform this operation
-func newVerifyECDSASignatureHint(ecdsaPtr, signature_r, signature_s hinter.ResOperander) hinter.Hinter {
+func newVerifyECDSASignatureHint(ecdsaPtr, signature_r, signature_s hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "VerifyECDSASignature",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -236,7 +236,7 @@ func createVerifyECDSASignatureHinter(resolver hintReferenceResolver) (hinter.Hi
 //   - `v` is the parity of the `y` result, it should be either 0 or 1
 //
 // `newGetPointFromXHint` assigns the y-coordinate as `value` in the current scope
-func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
+func newGetPointFromXHint(xCube, v hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "GetPointFromX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -393,7 +393,7 @@ func createDivModSafeDivHinter() (hinter.Hinter, error) {
 //   - `b` is the packed value that will divide `a`
 //
 // `newDivModNPackedDivmodV1Hint` assigns the result `res` as `value` in the current scope
-func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
+func newDivModNPackedDivmodV1Hint(a, b hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DivModNPackedDivmodV1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {

@@ -391,7 +391,7 @@ func createTestAssignHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 		return nil, err
 	}
 
-	a, ok := arg.(hinter.ResOperander)
+	a, ok := arg.(hinter.Reference)
 	if !ok {
 		return nil, fmt.Errorf("expected a ResOperander reference")
 	}

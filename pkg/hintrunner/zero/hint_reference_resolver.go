@@ -35,24 +35,24 @@ func (m *hintReferenceResolver) GetReference(name string) (hinter.Reference, err
 
 // GetResOperander returns the result of GetReference type-asserted to ResOperander.
 // If reference is not found or is not of ResOperander type, a non-nil error is returned.
-func (m *hintReferenceResolver) GetResOperander(name string) (hinter.ResOperander, error) {
+func (m *hintReferenceResolver) GetResOperander(name string) (hinter.Reference, error) {
 	ref, err := m.GetReference(name)
 	if err != nil {
 		return nil, err
 	}
-	op, ok := ref.(hinter.ResOperander)
+	op, ok := ref.(hinter.Reference)
 	if !ok {
 		return nil, fmt.Errorf("expected %s to be ResOperander (got %T)", name, ref)
 	}
 	return op, nil
 }
 
-func (m *hintReferenceResolver) GetCellRefer(name string) (hinter.CellRefer, error) {
+func (m *hintReferenceResolver) GetCellRefer(name string) (hinter.Reference, error) {
 	ref, err := m.GetReference(name)
 	if err != nil {
 		return nil, err
 	}
-	op, ok := ref.(hinter.CellRefer)
+	op, ok := ref.(hinter.Reference)
 	if !ok {
 		return nil, fmt.Errorf("expected %s to be CellRefer (got %T)", name, ref)
 	}

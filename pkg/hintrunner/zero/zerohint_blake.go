@@ -21,7 +21,7 @@ import (
 //
 // `newBlake2sAddUint256Hint` splits each part of the `uint256` in 4 `u32` and writes the result in memory
 // This hint is available in Big-Endian or Little-Endian representation
-func newBlake2sAddUint256Hint(low, high, data hinter.ResOperander, bigend bool) hinter.Hinter {
+func newBlake2sAddUint256Hint(low, high, data hinter.Reference, bigend bool) hinter.Hinter {
 	name := "Blake2sAddUint256"
 	if bigend {
 		name += "Bigend"
@@ -125,7 +125,7 @@ func createBlake2sAddUint256Hinter(resolver hintReferenceResolver, bigend bool) 
 //   - `blake2sPtrEnd` is a pointer to the address where to write the result
 //
 // There are 3 versions of Blake2sFinalize hint, this implementation corresponds to V1 and V2
-func newBlake2sFinalizeHint(blake2sPtrEnd hinter.ResOperander) hinter.Hinter {
+func newBlake2sFinalizeHint(blake2sPtrEnd hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Blake2sFinalize",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -211,7 +211,7 @@ func createBlake2sFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter,
 //
 // There are 3 versions of Blake2sFinalize hint, this is the V3 implementation, with a slightly
 // modification in the way padding is done compared to V1 and V2
-func newBlake2sFinalizeV3Hint(blake2sPtrEnd hinter.ResOperander) hinter.Hinter {
+func newBlake2sFinalizeV3Hint(blake2sPtrEnd hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Blake2sFinalizeV3",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -295,7 +295,7 @@ func createBlake2sFinalizeV3Hinter(resolver hintReferenceResolver) (hinter.Hinte
 //   - `output` should point to the middle of an instance, right after initial_state, message, t, f,
 //     which should all have a value at this point, and right before the output portion which will be
 //     written by this function.
-func newBlake2sComputeHint(output hinter.ResOperander) hinter.Hinter {
+func newBlake2sComputeHint(output hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Blake2sCompute",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -437,7 +437,7 @@ func createBlake2sComputeHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 //     written by this function.
 //   - `blake2s_start` should point to the middle of an instance, right after initial_state, message, t, f,
 //     which should all have a value at this point.
-func newBlake2sCompressHint(nBytes, output, blake2sStart hinter.ResOperander) hinter.Hinter {
+func newBlake2sCompressHint(nBytes, output, blake2sStart hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Blake2sCompress",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {

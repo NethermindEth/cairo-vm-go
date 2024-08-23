@@ -22,7 +22,7 @@ import (
 //
 // There are 2 versions of this hint, depending on whether `_block_size` should be lower than 10 or 1000
 // Corresponding hintcodes are cairoKeccakFinalizeCode and cairoKeccakFinalizeBlockSize1000Code
-func newCairoKeccakFinalizeHint(keccakPtrEnd hinter.ResOperander) hinter.Hinter {
+func newCairoKeccakFinalizeHint(keccakPtrEnd hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "CairoKeccakFinalize",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -85,7 +85,7 @@ func createCairoKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hin
 //   - `length` is the length of the data to hash
 //   - `low` is the low part of the produced hash
 //   - `high` is the high part of the produced hash
-func newUnsafeKeccakHint(data, length, high, low hinter.ResOperander) hinter.Hinter {
+func newUnsafeKeccakHint(data, length, high, low hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UnsafeKeccak",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -221,7 +221,7 @@ func createUnsafeKeccakHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 //	    start_ptr: felt*,
 //	    end_ptr: felt*,
 //	}
-func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.ResOperander) hinter.Hinter {
+func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UnsafeKeccakFinalize",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -334,7 +334,7 @@ func createUnsafeKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hi
 //   - `inputs` is the address in memory where to write Keccak arguments
 //   - `low` is the low part of the `uint256` argument for the Keccac function
 //   - `high` is the high part of the `uint256` argument for the Keccac function
-func newKeccakWriteArgsHint(inputs, low, high hinter.ResOperander) hinter.Hinter {
+func newKeccakWriteArgsHint(inputs, low, high hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "KeccakWriteArgs",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -432,7 +432,7 @@ func createKeccakWriteArgsHinter(resolver hintReferenceResolver) (hinter.Hinter,
 //
 // `newCompareKeccakFullRateInBytesHint` writes 1 or 0 to `ap` memory address depending on whether
 // `n_bytes` is greater or equal to KECCAK_FULL_RATE_IN_BYTES or not
-func newCompareKeccakFullRateInBytesHint(nBytes hinter.ResOperander) hinter.Hinter {
+func newCompareKeccakFullRateInBytesHint(nBytes hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "CompareKeccakFullRateInBytes",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -476,7 +476,7 @@ func createCompareKeccakFullRateInBytesNondetHinter(resolver hintReferenceResolv
 // `KECCAK_STATE_SIZE_FELTS` is an operander in the Python VM but it is constant that we decided to hardcode
 // `newBlockPermutationHint` reads 25 memory cells starting from `keccakPtr -  25`, and writes
 // the result of the Keccak block permutation in the next 25 memory cells, starting from `keccakPtr`
-func newBlockPermutationHint(keccakPtr hinter.ResOperander) hinter.Hinter {
+func newBlockPermutationHint(keccakPtr hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "BlockPermutation",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -553,7 +553,7 @@ func createBlockPermutationHinter(resolver hintReferenceResolver) (hinter.Hinter
 //
 // `newCompareBytesInWordHint` writes 1 or 0 to `ap` memory address depending on whether
 // `n_bytes` is lower than BYTES_IN_WORD or not
-func newCompareBytesInWordHint(nBytes hinter.ResOperander) hinter.Hinter {
+func newCompareBytesInWordHint(nBytes hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "CompareBytesInWordHint",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -598,7 +598,7 @@ func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinte
 //   - `high12` is the variable that will store the quotient of the division
 //   - `low12` is the variable that will store the remainder of the division
 //   - `inputs` is the address in memory to which we add an offset of 12 and read that value
-func newSplitInput12Hint(high12, low12, inputs hinter.ResOperander) hinter.Hinter {
+func newSplitInput12Hint(high12, low12, inputs hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitInput12",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -685,7 +685,7 @@ func createSplitInput12Hinter(resolver hintReferenceResolver) (hinter.Hinter, er
 //   - `high15` is the variable that will store the quotient of the division
 //   - `low15` is the variable that will store the remainder of the division
 //   - `inputs` is the address in memory to which we add an offset of 15 and read that value
-func newSplitInput15Hint(high15, low15, inputs hinter.ResOperander) hinter.Hinter {
+func newSplitInput15Hint(high15, low15, inputs hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitInput15",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -774,7 +774,7 @@ func createSplitInput15Hinter(resolver hintReferenceResolver) (hinter.Hinter, er
 //   - `output1Mid` is the variable that will store the remainder of the second division
 //   - `output1High` is the variable that will store the quotient of the second division
 //   - `output1` is the variable that will be divided in the first division
-func newSplitOutputMidLowHighHint(output1, output1Low, output1Mid, output1High hinter.ResOperander) hinter.Hinter {
+func newSplitOutputMidLowHighHint(output1, output1Low, output1Mid, output1High hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitOutputMidLowHigh",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -871,7 +871,7 @@ func createSplitOutputMidLowHighHinter(resolver hintReferenceResolver) (hinter.H
 //   - `output0_low` is the variable that will store the low part of `output0`
 //   - `output0_high` is the variable that will store the high part of `output0`
 //   - `output0` is the value to split
-func newSplitOutput0Hint(output0Low, output0High, output0 hinter.ResOperander) hinter.Hinter {
+func newSplitOutput0Hint(output0Low, output0High, output0 hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitOutput0",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -948,7 +948,7 @@ func createSplitOutput0Hinter(resolver hintReferenceResolver) (hinter.Hinter, er
 //   - `nWordsToCopy` is the variable that will store the quotient of the division
 //   - `nBytesLeft` is the variable that will store the remainder of the division
 //   - `nBytes` is the variable that will be divided
-func newSplitNBytesHint(nBytes, nWordsToCopy, nBytesLeft hinter.ResOperander) hinter.Hinter {
+func newSplitNBytesHint(nBytes, nWordsToCopy, nBytesLeft hinter.Reference) hinter.Hinter {
 	name := "SplitNBytes"
 	return &GenericZeroHinter{
 		Name: name,
@@ -1025,7 +1025,7 @@ func createSplitNBytesHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 //   - `high3` is the variable that will store the quotient of the division
 //   - `low3` is the variable that will store the remainder of the division
 //   - `inputs` is the address in memory to which we add an offset of 3 and read that value
-func newSplitInput3Hint(high3, low3, inputs hinter.ResOperander) hinter.Hinter {
+func newSplitInput3Hint(high3, low3, inputs hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitInput3",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -1111,7 +1111,7 @@ func createSplitInput3Hinter(resolver hintReferenceResolver) (hinter.Hinter, err
 //   - `high6` is the variable that will store the quotient of the division
 //   - `low6` is the variable that will store the remainder of the division
 //   - `inputs` is the address in memory to which we add an offset of 6 and read that value
-func newSplitInput6Hint(high6, low6, inputs hinter.ResOperander) hinter.Hinter {
+func newSplitInput6Hint(high6, low6, inputs hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitInput6",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -1198,7 +1198,7 @@ func createSplitInput6Hinter(resolver hintReferenceResolver) (hinter.Hinter, err
 //   - `high9` is the variable that will store the quotient of the division
 //   - `low9` is the variable that will store the remainder of the division
 //   - `inputs` is the address in memory to which we add an offset of 9 and read that value
-func newSplitInput9Hint(high9, low9, inputs hinter.ResOperander) hinter.Hinter {
+func newSplitInput9Hint(high9, low9, inputs hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitInput9",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {

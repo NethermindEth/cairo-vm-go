@@ -14,7 +14,7 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.Hinter {
+func newMemContinueHint(continueTarget hinter.Reference, memset bool) hinter.Hinter {
 	var name string
 	if memset {
 		name = "MemsetContinueLoop"
@@ -63,7 +63,7 @@ func newMemContinueHint(continueTarget hinter.ResOperander, memset bool) hinter.
 }
 
 func createMemContinueHinter(resolver hintReferenceResolver, memset bool) (hinter.Hinter, error) {
-	var continueTarget hinter.ResOperander
+	var continueTarget hinter.Reference
 	var err error
 	if memset {
 		continueTarget, err = resolver.GetResOperander("continue_loop")
@@ -107,7 +107,7 @@ func createVMExitScopeHinter() (hinter.Hinter, error) {
 // `newMemEnterScopeHint` takes 2 operanders as arguments
 //   - `value` is the value that is added in the new scope
 //   - `memset` specifies whether it's a memset or memcpy operation
-func newMemEnterScopeHint(value hinter.ResOperander, memset bool) hinter.Hinter {
+func newMemEnterScopeHint(value hinter.Reference, memset bool) hinter.Hinter {
 	var name string
 	if memset {
 		name = "MemsetEnterScope"
@@ -135,7 +135,7 @@ func newMemEnterScopeHint(value hinter.ResOperander, memset bool) hinter.Hinter 
 }
 
 func createMemEnterScopeHinter(resolver hintReferenceResolver, memset bool) (hinter.Hinter, error) {
-	var value hinter.ResOperander
+	var value hinter.Reference
 	var err error
 	if memset {
 		value, err = resolver.GetResOperander("n")
@@ -153,7 +153,7 @@ func createMemEnterScopeHinter(resolver hintReferenceResolver, memset bool) (hin
 // `newGetFeltBitLengthHint` takes 2 operanders as arguments
 //   - `x` is a felt variable
 //   - `bit_length` is the variable that will store the bit length of x
-func newGetFeltBitLengthHint(x, bitLength hinter.ResOperander) hinter.Hinter {
+func newGetFeltBitLengthHint(x, bitLength hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "GetFeltBitLength",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -203,7 +203,7 @@ func createGetFeltBitLengthHinter(resolver hintReferenceResolver) (hinter.Hinter
 //   - `key` is the felt key to search for in the array
 //   - `index` is the address in memory where to write the index of the found element in the array
 //   - `nElms` is the number of elements in the array
-func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.ResOperander) hinter.Hinter {
+func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "FindElement",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -384,7 +384,7 @@ func createFindElementHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 	return newFindElementHint(arrayPtr, elmSize, key, index, nElms), nil
 }
 
-func newSetAddHint(elmSize, elmPtr, setPtr, setEndPtr, index, isElmInSet hinter.ResOperander) hinter.Hinter {
+func newSetAddHint(elmSize, elmPtr, setPtr, setEndPtr, index, isElmInSet hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SetAdd",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -514,7 +514,7 @@ func createSetAddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 //   - `nElms` is the number of elements in the array
 //   - `key` is the given key that acts a threshold
 //   - `index` is the result, i.e., the index of the first element greater or equal to the given key
-func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.ResOperander) hinter.Hinter {
+func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SearchSortedLower",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -652,7 +652,7 @@ func createSearchSortedLowerHinter(resolver hintReferenceResolver) (hinter.Hinte
 //   - `elementsEnd` represents the address in memory right after the last element of the array
 //   - `elements` represents the address in memory of the first element of the array
 //   - `x` represents the offset difference used to decide the result
-func newNondetElementsOverXHint(elementsEnd, elements hinter.ResOperander, x uint64) hinter.Hinter {
+func newNondetElementsOverXHint(elementsEnd, elements hinter.Reference, x uint64) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "NondetElementsOverX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -701,7 +701,7 @@ func createNondetElementsOverXHinter(resolver hintReferenceResolver, x uint64) (
 // `newNormalizeAddressHint` takes 2 arguments
 //   - `isSmall` represents the address where the result of the comparison is stored
 //   - `addr` represents the address whose value is checked against ADDR_BOUND
-func newNormalizeAddressHint(isSmall, addr hinter.ResOperander) hinter.Hinter {
+func newNormalizeAddressHint(isSmall, addr hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "NormalizeAddress",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -758,7 +758,7 @@ func createNormalizeAddressHinter(resolver hintReferenceResolver) (hinter.Hinter
 // `newSha256AndBlake2sInputHint` takes 2 arguments
 //   - `full_word` represents the address where the result of the comparison is stored
 //   - `n_bytes` represents the value that will be compared to 4
-func newSha256AndBlake2sInputHint(fullWord, nbytes hinter.ResOperander) hinter.Hinter {
+func newSha256AndBlake2sInputHint(fullWord, nbytes hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Sha256AndBlake2sInput",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
