@@ -140,9 +140,7 @@ func (expression DerefCastExp) Evaluate() (hinter.Reference, error) {
 	}
 
 	switch result := value.(type) {
-	case hinter.ApCellRef:
-		return hinter.Deref{Deref: result}, nil
-	case hinter.FpCellRef:
+	case hinter.ApCellRef, hinter.FpCellRef:
 		return hinter.Deref{Deref: result}, nil
 	case hinter.Deref:
 		return hinter.DoubleDeref{
@@ -277,11 +275,11 @@ func (expression ProdExp) Evaluate() (hinter.Reference, error) {
 
 	switch left := leftExp.(type) {
 	case hinter.ApCellRef, hinter.FpCellRef:
-		return nil, fmt.Errorf("invalid product expression")
+		return nil, fmt.Errorf("unexpected product expression")
 	default:
 		switch right := rightExp.(type) {
 		case hinter.ApCellRef, hinter.FpCellRef:
-			return nil, fmt.Errorf("invalid product expression")
+			return nil, fmt.Errorf("unexpected product expression")
 		default:
 			return hinter.BinaryOp{
 				Operator: hinter.Mul,
