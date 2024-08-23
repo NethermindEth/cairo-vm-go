@@ -20,8 +20,6 @@ type Reference interface {
 	ApplyApTracking(hint, ref zero.ApTracking) Reference
 }
 
-// ApCellRef is a reference to a cell in the Ap register
-
 type ApCellRef int16
 
 func (ap ApCellRef) String() string {
@@ -52,8 +50,6 @@ func (v ApCellRef) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	return ApCellRef(newOffset)
 }
 
-// FpCellRef is a reference to a cell in the Fp register
-
 type FpCellRef int16
 
 func (fp FpCellRef) String() string {
@@ -80,8 +76,6 @@ func (v FpCellRef) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	// Nothing to do
 	return v
 }
-
-// Deref is a reference to a cell in memory
 
 type Deref struct {
 	Deref Reference
@@ -111,8 +105,6 @@ func (v Deref) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	v.Deref = v.Deref.ApplyApTracking(hint, ref)
 	return v
 }
-
-// DoubleDeref is a reference to a cell in memory, with an offset
 
 type DoubleDeref struct {
 	Deref  Deref
@@ -169,8 +161,6 @@ func (v DoubleDeref) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	return v
 }
 
-// Immediate is a constant value
-
 type Immediate f.Element
 
 func (imm Immediate) String() string {
@@ -203,8 +193,6 @@ const (
 	Mul
 	Sub
 )
-
-// BinaryOp is a binary operation of two References
 
 type BinaryOp struct {
 	Operator Operator
