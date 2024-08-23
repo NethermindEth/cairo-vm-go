@@ -19,6 +19,10 @@ type Reference interface {
 	ApplyApTracking(hint, ref zero.ApTracking) Reference
 }
 
+type CellRefer interface {
+	AddOffset(int16) CellRefer
+}
+
 type ApCellRef int16
 
 func (ap ApCellRef) String() string {
@@ -45,6 +49,10 @@ func (v ApCellRef) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	return ApCellRef(newOffset)
 }
 
+func (ap ApCellRef) AddOffset(offset int16) CellRefer {
+	return ApCellRef(int16(ap) + offset)
+}
+
 type FpCellRef int16
 
 func (fp FpCellRef) String() string {
@@ -66,6 +74,10 @@ func (fp FpCellRef) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 func (v FpCellRef) ApplyApTracking(hint, ref zero.ApTracking) Reference {
 	// Nothing to do
 	return v
+}
+
+func (fp FpCellRef) AddOffset(offset int16) CellRefer {
+	return FpCellRef(int16(fp) + offset)
 }
 
 type Deref struct {

@@ -176,61 +176,28 @@ func (expression ArithExp) Evaluate() (hinter.Reference, error) {
 		return nil, err
 	}
 
-	switch leftExp.(type) {
-	case hinter.ApCellRef, hinter.FpCellRef:
-		// Binary Operation does not support CellRef in the left-hand side
-		// so the expression has to follow the pattern: reg + off + off + ... + off
-
-		isAp := false
-
-		switch leftExp.(type) {
-		case hinter.ApCellRef:
-			isAp = true
-		}
-
-		var leftApResult hinter.ApCellRef
-		var leftFpResult hinter.FpCellRef
-
-		if isAp {
-			leftApResult = leftExp.(hinter.ApCellRef)
-		} else {
-			leftFpResult = leftExp.(hinter.FpCellRef)
-		}
-
+	if leftResult, ok := leftExp.(hinter.CellRefer); ok {
 		for _, term := range expression.AddExp {
 			rightExp, err := term.TermExp.Evaluate()
 			if err != nil {
 				return nil, err
 			}
-
 			rightResult, ok := rightExp.(hinter.Immediate)
 			if !ok {
 				return nil, fmt.Errorf("invalid arithmetic expression")
 			}
-
 			off, ok := utils.Int16FromFelt((*fp.Element)(&rightResult))
 			if !ok {
 				return nil, fmt.Errorf("invalid arithmetic expression")
 			}
-
 			if term.Operator == "-" {
 				off = -off
 			}
 
-			if isAp {
-				oldOffset := int16(leftApResult)
-				leftApResult = hinter.ApCellRef(off + oldOffset)
-			} else {
-				oldOffset := int16(leftFpResult)
-				leftFpResult = hinter.FpCellRef(off + oldOffset)
-			}
+			leftResult = leftResult.AddOffset(off)
 		}
-
-		if isAp {
-			return leftApResult, nil
-		}
-		return leftFpResult, nil
-	default:
+		return leftResult.(hinter.Reference), nil
+	} else {
 		for _, term := range expression.AddExp {
 			rightExp, err := term.TermExp.Evaluate()
 			if err != nil {
