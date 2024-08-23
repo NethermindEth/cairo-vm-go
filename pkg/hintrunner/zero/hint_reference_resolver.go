@@ -40,11 +40,12 @@ func (m *hintReferenceResolver) GetResOperander(name string) (hinter.Reference, 
 	if err != nil {
 		return nil, err
 	}
-	op, ok := ref.(hinter.Reference)
-	if !ok {
+	switch op := ref.(type) {
+	case hinter.ApCellRef, hinter.FpCellRef:
 		return nil, fmt.Errorf("expected %s to be ResOperander (got %T)", name, ref)
+	default:
+		return op, nil
 	}
-	return op, nil
 }
 
 func (m *hintReferenceResolver) GetCellRefer(name string) (hinter.Reference, error) {
@@ -52,11 +53,12 @@ func (m *hintReferenceResolver) GetCellRefer(name string) (hinter.Reference, err
 	if err != nil {
 		return nil, err
 	}
-	op, ok := ref.(hinter.Reference)
-	if !ok {
+	switch op := ref.(type) {
+	case hinter.Deref, hinter.DoubleDeref, hinter.BinaryOp, hinter.Immediate:
 		return nil, fmt.Errorf("expected %s to be CellRefer (got %T)", name, ref)
+	default:
+		return op, nil
 	}
-	return op, nil
 }
 
 // shortSymbolName turns a full symbol name like "a.b.c" into just "c".
