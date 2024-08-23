@@ -391,9 +391,13 @@ func createTestAssignHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 		return nil, err
 	}
 
-	a, ok := arg.(hinter.Reference)
-	if !ok {
+	var a hinter.Reference
+
+	switch v := arg.(type) {
+	case hinter.ApCellRef, hinter.FpCellRef:
 		return nil, fmt.Errorf("expected a ResOperander reference")
+	default:
+		a = v
 	}
 
 	h := &GenericZeroHinter{
