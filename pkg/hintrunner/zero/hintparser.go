@@ -197,26 +197,27 @@ func (expression ArithExp) Evaluate() (hinter.Reference, error) {
 			leftResult = leftResult.AddOffset(off)
 		}
 		return leftResult.(hinter.Reference), nil
-	} else {
-		for _, term := range expression.AddExp {
-			rightExp, err := term.TermExp.Evaluate()
-			if err != nil {
-				return nil, err
-			}
-
-			op, err := parseOperator(term.Operator)
-			if err != nil {
-				return nil, err
-			}
-
-			leftExp = hinter.BinaryOp{
-				Operator: op,
-				Lhs:      leftExp,
-				Rhs:      rightExp,
-			}
-		}
-		return leftExp, nil
 	}
+
+	for _, term := range expression.AddExp {
+		rightExp, err := term.TermExp.Evaluate()
+		if err != nil {
+			return nil, err
+		}
+
+		op, err := parseOperator(term.Operator)
+		if err != nil {
+			return nil, err
+		}
+
+		leftExp = hinter.BinaryOp{
+			Operator: op,
+			Lhs:      leftExp,
+			Rhs:      rightExp,
+		}
+	}
+
+	return leftExp, nil
 }
 
 func (expression TermExp) Evaluate() (hinter.Reference, error) {
