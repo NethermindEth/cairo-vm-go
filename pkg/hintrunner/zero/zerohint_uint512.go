@@ -72,12 +72,12 @@ func newInvModPUint512Hint(x, xInverseModP hinter.Reference) hinter.Hinter {
 }
 
 func createInvModPUint512Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
 
-	xInverseModP, err := resolver.GetResOperander("x_inverse_mod_p")
+	xInverseModP, err := resolver.GetReference("x_inverse_mod_p")
 	if err != nil {
 		return nil, err
 	}

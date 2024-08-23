@@ -66,9 +66,9 @@ func createMemContinueHinter(resolver hintReferenceResolver, memset bool) (hinte
 	var continueTarget hinter.Reference
 	var err error
 	if memset {
-		continueTarget, err = resolver.GetResOperander("continue_loop")
+		continueTarget, err = resolver.GetReference("continue_loop")
 	} else {
-		continueTarget, err = resolver.GetResOperander("continue_copying")
+		continueTarget, err = resolver.GetReference("continue_copying")
 	}
 	if err != nil {
 		return nil, err
@@ -138,9 +138,9 @@ func createMemEnterScopeHinter(resolver hintReferenceResolver, memset bool) (hin
 	var value hinter.Reference
 	var err error
 	if memset {
-		value, err = resolver.GetResOperander("n")
+		value, err = resolver.GetReference("n")
 	} else {
-		value, err = resolver.GetResOperander("len")
+		value, err = resolver.GetReference("len")
 	}
 	if err != nil {
 		return nil, err
@@ -182,12 +182,12 @@ func newGetFeltBitLengthHint(x, bitLength hinter.Reference) hinter.Hinter {
 }
 
 func createGetFeltBitLengthHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
 
-	bitLength, err := resolver.GetResOperander("bit_length")
+	bitLength, err := resolver.GetReference("bit_length")
 	if err != nil {
 		return nil, err
 	}
@@ -361,23 +361,23 @@ func newFindElementHint(arrayPtr, elmSize, key, index, nElms hinter.Reference) h
 }
 
 func createFindElementHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	arrayPtr, err := resolver.GetResOperander("array_ptr")
+	arrayPtr, err := resolver.GetReference("array_ptr")
 	if err != nil {
 		return nil, err
 	}
-	elmSize, err := resolver.GetResOperander("elm_size")
+	elmSize, err := resolver.GetReference("elm_size")
 	if err != nil {
 		return nil, err
 	}
-	key, err := resolver.GetResOperander("key")
+	key, err := resolver.GetReference("key")
 	if err != nil {
 		return nil, err
 	}
-	index, err := resolver.GetResOperander("index")
+	index, err := resolver.GetReference("index")
 	if err != nil {
 		return nil, err
 	}
-	nElms, err := resolver.GetResOperander("n_elms")
+	nElms, err := resolver.GetReference("n_elms")
 	if err != nil {
 		return nil, err
 	}
@@ -477,27 +477,27 @@ func newSetAddHint(elmSize, elmPtr, setPtr, setEndPtr, index, isElmInSet hinter.
 }
 
 func createSetAddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	elmSize, err := resolver.GetResOperander("elm_size")
+	elmSize, err := resolver.GetReference("elm_size")
 	if err != nil {
 		return nil, err
 	}
-	elmPtr, err := resolver.GetResOperander("elm_ptr")
+	elmPtr, err := resolver.GetReference("elm_ptr")
 	if err != nil {
 		return nil, err
 	}
-	setPtr, err := resolver.GetResOperander("set_ptr")
+	setPtr, err := resolver.GetReference("set_ptr")
 	if err != nil {
 		return nil, err
 	}
-	setEndPtr, err := resolver.GetResOperander("set_end_ptr")
+	setEndPtr, err := resolver.GetReference("set_end_ptr")
 	if err != nil {
 		return nil, err
 	}
-	index, err := resolver.GetResOperander("index")
+	index, err := resolver.GetReference("index")
 	if err != nil {
 		return nil, err
 	}
-	isElmInSet, err := resolver.GetResOperander("is_elm_in_set")
+	isElmInSet, err := resolver.GetReference("is_elm_in_set")
 	if err != nil {
 		return nil, err
 	}
@@ -616,27 +616,27 @@ func newSearchSortedLowerHint(arrayPtr, elmSize, nElms, key, index hinter.Refere
 }
 
 func createSearchSortedLowerHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	arrayPtr, err := resolver.GetResOperander("array_ptr")
+	arrayPtr, err := resolver.GetReference("array_ptr")
 	if err != nil {
 		return nil, err
 	}
 
-	elmSize, err := resolver.GetResOperander("elm_size")
+	elmSize, err := resolver.GetReference("elm_size")
 	if err != nil {
 		return nil, err
 	}
 
-	nElms, err := resolver.GetResOperander("n_elms")
+	nElms, err := resolver.GetReference("n_elms")
 	if err != nil {
 		return nil, err
 	}
 
-	key, err := resolver.GetResOperander("key")
+	key, err := resolver.GetReference("key")
 	if err != nil {
 		return nil, err
 	}
 
-	index, err := resolver.GetResOperander("index")
+	index, err := resolver.GetReference("index")
 	if err != nil {
 		return nil, err
 	}
@@ -683,11 +683,11 @@ func newNondetElementsOverXHint(elementsEnd, elements hinter.Reference, x uint64
 }
 
 func createNondetElementsOverXHinter(resolver hintReferenceResolver, x uint64) (hinter.Hinter, error) {
-	elementsEnd, err := resolver.GetResOperander("elements_end")
+	elementsEnd, err := resolver.GetReference("elements_end")
 	if err != nil {
 		return nil, err
 	}
-	elements, err := resolver.GetResOperander("elements")
+	elements, err := resolver.GetReference("elements")
 	if err != nil {
 		return nil, err
 	}
@@ -740,11 +740,11 @@ func newNormalizeAddressHint(isSmall, addr hinter.Reference) hinter.Hinter {
 }
 
 func createNormalizeAddressHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	isSmall, err := resolver.GetResOperander("is_small")
+	isSmall, err := resolver.GetReference("is_small")
 	if err != nil {
 		return nil, err
 	}
-	addr, err := resolver.GetResOperander("addr")
+	addr, err := resolver.GetReference("addr")
 	if err != nil {
 		return nil, err
 	}
@@ -786,12 +786,12 @@ func newSha256AndBlake2sInputHint(fullWord, nbytes hinter.Reference) hinter.Hint
 }
 
 func createSha256AndBlake2sInputHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	fullWord, err := resolver.GetResOperander("full_word")
+	fullWord, err := resolver.GetReference("full_word")
 	if err != nil {
 		return nil, err
 	}
 
-	nBytes, err := resolver.GetResOperander("n_bytes")
+	nBytes, err := resolver.GetReference("n_bytes")
 	if err != nil {
 		return nil, err
 	}

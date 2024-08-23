@@ -76,12 +76,12 @@ func newVerifyZeroHint(val, q hinter.Reference) hinter.Hinter {
 }
 
 func createVerifyZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	val, err := resolver.GetResOperander("val")
+	val, err := resolver.GetReference("val")
 	if err != nil {
 		return nil, err
 	}
 
-	q, err := resolver.GetResOperander("q")
+	q, err := resolver.GetReference("q")
 	if err != nil {
 		return nil, err
 	}
@@ -156,12 +156,12 @@ func newVerifyZeroV3Hint(val, q hinter.Reference) hinter.Hinter {
 }
 
 func createVerifyZeroV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	val, err := resolver.GetResOperander("val")
+	val, err := resolver.GetReference("val")
 	if err != nil {
 		return nil, err
 	}
 
-	q, err := resolver.GetResOperander("q")
+	q, err := resolver.GetReference("q")
 	if err != nil {
 		return nil, err
 	}
@@ -210,17 +210,17 @@ func newVerifyECDSASignatureHint(ecdsaPtr, signature_r, signature_s hinter.Refer
 }
 
 func createVerifyECDSASignatureHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	ecdsaPtr, err := resolver.GetResOperander("ecdsa_ptr")
+	ecdsaPtr, err := resolver.GetReference("ecdsa_ptr")
 	if err != nil {
 		return nil, err
 	}
 
-	signature_r, err := resolver.GetResOperander("signature_r")
+	signature_r, err := resolver.GetReference("signature_r")
 	if err != nil {
 		return nil, err
 	}
 
-	signature_s, err := resolver.GetResOperander("signature_s")
+	signature_s, err := resolver.GetReference("signature_s")
 	if err != nil {
 		return nil, err
 	}
@@ -301,12 +301,12 @@ func newGetPointFromXHint(xCube, v hinter.Reference) hinter.Hinter {
 }
 
 func createGetPointFromXHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	xCube, err := resolver.GetResOperander("x_cube")
+	xCube, err := resolver.GetReference("x_cube")
 	if err != nil {
 		return nil, err
 	}
 
-	v, err := resolver.GetResOperander("v")
+	v, err := resolver.GetReference("v")
 	if err != nil {
 		return nil, err
 	}
@@ -455,12 +455,12 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.Reference) hinter.Hinter {
 }
 
 func createDivModNPackedDivmodV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}

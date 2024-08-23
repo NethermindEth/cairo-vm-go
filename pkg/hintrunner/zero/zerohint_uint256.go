@@ -88,22 +88,22 @@ func newUint256AddHint(a, b, carryLow, carryHigh hinter.Reference) hinter.Hinter
 }
 
 func createUint256AddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
 
-	carryLow, err := resolver.GetResOperander("carry_low")
+	carryLow, err := resolver.GetReference("carry_low")
 	if err != nil {
 		return nil, err
 	}
 
-	carryHigh, err := resolver.GetResOperander("carry_high")
+	carryHigh, err := resolver.GetReference("carry_high")
 	if err != nil {
 		return nil, err
 	}
@@ -161,17 +161,17 @@ func newSplit64Hint(a, low, high hinter.Reference) hinter.Hinter {
 }
 
 func createSplit64Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	low, err := resolver.GetResOperander("low")
+	low, err := resolver.GetReference("low")
 	if err != nil {
 		return nil, err
 	}
 
-	high, err := resolver.GetResOperander("high")
+	high, err := resolver.GetReference("high")
 	if err != nil {
 		return nil, err
 	}
@@ -230,12 +230,12 @@ func newUint256SqrtHint(n, root hinter.Reference) hinter.Hinter {
 }
 
 func createUint256SqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	n, err := resolver.GetResOperander("n")
+	n, err := resolver.GetReference("n")
 	if err != nil {
 		return nil, err
 	}
 
-	root, err := resolver.GetResOperander("root")
+	root, err := resolver.GetReference("root")
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +275,7 @@ func newUint256SignedNNHint(a hinter.Reference) hinter.Hinter {
 }
 
 func createUint256SignedNNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
@@ -358,22 +358,22 @@ func newUint256UnsignedDivRemHint(a, div, quotient, remainder hinter.Reference) 
 }
 
 func createUint256UnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	div, err := resolver.GetResOperander("div")
+	div, err := resolver.GetReference("div")
 	if err != nil {
 		return nil, err
 	}
 
-	quotient, err := resolver.GetResOperander("quotient")
+	quotient, err := resolver.GetReference("quotient")
 	if err != nil {
 		return nil, err
 	}
 
-	remainder, err := resolver.GetResOperander("remainder")
+	remainder, err := resolver.GetReference("remainder")
 	if err != nil {
 		return nil, err
 	}
@@ -465,22 +465,22 @@ func newUint256UnsignedDivRemExpandedHint(a, div, quotient, remainder hinter.Ref
 }
 
 func createUint256UnsignedDivRemExpandedHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	div, err := resolver.GetResOperander("div")
+	div, err := resolver.GetReference("div")
 	if err != nil {
 		return nil, err
 	}
 
-	quotient, err := resolver.GetResOperander("quotient")
+	quotient, err := resolver.GetReference("quotient")
 	if err != nil {
 		return nil, err
 	}
 
-	remainder, err := resolver.GetResOperander("remainder")
+	remainder, err := resolver.GetReference("remainder")
 	if err != nil {
 		return nil, err
 	}
@@ -582,32 +582,32 @@ func newUint256MulDivModHint(a, b, div, quotientLow, quotientHigh, remainder hin
 }
 
 func createUint256MulDivModHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
 
-	div, err := resolver.GetResOperander("div")
+	div, err := resolver.GetReference("div")
 	if err != nil {
 		return nil, err
 	}
 
-	quotientLow, err := resolver.GetResOperander("quotient_low")
+	quotientLow, err := resolver.GetReference("quotient_low")
 	if err != nil {
 		return nil, err
 	}
 
-	quotientHigh, err := resolver.GetResOperander("quotient_high")
+	quotientHigh, err := resolver.GetReference("quotient_high")
 	if err != nil {
 		return nil, err
 	}
 
-	remainder, err := resolver.GetResOperander("remainder")
+	remainder, err := resolver.GetReference("remainder")
 	if err != nil {
 		return nil, err
 	}
@@ -682,17 +682,17 @@ func newUint256SubHint(a, b, res hinter.Reference) hinter.Hinter {
 }
 
 func createUint256SubHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := resolver.GetResOperander("res")
+	res, err := resolver.GetReference("res")
 	if err != nil {
 		return nil, err
 	}
@@ -781,11 +781,11 @@ func newSplitXXHint(x, xx hinter.Reference) hinter.Hinter {
 }
 
 func createSplitXXHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
-	xx, err := resolver.GetResOperander("xx")
+	xx, err := resolver.GetReference("xx")
 	if err != nil {
 		return nil, err
 	}
@@ -839,15 +839,15 @@ func newUint128AddHint(a, b, carry hinter.Reference) hinter.Hinter {
 }
 
 func createUint128AddHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
-	carry, err := resolver.GetResOperander("carry")
+	carry, err := resolver.GetReference("carry")
 	if err != nil {
 		return nil, err
 	}
@@ -896,11 +896,11 @@ func newUint128SqrtHint(n, root hinter.Reference) hinter.Hinter {
 }
 
 func createUint128SqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	n, err := resolver.GetResOperander("n")
+	n, err := resolver.GetReference("n")
 	if err != nil {
 		return nil, err
 	}
-	root, err := resolver.GetResOperander("root")
+	root, err := resolver.GetReference("root")
 	if err != nil {
 		return nil, err
 	}

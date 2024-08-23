@@ -54,12 +54,12 @@ func newIsLeFeltHint(a, b hinter.Reference) hinter.Hinter {
 }
 
 func createIsLeFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
@@ -105,12 +105,12 @@ func newAssertLtFeltHint(a, b hinter.Reference) hinter.Hinter {
 }
 
 func createAssertLtFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func newAssertNotZeroHint(value hinter.Reference) hinter.Hinter {
 }
 
 func createAssertNotZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func newAssertNNHint(a hinter.Reference) hinter.Hinter {
 }
 
 func createAssertNNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
@@ -239,12 +239,12 @@ func newAssertNotEqualHint(a, b hinter.Reference) hinter.Hinter {
 }
 
 func createAssertNotEqualHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
@@ -318,17 +318,17 @@ func createAssert250bitsHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	//> let low = [range_check_ptr];
 	//> let high = [range_check_ptr + 1];
 
-	low, err := resolver.GetResOperander("low")
+	low, err := resolver.GetReference("low")
 	if err != nil {
 		return nil, err
 	}
 
-	high, err := resolver.GetResOperander("high")
+	high, err := resolver.GetReference("high")
 	if err != nil {
 		return nil, err
 	}
 
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
@@ -351,17 +351,17 @@ func newAssertLeFeltHint(a, b, rangeCheckPtr hinter.Reference) hinter.Hinter {
 }
 
 func createAssertLeFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
 
-	rangeCheckPtr, err := resolver.GetResOperander("range_check_ptr")
+	rangeCheckPtr, err := resolver.GetReference("range_check_ptr")
 	if err != nil {
 		return nil, err
 	}
@@ -440,7 +440,7 @@ func newIsNNHint(a hinter.Reference) hinter.Hinter {
 }
 
 func createIsNNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
@@ -488,7 +488,7 @@ func createIsNNOutOfRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	// This hint is executed for the negative values.
 	// If the value was non-negative, it's usually handled by the IsNN hint.
 
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
@@ -536,12 +536,12 @@ func newIsPositiveHint(value, isPositive hinter.Reference) hinter.Hinter {
 }
 
 func createIsPositiveHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
 
-	isPositive, err := resolver.GetResOperander("is_positive")
+	isPositive, err := resolver.GetReference("is_positive")
 	if err != nil {
 		return nil, err
 	}
@@ -577,7 +577,7 @@ func newSplitIntAssertRangeHint(value hinter.Reference) hinter.Hinter {
 }
 
 func createSplitIntAssertRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
@@ -636,22 +636,22 @@ func newSplitIntHint(output, value, base, bound hinter.Reference) hinter.Hinter 
 }
 
 func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	output, err := resolver.GetResOperander("output")
+	output, err := resolver.GetReference("output")
 	if err != nil {
 		return nil, err
 	}
 
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
 
-	base, err := resolver.GetResOperander("base")
+	base, err := resolver.GetReference("base")
 	if err != nil {
 		return nil, err
 	}
 
-	bound, err := resolver.GetResOperander("bound")
+	bound, err := resolver.GetReference("bound")
 	if err != nil {
 		return nil, err
 	}
@@ -714,12 +714,12 @@ func newPowHint(locs, prevLocs hinter.Reference) hinter.Hinter {
 }
 
 func createPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	locs, err := resolver.GetCellRefer("locs")
+	locs, err := resolver.GetReference("locs")
 	if err != nil {
 		return nil, err
 	}
 
-	prev_locs, err := resolver.GetCellRefer("prev_locs")
+	prev_locs, err := resolver.GetReference("prev_locs")
 	if err != nil {
 		return nil, err
 	}
@@ -756,7 +756,7 @@ func newSignedPowHint(base hinter.Reference) hinter.Hinter {
 }
 
 func createSignedPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	base, err := resolver.GetResOperander("base")
+	base, err := resolver.GetReference("base")
 	if err != nil {
 		return nil, err
 	}
@@ -833,17 +833,17 @@ func newSplitFeltHint(low, high, value hinter.Reference) hinter.Hinter {
 }
 
 func createSplitFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	low, err := resolver.GetResOperander("low")
+	low, err := resolver.GetReference("low")
 	if err != nil {
 		return nil, err
 	}
 
-	high, err := resolver.GetResOperander("high")
+	high, err := resolver.GetReference("high")
 	if err != nil {
 		return nil, err
 	}
 
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
@@ -949,27 +949,27 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.Reference) hinter
 }
 
 func createSignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
 
-	div, err := resolver.GetResOperander("div")
+	div, err := resolver.GetReference("div")
 	if err != nil {
 		return nil, err
 	}
 
-	bound, err := resolver.GetResOperander("bound")
+	bound, err := resolver.GetReference("bound")
 	if err != nil {
 		return nil, err
 	}
 
-	r, err := resolver.GetResOperander("r")
+	r, err := resolver.GetReference("r")
 	if err != nil {
 		return nil, err
 	}
 
-	biased_q, err := resolver.GetResOperander("biased_q")
+	biased_q, err := resolver.GetReference("biased_q")
 	if err != nil {
 		return nil, err
 	}
@@ -1024,12 +1024,12 @@ func newSqrtHint(root, value hinter.Reference) hinter.Hinter {
 }
 
 func createSqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	root, err := resolver.GetResOperander("root")
+	root, err := resolver.GetReference("root")
 	if err != nil {
 		return nil, err
 	}
 
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
@@ -1104,22 +1104,22 @@ func newUnsignedDivRemHint(value, div, q, r hinter.Reference) hinter.Hinter {
 }
 
 func createUnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
 
-	div, err := resolver.GetResOperander("div")
+	div, err := resolver.GetReference("div")
 	if err != nil {
 		return nil, err
 	}
 
-	q, err := resolver.GetResOperander("q")
+	q, err := resolver.GetReference("q")
 	if err != nil {
 		return nil, err
 	}
 
-	r, err := resolver.GetResOperander("r")
+	r, err := resolver.GetReference("r")
 	if err != nil {
 		return nil, err
 	}
@@ -1178,11 +1178,11 @@ func newIsQuadResidueHint(x, y hinter.Reference) hinter.Hinter {
 }
 
 func createIsQuadResidueHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
-	y, err := resolver.GetResOperander("y")
+	y, err := resolver.GetReference("y")
 	if err != nil {
 		return nil, err
 	}
@@ -1228,17 +1228,17 @@ func newSplit128Hint(low, high, a hinter.Reference) hinter.Hinter {
 }
 
 func createSplit128Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	low, err := resolver.GetResOperander("low")
+	low, err := resolver.GetReference("low")
 	if err != nil {
 		return nil, err
 	}
 
-	high, err := resolver.GetResOperander("high")
+	high, err := resolver.GetReference("high")
 	if err != nil {
 		return nil, err
 	}
 
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
@@ -1284,11 +1284,11 @@ func newIs250BitsHint(is_250, addr hinter.Reference) hinter.Hinter {
 }
 
 func createIs250BitsHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	is_250, err := resolver.GetResOperander("is_250")
+	is_250, err := resolver.GetReference("is_250")
 	if err != nil {
 		return nil, err
 	}
-	addr, err := resolver.GetResOperander("addr")
+	addr, err := resolver.GetReference("addr")
 	if err != nil {
 		return nil, err
 	}

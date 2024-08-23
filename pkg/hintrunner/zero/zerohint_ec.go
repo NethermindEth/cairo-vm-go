@@ -70,17 +70,17 @@ func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.Reference) hinter.Hinte
 }
 
 func createGetHighLenHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	len_hi, err := resolver.GetResOperander("len_hi")
+	len_hi, err := resolver.GetReference("len_hi")
 	if err != nil {
 		return nil, err
 	}
 
-	scalar_u, err := resolver.GetResOperander("scalar_u")
+	scalar_u, err := resolver.GetReference("scalar_u")
 	if err != nil {
 		return nil, err
 	}
 
-	scalar_v, err := resolver.GetResOperander("scalar_v")
+	scalar_v, err := resolver.GetReference("scalar_v")
 	if err != nil {
 		return nil, err
 	}
@@ -146,12 +146,12 @@ func newBigIntToUint256Hint(low, x hinter.Reference) hinter.Hinter {
 }
 
 func createBigIntToUint256Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	low, err := resolver.GetResOperander("low")
+	low, err := resolver.GetReference("low")
 	if err != nil {
 		return nil, err
 	}
 
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +212,7 @@ func newEcNegateHint(point hinter.Reference) hinter.Hinter {
 }
 
 func createEcNegateHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	point, err := resolver.GetResOperander("point")
+	point, err := resolver.GetReference("point")
 	if err != nil {
 		return nil, err
 	}
@@ -336,12 +336,12 @@ func newDivModNPackedDivModExternalN(a, b hinter.Reference) hinter.Hinter {
 }
 
 func createDivModNPackedDivModExternalNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +401,7 @@ func newNondetBigint3V1Hint(res hinter.Reference) hinter.Hinter {
 }
 
 func createNondetBigint3V1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	res, err := resolver.GetResOperander("res")
+	res, err := resolver.GetReference("res")
 	if err != nil {
 		return nil, err
 	}
@@ -528,17 +528,17 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.Reference, secPBig 
 }
 
 func createFastEcAddAssignNewXHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	slope, err := resolver.GetResOperander("slope")
+	slope, err := resolver.GetReference("slope")
 	if err != nil {
 		return nil, err
 	}
 
-	point0, err := resolver.GetResOperander("point0")
+	point0, err := resolver.GetReference("point0")
 	if err != nil {
 		return nil, err
 	}
 
-	point1, err := resolver.GetResOperander("point1")
+	point1, err := resolver.GetReference("point1")
 	if err != nil {
 		return nil, err
 	}
@@ -552,17 +552,17 @@ func createFastEcAddAssignNewXHinter(resolver hintReferenceResolver) (hinter.Hin
 }
 
 func createFastEcAddAssignNewXV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	slope, err := resolver.GetResOperander("slope")
+	slope, err := resolver.GetReference("slope")
 	if err != nil {
 		return nil, err
 	}
 
-	point0, err := resolver.GetResOperander("point0")
+	point0, err := resolver.GetReference("point0")
 	if err != nil {
 		return nil, err
 	}
 
-	point1, err := resolver.GetResOperander("point1")
+	point1, err := resolver.GetReference("point1")
 	if err != nil {
 		return nil, err
 	}
@@ -577,17 +577,17 @@ func createFastEcAddAssignNewXV2Hinter(resolver hintReferenceResolver) (hinter.H
 }
 
 func createFastEcAddAssignNewXV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	slope, err := resolver.GetResOperander("slope")
+	slope, err := resolver.GetReference("slope")
 	if err != nil {
 		return nil, err
 	}
 
-	point0, err := resolver.GetResOperander("pt0")
+	point0, err := resolver.GetReference("pt0")
 	if err != nil {
 		return nil, err
 	}
 
-	point1, err := resolver.GetResOperander("pt1")
+	point1, err := resolver.GetReference("pt1")
 	if err != nil {
 		return nil, err
 	}
@@ -723,7 +723,7 @@ func newEcDoubleSlopeV1Hint(point hinter.Reference) hinter.Hinter {
 }
 
 func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	point, err := resolver.GetResOperander("point")
+	point, err := resolver.GetReference("point")
 	if err != nil {
 		return nil, err
 	}
@@ -801,7 +801,7 @@ func newEcDoubleSlopeV3Hint(point hinter.Reference) hinter.Hinter {
 }
 
 func createEcDoubleSlopeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	point, err := resolver.GetResOperander("pt")
+	point, err := resolver.GetReference("pt")
 	if err != nil {
 		return nil, err
 	}
@@ -853,7 +853,7 @@ func newReduceHint(x hinter.Reference) hinter.Hinter {
 }
 
 func createReduceHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
@@ -905,7 +905,7 @@ func newReduceEd25519Hint(x hinter.Reference) hinter.Hinter {
 }
 
 func createReduceEd25519Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
@@ -1028,12 +1028,12 @@ func newEcDoubleAssignNewXHint(slope, point hinter.Reference) hinter.Hinter {
 }
 
 func createEcDoubleAssignNewXV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	slope, err := resolver.GetResOperander("slope")
+	slope, err := resolver.GetReference("slope")
 	if err != nil {
 		return nil, err
 	}
 
-	point, err := resolver.GetResOperander("point")
+	point, err := resolver.GetReference("point")
 	if err != nil {
 		return nil, err
 	}
@@ -1042,12 +1042,12 @@ func createEcDoubleAssignNewXV1Hinter(resolver hintReferenceResolver) (hinter.Hi
 }
 
 func createEcDoubleAssignNewXV4Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	slope, err := resolver.GetResOperander("slope")
+	slope, err := resolver.GetReference("slope")
 	if err != nil {
 		return nil, err
 	}
 
-	point, err := resolver.GetResOperander("pt")
+	point, err := resolver.GetReference("pt")
 	if err != nil {
 		return nil, err
 	}
@@ -1056,12 +1056,12 @@ func createEcDoubleAssignNewXV4Hinter(resolver hintReferenceResolver) (hinter.Hi
 }
 
 func createEcDoubleAssignNewXV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	slope, err := resolver.GetResOperander("slope")
+	slope, err := resolver.GetReference("slope")
 	if err != nil {
 		return nil, err
 	}
 
-	point, err := resolver.GetResOperander("point")
+	point, err := resolver.GetReference("point")
 	if err != nil {
 		return nil, err
 	}
@@ -1232,12 +1232,12 @@ func newComputeSlopeV1Hint(point0, point1 hinter.Reference) hinter.Hinter {
 }
 
 func createComputeSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	point0, err := resolver.GetResOperander("point0")
+	point0, err := resolver.GetReference("point0")
 	if err != nil {
 		return nil, err
 	}
 
-	point1, err := resolver.GetResOperander("point1")
+	point1, err := resolver.GetReference("point1")
 	if err != nil {
 		return nil, err
 	}
@@ -1358,12 +1358,12 @@ func newComputeSlopeV2Hint(point0, point1 hinter.Reference) hinter.Hinter {
 }
 
 func createComputeSlopeV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	point0, err := resolver.GetResOperander("point0")
+	point0, err := resolver.GetReference("point0")
 	if err != nil {
 		return nil, err
 	}
 
-	point1, err := resolver.GetResOperander("point1")
+	point1, err := resolver.GetReference("point1")
 	if err != nil {
 		return nil, err
 	}
@@ -1477,12 +1477,12 @@ func newComputeSlopeV3Hint(point0, point1 hinter.Reference) hinter.Hinter {
 }
 
 func createComputeSlopeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	point0, err := resolver.GetResOperander("pt0")
+	point0, err := resolver.GetReference("pt0")
 	if err != nil {
 		return nil, err
 	}
 
-	point1, err := resolver.GetResOperander("pt1")
+	point1, err := resolver.GetReference("pt1")
 	if err != nil {
 		return nil, err
 	}
@@ -1515,7 +1515,7 @@ func newEcMulInnerHint(scalar hinter.Reference) hinter.Hinter {
 }
 
 func createEcMulInnerHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	scalar, err := resolver.GetResOperander("scalar")
+	scalar, err := resolver.GetReference("scalar")
 	if err != nil {
 		return nil, err
 	}
@@ -1607,7 +1607,7 @@ func newIsZeroPackHint(x hinter.Reference) hinter.Hinter {
 }
 
 func createIsZeroPackHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
@@ -1715,12 +1715,12 @@ func newRecoverYHint(x, p hinter.Reference) hinter.Hinter {
 }
 
 func createRecoverYHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
 
-	p, err := resolver.GetResOperander("p")
+	p, err := resolver.GetReference("p")
 	if err != nil {
 		return nil, err
 	}
@@ -1802,22 +1802,22 @@ func newRandomEcPointHint(p, m, q, s hinter.Reference) hinter.Hinter {
 }
 
 func createRandomEcPointHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	p, err := resolver.GetResOperander("p")
+	p, err := resolver.GetReference("p")
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := resolver.GetResOperander("m")
+	m, err := resolver.GetReference("m")
 	if err != nil {
 		return nil, err
 	}
 
-	q, err := resolver.GetResOperander("q")
+	q, err := resolver.GetReference("q")
 	if err != nil {
 		return nil, err
 	}
 
-	s, err := resolver.GetResOperander("s")
+	s, err := resolver.GetReference("s")
 	if err != nil {
 		return nil, err
 	}
@@ -1942,27 +1942,27 @@ func newChainedEcOpHint(len, p, m, q, s hinter.Reference) hinter.Hinter {
 }
 
 func createChainedEcOpHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	len, err := resolver.GetResOperander("len")
+	len, err := resolver.GetReference("len")
 	if err != nil {
 		return nil, err
 	}
 
-	p, err := resolver.GetResOperander("p")
+	p, err := resolver.GetReference("p")
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := resolver.GetResOperander("m")
+	m, err := resolver.GetReference("m")
 	if err != nil {
 		return nil, err
 	}
 
-	q, err := resolver.GetResOperander("q")
+	q, err := resolver.GetReference("q")
 	if err != nil {
 		return nil, err
 	}
 
-	s, err := resolver.GetResOperander("s")
+	s, err := resolver.GetReference("s")
 	if err != nil {
 		return nil, err
 	}
@@ -2053,17 +2053,17 @@ func newEcRecoverDivModNPackedHint(n, x, s hinter.Reference) hinter.Hinter {
 }
 
 func createEcRecoverDivModNPackedHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	n, err := resolver.GetResOperander("n")
+	n, err := resolver.GetReference("n")
 	if err != nil {
 		return nil, err
 	}
 
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
 
-	s, err := resolver.GetResOperander("s")
+	s, err := resolver.GetReference("s")
 	if err != nil {
 		return nil, err
 	}
@@ -2132,12 +2132,12 @@ func newEcRecoverSubABHint(a, b hinter.Reference) hinter.Hinter {
 }
 
 func createEcRecoverSubABHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
@@ -2230,17 +2230,17 @@ func newEcRecoverProductModHint(a, b, m hinter.Reference) hinter.Hinter {
 }
 
 func createEcRecoverProductModHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := resolver.GetResOperander("m")
+	m, err := resolver.GetReference("m")
 	if err != nil {
 		return nil, err
 	}
@@ -2394,17 +2394,17 @@ func newBigIntPackDivModHint(x, y, p hinter.Reference) hinter.Hinter {
 }
 
 func createBigIntPackDivModHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
 
-	y, err := resolver.GetResOperander("y")
+	y, err := resolver.GetReference("y")
 	if err != nil {
 		return nil, err
 	}
 
-	p, err := resolver.GetResOperander("P")
+	p, err := resolver.GetReference("P")
 	if err != nil {
 		return nil, err
 	}
@@ -2483,7 +2483,7 @@ func newBigIntSafeDivHint(flag hinter.Reference) hinter.Hinter {
 }
 
 func createBigIntSaveDivHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	flag, err := resolver.GetResOperander("flag")
+	flag, err := resolver.GetReference("flag")
 	if err != nil {
 		return nil, err
 	}

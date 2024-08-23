@@ -116,7 +116,7 @@ func newDefaultDictNewHint(defaultValue hinter.Reference) hinter.Hinter {
 }
 
 func createDefaultDictNewHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	defaultValue, err := resolver.GetResOperander("default_value")
+	defaultValue, err := resolver.GetReference("default_value")
 	if err != nil {
 		return nil, err
 	}
@@ -174,15 +174,15 @@ func newDictReadHint(dictPtr, key, value hinter.Reference) hinter.Hinter {
 }
 
 func createDictReadHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	dictPtr, err := resolver.GetResOperander("dict_ptr")
+	dictPtr, err := resolver.GetReference("dict_ptr")
 	if err != nil {
 		return nil, err
 	}
-	key, err := resolver.GetResOperander("key")
+	key, err := resolver.GetReference("key")
 	if err != nil {
 		return nil, err
 	}
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.Reference) hinter.Hinter {
 }
 
 func createDictSquashCopyDictHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	dictAccessesEnd, err := resolver.GetResOperander("dict_accesses_end")
+	dictAccessesEnd, err := resolver.GetReference("dict_accesses_end")
 	if err != nil {
 		return nil, err
 	}
@@ -325,15 +325,15 @@ func newDictWriteHint(dictPtr, key, newValue hinter.Reference) hinter.Hinter {
 }
 
 func createDictWriteHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	dictPtr, err := resolver.GetResOperander("dict_ptr")
+	dictPtr, err := resolver.GetReference("dict_ptr")
 	if err != nil {
 		return nil, err
 	}
-	key, err := resolver.GetResOperander("key")
+	key, err := resolver.GetReference("key")
 	if err != nil {
 		return nil, err
 	}
-	newValue, err := resolver.GetResOperander("new_value")
+	newValue, err := resolver.GetReference("new_value")
 	if err != nil {
 		return nil, err
 	}
@@ -412,19 +412,19 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.Reference) hinte
 }
 
 func createDictUpdateHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	dictPtr, err := resolver.GetResOperander("dict_ptr")
+	dictPtr, err := resolver.GetReference("dict_ptr")
 	if err != nil {
 		return nil, err
 	}
-	key, err := resolver.GetResOperander("key")
+	key, err := resolver.GetReference("key")
 	if err != nil {
 		return nil, err
 	}
-	newValue, err := resolver.GetResOperander("new_value")
+	newValue, err := resolver.GetReference("new_value")
 	if err != nil {
 		return nil, err
 	}
-	prevValue, err := resolver.GetResOperander("prev_value")
+	prevValue, err := resolver.GetReference("prev_value")
 	if err != nil {
 		return nil, err
 	}
@@ -574,23 +574,23 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 }
 
 func createSquashDictHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	dictAccesses, err := resolver.GetResOperander("dict_accesses")
+	dictAccesses, err := resolver.GetReference("dict_accesses")
 	if err != nil {
 		return nil, err
 	}
-	ptrDiff, err := resolver.GetResOperander("ptr_diff")
+	ptrDiff, err := resolver.GetReference("ptr_diff")
 	if err != nil {
 		return nil, err
 	}
-	nAccesses, err := resolver.GetResOperander("n_accesses")
+	nAccesses, err := resolver.GetReference("n_accesses")
 	if err != nil {
 		return nil, err
 	}
-	bigKeys, err := resolver.GetResOperander("big_keys")
+	bigKeys, err := resolver.GetReference("big_keys")
 	if err != nil {
 		return nil, err
 	}
-	firstKey, err := resolver.GetResOperander("first_key")
+	firstKey, err := resolver.GetReference("first_key")
 	if err != nil {
 		return nil, err
 	}
@@ -695,7 +695,7 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.Reference) hinter.H
 }
 
 func createSquashDictInnerCheckAccessIndexHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	loopTemps, err := resolver.GetCellRefer("loop_temps")
+	loopTemps, err := resolver.GetReference("loop_temps")
 	if err != nil {
 		return nil, err
 	}
@@ -749,7 +749,7 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.Reference) hinter.Hinte
 }
 
 func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	loopTemps, err := resolver.GetCellRefer("loop_temps")
+	loopTemps, err := resolver.GetReference("loop_temps")
 	if err != nil {
 		return nil, err
 	}
@@ -823,7 +823,7 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.Reference) hinter
 }
 
 func createSquashDictInnerFirstIterationHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	rangeCheckPtr, err := resolver.GetResOperander("range_check_ptr")
+	rangeCheckPtr, err := resolver.GetReference("range_check_ptr")
 	if err != nil {
 		return nil, err
 	}
@@ -867,7 +867,7 @@ func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.Reference) hinter.Hint
 }
 
 func createSquashDictInnerSkipLoopHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	shouldSkipLoop, err := resolver.GetResOperander("should_skip_loop")
+	shouldSkipLoop, err := resolver.GetReference("should_skip_loop")
 	if err != nil {
 		return nil, err
 	}
@@ -955,7 +955,7 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.Reference) hinter.Hinter {
 }
 
 func createSquashDictInnerNextKeyHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	nextKey, err := resolver.GetResOperander("next_key")
+	nextKey, err := resolver.GetReference("next_key")
 	if err != nil {
 		return nil, err
 	}
@@ -1001,7 +1001,7 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.Reference) hi
 }
 
 func createSquashDictInnerUsedAccessesAssertHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	nUsedAccesses, err := resolver.GetResOperander("n_used_accesses")
+	nUsedAccesses, err := resolver.GetReference("n_used_accesses")
 	if err != nil {
 		return nil, err
 	}
@@ -1041,11 +1041,11 @@ func newDictSquashUpdatePtrHint(squashedDictStart, squashedDictEnd hinter.Refere
 }
 
 func createDictSquashUpdatePtrHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	squashedDictStart, err := resolver.GetResOperander("squashed_dict_start")
+	squashedDictStart, err := resolver.GetReference("squashed_dict_start")
 	if err != nil {
 		return nil, err
 	}
-	squashedDictEnd, err := resolver.GetResOperander("squashed_dict_end")
+	squashedDictEnd, err := resolver.GetReference("squashed_dict_end")
 	if err != nil {
 		return nil, err
 	}

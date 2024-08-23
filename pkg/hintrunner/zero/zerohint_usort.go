@@ -191,27 +191,27 @@ func newUsortBodyHint(input, inputLen, output, outputLen, multiplicities hinter.
 }
 
 func createUsortBodyHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	input, err := resolver.GetResOperander("input")
+	input, err := resolver.GetReference("input")
 	if err != nil {
 		return nil, err
 	}
 
-	input_len, err := resolver.GetResOperander("input_len")
+	input_len, err := resolver.GetReference("input_len")
 	if err != nil {
 		return nil, err
 	}
 
-	output, err := resolver.GetResOperander("output")
+	output, err := resolver.GetReference("output")
 	if err != nil {
 		return nil, err
 	}
 
-	output_len, err := resolver.GetResOperander("output_len")
+	output_len, err := resolver.GetReference("output_len")
 	if err != nil {
 		return nil, err
 	}
 
-	multiplicities, err := resolver.GetResOperander("multiplicities")
+	multiplicities, err := resolver.GetReference("multiplicities")
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +262,7 @@ func newUsortVerifyHint(value hinter.Reference) hinter.Hinter {
 }
 
 func createUsortVerifyHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 
 	if err != nil {
 		return nil, err
@@ -329,7 +329,7 @@ func newUsortVerifyMultiplicityBodyHint(nextItemIndex hinter.Reference) hinter.H
 }
 
 func createUsortVerifyMultiplicityBodyHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	nextItemIndex, err := resolver.GetResOperander("next_item_index")
+	nextItemIndex, err := resolver.GetReference("next_item_index")
 	if err != nil {
 		return nil, err
 	}

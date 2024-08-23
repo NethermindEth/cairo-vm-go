@@ -70,7 +70,7 @@ func newCairoKeccakFinalizeHint(keccakPtrEnd hinter.Reference) hinter.Hinter {
 }
 
 func createCairoKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	keccakPtrEnd, err := resolver.GetResOperander("keccak_ptr_end")
+	keccakPtrEnd, err := resolver.GetReference("keccak_ptr_end")
 	if err != nil {
 		return nil, err
 	}
@@ -185,22 +185,22 @@ func newUnsafeKeccakHint(data, length, high, low hinter.Reference) hinter.Hinter
 }
 
 func createUnsafeKeccakHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	data, err := resolver.GetResOperander("data")
+	data, err := resolver.GetReference("data")
 	if err != nil {
 		return nil, err
 	}
 
-	length, err := resolver.GetResOperander("length")
+	length, err := resolver.GetReference("length")
 	if err != nil {
 		return nil, err
 	}
 
-	high, err := resolver.GetResOperander("high")
+	high, err := resolver.GetReference("high")
 	if err != nil {
 		return nil, err
 	}
 
-	low, err := resolver.GetResOperander("low")
+	low, err := resolver.GetReference("low")
 	if err != nil {
 		return nil, err
 	}
@@ -310,17 +310,17 @@ func newUnsafeKeccakFinalizeHint(keccakState, high, low hinter.Reference) hinter
 }
 
 func createUnsafeKeccakFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	keccak_state, err := resolver.GetResOperander("keccak_state")
+	keccak_state, err := resolver.GetReference("keccak_state")
 	if err != nil {
 		return nil, err
 	}
 
-	high, err := resolver.GetResOperander("high")
+	high, err := resolver.GetReference("high")
 	if err != nil {
 		return nil, err
 	}
 
-	low, err := resolver.GetResOperander("low")
+	low, err := resolver.GetReference("low")
 	if err != nil {
 		return nil, err
 	}
@@ -407,17 +407,17 @@ func newKeccakWriteArgsHint(inputs, low, high hinter.Reference) hinter.Hinter {
 }
 
 func createKeccakWriteArgsHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	inputs, err := resolver.GetResOperander("inputs")
+	inputs, err := resolver.GetReference("inputs")
 	if err != nil {
 		return nil, err
 	}
 
-	low, err := resolver.GetResOperander("low")
+	low, err := resolver.GetReference("low")
 	if err != nil {
 		return nil, err
 	}
 
-	high, err := resolver.GetResOperander("high")
+	high, err := resolver.GetReference("high")
 	if err != nil {
 		return nil, err
 	}
@@ -460,7 +460,7 @@ func newCompareKeccakFullRateInBytesHint(nBytes hinter.Reference) hinter.Hinter 
 }
 
 func createCompareKeccakFullRateInBytesNondetHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	nBytes, err := resolver.GetResOperander("n_bytes")
+	nBytes, err := resolver.GetReference("n_bytes")
 	if err != nil {
 		return nil, err
 	}
@@ -538,7 +538,7 @@ func newBlockPermutationHint(keccakPtr hinter.Reference) hinter.Hinter {
 }
 
 func createBlockPermutationHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	keccakPtr, err := resolver.GetResOperander("keccak_ptr")
+	keccakPtr, err := resolver.GetReference("keccak_ptr")
 	if err != nil {
 		return nil, err
 	}
@@ -582,7 +582,7 @@ func newCompareBytesInWordHint(nBytes hinter.Reference) hinter.Hinter {
 }
 
 func createCompareBytesInWordNondetHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	nBytes, err := resolver.GetResOperander("n_bytes")
+	nBytes, err := resolver.GetReference("n_bytes")
 	if err != nil {
 		return nil, err
 	}
@@ -659,17 +659,17 @@ func newSplitInput12Hint(high12, low12, inputs hinter.Reference) hinter.Hinter {
 }
 
 func createSplitInput12Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	high12, err := resolver.GetResOperander("high12")
+	high12, err := resolver.GetReference("high12")
 	if err != nil {
 		return nil, err
 	}
 
-	low12, err := resolver.GetResOperander("low12")
+	low12, err := resolver.GetReference("low12")
 	if err != nil {
 		return nil, err
 	}
 
-	inputs, err := resolver.GetResOperander("inputs")
+	inputs, err := resolver.GetReference("inputs")
 	if err != nil {
 		return nil, err
 	}
@@ -746,17 +746,17 @@ func newSplitInput15Hint(high15, low15, inputs hinter.Reference) hinter.Hinter {
 }
 
 func createSplitInput15Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	high15, err := resolver.GetResOperander("high15")
+	high15, err := resolver.GetReference("high15")
 	if err != nil {
 		return nil, err
 	}
 
-	low15, err := resolver.GetResOperander("low15")
+	low15, err := resolver.GetReference("low15")
 	if err != nil {
 		return nil, err
 	}
 
-	inputs, err := resolver.GetResOperander("inputs")
+	inputs, err := resolver.GetReference("inputs")
 	if err != nil {
 		return nil, err
 	}
@@ -842,22 +842,22 @@ func newSplitOutputMidLowHighHint(output1, output1Low, output1Mid, output1High h
 }
 
 func createSplitOutputMidLowHighHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	output1, err := resolver.GetResOperander("output1")
+	output1, err := resolver.GetReference("output1")
 	if err != nil {
 		return nil, err
 	}
 
-	output1Low, err := resolver.GetResOperander("output1_low")
+	output1Low, err := resolver.GetReference("output1_low")
 	if err != nil {
 		return nil, err
 	}
 
-	output1Mid, err := resolver.GetResOperander("output1_mid")
+	output1Mid, err := resolver.GetReference("output1_mid")
 	if err != nil {
 		return nil, err
 	}
 
-	output1High, err := resolver.GetResOperander("output1_high")
+	output1High, err := resolver.GetReference("output1_high")
 	if err != nil {
 		return nil, err
 	}
@@ -922,17 +922,17 @@ func newSplitOutput0Hint(output0Low, output0High, output0 hinter.Reference) hint
 }
 
 func createSplitOutput0Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	output0Low, err := resolver.GetResOperander("output0_low")
+	output0Low, err := resolver.GetReference("output0_low")
 	if err != nil {
 		return nil, err
 	}
 
-	output0High, err := resolver.GetResOperander("output0_high")
+	output0High, err := resolver.GetReference("output0_high")
 	if err != nil {
 		return nil, err
 	}
 
-	output0, err := resolver.GetResOperander("output0")
+	output0, err := resolver.GetReference("output0")
 	if err != nil {
 		return nil, err
 	}
@@ -999,17 +999,17 @@ func newSplitNBytesHint(nBytes, nWordsToCopy, nBytesLeft hinter.Reference) hinte
 }
 
 func createSplitNBytesHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	nBytes, err := resolver.GetResOperander("n_bytes")
+	nBytes, err := resolver.GetReference("n_bytes")
 	if err != nil {
 		return nil, err
 	}
 
-	nWordsToCopy, err := resolver.GetResOperander("n_words_to_copy")
+	nWordsToCopy, err := resolver.GetReference("n_words_to_copy")
 	if err != nil {
 		return nil, err
 	}
 
-	nBytesLeft, err := resolver.GetResOperander("n_bytes_left")
+	nBytesLeft, err := resolver.GetReference("n_bytes_left")
 	if err != nil {
 		return nil, err
 	}
@@ -1085,17 +1085,17 @@ func newSplitInput3Hint(high3, low3, inputs hinter.Reference) hinter.Hinter {
 }
 
 func createSplitInput3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	high3, err := resolver.GetResOperander("high3")
+	high3, err := resolver.GetReference("high3")
 	if err != nil {
 		return nil, err
 	}
 
-	low3, err := resolver.GetResOperander("low3")
+	low3, err := resolver.GetReference("low3")
 	if err != nil {
 		return nil, err
 	}
 
-	inputs, err := resolver.GetResOperander("inputs")
+	inputs, err := resolver.GetReference("inputs")
 	if err != nil {
 		return nil, err
 	}
@@ -1172,17 +1172,17 @@ func newSplitInput6Hint(high6, low6, inputs hinter.Reference) hinter.Hinter {
 }
 
 func createSplitInput6Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	high6, err := resolver.GetResOperander("high6")
+	high6, err := resolver.GetReference("high6")
 	if err != nil {
 		return nil, err
 	}
 
-	low6, err := resolver.GetResOperander("low6")
+	low6, err := resolver.GetReference("low6")
 	if err != nil {
 		return nil, err
 	}
 
-	inputs, err := resolver.GetResOperander("inputs")
+	inputs, err := resolver.GetReference("inputs")
 	if err != nil {
 		return nil, err
 	}
@@ -1259,17 +1259,17 @@ func newSplitInput9Hint(high9, low9, inputs hinter.Reference) hinter.Hinter {
 }
 
 func createSplitInput9Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	high9, err := resolver.GetResOperander("high9")
+	high9, err := resolver.GetReference("high9")
 	if err != nil {
 		return nil, err
 	}
 
-	low9, err := resolver.GetResOperander("low9")
+	low9, err := resolver.GetReference("low9")
 	if err != nil {
 		return nil, err
 	}
 
-	inputs, err := resolver.GetResOperander("inputs")
+	inputs, err := resolver.GetReference("inputs")
 	if err != nil {
 		return nil, err
 	}

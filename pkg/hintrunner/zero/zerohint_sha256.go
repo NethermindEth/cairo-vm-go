@@ -81,12 +81,12 @@ func newPackedSha256Hint(sha256Start, output hinter.Reference) hinter.Hinter {
 }
 
 func createPackedSha256Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	sha256Start, err := resolver.GetResOperander("sha256_start")
+	sha256Start, err := resolver.GetReference("sha256_start")
 	if err != nil {
 		return nil, err
 	}
 
-	output, err := resolver.GetResOperander("output")
+	output, err := resolver.GetReference("output")
 	if err != nil {
 		return nil, err
 	}
@@ -190,17 +190,17 @@ func newSha256ChunkHint(sha256Start, state, output hinter.Reference) hinter.Hint
 }
 
 func createSha256ChunkHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	sha256Start, err := resolver.GetResOperander("sha256_start")
+	sha256Start, err := resolver.GetReference("sha256_start")
 	if err != nil {
 		return nil, err
 	}
 
-	state, err := resolver.GetResOperander("state")
+	state, err := resolver.GetReference("state")
 	if err != nil {
 		return nil, err
 	}
 
-	output, err := resolver.GetResOperander("output")
+	output, err := resolver.GetReference("output")
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +286,7 @@ func newFinalizeSha256Hint(sha256PtrEnd hinter.Reference) hinter.Hinter {
 }
 
 func createFinalizeSha256Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	sha256PtrEnd, err := resolver.GetResOperander("sha256_ptr_end")
+	sha256PtrEnd, err := resolver.GetReference("sha256_ptr_end")
 	if err != nil {
 		return nil, err
 	}

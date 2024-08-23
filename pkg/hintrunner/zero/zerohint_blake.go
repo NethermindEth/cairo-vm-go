@@ -100,17 +100,17 @@ func newBlake2sAddUint256Hint(low, high, data hinter.Reference, bigend bool) hin
 }
 
 func createBlake2sAddUint256Hinter(resolver hintReferenceResolver, bigend bool) (hinter.Hinter, error) {
-	low, err := resolver.GetResOperander("low")
+	low, err := resolver.GetReference("low")
 	if err != nil {
 		return nil, err
 	}
 
-	high, err := resolver.GetResOperander("high")
+	high, err := resolver.GetReference("high")
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := resolver.GetResOperander("data")
+	data, err := resolver.GetReference("data")
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func newBlake2sFinalizeHint(blake2sPtrEnd hinter.Reference) hinter.Hinter {
 }
 
 func createBlake2sFinalizeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	blake2sPtrEnd, err := resolver.GetResOperander("blake2s_ptr_end")
+	blake2sPtrEnd, err := resolver.GetReference("blake2s_ptr_end")
 	if err != nil {
 		return nil, err
 	}
@@ -281,7 +281,7 @@ func newBlake2sFinalizeV3Hint(blake2sPtrEnd hinter.Reference) hinter.Hinter {
 }
 
 func createBlake2sFinalizeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	blake2sPtrEnd, err := resolver.GetResOperander("blake2s_ptr_end")
+	blake2sPtrEnd, err := resolver.GetReference("blake2s_ptr_end")
 	if err != nil {
 		return nil, err
 	}
@@ -421,7 +421,7 @@ func newBlake2sComputeHint(output hinter.Reference) hinter.Hinter {
 }
 
 func createBlake2sComputeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	output, err := resolver.GetResOperander("output")
+	output, err := resolver.GetReference("output")
 	if err != nil {
 		return nil, err
 	}
@@ -533,17 +533,17 @@ func newBlake2sCompressHint(nBytes, output, blake2sStart hinter.Reference) hinte
 }
 
 func createBlake2sCompressHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	nBytes, err := resolver.GetResOperander("n_bytes")
+	nBytes, err := resolver.GetReference("n_bytes")
 	if err != nil {
 		return nil, err
 	}
 
-	output, err := resolver.GetResOperander("output")
+	output, err := resolver.GetReference("output")
 	if err != nil {
 		return nil, err
 	}
 
-	blake2sStart, err := resolver.GetResOperander("blake2s_start")
+	blake2sStart, err := resolver.GetReference("blake2s_start")
 	if err != nil {
 		return nil, err
 	}
