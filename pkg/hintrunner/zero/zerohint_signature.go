@@ -22,7 +22,7 @@ import (
 //
 // `newVerifyZeroHint` writes the quotient of the modular division of the packed value
 // by secp256k1 prime to the memory address corresponding to `q`
-func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
+func newVerifyZeroHint(val, q hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "VerifyZero",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -32,7 +32,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
 			//> ids.q = q % PRIME
 
-			valAddr, err := val.GetAddress(vm)
+			valAddr, err := val.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -64,7 +64,7 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 			//> ids.q = q % PRIME
 			qBig.Mod(qBig, fp.Modulus())
 			qFelt := new(fp.Element).SetBigInt(qBig)
-			qAddr, err := q.GetAddress(vm)
+			qAddr, err := q.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -76,12 +76,12 @@ func newVerifyZeroHint(val, q hinter.ResOperander) hinter.Hinter {
 }
 
 func createVerifyZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	val, err := resolver.GetResOperander("val")
+	val, err := resolver.GetReference("val")
 	if err != nil {
 		return nil, err
 	}
 
-	q, err := resolver.GetResOperander("q")
+	q, err := resolver.GetReference("q")
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func createVerifyZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 //
 // `newVerifyZeroV3Hint` writes the quotient of the modular division of the packed value
 // by Curve25519 prime to the memory address corresponding to `q`
-func newVerifyZeroV3Hint(val, q hinter.ResOperander) hinter.Hinter {
+func newVerifyZeroV3Hint(val, q hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "VerifyZeroV3",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -110,7 +110,7 @@ func newVerifyZeroV3Hint(val, q hinter.ResOperander) hinter.Hinter {
 			//> assert r == 0, f"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}."
 			//> ids.q = q % PRIME
 
-			valAddr, err := val.GetAddress(vm)
+			valAddr, err := val.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -144,7 +144,7 @@ func newVerifyZeroV3Hint(val, q hinter.ResOperander) hinter.Hinter {
 			//> ids.q = q % PRIME
 			qBig.Mod(qBig, fp.Modulus())
 			qFelt := new(fp.Element).SetBigInt(qBig)
-			qAddr, err := q.GetAddress(vm)
+			qAddr, err := q.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -156,12 +156,12 @@ func newVerifyZeroV3Hint(val, q hinter.ResOperander) hinter.Hinter {
 }
 
 func createVerifyZeroV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	val, err := resolver.GetResOperander("val")
+	val, err := resolver.GetReference("val")
 	if err != nil {
 		return nil, err
 	}
 
-	q, err := resolver.GetResOperander("q")
+	q, err := resolver.GetReference("q")
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +177,7 @@ func createVerifyZeroV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, er
 //   - `signature_r` and `signature_s` are the r and s parts of the signature
 //
 // `newVerifyECDSASignatureHint` uses the ECDSA builtin to perform this operation
-func newVerifyECDSASignatureHint(ecdsaPtr, signature_r, signature_s hinter.ResOperander) hinter.Hinter {
+func newVerifyECDSASignatureHint(ecdsaPtr, signature_r, signature_s hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "VerifyECDSASignature",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -210,17 +210,17 @@ func newVerifyECDSASignatureHint(ecdsaPtr, signature_r, signature_s hinter.ResOp
 }
 
 func createVerifyECDSASignatureHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	ecdsaPtr, err := resolver.GetResOperander("ecdsa_ptr")
+	ecdsaPtr, err := resolver.GetReference("ecdsa_ptr")
 	if err != nil {
 		return nil, err
 	}
 
-	signature_r, err := resolver.GetResOperander("signature_r")
+	signature_r, err := resolver.GetReference("signature_r")
 	if err != nil {
 		return nil, err
 	}
 
-	signature_s, err := resolver.GetResOperander("signature_s")
+	signature_s, err := resolver.GetReference("signature_s")
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func createVerifyECDSASignatureHinter(resolver hintReferenceResolver) (hinter.Hi
 //   - `v` is the parity of the `y` result, it should be either 0 or 1
 //
 // `newGetPointFromXHint` assigns the y-coordinate as `value` in the current scope
-func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
+func newGetPointFromXHint(xCube, v hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "GetPointFromX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -249,7 +249,7 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 			//> else:
 			//>		value = (-y) % SECP_P
 
-			xCubeAddr, err := xCube.GetAddress(vm)
+			xCubeAddr, err := xCube.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -301,12 +301,12 @@ func newGetPointFromXHint(xCube, v hinter.ResOperander) hinter.Hinter {
 }
 
 func createGetPointFromXHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	xCube, err := resolver.GetResOperander("x_cube")
+	xCube, err := resolver.GetReference("x_cube")
 	if err != nil {
 		return nil, err
 	}
 
-	v, err := resolver.GetResOperander("v")
+	v, err := resolver.GetReference("v")
 	if err != nil {
 		return nil, err
 	}
@@ -393,7 +393,7 @@ func createDivModSafeDivHinter() (hinter.Hinter, error) {
 //   - `b` is the packed value that will divide `a`
 //
 // `newDivModNPackedDivmodV1Hint` assigns the result `res` as `value` in the current scope
-func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
+func newDivModNPackedDivmodV1Hint(a, b hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DivModNPackedDivmodV1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -404,12 +404,12 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 			//> b = pack(ids.b, PRIME)
 			//> value = res = div_mod(a, b, N)
 
-			aAddr, err := a.GetAddress(vm)
+			aAddr, err := a.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			bAddr, err := b.GetAddress(vm)
+			bAddr, err := b.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -455,12 +455,12 @@ func newDivModNPackedDivmodV1Hint(a, b hinter.ResOperander) hinter.Hinter {
 }
 
 func createDivModNPackedDivmodV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}

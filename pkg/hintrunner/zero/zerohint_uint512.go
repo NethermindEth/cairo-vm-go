@@ -19,7 +19,7 @@ const (
 // `newInvModPUint512Hint` takes 2 operanders as arguments
 //   - `x` is the `uint512` variable that will be inverted modulo `p`
 //   - `x_inverse_mod_p` is the variable that will store the result of the hint in memory
-func newInvModPUint512Hint(x, xInverseModP hinter.ResOperander) hinter.Hinter {
+func newInvModPUint512Hint(x, xInverseModP hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "InvModPUint512",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -62,7 +62,7 @@ func newInvModPUint512Hint(x, xInverseModP hinter.ResOperander) hinter.Hinter {
 			xInverseModPBig.Rsh(xInverseModPBig, uint(BITSHIFT))
 			xInverseModPSplit[1] = *new(fp.Element).SetBigInt(xInverseModPBig)
 
-			resAddr, err := xInverseModP.GetAddress(vm)
+			resAddr, err := xInverseModP.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -72,12 +72,12 @@ func newInvModPUint512Hint(x, xInverseModP hinter.ResOperander) hinter.Hinter {
 }
 
 func createInvModPUint512Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
 
-	xInverseModP, err := resolver.GetResOperander("x_inverse_mod_p")
+	xInverseModP, err := resolver.GetReference("x_inverse_mod_p")
 	if err != nil {
 		return nil, err
 	}

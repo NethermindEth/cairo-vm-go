@@ -78,7 +78,7 @@ func createDictNewHinter() (hinter.Hinter, error) {
 // `newDefaultDictNewHint` takes 1 operander as argument
 //   - `default_value` variable will be the default value
 //     returned for keys not present in the dictionary
-func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
+func newDefaultDictNewHint(defaultValue hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DefaultDictNew",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -116,7 +116,7 @@ func newDefaultDictNewHint(defaultValue hinter.ResOperander) hinter.Hinter {
 }
 
 func createDefaultDictNewHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	defaultValue, err := resolver.GetResOperander("default_value")
+	defaultValue, err := resolver.GetReference("default_value")
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func createDefaultDictNewHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 //   - `dictPtr` variable will be pointer to the dictionary to read from
 //   - `key` variable represents the key we are accessing the dictionary with
 //   - `value` variable will hold the value of the dictionary stored at key after the hint is run
-func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
+func newDictReadHint(dictPtr, key, value hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DictRead",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -158,7 +158,7 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 			if err != nil {
 				return err
 			}
-			valueAddr, err := value.GetAddress(vm)
+			valueAddr, err := value.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -174,15 +174,15 @@ func newDictReadHint(dictPtr, key, value hinter.ResOperander) hinter.Hinter {
 }
 
 func createDictReadHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	dictPtr, err := resolver.GetResOperander("dict_ptr")
+	dictPtr, err := resolver.GetReference("dict_ptr")
 	if err != nil {
 		return nil, err
 	}
-	key, err := resolver.GetResOperander("key")
+	key, err := resolver.GetReference("key")
 	if err != nil {
 		return nil, err
 	}
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func createDictReadHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 //   - `dict_accesses_end` variable is a memory address that allows access to the dictionary
 //
 // `newDictSquashCopyDictHint`assigns `initial_dict` to the retrieved dictionary in the current scope
-func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinter {
+func newDictSquashCopyDictHint(dictAccessesEnd hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DictSquashCopyDict",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -253,7 +253,7 @@ func newDictSquashCopyDictHint(dictAccessesEnd hinter.ResOperander) hinter.Hinte
 }
 
 func createDictSquashCopyDictHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	dictAccessesEnd, err := resolver.GetResOperander("dict_accesses_end")
+	dictAccessesEnd, err := resolver.GetReference("dict_accesses_end")
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +268,7 @@ func createDictSquashCopyDictHinter(resolver hintReferenceResolver) (hinter.Hint
 //   - `dictPtr` variable will be pointer to the dictionary to update
 //   - `key` variable will be the key whose value is updated in the dictionary
 //   - `newValue` variable will be the new value for given key in the dictionary
-func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter {
+func newDictWriteHint(dictPtr, key, newValue hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DictWrite",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -325,15 +325,15 @@ func newDictWriteHint(dictPtr, key, newValue hinter.ResOperander) hinter.Hinter 
 }
 
 func createDictWriteHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	dictPtr, err := resolver.GetResOperander("dict_ptr")
+	dictPtr, err := resolver.GetReference("dict_ptr")
 	if err != nil {
 		return nil, err
 	}
-	key, err := resolver.GetResOperander("key")
+	key, err := resolver.GetReference("key")
 	if err != nil {
 		return nil, err
 	}
-	newValue, err := resolver.GetResOperander("new_value")
+	newValue, err := resolver.GetReference("new_value")
 	if err != nil {
 		return nil, err
 	}
@@ -349,7 +349,7 @@ func createDictWriteHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 //   - `newValue` variable will be the new value for given `key` in the dictionary
 //   - `prevValue` variable will be the old value for given `key` in the dictionary
 //     which will be asserted before the update
-func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hinter.Hinter {
+func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DictUpdate",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -412,19 +412,19 @@ func newDictUpdateHint(dictPtr, key, newValue, prevValue hinter.ResOperander) hi
 }
 
 func createDictUpdateHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	dictPtr, err := resolver.GetResOperander("dict_ptr")
+	dictPtr, err := resolver.GetReference("dict_ptr")
 	if err != nil {
 		return nil, err
 	}
-	key, err := resolver.GetResOperander("key")
+	key, err := resolver.GetReference("key")
 	if err != nil {
 		return nil, err
 	}
-	newValue, err := resolver.GetResOperander("new_value")
+	newValue, err := resolver.GetReference("new_value")
 	if err != nil {
 		return nil, err
 	}
-	prevValue, err := resolver.GetResOperander("prev_value")
+	prevValue, err := resolver.GetReference("prev_value")
 	if err != nil {
 		return nil, err
 	}
@@ -445,7 +445,7 @@ func createDictUpdateHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 //   - `nAccesses` variable will have a value indicating the number of times the dict was accessed
 //   - `bigKeys` variable will be written a value of 1 if the keys used are bigger than the range_check and 0 otherwise
 //   - `firstKey` variable will be written the value of the largest used key after the hint is run
-func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinter.ResOperander) hinter.Hinter {
+func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SquashDict",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -530,7 +530,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			})
 
 			//> ids.big_keys = 1 if keys[0] >= range_check_builtin.bound else 0
-			bigKeysAddr, err := bigKeys.GetAddress(vm)
+			bigKeysAddr, err := bigKeys.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -546,7 +546,7 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 			}
 
 			//> ids.first_key = key = keys.pop()
-			firstKeyAddr, err := firstKey.GetAddress(vm)
+			firstKeyAddr, err := firstKey.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -574,23 +574,23 @@ func newSquashDictHint(dictAccesses, ptrDiff, nAccesses, bigKeys, firstKey hinte
 }
 
 func createSquashDictHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	dictAccesses, err := resolver.GetResOperander("dict_accesses")
+	dictAccesses, err := resolver.GetReference("dict_accesses")
 	if err != nil {
 		return nil, err
 	}
-	ptrDiff, err := resolver.GetResOperander("ptr_diff")
+	ptrDiff, err := resolver.GetReference("ptr_diff")
 	if err != nil {
 		return nil, err
 	}
-	nAccesses, err := resolver.GetResOperander("n_accesses")
+	nAccesses, err := resolver.GetReference("n_accesses")
 	if err != nil {
 		return nil, err
 	}
-	bigKeys, err := resolver.GetResOperander("big_keys")
+	bigKeys, err := resolver.GetReference("big_keys")
 	if err != nil {
 		return nil, err
 	}
-	firstKey, err := resolver.GetResOperander("first_key")
+	firstKey, err := resolver.GetReference("first_key")
 	if err != nil {
 		return nil, err
 	}
@@ -644,7 +644,7 @@ func createSquashDictInnerAssertLenKeysHinter() (hinter.Hinter, error) {
 // `newSquashDictInnerCheckAccessIndexHint` writes to the first field `index_delta_minus1`
 // of the `loop_temps` struct the result of `new_access_index - current_access_index - 1`
 // and assigns `new_access_index` to `current_access_index` in the scope
-func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinter.Hinter {
+func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SquashDictInnerCheckAccessIndex",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -677,7 +677,7 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 				return err
 			}
 
-			loopTempsAddr, err := loopTemps.GetAddress(vm)
+			loopTempsAddr, err := loopTemps.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -695,7 +695,7 @@ func newSquashDictInnerCheckAccessIndexHint(loopTemps hinter.ResOperander) hinte
 }
 
 func createSquashDictInnerCheckAccessIndexHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	loopTemps, err := resolver.GetCellRefer("loop_temps")
+	loopTemps, err := resolver.GetReference("loop_temps")
 	if err != nil {
 		return nil, err
 	}
@@ -721,7 +721,7 @@ func createSquashDictInnerCheckAccessIndexHinter(resolver hintReferenceResolver)
 //
 // `newSquashDictInnerContinueLoopHint`writes 0 or 1 in the `should_continue` field
 // depending on whether the `current_access_indices` array contains items or not
-func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hinter {
+func newSquashDictInnerContinueLoopHint(loopTemps hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SquashDictInnerContinueLoop",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -732,7 +732,7 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hi
 				return err
 			}
 
-			loopTempsAddr, err := loopTemps.GetAddress(vm)
+			loopTempsAddr, err := loopTemps.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -749,7 +749,7 @@ func newSquashDictInnerContinueLoopHint(loopTemps hinter.ResOperander) hinter.Hi
 }
 
 func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	loopTemps, err := resolver.GetCellRefer("loop_temps")
+	loopTemps, err := resolver.GetReference("loop_temps")
 	if err != nil {
 		return nil, err
 	}
@@ -768,7 +768,7 @@ func createSquashDictInnerContinueLoopHinter(resolver hintReferenceResolver) (hi
 //
 // `newSquashDictInnerFirstIterationHint`writes `current_access_index` at `rangeCheckPtr`
 // offset in the execution segment of memory
-func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hinter.Hinter {
+func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SquashDictInnerFirstIteration",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -823,7 +823,7 @@ func newSquashDictInnerFirstIterationHint(rangeCheckPtr hinter.ResOperander) hin
 }
 
 func createSquashDictInnerFirstIterationHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	rangeCheckPtr, err := resolver.GetResOperander("range_check_ptr")
+	rangeCheckPtr, err := resolver.GetReference("range_check_ptr")
 	if err != nil {
 		return nil, err
 	}
@@ -839,7 +839,7 @@ func createSquashDictInnerFirstIterationHinter(resolver hintReferenceResolver) (
 //
 // `newSquashDictInnerSkipLoopHint` writes 0 or 1 in the `should_skip_loop`variable
 // depending on whether the `current_access_indices` array contains items or not
-func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.ResOperander) hinter.Hinter {
+func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SquashDictInnerSkipLoop",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -850,7 +850,7 @@ func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.ResOperander) hinter.H
 				return err
 			}
 
-			shouldSkipLoopAddr, err := shouldSkipLoop.GetAddress(vm)
+			shouldSkipLoopAddr, err := shouldSkipLoop.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -867,7 +867,7 @@ func newSquashDictInnerSkipLoopHint(shouldSkipLoop hinter.ResOperander) hinter.H
 }
 
 func createSquashDictInnerSkipLoopHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	shouldSkipLoop, err := resolver.GetResOperander("should_skip_loop")
+	shouldSkipLoop, err := resolver.GetReference("should_skip_loop")
 	if err != nil {
 		return nil, err
 	}
@@ -911,7 +911,7 @@ func createSquashDictInnerLenAssertHinter() (hinter.Hinter, error) {
 //
 // `newSquashDictInnerNextKeyHint` takes 1 operander as argument
 //   - `next_key` variable will be assigned to the next key in `keys`
-func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
+func newSquashDictInnerNextKeyHint(nextKey hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SquashDictInnerNextKey",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -944,7 +944,7 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
 
 			newKeyMemoryValue := memory.MemoryValueFromFieldElement(&newKey)
 
-			addrNextKey, err := nextKey.GetAddress(vm)
+			addrNextKey, err := nextKey.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -955,7 +955,7 @@ func newSquashDictInnerNextKeyHint(nextKey hinter.ResOperander) hinter.Hinter {
 }
 
 func createSquashDictInnerNextKeyHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	nextKey, err := resolver.GetResOperander("next_key")
+	nextKey, err := resolver.GetReference("next_key")
 	if err != nil {
 		return nil, err
 	}
@@ -968,7 +968,7 @@ func createSquashDictInnerNextKeyHinter(resolver hintReferenceResolver) (hinter.
 //
 // `newSquashDictInnerUsedAccessesAssertHint` takes one operander as argument
 //   - `nUsedAccesses` represents the number of used accesses for a given key
-func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander) hinter.Hinter {
+func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SquashDictInnerUsedAccessesAssert",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1001,7 +1001,7 @@ func newSquashDictInnerUsedAccessesAssertHint(nUsedAccesses hinter.ResOperander)
 }
 
 func createSquashDictInnerUsedAccessesAssertHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	nUsedAccesses, err := resolver.GetResOperander("n_used_accesses")
+	nUsedAccesses, err := resolver.GetReference("n_used_accesses")
 	if err != nil {
 		return nil, err
 	}
@@ -1014,7 +1014,7 @@ func createSquashDictInnerUsedAccessesAssertHinter(resolver hintReferenceResolve
 // `newDictSquashUpdatePtrHint` takes two operanders as arguments
 //   - `squashed_dict_start` pointer to the dictionary whose current_ptr should be updated
 //   - `squashed_dict_end` new current_ptr of the dictionary
-func newDictSquashUpdatePtrHint(squashedDictStart, squashedDictEnd hinter.ResOperander) hinter.Hinter {
+func newDictSquashUpdatePtrHint(squashedDictStart, squashedDictEnd hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DictSquashUpdatePtr",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1041,11 +1041,11 @@ func newDictSquashUpdatePtrHint(squashedDictStart, squashedDictEnd hinter.ResOpe
 }
 
 func createDictSquashUpdatePtrHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	squashedDictStart, err := resolver.GetResOperander("squashed_dict_start")
+	squashedDictStart, err := resolver.GetReference("squashed_dict_start")
 	if err != nil {
 		return nil, err
 	}
-	squashedDictEnd, err := resolver.GetResOperander("squashed_dict_end")
+	squashedDictEnd, err := resolver.GetReference("squashed_dict_end")
 	if err != nil {
 		return nil, err
 	}
