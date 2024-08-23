@@ -11,15 +11,16 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-//
-// All CellRef definitions
-
-type CellRefer interface {
+type Reference interface {
 	fmt.Stringer
 
-	ApplyApTracking(hint, ref zero.ApTracking) Reference
 	Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error)
+	GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error)
+	Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error)
+	ApplyApTracking(hint, ref zero.ApTracking) Reference
 }
+
+// ApCellRef is a reference to a cell in the Ap register
 
 type ApCellRef int16
 
@@ -35,6 +36,24 @@ func (ap ApCellRef) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
 	return mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
 }
 
+func (ap ApCellRef) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+	return mem.UnknownAddress, fmt.Errorf("cannot get an address from ApCellRef %s", ap)
+}
+
+func (ap ApCellRef) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
+	return mem.UnknownValue, fmt.Errorf("cannot resolve ApCellRef %s", ap)
+}
+
+func (v ApCellRef) ApplyApTracking(hint, ref zero.ApTracking) Reference {
+	if hint.Group != ref.Group {
+		return v // Group mismatched: nothing to adjust
+	}
+	newOffset := v - ApCellRef(hint.Offset-ref.Offset)
+	return ApCellRef(newOffset)
+}
+
+// FpCellRef is a reference to a cell in the Fp register
+
 type FpCellRef int16
 
 func (fp FpCellRef) String() string {
@@ -49,23 +68,35 @@ func (fp FpCellRef) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
 	return mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: res}, nil
 }
 
-//
-// All ResOperand definitions
-
-type ResOperander interface {
-	fmt.Stringer
-
-	ApplyApTracking(hint, ref zero.ApTracking) Reference
-	GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error)
-	Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error)
+func (fp FpCellRef) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+	return mem.UnknownAddress, fmt.Errorf("cannot get an address from FpCellRef %s", fp)
 }
 
+func (fp FpCellRef) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
+	return mem.UnknownValue, fmt.Errorf("cannot resolve FpCellRef %s", fp)
+}
+
+func (v FpCellRef) ApplyApTracking(hint, ref zero.ApTracking) Reference {
+	// Nothing to do
+	return v
+}
+
+// Deref is a reference to a cell in memory
+
 type Deref struct {
-	Deref CellRefer
+	Deref Reference
 }
 
 func (deref Deref) String() string {
 	return "Deref"
+}
+
+func (deref Deref) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+	return mem.UnknownAddress, fmt.Errorf("cannot get an address from a Deref operand")
+}
+
+func (deref Deref) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+	return deref.Deref.Get(vm)
 }
 
 func (deref Deref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
@@ -76,9 +107,12 @@ func (deref Deref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 	return vm.Memory.ReadFromAddress(&address)
 }
 
-func (deref Deref) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
-	return deref.Deref.Get(vm)
+func (v Deref) ApplyApTracking(hint, ref zero.ApTracking) Reference {
+	v.Deref = v.Deref.ApplyApTracking(hint, ref)
+	return v
 }
+
+// DoubleDeref is a reference to a cell in memory, with an offset
 
 type DoubleDeref struct {
 	Deref  Deref
@@ -89,17 +123,8 @@ func (dderef DoubleDeref) String() string {
 	return "DoubleDeref"
 }
 
-func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
-	addr, err := dderef.GetAddress(vm)
-	if err != nil {
-		return mem.UnknownValue, err
-	}
-	value, err := vm.Memory.ReadFromAddress(&addr)
-	if err != nil {
-		return mem.UnknownValue, fmt.Errorf("read result at %s: %w", addr, err)
-	}
-
-	return value, nil
+func (dderef DoubleDeref) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+	return mem.UnknownAddress, fmt.Errorf("cannot get an address from a DoubleDeref operand")
 }
 
 func (dderef DoubleDeref) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
@@ -126,10 +151,38 @@ func (dderef DoubleDeref) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, 
 	return resAddr, nil
 }
 
+func (dderef DoubleDeref) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
+	addr, err := dderef.GetAddress(vm)
+	if err != nil {
+		return mem.UnknownValue, err
+	}
+	value, err := vm.Memory.ReadFromAddress(&addr)
+	if err != nil {
+		return mem.UnknownValue, fmt.Errorf("read result at %s: %w", addr, err)
+	}
+
+	return value, nil
+}
+
+func (v DoubleDeref) ApplyApTracking(hint, ref zero.ApTracking) Reference {
+	v.Deref = v.Deref.ApplyApTracking(hint, ref).(Deref)
+	return v
+}
+
+// Immediate is a constant value
+
 type Immediate f.Element
 
 func (imm Immediate) String() string {
 	return "Immediate"
+}
+
+func (imm Immediate) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+	return mem.UnknownAddress, fmt.Errorf("cannot get an address from an immediate value %s", imm)
+}
+
+func (imm Immediate) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+	return mem.UnknownAddress, fmt.Errorf("cannot get an address from an immediate value %s", imm)
 }
 
 // Should we respect that, or go straight to felt?
@@ -138,8 +191,9 @@ func (imm Immediate) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 	return mem.MemoryValueFromFieldElement(&felt), nil
 }
 
-func (imm Immediate) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
-	return mem.UnknownAddress, fmt.Errorf("cannot get an address from an immediate value %s", imm)
+func (v Immediate) ApplyApTracking(hint, ref zero.ApTracking) Reference {
+	// Nothing to do
+	return v
 }
 
 type Operator uint8
@@ -150,14 +204,25 @@ const (
 	Sub
 )
 
+// BinaryOp is a binary operation of two References
+
 type BinaryOp struct {
 	Operator Operator
-	Lhs      ResOperander
-	Rhs      ResOperander
+	Lhs      Reference
+	Rhs      Reference
 }
 
 func (bop BinaryOp) String() string {
 	return "BinaryOperator"
+}
+
+func (bop BinaryOp) Get(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+	return mem.UnknownAddress, fmt.Errorf("cannot get an address from a Binary Operation operand")
+}
+
+func (bop BinaryOp) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
+	// TODO: Check if it's possible in some cases such as Deref + Immediate
+	return mem.UnknownAddress, fmt.Errorf("cannot get an address from a Binary Operation operand")
 }
 
 func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
@@ -185,45 +250,8 @@ func (bop BinaryOp) Resolve(vm *VM.VirtualMachine) (mem.MemoryValue, error) {
 	}
 }
 
-func (bop BinaryOp) GetAddress(vm *VM.VirtualMachine) (mem.MemoryAddress, error) {
-	// TODO: Check if it's possible in some cases such as Deref + Immediate
-	return mem.UnknownAddress, fmt.Errorf("cannot get an address from a Binary Operation operand")
-}
-
-type Reference interface {
-	ApplyApTracking(hint, ref zero.ApTracking) Reference
-}
-
-func (v ApCellRef) ApplyApTracking(hint, ref zero.ApTracking) Reference {
-	if hint.Group != ref.Group {
-		return v // Group mismatched: nothing to adjust
-	}
-	newOffset := v - ApCellRef(hint.Offset-ref.Offset)
-	return ApCellRef(newOffset)
-}
-
-func (v FpCellRef) ApplyApTracking(hint, ref zero.ApTracking) Reference {
-	// Nothing to do
-	return v
-}
-
-func (v Deref) ApplyApTracking(hint, ref zero.ApTracking) Reference {
-	v.Deref = v.Deref.ApplyApTracking(hint, ref).(CellRefer)
-	return v
-}
-
-func (v DoubleDeref) ApplyApTracking(hint, ref zero.ApTracking) Reference {
-	v.Deref = v.Deref.ApplyApTracking(hint, ref).(Deref)
-	return v
-}
-
 func (v BinaryOp) ApplyApTracking(hint, ref zero.ApTracking) Reference {
-	v.Lhs = v.Lhs.ApplyApTracking(hint, ref).(ResOperander)
-	v.Rhs = v.Rhs.ApplyApTracking(hint, ref).(ResOperander)
-	return v
-}
-
-func (v Immediate) ApplyApTracking(hint, ref zero.ApTracking) Reference {
-	// Nothing to do
+	v.Lhs = v.Lhs.ApplyApTracking(hint, ref)
+	v.Rhs = v.Rhs.ApplyApTracking(hint, ref)
 	return v
 }
