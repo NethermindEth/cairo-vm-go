@@ -40,11 +40,11 @@ func (m *hintReferenceResolver) GetResOperander(name string) (hinter.Reference, 
 	if err != nil {
 		return nil, err
 	}
-	switch op := ref.(type) {
+	switch ref.(type) {
 	case hinter.ApCellRef, hinter.FpCellRef:
 		return nil, fmt.Errorf("expected %s to be ResOperander (got %T)", name, ref)
 	default:
-		return op, nil
+		return ref, nil
 	}
 }
 
@@ -53,11 +53,11 @@ func (m *hintReferenceResolver) GetCellRefer(name string) (hinter.Reference, err
 	if err != nil {
 		return nil, err
 	}
-	switch op := ref.(type) {
+	switch ref.(type) {
 	case hinter.Deref, hinter.DoubleDeref, hinter.BinaryOp, hinter.Immediate:
 		return nil, fmt.Errorf("expected %s to be CellRefer (got %T)", name, ref)
 	default:
-		return op, nil
+		return ref, nil
 	}
 }
 

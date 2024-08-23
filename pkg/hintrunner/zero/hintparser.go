@@ -273,21 +273,11 @@ func (expression ProdExp) Evaluate() (hinter.Reference, error) {
 		return nil, err
 	}
 
-	switch left := leftExp.(type) {
-	case hinter.ApCellRef, hinter.FpCellRef:
-		return nil, fmt.Errorf("unexpected product expression")
-	default:
-		switch right := rightExp.(type) {
-		case hinter.ApCellRef, hinter.FpCellRef:
-			return nil, fmt.Errorf("unexpected product expression")
-		default:
-			return hinter.BinaryOp{
-				Operator: hinter.Mul,
-				Lhs:      left,
-				Rhs:      right,
-			}, nil
-		}
-	}
+	return hinter.BinaryOp{
+		Operator: hinter.Mul,
+		Lhs:      leftExp,
+		Rhs:      rightExp,
+	}, nil
 }
 
 func (expression Expression) Evaluate() (hinter.Reference, error) {
