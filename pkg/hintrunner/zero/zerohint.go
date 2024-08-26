@@ -391,16 +391,11 @@ func createTestAssignHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 		return nil, err
 	}
 
-	a, ok := arg.(hinter.ResOperander)
-	if !ok {
-		return nil, fmt.Errorf("expected a ResOperander reference")
-	}
-
 	h := &GenericZeroHinter{
 		Name: "TestAssign",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			apAddr := vm.Context.AddressAp()
-			v, err := a.Resolve(vm)
+			v, err := arg.Resolve(vm)
 			if err != nil {
 				return err
 			}

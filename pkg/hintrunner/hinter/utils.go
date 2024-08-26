@@ -8,7 +8,7 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func ResolveAsAddress(vm *VM.VirtualMachine, op ResOperander) (*mem.MemoryAddress, error) {
+func ResolveAsAddress(vm *VM.VirtualMachine, op Reference) (*mem.MemoryAddress, error) {
 	mv, err := op.Resolve(vm)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
@@ -22,7 +22,7 @@ func ResolveAsAddress(vm *VM.VirtualMachine, op ResOperander) (*mem.MemoryAddres
 	return addr, nil
 }
 
-func ResolveAsFelt(vm *VM.VirtualMachine, op ResOperander) (*f.Element, error) {
+func ResolveAsFelt(vm *VM.VirtualMachine, op Reference) (*f.Element, error) {
 	mv, err := op.Resolve(vm)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
@@ -36,7 +36,7 @@ func ResolveAsFelt(vm *VM.VirtualMachine, op ResOperander) (*f.Element, error) {
 	return felt, nil
 }
 
-func ResolveAsUint64(vm *VM.VirtualMachine, op ResOperander) (uint64, error) {
+func ResolveAsUint64(vm *VM.VirtualMachine, op Reference) (uint64, error) {
 	mv, err := op.Resolve(vm)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)

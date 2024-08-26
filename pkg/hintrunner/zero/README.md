@@ -36,7 +36,7 @@ type Hinter interface {
 so to make this process easier we've created a generic structure `GenericZeroHinter` that will allow you to pass on all the information needed. It will look something like this:
 
 ```
-func newAssert250bitsHint(low, high, value hinter.ResOperander) hinter.Hinter {
+func newAssert250bitsHint(low, high, value hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Assert250bits",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {

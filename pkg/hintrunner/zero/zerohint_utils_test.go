@@ -93,7 +93,7 @@ func valueAtAddressEquals(addr memory.MemoryAddress, expected *fp.Element) func(
 func varValueEquals(varName string, expected *fp.Element) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
 		o := ctx.operanders[varName]
-		addr, err := o.GetAddress(ctx.vm)
+		addr, err := o.Get(ctx.vm)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -118,7 +118,7 @@ func allVarValueEquals(expectedValues map[string]*fp.Element) func(t *testing.T,
 func consecutiveVarAddrResolvedValueEquals(varName string, expectedValues []*fp.Element) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
 		o := ctx.operanders[varName]
-		addr, err := o.GetAddress(ctx.vm)
+		addr, err := o.Get(ctx.vm)
 		require.NoError(t, err)
 		actualAddress, err := ctx.vm.Memory.ReadFromAddressAsAddress(&addr)
 		require.NoError(t, err)
@@ -134,7 +134,7 @@ func consecutiveVarAddrResolvedValueEquals(varName string, expectedValues []*fp.
 func consecutiveVarValueEquals(varName string, expectedValues []*fp.Element) func(t *testing.T, ctx *hintTestContext) {
 	return func(t *testing.T, ctx *hintTestContext) {
 		o := ctx.operanders[varName]
-		addr, err := o.GetAddress(ctx.vm)
+		addr, err := o.Get(ctx.vm)
 		if err != nil {
 			t.Fatal(err)
 		}
