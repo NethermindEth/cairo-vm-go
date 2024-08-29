@@ -55,7 +55,7 @@ func AsIntBig(value *big.Int) big.Int {
 func Divmod(n, m, p *big.Int) (big.Int, error) {
 	// https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/python/math_utils.py#L26
 
-	a, _, c := igcdex(m, p)
+	a, _, c := Igcdex(m, p)
 	if c.Cmp(big.NewInt(1)) != 0 {
 		return *big.NewInt(0), errors.New("no solution exists (gcd(m, p) != 1)")
 	}
@@ -65,7 +65,7 @@ func Divmod(n, m, p *big.Int) (big.Int, error) {
 	return *res, nil
 }
 
-func igcdex(a, b *big.Int) (big.Int, big.Int, big.Int) {
+func Igcdex(a, b *big.Int) (big.Int, big.Int, big.Int) {
 	// https://github.com/sympy/sympy/blob/d91b8ad6d36a59a879cc70e5f4b379da5fdd46ce/sympy/core/intfunc.py#L362
 
 	if a.Cmp(big.NewInt(0)) == 0 && b.Cmp(big.NewInt(0)) == 0 {

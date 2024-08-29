@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"math"
 	"math/big"
 	"math/bits"
 
@@ -124,6 +125,32 @@ func FeltDivRem(a, b *fp.Element) (div fp.Element, rem fp.Element) {
 	rem.SetBigInt(&tmpRem)
 
 	return div, rem
+}
+
+func Int16FromFelt(n *fp.Element) (int16, bool) {
+	bigN := n.BigInt(new(big.Int))
+	return Int16FromBigInt(bigN)
+}
+
+func Int16FromBigInt(n *big.Int) (int16, bool) {
+	mod := fp.Modulus()
+	negN := new(big.Int).Sub(mod, n)
+	maxInt16 := new(big.Int).SetInt64(int64(math.MaxInt16))
+
+	var result int64
+	if n.Cmp(negN) == 1 {
+		if negN.Cmp(maxInt16) == 1 {
+			return 0, false
+		}
+		result = -negN.Int64()
+	} else {
+		if n.Cmp(maxInt16) == 1 {
+			return 0, false
+		}
+		result = n.Int64()
+	}
+
+	return int16(result), true
 }
 
 func RightRot(value uint32, n uint32) uint32 {

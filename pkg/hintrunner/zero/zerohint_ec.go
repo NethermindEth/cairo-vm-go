@@ -20,18 +20,18 @@ import (
 //   - `len_hi`: the variable that will store the result of the bit-length calculation
 //   - `scalar_u.d2`: the first scalar value
 //   - `scalar_v.d2`: the second scalar value
-func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.ResOperander) hinter.Hinter {
+func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "GetHighLen",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> ids.len_hi = max(ids.scalar_u.d2.bit_length(), ids.scalar_v.d2.bit_length())-1
 
-			scalarUAddr, err := scalar_u.GetAddress(vm)
+			scalarUAddr, err := scalar_u.Get(vm)
 			if err != nil {
 				return fmt.Errorf("failed to resolve scalar_u address: %w", err)
 			}
 
-			scalarVAddr, err := scalar_v.GetAddress(vm)
+			scalarVAddr, err := scalar_v.Get(vm)
 			if err != nil {
 				return fmt.Errorf("failed to resolve scalar_v address: %w", err)
 			}
@@ -57,7 +57,7 @@ func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.ResOperander) hinter.Hi
 
 			lenHi := utils.Max(bitLenU, bitLenV) - 1
 
-			lenHiAddr, err := len_hi.GetAddress(vm)
+			lenHiAddr, err := len_hi.Get(vm)
 			if err != nil {
 				return fmt.Errorf("failed to get address of len_hi: %w", err)
 			}
@@ -70,17 +70,17 @@ func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.ResOperander) hinter.Hi
 }
 
 func createGetHighLenHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	len_hi, err := resolver.GetResOperander("len_hi")
+	len_hi, err := resolver.GetReference("len_hi")
 	if err != nil {
 		return nil, err
 	}
 
-	scalar_u, err := resolver.GetResOperander("scalar_u")
+	scalar_u, err := resolver.GetReference("scalar_u")
 	if err != nil {
 		return nil, err
 	}
 
-	scalar_v, err := resolver.GetResOperander("scalar_v")
+	scalar_v, err := resolver.GetReference("scalar_v")
 	if err != nil {
 		return nil, err
 	}
@@ -93,18 +93,18 @@ func createGetHighLenHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 // `newBigIntToUint256Hint` takes 2 operanders as arguments
 //   - `low` is the variable that will store the low part of the uint256 result
 //   - `x` is the BigInt variable to convert to uint256
-func newBigIntToUint256Hint(low, x hinter.ResOperander) hinter.Hinter {
+func newBigIntToUint256Hint(low, x hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "BigIntToUint256",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 			//> ids.low = (ids.x.d0 + ids.x.d1 * ids.BASE) & ((1 << 128) - 1)
 
-			lowAddr, err := low.GetAddress(vm)
+			lowAddr, err := low.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			xAddr, err := x.GetAddress(vm)
+			xAddr, err := x.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -146,12 +146,12 @@ func newBigIntToUint256Hint(low, x hinter.ResOperander) hinter.Hinter {
 }
 
 func createBigIntToUint256Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	low, err := resolver.GetResOperander("low")
+	low, err := resolver.GetReference("low")
 	if err != nil {
 		return nil, err
 	}
 
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func createBigIntToUint256Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 //   - `point` is the point on an elliptic curve to operate on
 //
 // `newEcNegateHint` assigns the result as `value` in the current scope
-func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
+func newEcNegateHint(point hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcNegate",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -180,7 +180,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
-			pointAddr, err := point.GetAddress(vm)
+			pointAddr, err := point.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -212,7 +212,7 @@ func newEcNegateHint(point hinter.ResOperander) hinter.Hinter {
 }
 
 func createEcNegateHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	point, err := resolver.GetResOperander("point")
+	point, err := resolver.GetReference("point")
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +278,7 @@ func createDivModNSafeDivPlusOneHinter() (hinter.Hinter, error) {
 //   - `b` is the value that will be packed and taken prime
 //
 // `DivModNPackedDivModExternalN` assigns the result as `value` in the current scope.
-func newDivModNPackedDivModExternalN(a, b hinter.ResOperander) hinter.Hinter {
+func newDivModNPackedDivModExternalN(a, b hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "DivModNPackedDivModExternalN",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -288,7 +288,7 @@ func newDivModNPackedDivModExternalN(a, b hinter.ResOperander) hinter.Hinter {
 			//> b = pack(ids.b, PRIME)
 			//> value = res = div_mod(a, b, N)
 
-			aAddr, err := a.GetAddress(vm)
+			aAddr, err := a.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -303,7 +303,7 @@ func newDivModNPackedDivModExternalN(a, b hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			bAddr, err := b.GetAddress(vm)
+			bAddr, err := b.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -336,12 +336,12 @@ func newDivModNPackedDivModExternalN(a, b hinter.ResOperander) hinter.Hinter {
 }
 
 func createDivModNPackedDivModExternalNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +355,7 @@ func createDivModNPackedDivModExternalNHinter(resolver hintReferenceResolver) (h
 //   - `res` is the location in memory where to write the result
 //
 // `newNondetBigint3V1Hint` uses `SecPSplit` to split the value in 3 felts and writes the result in memory
-func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
+func newNondetBigint3V1Hint(res hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "NondetBigint3V1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -363,7 +363,7 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 			//>
 			//> segments.write_arg(ids.res.address_, split(value))
 
-			address, err := res.GetAddress(vm)
+			address, err := res.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -401,7 +401,7 @@ func newNondetBigint3V1Hint(res hinter.ResOperander) hinter.Hinter {
 }
 
 func createNondetBigint3V1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	res, err := resolver.GetResOperander("res")
+	res, err := resolver.GetReference("res")
 	if err != nil {
 		return nil, err
 	}
@@ -423,7 +423,7 @@ func createNondetBigint3V1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 // V1 uses Secp256k1 curve
 // V2 uses Curve25519 curve with SECP_P = 2**255 - 19
 // V3 is similar to V1 but uses `pt0` and `pt1` for operanders where V1 and V2 use `point0` and `point1`
-func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander, secPBig big.Int) hinter.Hinter {
+func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.Reference, secPBig big.Int) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "FastEcAddAssignNewX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -448,17 +448,17 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander, secPB
 			//>
 			//> value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P
 
-			slopeAddr, err := slope.GetAddress(vm)
+			slopeAddr, err := slope.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			point0Addr, err := point0.GetAddress(vm)
+			point0Addr, err := point0.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			point1Addr, err := point1.GetAddress(vm)
+			point1Addr, err := point1.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -528,17 +528,17 @@ func newFastEcAddAssignNewXHint(slope, point0, point1 hinter.ResOperander, secPB
 }
 
 func createFastEcAddAssignNewXHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	slope, err := resolver.GetResOperander("slope")
+	slope, err := resolver.GetReference("slope")
 	if err != nil {
 		return nil, err
 	}
 
-	point0, err := resolver.GetResOperander("point0")
+	point0, err := resolver.GetReference("point0")
 	if err != nil {
 		return nil, err
 	}
 
-	point1, err := resolver.GetResOperander("point1")
+	point1, err := resolver.GetReference("point1")
 	if err != nil {
 		return nil, err
 	}
@@ -552,17 +552,17 @@ func createFastEcAddAssignNewXHinter(resolver hintReferenceResolver) (hinter.Hin
 }
 
 func createFastEcAddAssignNewXV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	slope, err := resolver.GetResOperander("slope")
+	slope, err := resolver.GetReference("slope")
 	if err != nil {
 		return nil, err
 	}
 
-	point0, err := resolver.GetResOperander("point0")
+	point0, err := resolver.GetReference("point0")
 	if err != nil {
 		return nil, err
 	}
 
-	point1, err := resolver.GetResOperander("point1")
+	point1, err := resolver.GetReference("point1")
 	if err != nil {
 		return nil, err
 	}
@@ -577,17 +577,17 @@ func createFastEcAddAssignNewXV2Hinter(resolver hintReferenceResolver) (hinter.H
 }
 
 func createFastEcAddAssignNewXV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	slope, err := resolver.GetResOperander("slope")
+	slope, err := resolver.GetReference("slope")
 	if err != nil {
 		return nil, err
 	}
 
-	point0, err := resolver.GetResOperander("pt0")
+	point0, err := resolver.GetReference("pt0")
 	if err != nil {
 		return nil, err
 	}
 
-	point1, err := resolver.GetResOperander("pt1")
+	point1, err := resolver.GetReference("pt1")
 	if err != nil {
 		return nil, err
 	}
@@ -658,7 +658,7 @@ func createFastEcAddAssignNewYHinter() (hinter.Hinter, error) {
 //   - `point` is the point on an elliptic curve to operate on
 //
 // `newEcDoubleSlopeV1Hint` assigns the `slope` result as `value` in the current scope
-func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
+func newEcDoubleSlopeV1Hint(point hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcDoubleSlopeV1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -670,7 +670,7 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 			//> y = pack(ids.point.y, PRIME)
 			//> value = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)
 
-			pointAddr, err := point.GetAddress(vm)
+			pointAddr, err := point.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -723,7 +723,7 @@ func newEcDoubleSlopeV1Hint(point hinter.ResOperander) hinter.Hinter {
 }
 
 func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	point, err := resolver.GetResOperander("point")
+	point, err := resolver.GetReference("point")
 	if err != nil {
 		return nil, err
 	}
@@ -740,7 +740,7 @@ func createEcDoubleSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 // This version differs from EcDoubleSlopeV1 by the name of the operander (`point` for V1, `pt` for V3)
 // and the computation of the slope : V1 uses a dedicated utility function with an additionnal check
 // while V3 executes the modular division directly
-func newEcDoubleSlopeV3Hint(point hinter.ResOperander) hinter.Hinter {
+func newEcDoubleSlopeV3Hint(point hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcDoubleSlopeV3",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -752,7 +752,7 @@ func newEcDoubleSlopeV3Hint(point hinter.ResOperander) hinter.Hinter {
 			//> y = pack(ids.pt.y, PRIME)
 			//> value = slope = div_mod(3 * x ** 2, 2 * y, SECP_P)
 
-			pointAddr, err := point.GetAddress(vm)
+			pointAddr, err := point.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -801,7 +801,7 @@ func newEcDoubleSlopeV3Hint(point hinter.ResOperander) hinter.Hinter {
 }
 
 func createEcDoubleSlopeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	point, err := resolver.GetResOperander("pt")
+	point, err := resolver.GetReference("pt")
 	if err != nil {
 		return nil, err
 	}
@@ -816,7 +816,7 @@ func createEcDoubleSlopeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter,
 //
 // `newReduceHint` assigns the result as `value` in the current scope
 // This implementation is valid for ReduceV1 and ReduceV2
-func newReduceHint(x hinter.ResOperander) hinter.Hinter {
+func newReduceHint(x hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Reduce",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -829,7 +829,7 @@ func newReduceHint(x hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
-			xAddr, err := x.GetAddress(vm)
+			xAddr, err := x.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -853,7 +853,7 @@ func newReduceHint(x hinter.ResOperander) hinter.Hinter {
 }
 
 func createReduceHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
@@ -867,7 +867,7 @@ func createReduceHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 //   - `x` is the packed value to be reduced
 //
 // `newReduceEd25519Hint` assigns the result as `value` in the current scope
-func newReduceEd25519Hint(x hinter.ResOperander) hinter.Hinter {
+func newReduceEd25519Hint(x hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "ReduceEd25519",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -881,7 +881,7 @@ func newReduceEd25519Hint(x hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("GetSecPBig failed")
 			}
 
-			xAddr, err := x.GetAddress(vm)
+			xAddr, err := x.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -905,7 +905,7 @@ func newReduceEd25519Hint(x hinter.ResOperander) hinter.Hinter {
 }
 
 func createReduceEd25519Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
@@ -926,7 +926,7 @@ func createReduceEd25519Hinter(resolver hintReferenceResolver) (hinter.Hinter, e
 // This implementation is valid for EcDoubleAssignNewX V1,V2 and V4, only the operander differs
 // with `point` used for V1,V2 and `pt` used for V4 and for V2 SECP_P has to be already in scope
 // contrary to V1
-func newEcDoubleAssignNewXHint(slope, point hinter.ResOperander) hinter.Hinter {
+func newEcDoubleAssignNewXHint(slope, point hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcDoubleAssignNewX",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -957,12 +957,12 @@ func newEcDoubleAssignNewXHint(slope, point hinter.ResOperander) hinter.Hinter {
 			//>
 			//> value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P
 
-			slopeAddr, err := slope.GetAddress(vm)
+			slopeAddr, err := slope.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			pointAddr, err := point.GetAddress(vm)
+			pointAddr, err := point.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1028,12 +1028,12 @@ func newEcDoubleAssignNewXHint(slope, point hinter.ResOperander) hinter.Hinter {
 }
 
 func createEcDoubleAssignNewXV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	slope, err := resolver.GetResOperander("slope")
+	slope, err := resolver.GetReference("slope")
 	if err != nil {
 		return nil, err
 	}
 
-	point, err := resolver.GetResOperander("point")
+	point, err := resolver.GetReference("point")
 	if err != nil {
 		return nil, err
 	}
@@ -1042,12 +1042,12 @@ func createEcDoubleAssignNewXV1Hinter(resolver hintReferenceResolver) (hinter.Hi
 }
 
 func createEcDoubleAssignNewXV4Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	slope, err := resolver.GetResOperander("slope")
+	slope, err := resolver.GetReference("slope")
 	if err != nil {
 		return nil, err
 	}
 
-	point, err := resolver.GetResOperander("pt")
+	point, err := resolver.GetReference("pt")
 	if err != nil {
 		return nil, err
 	}
@@ -1056,12 +1056,12 @@ func createEcDoubleAssignNewXV4Hinter(resolver hintReferenceResolver) (hinter.Hi
 }
 
 func createEcDoubleAssignNewXV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	slope, err := resolver.GetResOperander("slope")
+	slope, err := resolver.GetReference("slope")
 	if err != nil {
 		return nil, err
 	}
 
-	point, err := resolver.GetResOperander("point")
+	point, err := resolver.GetReference("point")
 	if err != nil {
 		return nil, err
 	}
@@ -1128,7 +1128,7 @@ func createEcDoubleAssignNewYV1Hinter() (hinter.Hinter, error) {
 //   - `point1` is the second point on an elliptic curve to operate on
 //
 // `newComputeSlopeV1Hint` assigns the `slope` result as `value` in the current scope
-func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
+func newComputeSlopeV1Hint(point0, point1 hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "ComputeSlopeV1",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1142,12 +1142,12 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			//> y1 = pack(ids.point1.y, PRIME)
 			//> value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
 
-			point0XAddr, err := point0.GetAddress(vm)
+			point0XAddr, err := point0.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			point1XAddr, err := point1.GetAddress(vm)
+			point1XAddr, err := point1.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1232,12 +1232,12 @@ func newComputeSlopeV1Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 }
 
 func createComputeSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	point0, err := resolver.GetResOperander("point0")
+	point0, err := resolver.GetReference("point0")
 	if err != nil {
 		return nil, err
 	}
 
-	point1, err := resolver.GetResOperander("point1")
+	point1, err := resolver.GetReference("point1")
 	if err != nil {
 		return nil, err
 	}
@@ -1253,7 +1253,7 @@ func createComputeSlopeV1Hinter(resolver hintReferenceResolver) (hinter.Hinter, 
 //
 // `newComputeSlopeV2Hint` assigns the `slope` result as `value` in the current scope
 // // This version uses Curve25519 curve with SECP_P = 2**255 - 19
-func newComputeSlopeV2Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
+func newComputeSlopeV2Hint(point0, point1 hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "ComputeSlopeV2",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1267,12 +1267,12 @@ func newComputeSlopeV2Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			//> y1 = pack(ids.point1.y, PRIME)
 			//> value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)
 
-			point0XAddr, err := point0.GetAddress(vm)
+			point0XAddr, err := point0.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			point1XAddr, err := point1.GetAddress(vm)
+			point1XAddr, err := point1.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1358,12 +1358,12 @@ func newComputeSlopeV2Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 }
 
 func createComputeSlopeV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	point0, err := resolver.GetResOperander("point0")
+	point0, err := resolver.GetReference("point0")
 	if err != nil {
 		return nil, err
 	}
 
-	point1, err := resolver.GetResOperander("point1")
+	point1, err := resolver.GetReference("point1")
 	if err != nil {
 		return nil, err
 	}
@@ -1382,7 +1382,7 @@ func createComputeSlopeV2Hinter(resolver hintReferenceResolver) (hinter.Hinter, 
 // This version differs from ComputeSlopeV1 by the name of the operanders (`point0` and `point1` for V1, `pt0` and `pt1` for V3)
 // and the computation of the slope : V1 uses a dedicated utility function with an additionnal check while V3 executes
 // the modular division directly
-func newComputeSlopeV3Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
+func newComputeSlopeV3Hint(point0, point1 hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "ComputeSlopeV3",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1396,12 +1396,12 @@ func newComputeSlopeV3Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 			//> y1 = pack(ids.pt1.y, PRIME)
 			//> value = slope = div_mod(y0 - y1, x0 - x1, SECP_P)
 
-			point0XAddr, err := point0.GetAddress(vm)
+			point0XAddr, err := point0.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			point1XAddr, err := point1.GetAddress(vm)
+			point1XAddr, err := point1.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1477,12 +1477,12 @@ func newComputeSlopeV3Hint(point0, point1 hinter.ResOperander) hinter.Hinter {
 }
 
 func createComputeSlopeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	point0, err := resolver.GetResOperander("pt0")
+	point0, err := resolver.GetReference("pt0")
 	if err != nil {
 		return nil, err
 	}
 
-	point1, err := resolver.GetResOperander("pt1")
+	point1, err := resolver.GetReference("pt1")
 	if err != nil {
 		return nil, err
 	}
@@ -1490,7 +1490,7 @@ func createComputeSlopeV3Hinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	return newComputeSlopeV3Hint(point0, point1), nil
 }
 
-func newEcMulInnerHint(scalar hinter.ResOperander) hinter.Hinter {
+func newEcMulInnerHint(scalar hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcMulInner",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -1515,7 +1515,7 @@ func newEcMulInnerHint(scalar hinter.ResOperander) hinter.Hinter {
 }
 
 func createEcMulInnerHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	scalar, err := resolver.GetResOperander("scalar")
+	scalar, err := resolver.GetReference("scalar")
 	if err != nil {
 		return nil, err
 	}
@@ -1566,7 +1566,7 @@ func createIsZeroNondetHinter() (hinter.Hinter, error) {
 //   - `x` is the value that will be packed and taken modulo SECP_P prime
 //
 // `newIsZeroPackHint` assigns the result as `x` in the current scope
-func newIsZeroPackHint(x hinter.ResOperander) hinter.Hinter {
+func newIsZeroPackHint(x hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsZeroPack",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1574,7 +1574,7 @@ func newIsZeroPackHint(x hinter.ResOperander) hinter.Hinter {
 			//>
 			//> x = pack(ids.x, PRIME) % SECP_P
 
-			xAddr, err := x.GetAddress(vm)
+			xAddr, err := x.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1607,7 +1607,7 @@ func newIsZeroPackHint(x hinter.ResOperander) hinter.Hinter {
 }
 
 func createIsZeroPackHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
@@ -1659,7 +1659,7 @@ func createIsZeroDivModHinter() (hinter.Hinter, error) {
 // `newRecoverYHint` takes 2 operanders as arguments
 //   - `x` is the x coordinate of an elliptic curve point
 //   - `p` is one of the two EC points with the given x coordinate (x, y)
-func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
+func newRecoverYHint(x, p hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "RecoverY",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1669,7 +1669,7 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 			//> # This raises an exception if `x` is not on the curve.
 			//> ids.p.y = recover_y(ids.x, ALPHA, BETA, FIELD_PRIME)
 
-			pXAddr, err := p.GetAddress(vm)
+			pXAddr, err := p.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1715,12 +1715,12 @@ func newRecoverYHint(x, p hinter.ResOperander) hinter.Hinter {
 }
 
 func createRecoverYHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
 
-	p, err := resolver.GetResOperander("p")
+	p, err := resolver.GetReference("p")
 	if err != nil {
 		return nil, err
 	}
@@ -1737,7 +1737,7 @@ func createRecoverYHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 //   - `m` the multiplication coefficient of Q used for seed generation
 //   - `q` an EC point used for seed generation
 //   - `s` is where the generated random EC point is written to
-func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
+func newRandomEcPointHint(p, m, q, s hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "RandomEcPoint",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1751,7 +1751,7 @@ func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
 			//> seed = b"".join(map(to_bytes, [ids.p.x, ids.p.y, ids.m, ids.q.x, ids.q.y]))
 			//> ids.s.x, ids.s.y = random_ec_point(FIELD_PRIME, ALPHA, BETA, seed)
 
-			pAddr, err := p.GetAddress(vm)
+			pAddr, err := p.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1766,7 +1766,7 @@ func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			qAddr, err := q.GetAddress(vm)
+			qAddr, err := q.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1791,7 +1791,7 @@ func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
 				writeFeltToBytesArray(felt)
 			}
 
-			sAddr, err := s.GetAddress(vm)
+			sAddr, err := s.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1802,22 +1802,22 @@ func newRandomEcPointHint(p, m, q, s hinter.ResOperander) hinter.Hinter {
 }
 
 func createRandomEcPointHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	p, err := resolver.GetResOperander("p")
+	p, err := resolver.GetReference("p")
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := resolver.GetResOperander("m")
+	m, err := resolver.GetReference("m")
 	if err != nil {
 		return nil, err
 	}
 
-	q, err := resolver.GetResOperander("q")
+	q, err := resolver.GetReference("q")
 	if err != nil {
 		return nil, err
 	}
 
-	s, err := resolver.GetResOperander("s")
+	s, err := resolver.GetReference("s")
 	if err != nil {
 		return nil, err
 	}
@@ -1835,7 +1835,7 @@ func createRandomEcPointHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 //   - `m` the multiplication coefficient of Q used for seed generation
 //   - `q` an EC point used for seed generation
 //   - `s` is where the generated random EC point is written to
-func newChainedEcOpHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
+func newChainedEcOpHint(len, p, m, q, s hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "ChainedEcOp",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1881,7 +1881,7 @@ func newChainedEcOpHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("f'chained_ec_op() can only be used with len<=%d.\n Got: n_elms=%d", chainedEcOpMaxLen, nElms)
 			}
 
-			pAddr, err := p.GetAddress(vm)
+			pAddr, err := p.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1931,7 +1931,7 @@ func newChainedEcOpHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
 
 			}
 
-			sAddr, err := s.GetAddress(vm)
+			sAddr, err := s.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1942,27 +1942,27 @@ func newChainedEcOpHint(len, p, m, q, s hinter.ResOperander) hinter.Hinter {
 }
 
 func createChainedEcOpHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	len, err := resolver.GetResOperander("len")
+	len, err := resolver.GetReference("len")
 	if err != nil {
 		return nil, err
 	}
 
-	p, err := resolver.GetResOperander("p")
+	p, err := resolver.GetReference("p")
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := resolver.GetResOperander("m")
+	m, err := resolver.GetReference("m")
 	if err != nil {
 		return nil, err
 	}
 
-	q, err := resolver.GetResOperander("q")
+	q, err := resolver.GetReference("q")
 	if err != nil {
 		return nil, err
 	}
 
-	s, err := resolver.GetResOperander("s")
+	s, err := resolver.GetReference("s")
 	if err != nil {
 		return nil, err
 	}
@@ -1976,7 +1976,7 @@ func createChainedEcOpHinter(resolver hintReferenceResolver) (hinter.Hinter, err
 //   - `n` is an EC point
 //   - `x` is an EC point
 //   - `s` is an EC point
-func newEcRecoverDivModNPackedHint(n, x, s hinter.ResOperander) hinter.Hinter {
+func newEcRecoverDivModNPackedHint(n, x, s hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcRecoverDivModNPacked",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1988,17 +1988,17 @@ func newEcRecoverDivModNPackedHint(n, x, s hinter.ResOperander) hinter.Hinter {
 			//> s = pack(ids.s, PRIME) % N
 			//> value = res = div_mod(x, s, N)
 
-			nAddr, err := n.GetAddress(vm)
+			nAddr, err := n.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			xAddr, err := x.GetAddress(vm)
+			xAddr, err := x.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			sAddr, err := s.GetAddress(vm)
+			sAddr, err := s.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -2053,17 +2053,17 @@ func newEcRecoverDivModNPackedHint(n, x, s hinter.ResOperander) hinter.Hinter {
 }
 
 func createEcRecoverDivModNPackedHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	n, err := resolver.GetResOperander("n")
+	n, err := resolver.GetReference("n")
 	if err != nil {
 		return nil, err
 	}
 
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
 
-	s, err := resolver.GetResOperander("s")
+	s, err := resolver.GetReference("s")
 	if err != nil {
 		return nil, err
 	}
@@ -2076,7 +2076,7 @@ func createEcRecoverDivModNPackedHinter(resolver hintReferenceResolver) (hinter.
 // `newEcRecoverSubABHint` takes 2 operanders as arguments
 //   - `a` is an EC point
 //   - `b` is an EC point
-func newEcRecoverSubABHint(a, b hinter.ResOperander) hinter.Hinter {
+func newEcRecoverSubABHint(a, b hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcRecoverSubAB",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -2088,12 +2088,12 @@ func newEcRecoverSubABHint(a, b hinter.ResOperander) hinter.Hinter {
 			//>
 			//> value = res = a - b
 
-			aAddr, err := a.GetAddress(vm)
+			aAddr, err := a.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			bAddr, err := b.GetAddress(vm)
+			bAddr, err := b.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -2132,12 +2132,12 @@ func newEcRecoverSubABHint(a, b hinter.ResOperander) hinter.Hinter {
 }
 
 func createEcRecoverSubABHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
@@ -2151,7 +2151,7 @@ func createEcRecoverSubABHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 //   - `a` is an EC point
 //   - `b` is an EC point
 //   - `m` is an EC point
-func newEcRecoverProductModHint(a, b, m hinter.ResOperander) hinter.Hinter {
+func newEcRecoverProductModHint(a, b, m hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "EcRecoverProductMod",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -2165,17 +2165,17 @@ func newEcRecoverProductModHint(a, b, m hinter.ResOperander) hinter.Hinter {
 			//>
 			//> value = res = product % m
 
-			aAddr, err := a.GetAddress(vm)
+			aAddr, err := a.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			bAddr, err := b.GetAddress(vm)
+			bAddr, err := b.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			mAddr, err := m.GetAddress(vm)
+			mAddr, err := m.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -2230,17 +2230,17 @@ func newEcRecoverProductModHint(a, b, m hinter.ResOperander) hinter.Hinter {
 }
 
 func createEcRecoverProductModHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := resolver.GetResOperander("m")
+	m, err := resolver.GetReference("m")
 	if err != nil {
 		return nil, err
 	}
@@ -2291,7 +2291,7 @@ func createEcRecoverProductDivMHinter() (hinter.Hinter, error) {
 //   - `y` is the denominator
 //
 // `newBigIntPackDivModHint` assigns the result as `value` in the current scope
-func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
+func newBigIntPackDivModHint(x, y, p hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "BigIntPackDivMod",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -2305,7 +2305,7 @@ func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 			//>
 			//> value = res = div_mod(x, y, p)
 
-			pAddr, err := p.GetAddress(vm)
+			pAddr, err := p.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -2315,7 +2315,7 @@ func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			xAddr, err := x.GetAddress(vm)
+			xAddr, err := x.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -2325,7 +2325,7 @@ func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			yAddr, err := y.GetAddress(vm)
+			yAddr, err := y.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -2394,17 +2394,17 @@ func newBigIntPackDivModHint(x, y, p hinter.ResOperander) hinter.Hinter {
 }
 
 func createBigIntPackDivModHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
 
-	y, err := resolver.GetResOperander("y")
+	y, err := resolver.GetReference("y")
 	if err != nil {
 		return nil, err
 	}
 
-	p, err := resolver.GetResOperander("P")
+	p, err := resolver.GetReference("P")
 	if err != nil {
 		return nil, err
 	}
@@ -2417,7 +2417,7 @@ func createBigIntPackDivModHinter(resolver hintReferenceResolver) (hinter.Hinter
 // `newBigIntSafeDivHint` does not take any arguments
 //
 // `newBigIntSafeDivHint` assigns the result as `value` and sets `flag` based on the result in the current scope
-func newBigIntSafeDivHint(flag hinter.ResOperander) hinter.Hinter {
+func newBigIntSafeDivHint(flag hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "BigIntSafeDiv",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -2425,7 +2425,7 @@ func newBigIntSafeDivHint(flag hinter.ResOperander) hinter.Hinter {
 			//> value = k if k > 0 else 0 - k
 			//> ids.flag = 1 if k > 0 else 0
 
-			flagAddr, err := flag.GetAddress(vm)
+			flagAddr, err := flag.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -2483,7 +2483,7 @@ func newBigIntSafeDivHint(flag hinter.ResOperander) hinter.Hinter {
 }
 
 func createBigIntSaveDivHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	flag, err := resolver.GetResOperander("flag")
+	flag, err := resolver.GetReference("flag")
 	if err != nil {
 		return nil, err
 	}

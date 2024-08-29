@@ -181,6 +181,137 @@ func TestTestLessThanOrEqFalse(t *testing.T) {
 	)
 }
 
+func TestLessThanOrEqualAddressTrue(t *testing.T) {
+	// Address of lhs and rhs are same (SegmentIndex and Offset)
+	vm := VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	addr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       23,
+	}
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&addr))
+
+	var dst hinter.ApCellRef = 1
+	rhs := hinter.Deref{Deref: hinter.ApCellRef(0)}
+	lhs := hinter.Deref{Deref: hinter.ApCellRef(0)}
+
+	hint := TestLessThanOrEqualAddress{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err := hint.Execute(vm, nil)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		mem.MemoryValueFromInt(1),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 1),
+	)
+
+	// Address of lhs is less than the address of rhs (Offset)
+	vm = VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	rhsAddr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       23,
+	}
+	lhsAddr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       17,
+	}
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&rhsAddr))
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap+1, mem.MemoryValueFromMemoryAddress(&lhsAddr))
+
+	dst = 2
+	rhs = hinter.Deref{Deref: hinter.ApCellRef(0)}
+	lhs = hinter.Deref{Deref: hinter.ApCellRef(1)}
+
+	hint = TestLessThanOrEqualAddress{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err = hint.Execute(vm, nil)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		mem.MemoryValueFromInt(1),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 2),
+	)
+
+	// Address of lhs is less than the address of rhs (SegmentIndex)
+	vm = VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	rhsAddr = mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment + 1,
+		Offset:       17,
+	}
+	lhsAddr = mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       23,
+	}
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&rhsAddr))
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap+1, mem.MemoryValueFromMemoryAddress(&lhsAddr))
+
+	dst = 2
+	rhs = hinter.Deref{Deref: hinter.ApCellRef(0)}
+	lhs = hinter.Deref{Deref: hinter.ApCellRef(1)}
+
+	hint = TestLessThanOrEqualAddress{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err = hint.Execute(vm, nil)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		mem.MemoryValueFromInt(1),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 2),
+	)
+}
+
+func TestLessThanOrEqualAddressFalse(t *testing.T) {
+	vm := VM.DefaultVirtualMachine()
+	vm.Context.Ap = 0
+	vm.Context.Fp = 0
+	rhsAddr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       17,
+	}
+	lhsAddr := mem.MemoryAddress{
+		SegmentIndex: VM.ExecutionSegment,
+		Offset:       23,
+	}
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&rhsAddr))
+	utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap+1, mem.MemoryValueFromMemoryAddress(&lhsAddr))
+
+	var dst hinter.ApCellRef = 2
+	rhs := hinter.Deref{Deref: hinter.ApCellRef(0)}
+	lhs := hinter.Deref{Deref: hinter.ApCellRef(1)}
+
+	hint := TestLessThanOrEqualAddress{
+		dst: dst,
+		lhs: lhs,
+		rhs: rhs,
+	}
+
+	err := hint.Execute(vm, nil)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		mem.EmptyMemoryValueAsFelt(),
+		utils.ReadFrom(vm, VM.ExecutionSegment, 2),
+		"Expected the hint to evaluate to False when address of lhs is larger",
+	)
+}
+
 func TestLinearSplit(t *testing.T) {
 	vm := VM.DefaultVirtualMachine()
 	vm.Context.Ap = 0
@@ -324,6 +455,266 @@ func TestDivModDivisionByZeroError(t *testing.T) {
 	require.ErrorContains(t, err, "cannot be divided by zero, rhs: 0")
 }
 
+func TestU256InvModN(t *testing.T) {
+	t.Run("test u256InvModN (n == 1)", func(t *testing.T) {
+		vm := VM.DefaultVirtualMachine()
+		vm.Context.Ap = 0
+		vm.Context.Fp = 0
+
+		var G0OrNoInv hinter.ApCellRef = 1
+		var G1Option hinter.ApCellRef = 2
+		var SOrR0 hinter.ApCellRef = 3
+		var SOrR1 hinter.ApCellRef = 4
+		var TOrK0 hinter.ApCellRef = 5
+		var TOrK1 hinter.ApCellRef = 6
+
+		B0Felt := f.NewElement(0)
+		B1Felt := f.NewElement(1)
+
+		N0Felt := f.NewElement(1)
+		N1Felt := f.NewElement(0)
+
+		hint := U256InvModN{
+			B0:        hinter.Immediate(B0Felt),
+			B1:        hinter.Immediate(B1Felt),
+			N0:        hinter.Immediate(N0Felt),
+			N1:        hinter.Immediate(N1Felt),
+			G0OrNoInv: G0OrNoInv,
+			G1Option:  G1Option,
+			SOrR0:     SOrR0,
+			SOrR1:     SOrR1,
+			TOrK0:     TOrK0,
+			TOrK1:     TOrK1,
+		}
+
+		err := hint.Execute(vm, nil)
+		require.Nil(t, err)
+
+		G0OrNoInvVal := &f.Element{}
+		G0OrNoInvVal.SetInt64(1)
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(G0OrNoInvVal),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 1),
+		)
+
+		G1OptionVal := &f.Element{}
+		G1OptionVal.SetZero()
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(G1OptionVal),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 2),
+		)
+
+		SOrR0Val := &f.Element{}
+		SOrR0Val.SetZero()
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(SOrR0Val),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 3),
+		)
+
+		SOrR1Val := &f.Element{}
+		SOrR1Val.SetInt64(1)
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(SOrR1Val),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 4),
+		)
+
+		TOrK0Val := &f.Element{}
+		TOrK0Val.SetInt64(1)
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(TOrK0Val),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 5),
+		)
+
+		TOrK1Val := &f.Element{}
+		TOrK1Val.SetZero()
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(TOrK1Val),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 6),
+		)
+	})
+
+	t.Run("test u256InvModN (g != 1)", func(t *testing.T) {
+		vm := VM.DefaultVirtualMachine()
+		vm.Context.Ap = 0
+		vm.Context.Fp = 0
+
+		var G0OrNoInv hinter.ApCellRef = 1
+		var G1Option hinter.ApCellRef = 2
+		var SOrR0 hinter.ApCellRef = 3
+		var SOrR1 hinter.ApCellRef = 4
+		var TOrK0 hinter.ApCellRef = 5
+		var TOrK1 hinter.ApCellRef = 6
+
+		B0Felt := f.NewElement(2004)
+		B1Felt := f.NewElement(0)
+
+		N0Felt := f.NewElement(100)
+		N1Felt := f.NewElement(0)
+
+		hint := U256InvModN{
+			B0:        hinter.Immediate(B0Felt),
+			B1:        hinter.Immediate(B1Felt),
+			N0:        hinter.Immediate(N0Felt),
+			N1:        hinter.Immediate(N1Felt),
+			G0OrNoInv: G0OrNoInv,
+			G1Option:  G1Option,
+			SOrR0:     SOrR0,
+			SOrR1:     SOrR1,
+			TOrK0:     TOrK0,
+			TOrK1:     TOrK1,
+		}
+
+		err := hint.Execute(vm, nil)
+		require.Nil(t, err)
+
+		G0OrNoInvVal := &f.Element{}
+		G0OrNoInvVal.SetInt64(2)
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(G0OrNoInvVal),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 1),
+		)
+
+		G1OptionVal := &f.Element{}
+		G1OptionVal.SetZero()
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(G1OptionVal),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 2),
+		)
+
+		SOrR0Val := &f.Element{}
+		SOrR0Val.SetInt64(1002)
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(SOrR0Val),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 3),
+		)
+
+		SOrR1Val := &f.Element{}
+		SOrR1Val.SetZero()
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(SOrR1Val),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 4),
+		)
+
+		TOrK0Val := &f.Element{}
+		TOrK0Val.SetInt64(50)
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(TOrK0Val),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 5),
+		)
+
+		TOrK1Val := &f.Element{}
+		TOrK1Val.SetZero()
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(TOrK1Val),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 6),
+		)
+	})
+
+	t.Run("test u256InvModN (n != 1 and g == 1)", func(t *testing.T) {
+		vm := VM.DefaultVirtualMachine()
+		vm.Context.Ap = 0
+		vm.Context.Fp = 0
+
+		var G0OrNoInv hinter.ApCellRef = 1
+		var G1Option hinter.ApCellRef = 2
+		var SOrR0 hinter.ApCellRef = 3
+		var SOrR1 hinter.ApCellRef = 4
+		var TOrK0 hinter.ApCellRef = 5
+		var TOrK1 hinter.ApCellRef = 6
+
+		B0Felt := f.NewElement(3)
+		B1Felt := f.NewElement(0)
+
+		N0Felt := f.NewElement(2)
+		N1Felt := f.NewElement(0)
+
+		hint := U256InvModN{
+			B0:        hinter.Immediate(B0Felt),
+			B1:        hinter.Immediate(B1Felt),
+			N0:        hinter.Immediate(N0Felt),
+			N1:        hinter.Immediate(N1Felt),
+			G0OrNoInv: G0OrNoInv,
+			G1Option:  G1Option,
+			SOrR0:     SOrR0,
+			SOrR1:     SOrR1,
+			TOrK0:     TOrK0,
+			TOrK1:     TOrK1,
+		}
+
+		err := hint.Execute(vm, nil)
+		require.Nil(t, err)
+
+		G0OrNoInvVal := &f.Element{}
+		G0OrNoInvVal.SetZero()
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(G0OrNoInvVal),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 1),
+		)
+
+		SOrR0Val := &f.Element{}
+		SOrR0Val.SetInt64(1)
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(SOrR0Val),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 3),
+		)
+
+		SOrR1Val := &f.Element{}
+		SOrR1Val.SetZero()
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(SOrR1Val),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 4),
+		)
+
+		TOrK0Val := &f.Element{}
+		TOrK0Val.SetInt64(1)
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(TOrK0Val),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 5),
+		)
+
+		TOrK1Val := &f.Element{}
+		TOrK1Val.SetZero()
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(TOrK1Val),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 6),
+		)
+	})
+}
+
 func TestUint256DivMod(t *testing.T) {
 	t.Run("test uint256DivMod", func(t *testing.T) {
 		vm := VM.DefaultVirtualMachine()
@@ -356,8 +747,7 @@ func TestUint256DivMod(t *testing.T) {
 		require.Nil(t, err)
 
 		quotient0Val := &f.Element{}
-		_, err = quotient0Val.SetString("10")
-		require.Nil(t, err)
+		quotient0Val.SetInt64(10)
 
 		require.Equal(
 			t,
@@ -376,8 +766,7 @@ func TestUint256DivMod(t *testing.T) {
 		)
 
 		remainder0Val := &f.Element{}
-		_, err = remainder0Val.SetString("59")
-		require.Nil(t, err)
+		remainder0Val.SetInt64(59)
 
 		require.Equal(
 			t,
@@ -386,8 +775,7 @@ func TestUint256DivMod(t *testing.T) {
 		)
 
 		remainder1Val := &f.Element{}
-		_, err = remainder1Val.SetString("2")
-		require.Nil(t, err)
+		remainder1Val.SetInt64(2)
 
 		require.Equal(
 			t,
@@ -984,7 +1372,7 @@ func TestAssertLeFindSmallArc(t *testing.T) {
 		vm.Context.Ap = 0
 		vm.Context.Fp = 0
 		// The addr that the range check pointer will point to
-		addr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{})
+		addr := vm.Memory.AllocateBuiltinSegment(&builtins.RangeCheck{RangeCheckNParts: 8})
 		utils.WriteTo(vm, VM.ExecutionSegment, vm.Context.Ap, mem.MemoryValueFromMemoryAddress(&addr))
 
 		hint := AssertLeFindSmallArc{
@@ -1069,7 +1457,7 @@ func TestRandomEcPoint(t *testing.T) {
 		y: hinter.ApCellRef(1),
 	}
 
-	err := hint.Execute(vm)
+	err := hint.Execute(vm, nil)
 	require.NoError(t, err)
 
 	expectedX := mem.MemoryValueFromFieldElement(
@@ -1116,7 +1504,7 @@ func TestFieldSqrt(t *testing.T) {
 				sqrt: hinter.ApCellRef(0),
 			}
 
-			err := hint.Execute(vm)
+			err := hint.Execute(vm, nil)
 
 			require.NoError(t, err)
 			require.Equal(

@@ -9,14 +9,30 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	u "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+func GetCairoHints(cairoProgramJson *starknet.StarknetProgram) (map[uint64][]hinter.Hinter, error) {
+	hints := make(map[uint64][]hinter.Hinter)
+	for _, hintsList := range cairoProgramJson.Hints {
+		for _, hint := range hintsList.Hints {
+			processedHint, err := GetHintByName(hint)
+			if err != nil {
+				return nil, err
+			}
+			hints[hintsList.Index] = append(hints[hintsList.Index], processedHint)
+		}
+	}
+
+	return hints, nil
+}
+
 type AllocSegment struct {
-	Dst hinter.CellRefer
+	Dst hinter.Reference
 }
 
 func (hint *AllocSegment) String() string {
@@ -41,9 +57,9 @@ func (hint *AllocSegment) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerCon
 }
 
 type TestLessThan struct {
-	dst hinter.CellRefer
-	lhs hinter.ResOperander
-	rhs hinter.ResOperander
+	dst hinter.Reference
+	lhs hinter.Reference
+	rhs hinter.Reference
 }
 
 func (hint *TestLessThan) String() string {
@@ -91,9 +107,9 @@ func (hint *TestLessThan) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerCon
 }
 
 type TestLessThanOrEqual struct {
-	dst hinter.CellRefer
-	lhs hinter.ResOperander
-	rhs hinter.ResOperander
+	dst hinter.Reference
+	lhs hinter.Reference
+	rhs hinter.Reference
 }
 
 func (hint *TestLessThanOrEqual) String() string {
@@ -140,12 +156,56 @@ func (hint *TestLessThanOrEqual) Execute(vm *VM.VirtualMachine, _ *hinter.HintRu
 	return nil
 }
 
+type TestLessThanOrEqualAddress struct {
+	dst hinter.Reference
+	lhs hinter.Reference
+	rhs hinter.Reference
+}
+
+func (hint *TestLessThanOrEqualAddress) String() string {
+	return "TestLessThanOrEqualAddress"
+}
+
+func (hint *TestLessThanOrEqualAddress) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+	lhsPtr, err := hinter.ResolveAsAddress(vm, hint.lhs)
+	if err != nil {
+		return fmt.Errorf("resolve lhs pointer: %w", err)
+	}
+
+	rhsPtr, err := hinter.ResolveAsAddress(vm, hint.rhs)
+	if err != nil {
+		return fmt.Errorf("resolve rhs pointer: %w", err)
+	}
+
+	resFelt := f.Element{}
+	if lhsPtr.Cmp(rhsPtr) <= 0 {
+		resFelt.SetOne()
+	}
+
+	dstAddr, err := hint.dst.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get dst address %s: %w", dstAddr, err)
+	}
+
+	mv := mem.MemoryValueFromFieldElement(&resFelt)
+	err = vm.Memory.WriteToAddress(&dstAddr, &mv)
+	if err != nil {
+		return fmt.Errorf("write to dst address %s: %w", dstAddr, err)
+	}
+
+	return nil
+}
+
 type LinearSplit struct {
-	value  hinter.ResOperander
-	scalar hinter.ResOperander
-	maxX   hinter.ResOperander
-	x      hinter.CellRefer
-	y      hinter.CellRefer
+	value  hinter.Reference
+	scalar hinter.Reference
+	maxX   hinter.Reference
+	x      hinter.Reference
+	y      hinter.Reference
+}
+
+func (hint LinearSplit) String() string {
+	return "LinearSplit"
 }
 
 func (hint LinearSplit) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -221,10 +281,10 @@ func (hint LinearSplit) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 }
 
 type WideMul128 struct {
-	lhs  hinter.ResOperander
-	rhs  hinter.ResOperander
-	high hinter.CellRefer
-	low  hinter.CellRefer
+	lhs  hinter.Reference
+	rhs  hinter.Reference
+	high hinter.Reference
+	low  hinter.Reference
 }
 
 func (hint *WideMul128) String() string {
@@ -295,10 +355,10 @@ func (hint *WideMul128) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 }
 
 type DivMod struct {
-	lhs       hinter.ResOperander
-	rhs       hinter.ResOperander
-	quotient  hinter.CellRefer
-	remainder hinter.CellRefer
+	lhs       hinter.Reference
+	rhs       hinter.Reference
+	quotient  hinter.Reference
+	remainder hinter.Reference
 }
 
 func (hint DivMod) String() string {
@@ -377,15 +437,242 @@ func (hint DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) e
 	return nil
 }
 
+type U256InvModN struct {
+	B0        hinter.Reference
+	B1        hinter.Reference
+	N0        hinter.Reference
+	N1        hinter.Reference
+	G0OrNoInv hinter.Reference
+	G1Option  hinter.Reference
+	SOrR0     hinter.Reference
+	SOrR1     hinter.Reference
+	TOrK0     hinter.Reference
+	TOrK1     hinter.Reference
+}
+
+func (hint U256InvModN) String() string {
+	return "U256InvModN"
+}
+
+func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+	B0, err := hint.B0.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve B0 operand %s: %v", hint.B0, err)
+	}
+
+	B1, err := hint.B1.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve B1 operand %s: %v", hint.B1, err)
+	}
+
+	N0, err := hint.N0.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve N0 operand %s: %v", hint.N0, err)
+	}
+
+	N1, err := hint.N1.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve N1 operand %s: %v", hint.N1, err)
+	}
+
+	g0OrNoInvAddr, err := hint.G0OrNoInv.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get G0OrNoInv address %s: %w", g0OrNoInvAddr, err)
+	}
+
+	g1OptionAddr, err := hint.G1Option.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get G1Option address %s: %w", g1OptionAddr, err)
+	}
+
+	sOrR0Addr, err := hint.SOrR0.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get SOrR0 address %s: %w", sOrR0Addr, err)
+	}
+
+	sOrR1Addr, err := hint.SOrR1.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get SOrR1 address %s: %w", sOrR1Addr, err)
+	}
+
+	tOrK0Addr, err := hint.TOrK0.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get TOrK0 address %s: %w", tOrK0Addr, err)
+	}
+
+	tOrK1Addr, err := hint.TOrK1.Get(vm)
+	if err != nil {
+		return fmt.Errorf("get TOrK1 address %s: %w", tOrK1Addr, err)
+	}
+
+	B0Felt, err := B0.FieldElement()
+	if err != nil {
+		return err
+	}
+	B1Felt, err := B1.FieldElement()
+	if err != nil {
+		return err
+	}
+	N0Felt, err := N0.FieldElement()
+	if err != nil {
+		return err
+	}
+	N1Felt, err := N1.FieldElement()
+	if err != nil {
+		return err
+	}
+
+	var B0BigInt big.Int
+	B0Felt.BigInt(&B0BigInt)
+
+	var B1BigInt big.Int
+	B1Felt.BigInt(&B1BigInt)
+
+	var N0BigInt big.Int
+	N0Felt.BigInt(&N0BigInt)
+
+	var N1BigInt big.Int
+	N1Felt.BigInt(&N1BigInt)
+
+	b := new(big.Int).Lsh(&B1BigInt, 128)
+	b.Add(b, &B0BigInt)
+
+	n := new(big.Int).Lsh(&N1BigInt, 128)
+	n.Add(n, &N0BigInt)
+
+	_, r, g := u.Igcdex(n, b)
+	mask := new(big.Int).Lsh(big.NewInt(1), 128)
+	mask.Sub(mask, big.NewInt(1))
+
+	if n.Cmp(big.NewInt(1)) == 0 {
+		mv := mem.MemoryValueFromFieldElement(B0Felt)
+		err = vm.Memory.WriteToAddress(&sOrR0Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to SOrR0 address %s: %w", sOrR0Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(B1Felt)
+		err = vm.Memory.WriteToAddress(&sOrR1Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to SOrR1 address %s: %w", sOrR1Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(&utils.FeltOne)
+		err = vm.Memory.WriteToAddress(&tOrK0Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to TOrK0 address %s: %w", tOrK0Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(&utils.FeltZero)
+		err = vm.Memory.WriteToAddress(&tOrK1Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to TOrK1 address %s: %w", tOrK1Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(&utils.FeltOne)
+		err = vm.Memory.WriteToAddress(&g0OrNoInvAddr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to G0OrNoInv address %s: %w", g0OrNoInvAddr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(&utils.FeltZero)
+		err = vm.Memory.WriteToAddress(&g1OptionAddr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to G1Option address %s: %w", g1OptionAddr, err)
+		}
+	} else if g.Cmp(big.NewInt(1)) != 0 {
+		if new(big.Int).Rem(&g, big.NewInt(2)).Cmp(big.NewInt(0)) == 0 {
+			g = *big.NewInt(2)
+		}
+
+		s := new(big.Int).Div(b, &g)
+		t := new(big.Int).Div(n, &g)
+
+		mv := mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(s, mask)))
+		err = vm.Memory.WriteToAddress(&sOrR0Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to SOrR0 address %s: %w", sOrR0Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(s, 128)))
+		err = vm.Memory.WriteToAddress(&sOrR1Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to SOrR1 address %s: %w", sOrR1Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(t, mask)))
+		err = vm.Memory.WriteToAddress(&tOrK0Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to TOrK0 address %s: %w", tOrK0Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(t, 128)))
+		err = vm.Memory.WriteToAddress(&tOrK1Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to TOrK1 address %s: %w", tOrK1Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(&g, mask)))
+		err = vm.Memory.WriteToAddress(&g0OrNoInvAddr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to G0OrNoInv address %s: %w", g0OrNoInvAddr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(&g, 128)))
+		err = vm.Memory.WriteToAddress(&g1OptionAddr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to G1Option address %s: %w", g1OptionAddr, err)
+		}
+	} else {
+		r.Rem(&r, n)
+
+		k := new(big.Int).Mul(&r, b)
+		k.Sub(k, big.NewInt(1))
+		k.Div(k, n)
+
+		mv := mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(&r, mask)))
+		err = vm.Memory.WriteToAddress(&sOrR0Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to SOrR0 address %s: %w", sOrR0Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(&r, 128)))
+		err = vm.Memory.WriteToAddress(&sOrR1Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to SOrR1 address %s: %w", sOrR1Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).And(k, mask)))
+		err = vm.Memory.WriteToAddress(&tOrK0Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to TOrK0 address %s: %w", tOrK0Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(new(f.Element).SetBigInt(new(big.Int).Rsh(k, 128)))
+		err = vm.Memory.WriteToAddress(&tOrK1Addr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to TOrK1 address %s: %w", tOrK1Addr, err)
+		}
+
+		mv = mem.MemoryValueFromFieldElement(&utils.FeltZero)
+		err = vm.Memory.WriteToAddress(&g0OrNoInvAddr, &mv)
+		if err != nil {
+			return fmt.Errorf("write to G0OrNoInv address %s: %w", g0OrNoInvAddr, err)
+		}
+	}
+
+	return nil
+}
+
 type Uint256DivMod struct {
-	dividend0  hinter.ResOperander
-	dividend1  hinter.ResOperander
-	divisor0   hinter.ResOperander
-	divisor1   hinter.ResOperander
-	quotient0  hinter.CellRefer
-	quotient1  hinter.CellRefer
-	remainder0 hinter.CellRefer
-	remainder1 hinter.CellRefer
+	dividend0  hinter.Reference
+	dividend1  hinter.Reference
+	divisor0   hinter.Reference
+	divisor1   hinter.Reference
+	quotient0  hinter.Reference
+	quotient1  hinter.Reference
+	remainder0 hinter.Reference
+	remainder1 hinter.Reference
 }
 
 func (hint Uint256DivMod) String() string {
@@ -502,8 +789,12 @@ func (hint Uint256DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerCon
 }
 
 type DebugPrint struct {
-	start hinter.ResOperander
-	end   hinter.ResOperander
+	start hinter.Reference
+	end   hinter.Reference
+}
+
+func (hint DebugPrint) String() string {
+	return "DebugPrint"
 }
 
 func (hint DebugPrint) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -549,8 +840,8 @@ func (hint DebugPrint) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContex
 }
 
 type SquareRoot struct {
-	value hinter.ResOperander
-	dst   hinter.CellRefer
+	value hinter.Reference
+	dst   hinter.Reference
 }
 
 func (hint *SquareRoot) String() string {
@@ -589,13 +880,13 @@ func (hint *SquareRoot) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 }
 
 type Uint256SquareRoot struct {
-	valueLow                     hinter.ResOperander
-	valueHigh                    hinter.ResOperander
-	sqrt0                        hinter.CellRefer
-	sqrt1                        hinter.CellRefer
-	remainderLow                 hinter.CellRefer
-	remainderHigh                hinter.CellRefer
-	sqrtMul2MinusRemainderGeU128 hinter.CellRefer
+	valueLow                     hinter.Reference
+	valueHigh                    hinter.Reference
+	sqrt0                        hinter.Reference
+	sqrt1                        hinter.Reference
+	remainderLow                 hinter.Reference
+	remainderHigh                hinter.Reference
+	sqrtMul2MinusRemainderGeU128 hinter.Reference
 }
 
 func (hint Uint256SquareRoot) String() string {
@@ -746,7 +1037,7 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunne
 //
 
 type AllocFelt252Dict struct {
-	SegmentArenaPtr hinter.ResOperander
+	SegmentArenaPtr hinter.Reference
 }
 
 func (hint *AllocFelt252Dict) String() string {
@@ -800,8 +1091,8 @@ func (hint *AllocFelt252Dict) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRun
 }
 
 type Felt252DictEntryInit struct {
-	DictPtr hinter.ResOperander
-	Key     hinter.ResOperander
+	DictPtr hinter.Reference
+	Key     hinter.Reference
 }
 
 func (hint Felt252DictEntryInit) String() string {
@@ -832,8 +1123,8 @@ func (hint *Felt252DictEntryInit) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 }
 
 type Felt252DictEntryUpdate struct {
-	DictPtr hinter.ResOperander
-	Value   hinter.ResOperander
+	DictPtr hinter.Reference
+	Value   hinter.Reference
 }
 
 func (hint Felt252DictEntryUpdate) String() string {
@@ -868,8 +1159,8 @@ func (hint *Felt252DictEntryUpdate) Execute(vm *VM.VirtualMachine, ctx *hinter.H
 }
 
 type GetSegmentArenaIndex struct {
-	DictIndex  hinter.CellRefer
-	DictEndPtr hinter.ResOperander
+	DictIndex  hinter.Reference
+	DictEndPtr hinter.Reference
 }
 
 func (hint *GetSegmentArenaIndex) String() string {
@@ -901,10 +1192,10 @@ func (hint *GetSegmentArenaIndex) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 //
 
 type InitSquashData struct {
-	FirstKey     hinter.CellRefer
-	BigKeys      hinter.CellRefer
-	DictAccesses hinter.ResOperander
-	NumAccesses  hinter.ResOperander
+	FirstKey     hinter.Reference
+	BigKeys      hinter.Reference
+	DictAccesses hinter.Reference
+	NumAccesses  hinter.Reference
 }
 
 func (hint *InitSquashData) String() string {
@@ -983,7 +1274,7 @@ func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunne
 }
 
 type GetCurrentAccessIndex struct {
-	RangeCheckPtr hinter.ResOperander
+	RangeCheckPtr hinter.Reference
 }
 
 func (hint *GetCurrentAccessIndex) String() string {
@@ -1008,7 +1299,7 @@ func (hint *GetCurrentAccessIndex) Execute(vm *VM.VirtualMachine, ctx *hinter.Hi
 }
 
 type ShouldSkipSquashLoop struct {
-	ShouldSkipLoop hinter.CellRefer
+	ShouldSkipLoop hinter.Reference
 }
 
 func (hint *ShouldSkipSquashLoop) String() string {
@@ -1034,7 +1325,7 @@ func (hint *ShouldSkipSquashLoop) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 }
 
 type GetCurrentAccessDelta struct {
-	IndexDeltaMinusOne hinter.CellRefer
+	IndexDeltaMinusOne hinter.Reference
 }
 
 func (hint *GetCurrentAccessDelta) String() string {
@@ -1065,7 +1356,7 @@ func (hint *GetCurrentAccessDelta) Execute(vm *VM.VirtualMachine, ctx *hinter.Hi
 }
 
 type ShouldContinueSquashLoop struct {
-	ShouldContinue hinter.CellRefer
+	ShouldContinue hinter.Reference
 }
 
 func (hint *ShouldContinueSquashLoop) String() string {
@@ -1090,7 +1381,7 @@ func (hint *ShouldContinueSquashLoop) Execute(vm *VM.VirtualMachine, ctx *hinter
 }
 
 type GetNextDictKey struct {
-	NextKey hinter.CellRefer
+	NextKey hinter.Reference
 }
 
 func (hint *GetNextDictKey) String() string {
@@ -1113,18 +1404,18 @@ func (hint *GetNextDictKey) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunne
 }
 
 type Uint512DivModByUint256 struct {
-	dividend0  hinter.ResOperander
-	dividend1  hinter.ResOperander
-	dividend2  hinter.ResOperander
-	dividend3  hinter.ResOperander
-	divisor0   hinter.ResOperander
-	divisor1   hinter.ResOperander
-	quotient0  hinter.CellRefer
-	quotient1  hinter.CellRefer
-	quotient2  hinter.CellRefer
-	quotient3  hinter.CellRefer
-	remainder0 hinter.CellRefer
-	remainder1 hinter.CellRefer
+	dividend0  hinter.Reference
+	dividend1  hinter.Reference
+	dividend2  hinter.Reference
+	dividend3  hinter.Reference
+	divisor0   hinter.Reference
+	divisor1   hinter.Reference
+	quotient0  hinter.Reference
+	quotient1  hinter.Reference
+	quotient2  hinter.Reference
+	quotient3  hinter.Reference
+	remainder0 hinter.Reference
+	remainder1 hinter.Reference
 }
 
 func (hint Uint512DivModByUint256) String() string {
@@ -1286,8 +1577,8 @@ func (hint Uint512DivModByUint256) Execute(vm *VM.VirtualMachine, _ *hinter.Hint
 }
 
 type AllocConstantSize struct {
-	Size hinter.ResOperander
-	Dst  hinter.CellRefer
+	Size hinter.Reference
+	Dst  hinter.Reference
 }
 
 func (hint *AllocConstantSize) String() string {
@@ -1320,9 +1611,9 @@ func (hint *AllocConstantSize) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRu
 }
 
 type AssertLeFindSmallArc struct {
-	A             hinter.ResOperander
-	B             hinter.ResOperander
-	RangeCheckPtr hinter.ResOperander
+	A             hinter.Reference
+	B             hinter.Reference
+	RangeCheckPtr hinter.Reference
 }
 
 func (hint *AssertLeFindSmallArc) String() string {
@@ -1438,7 +1729,7 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 }
 
 type AssertLeIsFirstArcExcluded struct {
-	SkipExcludeAFlag hinter.CellRefer
+	SkipExcludeAFlag hinter.Reference
 }
 
 func (hint *AssertLeIsFirstArcExcluded) String() string {
@@ -1466,7 +1757,7 @@ func (hint *AssertLeIsFirstArcExcluded) Execute(vm *VM.VirtualMachine, ctx *hint
 }
 
 type AssertLeIsSecondArcExcluded struct {
-	SkipExcludeBMinusA hinter.CellRefer
+	SkipExcludeBMinusA hinter.Reference
 }
 
 func (hint *AssertLeIsSecondArcExcluded) String() string {
@@ -1494,15 +1785,15 @@ func (hint *AssertLeIsSecondArcExcluded) Execute(vm *VM.VirtualMachine, ctx *hin
 }
 
 type RandomEcPoint struct {
-	x hinter.CellRefer
-	y hinter.CellRefer
+	x hinter.Reference
+	y hinter.Reference
 }
 
 func (hint *RandomEcPoint) String() string {
 	return "RandomEc"
 }
 
-func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
+func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	// Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic residue.
 
 	// Starkware's elliptic curve Beta value https://docs.starkware.co/starkex/crypto/stark-curve.html
@@ -1553,15 +1844,15 @@ func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine) error {
 }
 
 type FieldSqrt struct {
-	val  hinter.ResOperander
-	sqrt hinter.CellRefer
+	val  hinter.Reference
+	sqrt hinter.Reference
 }
 
 func (hint *FieldSqrt) String() string {
 	return "FieldSqrt"
 }
 
-func (hint *FieldSqrt) Execute(vm *VM.VirtualMachine) error {
+func (hint *FieldSqrt) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	val, err := hint.val.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve val operand %s: %v", hint.val, err)

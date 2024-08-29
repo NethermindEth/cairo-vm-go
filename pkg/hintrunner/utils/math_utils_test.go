@@ -98,7 +98,7 @@ func TestIgcdex(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actualX, actualY, actualG := igcdex(tt.a, tt.b)
+			actualX, actualY, actualG := Igcdex(tt.a, tt.b)
 
 			if actualX.Cmp(tt.expectedX) != 0 {
 				t.Errorf("got x: %v, want: %v", actualX, tt.expectedX)

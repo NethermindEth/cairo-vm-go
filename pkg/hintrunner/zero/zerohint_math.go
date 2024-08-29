@@ -23,7 +23,7 @@ import (
 //
 // `newIsLeFeltHint` writes to `[ap]` the result of the comparison
 // i.e, 1 if `a % PRIME <= b % PRIME`, 0 otherwise
-func newIsLeFeltHint(a, b hinter.ResOperander) hinter.Hinter {
+func newIsLeFeltHint(a, b hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsLeFelt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -54,12 +54,12 @@ func newIsLeFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 }
 
 func createIsLeFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func createIsLeFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 //
 // `newAssertLtFeltHint` returns an error if `a` is not
 // strictly less than `b` within a finite field
-func newAssertLtFeltHint(a, b hinter.ResOperander) hinter.Hinter {
+func newAssertLtFeltHint(a, b hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "AssertLtFelt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -105,12 +105,12 @@ func newAssertLtFeltHint(a, b hinter.ResOperander) hinter.Hinter {
 }
 
 func createAssertLtFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func createAssertLtFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 //   - `value` is the value that will be compared to 0
 //
 // `newAssertNotZeroHint` returns an error if `value` is zero
-func newAssertNotZeroHint(value hinter.ResOperander) hinter.Hinter {
+func newAssertNotZeroHint(value hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "AssertNotZero",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -147,7 +147,7 @@ func newAssertNotZeroHint(value hinter.ResOperander) hinter.Hinter {
 }
 
 func createAssertNotZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func createAssertNotZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 //
 // `newAssertNNHint` returns an error if `value` is negative
 // within a specified range
-func newAssertNNHint(a hinter.ResOperander) hinter.Hinter {
+func newAssertNNHint(a hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "AssertNN",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -186,7 +186,7 @@ func newAssertNNHint(a hinter.ResOperander) hinter.Hinter {
 }
 
 func createAssertNNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func createAssertNNHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 //   - `a` and `b` are the values that will be compared
 //
 // `newAssertNotEqualHint` returns an error if `a` and `b` are not equal
-func newAssertNotEqualHint(a, b hinter.ResOperander) hinter.Hinter {
+func newAssertNotEqualHint(a, b hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "AssertNotEqual",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -239,12 +239,12 @@ func newAssertNotEqualHint(a, b hinter.ResOperander) hinter.Hinter {
 }
 
 func createAssertNotEqualHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +261,7 @@ func createAssertNotEqualHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 //
 // `newAssert250bitsHint` writes the quotient and the remainder of the modular
 // division of `value` by 2**128 at `low` and `high` addresses in memory, respectively
-func newAssert250bitsHint(low, high, value hinter.ResOperander) hinter.Hinter {
+func newAssert250bitsHint(low, high, value hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Assert250bits",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -284,12 +284,12 @@ func newAssert250bitsHint(low, high, value hinter.ResOperander) hinter.Hinter {
 				return fmt.Errorf("assertion failed: %v is outside of the range [0, 2**250)", value)
 			}
 
-			lowAddr, err := low.GetAddress(vm)
+			lowAddr, err := low.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			highAddr, err := high.GetAddress(vm)
+			highAddr, err := high.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -318,17 +318,17 @@ func createAssert250bitsHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 	//> let low = [range_check_ptr];
 	//> let high = [range_check_ptr + 1];
 
-	low, err := resolver.GetResOperander("low")
+	low, err := resolver.GetReference("low")
 	if err != nil {
 		return nil, err
 	}
 
-	high, err := resolver.GetResOperander("high")
+	high, err := resolver.GetReference("high")
 	if err != nil {
 		return nil, err
 	}
 
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
@@ -342,7 +342,7 @@ func createAssert250bitsHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 // `newAssertLeFeltHint` takes 3 operanders as arguments
 //   - `a` and `b` is the values that will be evaluated
 //   - `rangeCheckPtr` is a pointer to the range-check builtin
-func newAssertLeFeltHint(a, b, rangeCheckPtr hinter.ResOperander) hinter.Hinter {
+func newAssertLeFeltHint(a, b, rangeCheckPtr hinter.Reference) hinter.Hinter {
 	return &core.AssertLeFindSmallArc{
 		A:             a,
 		B:             b,
@@ -351,17 +351,17 @@ func newAssertLeFeltHint(a, b, rangeCheckPtr hinter.ResOperander) hinter.Hinter 
 }
 
 func createAssertLeFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := resolver.GetResOperander("b")
+	b, err := resolver.GetReference("b")
 	if err != nil {
 		return nil, err
 	}
 
-	rangeCheckPtr, err := resolver.GetResOperander("range_check_ptr")
+	rangeCheckPtr, err := resolver.GetReference("range_check_ptr")
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +412,7 @@ func createAssertLeFeltExcluded2Hinter() (hinter.Hinter, error) {
 //
 // `newIsNNHint` writes 0 or 1 to memory at `[ap]` address, depending on
 // whether `a` is positive or negative, respectively
-func newIsNNHint(a hinter.ResOperander) hinter.Hinter {
+func newIsNNHint(a hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsNN",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -440,7 +440,7 @@ func newIsNNHint(a hinter.ResOperander) hinter.Hinter {
 }
 
 func createIsNNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
@@ -456,7 +456,7 @@ func createIsNNHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 //
 // `newIsNNOutOfRangeHint` writes 0 or 1 to memory at `[ap]` address, depending on
 // whether the negation of `a` minus one is positive or negative, respectively
-func newIsNNOutOfRangeHint(a hinter.ResOperander) hinter.Hinter {
+func newIsNNOutOfRangeHint(a hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsNNOutOfRange",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -488,7 +488,7 @@ func createIsNNOutOfRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	// This hint is executed for the negative values.
 	// If the value was non-negative, it's usually handled by the IsNN hint.
 
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
@@ -505,7 +505,7 @@ func createIsNNOutOfRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 //
 // `newIsPositiveHint` writes 1 or 0 to `dest` address, depending on
 // whether `value` is positive or negative in the context, respectively
-func newIsPositiveHint(value, isPositive hinter.ResOperander) hinter.Hinter {
+func newIsPositiveHint(value, isPositive hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsPositive",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -513,7 +513,7 @@ func newIsPositiveHint(value, isPositive hinter.ResOperander) hinter.Hinter {
 			//> ids.is_positive = 1 if is_positive(
 			//>     value=ids.value, prime=PRIME, rc_bound=range_check_builtin.bound) else 0
 
-			isPositiveAddr, err := isPositive.GetAddress(vm)
+			isPositiveAddr, err := isPositive.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -536,12 +536,12 @@ func newIsPositiveHint(value, isPositive hinter.ResOperander) hinter.Hinter {
 }
 
 func createIsPositiveHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
 
-	isPositive, err := resolver.GetResOperander("is_positive")
+	isPositive, err := resolver.GetReference("is_positive")
 	if err != nil {
 		return nil, err
 	}
@@ -556,7 +556,7 @@ func createIsPositiveHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 //   - `value` is the value that will be evaluated
 //
 // `newSplitIntAssertRangeHint` returns an error if `value` is not zero
-func newSplitIntAssertRangeHint(value hinter.ResOperander) hinter.Hinter {
+func newSplitIntAssertRangeHint(value hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitIntAssertRange",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -577,7 +577,7 @@ func newSplitIntAssertRangeHint(value hinter.ResOperander) hinter.Hinter {
 }
 
 func createSplitIntAssertRangeHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
@@ -596,7 +596,7 @@ func createSplitIntAssertRangeHinter(resolver hintReferenceResolver) (hinter.Hin
 //
 // `newSplitIntHint` is recursively called when splitting an integer
 // and writes to the `output` memory address the calculated limb
-func newSplitIntHint(output, value, base, bound hinter.ResOperander) hinter.Hinter {
+func newSplitIntHint(output, value, base, bound hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitInt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -636,22 +636,22 @@ func newSplitIntHint(output, value, base, bound hinter.ResOperander) hinter.Hint
 }
 
 func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	output, err := resolver.GetResOperander("output")
+	output, err := resolver.GetReference("output")
 	if err != nil {
 		return nil, err
 	}
 
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
 
-	base, err := resolver.GetResOperander("base")
+	base, err := resolver.GetReference("base")
 	if err != nil {
 		return nil, err
 	}
 
-	bound, err := resolver.GetResOperander("bound")
+	bound, err := resolver.GetReference("bound")
 	if err != nil {
 		return nil, err
 	}
@@ -668,7 +668,7 @@ func createSplitIntHinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 //
 // `newPowHint` writes to the memory address of `locs` variable the value of the least
 // significant bit of the exponent of `prevLocs` variable module a prime field
-func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
+func newPowHint(locs, prevLocs hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Pow",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -683,12 +683,12 @@ func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
 			} */
 
 			const expStructOffset = 4
-			locsBitAddress, err := locs.GetAddress(vm)
+			locsBitAddress, err := locs.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			prevLocsBitAddress, err := prevLocs.GetAddress(vm)
+			prevLocsBitAddress, err := prevLocs.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -714,12 +714,12 @@ func newPowHint(locs, prevLocs hinter.ResOperander) hinter.Hinter {
 }
 
 func createPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	locs, err := resolver.GetCellRefer("locs")
+	locs, err := resolver.GetReference("locs")
 	if err != nil {
 		return nil, err
 	}
 
-	prev_locs, err := resolver.GetCellRefer("prev_locs")
+	prev_locs, err := resolver.GetReference("prev_locs")
 	if err != nil {
 		return nil, err
 	}
@@ -736,7 +736,7 @@ func createPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 //   - `base` is the value that will be checked
 //
 // `newSignedPowHint` returns an error if `base` is zero
-func newSignedPowHint(base hinter.ResOperander) hinter.Hinter {
+func newSignedPowHint(base hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SignedPow",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -756,7 +756,7 @@ func newSignedPowHint(base hinter.ResOperander) hinter.Hinter {
 }
 
 func createSignedPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	base, err := resolver.GetResOperander("base")
+	base, err := resolver.GetReference("base")
 	if err != nil {
 		return nil, err
 	}
@@ -771,7 +771,7 @@ func createSignedPowHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 //
 // `newSplitFeltHint` writes the low and high components in the `low` and `high`
 // memory address, respectively
-func newSplitFeltHint(low, high, value hinter.ResOperander) hinter.Hinter {
+func newSplitFeltHint(low, high, value hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SplitFelt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -801,12 +801,12 @@ func newSplitFeltHint(low, high, value hinter.ResOperander) hinter.Hinter {
 
 			var valueBigInt big.Int
 			value.BigInt(&valueBigInt)
-			lowAddr, err := low.GetAddress(vm)
+			lowAddr, err := low.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			highAddr, err := high.GetAddress(vm)
+			highAddr, err := high.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -833,17 +833,17 @@ func newSplitFeltHint(low, high, value hinter.ResOperander) hinter.Hinter {
 }
 
 func createSplitFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	low, err := resolver.GetResOperander("low")
+	low, err := resolver.GetReference("low")
 	if err != nil {
 		return nil, err
 	}
 
-	high, err := resolver.GetResOperander("high")
+	high, err := resolver.GetReference("high")
 	if err != nil {
 		return nil, err
 	}
 
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
@@ -862,7 +862,7 @@ func createSplitFeltHinter(resolver hintReferenceResolver) (hinter.Hinter, error
 //   - `biased_q` is the variable that will store the quotient of the modular division
 //
 // `newSignedDivRemHint` writes `r` and `biased_q` values to their respective memory address
-func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hinter.Hinter {
+func newSignedDivRemHint(value, div, bound, r, biased_q hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "SignedDivRem",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -920,7 +920,7 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			boundFelt.BigInt(&boundBig)
 			qBig, rBig := new(big.Int).DivMod(&intValueBig, &divBig, new(big.Int))
 			rFelt := new(fp.Element).SetBigInt(rBig)
-			rAddr, err := r.GetAddress(vm)
+			rAddr, err := r.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -938,7 +938,7 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 			//> ids.biased_q = q + ids.bound
 			biasedQBig := new(big.Int).Add(qBig, &boundBig)
 			biasedQ := new(fp.Element).SetBigInt(biasedQBig)
-			biasedQAddr, err := biased_q.GetAddress(vm)
+			biasedQAddr, err := biased_q.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -949,27 +949,27 @@ func newSignedDivRemHint(value, div, bound, r, biased_q hinter.ResOperander) hin
 }
 
 func createSignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
 
-	div, err := resolver.GetResOperander("div")
+	div, err := resolver.GetReference("div")
 	if err != nil {
 		return nil, err
 	}
 
-	bound, err := resolver.GetResOperander("bound")
+	bound, err := resolver.GetReference("bound")
 	if err != nil {
 		return nil, err
 	}
 
-	r, err := resolver.GetResOperander("r")
+	r, err := resolver.GetReference("r")
 	if err != nil {
 		return nil, err
 	}
 
-	biased_q, err := resolver.GetResOperander("biased_q")
+	biased_q, err := resolver.GetReference("biased_q")
 	if err != nil {
 		return nil, err
 	}
@@ -985,7 +985,7 @@ func createSignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, er
 //   - `value` is the variable to operate on
 //
 // `newSqrtHint` writes the result of the hint at `root` address in memory
-func newSqrtHint(root, value hinter.ResOperander) hinter.Hinter {
+func newSqrtHint(root, value hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Sqrt",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -995,7 +995,7 @@ func newSqrtHint(root, value hinter.ResOperander) hinter.Hinter {
 			// assert 2 ** 250 < PRIME
 			// ids.root = isqrt(value)
 
-			rootAddr, err := root.GetAddress(vm)
+			rootAddr, err := root.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1024,12 +1024,12 @@ func newSqrtHint(root, value hinter.ResOperander) hinter.Hinter {
 }
 
 func createSqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	root, err := resolver.GetResOperander("root")
+	root, err := resolver.GetReference("root")
 	if err != nil {
 		return nil, err
 	}
 
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
@@ -1047,7 +1047,7 @@ func createSqrtHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
 //   - `r` is the variable that will store the remainder of the modular division
 //
 // `newUnsignedDivRemHinter` writes `q` and `r` values to their respective memory address
-func newUnsignedDivRemHint(value, div, q, r hinter.ResOperander) hinter.Hinter {
+func newUnsignedDivRemHint(value, div, q, r hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "UnsignedDivRem",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -1067,12 +1067,12 @@ func newUnsignedDivRemHint(value, div, q, r hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			qAddr, err := q.GetAddress(vm)
+			qAddr, err := q.Get(vm)
 			if err != nil {
 				return err
 			}
 
-			rAddr, err := r.GetAddress(vm)
+			rAddr, err := r.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1104,22 +1104,22 @@ func newUnsignedDivRemHint(value, div, q, r hinter.ResOperander) hinter.Hinter {
 }
 
 func createUnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	value, err := resolver.GetResOperander("value")
+	value, err := resolver.GetReference("value")
 	if err != nil {
 		return nil, err
 	}
 
-	div, err := resolver.GetResOperander("div")
+	div, err := resolver.GetReference("div")
 	if err != nil {
 		return nil, err
 	}
 
-	q, err := resolver.GetResOperander("q")
+	q, err := resolver.GetReference("q")
 	if err != nil {
 		return nil, err
 	}
 
-	r, err := resolver.GetResOperander("r")
+	r, err := resolver.GetReference("r")
 	if err != nil {
 		return nil, err
 	}
@@ -1127,7 +1127,7 @@ func createUnsignedDivRemHinter(resolver hintReferenceResolver) (hinter.Hinter, 
 	return newUnsignedDivRemHint(value, div, q, r), nil
 }
 
-func newIsQuadResidueHint(x, y hinter.ResOperander) hinter.Hinter {
+func newIsQuadResidueHint(x, y hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "IsQuadResidue",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
@@ -1144,7 +1144,7 @@ func newIsQuadResidueHint(x, y hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			yAddr, err := y.GetAddress(vm)
+			yAddr, err := y.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1178,11 +1178,11 @@ func newIsQuadResidueHint(x, y hinter.ResOperander) hinter.Hinter {
 }
 
 func createIsQuadResidueHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	x, err := resolver.GetResOperander("x")
+	x, err := resolver.GetReference("x")
 	if err != nil {
 		return nil, err
 	}
-	y, err := resolver.GetResOperander("y")
+	y, err := resolver.GetReference("y")
 	if err != nil {
 		return nil, err
 	}
@@ -1195,18 +1195,18 @@ func createIsQuadResidueHinter(resolver hintReferenceResolver) (hinter.Hinter, e
 // `newSplit128Hint` takes 3 operanders as arguments
 //   - `low` and `high` are the variables that will store the low and high components
 //   - `a` is the variable to split
-func newSplit128Hint(low, high, a hinter.ResOperander) hinter.Hinter {
+func newSplit128Hint(low, high, a hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Split128",
 		Op: func(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 			//> ids.low = ids.a & ((1<<128) - 1)
 			//> ids.high = ids.a >> 128
 
-			lowAddr, err := low.GetAddress(vm)
+			lowAddr, err := low.Get(vm)
 			if err != nil {
 				return err
 			}
-			highAddr, err := high.GetAddress(vm)
+			highAddr, err := high.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1228,17 +1228,17 @@ func newSplit128Hint(low, high, a hinter.ResOperander) hinter.Hinter {
 }
 
 func createSplit128Hinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	low, err := resolver.GetResOperander("low")
+	low, err := resolver.GetReference("low")
 	if err != nil {
 		return nil, err
 	}
 
-	high, err := resolver.GetResOperander("high")
+	high, err := resolver.GetReference("high")
 	if err != nil {
 		return nil, err
 	}
 
-	a, err := resolver.GetResOperander("a")
+	a, err := resolver.GetReference("a")
 	if err != nil {
 		return nil, err
 	}
@@ -1254,7 +1254,7 @@ func createSplit128Hinter(resolver hintReferenceResolver) (hinter.Hinter, error)
 //   - `addr` is the address that will be compared to 2**250
 //
 // `newIs250Bits` writes 1 or 0 to the memory address of `is_250` variable
-func newIs250BitsHint(is_250, addr hinter.ResOperander) hinter.Hinter {
+func newIs250BitsHint(is_250, addr hinter.Reference) hinter.Hinter {
 	return &GenericZeroHinter{
 		Name: "Is250Bits",
 		Op: func(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
@@ -1265,7 +1265,7 @@ func newIs250BitsHint(is_250, addr hinter.ResOperander) hinter.Hinter {
 				return err
 			}
 
-			is250Addr, err := is_250.GetAddress(vm)
+			is250Addr, err := is_250.Get(vm)
 			if err != nil {
 				return err
 			}
@@ -1284,11 +1284,11 @@ func newIs250BitsHint(is_250, addr hinter.ResOperander) hinter.Hinter {
 }
 
 func createIs250BitsHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
-	is_250, err := resolver.GetResOperander("is_250")
+	is_250, err := resolver.GetReference("is_250")
 	if err != nil {
 		return nil, err
 	}
-	addr, err := resolver.GetResOperander("addr")
+	addr, err := resolver.GetReference("addr")
 	if err != nil {
 		return nil, err
 	}
