@@ -3,6 +3,7 @@ package zero
 import (
 	"fmt"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	sn "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -96,4 +97,44 @@ func scanIdentifiers(json *zero.ZeroProgram, f func(key string, ident *zero.Iden
 		}
 	}
 	return nil
+}
+
+func LoadCairoProgram(cairoProgram *sn.StarknetProgram) (*Program, error) {
+	bytecode := make([]*fp.Element, len(cairoProgram.Bytecode))
+	for i, felt := range cairoProgram.Bytecode {
+		bytecode[i] = &felt
+	}
+
+	entrypoints := extractCairoEntryPoints(cairoProgram)
+	builtins := extractCairoBuiltins(cairoProgram)
+
+	return &Program{
+		Bytecode:    bytecode,
+		Entrypoints: entrypoints,
+		Labels:      nil,
+		Builtins:    builtins,
+	}, nil
+}
+
+func extractCairoEntryPoints(cairoProgram *sn.StarknetProgram) map[string]uint64 {
+	entrypoints := make(map[string]uint64)
+
+	for name, entry := range cairoProgram.EntryPointsByFunction {
+		entrypoints[name] = uint64(entry.Offset)
+	}
+	return entrypoints
+}
+
+func extractCairoBuiltins(cairoProgram *sn.StarknetProgram) []sn.Builtin {
+	uniqueBuiltins := make(map[starknet.Builtin]struct{})
+	var builtins []starknet.Builtin
+	for _, entry := range cairoProgram.EntryPointsByFunction {
+		for _, builtin := range entry.Builtins {
+			if _, exists := uniqueBuiltins[builtin]; !exists {
+				uniqueBuiltins[builtin] = struct{}{}
+				builtins = append(builtins, builtin)
+			}
+		}
+	}
+	return builtins
 }

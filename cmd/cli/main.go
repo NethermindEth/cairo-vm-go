@@ -98,13 +98,9 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot get cairo version: %w", err)
 					}
-					fmt.Printf("Loading program at %s\n", pathToFile)
-					zeroProgram, err := zero.ZeroProgramFromFile(pathToFile)
-					if err != nil {
-						return fmt.Errorf("cannot load program: %w", err)
-					}
 
 					var hints map[uint64][]hinter.Hinter
+					var program *runnerzero.Program
 					if cairoVersion > 0 {
 						cairoProgram, err := starknet.StarknetProgramFromFile(pathToFile)
 						if err != nil {
@@ -114,18 +110,34 @@ func main() {
 						if err != nil {
 							return fmt.Errorf("cannot get hints: %w", err)
 						}
+						program, err = runnerzero.LoadCairoProgram(cairoProgram)
+						if err != nil {
+							return fmt.Errorf("cannot load program: %w", err)
+						}
 					} else {
+						fmt.Printf("Loading program at %s\n", pathToFile)
+						zeroProgram, err := zero.ZeroProgramFromFile(pathToFile)
+						if err != nil {
+							return fmt.Errorf("cannot load program: %w", err)
+						}
 						hints, err = hintrunner.GetZeroHints(zeroProgram)
 						if err != nil {
 							return fmt.Errorf("cannot create hints: %w", err)
 						}
+						program, err = runnerzero.LoadCairoZeroProgram(zeroProgram)
+						if err != nil {
+							return fmt.Errorf("cannot load program: %w", err)
+						}
 					}
-					program, err := runnerzero.LoadCairoZeroProgram(zeroProgram)
-					if err != nil {
-						return fmt.Errorf("cannot load program: %w", err)
+					runnerMode := runnerzero.ExecutionMode
+					switch {
+					case proofmode && cairoVersion > 0:
+						runnerMode = runnerzero.ProofModeCairo1
+					case proofmode && cairoVersion == 0:
+						runnerMode = runnerzero.ProofModeCairo0
 					}
 					fmt.Println("Running....")
-					runner, err := runnerzero.NewRunner(program, hints, proofmode, collectTrace, maxsteps, layoutName)
+					runner, err := runnerzero.NewRunner(runnerMode, program, hints, proofmode, collectTrace, maxsteps, layoutName)
 					if err != nil {
 						return fmt.Errorf("cannot create runner: %w", err)
 					}
