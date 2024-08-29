@@ -11,13 +11,15 @@ import (
 func (runner *ZeroRunner) GetAirPublicInput() (AirPublicInput, error) {
 	rcMin, rcMax := runner.getPermRangeCheckLimits()
 	return AirPublicInput{
-		Layout:         runner.layout.Name,
-		RcMin:          rcMin,
-		RcMax:          rcMax,
-		NSteps:         len(runner.vm.Trace),
-		DynamicParams:  nil,
+		Layout:        runner.layout.Name,
+		RcMin:         rcMin,
+		RcMax:         rcMax,
+		NSteps:        len(runner.vm.Trace),
+		DynamicParams: nil,
+		// TODO: yet to be implemented
 		MemorySegments: make(map[string]AirMemorySegmentEntry),
-		PublicMemory:   make([]AirPublicMemoryEntry, 0),
+		// TODO: yet to be implemented
+		PublicMemory: make([]AirPublicMemoryEntry, 0),
 	}, nil
 }
 
