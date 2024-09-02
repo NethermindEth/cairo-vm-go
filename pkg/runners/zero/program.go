@@ -102,9 +102,9 @@ func scanIdentifiers(json *zero.ZeroProgram, f func(key string, ident *zero.Iden
 func LoadCairoProgram(cairoProgram *sn.StarknetProgram) (*Program, error) {
 	bytecode := make([]*fp.Element, len(cairoProgram.Bytecode))
 	for i, felt := range cairoProgram.Bytecode {
-		bytecode[i] = &felt
+		f := felt
+		bytecode[i] = &f
 	}
-
 	entrypoints := extractCairoEntryPoints(cairoProgram)
 	builtins := extractCairoBuiltins(cairoProgram)
 
