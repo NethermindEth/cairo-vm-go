@@ -367,7 +367,6 @@ func runVm(path string) (time.Duration, string, string, string, error) {
 	}
 
 	return elapsed, traceOutput, memoryOutput, string(res), nil
-
 }
 
 func decodeProof(traceLocation string, memoryLocation string) ([]vm.Trace, []*fp.Element, error) {
