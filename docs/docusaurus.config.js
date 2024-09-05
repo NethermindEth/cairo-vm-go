@@ -1,47 +1,57 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const lightCodeTheme = require("prism-react-renderer").default;
+const darkCodeTheme = require("prism-react-renderer").default;
+
+module.exports = {
+  themeConfig: {
+    prism: {
+      theme: lightCodeTheme,
+      darkTheme: darkCodeTheme,
+      additionalLanguages: ["bash", "javascript"], // Vous pouvez ajouter d'autres langages si nécessaire
+    },
+  },
+};
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Cairo-VM in Go',
-  tagline: 'A virtual machine for Cairo 1 written in Go',
-  url: 'https://cairo-vm.nethermind.io/',
-  baseUrl: '/',
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
-  favicon: 'img/favicon.ico',
+  title: "Cairo-VM in Go",
+  tagline: "A virtual machine for Cairo 1 written in Go",
+  url: "https://cairo-vm.nethermind.io/",
+  baseUrl: "/",
+  onBrokenLinks: "throw",
+  onBrokenMarkdownLinks: "warn",
+  favicon: "img/favicon.ico",
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'NethermindEth', // Usually your GitHub org/user name.
-  projectName: 'cairo-vm-go', // Usually your repo name.
+  organizationName: "NethermindEth", // Usually your GitHub org/user name.
+  projectName: "cairo-vm-go", // Usually your repo name.
   trailingSlash: false,
 
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
   // to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
+    defaultLocale: "en",
+    locales: ["en"],
   },
 
   presets: [
     [
-      'classic',
+      "classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          sidebarPath: require.resolve('./sidebars.js'),
+          sidebarPath: require.resolve("./sidebars.js"),
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/NethermindEth/cairo-vm-go/tree/main/docs/',
+            "https://github.com/NethermindEth/cairo-vm-go/tree/main/docs/",
         },
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: require.resolve("./src/css/custom.css"),
         },
       }),
     ],
@@ -51,56 +61,56 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       navbar: {
-        title: 'Cairo-VM',
+        title: "Cairo-VM",
         // logo: {
         //   alt: 'My Site Logo',
         //   src: 'img/logo.svg',
         // },
         items: [
           {
-            type: 'doc',
-            docId: 'intro',
-            position: 'left',
-            label: 'Docs',
+            type: "doc",
+            docId: "intro",
+            position: "left",
+            label: "Docs",
           },
           {
-            href: 'https://github.com/NethermindEth/cairo-vm-go',
-            label: 'GitHub',
-            position: 'right',
+            href: "https://github.com/NethermindEth/cairo-vm-go",
+            label: "GitHub",
+            position: "right",
           },
         ],
       },
       footer: {
-        style: 'dark',
+        style: "dark",
         links: [
           {
-            title: 'Docs',
+            title: "Docs",
             items: [
               {
-                label: 'Tutorial',
-                to: '/docs/intro',
+                label: "Tutorial",
+                to: "/docs/intro",
               },
             ],
           },
           {
-            title: 'Community',
+            title: "Community",
             items: [
               {
-                label: 'Discord',
-                href: 'https://discord.com/invite/PaCMRFdvWT',
+                label: "Discord",
+                href: "https://discord.com/invite/PaCMRFdvWT",
               },
               {
-                label: 'Twitter',
-                href: 'https://twitter.com/nethermindeth',
+                label: "Twitter",
+                href: "https://twitter.com/nethermindeth",
               },
             ],
           },
           {
-            title: 'More',
+            title: "More",
             items: [
               {
-                label: 'GitHub',
-                href: 'https://github.com/NethermindEth/cairo-vm-go',
+                label: "GitHub",
+                href: "https://github.com/NethermindEth/cairo-vm-go",
               },
             ],
           },

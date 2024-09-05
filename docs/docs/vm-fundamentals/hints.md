@@ -96,9 +96,9 @@ Returns a new dictionary with one DictAccess instance per key (value before and 
 
 Example:
 
-Input: {(key1, 0, 2), (key1, 2, 7), (key2, 4, 1), (key1, 7, 5), (key2, 1, 2)}
+Input: (key1, 0, 2), (key1, 2, 7), (key2, 4, 1), (key1, 7, 5), (key2, 1, 2)
 
-Output: {(key1, 0, 5), (key2, 4, 2)} 
+Output: (key1, 0, 5), (key2, 4, 2)
 
 ## Usort
 
