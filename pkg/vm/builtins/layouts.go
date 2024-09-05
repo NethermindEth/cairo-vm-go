@@ -91,6 +91,17 @@ func getRecursiveWithPoseidonLayout() Layout {
 	}}
 }
 
+func getAllSolidityLayout() Layout {
+	return Layout{Name: "recursive_with_poseidon", RcUnits: 4, Builtins: []LayoutBuiltin{
+		{Runner: &Output{}, Builtin: starknet.Output},
+		{Runner: &Pedersen{ratio: 8}, Builtin: starknet.Pedersen},
+		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
+		{Runner: &ECDSA{ratio: 512}, Builtin: starknet.ECDSA},
+		{Runner: &Bitwise{ratio: 256}, Builtin: starknet.Bitwise},
+		{Runner: &EcOp{ratio: 256, cache: make(map[uint64]fp.Element)}, Builtin: starknet.ECOP},
+	}}
+}
+
 func GetLayout(layout string) (Layout, error) {
 	switch layout {
 	case "plain":
@@ -107,6 +118,8 @@ func GetLayout(layout string) (Layout, error) {
 		return getRecursiveLargeOutputLayout(), nil
 	case "recursive_with_poseidon":
 		return getRecursiveWithPoseidonLayout(), nil
+	case "all_solidity":
+		return getAllSolidityLayout(), nil
 	case "":
 		return getPlainLayout(), nil
 	default:

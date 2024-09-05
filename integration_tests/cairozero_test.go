@@ -298,6 +298,8 @@ func runPythonVm(testFilename, path string) (time.Duration, string, string, erro
 		args = append(args, "--layout", "recursive_large_output")
 	} else if strings.HasSuffix(testFilename, ".recursive_with_poseidon.cairo") {
 		args = append(args, "--layout", "recursive_with_poseidon")
+	} else if strings.HasSuffix(testFilename, ".all_solidity.cairo") {
+		args = append(args, "--layout", "all_solidity")
 	}
 
 	cmd := exec.Command("cairo-run", args...)
@@ -339,6 +341,8 @@ func runVm(path string) (time.Duration, string, string, string, error) {
 		layout = "recursive_large_output"
 	} else if strings.Contains(path, ".recursive_with_poseidon") {
 		layout = "recursive_with_poseidon"
+	} else if strings.Contains(path, ".all_solidity") {
+		layout = "all_solidity"
 	}
 
 	cmd := exec.Command(
