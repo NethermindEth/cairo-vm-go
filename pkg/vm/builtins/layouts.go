@@ -38,7 +38,7 @@ func getSmallLayout() Layout {
 }
 
 func getDexLayout() Layout {
-	return Layout{Name: "small", RcUnits: 4, Builtins: []LayoutBuiltin{
+	return Layout{Name: "dex", RcUnits: 4, Builtins: []LayoutBuiltin{
 		{Runner: &Output{}, Builtin: starknet.Output},
 		{Runner: &Pedersen{ratio: 8}, Builtin: starknet.Pedersen},
 		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
