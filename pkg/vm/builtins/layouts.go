@@ -24,6 +24,10 @@ type Layout struct {
 	Builtins []LayoutBuiltin
 }
 
+func getPlainLayout() Layout {
+	return Layout{Name: "plain", RcUnits: 16, Builtins: []LayoutBuiltin{}}
+}
+
 func getSmallLayout() Layout {
 	return Layout{Name: "small", RcUnits: 16, Builtins: []LayoutBuiltin{
 		{Runner: &Output{}, Builtin: starknet.Output},
@@ -33,8 +37,13 @@ func getSmallLayout() Layout {
 	}}
 }
 
-func getPlainLayout() Layout {
-	return Layout{Name: "plain", RcUnits: 16, Builtins: []LayoutBuiltin{}}
+func getDexLayout() Layout {
+	return Layout{Name: "small", RcUnits: 4, Builtins: []LayoutBuiltin{
+		{Runner: &Output{}, Builtin: starknet.Output},
+		{Runner: &Pedersen{ratio: 8}, Builtin: starknet.Pedersen},
+		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
+		{Runner: &ECDSA{ratio: 512}, Builtin: starknet.ECDSA},
+	}}
 }
 
 func getStarknetWithKeccakLayout() Layout {
@@ -52,10 +61,12 @@ func getStarknetWithKeccakLayout() Layout {
 
 func GetLayout(layout string) (Layout, error) {
 	switch layout {
-	case "small":
-		return getSmallLayout(), nil
 	case "plain":
 		return getPlainLayout(), nil
+	case "small":
+		return getSmallLayout(), nil
+	case "dex":
+		return getDexLayout(), nil
 	case "starknet_with_keccak":
 		return getStarknetWithKeccakLayout(), nil
 	case "":
