@@ -288,12 +288,12 @@ func runPythonVm(testFilename, path string) (time.Duration, string, string, erro
 	// A file without this suffix will use the default ("plain") layout.
 	if strings.HasSuffix(testFilename, ".small.cairo") {
 		args = append(args, "--layout", "small")
-	} else if strings.HasSuffix(testFilename, ".starknet_without_keccak.cairo") {
-		args = append(args, "--layout", "starknet")
 	} else if strings.HasSuffix(testFilename, ".dex.cairo") {
 		args = append(args, "--layout", "dex")
 	} else if strings.HasSuffix(testFilename, ".starknet_with_keccak.cairo") {
 		args = append(args, "--layout", "starknet_with_keccak")
+	} else if strings.HasSuffix(testFilename, ".starknet.cairo") {
+		args = append(args, "--layout", "starknet")
 	} else if strings.HasSuffix(testFilename, ".recursive_large_output.cairo") {
 		args = append(args, "--layout", "recursive_large_output")
 	} else if strings.HasSuffix(testFilename, ".recursive_with_poseidon.cairo") {
