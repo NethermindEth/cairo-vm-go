@@ -330,11 +330,11 @@ func runVm(path string) (time.Duration, string, string, string, error) {
 	if strings.Contains(path, ".small") {
 		layout = "small"
 	} else if strings.Contains(path, ".dex") {
-		layout = "starknet_with_keccak"
-	} else if strings.Contains(path, ".recursive") {
 		layout = "dex"
-	} else if strings.Contains(path, ".starknet_with_keccak") {
+	} else if strings.Contains(path, ".recursive") {
 		layout = "recursive"
+	} else if strings.Contains(path, ".starknet_with_keccak") {
+		layout = "starknet_with_keccak"
 	} else if strings.Contains(path, ".recursive_large_output") {
 		layout = "recursive_large_output"
 	} else if strings.Contains(path, ".recursive_with_poseidon") {
