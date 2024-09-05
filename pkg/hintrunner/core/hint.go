@@ -33,7 +33,7 @@ func GetCairoHints(cairoProgramJson *starknet.StarknetProgram) (map[uint64][]hin
 }
 
 type AllocSegment struct {
-	Dst hinter.CellRefer
+	Dst hinter.Reference
 }
 
 func (hint *AllocSegment) String() string {
@@ -58,9 +58,9 @@ func (hint *AllocSegment) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerCon
 }
 
 type TestLessThan struct {
-	dst hinter.CellRefer
-	lhs hinter.ResOperander
-	rhs hinter.ResOperander
+	dst hinter.Reference
+	lhs hinter.Reference
+	rhs hinter.Reference
 }
 
 func (hint *TestLessThan) String() string {
@@ -108,9 +108,9 @@ func (hint *TestLessThan) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerCon
 }
 
 type TestLessThanOrEqual struct {
-	dst hinter.CellRefer
-	lhs hinter.ResOperander
-	rhs hinter.ResOperander
+	dst hinter.Reference
+	lhs hinter.Reference
+	rhs hinter.Reference
 }
 
 func (hint *TestLessThanOrEqual) String() string {
@@ -158,9 +158,9 @@ func (hint *TestLessThanOrEqual) Execute(vm *VM.VirtualMachine, _ *hinter.HintRu
 }
 
 type TestLessThanOrEqualAddress struct {
-	dst hinter.CellRefer
-	lhs hinter.ResOperander
-	rhs hinter.ResOperander
+	dst hinter.Reference
+	lhs hinter.Reference
+	rhs hinter.Reference
 }
 
 func (hint *TestLessThanOrEqualAddress) String() string {
@@ -198,11 +198,11 @@ func (hint *TestLessThanOrEqualAddress) Execute(vm *VM.VirtualMachine, _ *hinter
 }
 
 type LinearSplit struct {
-	value  hinter.ResOperander
-	scalar hinter.ResOperander
-	maxX   hinter.ResOperander
-	x      hinter.CellRefer
-	y      hinter.CellRefer
+	value  hinter.Reference
+	scalar hinter.Reference
+	maxX   hinter.Reference
+	x      hinter.Reference
+	y      hinter.Reference
 }
 
 func (hint LinearSplit) String() string {
@@ -282,10 +282,10 @@ func (hint LinearSplit) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 }
 
 type WideMul128 struct {
-	lhs  hinter.ResOperander
-	rhs  hinter.ResOperander
-	high hinter.CellRefer
-	low  hinter.CellRefer
+	lhs  hinter.Reference
+	rhs  hinter.Reference
+	high hinter.Reference
+	low  hinter.Reference
 }
 
 func (hint *WideMul128) String() string {
@@ -356,10 +356,10 @@ func (hint *WideMul128) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 }
 
 type DivMod struct {
-	lhs       hinter.ResOperander
-	rhs       hinter.ResOperander
-	quotient  hinter.CellRefer
-	remainder hinter.CellRefer
+	lhs       hinter.Reference
+	rhs       hinter.Reference
+	quotient  hinter.Reference
+	remainder hinter.Reference
 }
 
 func (hint DivMod) String() string {
@@ -439,16 +439,16 @@ func (hint DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) e
 }
 
 type U256InvModN struct {
-	B0        hinter.ResOperander
-	B1        hinter.ResOperander
-	N0        hinter.ResOperander
-	N1        hinter.ResOperander
-	G0OrNoInv hinter.CellRefer
-	G1Option  hinter.CellRefer
-	SOrR0     hinter.CellRefer
-	SOrR1     hinter.CellRefer
-	TOrK0     hinter.CellRefer
-	TOrK1     hinter.CellRefer
+	B0        hinter.Reference
+	B1        hinter.Reference
+	N0        hinter.Reference
+	N1        hinter.Reference
+	G0OrNoInv hinter.Reference
+	G1Option  hinter.Reference
+	SOrR0     hinter.Reference
+	SOrR1     hinter.Reference
+	TOrK0     hinter.Reference
+	TOrK1     hinter.Reference
 }
 
 func (hint U256InvModN) String() string {
@@ -666,14 +666,14 @@ func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 }
 
 type Uint256DivMod struct {
-	dividend0  hinter.ResOperander
-	dividend1  hinter.ResOperander
-	divisor0   hinter.ResOperander
-	divisor1   hinter.ResOperander
-	quotient0  hinter.CellRefer
-	quotient1  hinter.CellRefer
-	remainder0 hinter.CellRefer
-	remainder1 hinter.CellRefer
+	dividend0  hinter.Reference
+	dividend1  hinter.Reference
+	divisor0   hinter.Reference
+	divisor1   hinter.Reference
+	quotient0  hinter.Reference
+	quotient1  hinter.Reference
+	remainder0 hinter.Reference
+	remainder1 hinter.Reference
 }
 
 func (hint Uint256DivMod) String() string {
@@ -790,8 +790,8 @@ func (hint Uint256DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerCon
 }
 
 type DebugPrint struct {
-	start hinter.ResOperander
-	end   hinter.ResOperander
+	start hinter.Reference
+	end   hinter.Reference
 }
 
 func (hint DebugPrint) String() string {
@@ -841,8 +841,8 @@ func (hint DebugPrint) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContex
 }
 
 type SquareRoot struct {
-	value hinter.ResOperander
-	dst   hinter.CellRefer
+	value hinter.Reference
+	dst   hinter.Reference
 }
 
 func (hint *SquareRoot) String() string {
@@ -881,13 +881,13 @@ func (hint *SquareRoot) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 }
 
 type Uint256SquareRoot struct {
-	valueLow                     hinter.ResOperander
-	valueHigh                    hinter.ResOperander
-	sqrt0                        hinter.CellRefer
-	sqrt1                        hinter.CellRefer
-	remainderLow                 hinter.CellRefer
-	remainderHigh                hinter.CellRefer
-	sqrtMul2MinusRemainderGeU128 hinter.CellRefer
+	valueLow                     hinter.Reference
+	valueHigh                    hinter.Reference
+	sqrt0                        hinter.Reference
+	sqrt1                        hinter.Reference
+	remainderLow                 hinter.Reference
+	remainderHigh                hinter.Reference
+	sqrtMul2MinusRemainderGeU128 hinter.Reference
 }
 
 func (hint Uint256SquareRoot) String() string {
@@ -1038,7 +1038,7 @@ func (hint Uint256SquareRoot) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunne
 //
 
 type AllocFelt252Dict struct {
-	SegmentArenaPtr hinter.ResOperander
+	SegmentArenaPtr hinter.Reference
 }
 
 func (hint *AllocFelt252Dict) String() string {
@@ -1092,8 +1092,8 @@ func (hint *AllocFelt252Dict) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRun
 }
 
 type Felt252DictEntryInit struct {
-	DictPtr hinter.ResOperander
-	Key     hinter.ResOperander
+	DictPtr hinter.Reference
+	Key     hinter.Reference
 }
 
 func (hint Felt252DictEntryInit) String() string {
@@ -1124,8 +1124,8 @@ func (hint *Felt252DictEntryInit) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 }
 
 type Felt252DictEntryUpdate struct {
-	DictPtr hinter.ResOperander
-	Value   hinter.ResOperander
+	DictPtr hinter.Reference
+	Value   hinter.Reference
 }
 
 func (hint Felt252DictEntryUpdate) String() string {
@@ -1160,8 +1160,8 @@ func (hint *Felt252DictEntryUpdate) Execute(vm *VM.VirtualMachine, ctx *hinter.H
 }
 
 type GetSegmentArenaIndex struct {
-	DictIndex  hinter.CellRefer
-	DictEndPtr hinter.ResOperander
+	DictIndex  hinter.Reference
+	DictEndPtr hinter.Reference
 }
 
 func (hint *GetSegmentArenaIndex) String() string {
@@ -1193,10 +1193,10 @@ func (hint *GetSegmentArenaIndex) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 //
 
 type InitSquashData struct {
-	FirstKey     hinter.CellRefer
-	BigKeys      hinter.CellRefer
-	DictAccesses hinter.ResOperander
-	NumAccesses  hinter.ResOperander
+	FirstKey     hinter.Reference
+	BigKeys      hinter.Reference
+	DictAccesses hinter.Reference
+	NumAccesses  hinter.Reference
 }
 
 func (hint *InitSquashData) String() string {
@@ -1275,7 +1275,7 @@ func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunne
 }
 
 type GetCurrentAccessIndex struct {
-	RangeCheckPtr hinter.ResOperander
+	RangeCheckPtr hinter.Reference
 }
 
 func (hint *GetCurrentAccessIndex) String() string {
@@ -1300,7 +1300,7 @@ func (hint *GetCurrentAccessIndex) Execute(vm *VM.VirtualMachine, ctx *hinter.Hi
 }
 
 type ShouldSkipSquashLoop struct {
-	ShouldSkipLoop hinter.CellRefer
+	ShouldSkipLoop hinter.Reference
 }
 
 func (hint *ShouldSkipSquashLoop) String() string {
@@ -1326,7 +1326,7 @@ func (hint *ShouldSkipSquashLoop) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 }
 
 type GetCurrentAccessDelta struct {
-	IndexDeltaMinusOne hinter.CellRefer
+	IndexDeltaMinusOne hinter.Reference
 }
 
 func (hint *GetCurrentAccessDelta) String() string {
@@ -1357,7 +1357,7 @@ func (hint *GetCurrentAccessDelta) Execute(vm *VM.VirtualMachine, ctx *hinter.Hi
 }
 
 type ShouldContinueSquashLoop struct {
-	ShouldContinue hinter.CellRefer
+	ShouldContinue hinter.Reference
 }
 
 func (hint *ShouldContinueSquashLoop) String() string {
@@ -1382,7 +1382,7 @@ func (hint *ShouldContinueSquashLoop) Execute(vm *VM.VirtualMachine, ctx *hinter
 }
 
 type GetNextDictKey struct {
-	NextKey hinter.CellRefer
+	NextKey hinter.Reference
 }
 
 func (hint *GetNextDictKey) String() string {
@@ -1405,18 +1405,18 @@ func (hint *GetNextDictKey) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunne
 }
 
 type Uint512DivModByUint256 struct {
-	dividend0  hinter.ResOperander
-	dividend1  hinter.ResOperander
-	dividend2  hinter.ResOperander
-	dividend3  hinter.ResOperander
-	divisor0   hinter.ResOperander
-	divisor1   hinter.ResOperander
-	quotient0  hinter.CellRefer
-	quotient1  hinter.CellRefer
-	quotient2  hinter.CellRefer
-	quotient3  hinter.CellRefer
-	remainder0 hinter.CellRefer
-	remainder1 hinter.CellRefer
+	dividend0  hinter.Reference
+	dividend1  hinter.Reference
+	dividend2  hinter.Reference
+	dividend3  hinter.Reference
+	divisor0   hinter.Reference
+	divisor1   hinter.Reference
+	quotient0  hinter.Reference
+	quotient1  hinter.Reference
+	quotient2  hinter.Reference
+	quotient3  hinter.Reference
+	remainder0 hinter.Reference
+	remainder1 hinter.Reference
 }
 
 func (hint Uint512DivModByUint256) String() string {
@@ -1578,8 +1578,8 @@ func (hint Uint512DivModByUint256) Execute(vm *VM.VirtualMachine, _ *hinter.Hint
 }
 
 type AllocConstantSize struct {
-	Size hinter.ResOperander
-	Dst  hinter.CellRefer
+	Size hinter.Reference
+	Dst  hinter.Reference
 }
 
 func (hint *AllocConstantSize) String() string {
@@ -1612,9 +1612,9 @@ func (hint *AllocConstantSize) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRu
 }
 
 type AssertLeFindSmallArc struct {
-	A             hinter.ResOperander
-	B             hinter.ResOperander
-	RangeCheckPtr hinter.ResOperander
+	A             hinter.Reference
+	B             hinter.Reference
+	RangeCheckPtr hinter.Reference
 }
 
 func (hint *AssertLeFindSmallArc) String() string {
@@ -1730,7 +1730,7 @@ func (hint *AssertLeFindSmallArc) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 }
 
 type AssertLeIsFirstArcExcluded struct {
-	SkipExcludeAFlag hinter.CellRefer
+	SkipExcludeAFlag hinter.Reference
 }
 
 func (hint *AssertLeIsFirstArcExcluded) String() string {
@@ -1758,7 +1758,7 @@ func (hint *AssertLeIsFirstArcExcluded) Execute(vm *VM.VirtualMachine, ctx *hint
 }
 
 type AssertLeIsSecondArcExcluded struct {
-	SkipExcludeBMinusA hinter.CellRefer
+	SkipExcludeBMinusA hinter.Reference
 }
 
 func (hint *AssertLeIsSecondArcExcluded) String() string {
@@ -1786,8 +1786,8 @@ func (hint *AssertLeIsSecondArcExcluded) Execute(vm *VM.VirtualMachine, ctx *hin
 }
 
 type RandomEcPoint struct {
-	x hinter.CellRefer
-	y hinter.CellRefer
+	x hinter.Reference
+	y hinter.Reference
 }
 
 func (hint *RandomEcPoint) String() string {
@@ -1845,8 +1845,8 @@ func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerCo
 }
 
 type FieldSqrt struct {
-	val  hinter.ResOperander
-	sqrt hinter.CellRefer
+	val  hinter.Reference
+	sqrt hinter.Reference
 }
 
 func (hint *FieldSqrt) String() string {

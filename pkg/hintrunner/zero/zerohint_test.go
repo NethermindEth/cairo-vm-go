@@ -23,7 +23,7 @@ type hintTestContext struct {
 	vm            *VM.VirtualMachine
 	runnerContext *hinter.HintRunnerContext
 
-	operanders map[string]hinter.ResOperander
+	operanders map[string]hinter.Reference
 }
 
 // hintTestCase describes a single zero hint test case.
@@ -125,7 +125,7 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 		testCtx := &hintTestContext{
 			vm:            vm,
 			runnerContext: ctx,
-			operanders:    make(map[string]hinter.ResOperander),
+			operanders:    make(map[string]hinter.Reference),
 		}
 
 		// builtinsAllocated stores fp offsets mapping for the builtin pointers.

@@ -8,7 +8,7 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func parseCellRefer(cr starknet.CellRef) hinter.CellRefer {
+func parseCellRefer(cr starknet.CellRef) hinter.Reference {
 	switch cr.Register {
 	case starknet.AP:
 		return hinter.ApCellRef(cr.Offset)
@@ -49,7 +49,7 @@ func parseBinOp(ro starknet.ResOperand) hinter.BinaryOp {
 	a := hinter.Deref{
 		Deref: parseCellRefer(binOp.A),
 	}
-	var b hinter.ResOperander = nil
+	var b hinter.Reference = nil
 	switch binOp.B.Inner.(type) {
 	case *starknet.Deref:
 		b = &hinter.Deref{
@@ -74,7 +74,7 @@ func parseBinOp(ro starknet.ResOperand) hinter.BinaryOp {
 	}
 }
 
-func parseResOperand(ro starknet.ResOperand) hinter.ResOperander {
+func parseResOperand(ro starknet.ResOperand) hinter.Reference {
 	switch ro.Name {
 	case starknet.DerefName:
 		return parseDeref(ro)
