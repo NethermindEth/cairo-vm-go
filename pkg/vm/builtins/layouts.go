@@ -95,12 +95,12 @@ func GetLayout(layout string) (Layout, error) {
 	switch layout {
 	case "plain":
 		return getPlainLayout(), nil
-	case "starknet":
-		return getStarknetLayout(), nil
 	case "small":
 		return getSmallLayout(), nil
 	case "dex":
 		return getDexLayout(), nil
+	case "starknet":
+		return getStarknetLayout(), nil
 	case "starknet_with_keccak":
 		return getStarknetWithKeccakLayout(), nil
 	case "recursive_large_output":
