@@ -37,6 +37,19 @@ func getPlainLayout() Layout {
 	return Layout{Name: "plain", RcUnits: 16, Builtins: []LayoutBuiltin{}}
 }
 
+func getStarknetLayout() Layout {
+	return Layout{Name: "starknet", RcUnits: 4, Builtins: []LayoutBuiltin{
+		{Runner: &Output{}, Builtin: starknet.Output},
+		{Runner: &Pedersen{ratio: 32}, Builtin: starknet.Pedersen},
+		{Runner: &RangeCheck{ratio: 16, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
+		{Runner: &ECDSA{ratio: 2048}, Builtin: starknet.ECDSA},
+		{Runner: &Bitwise{ratio: 64}, Builtin: starknet.Bitwise},
+		{Runner: &EcOp{ratio: 1024, cache: make(map[uint64]fp.Element)}, Builtin: starknet.ECOP},
+		{Runner: &Keccak{ratio: 2048, cache: make(map[uint64]fp.Element)}, Builtin: starknet.Keccak},
+		{Runner: &Poseidon{ratio: 32, cache: make(map[uint64]fp.Element)}, Builtin: starknet.Poseidon},
+	}}
+}
+
 func getStarknetWithKeccakLayout() Layout {
 	return Layout{Name: "starknet_with_keccak", RcUnits: 4, Builtins: []LayoutBuiltin{
 		{Runner: &Output{}, Builtin: starknet.Output},
@@ -56,6 +69,8 @@ func GetLayout(layout string) (Layout, error) {
 		return getSmallLayout(), nil
 	case "plain":
 		return getPlainLayout(), nil
+	case "starknet":
+		return getStarknetLayout(), nil
 	case "starknet_with_keccak":
 		return getStarknetWithKeccakLayout(), nil
 	case "":
