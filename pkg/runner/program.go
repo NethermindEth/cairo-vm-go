@@ -1,4 +1,4 @@
-package zero
+package runner
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-type Program struct {
+type ZeroProgram struct {
 	// the bytecode in string format
 	Bytecode []*fp.Element
 	// given a string it returns the pc for that function call
@@ -19,7 +19,9 @@ type Program struct {
 	Builtins []sn.Builtin
 }
 
-func LoadCairoZeroProgram(cairoZeroJson *zero.ZeroProgram) (*Program, error) {
+type CairoProgram struct{}
+
+func LoadCairoZeroProgram(cairoZeroJson *zero.ZeroProgram) (*ZeroProgram, error) {
 	// bytecode
 	bytecode := make([]*fp.Element, len(cairoZeroJson.Data))
 	for i := range cairoZeroJson.Data {
@@ -43,7 +45,7 @@ func LoadCairoZeroProgram(cairoZeroJson *zero.ZeroProgram) (*Program, error) {
 		return nil, err
 	}
 
-	return &Program{
+	return &ZeroProgram{
 		Bytecode:    bytecode,
 		Entrypoints: entrypoints,
 		Labels:      labels,
