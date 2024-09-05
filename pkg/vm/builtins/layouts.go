@@ -37,6 +37,15 @@ func getPlainLayout() Layout {
 	return Layout{Name: "plain", RcUnits: 16, Builtins: []LayoutBuiltin{}}
 }
 
+func getRecursiveLayout() Layout {
+	return Layout{Name: "small", RcUnits: 16, Builtins: []LayoutBuiltin{
+		{Runner: &Output{}, Builtin: starknet.Output},
+		{Runner: &Pedersen{ratio: 128}, Builtin: starknet.Pedersen},
+		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
+		{Runner: &Bitwise{ratio: 8}, Builtin: starknet.Bitwise},
+	}}
+}
+
 func getStarknetWithKeccakLayout() Layout {
 	return Layout{Name: "starknet_with_keccak", RcUnits: 4, Builtins: []LayoutBuiltin{
 		{Runner: &Output{}, Builtin: starknet.Output},
@@ -56,6 +65,8 @@ func GetLayout(layout string) (Layout, error) {
 		return getSmallLayout(), nil
 	case "plain":
 		return getPlainLayout(), nil
+	case "recursive":
+		return getRecursiveLayout(), nil
 	case "starknet_with_keccak":
 		return getStarknetWithKeccakLayout(), nil
 	case "":
