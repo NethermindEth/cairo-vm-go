@@ -59,6 +59,17 @@ func getStarknetWithKeccakLayout() Layout {
 	}}
 }
 
+func getRecursiveWithPoseidonLayout() Layout {
+	return Layout{Name: "recursive_with_poseidon", RcUnits: 4, Builtins: []LayoutBuiltin{
+		{Runner: &Output{}, Builtin: starknet.Output},
+		{Runner: &Pedersen{ratio: 256}, Builtin: starknet.Pedersen},
+		{Runner: &RangeCheck{ratio: 16, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
+		{Runner: &Bitwise{ratio: 16}, Builtin: starknet.Bitwise},
+		{Runner: &Poseidon{ratio: 64, cache: make(map[uint64]fp.Element)}, Builtin: starknet.Poseidon},
+	}}
+}
+
+// recursive_with_poseidon
 func GetLayout(layout string) (Layout, error) {
 	switch layout {
 	case "plain":
@@ -69,6 +80,8 @@ func GetLayout(layout string) (Layout, error) {
 		return getDexLayout(), nil
 	case "starknet_with_keccak":
 		return getStarknetWithKeccakLayout(), nil
+	case "recursive_with_poseidon":
+		return getRecursiveWithPoseidonLayout(), nil
 	case "":
 		return getPlainLayout(), nil
 	default:
