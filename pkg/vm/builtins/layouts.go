@@ -52,6 +52,8 @@ func getRecursiveLayout() Layout {
 		{Runner: &Pedersen{ratio: 128}, Builtin: starknet.Pedersen},
 		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
 		{Runner: &Bitwise{ratio: 8}, Builtin: starknet.Bitwise},
+	}}
+}
 
 func getStarknetLayout() Layout {
 	return Layout{Name: "starknet", RcUnits: 4, Builtins: []LayoutBuiltin{
