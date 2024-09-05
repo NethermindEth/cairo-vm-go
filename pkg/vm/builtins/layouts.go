@@ -92,7 +92,7 @@ func getRecursiveWithPoseidonLayout() Layout {
 }
 
 func getAllSolidityLayout() Layout {
-	return Layout{Name: "recursive_with_poseidon", RcUnits: 4, Builtins: []LayoutBuiltin{
+	return Layout{Name: "recursive_with_poseidon", RcUnits: 8, Builtins: []LayoutBuiltin{
 		{Runner: &Output{}, Builtin: starknet.Output},
 		{Runner: &Pedersen{ratio: 8}, Builtin: starknet.Pedersen},
 		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
