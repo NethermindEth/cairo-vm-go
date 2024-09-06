@@ -49,7 +49,7 @@ func TestEmptyEntryPointTypeParsing(t *testing.T) {
 	starknet, err := StarknetProgramFromJSON(testData)
 	require.NoError(t, err)
 
-	entryPoints := starknet.EntryPoints
+	entryPoints := starknet.EntryPointsByType
 	assert.Empty(t, entryPoints.External)
 	assert.Empty(t, entryPoints.L1Handler)
 	assert.Empty(t, entryPoints.Constructor)
@@ -84,7 +84,7 @@ func TestEntryPointInfoParsing(t *testing.T) {
 	starknet, err := StarknetProgramFromJSON(testData)
 	require.NoError(t, err)
 
-	entryPoints := starknet.EntryPoints
+	entryPoints := starknet.EntryPointsByType
 	assert.Len(t, entryPoints.External, 1)
 
 	entryPointInfo := entryPoints.External[0]
