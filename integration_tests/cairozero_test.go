@@ -288,9 +288,21 @@ func runPythonVm(testFilename, path string) (time.Duration, string, string, erro
 	// A file without this suffix will use the default ("plain") layout.
 	if strings.HasSuffix(testFilename, ".small.cairo") {
 		args = append(args, "--layout", "small")
+	} else if strings.HasSuffix(testFilename, ".dex.cairo") {
+		args = append(args, "--layout", "dex")
+	} else if strings.HasSuffix(testFilename, ".recursive.cairo") {
+		args = append(args, "--layout", "recursive")
 	} else if strings.HasSuffix(testFilename, ".starknet_with_keccak.cairo") {
 		args = append(args, "--layout", "starknet_with_keccak")
-	} else if strings.HasSuffix(testFilename, ".all_cairo.cairo") {
+	} else if strings.HasSuffix(testFilename, ".starknet.cairo") {
+		args = append(args, "--layout", "starknet")
+	} else if strings.HasSuffix(testFilename, ".recursive_large_output.cairo") {
+		args = append(args, "--layout", "recursive_large_output")
+	} else if strings.HasSuffix(testFilename, ".recursive_with_poseidon.cairo") {
+		args = append(args, "--layout", "recursive_with_poseidon")
+	} else if strings.HasSuffix(testFilename, ".all_solidity.cairo") {
+		args = append(args, "--layout", "all_solidity")
+  } else if strings.HasSuffix(testFilename, ".all_cairo.cairo") {
 		args = append(args, "--layout", "all_cairo")
 	}
 
@@ -323,9 +335,21 @@ func runVm(path string) (time.Duration, string, string, string, error) {
 	layout := "plain"
 	if strings.Contains(path, ".small") {
 		layout = "small"
+	} else if strings.Contains(path, ".dex") {
+		layout = "dex"
+	} else if strings.Contains(path, ".recursive") {
+		layout = "recursive"
 	} else if strings.Contains(path, ".starknet_with_keccak") {
 		layout = "starknet_with_keccak"
-	} else if strings.Contains(path, ".all_cairo") {
+	} else if strings.Contains(path, ".starknet") {
+		layout = "starknet"
+	} else if strings.Contains(path, ".recursive_large_output") {
+		layout = "recursive_large_output"
+	} else if strings.Contains(path, ".recursive_with_poseidon") {
+		layout = "recursive_with_poseidon"
+	} else if strings.Contains(path, ".all_solidity") {
+		layout = "all_solidity"
+  } else if strings.Contains(path, ".all_cairo") {
 		layout = "all_cairo"
 	}
 
@@ -355,7 +379,6 @@ func runVm(path string) (time.Duration, string, string, string, error) {
 	}
 
 	return elapsed, traceOutput, memoryOutput, string(res), nil
-
 }
 
 func decodeProof(traceLocation string, memoryLocation string) ([]vm.Trace, []*fp.Element, error) {
