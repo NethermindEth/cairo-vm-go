@@ -304,6 +304,12 @@ func (runner *ZeroRunner) checkUsedCells() error {
 			}
 		}
 	}
+
+	err := runner.checkDilutedCheckUsage()
+	if err != nil {
+		return err
+	}
+
 	return runner.checkRangeCheckUsage()
 }
 
@@ -360,7 +366,7 @@ func (runner *ZeroRunner) getPermRangeCheckLimits() (uint16, uint16) {
 }
 
 func (runner *ZeroRunner) checkDilutedCheckUsage() error {
-	return nil
+	return fmt.Errorf("check")
 }
 
 // FinalizeSegments calculates the final size of the builtins segments,
