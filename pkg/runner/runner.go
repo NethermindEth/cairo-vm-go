@@ -366,7 +366,7 @@ func (runner *ZeroRunner) getPermRangeCheckLimits() (uint16, uint16) {
 }
 
 func (runner *ZeroRunner) checkDilutedCheckUsage() error {
-	return fmt.Errorf("check")
+	return fmt.Errorf("check for diluted pool instance failed")
 }
 
 // FinalizeSegments calculates the final size of the builtins segments,
