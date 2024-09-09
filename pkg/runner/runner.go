@@ -359,6 +359,10 @@ func (runner *ZeroRunner) getPermRangeCheckLimits() (uint16, uint16) {
 	return rcMin, rcMax
 }
 
+func (runner *ZeroRunner) checkDilutedCheckUsage() error {
+	return nil
+}
+
 // FinalizeSegments calculates the final size of the builtins segments,
 // using number of allocated instances and memory cells per builtin instance.
 // Additionally it sets the final size of the program segment to the program size.

@@ -22,6 +22,7 @@ type Layout struct {
 	RcUnits uint64
 	// List of builtins to be included in given layout
 	Builtins []LayoutBuiltin
+	diluted_pool_instance_def
 }
 
 func getPlainLayout() Layout {
