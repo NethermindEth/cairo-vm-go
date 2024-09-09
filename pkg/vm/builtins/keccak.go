@@ -89,3 +89,11 @@ func (k *Keccak) String() string {
 func (k *Keccak) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
 	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, k.ratio, inputCellsPerKeccak, instancesPerComponentKeccak, cellsPerKeccak)
 }
+
+func (k *Keccak) GetUsedDilutedCheckUnits(dilutedNBits uint32) uint64 {
+	totalCells := uint64(262144)
+	if dilutedNBits == 0 {
+		return 0
+	}
+	return totalCells / uint64(dilutedNBits)
+}

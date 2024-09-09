@@ -100,3 +100,27 @@ func (b *Bitwise) String() string {
 func (b *Bitwise) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
 	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, b.ratio, inputCellsPerBitwise, instancesPerComponentBitwise, cellsPerBitwise)
 }
+
+func (b *Bitwise) GetUsedDilutedCheckUnits(dilutedSpacing uint32, dilutedNBits uint32) uint64 {
+	totalNBits := uint32(251)
+	partition := make([]uint32, 0, totalNBits)
+
+	for i := uint32(0); i < totalNBits; i += dilutedSpacing * dilutedNBits {
+		for j := uint32(0); j < dilutedSpacing; j++ {
+			if i+j < totalNBits {
+				partition = append(partition, i+j)
+			}
+		}
+	}
+
+	partitionLength := uint64(len(partition))
+	numTrimmed := uint64(0)
+
+	for _, elem := range partition {
+		if elem+dilutedSpacing*(dilutedNBits-1)+1 > totalNBits {
+			numTrimmed++
+		}
+	}
+
+	return 4*partitionLength + numTrimmed
+}

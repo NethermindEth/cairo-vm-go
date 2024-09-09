@@ -366,9 +366,13 @@ func (runner *ZeroRunner) getPermRangeCheckLimits() (uint16, uint16) {
 }
 
 func (runner *ZeroRunner) checkDilutedCheckUsage() error {
-	// for _, builtin := range runner.program.Builtins {
-	// }
-	// return fmt.Errorf("check for diluted pool instance failed")
+	if runner.layout.DilutedPoolInstanceDef.IsNone() {
+		return nil
+	}
+
+	// dilutedPoolInstance := runner.layout.DilutedPoolInstanceDef.Unwrap()
+	// usedUnitsByBuiltins := 0
+
 	return nil
 }
 
