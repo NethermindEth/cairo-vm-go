@@ -22,11 +22,12 @@ type Layout struct {
 	RcUnits uint64
 	// List of builtins to be included in given layout
 	Builtins []LayoutBuiltin
-	diluted_pool_instance_def
+	// Option of a diluted pool instance
+	DilutedPoolInstanceDef DilutedPoolInstanceOption
 }
 
 func getPlainLayout() Layout {
-	return Layout{Name: "plain", RcUnits: 16, Builtins: []LayoutBuiltin{}}
+	return Layout{Name: "plain", RcUnits: 16, Builtins: []LayoutBuiltin{}, DilutedPoolInstanceDef: NoneDilutedPoolInstance()}
 }
 
 func getSmallLayout() Layout {
@@ -35,7 +36,7 @@ func getSmallLayout() Layout {
 		{Runner: &Pedersen{ratio: 8}, Builtin: starknet.Pedersen},
 		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
 		{Runner: &ECDSA{ratio: 512}, Builtin: starknet.ECDSA},
-	}}
+	}, DilutedPoolInstanceDef: NoneDilutedPoolInstance()}
 }
 
 func getDexLayout() Layout {
@@ -44,7 +45,7 @@ func getDexLayout() Layout {
 		{Runner: &Pedersen{ratio: 8}, Builtin: starknet.Pedersen},
 		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
 		{Runner: &ECDSA{ratio: 512}, Builtin: starknet.ECDSA},
-	}}
+	}, DilutedPoolInstanceDef: NoneDilutedPoolInstance()}
 }
 
 func getRecursiveLayout() Layout {
@@ -53,7 +54,7 @@ func getRecursiveLayout() Layout {
 		{Runner: &Pedersen{ratio: 128}, Builtin: starknet.Pedersen},
 		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
 		{Runner: &Bitwise{ratio: 8}, Builtin: starknet.Bitwise},
-	}}
+	}, DilutedPoolInstanceDef: SomeDilutedPoolInstance(DilutedPoolInstance{UnitsPerStep: 16, Spacing: 4, NBits: 16})}
 }
 
 func getStarknetLayout() Layout {
@@ -65,7 +66,7 @@ func getStarknetLayout() Layout {
 		{Runner: &Bitwise{ratio: 64}, Builtin: starknet.Bitwise},
 		{Runner: &EcOp{ratio: 1024, cache: make(map[uint64]fp.Element)}, Builtin: starknet.ECOP},
 		{Runner: &Poseidon{ratio: 32, cache: make(map[uint64]fp.Element)}, Builtin: starknet.Poseidon},
-	}}
+	}, DilutedPoolInstanceDef: SomeDilutedPoolInstance(DilutedPoolInstance{UnitsPerStep: 2, Spacing: 4, NBits: 16})}
 }
 
 func getStarknetWithKeccakLayout() Layout {
@@ -78,7 +79,7 @@ func getStarknetWithKeccakLayout() Layout {
 		{Runner: &EcOp{ratio: 1024, cache: make(map[uint64]fp.Element)}, Builtin: starknet.ECOP},
 		{Runner: &Keccak{ratio: 2048, cache: make(map[uint64]fp.Element)}, Builtin: starknet.Keccak},
 		{Runner: &Poseidon{ratio: 32, cache: make(map[uint64]fp.Element)}, Builtin: starknet.Poseidon},
-	}}
+	}, DilutedPoolInstanceDef: SomeDilutedPoolInstance(DilutedPoolInstance{UnitsPerStep: 16, Spacing: 4, NBits: 16})}
 }
 
 func getRecursiveLargeOutputLayout() Layout {
@@ -88,7 +89,7 @@ func getRecursiveLargeOutputLayout() Layout {
 		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
 		{Runner: &Bitwise{ratio: 8}, Builtin: starknet.Bitwise},
 		{Runner: &Poseidon{ratio: 8, cache: make(map[uint64]fp.Element)}, Builtin: starknet.Poseidon},
-	}}
+	}, DilutedPoolInstanceDef: SomeDilutedPoolInstance(DilutedPoolInstance{UnitsPerStep: 16, Spacing: 4, NBits: 16})}
 }
 
 func getRecursiveWithPoseidonLayout() Layout {
@@ -98,7 +99,7 @@ func getRecursiveWithPoseidonLayout() Layout {
 		{Runner: &RangeCheck{ratio: 16, RangeCheckNParts: 8}, Builtin: starknet.RangeCheck},
 		{Runner: &Bitwise{ratio: 16}, Builtin: starknet.Bitwise},
 		{Runner: &Poseidon{ratio: 64, cache: make(map[uint64]fp.Element)}, Builtin: starknet.Poseidon},
-	}}
+	}, DilutedPoolInstanceDef: SomeDilutedPoolInstance(DilutedPoolInstance{UnitsPerStep: 8, Spacing: 4, NBits: 16})}
 }
 
 func getAllSolidityLayout() Layout {
@@ -109,7 +110,7 @@ func getAllSolidityLayout() Layout {
 		{Runner: &ECDSA{ratio: 512}, Builtin: starknet.ECDSA},
 		{Runner: &Bitwise{ratio: 256}, Builtin: starknet.Bitwise},
 		{Runner: &EcOp{ratio: 256, cache: make(map[uint64]fp.Element)}, Builtin: starknet.ECOP},
-	}}
+	}, DilutedPoolInstanceDef: SomeDilutedPoolInstance(DilutedPoolInstance{UnitsPerStep: 16, Spacing: 4, NBits: 16})}
 }
 
 func GetLayout(layout string) (Layout, error) {
