@@ -6,14 +6,24 @@ import (
 
 func (runner *ZeroRunner) GetAirPublicInput() (AirPublicInput, error) {
 	rcMin, rcMax := runner.getPermRangeCheckLimits()
+
+	// TODO: refactor to reuse earlier computed relocated trace
+	relocatedTrace := runner.vm.RelocateTrace()
+	firstTrace := relocatedTrace[0]
+	lastTrace := relocatedTrace[len(relocatedTrace)-1]
+	memorySegments := make(map[string]AirMemorySegmentEntry)
+	// TODO: you need to calculate this for each builtin
+	memorySegments["program"] = AirMemorySegmentEntry{BeginAddr: firstTrace.Pc, StopPtr: lastTrace.Pc}
+	memorySegments["execution"] = AirMemorySegmentEntry{BeginAddr: firstTrace.Ap, StopPtr: lastTrace.Ap}
+
 	return AirPublicInput{
 		Layout:        runner.layout.Name,
 		RcMin:         rcMin,
 		RcMax:         rcMax,
 		NSteps:        len(runner.vm.Trace),
 		DynamicParams: nil,
-		// TODO: yet to be implemented
-		MemorySegments: make(map[string]AirMemorySegmentEntry),
+		// TODO: yet to be implemented fully
+		MemorySegments: memorySegments,
 		// TODO: yet to be implemented
 		PublicMemory: make([]AirPublicMemoryEntry, 0),
 	}, nil
@@ -30,8 +40,8 @@ type AirPublicInput struct {
 }
 
 type AirMemorySegmentEntry struct {
-	BeginAddr int `json:"begin_addr"`
-	StopPtr   int `json:"stop_ptr"`
+	BeginAddr uint64 `json:"begin_addr"`
+	StopPtr   uint64 `json:"stop_ptr"`
 }
 
 type AirPublicMemoryEntry struct {
