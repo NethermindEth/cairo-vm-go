@@ -13,7 +13,7 @@ import (
 	cairoversion "github.com/NethermindEth/cairo-vm-go/pkg/parsers/cairo_version"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
-	runnerzero "github.com/NethermindEth/cairo-vm-go/pkg/runners/zero"
+	"github.com/NethermindEth/cairo-vm-go/pkg/runner"
 	"github.com/urfave/cli/v2"
 )
 
@@ -136,12 +136,12 @@ func main() {
 							return fmt.Errorf("cannot create hints: %w", err)
 						}
 					}
-					program, err := runnerzero.LoadCairoZeroProgram(zeroProgram)
+					program, err := runner.LoadCairoZeroProgram(zeroProgram)
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
 					fmt.Println("Running....")
-					runner, err := runnerzero.NewRunner(program, hints, proofmode, collectTrace, maxsteps, layoutName)
+					runner, err := runner.NewRunner(program, hints, proofmode, collectTrace, maxsteps, layoutName)
 					if err != nil {
 						return fmt.Errorf("cannot create runner: %w", err)
 					}

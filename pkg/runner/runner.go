@@ -1,4 +1,4 @@
-package zero
+package runner
 
 import (
 	"errors"
@@ -16,7 +16,7 @@ import (
 
 type ZeroRunner struct {
 	// core components
-	program    *Program
+	program    *ZeroProgram
 	vm         *vm.VirtualMachine
 	hintrunner hintrunner.HintRunner
 	// config
@@ -28,8 +28,10 @@ type ZeroRunner struct {
 	layout      builtins.Layout
 }
 
+type CairoRunner struct{}
+
 // Creates a new Runner of a Cairo Zero program
-func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, proofmode bool, collectTrace bool, maxsteps uint64, layoutName string) (ZeroRunner, error) {
+func NewRunner(program *ZeroProgram, hints map[uint64][]hinter.Hinter, proofmode bool, collectTrace bool, maxsteps uint64, layoutName string) (ZeroRunner, error) {
 	hintrunner := hintrunner.NewHintRunner(hints)
 	layout, err := builtins.GetLayout(layoutName)
 	if err != nil {

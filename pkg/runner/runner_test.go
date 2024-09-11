@@ -1,4 +1,4 @@
-package zero
+package runner
 
 import (
 	"fmt"
@@ -414,13 +414,13 @@ func trimmedSegment(segment *memory.Segment) *memory.Segment {
 	return segment
 }
 
-func createProgram(code string) *Program {
+func createProgram(code string) *ZeroProgram {
 	bytecode, err := assembler.CasmToBytecode(code)
 	if err != nil {
 		panic(err)
 	}
 
-	program := Program{
+	program := ZeroProgram{
 		Bytecode: bytecode,
 		Entrypoints: map[string]uint64{
 			"main": 0,
@@ -430,7 +430,7 @@ func createProgram(code string) *Program {
 	return &program
 }
 
-func createProgramWithBuiltins(code string, builtins ...sn.Builtin) *Program {
+func createProgramWithBuiltins(code string, builtins ...sn.Builtin) *ZeroProgram {
 	program := createProgram(code)
 	program.Builtins = builtins
 	return program

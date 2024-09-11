@@ -1,4 +1,4 @@
-package zero
+package runner
 
 import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
