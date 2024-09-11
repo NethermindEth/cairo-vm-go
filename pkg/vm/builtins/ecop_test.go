@@ -27,7 +27,7 @@ func TestEcOp(t *testing.T) {
 	mult := ecmult(&point{*qx, *qy}, new(uint256.Int).SetUint64(3), &utils.FeltOne)
 	r := ecadd(&point{*px, *py}, &mult)
 
-	segment := memory.EmptySegmentWithLength(CellsPerEcOp)
+	segment := memory.EmptySegmentWithLength(cellsPerEcOp)
 	ecop := &EcOp{ratio: 1024, cache: make(map[uint64]fp.Element)}
 	segment.WithBuiltinRunner(ecop)
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -88,4 +89,23 @@ func (r *RangeCheck) GetRangeCheckUsage(rangeCheckSegment *memory.Segment) (uint
 		}
 	}
 	return minVal, maxVal
+}
+
+type AirPrivateBuiltinRangeCheck struct {
+	Index int    `json:"index"`
+	Value string `json:"value"`
+}
+
+func (r *RangeCheck) GetAirPrivateInput(rangeCheckSegment *memory.Segment) []AirPrivateBuiltinRangeCheck {
+	values := make([]AirPrivateBuiltinRangeCheck, 0)
+	for index, value := range rangeCheckSegment.Data {
+		if !value.Known() {
+			continue
+		}
+		valueBig := big.Int{}
+		value.Felt.BigInt(&valueBig)
+		valueHex := fmt.Sprintf("0x%x", &valueBig)
+		values = append(values, AirPrivateBuiltinRangeCheck{Index: index, Value: valueHex})
+	}
+	return values
 }

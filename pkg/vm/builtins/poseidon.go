@@ -2,14 +2,18 @@ package builtins
 
 import (
 	"errors"
+	"fmt"
+	"math/big"
+	"sort"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 const PoseidonName = "poseidon"
-const CellsPerPoseidon = 6
-const InputCellsPerPoseidon = 3
+const cellsPerPoseidon = 6
+const inputCellsPerPoseidon = 3
 const instancesPerComponentPoseidon = 1
 
 type Poseidon struct {
@@ -27,13 +31,13 @@ func (p *Poseidon) InferValue(segment *mem.Segment, offset uint64) error {
 		mv := mem.MemoryValueFromFieldElement(&value)
 		return segment.Write(offset, &mv)
 	}
-	poseidonIndex := offset % CellsPerPoseidon
-	if poseidonIndex < InputCellsPerPoseidon {
+	poseidonIndex := offset % cellsPerPoseidon
+	if poseidonIndex < inputCellsPerPoseidon {
 		return errors.New("cannot infer value")
 	}
 	baseOffset := offset - poseidonIndex
-	poseidonInputValues := make([]*fp.Element, InputCellsPerPoseidon)
-	for i := 0; i < InputCellsPerPoseidon; i++ {
+	poseidonInputValues := make([]*fp.Element, inputCellsPerPoseidon)
+	for i := 0; i < inputCellsPerPoseidon; i++ {
 		mv := segment.Peek(baseOffset + uint64(i))
 		if !mv.Known() {
 			return errors.New("cannot infer value")
@@ -56,9 +60,59 @@ func (p *Poseidon) InferValue(segment *mem.Segment, offset uint64) error {
 }
 
 func (p *Poseidon) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
-	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, p.ratio, InputCellsPerPoseidon, instancesPerComponentPoseidon, CellsPerPoseidon)
+	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, p.ratio, inputCellsPerPoseidon, instancesPerComponentPoseidon, cellsPerPoseidon)
 }
 
 func (p *Poseidon) String() string {
 	return PoseidonName
+}
+
+type AirPrivateBuiltinPoseidon struct {
+	Index   int    `json:"index"`
+	InputS0 string `json:"input_s0"`
+	InputS1 string `json:"input_s1"`
+	InputS2 string `json:"input_s2"`
+}
+
+func (p *Poseidon) GetAirPrivateInput(poseidonSegment *memory.Segment) []AirPrivateBuiltinPoseidon {
+	valueMapping := make(map[int]AirPrivateBuiltinPoseidon)
+	for index, value := range poseidonSegment.Data {
+		if !value.Known() {
+			continue
+		}
+		idx, stateIndex := index/cellsPerPoseidon, index%cellsPerPoseidon
+		if stateIndex >= inputCellsPerPoseidon {
+			continue
+		}
+
+		builtinValue, exists := valueMapping[idx]
+		if !exists {
+			builtinValue = AirPrivateBuiltinPoseidon{Index: idx}
+		}
+
+		valueBig := big.Int{}
+		value.Felt.BigInt(&valueBig)
+		valueHex := fmt.Sprintf("0x%x", &valueBig)
+		if stateIndex == 0 {
+			builtinValue.InputS0 = valueHex
+		} else if stateIndex == 1 {
+			builtinValue.InputS1 = valueHex
+		} else if stateIndex == 2 {
+			builtinValue.InputS2 = valueHex
+		}
+		valueMapping[idx] = builtinValue
+	}
+
+	values := make([]AirPrivateBuiltinPoseidon, 0)
+
+	sortedIndexes := make([]int, 0, len(valueMapping))
+	for index := range valueMapping {
+		sortedIndexes = append(sortedIndexes, index)
+	}
+	sort.Ints(sortedIndexes)
+	for _, index := range sortedIndexes {
+		value := valueMapping[index]
+		values = append(values, value)
+	}
+	return values
 }
