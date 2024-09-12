@@ -3,7 +3,10 @@ package builtins
 import (
 	"errors"
 	"fmt"
+	"math/big"
+	"sort"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	pedersenhash "github.com/consensys/gnark-crypto/ecc/stark-curve/pedersen-hash"
 )
@@ -62,4 +65,51 @@ func (p *Pedersen) String() string {
 
 func (p *Pedersen) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
 	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, p.ratio, inputCellsPerPedersen, instancesPerComponentPedersen, cellsPerPedersen)
+}
+
+type AirPrivateBuiltinPedersen struct {
+	Index int    `json:"index"`
+	X     string `json:"x"`
+	Y     string `json:"y"`
+}
+
+func (p *Pedersen) GetAirPrivateInput(pedersenSegment *memory.Segment) []AirPrivateBuiltinPedersen {
+	valueMapping := make(map[int]AirPrivateBuiltinPedersen)
+	for index, value := range pedersenSegment.Data {
+		if !value.Known() {
+			continue
+		}
+		idx, typ := index/cellsPerPedersen, index%cellsPerPedersen
+		if typ == 2 {
+			continue
+		}
+
+		builtinValue, exists := valueMapping[idx]
+		if !exists {
+			builtinValue = AirPrivateBuiltinPedersen{Index: idx}
+		}
+
+		valueBig := big.Int{}
+		value.Felt.BigInt(&valueBig)
+		valueHex := fmt.Sprintf("0x%x", &valueBig)
+		if typ == 0 {
+			builtinValue.X = valueHex
+		} else {
+			builtinValue.Y = valueHex
+		}
+		valueMapping[idx] = builtinValue
+	}
+
+	values := make([]AirPrivateBuiltinPedersen, 0)
+
+	sortedIndexes := make([]int, 0, len(valueMapping))
+	for index := range valueMapping {
+		sortedIndexes = append(sortedIndexes, index)
+	}
+	sort.Ints(sortedIndexes)
+	for _, index := range sortedIndexes {
+		value := valueMapping[index]
+		values = append(values, value)
+	}
+	return values
 }

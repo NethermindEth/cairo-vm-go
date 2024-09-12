@@ -3,8 +3,11 @@ package builtins
 import (
 	"errors"
 	"fmt"
+	"math/big"
+	"sort"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
@@ -233,4 +236,60 @@ func ecdouble(p *point, alpha *fp.Element) point {
 	y.Sub(&y, &p.Y)
 
 	return point{x, y}
+}
+
+type AirPrivateBuiltinEcOp struct {
+	Index int    `json:"index"`
+	PX    string `json:"p_x"`
+	PY    string `json:"p_y"`
+	M     string `json:"m"`
+	QX    string `json:"q_x"`
+	QY    string `json:"q_y"`
+}
+
+func (e *EcOp) GetAirPrivateInput(ecOpSegment *memory.Segment) []AirPrivateBuiltinEcOp {
+	valueMapping := make(map[int]AirPrivateBuiltinEcOp)
+	for index, value := range ecOpSegment.Data {
+		if !value.Known() {
+			continue
+		}
+		idx, typ := index/cellsPerEcOp, index%cellsPerEcOp
+		if typ >= inputCellsPerEcOp {
+			continue
+		}
+
+		builtinValue, exists := valueMapping[idx]
+		if !exists {
+			builtinValue = AirPrivateBuiltinEcOp{Index: idx}
+		}
+
+		valueBig := big.Int{}
+		value.Felt.BigInt(&valueBig)
+		valueHex := fmt.Sprintf("0x%x", &valueBig)
+		if typ == 0 {
+			builtinValue.PX = valueHex
+		} else if typ == 1 {
+			builtinValue.PY = valueHex
+		} else if typ == 2 {
+			builtinValue.QX = valueHex
+		} else if typ == 3 {
+			builtinValue.QY = valueHex
+		} else if typ == 4 {
+			builtinValue.M = valueHex
+		}
+		valueMapping[idx] = builtinValue
+	}
+
+	values := make([]AirPrivateBuiltinEcOp, 0)
+
+	sortedIndexes := make([]int, 0, len(valueMapping))
+	for index := range valueMapping {
+		sortedIndexes = append(sortedIndexes, index)
+	}
+	sort.Ints(sortedIndexes)
+	for _, index := range sortedIndexes {
+		value := valueMapping[index]
+		values = append(values, value)
+	}
+	return values
 }

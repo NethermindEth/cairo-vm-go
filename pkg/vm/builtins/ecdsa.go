@@ -2,6 +2,7 @@ package builtins
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -17,7 +18,7 @@ const cellsPerECDSA = 2
 const instancesPerComponentECDSA = 1
 
 type ECDSA struct {
-	signatures map[uint64]ecdsa.Signature
+	Signatures map[uint64]ecdsa.Signature
 	ratio      uint64
 }
 
@@ -58,7 +59,7 @@ func (e *ECDSA) CheckWrite(segment *memory.Segment, offset uint64, value *memory
 	}
 
 	pubKey := &ecdsa.PublicKey{A: key}
-	sig, ok := e.signatures[pubOffset]
+	sig, ok := e.Signatures[pubOffset]
 	if !ok {
 		return fmt.Errorf("signature is missing from ECDSA builtin")
 	}
@@ -117,8 +118,8 @@ Hint that will call this function looks like this:
 	},
 */
 func (e *ECDSA) AddSignature(pubOffset uint64, r, s *fp.Element) error {
-	if e.signatures == nil {
-		e.signatures = make(map[uint64]ecdsa.Signature)
+	if e.Signatures == nil {
+		e.Signatures = make(map[uint64]ecdsa.Signature)
 	}
 	bytes := make([]byte, 0, 64)
 	rBytes := r.Bytes()
@@ -132,7 +133,7 @@ func (e *ECDSA) AddSignature(pubOffset uint64, r, s *fp.Element) error {
 		return err
 	}
 
-	e.signatures[pubOffset] = sig
+	e.Signatures[pubOffset] = sig
 	return nil
 }
 
@@ -161,4 +162,50 @@ func recoverY(x *fp.Element) (fp.Element, fp.Element, error) {
 	negY := fp.Element{}
 	negY.Neg(y)
 	return *y, negY, nil
+}
+
+type AirPrivateBuiltinECDSASignatureInput struct {
+	R string `json:"r"`
+	W string `json:"w"`
+}
+
+type AirPrivateBuiltinECDSA struct {
+	Index          int                                  `json:"index"`
+	PubKey         string                               `json:"pubkey"`
+	Msg            string                               `json:"msg"`
+	SignatureInput AirPrivateBuiltinECDSASignatureInput `json:"signature_input"`
+}
+
+func (e *ECDSA) GetAirPrivateInput(ecdsaSegment *memory.Segment) ([]AirPrivateBuiltinECDSA, error) {
+	values := make([]AirPrivateBuiltinECDSA, 0)
+	for addrOffset, signature := range e.Signatures {
+		idx := addrOffset / cellsPerECDSA
+		pubKey, err := ecdsaSegment.Read(addrOffset)
+		if err != nil {
+			return values, err
+		}
+		msg, err := ecdsaSegment.Read(addrOffset + 1)
+		if err != nil {
+			return values, err
+		}
+
+		pubKeyBig := big.Int{}
+		msgBig := big.Int{}
+		pubKey.Felt.BigInt(&pubKeyBig)
+		msg.Felt.BigInt(&msgBig)
+		pubKeyHex := fmt.Sprintf("0x%x", &pubKeyBig)
+		msgHex := fmt.Sprintf("0x%x", &msgBig)
+
+		rBig := new(big.Int).SetBytes(signature.R[:])
+		sBig := new(big.Int).SetBytes(signature.S[:])
+		frModulusBig, _ := new(big.Int).SetString("3618502788666131213697322783095070105526743751716087489154079457884512865583", 10)
+		wBig := new(big.Int).ModInverse(sBig, frModulusBig)
+		signatureInput := AirPrivateBuiltinECDSASignatureInput{
+			R: fmt.Sprintf("0x%x", rBig),
+			W: fmt.Sprintf("0x%x", wBig),
+		}
+
+		values = append(values, AirPrivateBuiltinECDSA{Index: int(idx), PubKey: pubKeyHex, Msg: msgHex, SignatureInput: signatureInput})
+	}
+	return values, nil
 }

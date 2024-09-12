@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math/big"
+	"sort"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -88,4 +90,69 @@ func (k *Keccak) String() string {
 
 func (k *Keccak) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
 	return getBuiltinAllocatedSize(segmentUsedSize, vmCurrentStep, k.ratio, inputCellsPerKeccak, instancesPerComponentKeccak, cellsPerKeccak)
+}
+
+type AirPrivateBuiltinKeccak struct {
+	Index   int    `json:"index"`
+	InputS0 string `json:"input_s0"`
+	InputS1 string `json:"input_s1"`
+	InputS2 string `json:"input_s2"`
+	InputS3 string `json:"input_s3"`
+	InputS4 string `json:"input_s4"`
+	InputS5 string `json:"input_s5"`
+	InputS6 string `json:"input_s6"`
+	InputS7 string `json:"input_s7"`
+}
+
+func (k *Keccak) GetAirPrivateInput(keccakSegment *memory.Segment) []AirPrivateBuiltinKeccak {
+	valueMapping := make(map[int]AirPrivateBuiltinKeccak)
+	for index, value := range keccakSegment.Data {
+		if !value.Known() {
+			continue
+		}
+		idx, stateIndex := index/cellsPerKeccak, index%cellsPerKeccak
+		if stateIndex >= inputCellsPerKeccak {
+			continue
+		}
+
+		builtinValue, exists := valueMapping[idx]
+		if !exists {
+			builtinValue = AirPrivateBuiltinKeccak{Index: idx}
+		}
+
+		valueBig := big.Int{}
+		value.Felt.BigInt(&valueBig)
+		valueHex := fmt.Sprintf("0x%x", &valueBig)
+		if stateIndex == 0 {
+			builtinValue.InputS0 = valueHex
+		} else if stateIndex == 1 {
+			builtinValue.InputS1 = valueHex
+		} else if stateIndex == 2 {
+			builtinValue.InputS2 = valueHex
+		} else if stateIndex == 3 {
+			builtinValue.InputS3 = valueHex
+		} else if stateIndex == 4 {
+			builtinValue.InputS4 = valueHex
+		} else if stateIndex == 5 {
+			builtinValue.InputS5 = valueHex
+		} else if stateIndex == 6 {
+			builtinValue.InputS6 = valueHex
+		} else if stateIndex == 7 {
+			builtinValue.InputS7 = valueHex
+		}
+		valueMapping[idx] = builtinValue
+	}
+
+	values := make([]AirPrivateBuiltinKeccak, 0)
+
+	sortedIndexes := make([]int, 0, len(valueMapping))
+	for index := range valueMapping {
+		sortedIndexes = append(sortedIndexes, index)
+	}
+	sort.Ints(sortedIndexes)
+	for _, index := range sortedIndexes {
+		value := valueMapping[index]
+		values = append(values, value)
+	}
+	return values
 }
