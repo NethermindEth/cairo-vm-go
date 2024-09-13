@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -59,25 +58,25 @@ func (b *Builtin) UnmarshalJSON(data []byte) error {
 	}
 
 	switch builtinName {
-	case builtins.OutputName:
+	case "output":
 		*b = Output
-	case builtins.RangeCheckName:
+	case "range_check":
 		*b = RangeCheck
-	case builtins.RangeCheck96Name:
+	case "range_check96":
 		*b = RangeCheck96
-	case builtins.PedersenName:
+	case "pedersen":
 		*b = Pedersen
-	case builtins.ECDSAName:
+	case "ecdsa":
 		*b = ECDSA
-	case builtins.KeccakName:
+	case "keccak":
 		*b = Keccak
-	case builtins.BitwiseName:
+	case "bitwise":
 		*b = Bitwise
-	case builtins.EcOpName:
+	case "ec_op":
 		*b = ECOP
-	case builtins.PoseidonName:
+	case "poseidon":
 		*b = Poseidon
-	case builtins.SegmentArenaName:
+	case "segment_arena":
 		*b = SegmentArena
 	default:
 		return fmt.Errorf("unmarshal unknown builtin: %s", builtinName)
