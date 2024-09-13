@@ -20,9 +20,9 @@ import (
 //
 
 const (
-	KeccakName = "keccak"
-	cellsPerKeccak = 16
-	inputCellsPerKeccak = 8
+	KeccakName                  = "keccak"
+	cellsPerKeccak              = 16
+	inputCellsPerKeccak         = 8
 	instancesPerComponentKeccak = 16
 )
 

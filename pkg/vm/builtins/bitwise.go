@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	BitwiseName = "bitwise"
-	cellsPerBitwise = 5
-	inputCellsPerBitwise = 2
+	BitwiseName                  = "bitwise"
+	cellsPerBitwise              = 5
+	inputCellsPerBitwise         = 2
 	instancesPerComponentBitwise = 1
 )
 

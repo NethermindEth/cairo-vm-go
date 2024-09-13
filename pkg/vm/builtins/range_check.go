@@ -12,14 +12,14 @@ import (
 )
 
 const (
-	RangeCheckName = "range_check"
-	inputCellsPerRangeCheck = 1
-	cellsPerRangeCheck = 1
+	RangeCheckName                  = "range_check"
+	inputCellsPerRangeCheck         = 1
+	cellsPerRangeCheck              = 1
 	instancesPerComponentRangeCheck = 1
 
 	// Each range check instance consists of RangeCheckNParts 16-bit parts. INNER_RC_BOUND_SHIFT and INNER_RC_BOUND_MASK are used to extract 16-bit parts from the field elements stored in the range check segment.
 	INNER_RC_BOUND_SHIFT = 16
-	INNER_RC_BOUND_MASK = (1 << 16) - 1
+	INNER_RC_BOUND_MASK  = (1 << 16) - 1
 )
 
 type RangeCheck struct {

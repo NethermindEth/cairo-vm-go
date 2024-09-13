@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	PedersenName = "pedersen"
-	cellsPerPedersen = 3
-	inputCellsPerPedersen = 2
+	PedersenName                  = "pedersen"
+	cellsPerPedersen              = 3
+	inputCellsPerPedersen         = 2
 	instancesPerComponentPedersen = 1
 )
 

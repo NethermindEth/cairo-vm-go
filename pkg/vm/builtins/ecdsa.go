@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	ECDSAName = "ecdsa"
-	inputCellsPerECDSA = 2
-	cellsPerECDSA = 2
+	ECDSAName                  = "ecdsa"
+	inputCellsPerECDSA         = 2
+	cellsPerECDSA              = 2
 	instancesPerComponentECDSA = 1
 )
 

@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	EcOpName = "ec_op"
-	cellsPerEcOp = 7
-	inputCellsPerEcOp = 5
+	EcOpName                  = "ec_op"
+	cellsPerEcOp              = 7
+	inputCellsPerEcOp         = 5
 	instancesPerComponentEcOp = 1
 )
 
