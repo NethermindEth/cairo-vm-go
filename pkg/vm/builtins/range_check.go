@@ -11,6 +11,8 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+const RangeCheckName = "range_check"
+
 const inputCellsPerRangeCheck = 1
 const cellsPerRangeCheck = 1
 const instancesPerComponentRangeCheck = 1
