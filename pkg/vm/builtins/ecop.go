@@ -13,10 +13,12 @@ import (
 	"github.com/holiman/uint256"
 )
 
-const EcOpName = "ec_op"
-const cellsPerEcOp = 7
-const inputCellsPerEcOp = 5
-const instancesPerComponentEcOp = 1
+const (
+	EcOpName = "ec_op"
+	cellsPerEcOp = 7
+	inputCellsPerEcOp = 5
+	instancesPerComponentEcOp = 1
+)
 
 var feltThree fp.Element = fp.Element(
 	[]uint64{

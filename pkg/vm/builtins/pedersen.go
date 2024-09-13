@@ -11,10 +11,12 @@ import (
 	pedersenhash "github.com/consensys/gnark-crypto/ecc/stark-curve/pedersen-hash"
 )
 
-const PedersenName = "pedersen"
-const cellsPerPedersen = 3
-const inputCellsPerPedersen = 2
-const instancesPerComponentPedersen = 1
+const (
+	PedersenName = "pedersen"
+	cellsPerPedersen = 3
+	inputCellsPerPedersen = 2
+	instancesPerComponentPedersen = 1
+)
 
 type Pedersen struct {
 	ratio uint64
