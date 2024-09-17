@@ -111,6 +111,8 @@ func getAllSolidityLayout() Layout {
 	}}
 }
 
+// TODO: Add mul_mod and add_mod builtins
+// refer: https://github.com/lambdaclass/cairo-vm/blob/main/vm/src/types/instance_definitions/builtins_instance_def.rs#L168
 func getAllCairoLayout() Layout {
 	return Layout{Name: "all_cairo", RcUnits: 8, Builtins: []LayoutBuiltin{
 		{Runner: &Output{}, Builtin: starknet.Output},
