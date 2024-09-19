@@ -282,7 +282,7 @@ func (m *ModBuiltin) fillInputs(mem *memory.Memory, builtinPtr memory.MemoryAddr
 		if err != nil {
 			return err
 		}
-		val := fp.NewElement(inputs.n - uint64(m.instanceDef.batchSize) * uint64(instance))
+		val := fp.NewElement(inputs.n - uint64(m.instanceDef.batchSize)*uint64(instance))
 		mv = memory.MemoryValueFromFieldElement(&val)
 		if err := mem.WriteToAddress(&addr, &mv); err != nil {
 			return err
