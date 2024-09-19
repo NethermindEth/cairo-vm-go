@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"errors"
+	"fmt"
 	"math"
 	"math/big"
 	"math/bits"
@@ -155,4 +157,14 @@ func Int16FromBigInt(n *big.Int) (int16, bool) {
 
 func RightRot(value uint32, n uint32) uint32 {
 	return (value >> n) | ((value & ((1 << n) - 1)) << (32 - n))
+}
+
+func SafeDivUint64(x, y uint64) (uint64, error) {
+	if y == 0 {
+		return 0, fmt.Errorf("cannot divide: y division is zero")
+	}
+	if x%y != 0 {
+		return 0, errors.New("cannot divide: x is not divisible by y")
+	}
+	return x / y, nil
 }
