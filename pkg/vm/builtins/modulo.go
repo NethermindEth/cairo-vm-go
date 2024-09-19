@@ -3,7 +3,7 @@ package builtins
 import (
 	"fmt"
 	"math/big"
-	
+
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -47,9 +47,9 @@ const (
 type Operation string
 
 const (
-	AddOp Operation = "add"
-	SubOp Operation = "sub"
-	MulOp Operation = "mul"
+	AddOp    Operation = "add"
+	SubOp    Operation = "sub"
+	MulOp    Operation = "mul"
 	DivModOp Operation = "divmod"
 )
 
@@ -72,15 +72,15 @@ func (*ModBuiltinRunner) New(builtinType ModBuiltinType, included bool, instance
 		shiftPowers[i] = *new(big.Int).Exp(shift, big.NewInt(int64(i)), nil)
 	}
 	return &ModBuiltinRunner{
-		builtinType:           builtinType,
-		base:                  0,
-		stop_ptr:              nil,
-		instanceDef:           instanceDef,
-		included: 			   included,
-		zeroSegmentIndex:      0,
-		zeroSegmentSize:       max(N_WORDS, instanceDef.batchSize * 3),
-		shift:                 *shift,
-		shiftPowers: 		   shiftPowers,
+		builtinType:      builtinType,
+		base:             0,
+		stop_ptr:         nil,
+		instanceDef:      instanceDef,
+		included:         included,
+		zeroSegmentIndex: 0,
+		zeroSegmentSize:  max(N_WORDS, instanceDef.batchSize*3),
+		shift:            *shift,
+		shiftPowers:      shiftPowers,
 	}
 }
 
@@ -94,12 +94,12 @@ func (mbr *ModBuiltinRunner) NewMulMod(instanceDef *ModInstanceDef, included boo
 
 func (mbr *ModBuiltinRunner) Name() string {
 	switch mbr.builtinType {
-		case Add:
-			return "add_mod_builtin"
-		case Mul:
-			return "mul_mod_builtin"
-		default:
-			return "unknown"
+	case Add:
+		return "add_mod_builtin"
+	case Mul:
+		return "mul_mod_builtin"
+	default:
+		return "unknown"
 	}
 }
 
@@ -170,7 +170,7 @@ func (m *ModBuiltinRunner) readInputs(mem *memory.Memory, addr memory.MemoryAddr
 }
 
 func (mbr *ModBuiltinRunner) ComputeValue(memory memory.Memory, valuesPtr memory.MemoryAddress, offsetsPtr memory.MemoryAddress, indexInBatch uint, index uint) (big.Int, error) {
-	newOffsetPtr, err := offsetsPtr.AddOffset(int16(index + 3 * indexInBatch))
+	newOffsetPtr, err := offsetsPtr.AddOffset(int16(index + 3*indexInBatch))
 	if err != nil {
 		return big.Int{}, err
 	}
@@ -208,4 +208,3 @@ func (mbr *ModBuiltinRunner) ReadMemoryVars(memory memory.Memory, valuesPtr memo
 	}
 	return a, b, c, nil
 }
-
