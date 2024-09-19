@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -74,7 +73,7 @@ type AirPrivateBuiltinPoseidon struct {
 	InputS2 string `json:"input_s2"`
 }
 
-func (p *Poseidon) GetAirPrivateInput(poseidonSegment *memory.Segment) []AirPrivateBuiltinPoseidon {
+func (p *Poseidon) GetAirPrivateInput(poseidonSegment *mem.Segment) []AirPrivateBuiltinPoseidon {
 	valueMapping := make(map[int]AirPrivateBuiltinPoseidon)
 	for index, value := range poseidonSegment.Data {
 		if !value.Known() {

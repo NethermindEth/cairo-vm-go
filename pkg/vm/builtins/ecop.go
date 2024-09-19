@@ -7,7 +7,6 @@ import (
 	"sort"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/holiman/uint256"
@@ -247,7 +246,7 @@ type AirPrivateBuiltinEcOp struct {
 	QY    string `json:"q_y"`
 }
 
-func (e *EcOp) GetAirPrivateInput(ecOpSegment *memory.Segment) []AirPrivateBuiltinEcOp {
+func (e *EcOp) GetAirPrivateInput(ecOpSegment *mem.Segment) []AirPrivateBuiltinEcOp {
 	valueMapping := make(map[int]AirPrivateBuiltinEcOp)
 	for index, value := range ecOpSegment.Data {
 		if !value.Known() {
