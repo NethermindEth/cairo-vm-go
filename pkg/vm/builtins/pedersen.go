@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	pedersenhash "github.com/consensys/gnark-crypto/ecc/stark-curve/pedersen-hash"
 )
@@ -73,7 +72,7 @@ type AirPrivateBuiltinPedersen struct {
 	Y     string `json:"y"`
 }
 
-func (p *Pedersen) GetAirPrivateInput(pedersenSegment *memory.Segment) []AirPrivateBuiltinPedersen {
+func (p *Pedersen) GetAirPrivateInput(pedersenSegment *mem.Segment) []AirPrivateBuiltinPedersen {
 	valueMapping := make(map[int]AirPrivateBuiltinPedersen)
 	for index, value := range pedersenSegment.Data {
 		if !value.Known() {
