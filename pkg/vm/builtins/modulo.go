@@ -65,6 +65,13 @@ type ModBuiltinRunner struct {
 	shiftPowers      [N_WORDS]big.Int
 }
 
+func max(a, b uint) uint {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func (*ModBuiltinRunner) New(builtinType ModBuiltinType, included bool, instanceDef ModInstanceDef) *ModBuiltinRunner {
 	shift := new(big.Int).Lsh(big.NewInt(1), uint(instanceDef.wordBitLen))
 	shiftPowers := [N_WORDS]big.Int{}
