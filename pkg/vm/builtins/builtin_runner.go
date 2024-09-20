@@ -29,6 +29,10 @@ func Runner(name starknetParser.Builtin) memory.BuiltinRunner {
 		return &EcOp{}
 	case starknetParser.Poseidon:
 		return &Poseidon{}
+	case starknetParser.AddMod:
+		return &ModBuiltin{modBuiltinType: Add}
+	case starknetParser.MulMod:
+		return &ModBuiltin{modBuiltinType: Mul}
 	case starknetParser.SegmentArena:
 		panic("Not implemented")
 	default:

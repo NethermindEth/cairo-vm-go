@@ -22,6 +22,8 @@ const (
 	Poseidon
 	SegmentArena
 	RangeCheck96
+	AddMod
+	MulMod
 )
 
 func (b Builtin) MarshalJSON() ([]byte, error) {
@@ -46,7 +48,10 @@ func (b Builtin) MarshalJSON() ([]byte, error) {
 		return []byte("poseidon"), nil
 	case SegmentArena:
 		return []byte("segment_arena"), nil
-
+	case AddMod:
+		return []byte("add_mod"), nil
+	case MulMod:
+		return []byte("mul_mod"), nil
 	}
 	return nil, fmt.Errorf("marshal unknown builtin: %d", uint8(b))
 }
@@ -78,6 +83,10 @@ func (b *Builtin) UnmarshalJSON(data []byte) error {
 		*b = Poseidon
 	case "segment_arena":
 		*b = SegmentArena
+	case "add_mod":
+		*b = AddMod
+	case "mul_mod":
+		*b = MulMod
 	default:
 		return fmt.Errorf("unmarshal unknown builtin: %s", builtinName)
 	}
