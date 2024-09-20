@@ -375,20 +375,23 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 // first instance, pads the offsets table to fit the number of operations written in the
 // input to the first instance, and calculates missing values in the values table.
 //
-// For each builtin, the given tuple is of the form (builtin_ptr, builtin_runner, n),
-// where n is the number of operations in the offsets table (i.e., the length of the
-// offsets table is 3*n).
-//
-// The number of operations written to the input of the first instance n' should be at
+// The number of operations written to the input of the first instance n should be at
 // least n and a multiple of batch_size. Previous offsets are copied to the end of the
 // offsets table to make its length 3n'.
 func FillMemory(mem *memory.Memory, addModBuiltinAddr memory.MemoryAddress, nAddModsIndex uint64, mulModBuiltinAddr memory.MemoryAddress, nMulModsIndex uint64) error {
+	if nAddModsIndex > MAX_N {
+		return fmt.Errorf("AddMod builtin: n must be <= {MAX_N}")
+	}
+	if nMulModsIndex > MAX_N {
+		return fmt.Errorf("MulMod builtin: n must be <= {MAX_N}")
+	}
+
 	addModBuiltinSegment, ok := mem.FindSegmentWithBuiltin("AddMod")
-	if ok {
+	if !ok {
 		return fmt.Errorf("AddMod builtin segment doesn't exist")
 	}
 	mulModBuiltinSegment, ok := mem.FindSegmentWithBuiltin("MulMod")
-	if ok {
+	if !ok {
 		return fmt.Errorf("MulMod builtin segment doesn't exist")
 	}
 	addModBuiltinRunner, ok := addModBuiltinSegment.BuiltinRunner.(*ModBuiltin)
@@ -399,6 +402,7 @@ func FillMemory(mem *memory.Memory, addModBuiltinAddr memory.MemoryAddress, nAdd
 	if !ok {
 		return fmt.Errorf("mulModBuiltinRunner is not a ModBuiltin")
 	}
+
 	if addModBuiltinRunner.wordBitLen != mulModBuiltinRunner.wordBitLen {
 		return fmt.Errorf("AddMod and MulMod wordBitLen mismatch")
 	}
