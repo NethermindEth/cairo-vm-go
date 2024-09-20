@@ -17,14 +17,32 @@ const OFFSETS_PTR_OFFSET = 5
 const N_OFFSET = 6
 const N_WORDS = 4
 const CELLS_PER_MOD = 7
-const FILL_MEMORY_MAX = 100000
+
+// The maximum n value that the function fill_memory accepts
+const MAX_N = 100000
+
+// Represents a 384-bit unsigned integer d0 + 2**96 * d1 + 2**192 * d2 + 2**288 * d3
+// where each di is in [0, 2**96).
+//
+// struct UInt384 {
+//     d0: felt,
+//     d1: felt,
+//     d2: felt,
+//     d3: felt,
+// }
+// Instead of introducing UInt384, we use [N_WORDS]fp.Element to represent the 384-bit integer.
 
 type ModBuiltinInputs struct {
-	p          big.Int
-	pValues    [N_WORDS]fp.Element
-	valuesPtr  memory.MemoryAddress
+	// The modulus.
+	p       big.Int
+	pValues [N_WORDS]fp.Element
+	// A pointer to input values, the intermediate results and the output.
+	valuesPtr memory.MemoryAddress
+	// A pointer to offsets inside the values array, defining the circuit.
+	// The offsets array should contain 3 * n elements.
 	offsetsPtr memory.MemoryAddress
-	n          uint64
+	// The number of operations to perform.
+	n uint64
 }
 
 type ModBuiltinType string
@@ -88,6 +106,9 @@ func (m *ModBuiltin) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint
 	return 0, nil
 }
 
+// Reads N_WORDS from memory, starting at address = addr.
+// Returns the words and the value if all words are in memory.
+// Verifies that all words are integers and are bounded by 2**wordBitLen.
 func (m *ModBuiltin) readNWordsValue(memory *memory.Memory, addr memory.MemoryAddress) ([N_WORDS]fp.Element, big.Int, error) {
 	var words [N_WORDS]fp.Element
 	value := new(big.Int).SetInt64(0)
@@ -116,7 +137,10 @@ func (m *ModBuiltin) readNWordsValue(memory *memory.Memory, addr memory.MemoryAd
 	return words, *value, nil
 }
 
-func (m *ModBuiltin) readInputs(mem *memory.Memory, addr memory.MemoryAddress) (ModBuiltinInputs, error) {
+// Reads the inputs to the builtin (p, p_values, values_ptr, offsets_ptr, n) from the memory at address = addr.
+// Returns an instance of ModBuiltinInputs and asserts that it exists in memory.
+// If `read_n` is false, avoid reading and validating the value of 'n'.
+func (m *ModBuiltin) readInputs(mem *memory.Memory, addr memory.MemoryAddress, read_n bool) (ModBuiltinInputs, error) {
 	valuesPtrAddr, err := addr.AddOffset(int16(VALUES_PTR_OFFSET))
 	if err != nil {
 		return ModBuiltinInputs{}, err
@@ -133,13 +157,16 @@ func (m *ModBuiltin) readInputs(mem *memory.Memory, addr memory.MemoryAddress) (
 	if err != nil {
 		return ModBuiltinInputs{}, err
 	}
-	nFelt, err := mem.ReadAsElement(addr.SegmentIndex, addr.Offset+N_OFFSET)
-	if err != nil {
-		return ModBuiltinInputs{}, err
-	}
-	n := nFelt.Uint64()
-	if n < 1 {
-		return ModBuiltinInputs{}, fmt.Errorf("moduloBuiltin: n must be at least 1")
+	n := uint64(0)
+	if read_n {
+		nFelt, err := mem.ReadAsElement(addr.SegmentIndex, addr.Offset+N_OFFSET)
+		if err != nil {
+			return ModBuiltinInputs{}, err
+		}
+		n = nFelt.Uint64()
+		if n < 1 {
+			return ModBuiltinInputs{}, fmt.Errorf("moduloBuiltin: n must be at least 1")
+		}
 	}
 	pValues, p, err := m.readNWordsValue(mem, addr)
 	if err != nil {
@@ -154,8 +181,9 @@ func (m *ModBuiltin) readInputs(mem *memory.Memory, addr memory.MemoryAddress) (
 	}, nil
 }
 
+// Fills the inputs to the instances of the builtin given the inputs to the first instance.
 func (m *ModBuiltin) fillInputs(mem *memory.Memory, builtinPtr memory.MemoryAddress, inputs ModBuiltinInputs) error {
-	if inputs.n > FILL_MEMORY_MAX {
+	if inputs.n > MAX_N {
 		return fmt.Errorf("fill memory max exceeded")
 	}
 
@@ -217,6 +245,7 @@ func (m *ModBuiltin) fillInputs(mem *memory.Memory, builtinPtr memory.MemoryAddr
 	return nil
 }
 
+// Copies the first offsets in the offsets table to its end, nCopies times.
 func (m *ModBuiltin) fillOffsets(mem *memory.Memory, offsetsPtr memory.MemoryAddress, index, nCopies uint64) error {
 	if nCopies == 0 {
 		return nil
@@ -248,6 +277,7 @@ func (m *ModBuiltin) fillOffsets(mem *memory.Memory, offsetsPtr memory.MemoryAdd
 	return nil
 }
 
+// Given a value, writes its n_words to memory, starting at address = addr.
 func (m *ModBuiltin) writeNWordsValue(mem *memory.Memory, addr memory.MemoryAddress, value big.Int) error {
 	for i := 0; i < N_WORDS; i++ {
 		word := new(big.Int).Mod(&value, &m.shift)
@@ -267,6 +297,8 @@ func (m *ModBuiltin) writeNWordsValue(mem *memory.Memory, addr memory.MemoryAddr
 	return nil
 }
 
+// Fills a value in the values table, if exactly one value is missing.
+// Returns true on success or if all values are already known.
 func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, index int, op, invOp Operation) (bool, error) {
 	addresses := make([]memory.MemoryAddress, 0, 3)
 	values := make([]*big.Int, 0, 3)
@@ -339,6 +371,17 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 	}
 }
 
+// Fills the memory with inputs to the builtin instances based on the inputs to the
+// first instance, pads the offsets table to fit the number of operations written in the
+// input to the first instance, and calculates missing values in the values table.
+//
+// For each builtin, the given tuple is of the form (builtin_ptr, builtin_runner, n),
+// where n is the number of operations in the offsets table (i.e., the length of the
+// offsets table is 3*n).
+//
+// The number of operations written to the input of the first instance n' should be at
+// least n and a multiple of batch_size. Previous offsets are copied to the end of the
+// offsets table to make its length 3n'.
 func FillMemory(mem *memory.Memory, addModBuiltinAddr memory.MemoryAddress, nAddModsIndex uint64, mulModBuiltinAddr memory.MemoryAddress, nMulModsIndex uint64) error {
 	addModBuiltinSegment, ok := mem.FindSegmentWithBuiltin("AddMod")
 	if ok {
@@ -360,7 +403,7 @@ func FillMemory(mem *memory.Memory, addModBuiltinAddr memory.MemoryAddress, nAdd
 		return fmt.Errorf("AddMod and MulMod wordBitLen mismatch")
 	}
 
-	addModBuiltinInputs, err := addModBuiltinRunner.readInputs(mem, addModBuiltinAddr)
+	addModBuiltinInputs, err := addModBuiltinRunner.readInputs(mem, addModBuiltinAddr, true)
 	if err != nil {
 		return err
 	}
@@ -371,7 +414,7 @@ func FillMemory(mem *memory.Memory, addModBuiltinAddr memory.MemoryAddress, nAdd
 		return err
 	}
 
-	mulModBuiltinInputs, err := mulModBuiltinRunner.readInputs(mem, mulModBuiltinAddr)
+	mulModBuiltinInputs, err := mulModBuiltinRunner.readInputs(mem, mulModBuiltinAddr, true)
 	if err != nil {
 		return err
 	}
