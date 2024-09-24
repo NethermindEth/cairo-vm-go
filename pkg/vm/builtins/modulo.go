@@ -12,10 +12,27 @@ import (
 
 const ModuloName = "Mod"
 
+// These are the offsets in the array, which is used here as ModBuiltinInputs :
+// INPUT_NAMES = [
+//
+//	"p0",
+//	"p1",
+//	"p2",
+//	"p3",
+//	"values_ptr",
+//	"offsets_ptr",
+//	"n",
+//
+// ]
 const VALUES_PTR_OFFSET = 4
 const OFFSETS_PTR_OFFSET = 5
 const N_OFFSET = 6
+
+// This is the number of felts in a UInt384 struct
 const N_WORDS = 4
+
+// number of memory cells per modulo builtin
+// 4(felts) + 1(values_ptr) + 1(offsets_ptr) + 1(n) = 7
 const CELLS_PER_MOD = 7
 
 // The maximum n value that the function fill_memory accepts
@@ -116,22 +133,22 @@ func (m *ModBuiltin) readNWordsValue(memory *memory.Memory, addr memory.MemoryAd
 	for i := 0; i < N_WORDS; i++ {
 		newAddr, err := addr.AddOffset(int16(i))
 		if err != nil {
-			return words, *value, err
+			return [N_WORDS]fp.Element{}, *new(big.Int), err
 		}
 
 		wordFelt, err := memory.ReadAsElement(newAddr.SegmentIndex, newAddr.Offset)
 		if err != nil {
-			return words, *value, err
+			return [N_WORDS]fp.Element{}, *new(big.Int), err
 		}
 
 		var word big.Int
 		wordFelt.BigInt(&word)
 		if word.Cmp(&m.shift) >= 0 {
-			return words, *value, fmt.Errorf("word exceeds mod builtin word bit length")
+			return [N_WORDS]fp.Element{}, *new(big.Int), fmt.Errorf("expected integer at address %d:%d to be smaller than 2^%d. Got: %s", newAddr.SegmentIndex, newAddr.Offset, m.wordBitLen, word.String())
 		}
 
 		words[i] = wordFelt
-		value.Add(value, new(big.Int).Mul(&word, &m.shiftPowers[i]))
+		value = new(big.Int).Add(value, new(big.Int).Mul(&word, &m.shiftPowers[i]))
 	}
 
 	return words, *value, nil
@@ -165,7 +182,7 @@ func (m *ModBuiltin) readInputs(mem *memory.Memory, addr memory.MemoryAddress, r
 		}
 		n = nFelt.Uint64()
 		if n < 1 {
-			return ModBuiltinInputs{}, fmt.Errorf("moduloBuiltin: n must be at least 1")
+			return ModBuiltinInputs{}, fmt.Errorf("moduloBuiltin: Expected n >= 1. Got: %d", n)
 		}
 	}
 	pValues, p, err := m.readNWordsValue(mem, addr)
@@ -198,6 +215,7 @@ func (m *ModBuiltin) fillInputs(mem *memory.Memory, builtinPtr memory.MemoryAddr
 			return err
 		}
 
+		// Filling the 4 values of a UInt384 struct
 		for i := 0; i < N_WORDS; i++ {
 			addr, err := instancePtr.AddOffset(int16(i))
 			if err != nil {
@@ -231,6 +249,8 @@ func (m *ModBuiltin) fillInputs(mem *memory.Memory, builtinPtr memory.MemoryAddr
 			return err
 		}
 
+		// This denotes the number of operations left
+		// n for new instance = original n - batch_size * (number of instances passed)
 		addr, err = instancePtr.AddOffset(N_OFFSET)
 		if err != nil {
 			return err
@@ -245,7 +265,7 @@ func (m *ModBuiltin) fillInputs(mem *memory.Memory, builtinPtr memory.MemoryAddr
 	return nil
 }
 
-// Copies the first offsets in the offsets table to its end, nCopies times.
+// Copies the first offsets into memory, nCopies times.
 func (m *ModBuiltin) fillOffsets(mem *memory.Memory, offsetsPtr memory.MemoryAddress, index, nCopies uint64) error {
 	if nCopies == 0 {
 		return nil
