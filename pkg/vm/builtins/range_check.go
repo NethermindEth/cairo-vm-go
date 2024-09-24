@@ -13,6 +13,7 @@ import (
 
 const (
 	RangeCheckName                  = "range_check"
+	RangeCheck96Name string = "range_check96"
 	inputCellsPerRangeCheck         = 1
 	cellsPerRangeCheck              = 1
 	instancesPerComponentRangeCheck = 1
