@@ -3,33 +3,48 @@ package builtins
 import (
 	"fmt"
 	"math"
+	"strconv"
 
-	starknetParser "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
-func Runner(name starknetParser.Builtin) memory.BuiltinRunner {
+type Builtin uint8
+
+const (
+	OutputEnum Builtin = iota + 1
+	RangeCheckEnum
+	PedersenEnum
+	ECDSAEnum
+	KeccakEnum
+	BitwiseEnum
+	ECOPEnum
+	PoseidonEnum
+	SegmentArenaEnum
+	RangeCheck96Enum
+)
+
+func Runner(name Builtin) memory.BuiltinRunner {
 	switch name {
-	case starknetParser.Output:
+	case OutputEnum:
 		return &Output{}
-	case starknetParser.RangeCheck:
+	case RangeCheckEnum:
 		return &RangeCheck{0, 8}
-	case starknetParser.RangeCheck96:
+	case RangeCheck96Enum:
 		return &RangeCheck{0, 6}
-	case starknetParser.Pedersen:
+	case PedersenEnum:
 		return &Pedersen{}
-	case starknetParser.ECDSA:
+	case ECDSAEnum:
 		return &ECDSA{}
-	case starknetParser.Keccak:
+	case KeccakEnum:
 		return &Keccak{}
-	case starknetParser.Bitwise:
+	case BitwiseEnum:
 		return &Bitwise{}
-	case starknetParser.ECOP:
+	case ECOPEnum:
 		return &EcOp{}
-	case starknetParser.Poseidon:
+	case PoseidonEnum:
 		return &Poseidon{}
-	case starknetParser.SegmentArena:
+	case SegmentArenaEnum:
 		panic("Not implemented")
 	default:
 		panic("Unknown builtin")
@@ -65,3 +80,65 @@ func getBuiltinAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64, ratio
 	}
 	return allocatedInstances * cellsPerInstance, nil
 }
+
+
+func (b Builtin) MarshalJSON() ([]byte, error) {
+	switch b {
+	case OutputEnum:
+		return []byte("output"), nil
+	case RangeCheckEnum:
+		return []byte("range_check"), nil
+	case RangeCheck96Enum:
+		return []byte("range_check96"), nil
+	case PedersenEnum:
+		return []byte("pedersen"), nil
+	case ECDSAEnum:
+		return []byte("ecdsa"), nil
+	case KeccakEnum:
+		return []byte("keccak"), nil
+	case BitwiseEnum:
+		return []byte("bitwise"), nil
+	case ECOPEnum:
+		return []byte("ec_op"), nil
+	case PoseidonEnum:
+		return []byte("poseidon"), nil
+	case SegmentArenaEnum:
+		return []byte("segment_arena"), nil
+
+	}
+	return nil, fmt.Errorf("marshal unknown builtin: %d", uint8(b))
+}
+
+func (b *Builtin) UnmarshalJSON(data []byte) error {
+	builtinName, err := strconv.Unquote(string(data))
+	if err != nil {
+		return fmt.Errorf("unmarshal builtin: %w", err)
+	}
+
+	switch builtinName {
+	case "output":
+		*b = OutputEnum
+	case "range_check":
+		*b = RangeCheckEnum
+	case "range_check96":
+		*b = RangeCheck96Enum
+	case "pedersen":
+		*b = PedersenEnum
+	case "ecdsa":
+		*b = ECDSAEnum
+	case "keccak":
+		*b = KeccakEnum
+	case "bitwise":
+		*b = BitwiseEnum
+	case "ec_op":
+		*b = ECOPEnum
+	case "poseidon":
+		*b = PoseidonEnum
+	case "segment_arena":
+		*b = SegmentArenaEnum
+	default:
+		return fmt.Errorf("unmarshal unknown builtin: %s", builtinName)
+	}
+	return nil
+}
+

@@ -6,6 +6,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+    
+	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 )
 
 func TestCompilerVersionParsing(t *testing.T) {
@@ -93,7 +95,7 @@ func TestEntryPointInfoParsing(t *testing.T) {
 
 	assert.Len(t, entryPointInfo.Builtins, 9)
 	for i := 0; i < 9; i++ {
-		assert.Equal(t, Builtin(i+1), entryPointInfo.Builtins[i])
+		assert.Equal(t, builtins.Builtin(i+1), entryPointInfo.Builtins[i])
 	}
 }
 

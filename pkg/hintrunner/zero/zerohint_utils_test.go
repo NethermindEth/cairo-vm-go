@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	runnerutil "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
-	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
+	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -30,7 +30,7 @@ func addrWithSegment(segment, offset uint64) *memory.MemoryAddress {
 	}
 }
 
-func addrBuiltin(builtin starknet.Builtin, offset uint64) *builtinReference {
+func addrBuiltin(builtin builtins.Builtin, offset uint64) *builtinReference {
 	return &builtinReference{
 		builtin: builtin,
 		offset:  offset,

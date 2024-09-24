@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
+	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/stretchr/testify/require"
 )
@@ -54,7 +54,7 @@ func TestVerifyZeroHint(t *testing.T) {
 		"VerifyECDSASignature": {
 			{
 				operanders: []*hintOperander{
-					{Name: "ecdsaPtr", Kind: reference, Value: addrBuiltin(starknet.ECDSA, 0)},
+					{Name: "ecdsaPtr", Kind: reference, Value: addrBuiltin(builtins.ECDSAEnum, 0)},
 					{Name: "signature_r", Kind: apRelative, Value: feltString("3086480810278599376317923499561306189851900463386393948998357832163236918254")},
 					{Name: "signature_s", Kind: apRelative, Value: feltString("598673427589502599949712887611119751108407514580626464031881322743364689811")},
 				},

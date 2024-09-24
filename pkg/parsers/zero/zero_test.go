@@ -3,7 +3,7 @@ package zero
 import (
 	"testing"
 
-	starknetParser "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
+	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 
 	"github.com/stretchr/testify/require"
 )
@@ -69,10 +69,10 @@ func TestBuiltins(t *testing.T) {
 
 	require.Equal(t,
 		&ZeroProgram{
-			Builtins: []starknetParser.Builtin{
-				starknetParser.Output,
-				starknetParser.RangeCheck,
-				starknetParser.Bitwise,
+			Builtins: []builtins.Builtin{
+				builtins.OutputEnum,
+				builtins.RangeCheckEnum,
+				builtins.BitwiseEnum,
 			},
 		},
 		zeroProgram,
