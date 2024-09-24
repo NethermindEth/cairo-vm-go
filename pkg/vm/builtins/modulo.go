@@ -103,10 +103,12 @@ func NewModBuiltin(ratio uint64, modBuiltinType ModBuiltinType, wordBitLen uint6
 	}
 }
 
+// TODO: Implement CheckWrite
 func (m *ModBuiltin) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
 	return nil
 }
 
+// TODO: Implement CheckRead
 func (m *ModBuiltin) InferValue(segment *memory.Segment, offset uint64) error {
 	return nil
 }
