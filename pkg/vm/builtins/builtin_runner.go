@@ -85,25 +85,25 @@ func getBuiltinAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64, ratio
 func (b Builtin) MarshalJSON() ([]byte, error) {
 	switch b {
 	case OutputEnum:
-		return []byte("output"), nil
+		return []byte(OutputName), nil
 	case RangeCheckEnum:
-		return []byte("range_check"), nil
+		return []byte(RangeCheckName), nil
 	case RangeCheck96Enum:
-		return []byte("range_check96"), nil
+		return []byte(RangeCheck96Name), nil
 	case PedersenEnum:
-		return []byte("pedersen"), nil
+		return []byte(PedersenName), nil
 	case ECDSAEnum:
-		return []byte("ecdsa"), nil
+		return []byte(ECDSAName), nil
 	case KeccakEnum:
-		return []byte("keccak"), nil
+		return []byte(KeccakName), nil
 	case BitwiseEnum:
-		return []byte("bitwise"), nil
+		return []byte(BitwiseName), nil
 	case ECOPEnum:
-		return []byte("ec_op"), nil
+		return []byte(EcOpName), nil
 	case PoseidonEnum:
-		return []byte("poseidon"), nil
+		return []byte(PoseidonName), nil
 	case SegmentArenaEnum:
-		return []byte("segment_arena"), nil
+		return []byte(SegmentArenaName), nil
 
 	}
 	return nil, fmt.Errorf("marshal unknown builtin: %d", uint8(b))
@@ -116,25 +116,25 @@ func (b *Builtin) UnmarshalJSON(data []byte) error {
 	}
 
 	switch builtinName {
-	case "output":
+	case OutputName:
 		*b = OutputEnum
-	case "range_check":
+	case RangeCheckName:
 		*b = RangeCheckEnum
-	case "range_check96":
+	case RangeCheck96Name:
 		*b = RangeCheck96Enum
-	case "pedersen":
+	case PedersenName:
 		*b = PedersenEnum
-	case "ecdsa":
+	case ECDSAName:
 		*b = ECDSAEnum
-	case "keccak":
+	case KeccakName:
 		*b = KeccakEnum
-	case "bitwise":
+	case BitwiseName:
 		*b = BitwiseEnum
-	case "ec_op":
+	case EcOpName:
 		*b = ECOPEnum
-	case "poseidon":
+	case PoseidonName:
 		*b = PoseidonEnum
-	case "segment_arena":
+	case SegmentArenaName:
 		*b = SegmentArenaEnum
 	default:
 		return fmt.Errorf("unmarshal unknown builtin: %s", builtinName)
