@@ -344,7 +344,7 @@ func TestRangeCheck96Builtin(t *testing.T) {
         [ap + 1] = 0xffffffffffffffffffffffff;
         [ap + 1] = [[fp - 3] + 1];
         ret;
-    `, "all_cairo", sn.RangeCheck96)
+    `, "all_cairo", builtins.RangeCheck96Type)
 
 	err := runner.Run()
 	require.NoError(t, err)
@@ -365,7 +365,7 @@ func TestRangeCheck96BuiltinError(t *testing.T) {
         [ap] = 0x1000000000000000000000000;
         [ap] = [[fp - 3]];
         ret;
-    `, "all_cairo", sn.RangeCheck96)
+    `, "all_cairo", builtins.RangeCheck96Type)
 
 	err := runner.Run()
 	require.ErrorContains(t, err, "check write: 2**96 <")
@@ -374,7 +374,7 @@ func TestRangeCheck96BuiltinError(t *testing.T) {
 	runner = createRunner(`
         [ap] = [[fp - 3]];
         ret;
-    `, "all_cairo", sn.RangeCheck96)
+    `, "all_cairo", builtins.RangeCheck96Type)
 
 	err = runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
