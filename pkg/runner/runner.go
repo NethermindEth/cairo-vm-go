@@ -405,7 +405,7 @@ func (runner *ZeroRunner) Output() []*fp.Element {
 	}
 
 	output := []*fp.Element{}
-	outputSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin("output")
+	outputSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtins.OutputName)
 	if !ok {
 		return output
 	}

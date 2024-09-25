@@ -191,7 +191,7 @@ func TestBitwiseBuiltin(t *testing.T) {
 	err := runner.Run()
 	require.NoError(t, err)
 
-	bitwise, ok := runner.vm.Memory.FindSegmentWithBuiltin("bitwise")
+	bitwise, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtins.BitwiseName)
 	require.True(t, ok)
 
 	requireEqualSegments(t, createSegment(14, 7, 6, 9, 15), bitwise)
@@ -267,7 +267,7 @@ func TestPedersenBuiltin(t *testing.T) {
 	err := runner.Run()
 	require.NoError(t, err)
 
-	pedersen, ok := runner.vm.Memory.FindSegmentWithBuiltin("pedersen")
+	pedersen, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtins.PedersenName)
 	require.True(t, ok)
 	requireEqualSegments(t, createSegment(&val1, &val2, &val3), pedersen)
 }
@@ -349,7 +349,7 @@ func TestRangeCheck96Builtin(t *testing.T) {
 	err := runner.Run()
 	require.NoError(t, err)
 
-	rangeCheck96, ok := runner.vm.Memory.FindSegmentWithBuiltin("range_check96")
+	rangeCheck96, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtins.RangeCheck96Name)
 	require.True(t, ok)
 
 	felt := &fp.Element{}
