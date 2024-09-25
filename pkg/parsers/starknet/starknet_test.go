@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 )
 
 func TestCompilerVersionParsing(t *testing.T) {

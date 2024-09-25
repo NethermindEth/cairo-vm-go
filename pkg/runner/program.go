@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
-	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 

@@ -81,7 +81,6 @@ func getBuiltinAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64, ratio
 	return allocatedInstances * cellsPerInstance, nil
 }
 
-
 func (b BuiltinType) MarshalJSON() ([]byte, error) {
 	switch b {
 	case OutputType:
@@ -141,4 +140,3 @@ func (b *BuiltinType) UnmarshalJSON(data []byte) error {
 	}
 	return nil
 }
-

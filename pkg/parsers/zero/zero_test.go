@@ -3,7 +3,7 @@ package zero
 import (
 	"testing"
 
-	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 
 	"github.com/stretchr/testify/require"
 )
