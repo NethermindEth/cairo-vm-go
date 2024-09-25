@@ -9,42 +9,42 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
-type Builtin uint8
+type BuiltinType uint8
 
 const (
-	OutputEnum Builtin = iota + 1
-	RangeCheckEnum
-	PedersenEnum
-	ECDSAEnum
-	KeccakEnum
-	BitwiseEnum
-	ECOPEnum
-	PoseidonEnum
-	SegmentArenaEnum
-	RangeCheck96Enum
+	OutputType BuiltinType = iota + 1
+	RangeCheckType
+	PedersenType
+	ECDSAType
+	KeccakType
+	BitwiseType
+	ECOPType
+	PoseidonType
+	SegmentArenaType
+	RangeCheck96Type
 )
 
-func Runner(name Builtin) memory.BuiltinRunner {
+func Runner(name BuiltinType) memory.BuiltinRunner {
 	switch name {
-	case OutputEnum:
+	case OutputType:
 		return &Output{}
-	case RangeCheckEnum:
+	case RangeCheckType:
 		return &RangeCheck{0, 8}
-	case RangeCheck96Enum:
+	case RangeCheck96Type:
 		return &RangeCheck{0, 6}
-	case PedersenEnum:
+	case PedersenType:
 		return &Pedersen{}
-	case ECDSAEnum:
+	case ECDSAType:
 		return &ECDSA{}
-	case KeccakEnum:
+	case KeccakType:
 		return &Keccak{}
-	case BitwiseEnum:
+	case BitwiseType:
 		return &Bitwise{}
-	case ECOPEnum:
+	case ECOPType:
 		return &EcOp{}
-	case PoseidonEnum:
+	case PoseidonType:
 		return &Poseidon{}
-	case SegmentArenaEnum:
+	case SegmentArenaType:
 		panic("Not implemented")
 	default:
 		panic("Unknown builtin")
@@ -82,34 +82,34 @@ func getBuiltinAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64, ratio
 }
 
 
-func (b Builtin) MarshalJSON() ([]byte, error) {
+func (b BuiltinType) MarshalJSON() ([]byte, error) {
 	switch b {
-	case OutputEnum:
+	case OutputType:
 		return []byte(OutputName), nil
-	case RangeCheckEnum:
+	case RangeCheckType:
 		return []byte(RangeCheckName), nil
-	case RangeCheck96Enum:
+	case RangeCheck96Type:
 		return []byte(RangeCheck96Name), nil
-	case PedersenEnum:
+	case PedersenType:
 		return []byte(PedersenName), nil
-	case ECDSAEnum:
+	case ECDSAType:
 		return []byte(ECDSAName), nil
-	case KeccakEnum:
+	case KeccakType:
 		return []byte(KeccakName), nil
-	case BitwiseEnum:
+	case BitwiseType:
 		return []byte(BitwiseName), nil
-	case ECOPEnum:
+	case ECOPType:
 		return []byte(EcOpName), nil
-	case PoseidonEnum:
+	case PoseidonType:
 		return []byte(PoseidonName), nil
-	case SegmentArenaEnum:
+	case SegmentArenaType:
 		return []byte(SegmentArenaName), nil
 
 	}
 	return nil, fmt.Errorf("marshal unknown builtin: %d", uint8(b))
 }
 
-func (b *Builtin) UnmarshalJSON(data []byte) error {
+func (b *BuiltinType) UnmarshalJSON(data []byte) error {
 	builtinName, err := strconv.Unquote(string(data))
 	if err != nil {
 		return fmt.Errorf("unmarshal builtin: %w", err)
@@ -117,25 +117,25 @@ func (b *Builtin) UnmarshalJSON(data []byte) error {
 
 	switch builtinName {
 	case OutputName:
-		*b = OutputEnum
+		*b = OutputType
 	case RangeCheckName:
-		*b = RangeCheckEnum
+		*b = RangeCheckType
 	case RangeCheck96Name:
-		*b = RangeCheck96Enum
+		*b = RangeCheck96Type
 	case PedersenName:
-		*b = PedersenEnum
+		*b = PedersenType
 	case ECDSAName:
-		*b = ECDSAEnum
+		*b = ECDSAType
 	case KeccakName:
-		*b = KeccakEnum
+		*b = KeccakType
 	case BitwiseName:
-		*b = BitwiseEnum
+		*b = BitwiseType
 	case EcOpName:
-		*b = ECOPEnum
+		*b = ECOPType
 	case PoseidonName:
-		*b = PoseidonEnum
+		*b = PoseidonType
 	case SegmentArenaName:
-		*b = SegmentArenaEnum
+		*b = SegmentArenaType
 	default:
 		return fmt.Errorf("unmarshal unknown builtin: %s", builtinName)
 	}

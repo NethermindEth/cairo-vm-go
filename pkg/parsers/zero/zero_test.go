@@ -69,10 +69,10 @@ func TestBuiltins(t *testing.T) {
 
 	require.Equal(t,
 		&ZeroProgram{
-			Builtins: []builtins.Builtin{
-				builtins.OutputEnum,
-				builtins.RangeCheckEnum,
-				builtins.BitwiseEnum,
+			Builtins: []builtins.BuiltinType{
+				builtins.OutputType,
+				builtins.RangeCheckType,
+				builtins.BitwiseType,
 			},
 		},
 		zeroProgram,

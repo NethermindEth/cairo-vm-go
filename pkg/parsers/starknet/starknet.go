@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
 type EntryPointInfo struct {
 	Selector fp.Element `json:"selector"`
 	Offset   fp.Element `json:"offset"`
-	Builtins []builtins.Builtin  `json:"builtins"`
+	Builtins []builtins.BuiltinType  `json:"builtins"`
 }
 
 type EntryPointByType struct {

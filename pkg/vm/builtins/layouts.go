@@ -11,7 +11,7 @@ type LayoutBuiltin struct {
 	// Runner for the builtin
 	Runner memory.BuiltinRunner
 	// Builtin id from starknet parser
-	Builtin Builtin
+	Builtin BuiltinType
 }
 
 type Layout struct {
@@ -29,84 +29,84 @@ func getPlainLayout() Layout {
 
 func getSmallLayout() Layout {
 	return Layout{Name: "small", RcUnits: 16, Builtins: []LayoutBuiltin{
-		{Runner: &Output{}, Builtin: OutputEnum},
-		{Runner: &Pedersen{ratio: 8}, Builtin: PedersenEnum},
-		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: RangeCheckEnum},
-		{Runner: &ECDSA{ratio: 512}, Builtin: ECDSAEnum},
+		{Runner: &Output{}, Builtin: OutputType},
+		{Runner: &Pedersen{ratio: 8}, Builtin: PedersenType},
+		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: RangeCheckType},
+		{Runner: &ECDSA{ratio: 512}, Builtin: ECDSAType},
 	}}
 }
 
 func getDexLayout() Layout {
 	return Layout{Name: "dex", RcUnits: 4, Builtins: []LayoutBuiltin{
-		{Runner: &Output{}, Builtin: OutputEnum},
-		{Runner: &Pedersen{ratio: 8}, Builtin: PedersenEnum},
-		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: RangeCheckEnum},
-		{Runner: &ECDSA{ratio: 512}, Builtin: ECDSAEnum},
+		{Runner: &Output{}, Builtin: OutputType},
+		{Runner: &Pedersen{ratio: 8}, Builtin: PedersenType},
+		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: RangeCheckType},
+		{Runner: &ECDSA{ratio: 512}, Builtin: ECDSAType},
 	}}
 }
 
 func getRecursiveLayout() Layout {
 	return Layout{Name: "recursive", RcUnits: 4, Builtins: []LayoutBuiltin{
-		{Runner: &Output{}, Builtin: OutputEnum},
-		{Runner: &Pedersen{ratio: 128}, Builtin: PedersenEnum},
-		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: RangeCheckEnum},
-		{Runner: &Bitwise{ratio: 8}, Builtin: BitwiseEnum},
+		{Runner: &Output{}, Builtin: OutputType},
+		{Runner: &Pedersen{ratio: 128}, Builtin: PedersenType},
+		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: RangeCheckType},
+		{Runner: &Bitwise{ratio: 8}, Builtin: BitwiseType},
 	}}
 }
 
 func getStarknetLayout() Layout {
 	return Layout{Name: "starknet", RcUnits: 4, Builtins: []LayoutBuiltin{
-		{Runner: &Output{}, Builtin: OutputEnum},
-		{Runner: &Pedersen{ratio: 32}, Builtin: PedersenEnum},
-		{Runner: &RangeCheck{ratio: 16, RangeCheckNParts: 8}, Builtin: RangeCheckEnum},
-		{Runner: &ECDSA{ratio: 2048}, Builtin: ECDSAEnum},
-		{Runner: &Bitwise{ratio: 64}, Builtin: BitwiseEnum},
-		{Runner: &EcOp{ratio: 1024, cache: make(map[uint64]fp.Element)}, Builtin: ECOPEnum},
-		{Runner: &Poseidon{ratio: 32, cache: make(map[uint64]fp.Element)}, Builtin: PoseidonEnum},
+		{Runner: &Output{}, Builtin: OutputType},
+		{Runner: &Pedersen{ratio: 32}, Builtin: PedersenType},
+		{Runner: &RangeCheck{ratio: 16, RangeCheckNParts: 8}, Builtin: RangeCheckType},
+		{Runner: &ECDSA{ratio: 2048}, Builtin: ECDSAType},
+		{Runner: &Bitwise{ratio: 64}, Builtin: BitwiseType},
+		{Runner: &EcOp{ratio: 1024, cache: make(map[uint64]fp.Element)}, Builtin: ECOPType},
+		{Runner: &Poseidon{ratio: 32, cache: make(map[uint64]fp.Element)}, Builtin: PoseidonType},
 	}}
 }
 
 func getStarknetWithKeccakLayout() Layout {
 	return Layout{Name: "starknet_with_keccak", RcUnits: 4, Builtins: []LayoutBuiltin{
-		{Runner: &Output{}, Builtin: OutputEnum},
-		{Runner: &Pedersen{ratio: 32}, Builtin: PedersenEnum},
-		{Runner: &RangeCheck{ratio: 16, RangeCheckNParts: 8}, Builtin: RangeCheckEnum},
-		{Runner: &ECDSA{ratio: 2048}, Builtin: ECDSAEnum},
-		{Runner: &Bitwise{ratio: 64}, Builtin: BitwiseEnum},
-		{Runner: &EcOp{ratio: 1024, cache: make(map[uint64]fp.Element)}, Builtin: ECOPEnum},
-		{Runner: &Keccak{ratio: 2048, cache: make(map[uint64]fp.Element)}, Builtin: KeccakEnum},
-		{Runner: &Poseidon{ratio: 32, cache: make(map[uint64]fp.Element)}, Builtin: PoseidonEnum},
+		{Runner: &Output{}, Builtin: OutputType},
+		{Runner: &Pedersen{ratio: 32}, Builtin: PedersenType},
+		{Runner: &RangeCheck{ratio: 16, RangeCheckNParts: 8}, Builtin: RangeCheckType},
+		{Runner: &ECDSA{ratio: 2048}, Builtin: ECDSAType},
+		{Runner: &Bitwise{ratio: 64}, Builtin: BitwiseType},
+		{Runner: &EcOp{ratio: 1024, cache: make(map[uint64]fp.Element)}, Builtin: ECOPType},
+		{Runner: &Keccak{ratio: 2048, cache: make(map[uint64]fp.Element)}, Builtin: KeccakType},
+		{Runner: &Poseidon{ratio: 32, cache: make(map[uint64]fp.Element)}, Builtin: PoseidonType},
 	}}
 }
 
 func getRecursiveLargeOutputLayout() Layout {
 	return Layout{Name: "recursive_large_output", RcUnits: 4, Builtins: []LayoutBuiltin{
-		{Runner: &Output{}, Builtin: OutputEnum},
-		{Runner: &Pedersen{ratio: 128}, Builtin: PedersenEnum},
-		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: RangeCheckEnum},
-		{Runner: &Bitwise{ratio: 8}, Builtin: BitwiseEnum},
-		{Runner: &Poseidon{ratio: 8, cache: make(map[uint64]fp.Element)}, Builtin: PoseidonEnum},
+		{Runner: &Output{}, Builtin: OutputType},
+		{Runner: &Pedersen{ratio: 128}, Builtin: PedersenType},
+		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: RangeCheckType},
+		{Runner: &Bitwise{ratio: 8}, Builtin: BitwiseType},
+		{Runner: &Poseidon{ratio: 8, cache: make(map[uint64]fp.Element)}, Builtin: PoseidonType},
 	}}
 }
 
 func getRecursiveWithPoseidonLayout() Layout {
 	return Layout{Name: "recursive_with_poseidon", RcUnits: 4, Builtins: []LayoutBuiltin{
-		{Runner: &Output{}, Builtin: OutputEnum},
-		{Runner: &Pedersen{ratio: 256}, Builtin: PedersenEnum},
-		{Runner: &RangeCheck{ratio: 16, RangeCheckNParts: 8}, Builtin: RangeCheckEnum},
-		{Runner: &Bitwise{ratio: 16}, Builtin: BitwiseEnum},
-		{Runner: &Poseidon{ratio: 64, cache: make(map[uint64]fp.Element)}, Builtin: PoseidonEnum},
+		{Runner: &Output{}, Builtin: OutputType},
+		{Runner: &Pedersen{ratio: 256}, Builtin: PedersenType},
+		{Runner: &RangeCheck{ratio: 16, RangeCheckNParts: 8}, Builtin: RangeCheckType},
+		{Runner: &Bitwise{ratio: 16}, Builtin: BitwiseType},
+		{Runner: &Poseidon{ratio: 64, cache: make(map[uint64]fp.Element)}, Builtin: PoseidonType},
 	}}
 }
 
 func getAllSolidityLayout() Layout {
 	return Layout{Name: "recursive_with_poseidon", RcUnits: 8, Builtins: []LayoutBuiltin{
-		{Runner: &Output{}, Builtin: OutputEnum},
-		{Runner: &Pedersen{ratio: 8}, Builtin: PedersenEnum},
-		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: RangeCheckEnum},
-		{Runner: &ECDSA{ratio: 512}, Builtin: ECDSAEnum},
-		{Runner: &Bitwise{ratio: 256}, Builtin: BitwiseEnum},
-		{Runner: &EcOp{ratio: 256, cache: make(map[uint64]fp.Element)}, Builtin: ECOPEnum},
+		{Runner: &Output{}, Builtin: OutputType},
+		{Runner: &Pedersen{ratio: 8}, Builtin: PedersenType},
+		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 8}, Builtin: RangeCheckType},
+		{Runner: &ECDSA{ratio: 512}, Builtin: ECDSAType},
+		{Runner: &Bitwise{ratio: 256}, Builtin: BitwiseType},
+		{Runner: &EcOp{ratio: 256, cache: make(map[uint64]fp.Element)}, Builtin: ECOPType},
 	}}
 }
 

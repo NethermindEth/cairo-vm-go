@@ -5,7 +5,6 @@ import (
 	"os"
 
 	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
-	
 )
 
 type FlowTrackingData struct {
@@ -71,7 +70,7 @@ type AttributeScope struct {
 type ZeroProgram struct {
 	Prime            string                   `json:"prime"`
 	Data             []string                 `json:"data"`
-	Builtins         []builtins.Builtin		  `json:"builtins"`
+	Builtins         []builtins.BuiltinType		  `json:"builtins"`
 	Hints            map[string][]Hint        `json:"hints"`
 	CompilerVersion  string                   `json:"version"`
 	MainScope        string                   `json:"main_scope"`

@@ -7,8 +7,8 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	pedersenhash "github.com/consensys/gnark-crypto/ecc/stark-curve/pedersen-hash"
@@ -186,7 +186,7 @@ func TestBitwiseBuiltin(t *testing.T) {
         [ap + 1] = 9;
         [ap + 2] = 15;
         ret;
-    `, "starknet_with_keccak", builtins.BitwiseEnum)
+    `, "starknet_with_keccak", builtins.BitwiseType)
 
 	err := runner.Run()
 	require.NoError(t, err)
@@ -202,7 +202,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
 	runner := createRunner(`
 	    [ap] = [[fp - 3]];
 	    ret;
-	`, "starknet_with_keccak", builtins.BitwiseEnum)
+	`, "starknet_with_keccak", builtins.BitwiseType)
 
 	err := runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
@@ -211,7 +211,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
 	runner = createRunner(`
 	    [ap] = [[fp - 3] + 1];
 	    ret;
-	`, "starknet_with_keccak", builtins.BitwiseEnum)
+	`, "starknet_with_keccak", builtins.BitwiseType)
 	err = runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
 
@@ -219,7 +219,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
 	runner = createRunner(`
         [ap] = [[fp - 3] + 2];
         ret;
-    `, "starknet_with_keccak", builtins.BitwiseEnum)
+    `, "starknet_with_keccak", builtins.BitwiseType)
 
 	err = runner.Run()
 	require.ErrorContains(t, err, "input value at offset 0 is unknown")
@@ -233,7 +233,7 @@ func TestOutputBuiltin(t *testing.T) {
         [ap + 1] = 7;
         [ap + 1] = [[fp - 3] + 1];
         ret;
-    `, "small", builtins.OutputEnum)
+    `, "small", builtins.OutputType)
 	err := runner.Run()
 	require.NoError(t, err)
 
@@ -263,7 +263,7 @@ func TestPedersenBuiltin(t *testing.T) {
         ret;
     `, val1.Text(10), val2.Text(10), val3.Text(10))
 
-	runner := createRunner(code, "small", builtins.PedersenEnum)
+	runner := createRunner(code, "small", builtins.PedersenType)
 	err := runner.Run()
 	require.NoError(t, err)
 
@@ -276,14 +276,14 @@ func TestPedersenBuiltinError(t *testing.T) {
 	runner := createRunner(`
         [ap] = [[fp - 3]];
         ret;
-    `, "small", builtins.PedersenEnum)
+    `, "small", builtins.PedersenType)
 	err := runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
 
 	runner = createRunner(`
         [ap] = [[fp - 3] + 2];
         ret;
-    `, "small", builtins.PedersenEnum)
+    `, "small", builtins.PedersenType)
 	err = runner.Run()
 	require.ErrorContains(t, err, "input value at offset 0 is unknown")
 }
@@ -298,7 +298,7 @@ func TestRangeCheckBuiltin(t *testing.T) {
         [ap + 1] = 0xffffffffffffffffffffffffffffffff;
         [ap + 1] = [[fp - 3] + 1];
         ret;
-    `, "small", builtins.RangeCheckEnum)
+    `, "small", builtins.RangeCheckType)
 
 	err := runner.Run()
 	require.NoError(t, err)
@@ -319,7 +319,7 @@ func TestRangeCheckBuiltinError(t *testing.T) {
         [ap] = 0x100000000000000000000000000000000;
         [ap] = [[fp - 3]];
         ret;
-    `, "small", builtins.RangeCheckEnum)
+    `, "small", builtins.RangeCheckType)
 
 	err := runner.Run()
 	require.ErrorContains(t, err, "check write: 2**128 <")
@@ -328,7 +328,7 @@ func TestRangeCheckBuiltinError(t *testing.T) {
 	runner = createRunner(`
         [ap] = [[fp - 3]];
         ret;
-    `, "small", builtins.RangeCheckEnum)
+    `, "small", builtins.RangeCheckType)
 
 	err = runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
@@ -358,13 +358,13 @@ func TestEcOpBuiltin(t *testing.T) {
         [ap + 5] = 108925483682366235368969256555281508851459278989259552980345066351008608800;
         [ap + 6] = 1592365885972480102953613056006596671718206128324372995731808913669237079419;
         ret;
-    `, "starknet_with_keccak", builtins.ECOPEnum)
+    `, "starknet_with_keccak", builtins.ECOPType)
 
 	err := runner.Run()
 	require.NoError(t, err)
 }
 
-func createRunner(code string, layoutName string, builtins ...builtins.Builtin) ZeroRunner {
+func createRunner(code string, layoutName string, builtins ...builtins.BuiltinType) ZeroRunner {
 	program := createProgramWithBuiltins(code, builtins...)
 
 	hints := make(map[uint64][]hinter.Hinter)
@@ -430,7 +430,7 @@ func createProgram(code string) *ZeroProgram {
 	return &program
 }
 
-func createProgramWithBuiltins(code string, builtins ...builtins.Builtin) *ZeroProgram {
+func createProgramWithBuiltins(code string, builtins ...builtins.BuiltinType) *ZeroProgram {
 	program := createProgram(code)
 	program.Builtins = builtins
 	return program

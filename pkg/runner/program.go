@@ -3,8 +3,8 @@ package runner
 import (
 	"fmt"
 
-	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
+	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -16,7 +16,7 @@ type ZeroProgram struct {
 	// it stores the start and end label pcs
 	Labels map[string]uint64
 	// builtins
-	Builtins []builtins.Builtin
+	Builtins []builtins.BuiltinType
 }
 
 type CairoProgram struct{}

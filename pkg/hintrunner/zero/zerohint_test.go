@@ -56,7 +56,7 @@ type hintOperander struct {
 }
 
 type builtinReference struct {
-	builtin builtins.Builtin
+	builtin builtins.BuiltinType
 	offset  uint64
 }
 
@@ -134,7 +134,7 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 			offset uint64
 			addr   memory.MemoryAddress
 		}
-		builtinsAllocated := map[builtins.Builtin]allocatedBuiltin{}
+		builtinsAllocated := map[builtins.BuiltinType]allocatedBuiltin{}
 		for _, o := range tc.operanders {
 			if o.Kind != reference {
 				continue

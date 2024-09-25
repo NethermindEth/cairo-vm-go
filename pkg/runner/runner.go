@@ -185,7 +185,7 @@ func (runner *ZeroRunner) initializeEntrypoint(
 }
 
 func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue, error) {
-	builtinsSet := make(map[builtins.Builtin]bool)
+	builtinsSet := make(map[builtins.BuiltinType]bool)
 	for _, bRunner := range runner.layout.Builtins {
 		builtinsSet[bRunner.Builtin] = true
 	}
@@ -311,7 +311,7 @@ func (runner *ZeroRunner) checkRangeCheckUsage() error {
 	rcMin, rcMax := runner.getPermRangeCheckLimits()
 	var rcUnitsUsedByBuiltins uint64
 	for _, builtin := range runner.program.Builtins {
-		if builtin == builtins.RangeCheckEnum {
+		if builtin == builtins.RangeCheckType {
 			for _, layoutBuiltin := range runner.layout.Builtins {
 				if builtin == layoutBuiltin.Builtin {
 					rangeCheckRunner, ok := layoutBuiltin.Runner.(*builtins.RangeCheck)
@@ -340,7 +340,7 @@ func (runner *ZeroRunner) getPermRangeCheckLimits() (uint16, uint16) {
 	rcMin, rcMax := runner.vm.RcLimitsMin, runner.vm.RcLimitsMax
 
 	for _, builtin := range runner.program.Builtins {
-		if builtin == builtins.RangeCheckEnum {
+		if builtin == builtins.RangeCheckType {
 			bRunner := builtins.Runner(builtin)
 			rangeCheckRunner, _ := bRunner.(*builtins.RangeCheck)
 			rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(rangeCheckRunner.String())

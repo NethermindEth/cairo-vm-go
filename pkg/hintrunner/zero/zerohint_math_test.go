@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
+	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -445,8 +445,8 @@ func TestZeroHintMath(t *testing.T) {
 		"Assert250bits": {
 			{
 				operanders: []*hintOperander{
-					{Name: "low", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "high", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "low", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 					{Name: "value", Kind: apRelative, Value: feltInt64(3042)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -459,8 +459,8 @@ func TestZeroHintMath(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "low", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "high", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "low", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 					{Name: "value", Kind: fpRelative, Value: feltInt64(4938538853994)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -473,8 +473,8 @@ func TestZeroHintMath(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "low", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "high", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "low", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 					{Name: "value", Kind: apRelative, Value: feltString("348329493943842849393993999999231222222222")},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -487,8 +487,8 @@ func TestZeroHintMath(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "low", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "high", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "low", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 					{Name: "value", Kind: apRelative, Value: feltString("348329493943842849393124453993999999231222222222")},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -501,8 +501,8 @@ func TestZeroHintMath(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "low", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "high", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "low", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 					{Name: "value", Kind: apRelative, Value: feltInt64(-233)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -578,8 +578,8 @@ func TestZeroHintMath(t *testing.T) {
 		"SplitFelt": {
 			{
 				operanders: []*hintOperander{
-					{Name: "low", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "high", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "low", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 					{Name: "value", Kind: apRelative, Value: feltString("100000000000000000000000000000000000000")},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -592,8 +592,8 @@ func TestZeroHintMath(t *testing.T) {
 			},
 			{
 				operanders: []*hintOperander{
-					{Name: "low", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "high", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "low", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "high", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 					{Name: "value", Kind: apRelative, Value: &utils.FeltMax128},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
@@ -611,8 +611,8 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "value", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "div", Kind: apRelative, Value: &utils.FeltMax128},
 					{Name: "bound", Kind: apRelative, Value: &utils.Felt127},
-					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "biased_q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
@@ -624,8 +624,8 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "value", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "div", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "bound", Kind: apRelative, Value: &utils.Felt127},
-					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "biased_q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
@@ -637,8 +637,8 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "value", Kind: apRelative, Value: &utils.FeltZero},
 					{Name: "div", Kind: apRelative, Value: &utils.FeltOne},
 					{Name: "bound", Kind: apRelative, Value: new(fp.Element).SetBigInt(new(big.Int).Lsh(big.NewInt(1), 130))},
-					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "biased_q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
@@ -650,8 +650,8 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "value", Kind: apRelative, Value: feltInt64(-6)},
 					{Name: "div", Kind: apRelative, Value: feltInt64(2)},
 					{Name: "bound", Kind: apRelative, Value: feltInt64(2)},
-					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "biased_q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
@@ -663,8 +663,8 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "value", Kind: apRelative, Value: feltInt64(6)},
 					{Name: "div", Kind: apRelative, Value: feltInt64(2)},
 					{Name: "bound", Kind: apRelative, Value: feltInt64(3)},
-					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "biased_q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
@@ -676,8 +676,8 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "value", Kind: apRelative, Value: feltInt64(5)},
 					{Name: "div", Kind: apRelative, Value: feltInt64(2)},
 					{Name: "bound", Kind: apRelative, Value: &utils.Felt127},
-					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "biased_q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
@@ -692,8 +692,8 @@ func TestZeroHintMath(t *testing.T) {
 					{Name: "value", Kind: apRelative, Value: feltInt64(-3)},
 					{Name: "div", Kind: apRelative, Value: feltInt64(2)},
 					{Name: "bound", Kind: apRelative, Value: &utils.Felt127},
-					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "biased_q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "biased_q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newSignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["bound"], ctx.operanders["r"], ctx.operanders["biased_q"])
@@ -751,8 +751,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(100)},
 					{Name: "div", Kind: fpRelative, Value: feltUint64(6)},
-					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
@@ -766,8 +766,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(450326666)},
 					{Name: "div", Kind: fpRelative, Value: feltUint64(136310839)},
-					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
@@ -781,8 +781,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(0)},
 					{Name: "div", Kind: fpRelative, Value: feltUint64(10)},
-					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
@@ -796,8 +796,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(10)},
 					{Name: "div", Kind: fpRelative, Value: feltUint64(0)},
-					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
@@ -808,8 +808,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(10)},
 					{Name: "div", Kind: fpRelative, Value: feltString("10633823966279327296825105735305134079")},
-					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
@@ -823,8 +823,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(10)},
 					{Name: "div", Kind: fpRelative, Value: feltString("10633823966279327296825105735305134080")},
-					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])
@@ -838,8 +838,8 @@ func TestZeroHintMath(t *testing.T) {
 				operanders: []*hintOperander{
 					{Name: "value", Kind: fpRelative, Value: feltUint64(10)},
 					{Name: "div", Kind: fpRelative, Value: feltString("10633823966279327296825105735305134081")},
-					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 0)},
-					{Name: "q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckEnum, 1)},
+					{Name: "r", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 0)},
+					{Name: "q", Kind: reference, Value: addrBuiltin(builtins.RangeCheckType, 1)},
 				},
 				makeHinter: func(ctx *hintTestContext) hinter.Hinter {
 					return newUnsignedDivRemHint(ctx.operanders["value"], ctx.operanders["div"], ctx.operanders["q"], ctx.operanders["r"])

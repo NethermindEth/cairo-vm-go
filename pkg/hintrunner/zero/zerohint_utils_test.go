@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	runnerutil "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
-	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	builtins "github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +30,7 @@ func addrWithSegment(segment, offset uint64) *memory.MemoryAddress {
 	}
 }
 
-func addrBuiltin(builtin builtins.Builtin, offset uint64) *builtinReference {
+func addrBuiltin(builtin builtins.BuiltinType, offset uint64) *builtinReference {
 	return &builtinReference{
 		builtin: builtin,
 		offset:  offset,
