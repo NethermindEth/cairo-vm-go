@@ -113,7 +113,7 @@ func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, 
 		valuesPtr:  valuesAddr,
 		n:          0, // not used in fillValue
 		offsetsPtr: offsetsPtr,
-	}, 0, Operation(runner.modBuiltinType), Operation("Inv"+runner.modBuiltinType))
+	}, 0, runner.modBuiltinType)
 
 	if err != nil {
 		return nil, err
@@ -159,5 +159,6 @@ func TestAddModeBuiltinRunnerSubtraction(t *testing.T) {
 	res4, err := checkResult(*runner, true, *big.NewInt(67), *big.NewInt(0), *big.NewInt(5))
 	require.NoError(t, err)
 	require.Equal(t, big.NewInt(62), res4)
-	_, err = checkResult(*runner, true, *big.NewInt(4094), *big.NewInt(4095), *big.NewInt(4095))
+	_, err = checkResult(*runner, true, *big.NewInt(67), *big.NewInt(70), *big.NewInt(138))
+	require.ErrorContains(t, err, "addend greater than sum + p")
 }
