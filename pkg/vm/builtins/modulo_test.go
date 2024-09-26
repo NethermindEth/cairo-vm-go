@@ -56,7 +56,6 @@ func TestModuloBuiltin(t *testing.T) {
 Tests whether runner completes a trio a, b, c as the input implies:
 If inverse is False it tests whether a = x1, b=x2, c = None will be completed with c = res.
 If inverse is True it tests whether c = x1, b = x2, a = None will be completed with a = res.
-The case c=x1, a=x2, b=None is currently completely symmetric in fill_value so it isn't tested.
 */
 func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, error) {
 	mem := memory.Memory{}
