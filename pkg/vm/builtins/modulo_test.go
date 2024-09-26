@@ -1,6 +1,7 @@
 package builtins
 
 import (
+	// "fmt"
 	"math/big"
 	"testing"
 
@@ -75,13 +76,15 @@ func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, 
 			return nil, err
 		}
 	}
-	x1Addr := memory.MemoryAddress{SegmentIndex: 0, Offset: 24}
-	x2Addr, err := x1Addr.AddOffset(int16(N_WORDS))
+
+	valuesAddr := memory.MemoryAddress{SegmentIndex: 0, Offset: 24}
+
+	x1Addr, err := valuesAddr.AddOffset(int16(0))
 	if err != nil {
 		return nil, err
 	}
 
-	err = runner.writeNWordsValue(&mem, x1Addr, x1)
+	x2Addr, err := valuesAddr.AddOffset(int16(N_WORDS))
 	if err != nil {
 		return nil, err
 	}
@@ -90,8 +93,7 @@ func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, 
 		return nil, err
 	}
 
-	resAddr, err := x1Addr.AddOffset(int16(2 * N_WORDS))
-
+	resAddr, err := valuesAddr.AddOffset(int16(2 * N_WORDS))
 	if err != nil {
 		return nil, err
 	}
@@ -100,10 +102,15 @@ func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, 
 		x1Addr, resAddr = resAddr, x1Addr
 	}
 
+	err = runner.writeNWordsValue(&mem, x1Addr, x1)
+	if err != nil {
+		return nil, err
+	}
+
 	_, err = runner.fillValue(&mem, ModBuiltinInputs{
 		p:          p,
 		pValues:    [N_WORDS]fp.Element{}, // not used in fillValue
-		valuesPtr:  x1Addr,
+		valuesPtr:  valuesAddr,
 		n:          0, // not used in fillValue
 		offsetsPtr: offsetsPtr,
 	}, 0, Operation(runner.modBuiltinType), Operation("Inv"+runner.modBuiltinType))
@@ -136,4 +143,11 @@ func TestAddModBuiltinRunnerAddition(t *testing.T) {
 	require.Equal(t, big.NewInt(1), res4)
 	_, err = checkResult(*runner, false, *big.NewInt(4094), *big.NewInt(4095), *big.NewInt(4095))
 	require.ErrorContains(t, err, "Expected a Add b - 1 * p <= 4095")
+}
+
+func TestAddModeBuiltinRunnerSubtraction(t *testing.T) {
+	runner := NewModBuiltin(1, 3, 1, Add)
+	res1, err := checkResult(*runner, true, *big.NewInt(67), *big.NewInt(52), *big.NewInt(38))
+	require.NoError(t, err)
+	require.Equal(t, big.NewInt(14), res1)
 }
