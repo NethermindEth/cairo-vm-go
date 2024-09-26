@@ -53,8 +53,8 @@ func TestModuloBuiltin(t *testing.T) {
 
 /*
 Tests whether runner completes a trio a, b, c as the input implies:
-If inverse_bool is False it tests whether a=x1, b=x2, c=None will be completed with c=res.
-If inverse_bool is True it tests whether c=x1, b=x2, a=None will be completed with a=res.
+If inverse is False it tests whether a = x1, b=x2, c = None will be completed with c = res.
+If inverse is True it tests whether c = x1, b = x2, a = None will be completed with a = res.
 The case c=x1, a=x2, b=None is currently completely symmetric in fill_value so it isn't tested.
 */
 func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, error) {
@@ -81,8 +81,14 @@ func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, 
 		return nil, err
 	}
 
-	runner.writeNWordsValue(&mem, x1Addr, x1)
-	runner.writeNWordsValue(&mem, x2Addr, x2)
+	err = runner.writeNWordsValue(&mem, x1Addr, x1)
+	if err != nil {
+		return nil, err
+	}
+	err = runner.writeNWordsValue(&mem, x2Addr, x2)
+	if err != nil {
+		return nil, err
+	}
 
 	resAddr, err := x1Addr.AddOffset(int16(2 * N_WORDS))
 
@@ -94,13 +100,17 @@ func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, 
 		x1Addr, resAddr = resAddr, x1Addr
 	}
 
-	runner.fillValue(&mem, ModBuiltinInputs{
+	_, err = runner.fillValue(&mem, ModBuiltinInputs{
 		p:          p,
 		pValues:    [N_WORDS]fp.Element{}, // not used in fillValue
 		valuesPtr:  x1Addr,
 		n:          0, // not used in fillValue
 		offsetsPtr: offsetsPtr,
 	}, 0, Operation(runner.modBuiltinType), Operation("Inv"+runner.modBuiltinType))
+
+	if err != nil {
+		return nil, err
+	}
 
 	_, OutRes, err := runner.readNWordsValue(&mem, resAddr)
 	if err != nil {
@@ -120,7 +130,8 @@ func TestAddModBuiltinRunnerAddition(t *testing.T) {
 	require.Equal(t, big.NewInt(46), res2)
 	res3, err := checkResult(*runner, false, *big.NewInt(67), *big.NewInt(68), *big.NewInt(69))
 	require.NoError(t, err)
-	require.Equal(t, big.NewInt(3), res3)
+	//
+	require.Equal(t, big.NewInt(70), res3)
 	res4, err := checkResult(*runner, false, *big.NewInt(67), *big.NewInt(68), *big.NewInt(0))
 	require.NoError(t, err)
 	require.Equal(t, big.NewInt(1), res4)

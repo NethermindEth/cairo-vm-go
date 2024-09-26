@@ -85,6 +85,7 @@ type ModBuiltin struct {
 	batchSize      uint64
 	shift          big.Int
 	shiftPowers    [N_WORDS]big.Int
+	kBound         *big.Int
 }
 
 func NewModBuiltin(ratio uint64, wordBitLen uint64, batchSize uint64, modBuiltinType ModBuiltinType) *ModBuiltin {
@@ -94,6 +95,10 @@ func NewModBuiltin(ratio uint64, wordBitLen uint64, batchSize uint64, modBuiltin
 	for i := 1; i < N_WORDS; i++ {
 		shiftPowers[i].Mul(&shiftPowers[i-1], shift)
 	}
+	kBound := big.NewInt(2)
+	if modBuiltinType == Mul {
+		kBound = nil
+	}
 	return &ModBuiltin{
 		ratio:          ratio,
 		modBuiltinType: modBuiltinType,
@@ -101,6 +106,7 @@ func NewModBuiltin(ratio uint64, wordBitLen uint64, batchSize uint64, modBuiltin
 		batchSize:      batchSize,
 		shift:          *shift,
 		shiftPowers:    shiftPowers,
+		kBound:         kBound,
 	}
 }
 
@@ -359,10 +365,24 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 		}
 	}
 
+	// 2 ** 384 (max value that can be stored in 4 felts)
+	intLim := new(big.Int).Lsh(big.NewInt(1), uint(m.wordBitLen)*N_WORDS)
+	kBound := m.kBound
+	if kBound == nil {
+		kBound = intLim
+	}
+
 	switch {
 	case a != nil && b != nil && c == nil:
 		value := applyOp(a, b, op)
-		value.Mod(&value, &inputs.p)
+		if new(big.Int).Sub(&value, new(big.Int).Mul((new(big.Int).Sub(kBound, big.NewInt(1))), &inputs.p)).Cmp(new(big.Int).Sub(intLim, big.NewInt(1))) == 1 {
+			return false, fmt.Errorf("%s builtin: op(a, b) is too big to compensate for with multiples of p", m.String())
+		}
+		if value.Cmp(new(big.Int).Mul(kBound, &inputs.p)) < 0 {
+			value.Mod(&value, &inputs.p)
+		} else {
+			value.Sub(&value, new(big.Int).Mul(new(big.Int).Sub(kBound, big.NewInt(1)), &inputs.p))
+		}
 		if err := m.writeNWordsValue(mem, addresses[2], value); err != nil {
 			return false, err
 		}
