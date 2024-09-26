@@ -6,7 +6,6 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
@@ -186,7 +185,7 @@ func (runner *ZeroRunner) initializeEntrypoint(
 }
 
 func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue, error) {
-	builtinsSet := make(map[starknet.Builtin]bool)
+	builtinsSet := make(map[builtins.BuiltinType]bool)
 	for _, bRunner := range runner.layout.Builtins {
 		builtinsSet[bRunner.Builtin] = true
 	}
@@ -312,7 +311,7 @@ func (runner *ZeroRunner) checkRangeCheckUsage() error {
 	rcMin, rcMax := runner.getPermRangeCheckLimits()
 	var rcUnitsUsedByBuiltins uint64
 	for _, builtin := range runner.program.Builtins {
-		if builtin == starknet.RangeCheck {
+		if builtin == builtins.RangeCheckType {
 			for _, layoutBuiltin := range runner.layout.Builtins {
 				if builtin == layoutBuiltin.Builtin {
 					rangeCheckRunner, ok := layoutBuiltin.Runner.(*builtins.RangeCheck)
@@ -341,7 +340,7 @@ func (runner *ZeroRunner) getPermRangeCheckLimits() (uint16, uint16) {
 	rcMin, rcMax := runner.vm.RcLimitsMin, runner.vm.RcLimitsMax
 
 	for _, builtin := range runner.program.Builtins {
-		if builtin == starknet.RangeCheck {
+		if builtin == builtins.RangeCheckType {
 			bRunner := builtins.Runner(builtin)
 			rangeCheckRunner, _ := bRunner.(*builtins.RangeCheck)
 			rangeCheckSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(rangeCheckRunner.String())
@@ -406,7 +405,7 @@ func (runner *ZeroRunner) Output() []*fp.Element {
 	}
 
 	output := []*fp.Element{}
-	outputSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin("output")
+	outputSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtins.OutputName)
 	if !ok {
 		return output
 	}

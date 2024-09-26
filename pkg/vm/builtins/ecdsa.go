@@ -11,11 +11,12 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-const ECDSAName = "ecdsa"
-const inputCellsPerECDSA = 2
-const cellsPerECDSA = 2
-
-const instancesPerComponentECDSA = 1
+const (
+	ECDSAName                  = "ecdsa"
+	inputCellsPerECDSA         = 2
+	cellsPerECDSA              = 2
+	instancesPerComponentECDSA = 1
+)
 
 type ECDSA struct {
 	Signatures map[uint64]ecdsa.Signature

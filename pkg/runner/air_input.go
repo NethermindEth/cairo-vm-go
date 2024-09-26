@@ -62,31 +62,31 @@ func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirP
 		if ok {
 			// some checks might be missing here
 			switch builtinName {
-			case "range_check":
+			case builtins.RangeCheckName:
 				{
 					airPrivateInput.RangeCheck = bRunner.Runner.(*builtins.RangeCheck).GetAirPrivateInput(builtinSegment)
 				}
-			case "bitwise":
+			case builtins.BitwiseName:
 				{
 					airPrivateInput.Bitwise = bRunner.Runner.(*builtins.Bitwise).GetAirPrivateInput(builtinSegment)
 				}
-			case "poseidon":
+			case builtins.PoseidonName:
 				{
 					airPrivateInput.Poseidon = bRunner.Runner.(*builtins.Poseidon).GetAirPrivateInput(builtinSegment)
 				}
-			case "pedersen":
+			case builtins.PedersenName:
 				{
 					airPrivateInput.Pedersen = bRunner.Runner.(*builtins.Pedersen).GetAirPrivateInput(builtinSegment)
 				}
-			case "ec_op":
+			case builtins.EcOpName:
 				{
 					airPrivateInput.EcOp = bRunner.Runner.(*builtins.EcOp).GetAirPrivateInput(builtinSegment)
 				}
-			case "keccak":
+			case builtins.KeccakName:
 				{
 					airPrivateInput.Keccak = bRunner.Runner.(*builtins.Keccak).GetAirPrivateInput(builtinSegment)
 				}
-			case "ecdsa":
+			case builtins.ECDSAName:
 				{
 					ecdsaAirPrivateInput, err := bRunner.Runner.(*builtins.ECDSA).GetAirPrivateInput(builtinSegment)
 					if err != nil {
