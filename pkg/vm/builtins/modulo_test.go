@@ -144,7 +144,7 @@ func TestAddModBuiltinRunnerAddition(t *testing.T) {
 	require.ErrorContains(t, err, "Expected a Add b - 1 * p <= 4095")
 }
 
-func TestAddModeBuiltinRunnerSubtraction(t *testing.T) {
+func TestAddModBuiltinRunnerSubtraction(t *testing.T) {
 	runner := NewModBuiltin(1, 3, 1, Add)
 	res1, err := checkResult(*runner, true, *big.NewInt(67), *big.NewInt(52), *big.NewInt(38))
 	require.NoError(t, err)
@@ -160,4 +160,22 @@ func TestAddModeBuiltinRunnerSubtraction(t *testing.T) {
 	require.Equal(t, big.NewInt(62), res4)
 	_, err = checkResult(*runner, true, *big.NewInt(67), *big.NewInt(70), *big.NewInt(138))
 	require.ErrorContains(t, err, "addend greater than sum + p")
+}
+
+func TestMulModBuiltinRunnerMultiplication(t *testing.T) {
+	runner := NewModBuiltin(1, 3, 1, Mul)
+	res1, err := checkResult(*runner, false, *big.NewInt(67), *big.NewInt(11), *big.NewInt(8))
+	require.NoError(t, err)
+	require.Equal(t, big.NewInt(21), res1)
+	res2, err := checkResult(*runner, false, *big.NewInt(67), *big.NewInt(68), *big.NewInt(69))
+	require.NoError(t, err)
+	require.Equal(t, big.NewInt(2), res2)
+	res3, err := checkResult(*runner, false, *big.NewInt(67), *big.NewInt(525), *big.NewInt(526))
+	require.NoError(t, err)
+	require.Equal(t, big.NewInt(1785), res3)
+	res4, err := checkResult(*runner, false, *big.NewInt(67), *big.NewInt(525), *big.NewInt(0))
+	require.NoError(t, err)
+	require.Equal(t, big.NewInt(0), res4)
+	_, err = checkResult(*runner, false, *big.NewInt(67), *big.NewInt(3777), *big.NewInt(3989))
+	require.ErrorContains(t, err, "Expected a Mul b - 4095 * p <= 4095")
 }

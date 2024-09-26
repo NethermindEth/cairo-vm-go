@@ -352,7 +352,7 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 	intLim := new(big.Int).Lsh(big.NewInt(1), uint(m.wordBitLen)*N_WORDS)
 	kBound := m.kBound
 	if kBound == nil {
-		kBound = intLim
+		kBound = new(big.Int).Set(intLim)
 	}
 
 	switch {
