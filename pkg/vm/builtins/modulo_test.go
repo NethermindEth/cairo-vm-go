@@ -121,7 +121,7 @@ func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, 
 }
 
 func TestAddModBuiltinRunnerAddition(t *testing.T) {
-	runner := NewModBuiltin(128, 96, 1, Add)
+	runner := NewModBuiltin(1, 3, 1, Add)
 	res1, err := checkResult(*runner, false, *big.NewInt(67), *big.NewInt(17), *big.NewInt(40))
 	require.NoError(t, err)
 	require.Equal(t, big.NewInt(57), res1)
@@ -130,9 +130,10 @@ func TestAddModBuiltinRunnerAddition(t *testing.T) {
 	require.Equal(t, big.NewInt(46), res2)
 	res3, err := checkResult(*runner, false, *big.NewInt(67), *big.NewInt(68), *big.NewInt(69))
 	require.NoError(t, err)
-	//
 	require.Equal(t, big.NewInt(70), res3)
 	res4, err := checkResult(*runner, false, *big.NewInt(67), *big.NewInt(68), *big.NewInt(0))
 	require.NoError(t, err)
 	require.Equal(t, big.NewInt(1), res4)
+	_, err = checkResult(*runner, false, *big.NewInt(4094), *big.NewInt(4095), *big.NewInt(4095))
+	require.ErrorContains(t, err, "Expected a Add b - 1 * p <= 4095")
 }
