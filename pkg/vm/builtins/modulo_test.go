@@ -60,7 +60,7 @@ The case c=x1, a=x2, b=None is currently completely symmetric in fill_value so i
 func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, error) {
 	mem := memory.Memory{}
 
-	mem.AllocateEmptySegment()
+	mem.AllocateBuiltinSegment(&runner)
 
 	offsetsPtr := memory.MemoryAddress{SegmentIndex: 0, Offset: 0}
 
@@ -81,7 +81,9 @@ func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, 
 		return nil, err
 	}
 
+	runner.writeNWordsValue(&mem, x1Addr, x1)
 	runner.writeNWordsValue(&mem, x2Addr, x2)
+
 	resAddr, err := x1Addr.AddOffset(int16(2 * N_WORDS))
 
 	if err != nil {
@@ -92,8 +94,6 @@ func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, 
 		x1Addr, resAddr = resAddr, x1Addr
 	}
 
-	runner.writeNWordsValue(&mem, x1Addr, x1)
-
 	runner.fillValue(&mem, ModBuiltinInputs{
 		p:          p,
 		pValues:    [N_WORDS]fp.Element{}, // not used in fillValue
@@ -101,6 +101,8 @@ func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, 
 		n:          0, // not used in fillValue
 		offsetsPtr: offsetsPtr,
 	}, 0, Operation(runner.modBuiltinType), Operation("Inv"+runner.modBuiltinType))
+
+	// return big.NewInt(0), nil
 
 	_, OutRes, err := runner.readNWordsValue(&mem, resAddr)
 	if err != nil {
@@ -111,7 +113,7 @@ func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, 
 }
 
 func TestAddModBuiltinRunnerAddition(t *testing.T) {
-	runner := NewModBuiltin(128, 1, 96, Add)
+	runner := NewModBuiltin(128, 96, 1, Add)
 	res1, err := checkResult(*runner, false, *big.NewInt(67), *big.NewInt(17), *big.NewInt(40))
 	require.NoError(t, err)
 	require.Equal(t, big.NewInt(57), res1)

@@ -121,8 +121,8 @@ func getAllCairoLayout() Layout {
 		{Runner: &Keccak{ratio: 2048, cache: make(map[uint64]fp.Element)}, Builtin: KeccakType},
 		{Runner: &Poseidon{ratio: 256, cache: make(map[uint64]fp.Element)}, Builtin: PoseidonType},
 		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 6}, Builtin: RangeCheck96Type},
-		{Runner: &ModBuiltin{ratio: 128, wordBitLen: 1, batchSize: 96, modBuiltinType: Add}, Builtin: AddModeType},
-		{Runner: &ModBuiltin{ratio: 256, wordBitLen: 1, batchSize: 96, modBuiltinType: Mul}, Builtin: MulModType},
+		{Runner: &ModBuiltin{ratio: 128, wordBitLen: 96, batchSize: 1, modBuiltinType: Add}, Builtin: AddModeType},
+		{Runner: &ModBuiltin{ratio: 256, wordBitLen: 96, batchSize: 1, modBuiltinType: Mul}, Builtin: MulModType},
 	}}
 }
 
