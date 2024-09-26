@@ -22,6 +22,8 @@ const (
 	PoseidonType
 	SegmentArenaType
 	RangeCheck96Type
+	AddModeType
+	MulModType
 )
 
 func Runner(name BuiltinType) memory.BuiltinRunner {
@@ -44,6 +46,10 @@ func Runner(name BuiltinType) memory.BuiltinRunner {
 		return &EcOp{}
 	case PoseidonType:
 		return &Poseidon{}
+	case AddModeType:
+		return &ModBuiltin{modBuiltinType: Add}
+	case MulModType:
+		return &ModBuiltin{modBuiltinType: Mul}
 	case SegmentArenaType:
 		panic("Not implemented")
 	default:
@@ -101,6 +107,10 @@ func (b BuiltinType) MarshalJSON() ([]byte, error) {
 		return []byte(EcOpName), nil
 	case PoseidonType:
 		return []byte(PoseidonName), nil
+	case AddModeType:
+		return []byte("Add" + ModuloName), nil
+	case MulModType:
+		return []byte("Mul" + ModuloName), nil
 	case SegmentArenaType:
 		return []byte(SegmentArenaName), nil
 
@@ -133,6 +143,10 @@ func (b *BuiltinType) UnmarshalJSON(data []byte) error {
 		*b = ECOPType
 	case PoseidonName:
 		*b = PoseidonType
+	case "Add" + ModuloName:
+		*b = AddModeType
+	case "Mul" + ModuloName:
+		*b = MulModType
 	case SegmentArenaName:
 		*b = SegmentArenaType
 	default:
