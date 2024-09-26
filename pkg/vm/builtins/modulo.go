@@ -378,7 +378,17 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 	case a != nil && b == nil && c != nil:
 		var value big.Int
 		if op == Add {
-			value = *new(big.Int).Sub(c, a)
+			// Right now only k = 2 is an option, hence as we stated above that x + known can only take values
+			// from res to res + (k - 1) * p, hence known <= res + p
+			if a.Cmp(new(big.Int).Add(c, &inputs.p)) > 0 {
+				return false, fmt.Errorf("%s builtin: addend greater than sum + p: %d > %d + %d", m.String(), a, c, &inputs.p)
+			} else {
+				if a.Cmp(c) <= 0 {
+					value = *new(big.Int).Sub(c, a)
+				} else {
+					value = *new(big.Int).Sub(c.Add(c, &inputs.p), a)
+				}
+			}
 		} else {
 			value = *new(big.Int).Div(c, a)
 		}
