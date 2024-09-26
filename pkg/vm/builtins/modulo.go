@@ -411,6 +411,13 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 				}
 			}
 		} else {
+			x, _, gcd := utils.Igcdex(b, &inputs.p)
+			if gcd.Cmp(big.NewInt(1)) != 0 {
+				value = *new(big.Int).Div(&inputs.p, &gcd)
+			} else {
+				value = *new(big.Int).Mul(c, &x)
+				value = *value.Mod(&value, &inputs.p)
+			}
 			value = *new(big.Int).Div(c, b)
 		}
 		if err := m.writeNWordsValue(mem, addresses[0], value); err != nil {
