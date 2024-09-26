@@ -179,3 +179,13 @@ func TestMulModBuiltinRunnerMultiplication(t *testing.T) {
 	_, err = checkResult(*runner, false, *big.NewInt(67), *big.NewInt(3777), *big.NewInt(3989))
 	require.ErrorContains(t, err, "Expected a Mul b - 4095 * p <= 4095")
 }
+
+func TestMulModBuiltinRunnerDivision(t *testing.T) {
+	runner := NewModBuiltin(1, 3, 1, Mul)
+	res1, err := checkResult(*runner, true, *big.NewInt(67), *big.NewInt(36), *big.NewInt(9))
+	require.NoError(t, err)
+	require.Equal(t, big.NewInt(4), res1)
+	// res2, err := checkResult(*runner, true, *big.NewInt(67), *big.NewInt(138), *big.NewInt(41))
+	// require.NoError(t, err)
+	// require.Equal(t, big.NewInt(5), res2)
+}

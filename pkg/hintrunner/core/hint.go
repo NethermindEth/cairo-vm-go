@@ -540,7 +540,7 @@ func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerConte
 	n := new(big.Int).Lsh(&N1BigInt, 128)
 	n.Add(n, &N0BigInt)
 
-	_, r, g := u.Igcdex(n, b)
+	_, r, g := utils.Igcdex(n, b)
 	mask := new(big.Int).Lsh(big.NewInt(1), 128)
 	mask.Sub(mask, big.NewInt(1))
 

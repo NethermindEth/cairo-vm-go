@@ -168,3 +168,55 @@ func SafeDivUint64(x, y uint64) (uint64, error) {
 	}
 	return x / y, nil
 }
+
+func Igcdex(a, b *big.Int) (big.Int, big.Int, big.Int) {
+	// https://github.com/sympy/sympy/blob/d91b8ad6d36a59a879cc70e5f4b379da5fdd46ce/sympy/core/intfunc.py#L362
+
+	if a.Cmp(big.NewInt(0)) == 0 && b.Cmp(big.NewInt(0)) == 0 {
+		return *big.NewInt(0), *big.NewInt(1), *big.NewInt(0)
+	}
+	g, x, y := gcdext(a, b)
+	return x, y, g
+}
+
+func gcdext(a, b *big.Int) (big.Int, big.Int, big.Int) {
+	// https://github.com/sympy/sympy/blob/d91b8ad6d36a59a879cc70e5f4b379da5fdd46ce/sympy/external/ntheory.py#L125
+
+	if a.Cmp(big.NewInt(0)) == 0 || b.Cmp(big.NewInt(0)) == 0 {
+		g := new(big.Int)
+		if a.Cmp(big.NewInt(0)) == 0 {
+			g.Abs(b)
+		} else {
+			g.Abs(a)
+		}
+
+		if g.Cmp(big.NewInt(0)) == 0 {
+			return *big.NewInt(0), *big.NewInt(0), *big.NewInt(0)
+		}
+		return *g, *new(big.Int).Div(a, g), *new(big.Int).Div(b, g)
+	}
+
+	xSign, aSigned := sign(a)
+	ySign, bSigned := sign(b)
+	x, r := big.NewInt(1), big.NewInt(0)
+	y, s := big.NewInt(0), big.NewInt(1)
+
+	for bSigned.Sign() != 0 {
+		q, c := new(big.Int).DivMod(&aSigned, &bSigned, new(big.Int))
+		aSigned = bSigned
+		bSigned = *c
+		x, r = r, new(big.Int).Sub(x, new(big.Int).Mul(q, r))
+		y, s = s, new(big.Int).Sub(y, new(big.Int).Mul(q, s))
+	}
+
+	return aSigned, *new(big.Int).Mul(x, big.NewInt(int64(xSign))), *new(big.Int).Mul(y, big.NewInt(int64(ySign)))
+}
+
+func sign(n *big.Int) (int, big.Int) {
+	// https://github.com/sympy/sympy/blob/d91b8ad6d36a59a879cc70e5f4b379da5fdd46ce/sympy/external/ntheory.py#L119
+
+	if n.Sign() < 0 {
+		return -1, *new(big.Int).Abs(n)
+	}
+	return 1, *new(big.Int).Set(n)
+}

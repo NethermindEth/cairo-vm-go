@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -115,6 +116,72 @@ func TestRightRot(t *testing.T) {
 			result := RightRot(tc.value, tc.n)
 			if result != tc.expected {
 				t.Errorf("Expected %08X, got %08X", tc.expected, result)
+			}
+		})
+	}
+}
+
+func TestIgcdex(t *testing.T) {
+	// https://github.com/sympy/sympy/blob/e7fb2714f17b30b83e424448aad0da9e94a4b577/sympy/core/tests/test_numbers.py#L278
+	tests := []struct {
+		name                            string
+		a, b                            *big.Int
+		expectedX, expectedY, expectedG *big.Int
+	}{
+		{
+			name:      "Case 1",
+			a:         big.NewInt(2),
+			b:         big.NewInt(3),
+			expectedX: big.NewInt(-1),
+			expectedY: big.NewInt(1),
+			expectedG: big.NewInt(1),
+		},
+		{
+			name:      "Case 2",
+			a:         big.NewInt(10),
+			b:         big.NewInt(12),
+			expectedX: big.NewInt(-1),
+			expectedY: big.NewInt(1),
+			expectedG: big.NewInt(2),
+		},
+		{
+			name:      "Case 3",
+			a:         big.NewInt(100),
+			b:         big.NewInt(2004),
+			expectedX: big.NewInt(-20),
+			expectedY: big.NewInt(1),
+			expectedG: big.NewInt(4),
+		},
+		{
+			name:      "Case 4",
+			a:         big.NewInt(0),
+			b:         big.NewInt(0),
+			expectedX: big.NewInt(0),
+			expectedY: big.NewInt(1),
+			expectedG: big.NewInt(0),
+		},
+		{
+			name:      "Case 5",
+			a:         big.NewInt(1),
+			b:         big.NewInt(0),
+			expectedX: big.NewInt(1),
+			expectedY: big.NewInt(0),
+			expectedG: big.NewInt(1),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actualX, actualY, actualG := Igcdex(tt.a, tt.b)
+
+			if actualX.Cmp(tt.expectedX) != 0 {
+				t.Errorf("got x: %v, want: %v", actualX, tt.expectedX)
+			}
+			if actualY.Cmp(tt.expectedY) != 0 {
+				t.Errorf("got x: %v, want: %v", actualY, tt.expectedY)
+			}
+			if actualG.Cmp(tt.expectedG) != 0 {
+				t.Errorf("got x: %v, want: %v", actualG, tt.expectedG)
 			}
 		})
 	}
