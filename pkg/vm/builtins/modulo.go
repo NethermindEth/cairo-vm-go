@@ -72,10 +72,10 @@ const (
 type Operation string
 
 const (
-	addOp Operation = "add"
-	subOp Operation = "invAdd"
-	mulOp Operation = "mul"
-	divOp Operation = "invMul"
+	addOp Operation = "Add"
+	subOp Operation = "InvAdd"
+	mulOp Operation = "Mul"
+	divOp Operation = "InvMul"
 )
 
 type ModBuiltin struct {
@@ -87,7 +87,7 @@ type ModBuiltin struct {
 	shiftPowers    [N_WORDS]big.Int
 }
 
-func NewModBuiltin(ratio uint64, modBuiltinType ModBuiltinType, wordBitLen uint64, batchSize uint64) *ModBuiltin {
+func NewModBuiltin(ratio uint64, wordBitLen uint64, batchSize uint64, modBuiltinType ModBuiltinType) *ModBuiltin {
 	shift := new(big.Int).Lsh(big.NewInt(1), uint(wordBitLen))
 	shiftPowers := [N_WORDS]big.Int{}
 	for i := 0; i < N_WORDS; i++ {
@@ -114,11 +114,7 @@ func (m *ModBuiltin) InferValue(segment *memory.Segment, offset uint64) error {
 }
 
 func (m *ModBuiltin) String() string {
-	if m.modBuiltinType == Add {
-		return string(Add) + ModuloName
-	} else {
-		return string(Mul) + ModuloName
-	}
+	return string(m.modBuiltinType) + ModuloName
 }
 
 func (m *ModBuiltin) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
