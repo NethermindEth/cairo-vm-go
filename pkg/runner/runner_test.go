@@ -7,8 +7,8 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
-	sn "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	pedersenhash "github.com/consensys/gnark-crypto/ecc/stark-curve/pedersen-hash"
@@ -186,12 +186,12 @@ func TestBitwiseBuiltin(t *testing.T) {
         [ap + 1] = 9;
         [ap + 2] = 15;
         ret;
-    `, "starknet_with_keccak", sn.Bitwise)
+    `, "starknet_with_keccak", builtins.BitwiseType)
 
 	err := runner.Run()
 	require.NoError(t, err)
 
-	bitwise, ok := runner.vm.Memory.FindSegmentWithBuiltin("bitwise")
+	bitwise, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtins.BitwiseName)
 	require.True(t, ok)
 
 	requireEqualSegments(t, createSegment(14, 7, 6, 9, 15), bitwise)
@@ -202,7 +202,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
 	runner := createRunner(`
 	    [ap] = [[fp - 3]];
 	    ret;
-	`, "starknet_with_keccak", sn.Bitwise)
+	`, "starknet_with_keccak", builtins.BitwiseType)
 
 	err := runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
@@ -211,7 +211,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
 	runner = createRunner(`
 	    [ap] = [[fp - 3] + 1];
 	    ret;
-	`, "starknet_with_keccak", sn.Bitwise)
+	`, "starknet_with_keccak", builtins.BitwiseType)
 	err = runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
 
@@ -219,7 +219,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
 	runner = createRunner(`
         [ap] = [[fp - 3] + 2];
         ret;
-    `, "starknet_with_keccak", sn.Bitwise)
+    `, "starknet_with_keccak", builtins.BitwiseType)
 
 	err = runner.Run()
 	require.ErrorContains(t, err, "input value at offset 0 is unknown")
@@ -233,7 +233,7 @@ func TestOutputBuiltin(t *testing.T) {
         [ap + 1] = 7;
         [ap + 1] = [[fp - 3] + 1];
         ret;
-    `, "small", sn.Output)
+    `, "small", builtins.OutputType)
 	err := runner.Run()
 	require.NoError(t, err)
 
@@ -263,11 +263,11 @@ func TestPedersenBuiltin(t *testing.T) {
         ret;
     `, val1.Text(10), val2.Text(10), val3.Text(10))
 
-	runner := createRunner(code, "small", sn.Pedersen)
+	runner := createRunner(code, "small", builtins.PedersenType)
 	err := runner.Run()
 	require.NoError(t, err)
 
-	pedersen, ok := runner.vm.Memory.FindSegmentWithBuiltin("pedersen")
+	pedersen, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtins.PedersenName)
 	require.True(t, ok)
 	requireEqualSegments(t, createSegment(&val1, &val2, &val3), pedersen)
 }
@@ -276,14 +276,14 @@ func TestPedersenBuiltinError(t *testing.T) {
 	runner := createRunner(`
         [ap] = [[fp - 3]];
         ret;
-    `, "small", sn.Pedersen)
+    `, "small", builtins.PedersenType)
 	err := runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
 
 	runner = createRunner(`
         [ap] = [[fp - 3] + 2];
         ret;
-    `, "small", sn.Pedersen)
+    `, "small", builtins.PedersenType)
 	err = runner.Run()
 	require.ErrorContains(t, err, "input value at offset 0 is unknown")
 }
@@ -298,7 +298,7 @@ func TestRangeCheckBuiltin(t *testing.T) {
         [ap + 1] = 0xffffffffffffffffffffffffffffffff;
         [ap + 1] = [[fp - 3] + 1];
         ret;
-    `, "small", sn.RangeCheck)
+    `, "small", builtins.RangeCheckType)
 
 	err := runner.Run()
 	require.NoError(t, err)
@@ -319,7 +319,7 @@ func TestRangeCheckBuiltinError(t *testing.T) {
         [ap] = 0x100000000000000000000000000000000;
         [ap] = [[fp - 3]];
         ret;
-    `, "small", sn.RangeCheck)
+    `, "small", builtins.RangeCheckType)
 
 	err := runner.Run()
 	require.ErrorContains(t, err, "check write: 2**128 <")
@@ -328,7 +328,7 @@ func TestRangeCheckBuiltinError(t *testing.T) {
 	runner = createRunner(`
         [ap] = [[fp - 3]];
         ret;
-    `, "small", sn.RangeCheck)
+    `, "small", builtins.RangeCheckType)
 
 	err = runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
@@ -344,12 +344,12 @@ func TestRangeCheck96Builtin(t *testing.T) {
         [ap + 1] = 0xffffffffffffffffffffffff;
         [ap + 1] = [[fp - 3] + 1];
         ret;
-    `, "all_cairo", sn.RangeCheck96)
+    `, "all_cairo", builtins.RangeCheck96Type)
 
 	err := runner.Run()
 	require.NoError(t, err)
 
-	rangeCheck96, ok := runner.vm.Memory.FindSegmentWithBuiltin("range_check96")
+	rangeCheck96, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtins.RangeCheck96Name)
 	require.True(t, ok)
 
 	felt := &fp.Element{}
@@ -365,7 +365,7 @@ func TestRangeCheck96BuiltinError(t *testing.T) {
         [ap] = 0x1000000000000000000000000;
         [ap] = [[fp - 3]];
         ret;
-    `, "all_cairo", sn.RangeCheck96)
+    `, "all_cairo", builtins.RangeCheck96Type)
 
 	err := runner.Run()
 	require.ErrorContains(t, err, "check write: 2**96 <")
@@ -374,7 +374,7 @@ func TestRangeCheck96BuiltinError(t *testing.T) {
 	runner = createRunner(`
         [ap] = [[fp - 3]];
         ret;
-    `, "all_cairo", sn.RangeCheck96)
+    `, "all_cairo", builtins.RangeCheck96Type)
 
 	err = runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
@@ -404,7 +404,7 @@ func TestEcOpBuiltin(t *testing.T) {
         [ap + 5] = 108925483682366235368969256555281508851459278989259552980345066351008608800;
         [ap + 6] = 1592365885972480102953613056006596671718206128324372995731808913669237079419;
         ret;
-    `, "starknet_with_keccak", sn.ECOP)
+    `, "starknet_with_keccak", builtins.ECOPType)
 
 	err := runner.Run()
 	require.NoError(t, err)
@@ -432,7 +432,7 @@ func TestModuloBuiltin(t *testing.T) {
 	// requireEqualSegments(t, createSegment(2048, 5), modulo)
 }
 
-func createRunner(code string, layoutName string, builtins ...sn.Builtin) ZeroRunner {
+func createRunner(code string, layoutName string, builtins ...builtins.BuiltinType) ZeroRunner {
 	program := createProgramWithBuiltins(code, builtins...)
 
 	hints := make(map[uint64][]hinter.Hinter)
@@ -498,7 +498,7 @@ func createProgram(code string) *ZeroProgram {
 	return &program
 }
 
-func createProgramWithBuiltins(code string, builtins ...sn.Builtin) *ZeroProgram {
+func createProgramWithBuiltins(code string, builtins ...builtins.BuiltinType) *ZeroProgram {
 	program := createProgram(code)
 	program.Builtins = builtins
 	return program

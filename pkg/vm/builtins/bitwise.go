@@ -10,11 +10,12 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-const BitwiseName = "bitwise"
-
-const cellsPerBitwise = 5
-const inputCellsPerBitwise = 2
-const instancesPerComponentBitwise = 1
+const (
+	BitwiseName                  = "bitwise"
+	cellsPerBitwise              = 5
+	inputCellsPerBitwise         = 2
+	instancesPerComponentBitwise = 1
+)
 
 type Bitwise struct {
 	ratio uint64

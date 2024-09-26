@@ -3,37 +3,48 @@ package builtins
 import (
 	"fmt"
 	"math"
+	"strconv"
 
-	starknetParser "github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
-func Runner(name starknetParser.Builtin) memory.BuiltinRunner {
+type BuiltinType uint8
+
+const (
+	OutputType BuiltinType = iota + 1
+	RangeCheckType
+	PedersenType
+	ECDSAType
+	KeccakType
+	BitwiseType
+	ECOPType
+	PoseidonType
+	SegmentArenaType
+	RangeCheck96Type
+)
+
+func Runner(name BuiltinType) memory.BuiltinRunner {
 	switch name {
-	case starknetParser.Output:
+	case OutputType:
 		return &Output{}
-	case starknetParser.RangeCheck:
+	case RangeCheckType:
 		return &RangeCheck{0, 8}
-	case starknetParser.RangeCheck96:
+	case RangeCheck96Type:
 		return &RangeCheck{0, 6}
-	case starknetParser.Pedersen:
+	case PedersenType:
 		return &Pedersen{}
-	case starknetParser.ECDSA:
+	case ECDSAType:
 		return &ECDSA{}
-	case starknetParser.Keccak:
+	case KeccakType:
 		return &Keccak{}
-	case starknetParser.Bitwise:
+	case BitwiseType:
 		return &Bitwise{}
-	case starknetParser.ECOP:
+	case ECOPType:
 		return &EcOp{}
-	case starknetParser.Poseidon:
+	case PoseidonType:
 		return &Poseidon{}
-	case starknetParser.AddMod:
-		return &ModBuiltin{modBuiltinType: Add}
-	case starknetParser.MulMod:
-		return &ModBuiltin{modBuiltinType: Mul}
-	case starknetParser.SegmentArena:
+	case SegmentArenaType:
 		panic("Not implemented")
 	default:
 		panic("Unknown builtin")
@@ -68,4 +79,64 @@ func getBuiltinAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64, ratio
 		return 0, err
 	}
 	return allocatedInstances * cellsPerInstance, nil
+}
+
+func (b BuiltinType) MarshalJSON() ([]byte, error) {
+	switch b {
+	case OutputType:
+		return []byte(OutputName), nil
+	case RangeCheckType:
+		return []byte(RangeCheckName), nil
+	case RangeCheck96Type:
+		return []byte(RangeCheck96Name), nil
+	case PedersenType:
+		return []byte(PedersenName), nil
+	case ECDSAType:
+		return []byte(ECDSAName), nil
+	case KeccakType:
+		return []byte(KeccakName), nil
+	case BitwiseType:
+		return []byte(BitwiseName), nil
+	case ECOPType:
+		return []byte(EcOpName), nil
+	case PoseidonType:
+		return []byte(PoseidonName), nil
+	case SegmentArenaType:
+		return []byte(SegmentArenaName), nil
+
+	}
+	return nil, fmt.Errorf("marshal unknown builtin: %d", uint8(b))
+}
+
+func (b *BuiltinType) UnmarshalJSON(data []byte) error {
+	builtinName, err := strconv.Unquote(string(data))
+	if err != nil {
+		return fmt.Errorf("unmarshal builtin: %w", err)
+	}
+
+	switch builtinName {
+	case OutputName:
+		*b = OutputType
+	case RangeCheckName:
+		*b = RangeCheckType
+	case RangeCheck96Name:
+		*b = RangeCheck96Type
+	case PedersenName:
+		*b = PedersenType
+	case ECDSAName:
+		*b = ECDSAType
+	case KeccakName:
+		*b = KeccakType
+	case BitwiseName:
+		*b = BitwiseType
+	case EcOpName:
+		*b = ECOPType
+	case PoseidonName:
+		*b = PoseidonType
+	case SegmentArenaName:
+		*b = SegmentArenaType
+	default:
+		return fmt.Errorf("unmarshal unknown builtin: %s", builtinName)
+	}
+	return nil
 }

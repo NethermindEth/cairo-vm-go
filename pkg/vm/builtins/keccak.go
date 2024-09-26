@@ -19,10 +19,12 @@ import (
 // It's useful to give users options to use Keccak just as Rust VM does it with it's keccak.cairo as library.
 //
 
-const KeccakName = "keccak"
-const cellsPerKeccak = 16
-const inputCellsPerKeccak = 8
-const instancesPerComponentKeccak = 16
+const (
+	KeccakName                  = "keccak"
+	cellsPerKeccak              = 16
+	inputCellsPerKeccak         = 8
+	instancesPerComponentKeccak = 16
+)
 
 type Keccak struct {
 	ratio uint64

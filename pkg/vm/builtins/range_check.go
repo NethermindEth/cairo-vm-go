@@ -11,13 +11,17 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-const inputCellsPerRangeCheck = 1
-const cellsPerRangeCheck = 1
-const instancesPerComponentRangeCheck = 1
+const (
+	RangeCheckName                  = "range_check"
+	RangeCheck96Name                = "range_check96"
+	inputCellsPerRangeCheck         = 1
+	cellsPerRangeCheck              = 1
+	instancesPerComponentRangeCheck = 1
 
-// Each range check instance consists of RangeCheckNParts 16-bit parts. INNER_RC_BOUND_SHIFT and INNER_RC_BOUND_MASK are used to extract 16-bit parts from the field elements stored in the range check segment.
-const INNER_RC_BOUND_SHIFT = 16
-const INNER_RC_BOUND_MASK = (1 << 16) - 1
+	// Each range check instance consists of RangeCheckNParts 16-bit parts. INNER_RC_BOUND_SHIFT and INNER_RC_BOUND_MASK are used to extract 16-bit parts from the field elements stored in the range check segment.
+	INNER_RC_BOUND_SHIFT = 16
+	INNER_RC_BOUND_MASK  = (1 << 16) - 1
+)
 
 type RangeCheck struct {
 	ratio            uint64
@@ -57,9 +61,9 @@ func (r *RangeCheck) InferValue(segment *memory.Segment, offset uint64) error {
 
 func (r *RangeCheck) String() string {
 	if r.RangeCheckNParts == 6 {
-		return "range_check96"
+		return RangeCheck96Name
 	} else {
-		return "range_check"
+		return RangeCheckName
 	}
 }
 
