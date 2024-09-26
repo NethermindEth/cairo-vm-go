@@ -111,7 +111,6 @@ func (segment *Segment) Read(offset uint64) (MemoryValue, error) {
 
 	mv := &segment.Data[offset]
 	if !mv.Known() {
-		fmt.Println("Reading", mv)
 		if err := segment.BuiltinRunner.InferValue(segment, offset); err != nil {
 			return UnknownValue, fmt.Errorf("%s: %w", segment.BuiltinRunner, err)
 		}

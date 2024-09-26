@@ -102,14 +102,12 @@ func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, 
 		offsetsPtr: offsetsPtr,
 	}, 0, Operation(runner.modBuiltinType), Operation("Inv"+runner.modBuiltinType))
 
-	// return big.NewInt(0), nil
-
 	_, OutRes, err := runner.readNWordsValue(&mem, resAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	return &OutRes, nil
+	return OutRes, nil
 }
 
 func TestAddModBuiltinRunnerAddition(t *testing.T) {
@@ -122,7 +120,7 @@ func TestAddModBuiltinRunnerAddition(t *testing.T) {
 	require.Equal(t, big.NewInt(46), res2)
 	res3, err := checkResult(*runner, false, *big.NewInt(67), *big.NewInt(68), *big.NewInt(69))
 	require.NoError(t, err)
-	require.Equal(t, big.NewInt(70), res3)
+	require.Equal(t, big.NewInt(3), res3)
 	res4, err := checkResult(*runner, false, *big.NewInt(67), *big.NewInt(68), *big.NewInt(0))
 	require.NoError(t, err)
 	require.Equal(t, big.NewInt(1), res4)

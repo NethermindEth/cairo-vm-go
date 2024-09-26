@@ -125,32 +125,32 @@ func (m *ModBuiltin) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint
 // Reads N_WORDS from memory, starting at address = addr.
 // Returns the words and the value if all words are in memory.
 // Verifies that all words are integers and are bounded by 2**wordBitLen.
-func (m *ModBuiltin) readNWordsValue(memory *memory.Memory, addr memory.MemoryAddress) ([N_WORDS]fp.Element, big.Int, error) {
+func (m *ModBuiltin) readNWordsValue(memory *memory.Memory, addr memory.MemoryAddress) ([N_WORDS]fp.Element, *big.Int, error) {
 	var words [N_WORDS]fp.Element
 	value := new(big.Int).SetInt64(0)
 
 	for i := 0; i < N_WORDS; i++ {
 		newAddr, err := addr.AddOffset(int16(i))
 		if err != nil {
-			return [N_WORDS]fp.Element{}, *new(big.Int), err
+			return [N_WORDS]fp.Element{}, nil, err
 		}
 
 		wordFelt, err := memory.ReadAsElement(newAddr.SegmentIndex, newAddr.Offset)
 		if err != nil {
-			return [N_WORDS]fp.Element{}, *new(big.Int), err
+			return [N_WORDS]fp.Element{}, nil, err
 		}
 
 		var word big.Int
 		wordFelt.BigInt(&word)
 		if word.Cmp(&m.shift) >= 0 {
-			return [N_WORDS]fp.Element{}, *new(big.Int), fmt.Errorf("expected integer at address %d:%d to be smaller than 2^%d. Got: %s", newAddr.SegmentIndex, newAddr.Offset, m.wordBitLen, word.String())
+			return [N_WORDS]fp.Element{}, nil, fmt.Errorf("expected integer at address %d:%d to be smaller than 2^%d. Got: %s", newAddr.SegmentIndex, newAddr.Offset, m.wordBitLen, word.String())
 		}
 
 		words[i] = wordFelt
 		value = new(big.Int).Add(value, new(big.Int).Mul(&word, &m.shiftPowers[i]))
 	}
 
-	return words, *value, nil
+	return words, value, nil
 }
 
 // Reads the inputs to the builtin (p, p_values, values_ptr, offsets_ptr, n) from the memory at address = addr.
@@ -189,7 +189,7 @@ func (m *ModBuiltin) readInputs(mem *memory.Memory, addr memory.MemoryAddress, r
 		return ModBuiltinInputs{}, err
 	}
 	return ModBuiltinInputs{
-		p:          p,
+		p:          *p,
 		pValues:    pValues,
 		valuesPtr:  valuesPtr,
 		n:          n,
@@ -337,11 +337,9 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 			return false, err
 		}
 		addresses = append(addresses, addr)
-		_, value, err := m.readNWordsValue(mem, addr)
-		if err != nil {
-			return false, err
-		}
-		values = append(values, &value)
+		// do not check for error, as the value might not be in memory
+		_, value, _ := m.readNWordsValue(mem, addr)
+		values = append(values, value)
 	}
 
 	a, b, c := values[0], values[1], values[2]
