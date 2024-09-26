@@ -90,8 +90,9 @@ type ModBuiltin struct {
 func NewModBuiltin(ratio uint64, wordBitLen uint64, batchSize uint64, modBuiltinType ModBuiltinType) *ModBuiltin {
 	shift := new(big.Int).Lsh(big.NewInt(1), uint(wordBitLen))
 	shiftPowers := [N_WORDS]big.Int{}
-	for i := 0; i < N_WORDS; i++ {
-		shiftPowers[i].Exp(shift, big.NewInt(int64(i)), nil)
+	shiftPowers[0] = *big.NewInt(1)
+	for i := 1; i < N_WORDS; i++ {
+		shiftPowers[i].Mul(&shiftPowers[i-1], shift)
 	}
 	return &ModBuiltin{
 		ratio:          ratio,
