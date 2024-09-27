@@ -361,6 +361,7 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 		} else {
 			value = *new(big.Int).Mul(a, b)
 		}
+		// value - (kBound - 1) * p <= intLim - 1
 		if new(big.Int).Sub(&value, new(big.Int).Mul((new(big.Int).Sub(kBound, big.NewInt(1))), &inputs.p)).Cmp(new(big.Int).Sub(intLim, big.NewInt(1))) == 1 {
 			return false, fmt.Errorf("%s builtin: Expected a %s b - %d * p <= %d", m.String(), m.modBuiltinType, kBound.Sub(kBound, big.NewInt(1)), intLim.Sub(intLim, big.NewInt(1)))
 		}
