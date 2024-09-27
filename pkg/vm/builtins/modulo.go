@@ -106,14 +106,12 @@ func NewModBuiltin(ratio uint64, wordBitLen uint64, batchSize uint64, modBuiltin
 	}
 }
 
-// TODO: Implement CheckWrite
 func (m *ModBuiltin) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
 	return nil
 }
 
-// TODO: Implement CheckRead
 func (m *ModBuiltin) InferValue(segment *memory.Segment, offset uint64) error {
-	return nil
+	return fmt.Errorf("can't infer value")
 }
 
 func (m *ModBuiltin) String() string {
