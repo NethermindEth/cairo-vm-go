@@ -110,8 +110,6 @@ func getAllSolidityLayout() Layout {
 	}}
 }
 
-// TODO: Add mul_mod and add_mod builtins
-// refer: https://github.com/lambdaclass/cairo-vm/blob/main/vm/src/types/instance_definitions/builtins_instance_def.rs#L168
 func getAllCairoLayout() Layout {
 	return Layout{Name: "all_cairo", RcUnits: 8, Builtins: []LayoutBuiltin{
 		{Runner: &Output{}, Builtin: OutputType},
@@ -123,6 +121,8 @@ func getAllCairoLayout() Layout {
 		{Runner: &Keccak{ratio: 2048, cache: make(map[uint64]fp.Element)}, Builtin: KeccakType},
 		{Runner: &Poseidon{ratio: 256, cache: make(map[uint64]fp.Element)}, Builtin: PoseidonType},
 		{Runner: &RangeCheck{ratio: 8, RangeCheckNParts: 6}, Builtin: RangeCheck96Type},
+		{Runner: &ModBuiltin{ratio: 128, wordBitLen: 96, batchSize: 1, modBuiltinType: Add}, Builtin: AddModeType},
+		{Runner: &ModBuiltin{ratio: 256, wordBitLen: 96, batchSize: 1, modBuiltinType: Mul}, Builtin: MulModType},
 	}}
 }
 

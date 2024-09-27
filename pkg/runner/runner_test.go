@@ -410,6 +410,28 @@ func TestEcOpBuiltin(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestModuloBuiltin(t *testing.T) {
+	// modulo is located at fp - 3
+	// we first write 2048 and 5 to modulo
+	// then we read the modulo result from add and mul
+	// runner := createRunner(`
+	// 	[ap] = 2048;
+	// 	[ap] = [[fp - 3]];
+
+	// 	[ap + 1] = 5;
+	// 	[ap + 1] = [[fp - 3] + 1];
+	// 	ret;
+	// `, "small", sn.AddMod, sn.MulMod)
+
+	// err := runner.Run()
+	// require.NoError(t, err)
+
+	// modulo, ok := runner.vm.Memory.FindSegmentWithBuiltin("add_mod")
+	// require.True(t, ok)
+
+	// requireEqualSegments(t, createSegment(2048, 5), modulo)
+}
+
 func createRunner(code string, layoutName string, builtins ...builtins.BuiltinType) ZeroRunner {
 	program := createProgramWithBuiltins(code, builtins...)
 

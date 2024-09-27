@@ -6,6 +6,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	secp_utils "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -372,7 +373,7 @@ func newDivModSafeDivHint() hinter.Hinter {
 			}
 
 			divisor := new(big.Int).Sub(new(big.Int).Mul(res, b), a)
-			value, err := secp_utils.SafeDiv(divisor, N)
+			value, err := utils.SafeDiv(divisor, N)
 			if err != nil {
 				return err
 			}
