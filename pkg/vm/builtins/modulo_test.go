@@ -10,47 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestModuloBuiltin(t *testing.T) {
-	mod := &ModBuiltin{ratio: 128, wordBitLen: 1, batchSize: 96, modBuiltinType: Add}
-	segment := memory.EmptySegmentWithLength(9)
-	segment.WithBuiltinRunner(mod)
-
-	v0 := new(fp.Element).SetUint64(1)
-	v1 := new(fp.Element).SetUint64(2)
-	v2 := new(fp.Element).SetUint64(3)
-	v3 := new(fp.Element).SetUint64(4)
-	v4 := new(fp.Element).SetUint64(5)
-	v5 := new(fp.Element).SetUint64(9)
-	v6 := new(fp.Element).SetUint64(7)
-	v7 := new(fp.Element).SetUint64(8)
-	v00 := memory.MemoryValueFromFieldElement(v0)
-	v11 := memory.MemoryValueFromFieldElement(v1)
-	v22 := memory.MemoryValueFromFieldElement(v2)
-	v33 := memory.MemoryValueFromFieldElement(v3)
-	v44 := memory.MemoryValueFromFieldElement(v4)
-	v55 := memory.MemoryValueFromFieldElement(v5)
-	v66 := memory.MemoryValueFromFieldElement(v6)
-	v77 := memory.MemoryValueFromFieldElement(v7)
-	require.NoError(t, segment.Write(0, &v00))
-	require.NoError(t, segment.Write(1, &v11))
-	require.NoError(t, segment.Write(2, &v22))
-	require.NoError(t, segment.Write(3, &v33))
-	require.NoError(t, segment.Write(4, &v44))
-	require.NoError(t, segment.Write(5, &v55))
-	require.NoError(t, segment.Write(6, &v66))
-	require.NoError(t, segment.Write(7, &v77))
-
-	// TODO: Once Checkwrite and InferValue are implemented, uncomment this
-	// k, err := segment.Read(9)
-	// require.NoError(t, err)
-	// ans, err := k.FieldElement()
-	// require.NoError(t, err)
-	// expected := fp.NewElement(0)
-	// _, err = expected.SetUint64("15")
-	// require.NoError(t, err)
-	// assert.Equal(t, ans, &expected)
-}
-
 /*
 Tests whether runner completes a trio a, b, c as the input implies:
 If inverse is False it tests whether a = x1, b=x2, c = None will be completed with c = res.
