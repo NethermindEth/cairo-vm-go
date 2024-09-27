@@ -412,13 +412,24 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 			}
 		} else {
 			x, _, gcd := utils.Igcdex(b, &inputs.p)
+			// if gcd != 1, the known value is 0, in which case the res must be 0
 			if gcd.Cmp(big.NewInt(1)) != 0 {
 				value = *new(big.Int).Div(&inputs.p, &gcd)
 			} else {
 				value = *new(big.Int).Mul(c, &x)
 				value = *value.Mod(&value, &inputs.p)
+				tmpK, err := utils.SafeDiv(new(big.Int).Sub(new(big.Int).Mul(b, &value), c), &inputs.p)
+				if err != nil {
+					return false, err
+				}
+				if tmpK.Cmp(kBound) >= 0 {
+					return false, fmt.Errorf("%s builtin: ((%d * q) - %d) / %d > %d for any q > 0, such that %d * q = %d (mod %d) ", m.String(), b, c, &inputs.p, kBound, b, c, &inputs.p)
+				}
+				if tmpK.Cmp(big.NewInt(0)) < 0 {
+					// tmp_val + p * ((known - 1 - tmp_k) // known)
+					value = *value.Add(&value, new(big.Int).Mul(&inputs.p, new(big.Int).Div(new(big.Int).Sub(b, new(big.Int).Sub(&tmpK, big.NewInt(1))), b)))
+				}
 			}
-			value = *new(big.Int).Div(c, b)
 		}
 		if err := m.writeNWordsValue(mem, addresses[0], value); err != nil {
 			return false, err

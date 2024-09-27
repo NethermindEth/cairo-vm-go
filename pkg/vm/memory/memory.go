@@ -244,7 +244,6 @@ func (memory *Memory) Write(segmentIndex uint64, offset uint64, value *MemoryVal
 		return fmt.Errorf("segment %d: unallocated", segmentIndex)
 	}
 	if err := memory.Segments[segmentIndex].Write(offset, value); err != nil {
-		fmt.Println("error in write")
 		return fmt.Errorf("segment %d, offset %d: %w", segmentIndex, offset, err)
 	}
 	return nil
@@ -264,7 +263,6 @@ func (memory *Memory) Read(segmentIndex uint64, offset uint64) (MemoryValue, err
 	}
 	mv, err := memory.Segments[segmentIndex].Read(offset)
 	if err != nil {
-		fmt.Println(err)
 		return MemoryValue{}, fmt.Errorf("segment %d, offset %d: %w", segmentIndex, offset, err)
 	}
 	return mv, nil
