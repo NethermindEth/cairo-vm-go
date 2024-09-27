@@ -426,7 +426,6 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 					return false, fmt.Errorf("%s builtin: ((%d * q) - %d) / %d > %d for any q > 0, such that %d * q = %d (mod %d) ", m.String(), b, c, &inputs.p, kBound, b, c, &inputs.p)
 				}
 				if tmpK.Cmp(big.NewInt(0)) < 0 {
-					// tmp_val + p * ((known - 1 - tmp_k) // known)
 					value = *value.Add(&value, new(big.Int).Mul(&inputs.p, new(big.Int).Div(new(big.Int).Sub(b, new(big.Int).Sub(&tmpK, big.NewInt(1))), b)))
 				}
 			}
