@@ -456,148 +456,296 @@ func TestDivModDivisionByZeroError(t *testing.T) {
 }
 
 func TestEvalCircuit(t *testing.T) {
-	vm := VM.DefaultVirtualMachine()
+	t.Run("test mod_builtin_runner (1)", func(t *testing.T) {
+		vm := VM.DefaultVirtualMachine()
 
-	vm.Context.Ap = 0
-	vm.Context.Fp = 0
+		vm.Context.Ap = 0
+		vm.Context.Fp = 0
 
-	// Test : p = 2^96 + 1
-	//        Note that these calculations are performed based on the offsets that we provide
-	//        x1 = 1 (4 memory cells)
-	//        nil    (4 memory cells) (should become equal to 6)
-	//        x2 = 2^96 + 2 (4 memory cells)
-	// 	      res = 138 (4 memory cells) (multiplication of the above two numbers)
+		// Test : p = 2^96 + 1
+		//        Note that these calculations are performed based on the offsets that we provide
+		//        x1 = 17 (4 memory cells)
+		//        nil    (4 memory cells) (should become equal to 6)
+		//        x2 = 23 (4 memory cells)
+		// 	      res = nil (4 memory cells) (multiplication of the above two numbers should then equal 138)
 
-	// Values Array
-	// x1 = UInt384(17,0,0,0)
-	utils.WriteTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(17))
-	utils.WriteTo(vm, VM.ExecutionSegment, 1, mem.MemoryValueFromInt(0))
-	utils.WriteTo(vm, VM.ExecutionSegment, 2, mem.MemoryValueFromInt(0))
-	utils.WriteTo(vm, VM.ExecutionSegment, 3, mem.MemoryValueFromInt(0))
+		// Values Array
+		// x1 = UInt384(17,0,0,0)
+		utils.WriteTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(17))
+		utils.WriteTo(vm, VM.ExecutionSegment, 1, mem.MemoryValueFromInt(0))
+		utils.WriteTo(vm, VM.ExecutionSegment, 2, mem.MemoryValueFromInt(0))
+		utils.WriteTo(vm, VM.ExecutionSegment, 3, mem.MemoryValueFromInt(0))
 
-	// 4 unallocated memory cells
+		// 4 unallocated memory cells
 
-	// x2 = UInt384(23,1,0,0)
-	utils.WriteTo(vm, VM.ExecutionSegment, 8, mem.MemoryValueFromInt(23))
-	utils.WriteTo(vm, VM.ExecutionSegment, 9, mem.MemoryValueFromInt(0))
-	utils.WriteTo(vm, VM.ExecutionSegment, 10, mem.MemoryValueFromInt(0))
-	utils.WriteTo(vm, VM.ExecutionSegment, 11, mem.MemoryValueFromInt(0))
+		// x2 = UInt384(23,1,0,0)
+		utils.WriteTo(vm, VM.ExecutionSegment, 8, mem.MemoryValueFromInt(23))
+		utils.WriteTo(vm, VM.ExecutionSegment, 9, mem.MemoryValueFromInt(0))
+		utils.WriteTo(vm, VM.ExecutionSegment, 10, mem.MemoryValueFromInt(0))
+		utils.WriteTo(vm, VM.ExecutionSegment, 11, mem.MemoryValueFromInt(0))
 
-	// 4 unallocated memory cells for res
+		// 4 unallocated memory cells for res
 
-	// AddMod Offsets Array
-	utils.WriteTo(vm, VM.ExecutionSegment, 16, mem.MemoryValueFromInt(0))
-	utils.WriteTo(vm, VM.ExecutionSegment, 17, mem.MemoryValueFromInt(4))
-	utils.WriteTo(vm, VM.ExecutionSegment, 18, mem.MemoryValueFromInt(8))
+		// AddMod Offsets Array
+		utils.WriteTo(vm, VM.ExecutionSegment, 16, mem.MemoryValueFromInt(0))
+		utils.WriteTo(vm, VM.ExecutionSegment, 17, mem.MemoryValueFromInt(4))
+		utils.WriteTo(vm, VM.ExecutionSegment, 18, mem.MemoryValueFromInt(8))
 
-	// MulMod Offsets Array
-	utils.WriteTo(vm, VM.ExecutionSegment, 19, mem.MemoryValueFromInt(4))
-	utils.WriteTo(vm, VM.ExecutionSegment, 20, mem.MemoryValueFromInt(8))
-	utils.WriteTo(vm, VM.ExecutionSegment, 21, mem.MemoryValueFromInt(12))
+		// MulMod Offsets Array
+		utils.WriteTo(vm, VM.ExecutionSegment, 19, mem.MemoryValueFromInt(4))
+		utils.WriteTo(vm, VM.ExecutionSegment, 20, mem.MemoryValueFromInt(8))
+		utils.WriteTo(vm, VM.ExecutionSegment, 21, mem.MemoryValueFromInt(12))
 
-	AddModBuiltin := vm.Memory.AllocateBuiltinSegment(builtins.NewModBuiltin(1, 96, 1, builtins.Add))
-	MulModBuiltin := vm.Memory.AllocateBuiltinSegment(builtins.NewModBuiltin(1, 96, 1, builtins.Mul))
+		AddModBuiltin := vm.Memory.AllocateBuiltinSegment(builtins.NewModBuiltin(1, 96, 1, builtins.Add))
+		MulModBuiltin := vm.Memory.AllocateBuiltinSegment(builtins.NewModBuiltin(1, 96, 1, builtins.Mul))
 
-	/*
-		The Add and Mul Mod builtin structure are defined as:
-		struct ModBuiltin {
-			p: UInt384, 		   // The modulus.
-			values_ptr: UInt384*,  // A pointer to input values, the intermediate results and the output.
-			offsets_ptr: felt*,    // A pointer to offsets inside the values array, defining the circuit.
-			                       // The offsets array should contain 3 * n elements.
-			n: felt,               // The number of operations to perform.
+		/*
+			The Add and Mul Mod builtin structure are defined as:
+			struct ModBuiltin {
+				p: UInt384, 		   // The modulus.
+				values_ptr: UInt384*,  // A pointer to input values, the intermediate results and the output.
+				offsets_ptr: felt*,    // A pointer to offsets inside the values array, defining the circuit.
+									   // The offsets array should contain 3 * n elements.
+				n: felt,               // The number of operations to perform.
+			}
+		*/
+
+		// add_mod_ptr
+		// p = UInt384(1,1,0,0)
+		utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 0, mem.MemoryValueFromInt(1))
+		utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 1, mem.MemoryValueFromInt(1))
+		utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 2, mem.MemoryValueFromInt(0))
+		utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 3, mem.MemoryValueFromInt(0))
+
+		// values_ptr
+		utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 4, mem.MemoryValueFromMemoryAddress(&mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: 0}))
+
+		// offsets_ptr
+		utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 5, mem.MemoryValueFromMemoryAddress(&mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: 16}))
+
+		// n
+		utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 6, mem.MemoryValueFromInt(1))
+
+		// mul_mod_ptr
+		// p = UInt384(1,1,0,0)
+		utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 0, mem.MemoryValueFromInt(1))
+		utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 1, mem.MemoryValueFromInt(1))
+		utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 2, mem.MemoryValueFromInt(0))
+		utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 3, mem.MemoryValueFromInt(0))
+
+		// values_ptr
+		utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 4, mem.MemoryValueFromMemoryAddress(&mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: 0}))
+
+		// offsets_ptr
+		utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 5, mem.MemoryValueFromMemoryAddress(&mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: 19}))
+
+		// n
+		utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 6, mem.MemoryValueFromInt(1))
+
+		// To get the address of mul_mod_ptr and add_mod_ptr
+		utils.WriteTo(vm, VM.ExecutionSegment, 22, mem.MemoryValueFromSegmentAndOffset(AddModBuiltin.SegmentIndex, 0))
+		utils.WriteTo(vm, VM.ExecutionSegment, 23, mem.MemoryValueFromSegmentAndOffset(MulModBuiltin.SegmentIndex, 0))
+
+		var addRef hinter.ApCellRef = 22
+		var mulRef hinter.ApCellRef = 23
+
+		nAddMods := hinter.Immediate(f.NewElement(1))
+		nMulMods := hinter.Immediate(f.NewElement(1))
+		addModPtrAddr := hinter.Deref{Deref: addRef}
+		mulModPtrAddr := hinter.Deref{Deref: mulRef}
+
+		hint := EvalCircuit{
+			AddModN:   nAddMods,
+			AddModPtr: addModPtrAddr,
+			MulModN:   nMulMods,
+			MulModPtr: mulModPtrAddr,
 		}
-	*/
 
-	// add_mod_ptr
-	// p = UInt384(1,1,0,0)
-	utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 0, mem.MemoryValueFromInt(1))
-	utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 1, mem.MemoryValueFromInt(1))
-	utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 2, mem.MemoryValueFromInt(0))
-	utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 3, mem.MemoryValueFromInt(0))
+		err := hint.Execute(vm, nil)
+		require.Nil(t, err)
 
-	// values_ptr
-	utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 4, mem.MemoryValueFromMemoryAddress(&mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: 0}))
+		res1 := &f.Element{}
+		res1.SetInt64(138)
 
-	// offsets_ptr
-	utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 5, mem.MemoryValueFromMemoryAddress(&mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: 16}))
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(res1),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 12),
+		)
 
-	// n
-	utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 6, mem.MemoryValueFromInt(1))
+		res2 := &f.Element{}
+		res2.SetInt64(0)
 
-	// mul_mod_ptr
-	// p = UInt384(1,1,0,0)
-	utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 0, mem.MemoryValueFromInt(1))
-	utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 1, mem.MemoryValueFromInt(1))
-	utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 2, mem.MemoryValueFromInt(0))
-	utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 3, mem.MemoryValueFromInt(0))
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(res2),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 13),
+		)
 
-	// values_ptr
-	utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 4, mem.MemoryValueFromMemoryAddress(&mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: 0}))
+		res3 := &f.Element{}
+		res3.SetInt64(0)
 
-	// offsets_ptr
-	utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 5, mem.MemoryValueFromMemoryAddress(&mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: 19}))
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(res2),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 14),
+		)
 
-	// n
-	utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 6, mem.MemoryValueFromInt(1))
+		res4 := &f.Element{}
+		res4.SetInt64(0)
 
-	// To get the address of mul_mod_ptr and add_mod_ptr
-	utils.WriteTo(vm, VM.ExecutionSegment, 22, mem.MemoryValueFromSegmentAndOffset(AddModBuiltin.SegmentIndex, 0))
-	utils.WriteTo(vm, VM.ExecutionSegment, 23, mem.MemoryValueFromSegmentAndOffset(MulModBuiltin.SegmentIndex, 0))
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(res2),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 15),
+		)
+	})
 
-	var addRef hinter.ApCellRef = 22
-	var mulRef hinter.ApCellRef = 23
+	t.Run("test mod_builtin_runner (2)", func(t *testing.T) {
+		vm := VM.DefaultVirtualMachine()
 
-	nAddMods := hinter.Immediate(f.NewElement(1))
-	nMulMods := hinter.Immediate(f.NewElement(1))
-	addModPtrAddr := hinter.Deref{Deref: addRef}
-	mulModPtrAddr := hinter.Deref{Deref: mulRef}
+		vm.Context.Ap = 0
+		vm.Context.Fp = 0
 
-	hint := EvalCircuit{
-		AddModN:   nAddMods,
-		AddModPtr: addModPtrAddr,
-		MulModN:   nMulMods,
-		MulModPtr: mulModPtrAddr,
-	}
+		// Test : p = 2^96 + 1
+		//        Note that these calculations are performed based on the offsets that we provide
+		//        x1 = 1 (4 memory cells)
+		//        nil    (4 memory cells) (should become equal to 0)
+		//        x2 = 2^96 + 2 (4 memory cells)
+		// 	      res = nil (4 memory cells) (multiplication of the above two numbers should then equal 0)
 
-	err := hint.Execute(vm, nil)
-	require.Nil(t, err)
+		// Values Array
+		// x1 = UInt384(17,0,0,0)
+		utils.WriteTo(vm, VM.ExecutionSegment, 0, mem.MemoryValueFromInt(1))
+		utils.WriteTo(vm, VM.ExecutionSegment, 1, mem.MemoryValueFromInt(0))
+		utils.WriteTo(vm, VM.ExecutionSegment, 2, mem.MemoryValueFromInt(0))
+		utils.WriteTo(vm, VM.ExecutionSegment, 3, mem.MemoryValueFromInt(0))
 
-	res1 := &f.Element{}
-	res1.SetInt64(138)
+		// 4 unallocated memory cells
 
-	require.Equal(
-		t,
-		mem.MemoryValueFromFieldElement(res1),
-		utils.ReadFrom(vm, VM.ExecutionSegment, 12),
-	)
+		// x2 = UInt384(23,1,0,0)
+		utils.WriteTo(vm, VM.ExecutionSegment, 8, mem.MemoryValueFromInt(2))
+		utils.WriteTo(vm, VM.ExecutionSegment, 9, mem.MemoryValueFromInt(1))
+		utils.WriteTo(vm, VM.ExecutionSegment, 10, mem.MemoryValueFromInt(0))
+		utils.WriteTo(vm, VM.ExecutionSegment, 11, mem.MemoryValueFromInt(0))
 
-	res2 := &f.Element{}
-	res2.SetInt64(0)
+		// 4 unallocated memory cells for res
 
-	require.Equal(
-		t,
-		mem.MemoryValueFromFieldElement(res2),
-		utils.ReadFrom(vm, VM.ExecutionSegment, 13),
-	)
+		// AddMod Offsets Array
+		utils.WriteTo(vm, VM.ExecutionSegment, 16, mem.MemoryValueFromInt(0))
+		utils.WriteTo(vm, VM.ExecutionSegment, 17, mem.MemoryValueFromInt(4))
+		utils.WriteTo(vm, VM.ExecutionSegment, 18, mem.MemoryValueFromInt(8))
 
-	res3 := &f.Element{}
-	res3.SetInt64(0)
+		// MulMod Offsets Array
+		utils.WriteTo(vm, VM.ExecutionSegment, 19, mem.MemoryValueFromInt(4))
+		utils.WriteTo(vm, VM.ExecutionSegment, 20, mem.MemoryValueFromInt(8))
+		utils.WriteTo(vm, VM.ExecutionSegment, 21, mem.MemoryValueFromInt(12))
 
-	require.Equal(
-		t,
-		mem.MemoryValueFromFieldElement(res2),
-		utils.ReadFrom(vm, VM.ExecutionSegment, 14),
-	)
+		AddModBuiltin := vm.Memory.AllocateBuiltinSegment(builtins.NewModBuiltin(1, 96, 1, builtins.Add))
+		MulModBuiltin := vm.Memory.AllocateBuiltinSegment(builtins.NewModBuiltin(1, 96, 1, builtins.Mul))
 
-	res4 := &f.Element{}
-	res4.SetInt64(0)
+		/*
+			The Add and Mul Mod builtin structure are defined as:
+			struct ModBuiltin {
+				p: UInt384, 		   // The modulus.
+				values_ptr: UInt384*,  // A pointer to input values, the intermediate results and the output.
+				offsets_ptr: felt*,    // A pointer to offsets inside the values array, defining the circuit.
+									   // The offsets array should contain 3 * n elements.
+				n: felt,               // The number of operations to perform.
+			}
+		*/
 
-	require.Equal(
-		t,
-		mem.MemoryValueFromFieldElement(res2),
-		utils.ReadFrom(vm, VM.ExecutionSegment, 15),
-	)
+		// add_mod_ptr
+		// p = UInt384(1,1,0,0)
+		utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 0, mem.MemoryValueFromInt(1))
+		utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 1, mem.MemoryValueFromInt(1))
+		utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 2, mem.MemoryValueFromInt(0))
+		utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 3, mem.MemoryValueFromInt(0))
+
+		// values_ptr
+		utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 4, mem.MemoryValueFromMemoryAddress(&mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: 0}))
+
+		// offsets_ptr
+		utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 5, mem.MemoryValueFromMemoryAddress(&mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: 16}))
+
+		// n
+		utils.WriteTo(vm, AddModBuiltin.SegmentIndex, 6, mem.MemoryValueFromInt(1))
+
+		// mul_mod_ptr
+		// p = UInt384(1,1,0,0)
+		utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 0, mem.MemoryValueFromInt(1))
+		utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 1, mem.MemoryValueFromInt(1))
+		utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 2, mem.MemoryValueFromInt(0))
+		utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 3, mem.MemoryValueFromInt(0))
+
+		// values_ptr
+		utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 4, mem.MemoryValueFromMemoryAddress(&mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: 0}))
+
+		// offsets_ptr
+		utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 5, mem.MemoryValueFromMemoryAddress(&mem.MemoryAddress{SegmentIndex: VM.ExecutionSegment, Offset: 19}))
+
+		// n
+		utils.WriteTo(vm, MulModBuiltin.SegmentIndex, 6, mem.MemoryValueFromInt(1))
+
+		// To get the address of mul_mod_ptr and add_mod_ptr
+		utils.WriteTo(vm, VM.ExecutionSegment, 22, mem.MemoryValueFromSegmentAndOffset(AddModBuiltin.SegmentIndex, 0))
+		utils.WriteTo(vm, VM.ExecutionSegment, 23, mem.MemoryValueFromSegmentAndOffset(MulModBuiltin.SegmentIndex, 0))
+
+		var addRef hinter.ApCellRef = 22
+		var mulRef hinter.ApCellRef = 23
+
+		nAddMods := hinter.Immediate(f.NewElement(1))
+		nMulMods := hinter.Immediate(f.NewElement(1))
+		addModPtrAddr := hinter.Deref{Deref: addRef}
+		mulModPtrAddr := hinter.Deref{Deref: mulRef}
+
+		hint := EvalCircuit{
+			AddModN:   nAddMods,
+			AddModPtr: addModPtrAddr,
+			MulModN:   nMulMods,
+			MulModPtr: mulModPtrAddr,
+		}
+
+		err := hint.Execute(vm, nil)
+		require.Nil(t, err)
+
+		res1 := &f.Element{}
+		res1.SetInt64(0)
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(res1),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 12),
+		)
+
+		res2 := &f.Element{}
+		res2.SetInt64(0)
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(res2),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 13),
+		)
+
+		res3 := &f.Element{}
+		res3.SetInt64(0)
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(res2),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 14),
+		)
+
+		res4 := &f.Element{}
+		res4.SetInt64(0)
+
+		require.Equal(
+			t,
+			mem.MemoryValueFromFieldElement(res2),
+			utils.ReadFrom(vm, VM.ExecutionSegment, 15),
+		)
+	})
+
 }
 
 func TestU256InvModN(t *testing.T) {
