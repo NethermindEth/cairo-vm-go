@@ -573,7 +573,9 @@ func FillMemory(mem *memory.Memory, addModInputAddress memory.MemoryAddress, nAd
 					nComputedMulGates = nMulMods
 				}
 				mulModBuiltinInputs.n = nComputedMulGates
-				mulModBuiltinRunner.fillOffsets(mem, mulModBuiltinInputs.offsetsPtr, nMulMods, nComputedMulGates-nMulMods)
+				if err := mulModBuiltinRunner.fillOffsets(mem, mulModBuiltinInputs.offsetsPtr, nMulMods, nComputedMulGates-nMulMods); err != nil {
+					return err
+				}
 			} else {
 				if mulModBuiltinRunner.batchSize != 1 {
 					return fmt.Errorf("MulMod builtin: Inverse failure is supported only at batch_size == 1")
@@ -589,7 +591,9 @@ func FillMemory(mem *memory.Memory, addModInputAddress memory.MemoryAddress, nAd
 				return err
 			}
 
-			mulModBuiltinRunner.fillInputs(mem, mulModInputAddress, mulModBuiltinInputs)
+			if err := mulModBuiltinRunner.fillInputs(mem, mulModInputAddress, mulModBuiltinInputs); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
