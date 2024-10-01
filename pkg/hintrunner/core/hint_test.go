@@ -464,9 +464,9 @@ func TestEvalCircuit(t *testing.T) {
 	// Test : p = 2^96 + 1
 	//        Note that these calculations are performed based on the offsets that we provide
 	//        x1 = 1 (4 memory cells)
-	//        nil    (4 memory cells) (should become equal to 0 as 2^96 + 1 mod p = 0)
+	//        nil    (4 memory cells) (should become equal to 6)
 	//        x2 = 2^96 + 2 (4 memory cells)
-	// 	      res = 0 (4 memory cells) (multiplication of the above two numbers)
+	// 	      res = 138 (4 memory cells) (multiplication of the above two numbers)
 
 	// Values Array
 	// x1 = UInt384(17,0,0,0)
