@@ -3,6 +3,7 @@ package builtins
 import (
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 
@@ -340,7 +341,12 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 		}
 		addresses = append(addresses, addr)
 		// do not check for error, as the value might not be in memory
-		_, value, _ := m.readNWordsValue(mem, addr)
+		_, value, err := m.readNWordsValue(mem, addr)
+		if err != nil {
+			if strings.Contains(err.Error(), "expected integer at address") {
+				return 0, err
+			}
+		}
 		values = append(values, value)
 	}
 
