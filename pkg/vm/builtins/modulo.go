@@ -320,23 +320,23 @@ func (m *ModBuiltin) writeNWordsValue(mem *memory.Memory, addr memory.MemoryAddr
 // Returns true on success or if all values are already known.
 // Given known, res, p fillValue tries to compute the minimal integer operand x which
 // satisfies the equation op(x,known) = res + k*p for some k in {0,1,...,self.k_bound-1}.
-func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, index int, op ModBuiltinType) (bool, error) {
+func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, index int, op ModBuiltinType) (int, error) {
 	addresses := make([]memory.MemoryAddress, 0, 3)
 	values := make([]*big.Int, 0, 3)
 
 	for i := 0; i < 3; i++ {
 		addr, err := inputs.offsetsPtr.AddOffset(int16(3*index + i))
 		if err != nil {
-			return false, err
+			return 0, err
 		}
 		offsetFelt, err := mem.ReadAsElement(addr.SegmentIndex, addr.Offset)
 		if err != nil {
-			return false, err
+			return 0, err
 		}
 		offset := offsetFelt.Uint64()
 		addr, err = inputs.valuesPtr.AddOffset(int16(offset))
 		if err != nil {
-			return false, err
+			return 0, err
 		}
 		addresses = append(addresses, addr)
 		// do not check for error, as the value might not be in memory
@@ -362,7 +362,7 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 		}
 		// value - (kBound - 1) * p <= intLim - 1
 		if new(big.Int).Sub(&value, new(big.Int).Mul((new(big.Int).Sub(kBound, big.NewInt(1))), &inputs.p)).Cmp(new(big.Int).Sub(intLim, big.NewInt(1))) == 1 {
-			return false, fmt.Errorf("%s builtin: Expected a %s b - %d * p <= %d", m.String(), m.modBuiltinType, kBound.Sub(kBound, big.NewInt(1)), intLim.Sub(intLim, big.NewInt(1)))
+			return 0, fmt.Errorf("%s builtin: Expected a %s b - %d * p <= %d", m.String(), m.modBuiltinType, kBound.Sub(kBound, big.NewInt(1)), intLim.Sub(intLim, big.NewInt(1)))
 		}
 		if value.Cmp(new(big.Int).Mul(kBound, &inputs.p)) < 0 {
 			value.Mod(&value, &inputs.p)
@@ -370,16 +370,17 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 			value.Sub(&value, new(big.Int).Mul(new(big.Int).Sub(kBound, big.NewInt(1)), &inputs.p))
 		}
 		if err := m.writeNWordsValue(mem, addresses[2], value); err != nil {
-			return false, err
+			return 0, err
 		}
-		return true, nil
+		return 1, nil
 	case a != nil && b == nil && c != nil:
+		zeroDivisor := false
 		var value big.Int
 		if op == Add {
 			// Right now only k = 2 is an option, hence as we stated above that x + known can only take values
 			// from res to res + (k - 1) * p, hence known <= res + p
 			if a.Cmp(new(big.Int).Add(c, &inputs.p)) > 0 {
-				return false, fmt.Errorf("%s builtin: addend greater than sum + p: %d > %d + %d", m.String(), a, c, &inputs.p)
+				return 0, fmt.Errorf("%s builtin: addend greater than sum + p: %d > %d + %d", m.String(), a, c, &inputs.p)
 			} else {
 				if a.Cmp(c) <= 0 {
 					value = *new(big.Int).Sub(c, a)
@@ -391,16 +392,17 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 			x, _, gcd := utils.Igcdex(a, &inputs.p)
 			// if gcd != 1, the known value is 0, in which case the res must be 0
 			if gcd.Cmp(big.NewInt(1)) != 0 {
+				zeroDivisor = true
 				value = *new(big.Int).Div(&inputs.p, &gcd)
 			} else {
 				value = *new(big.Int).Mul(c, &x)
 				value = *value.Mod(&value, &inputs.p)
 				tmpK, err := utils.SafeDiv(new(big.Int).Sub(new(big.Int).Mul(a, &value), c), &inputs.p)
 				if err != nil {
-					return false, err
+					return 0, err
 				}
 				if tmpK.Cmp(kBound) >= 0 {
-					return false, fmt.Errorf("%s builtin: ((%d * q) - %d) / %d > %d for any q > 0, such that %d * q = %d (mod %d) ", m.String(), a, c, &inputs.p, kBound, a, c, &inputs.p)
+					return 0, fmt.Errorf("%s builtin: ((%d * q) - %d) / %d > %d for any q > 0, such that %d * q = %d (mod %d) ", m.String(), a, c, &inputs.p, kBound, a, c, &inputs.p)
 				}
 				if tmpK.Cmp(big.NewInt(0)) < 0 {
 					value = *value.Add(&value, new(big.Int).Mul(&inputs.p, new(big.Int).Div(new(big.Int).Sub(a, new(big.Int).Sub(&tmpK, big.NewInt(1))), a)))
@@ -408,16 +410,20 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 			}
 		}
 		if err := m.writeNWordsValue(mem, addresses[1], value); err != nil {
-			return false, err
+			return 0, err
 		}
-		return true, nil
+		if zeroDivisor {
+			return 2, nil
+		}
+		return 1, nil
 	case a == nil && b != nil && c != nil:
+		zeroDivisor := false
 		var value big.Int
 		if op == Add {
 			// Right now only k = 2 is an option, hence as we stated above that x + known can only take values
 			// from res to res + (k - 1) * p, hence known <= res + p
 			if b.Cmp(new(big.Int).Add(c, &inputs.p)) > 0 {
-				return false, fmt.Errorf("%s builtin: addend greater than sum + p: %d > %d + %d", m.String(), b, c, &inputs.p)
+				return 0, fmt.Errorf("%s builtin: addend greater than sum + p: %d > %d + %d", m.String(), b, c, &inputs.p)
 			} else {
 				if b.Cmp(c) <= 0 {
 					value = *new(big.Int).Sub(c, b)
@@ -429,16 +435,17 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 			x, _, gcd := utils.Igcdex(b, &inputs.p)
 			// if gcd != 1, the known value is 0, in which case the res must be 0
 			if gcd.Cmp(big.NewInt(1)) != 0 {
+				zeroDivisor = true
 				value = *new(big.Int).Div(&inputs.p, &gcd)
 			} else {
 				value = *new(big.Int).Mul(c, &x)
 				value = *value.Mod(&value, &inputs.p)
 				tmpK, err := utils.SafeDiv(new(big.Int).Sub(new(big.Int).Mul(b, &value), c), &inputs.p)
 				if err != nil {
-					return false, err
+					return 0, err
 				}
 				if tmpK.Cmp(kBound) >= 0 {
-					return false, fmt.Errorf("%s builtin: ((%d * q) - %d) / %d > %d for any q > 0, such that %d * q = %d (mod %d) ", m.String(), b, c, &inputs.p, kBound, b, c, &inputs.p)
+					return 0, fmt.Errorf("%s builtin: ((%d * q) - %d) / %d > %d for any q > 0, such that %d * q = %d (mod %d) ", m.String(), b, c, &inputs.p, kBound, b, c, &inputs.p)
 				}
 				if tmpK.Cmp(big.NewInt(0)) < 0 {
 					value = *value.Add(&value, new(big.Int).Mul(&inputs.p, new(big.Int).Div(new(big.Int).Sub(b, new(big.Int).Sub(&tmpK, big.NewInt(1))), b)))
@@ -446,13 +453,16 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 			}
 		}
 		if err := m.writeNWordsValue(mem, addresses[0], value); err != nil {
-			return false, err
+			return 0, err
 		}
-		return true, nil
+		if zeroDivisor {
+			return 2, nil
+		}
+		return 1, nil
 	case a != nil && b != nil && c != nil:
-		return true, nil
+		return 1, nil
 	default:
-		return false, nil
+		return 0, nil
 	}
 }
 
@@ -526,23 +536,24 @@ func FillMemory(mem *memory.Memory, addModInputAddress memory.MemoryAddress, nAd
 	addModIndex, mulModIndex := uint64(0), uint64(0)
 	for addModIndex < nAddMods || mulModIndex < nMulMods {
 		if addModIndex < nAddMods && addModBuiltinRunner != nil {
-			ok, err := addModBuiltinRunner.fillValue(mem, addModBuiltinInputs, int(addModIndex), Add)
+			res, err := addModBuiltinRunner.fillValue(mem, addModBuiltinInputs, int(addModIndex), Add)
 			if err != nil {
 				return err
 			}
-			if ok {
+			if res == 1 {
 				addModIndex++
 			}
 		}
 
 		if mulModIndex < nMulMods && mulModBuiltinRunner != nil {
-			ok, err := mulModBuiltinRunner.fillValue(mem, mulModBuiltinInputs, int(mulModIndex), Mul)
+			res, err := mulModBuiltinRunner.fillValue(mem, mulModBuiltinInputs, int(mulModIndex), Mul)
 			if err != nil {
 				return err
 			}
-			if ok {
-				mulModIndex++
+			if res == 0 {
+				return fmt.Errorf("MulMod builtin: Could not fill the values table")
 			}
+			mulModIndex++
 		}
 	}
 	return nil
