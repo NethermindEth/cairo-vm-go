@@ -18,6 +18,7 @@ const (
 	CheatcodeName  HintName = "Cheatcode"
 	// Core hints
 	AllocSegmentName                HintName = "AllocSegment"
+	EvalCircuitName                 HintName = "EvalCircuit"
 	TestLessThanName                HintName = "TestLessThan"
 	TestLessThanOrEqualName         HintName = "TestLessThanOrEqual"
 	TestLessThanOrEqualAddressName  HintName = "TestLessThanOrEqualAddress"
@@ -73,6 +74,13 @@ type Cheatcode struct {
 
 type AllocSegment struct {
 	Dst CellRef `json:"dst" validate:"required"`
+}
+
+type EvalCircuit struct {
+	NAddMods  ResOperand `json:"add_mod_n" validate:"required"`
+	AddModPtr ResOperand `json:"add_mod_ptr" validate:"required"`
+	NMulMods  ResOperand `json:"mul_mod_n" validate:"required"`
+	MulModPtr ResOperand `json:"mul_mod_ptr" validate:"required"`
 }
 
 type TestLessThan struct {
@@ -489,6 +497,8 @@ func (h *Hint) UnmarshalJSON(data []byte) error {
 		// Core hints
 		case AllocSegmentName:
 			args = &AllocSegment{}
+		case EvalCircuitName:
+			args = &EvalCircuit{}
 		case TestLessThanName:
 			args = &TestLessThan{}
 		case TestLessThanOrEqualName:

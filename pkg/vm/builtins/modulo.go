@@ -352,7 +352,6 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 	if kBound == nil {
 		kBound = new(big.Int).Set(intLim)
 	}
-
 	switch {
 	case a != nil && b != nil && c == nil:
 		var value big.Int
@@ -464,78 +463,87 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 // The number of operations written to the input of the first instance n should be at
 // least n and a multiple of batch_size. Previous offsets are copied to the end of the
 // offsets table to make its length 3n'.
-func FillMemory(mem *memory.Memory, addModBuiltinAddr memory.MemoryAddress, nAddModsIndex uint64, mulModBuiltinAddr memory.MemoryAddress, nMulModsIndex uint64) error {
-	if nAddModsIndex > MAX_N {
+func FillMemory(mem *memory.Memory, addModInputAddress memory.MemoryAddress, nAddMods uint64, mulModInputAddress memory.MemoryAddress, nMulMods uint64) error {
+	if nAddMods > MAX_N {
 		return fmt.Errorf("AddMod builtin: n must be <= {MAX_N}")
 	}
-	if nMulModsIndex > MAX_N {
+	if nMulMods > MAX_N {
 		return fmt.Errorf("MulMod builtin: n must be <= {MAX_N}")
 	}
 
-	addModBuiltinSegment, ok := mem.FindSegmentWithBuiltin("AddMod")
-	if !ok {
-		return fmt.Errorf("AddMod builtin segment doesn't exist")
-	}
-	mulModBuiltinSegment, ok := mem.FindSegmentWithBuiltin("MulMod")
-	if !ok {
-		return fmt.Errorf("MulMod builtin segment doesn't exist")
-	}
-	addModBuiltinRunner, ok := addModBuiltinSegment.BuiltinRunner.(*ModBuiltin)
-	if !ok {
-		return fmt.Errorf("addModBuiltinRunner is not a ModBuiltin")
-	}
-	mulModBuiltinRunner, ok := mulModBuiltinSegment.BuiltinRunner.(*ModBuiltin)
-	if !ok {
-		return fmt.Errorf("mulModBuiltinRunner is not a ModBuiltin")
+	var addModBuiltinRunner *ModBuiltin
+	var mulModBuiltinRunner *ModBuiltin
+
+	if nAddMods != 0 {
+		addModBuiltinSegment, ok := mem.FindSegmentWithBuiltin("AddMod")
+		if !ok {
+			return fmt.Errorf("AddMod builtin segment doesn't exist")
+		}
+		addModBuiltinRunner, ok = addModBuiltinSegment.BuiltinRunner.(*ModBuiltin)
+		if !ok {
+			return fmt.Errorf("addModBuiltinRunner is not a ModBuiltin")
+		}
+	} else {
+		addModBuiltinRunner = nil
 	}
 
-	if addModBuiltinRunner.wordBitLen != mulModBuiltinRunner.wordBitLen {
-		return fmt.Errorf("AddMod and MulMod wordBitLen mismatch")
+	if nMulMods != 0 {
+		mulModBuiltinSegment, ok := mem.FindSegmentWithBuiltin("MulMod")
+		if !ok {
+			return fmt.Errorf("MulMod builtin segment doesn't exist")
+		}
+		mulModBuiltinRunner, ok = mulModBuiltinSegment.BuiltinRunner.(*ModBuiltin)
+		if !ok {
+			return fmt.Errorf("mulModBuiltinRunner is not a ModBuiltin")
+		}
+	} else {
+		mulModBuiltinRunner = nil
 	}
 
-	addModBuiltinInputs, err := addModBuiltinRunner.readInputs(mem, addModBuiltinAddr, true)
-	if err != nil {
-		return err
-	}
-	if err := addModBuiltinRunner.fillInputs(mem, addModBuiltinAddr, addModBuiltinInputs); err != nil {
-		return err
-	}
-	if err := addModBuiltinRunner.fillOffsets(mem, addModBuiltinInputs.offsetsPtr, nAddModsIndex, addModBuiltinInputs.n-nAddModsIndex); err != nil {
-		return err
+	var addModBuiltinInputs, mulModBuiltinInputs ModBuiltinInputs
+	var err error
+
+	if addModBuiltinRunner != nil {
+		addModBuiltinInputs, err = addModBuiltinRunner.readInputs(mem, addModInputAddress, true)
+		if err != nil {
+			return err
+		}
+		if err := addModBuiltinRunner.fillInputs(mem, addModInputAddress, addModBuiltinInputs); err != nil {
+			return err
+		}
+		if err := addModBuiltinRunner.fillOffsets(mem, addModBuiltinInputs.offsetsPtr, nAddMods, addModBuiltinInputs.n-nAddMods); err != nil {
+			return err
+		}
 	}
 
-	mulModBuiltinInputs, err := mulModBuiltinRunner.readInputs(mem, mulModBuiltinAddr, true)
-	if err != nil {
-		return err
-	}
-	if err := mulModBuiltinRunner.fillInputs(mem, mulModBuiltinAddr, mulModBuiltinInputs); err != nil {
-		return err
-	}
-	if err := mulModBuiltinRunner.fillOffsets(mem, mulModBuiltinInputs.offsetsPtr, nMulModsIndex, mulModBuiltinInputs.n-nMulModsIndex); err != nil {
-		return err
+	if mulModBuiltinRunner != nil {
+		mulModBuiltinInputs, err = mulModBuiltinRunner.readInputs(mem, mulModInputAddress, true)
+		if err != nil {
+			return err
+		}
 	}
 
 	addModIndex, mulModIndex := uint64(0), uint64(0)
-	for addModIndex < nAddModsIndex {
-		ok, err := addModBuiltinRunner.fillValue(mem, addModBuiltinInputs, int(addModIndex), Add)
-		if err != nil {
-			return err
+	for addModIndex < nAddMods || mulModIndex < nMulMods {
+		if addModIndex < nAddMods && addModBuiltinRunner != nil {
+			ok, err := addModBuiltinRunner.fillValue(mem, addModBuiltinInputs, int(addModIndex), Add)
+			if err != nil {
+				return err
+			}
+			if ok {
+				addModIndex++
+			}
 		}
-		if ok {
-			addModIndex++
+
+		if mulModIndex < nMulMods && mulModBuiltinRunner != nil {
+			ok, err := mulModBuiltinRunner.fillValue(mem, mulModBuiltinInputs, int(mulModIndex), Mul)
+			if err != nil {
+				return err
+			}
+			if ok {
+				mulModIndex++
+			}
 		}
 	}
-
-	for mulModIndex < nMulModsIndex {
-		ok, err = mulModBuiltinRunner.fillValue(mem, mulModBuiltinInputs, int(mulModIndex), Mul)
-		if err != nil {
-			return err
-		}
-		if ok {
-			mulModIndex++
-		}
-	}
-	// POTENTIALY: add n_computed_mul_gates features in the future
-
 	return nil
 }

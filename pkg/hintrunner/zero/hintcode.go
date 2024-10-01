@@ -173,6 +173,7 @@ const (
 
 	// ------ Other hints related code ------
 	allocSegmentCode          string = "memory[ap] = segments.add()"
+	evalCircuitCode           string = "from starkware.cairo.lang.builtins.modulo.mod_builtin_runner import ModBuiltinRunner\nassert builtin_runners[\"add_mod_builtin\"].instance_def.batch_size == 1\nassert builtin_runners[\"mul_mod_builtin\"].instance_def.batch_size == 1\n\nModBuiltinRunner.fill_memory(\n	memory=memory,\n	add_mod=(ids.add_mod_ptr.address_, builtin_runners[\"add_mod_builtin\"], ids.add_mod_n),\n	mul_mod=(ids.mul_mod_ptr.address_, builtin_runners[\"mul_mod_builtin\"], ids.mul_mod_n),\n)"
 	memcpyContinueCopyingCode string = "n -= 1\nids.continue_copying = 1 if n > 0 else 0"
 	memsetContinueLoopCode    string = "n -= 1\nids.continue_loop = 1 if n > 0 else 0"
 	memcpyEnterScopeCode      string = "vm_enter_scope({'n': ids.len})"

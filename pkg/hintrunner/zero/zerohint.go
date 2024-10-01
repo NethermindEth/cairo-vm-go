@@ -319,6 +319,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 	// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter()
+	case evalCircuitCode:
+		return createEvalCircuitHinter(resolver)
 	case memcpyContinueCopyingCode:
 		return createMemContinueHinter(resolver, false)
 	case memsetContinueLoopCode:

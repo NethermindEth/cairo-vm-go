@@ -12,6 +12,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -54,6 +55,46 @@ func (hint *AllocSegment) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerCon
 	}
 
 	return nil
+}
+
+type EvalCircuit struct {
+	AddModN   hinter.Reference
+	AddModPtr hinter.Reference
+	MulModN   hinter.Reference
+	MulModPtr hinter.Reference
+}
+
+func (hint *EvalCircuit) String() string {
+	return "EvalCircuit"
+}
+
+func (hint *EvalCircuit) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+	addModInputAddress, err := hinter.ResolveAsAddress(vm, hint.AddModPtr)
+	if err != nil {
+		return fmt.Errorf("resolve addModBuiltin pointer: %w", err)
+	}
+	nAddMods, err := hint.AddModN.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve nAddMods operand %s: %v", hint.AddModN, err)
+	}
+	nAddModsFelt, err := nAddMods.Uint64()
+	if err != nil {
+		return err
+	}
+	mulModInputAddress, err := hinter.ResolveAsAddress(vm, hint.MulModPtr)
+	if err != nil {
+		return fmt.Errorf("resolve mulModBuiltin pointer: %w", err)
+	}
+	nMulMods, err := hint.MulModN.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve nMulMods operand %s: %v", hint.MulModN, err)
+	}
+	nMulModsFelt, err := nMulMods.Uint64()
+	if err != nil {
+		return err
+	}
+
+	return builtins.FillMemory(vm.Memory, *addModInputAddress, nAddModsFelt, *mulModInputAddress, nMulModsFelt)
 }
 
 type TestLessThan struct {

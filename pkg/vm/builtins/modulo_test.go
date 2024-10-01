@@ -12,7 +12,7 @@ import (
 
 /*
 Tests whether runner completes a trio a, b, c as the input implies:
-If inverse is False it tests whether a = x1, b=x2, c = None will be completed with c = res.
+If inverse is False it tests whether a = x1, b = x2, c = None will be completed with c = res.
 If inverse is True it tests whether c = x1, b = x2, a = None will be completed with a = res.
 */
 func checkResult(runner ModBuiltin, inverse bool, p, x1, x2 big.Int) (*big.Int, error) {
