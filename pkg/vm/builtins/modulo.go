@@ -534,6 +534,7 @@ func FillMemory(mem *memory.Memory, addModInputAddress memory.MemoryAddress, nAd
 	}
 
 	addModIndex, mulModIndex := uint64(0), uint64(0)
+	nComputedMulGates := uint64(0)
 	for addModIndex < nAddMods || mulModIndex < nMulMods {
 		if addModIndex < nAddMods && addModBuiltinRunner != nil {
 			res, err := addModBuiltinRunner.fillValue(mem, addModBuiltinInputs, int(addModIndex), Add)
@@ -553,7 +554,36 @@ func FillMemory(mem *memory.Memory, addModInputAddress memory.MemoryAddress, nAd
 			if res == 0 {
 				return fmt.Errorf("MulMod builtin: Could not fill the values table")
 			}
+			if res == 2 && nComputedMulGates == 0 {
+				nComputedMulGates = mulModIndex
+			}
 			mulModIndex++
+		}
+
+		if mulModBuiltinRunner != nil {
+			if nComputedMulGates == 0 {
+				nComputedMulGates = mulModBuiltinInputs.n
+				if nComputedMulGates == 0 {
+					nComputedMulGates = nMulMods
+				}
+				mulModBuiltinInputs.n = nComputedMulGates
+				mulModBuiltinRunner.fillOffsets(mem, mulModBuiltinInputs.offsetsPtr, nMulMods, nComputedMulGates-nMulMods)
+			} else {
+				if mulModBuiltinRunner.batchSize != 1 {
+					return fmt.Errorf("MulMod builtin: Inverse failure is supported only at batch_size == 1")
+				}
+			}
+			mulModBuiltinInputs.n = nComputedMulGates
+			mulModInputNAddr, err := mulModInputAddress.AddOffset(int16(N_OFFSET))
+			if err != nil {
+				return err
+			}
+			mv := memory.MemoryValueFromFieldElement(new(fp.Element).SetUint64(nComputedMulGates))
+			if err := mem.WriteToAddress(&mulModInputNAddr, &mv); err != nil {
+				return err
+			}
+
+			mulModBuiltinRunner.fillInputs(mem, mulModInputAddress, mulModBuiltinInputs)
 		}
 	}
 	return nil
