@@ -565,6 +565,7 @@ func FillMemory(mem *memory.Memory, addModInputAddress memory.MemoryAddress, nAd
 		}
 	}
 
+	// TODO: Investigate tests that fail when nComputedMulGates is not implemented
 	if mulModBuiltinRunner != nil {
 		if nComputedMulGates == 0 {
 			nComputedMulGates = mulModBuiltinInputs.n
