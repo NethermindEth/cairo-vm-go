@@ -492,6 +492,8 @@ func FillMemory(mem *memory.Memory, addModInputAddress memory.MemoryAddress, nAd
 
 	var addModBuiltinRunner *ModBuiltin
 	var mulModBuiltinRunner *ModBuiltin
+	var addModBuiltinInputs, mulModBuiltinInputs ModBuiltinInputs
+	var err error
 
 	if nAddMods != 0 {
 		addModBuiltinSegment, ok := mem.FindSegmentWithBuiltin("AddMod")
@@ -501,6 +503,17 @@ func FillMemory(mem *memory.Memory, addModInputAddress memory.MemoryAddress, nAd
 		addModBuiltinRunner, ok = addModBuiltinSegment.BuiltinRunner.(*ModBuiltin)
 		if !ok {
 			return fmt.Errorf("addModBuiltinRunner is not a ModBuiltin")
+		}
+
+		addModBuiltinInputs, err = addModBuiltinRunner.readInputs(mem, addModInputAddress, true)
+		if err != nil {
+			return err
+		}
+		if err := addModBuiltinRunner.fillInputs(mem, addModInputAddress, addModBuiltinInputs); err != nil {
+			return err
+		}
+		if err := addModBuiltinRunner.fillOffsets(mem, addModBuiltinInputs.offsetsPtr, nAddMods, addModBuiltinInputs.n-nAddMods); err != nil {
+			return err
 		}
 	} else {
 		addModBuiltinRunner = nil
@@ -515,31 +528,13 @@ func FillMemory(mem *memory.Memory, addModInputAddress memory.MemoryAddress, nAd
 		if !ok {
 			return fmt.Errorf("mulModBuiltinRunner is not a ModBuiltin")
 		}
-	} else {
-		mulModBuiltinRunner = nil
-	}
 
-	var addModBuiltinInputs, mulModBuiltinInputs ModBuiltinInputs
-	var err error
-
-	if addModBuiltinRunner != nil {
-		addModBuiltinInputs, err = addModBuiltinRunner.readInputs(mem, addModInputAddress, true)
-		if err != nil {
-			return err
-		}
-		if err := addModBuiltinRunner.fillInputs(mem, addModInputAddress, addModBuiltinInputs); err != nil {
-			return err
-		}
-		if err := addModBuiltinRunner.fillOffsets(mem, addModBuiltinInputs.offsetsPtr, nAddMods, addModBuiltinInputs.n-nAddMods); err != nil {
-			return err
-		}
-	}
-
-	if mulModBuiltinRunner != nil {
 		mulModBuiltinInputs, err = mulModBuiltinRunner.readInputs(mem, mulModInputAddress, true)
 		if err != nil {
 			return err
 		}
+	} else {
+		mulModBuiltinRunner = nil
 	}
 
 	addModIndex, mulModIndex := uint64(0), uint64(0)
@@ -568,35 +563,35 @@ func FillMemory(mem *memory.Memory, addModInputAddress memory.MemoryAddress, nAd
 			}
 			mulModIndex++
 		}
+	}
 
-		if mulModBuiltinRunner != nil {
+	if mulModBuiltinRunner != nil {
+		if nComputedMulGates == 0 {
+			nComputedMulGates = mulModBuiltinInputs.n
 			if nComputedMulGates == 0 {
-				nComputedMulGates = mulModBuiltinInputs.n
-				if nComputedMulGates == 0 {
-					nComputedMulGates = nMulMods
-				}
-				mulModBuiltinInputs.n = nComputedMulGates
-				if err := mulModBuiltinRunner.fillOffsets(mem, mulModBuiltinInputs.offsetsPtr, nMulMods, nComputedMulGates-nMulMods); err != nil {
-					return err
-				}
-			} else {
-				if mulModBuiltinRunner.batchSize != 1 {
-					return fmt.Errorf("MulMod builtin: Inverse failure is supported only at batch_size == 1")
-				}
+				nComputedMulGates = nMulMods
 			}
 			mulModBuiltinInputs.n = nComputedMulGates
-			mulModInputNAddr, err := mulModInputAddress.AddOffset(int16(N_OFFSET))
-			if err != nil {
+			if err := mulModBuiltinRunner.fillOffsets(mem, mulModBuiltinInputs.offsetsPtr, nMulMods, nComputedMulGates-nMulMods); err != nil {
 				return err
 			}
-			mv := memory.MemoryValueFromFieldElement(new(fp.Element).SetUint64(nComputedMulGates))
-			if err := mem.WriteToAddress(&mulModInputNAddr, &mv); err != nil {
-				return err
+		} else {
+			if mulModBuiltinRunner.batchSize != 1 {
+				return fmt.Errorf("MulMod builtin: Inverse failure is supported only at batch_size == 1")
 			}
+		}
+		mulModBuiltinInputs.n = nComputedMulGates
+		mulModInputNAddr, err := mulModInputAddress.AddOffset(int16(N_OFFSET))
+		if err != nil {
+			return err
+		}
+		mv := memory.MemoryValueFromFieldElement(new(fp.Element).SetUint64(nComputedMulGates))
+		if err := mem.WriteToAddress(&mulModInputNAddr, &mv); err != nil {
+			return err
+		}
 
-			if err := mulModBuiltinRunner.fillInputs(mem, mulModInputAddress, mulModBuiltinInputs); err != nil {
-				return err
-			}
+		if err := mulModBuiltinRunner.fillInputs(mem, mulModInputAddress, mulModBuiltinInputs); err != nil {
+			return err
 		}
 	}
 	return nil
