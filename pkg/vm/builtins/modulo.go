@@ -318,7 +318,9 @@ func (m *ModBuiltin) writeNWordsValue(mem *memory.Memory, addr memory.MemoryAddr
 }
 
 // Fills a value in the values table, if exactly one value is missing.
-// Returns true on success or if all values are already known.
+// Returns 1 on success or if all values are already known.
+// Returns 0 if there is an error or is the value cannot be filled
+// Returns 2 when the mulModBuiltin has a zero divisor.
 // Given known, res, p fillValue tries to compute the minimal integer operand x which
 // satisfies the equation op(x,known) = res + k*p for some k in {0,1,...,self.k_bound-1}.
 func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, index int, op ModBuiltinType) (int, error) {
