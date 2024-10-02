@@ -342,7 +342,8 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 			return 0, err
 		}
 		addresses = append(addresses, addr)
-		// do not check for error, as the value might not be in memory
+		// do not check for all errors, as the value might not be in memory
+		// only check for the error when the value in memory exceeds 2**wordBitLen
 		_, value, err := m.readNWordsValue(mem, addr)
 		if err != nil {
 			if strings.Contains(err.Error(), "expected integer at address") {
