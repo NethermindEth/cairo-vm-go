@@ -3,6 +3,7 @@ package builtins
 import (
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 
@@ -317,30 +318,38 @@ func (m *ModBuiltin) writeNWordsValue(mem *memory.Memory, addr memory.MemoryAddr
 }
 
 // Fills a value in the values table, if exactly one value is missing.
-// Returns true on success or if all values are already known.
+// Returns 1 on success or if all values are already known.
+// Returns 0 if there is an error or is the value cannot be filled
+// Returns 2 when the mulModBuiltin has a zero divisor.
 // Given known, res, p fillValue tries to compute the minimal integer operand x which
 // satisfies the equation op(x,known) = res + k*p for some k in {0,1,...,self.k_bound-1}.
-func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, index int, op ModBuiltinType) (bool, error) {
+func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, index int, op ModBuiltinType) (int, error) {
 	addresses := make([]memory.MemoryAddress, 0, 3)
 	values := make([]*big.Int, 0, 3)
 
 	for i := 0; i < 3; i++ {
 		addr, err := inputs.offsetsPtr.AddOffset(int16(3*index + i))
 		if err != nil {
-			return false, err
+			return 0, err
 		}
 		offsetFelt, err := mem.ReadAsElement(addr.SegmentIndex, addr.Offset)
 		if err != nil {
-			return false, err
+			return 0, err
 		}
 		offset := offsetFelt.Uint64()
 		addr, err = inputs.valuesPtr.AddOffset(int16(offset))
 		if err != nil {
-			return false, err
+			return 0, err
 		}
 		addresses = append(addresses, addr)
-		// do not check for error, as the value might not be in memory
-		_, value, _ := m.readNWordsValue(mem, addr)
+		// do not check for all errors, as the value might not be in memory
+		// only check for the error when the value in memory exceeds 2**wordBitLen
+		_, value, err := m.readNWordsValue(mem, addr)
+		if err != nil {
+			if strings.Contains(err.Error(), "expected integer at address") {
+				return 0, err
+			}
+		}
 		values = append(values, value)
 	}
 
@@ -352,7 +361,6 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 	if kBound == nil {
 		kBound = new(big.Int).Set(intLim)
 	}
-
 	switch {
 	case a != nil && b != nil && c == nil:
 		var value big.Int
@@ -363,7 +371,7 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 		}
 		// value - (kBound - 1) * p <= intLim - 1
 		if new(big.Int).Sub(&value, new(big.Int).Mul((new(big.Int).Sub(kBound, big.NewInt(1))), &inputs.p)).Cmp(new(big.Int).Sub(intLim, big.NewInt(1))) == 1 {
-			return false, fmt.Errorf("%s builtin: Expected a %s b - %d * p <= %d", m.String(), m.modBuiltinType, kBound.Sub(kBound, big.NewInt(1)), intLim.Sub(intLim, big.NewInt(1)))
+			return 0, fmt.Errorf("%s builtin: Expected a %s b - %d * p <= %d", m.String(), m.modBuiltinType, kBound.Sub(kBound, big.NewInt(1)), intLim.Sub(intLim, big.NewInt(1)))
 		}
 		if value.Cmp(new(big.Int).Mul(kBound, &inputs.p)) < 0 {
 			value.Mod(&value, &inputs.p)
@@ -371,16 +379,17 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 			value.Sub(&value, new(big.Int).Mul(new(big.Int).Sub(kBound, big.NewInt(1)), &inputs.p))
 		}
 		if err := m.writeNWordsValue(mem, addresses[2], value); err != nil {
-			return false, err
+			return 0, err
 		}
-		return true, nil
+		return 1, nil
 	case a != nil && b == nil && c != nil:
+		zeroDivisor := false
 		var value big.Int
 		if op == Add {
 			// Right now only k = 2 is an option, hence as we stated above that x + known can only take values
 			// from res to res + (k - 1) * p, hence known <= res + p
 			if a.Cmp(new(big.Int).Add(c, &inputs.p)) > 0 {
-				return false, fmt.Errorf("%s builtin: addend greater than sum + p: %d > %d + %d", m.String(), a, c, &inputs.p)
+				return 0, fmt.Errorf("%s builtin: addend greater than sum + p: %d > %d + %d", m.String(), a, c, &inputs.p)
 			} else {
 				if a.Cmp(c) <= 0 {
 					value = *new(big.Int).Sub(c, a)
@@ -392,16 +401,17 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 			x, _, gcd := utils.Igcdex(a, &inputs.p)
 			// if gcd != 1, the known value is 0, in which case the res must be 0
 			if gcd.Cmp(big.NewInt(1)) != 0 {
+				zeroDivisor = true
 				value = *new(big.Int).Div(&inputs.p, &gcd)
 			} else {
 				value = *new(big.Int).Mul(c, &x)
 				value = *value.Mod(&value, &inputs.p)
 				tmpK, err := utils.SafeDiv(new(big.Int).Sub(new(big.Int).Mul(a, &value), c), &inputs.p)
 				if err != nil {
-					return false, err
+					return 0, err
 				}
 				if tmpK.Cmp(kBound) >= 0 {
-					return false, fmt.Errorf("%s builtin: ((%d * q) - %d) / %d > %d for any q > 0, such that %d * q = %d (mod %d) ", m.String(), a, c, &inputs.p, kBound, a, c, &inputs.p)
+					return 0, fmt.Errorf("%s builtin: ((%d * q) - %d) / %d > %d for any q > 0, such that %d * q = %d (mod %d) ", m.String(), a, c, &inputs.p, kBound, a, c, &inputs.p)
 				}
 				if tmpK.Cmp(big.NewInt(0)) < 0 {
 					value = *value.Add(&value, new(big.Int).Mul(&inputs.p, new(big.Int).Div(new(big.Int).Sub(a, new(big.Int).Sub(&tmpK, big.NewInt(1))), a)))
@@ -409,16 +419,20 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 			}
 		}
 		if err := m.writeNWordsValue(mem, addresses[1], value); err != nil {
-			return false, err
+			return 0, err
 		}
-		return true, nil
+		if zeroDivisor {
+			return 2, nil
+		}
+		return 1, nil
 	case a == nil && b != nil && c != nil:
+		zeroDivisor := false
 		var value big.Int
 		if op == Add {
 			// Right now only k = 2 is an option, hence as we stated above that x + known can only take values
 			// from res to res + (k - 1) * p, hence known <= res + p
 			if b.Cmp(new(big.Int).Add(c, &inputs.p)) > 0 {
-				return false, fmt.Errorf("%s builtin: addend greater than sum + p: %d > %d + %d", m.String(), b, c, &inputs.p)
+				return 0, fmt.Errorf("%s builtin: addend greater than sum + p: %d > %d + %d", m.String(), b, c, &inputs.p)
 			} else {
 				if b.Cmp(c) <= 0 {
 					value = *new(big.Int).Sub(c, b)
@@ -430,16 +444,17 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 			x, _, gcd := utils.Igcdex(b, &inputs.p)
 			// if gcd != 1, the known value is 0, in which case the res must be 0
 			if gcd.Cmp(big.NewInt(1)) != 0 {
+				zeroDivisor = true
 				value = *new(big.Int).Div(&inputs.p, &gcd)
 			} else {
 				value = *new(big.Int).Mul(c, &x)
 				value = *value.Mod(&value, &inputs.p)
 				tmpK, err := utils.SafeDiv(new(big.Int).Sub(new(big.Int).Mul(b, &value), c), &inputs.p)
 				if err != nil {
-					return false, err
+					return 0, err
 				}
 				if tmpK.Cmp(kBound) >= 0 {
-					return false, fmt.Errorf("%s builtin: ((%d * q) - %d) / %d > %d for any q > 0, such that %d * q = %d (mod %d) ", m.String(), b, c, &inputs.p, kBound, b, c, &inputs.p)
+					return 0, fmt.Errorf("%s builtin: ((%d * q) - %d) / %d > %d for any q > 0, such that %d * q = %d (mod %d) ", m.String(), b, c, &inputs.p, kBound, b, c, &inputs.p)
 				}
 				if tmpK.Cmp(big.NewInt(0)) < 0 {
 					value = *value.Add(&value, new(big.Int).Mul(&inputs.p, new(big.Int).Div(new(big.Int).Sub(b, new(big.Int).Sub(&tmpK, big.NewInt(1))), b)))
@@ -447,13 +462,16 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 			}
 		}
 		if err := m.writeNWordsValue(mem, addresses[0], value); err != nil {
-			return false, err
+			return 0, err
 		}
-		return true, nil
+		if zeroDivisor {
+			return 2, nil
+		}
+		return 1, nil
 	case a != nil && b != nil && c != nil:
-		return true, nil
+		return 1, nil
 	default:
-		return false, nil
+		return 0, nil
 	}
 }
 
@@ -464,78 +482,118 @@ func (m *ModBuiltin) fillValue(mem *memory.Memory, inputs ModBuiltinInputs, inde
 // The number of operations written to the input of the first instance n should be at
 // least n and a multiple of batch_size. Previous offsets are copied to the end of the
 // offsets table to make its length 3n'.
-func FillMemory(mem *memory.Memory, addModBuiltinAddr memory.MemoryAddress, nAddModsIndex uint64, mulModBuiltinAddr memory.MemoryAddress, nMulModsIndex uint64) error {
-	if nAddModsIndex > MAX_N {
+func FillMemory(mem *memory.Memory, addModInputAddress memory.MemoryAddress, nAddMods uint64, mulModInputAddress memory.MemoryAddress, nMulMods uint64) error {
+	if nAddMods > MAX_N {
 		return fmt.Errorf("AddMod builtin: n must be <= {MAX_N}")
 	}
-	if nMulModsIndex > MAX_N {
+	if nMulMods > MAX_N {
 		return fmt.Errorf("MulMod builtin: n must be <= {MAX_N}")
 	}
 
-	addModBuiltinSegment, ok := mem.FindSegmentWithBuiltin("AddMod")
-	if !ok {
-		return fmt.Errorf("AddMod builtin segment doesn't exist")
-	}
-	mulModBuiltinSegment, ok := mem.FindSegmentWithBuiltin("MulMod")
-	if !ok {
-		return fmt.Errorf("MulMod builtin segment doesn't exist")
-	}
-	addModBuiltinRunner, ok := addModBuiltinSegment.BuiltinRunner.(*ModBuiltin)
-	if !ok {
-		return fmt.Errorf("addModBuiltinRunner is not a ModBuiltin")
-	}
-	mulModBuiltinRunner, ok := mulModBuiltinSegment.BuiltinRunner.(*ModBuiltin)
-	if !ok {
-		return fmt.Errorf("mulModBuiltinRunner is not a ModBuiltin")
+	var addModBuiltinRunner *ModBuiltin
+	var mulModBuiltinRunner *ModBuiltin
+	var addModBuiltinInputs, mulModBuiltinInputs ModBuiltinInputs
+	var err error
+
+	if nAddMods != 0 {
+		addModBuiltinSegment, ok := mem.FindSegmentWithBuiltin("AddMod")
+		if !ok {
+			return fmt.Errorf("AddMod builtin segment doesn't exist")
+		}
+		addModBuiltinRunner, ok = addModBuiltinSegment.BuiltinRunner.(*ModBuiltin)
+		if !ok {
+			return fmt.Errorf("addModBuiltinRunner is not a ModBuiltin")
+		}
+
+		addModBuiltinInputs, err = addModBuiltinRunner.readInputs(mem, addModInputAddress, true)
+		if err != nil {
+			return err
+		}
+		if err := addModBuiltinRunner.fillInputs(mem, addModInputAddress, addModBuiltinInputs); err != nil {
+			return err
+		}
+		if err := addModBuiltinRunner.fillOffsets(mem, addModBuiltinInputs.offsetsPtr, nAddMods, addModBuiltinInputs.n-nAddMods); err != nil {
+			return err
+		}
+	} else {
+		addModBuiltinRunner = nil
 	}
 
-	if addModBuiltinRunner.wordBitLen != mulModBuiltinRunner.wordBitLen {
-		return fmt.Errorf("AddMod and MulMod wordBitLen mismatch")
-	}
+	if nMulMods != 0 {
+		mulModBuiltinSegment, ok := mem.FindSegmentWithBuiltin("MulMod")
+		if !ok {
+			return fmt.Errorf("MulMod builtin segment doesn't exist")
+		}
+		mulModBuiltinRunner, ok = mulModBuiltinSegment.BuiltinRunner.(*ModBuiltin)
+		if !ok {
+			return fmt.Errorf("mulModBuiltinRunner is not a ModBuiltin")
+		}
 
-	addModBuiltinInputs, err := addModBuiltinRunner.readInputs(mem, addModBuiltinAddr, true)
-	if err != nil {
-		return err
-	}
-	if err := addModBuiltinRunner.fillInputs(mem, addModBuiltinAddr, addModBuiltinInputs); err != nil {
-		return err
-	}
-	if err := addModBuiltinRunner.fillOffsets(mem, addModBuiltinInputs.offsetsPtr, nAddModsIndex, addModBuiltinInputs.n-nAddModsIndex); err != nil {
-		return err
-	}
-
-	mulModBuiltinInputs, err := mulModBuiltinRunner.readInputs(mem, mulModBuiltinAddr, true)
-	if err != nil {
-		return err
-	}
-	if err := mulModBuiltinRunner.fillInputs(mem, mulModBuiltinAddr, mulModBuiltinInputs); err != nil {
-		return err
-	}
-	if err := mulModBuiltinRunner.fillOffsets(mem, mulModBuiltinInputs.offsetsPtr, nMulModsIndex, mulModBuiltinInputs.n-nMulModsIndex); err != nil {
-		return err
+		mulModBuiltinInputs, err = mulModBuiltinRunner.readInputs(mem, mulModInputAddress, true)
+		if err != nil {
+			return err
+		}
+	} else {
+		mulModBuiltinRunner = nil
 	}
 
 	addModIndex, mulModIndex := uint64(0), uint64(0)
-	for addModIndex < nAddModsIndex {
-		ok, err := addModBuiltinRunner.fillValue(mem, addModBuiltinInputs, int(addModIndex), Add)
-		if err != nil {
-			return err
+	nComputedMulGates := uint64(0)
+	for addModIndex < nAddMods || mulModIndex < nMulMods {
+		if addModIndex < nAddMods && addModBuiltinRunner != nil {
+			res, err := addModBuiltinRunner.fillValue(mem, addModBuiltinInputs, int(addModIndex), Add)
+			if err != nil {
+				return err
+			}
+			if res == 1 {
+				addModIndex++
+			}
 		}
-		if ok {
-			addModIndex++
-		}
-	}
 
-	for mulModIndex < nMulModsIndex {
-		ok, err = mulModBuiltinRunner.fillValue(mem, mulModBuiltinInputs, int(mulModIndex), Mul)
-		if err != nil {
-			return err
-		}
-		if ok {
+		if mulModIndex < nMulMods && mulModBuiltinRunner != nil {
+			res, err := mulModBuiltinRunner.fillValue(mem, mulModBuiltinInputs, int(mulModIndex), Mul)
+			if err != nil {
+				return err
+			}
+			if res == 0 {
+				return fmt.Errorf("MulMod builtin: Could not fill the values table")
+			}
+			if res == 2 && nComputedMulGates == 0 {
+				nComputedMulGates = mulModIndex
+			}
 			mulModIndex++
 		}
 	}
-	// POTENTIALY: add n_computed_mul_gates features in the future
 
+	// TODO: Investigate tests that fail when nComputedMulGates is not implemented
+	if mulModBuiltinRunner != nil {
+		if nComputedMulGates == 0 {
+			nComputedMulGates = mulModBuiltinInputs.n
+			if nComputedMulGates == 0 {
+				nComputedMulGates = nMulMods
+			}
+			mulModBuiltinInputs.n = nComputedMulGates
+			if err := mulModBuiltinRunner.fillOffsets(mem, mulModBuiltinInputs.offsetsPtr, nMulMods, nComputedMulGates-nMulMods); err != nil {
+				return err
+			}
+		} else {
+			if mulModBuiltinRunner.batchSize != 1 {
+				return fmt.Errorf("MulMod builtin: Inverse failure is supported only at batch_size == 1")
+			}
+		}
+		mulModBuiltinInputs.n = nComputedMulGates
+		mulModInputNAddr, err := mulModInputAddress.AddOffset(int16(N_OFFSET))
+		if err != nil {
+			return err
+		}
+		mv := memory.MemoryValueFromFieldElement(new(fp.Element).SetUint64(nComputedMulGates))
+		if err := mem.WriteToAddress(&mulModInputNAddr, &mv); err != nil {
+			return err
+		}
+
+		if err := mulModBuiltinRunner.fillInputs(mem, mulModInputAddress, mulModBuiltinInputs); err != nil {
+			return err
+		}
+	}
 	return nil
 }
