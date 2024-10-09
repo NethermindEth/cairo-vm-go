@@ -257,7 +257,7 @@ func (runner *Runner) RunUntilPc(pc *mem.MemoryAddress) error {
 		fmt.Println(i, data)
 	}
 	for !runner.vm.Context.Pc.Equal(pc) {
-		fmt.Println(runner.vm.Context.Pc, pc, runner.vm.Context.Fp)
+		fmt.Println(runner.steps(), runner.vm.Context.Pc, pc, runner.vm.Context.Fp)
 		if runner.steps() >= runner.maxsteps {
 			return fmt.Errorf(
 				"pc %s step %d: max step limit exceeded (%d)",
@@ -269,7 +269,6 @@ func (runner *Runner) RunUntilPc(pc *mem.MemoryAddress) error {
 		if err := runner.vm.RunStep(&runner.hintrunner); err != nil {
 			return fmt.Errorf("pc %s step %d: %w", runner.pc(), runner.steps(), err)
 		}
-		fmt.Println(runner.vm.Context.Pc, pc, runner.vm.Context.Fp)
 	}
 	return nil
 }
