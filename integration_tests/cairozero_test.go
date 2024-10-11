@@ -145,13 +145,10 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 var zerobench = flag.Bool("zerobench", false, "run integration tests and generate benchmarks file")
 
 func TestCairoZeroFiles(t *testing.T) {
-	// roots := []string{
-	// 	"./cairo_zero_hint_tests/",
-	// 	"./cairo_zero_file_tests/",
-	// 	"./builtin_tests/",
-	// }
 	roots := []string{
+		"./cairo_zero_hint_tests/",
 		"./cairo_zero_file_tests/",
+		"./builtin_tests/",
 	}
 
 	// filter is for debugging purposes

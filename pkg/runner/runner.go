@@ -84,7 +84,7 @@ func (runner *ZeroRunner) Run() error {
 		return errors.New("cannot re-run using the same runner")
 	}
 
-	end, err := runner.InitializeMainEntrypoint()
+	end, err := runner.initializeMainEntrypoint()
 	if err != nil {
 		return fmt.Errorf("initializing main entry point: %w", err)
 	}
@@ -116,9 +116,7 @@ func (runner *ZeroRunner) initializeSegments() (*mem.Memory, error) {
 	return memory, nil
 }
 
-// TODO: unexport it. It's only used inside this file and tests so far.
-// We probably don't want various init API to leak outside (see #237 for more context).
-func (runner *ZeroRunner) InitializeMainEntrypoint() (mem.MemoryAddress, error) {
+func (runner *ZeroRunner) initializeMainEntrypoint() (mem.MemoryAddress, error) {
 	memory, err := runner.initializeSegments()
 	if err != nil {
 		return mem.UnknownAddress, err
@@ -215,7 +213,8 @@ func (runner *ZeroRunner) initializeVm(
 ) error {
 	executionSegment := memory.Segments[vm.ExecutionSegment]
 	offset := executionSegment.Len()
-	for idx := range stack {
+	stackSize := uint64(len(stack))
+	for idx := uint64(0); idx < stackSize; idx++ {
 		if err := executionSegment.Write(offset+uint64(idx), &stack[idx]); err != nil {
 			return err
 		}
@@ -225,8 +224,8 @@ func (runner *ZeroRunner) initializeVm(
 	// initialize vm
 	runner.vm, err = vm.NewVirtualMachine(vm.Context{
 		Pc: *initialPC,
-		Ap: offset + uint64(len(stack)),
-		Fp: offset + uint64(len(stack)),
+		Ap: offset + stackSize,
+		Fp: offset + stackSize,
 	}, memory, vm.VirtualMachineConfig{ProofMode: runner.proofmode, CollectTrace: runner.collectTrace})
 	return err
 }

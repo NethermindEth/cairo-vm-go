@@ -35,15 +35,7 @@ func LoadCairoZeroProgram(cairoZeroJson *zero.ZeroProgram) (*ZeroProgram, error)
 		bytecode[i] = felt
 	}
 
-	entrypoints, err := extractEntrypoints(cairoZeroJson)
-	if err != nil {
-		return nil, err
-	}
-
-	labels, err := extractLabels(cairoZeroJson)
-	if err != nil {
-		return nil, err
-	}
+	entrypoints, labels := extractEntrypointsAndLabels(cairoZeroJson)
 
 	return &ZeroProgram{
 		Bytecode:    bytecode,
@@ -53,49 +45,22 @@ func LoadCairoZeroProgram(cairoZeroJson *zero.ZeroProgram) (*ZeroProgram, error)
 	}, nil
 }
 
-func extractEntrypoints(json *zero.ZeroProgram) (map[string]uint64, error) {
-	result := make(map[string]uint64)
-	err := scanIdentifiers(
-		json,
-		func(key string, ident *zero.Identifier) error {
-			if ident.IdentifierType == "function" {
-				name := key[len(json.MainScope)+1:]
-				result[name] = uint64(ident.Pc)
-			}
-			return nil
-		},
-	)
-
-	if err != nil {
-		return nil, fmt.Errorf("extracting entrypoints: %w", err)
-	}
-	return result, nil
-}
-
-func extractLabels(json *zero.ZeroProgram) (map[string]uint64, error) {
-	labels := make(map[string]uint64, 2)
-	err := scanIdentifiers(
-		json,
-		func(key string, ident *zero.Identifier) error {
-			if ident.IdentifierType == "label" {
-				name := key[len(json.MainScope)+1:]
-				labels[name] = uint64(ident.Pc)
-			}
-			return nil
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("extracting labels: %w", err)
-	}
-
-	return labels, nil
-}
-
-func scanIdentifiers(json *zero.ZeroProgram, f func(key string, ident *zero.Identifier) error) error {
+func extractEntrypointsAndLabels(json *zero.ZeroProgram) (map[string]uint64, map[string]uint64) {
+	entrypoints := map[string]uint64{}
 	for key, ident := range json.Identifiers {
-		if err := f(key, ident); err != nil {
-			return err
+		if ident.IdentifierType == "function" {
+			name := key[len(json.MainScope)+1:]
+			entrypoints[name] = uint64(ident.Pc)
 		}
 	}
-	return nil
+
+	labels := make(map[string]uint64, 2)
+	for key, ident := range json.Identifiers {
+		if ident.IdentifierType == "label" {
+			name := key[len(json.MainScope)+1:]
+			labels[name] = uint64(ident.Pc)
+		}
+	}
+
+	return entrypoints, labels
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/zero"
-	cairoversion "github.com/NethermindEth/cairo-vm-go/pkg/parsers/cairo_version"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	"github.com/NethermindEth/cairo-vm-go/pkg/runner"
@@ -110,10 +109,6 @@ func main() {
 					if pathToFile == "" {
 						return fmt.Errorf("path to cairo file not set")
 					}
-					cairoVersion, err := cairoversion.GetCairoVersion(pathToFile)
-					if err != nil {
-						return fmt.Errorf("cannot get cairo version: %w", err)
-					}
 					fmt.Printf("Loading program at %s\n", pathToFile)
 					zeroProgram, err := zero.ZeroProgramFromFile(pathToFile)
 					if err != nil {
@@ -121,7 +116,7 @@ func main() {
 					}
 
 					var hints map[uint64][]hinter.Hinter
-					if cairoVersion > 0 {
+					if zeroProgram.CompilerVersion[0] == '1' {
 						cairoProgram, err := starknet.StarknetProgramFromFile(pathToFile)
 						if err != nil {
 							return fmt.Errorf("cannot load program: %w", err)
