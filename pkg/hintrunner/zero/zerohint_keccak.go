@@ -39,7 +39,7 @@ func newCairoKeccakFinalizeHint(keccakPtrEnd hinter.Reference) hinter.Hinter {
 
 			var input [25]uint64
 			builtins.KeccakF1600(&input)
-			padding := make([]uint64, keccakStateSizeFeltsVal)
+			padding := make([]uint64, 0, keccakStateSizeFeltsVal)
 			padding = append(padding, input[:]...)
 			result := make([]uint64, 0, keccakStateSizeFeltsVal*blockSizeVal)
 			for i := uint64(0); i < blockSizeVal; i++ {
