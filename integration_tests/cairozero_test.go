@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -53,7 +52,7 @@ func (f *Filter) filtered(testFile string) bool {
 	return false
 }
 
-func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[string][2]int, benchmark bool, errorExpected bool) {
+func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[string][3]int, benchmark bool, errorExpected bool) {
 	t.Logf("testing: %s\n", path)
 
 	compiledOutput, err := compileZeroCode(path)
@@ -63,6 +62,17 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	}
 
 	elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(name, compiledOutput)
+	if errorExpected {
+		// we let the code go on so that we can check if the go vm also raises an error
+		assert.Error(t, err, path)
+	} else {
+		if err != nil {
+			t.Error(err)
+			return
+		}
+	}
+
+	elapsedRs, rsTraceFile, rsMemoryFile, err := runRustVm(name, compiledOutput)
 	if errorExpected {
 		// we let the code go on so that we can check if the go vm also raises an error
 		assert.Error(t, err, path)
@@ -85,7 +95,7 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	}
 
 	if benchmark {
-		benchmarkMap[name] = [2]int{int(elapsedPy.Milliseconds()), int(elapsedGo.Milliseconds())}
+		benchmarkMap[name] = [3]int{int(elapsedPy.Milliseconds()), int(elapsedGo.Milliseconds()), int(elapsedRs.Milliseconds())}
 	}
 
 	pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
@@ -100,12 +110,34 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		return
 	}
 
+	rsTrace, rsMemory, err := decodeProof(rsTraceFile, rsMemoryFile)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if !assert.Equal(t, pyTrace, rsTrace) {
+		t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
+		t.Logf("rstrace:\n%s\n", traceRepr(rsTrace))
+	}
+	if !assert.Equal(t, pyMemory, rsMemory) {
+		t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
+		t.Logf("rsmemory;\n%s\n", memoryRepr(rsMemory))
+	}
 	if !assert.Equal(t, pyTrace, trace) {
 		t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
 		t.Logf("trace:\n%s\n", traceRepr(trace))
 	}
 	if !assert.Equal(t, pyMemory, memory) {
 		t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
+		t.Logf("memory;\n%s\n", memoryRepr(memory))
+	}
+	if !assert.Equal(t, rsTrace, trace) {
+		t.Logf("rstrace:\n%s\n", traceRepr(rsTrace))
+		t.Logf("trace:\n%s\n", traceRepr(trace))
+	}
+	if !assert.Equal(t, rsMemory, memory) {
+		t.Logf("rsmemory;\n%s\n", memoryRepr(rsMemory))
 		t.Logf("memory;\n%s\n", memoryRepr(memory))
 	}
 }
@@ -123,7 +155,7 @@ func TestCairoZeroFiles(t *testing.T) {
 	filter := Filter{}
 	filter.init()
 
-	benchmarkMap := make(map[string][2]int)
+	benchmarkMap := make(map[string][3]int)
 
 	sem := make(chan struct{}, 5) // semaphore to limit concurrency
 	var wg sync.WaitGroup         // WaitGroup to wait for all goroutines to finish
@@ -176,18 +208,17 @@ func TestCairoZeroFiles(t *testing.T) {
 	}
 }
 
-// Save the Benchmarks for the integration tests in `BenchMarks.txt`
-func WriteBenchMarksToFile(benchmarkMap map[string][2]int) {
-	totalWidth := 123
+func WriteBenchMarksToFile(benchmarkMap map[string][3]int) {
+	totalWidth := 113 // Reduced width to adjust for long file names
 
 	border := strings.Repeat("=", totalWidth)
 	separator := strings.Repeat("-", totalWidth)
 
 	var sb strings.Builder
-	w := tabwriter.NewWriter(&sb, 40, 0, 0, ' ', tabwriter.Debug)
+	w := tabwriter.NewWriter(&sb, 0, 0, 1, ' ', tabwriter.AlignRight)
 
 	sb.WriteString(border + "\n")
-	fmt.Fprintln(w, "| File \t PythonVM (ms) \t GoVM (ms) \t")
+	fmt.Fprintf(w, "| %-40s | %-20s | %-20s | %-20s |\n", "File", "PythonVM (ms)", "GoVM (ms)", "RustVM (ms)")
 	w.Flush()
 	sb.WriteString(border + "\n")
 
@@ -195,16 +226,13 @@ func WriteBenchMarksToFile(benchmarkMap map[string][2]int) {
 	totalFiles := len(benchmarkMap)
 
 	for key, values := range benchmarkMap {
-		row := "| " + key + "\t "
-
-		for iter, value := range values {
-			row = row + strconv.Itoa(value) + "\t"
-			if iter == 0 {
-				row = row + " "
-			}
+		// Adjust the key length if it's too long
+		displayKey := key
+		if len(displayKey) > 40 {
+			displayKey = displayKey[:37] + "..."
 		}
 
-		fmt.Fprintln(w, row)
+		fmt.Fprintf(w, "| %-40s | %-20d | %-20d | %-20d |\n", displayKey, values[0], values[1], values[2])
 		w.Flush()
 
 		if iterator < totalFiles-1 {
@@ -236,6 +264,8 @@ const (
 	compiledSuffix = "_compiled.json"
 	pyTraceSuffix  = "_py_trace"
 	pyMemorySuffix = "_py_memory"
+	rsTraceSuffix  = "_rs_trace"
+	rsMemorySuffix = "_rs_memory"
 	traceSuffix    = "_trace"
 	memorySuffix   = "_memory"
 )
@@ -317,6 +347,61 @@ func runPythonVm(testFilename, path string) (time.Duration, string, string, erro
 	if err != nil {
 		return 0, "", "", fmt.Errorf(
 			"cairo-run %s: %w\n%s", path, err, string(res),
+		)
+	}
+
+	return elapsed, traceOutput, memoryOutput, nil
+}
+
+// given a path to a compiled cairo zero file, execute it using the
+// rust vm and return the trace and memory files location
+func runRustVm(testFilename, path string) (time.Duration, string, string, error) {
+	traceOutput := swapExtenstion(path, rsTraceSuffix)
+	memoryOutput := swapExtenstion(path, rsMemorySuffix)
+
+	args := []string{
+		path,
+		"--proof_mode",
+		"--trace_file",
+		traceOutput,
+		"--memory_file",
+		memoryOutput,
+	}
+
+	// If any other layouts are needed, add the suffix checks here.
+	// The convention would be: ".$layout.cairo"
+	// A file without this suffix will use the default ("plain") layout.
+	if strings.HasSuffix(testFilename, ".small.cairo") {
+		args = append(args, "--layout", "small")
+	} else if strings.HasSuffix(testFilename, ".dex.cairo") {
+		args = append(args, "--layout", "dex")
+	} else if strings.HasSuffix(testFilename, ".recursive.cairo") {
+		args = append(args, "--layout", "recursive")
+	} else if strings.HasSuffix(testFilename, ".starknet_with_keccak.cairo") {
+		args = append(args, "--layout", "starknet_with_keccak")
+	} else if strings.HasSuffix(testFilename, ".starknet.cairo") {
+		args = append(args, "--layout", "starknet")
+	} else if strings.HasSuffix(testFilename, ".recursive_large_output.cairo") {
+		args = append(args, "--layout", "recursive_large_output")
+	} else if strings.HasSuffix(testFilename, ".recursive_with_poseidon.cairo") {
+		args = append(args, "--layout", "recursive_with_poseidon")
+	} else if strings.HasSuffix(testFilename, ".all_solidity.cairo") {
+		args = append(args, "--layout", "all_solidity")
+	} else if strings.HasSuffix(testFilename, ".all_cairo.cairo") {
+		args = append(args, "--layout", "all_cairo")
+	}
+
+	cmd := exec.Command("./../rust_vm_bin/cairo-vm-cli", args...)
+
+	start := time.Now()
+
+	res, err := cmd.CombinedOutput()
+
+	elapsed := time.Since(start)
+
+	if err != nil {
+		return 0, "", "", fmt.Errorf(
+			"./../rust_vm_bin/cairo-vm-cli %s: %w\n%s", path, err, string(res),
 		)
 	}
 

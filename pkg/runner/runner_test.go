@@ -30,7 +30,7 @@ func TestSimpleProgram(t *testing.T) {
 	runner, err := NewRunner(program, hints, false, false, math.MaxUint64, "plain")
 	require.NoError(t, err)
 
-	endPc, err := runner.InitializeMainEntrypoint()
+	endPc, err := runner.initializeMainEntrypoint()
 	require.NoError(t, err)
 
 	expectedPc := memory.MemoryAddress{SegmentIndex: 3, Offset: 0}
@@ -77,7 +77,7 @@ func TestStepLimitExceeded(t *testing.T) {
 	runner, err := NewRunner(program, hints, false, false, 3, "plain")
 	require.NoError(t, err)
 
-	endPc, err := runner.InitializeMainEntrypoint()
+	endPc, err := runner.initializeMainEntrypoint()
 	require.NoError(t, err)
 
 	expectedPc := memory.MemoryAddress{SegmentIndex: 3, Offset: 0}

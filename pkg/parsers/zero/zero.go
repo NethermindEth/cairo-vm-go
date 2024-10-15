@@ -72,7 +72,7 @@ type ZeroProgram struct {
 	Data             []string               `json:"data"`
 	Builtins         []builtins.BuiltinType `json:"builtins"`
 	Hints            map[string][]Hint      `json:"hints"`
-	CompilerVersion  string                 `json:"version"`
+	CompilerVersion  string                 `json:"compiler_version"`
 	MainScope        string                 `json:"main_scope"`
 	Identifiers      map[string]*Identifier `json:"identifiers"`
 	ReferenceManager ReferenceManager       `json:"reference_manager"`
@@ -95,6 +95,7 @@ type Identifier struct {
 	Value      any `json:"value"`
 }
 
+// TODO: Do we really need this ?
 func (z ZeroProgram) MarshalToFile(filepath string) error {
 	// Marshal Output struct into JSON bytes
 	data, err := json.MarshalIndent(z, "", "    ")
