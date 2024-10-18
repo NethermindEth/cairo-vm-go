@@ -99,7 +99,7 @@ func NewVirtualMachine(
 	// Initialize the trace if necesary
 	var trace []Context
 	if config.ProofMode || config.CollectTrace {
-		trace = []Context{}
+		trace = make([]Context, 0)
 	}
 
 	return &VirtualMachine{

@@ -6,6 +6,8 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	// "runtime"
+	"runtime/pprof"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -17,6 +19,7 @@ import (
 )
 
 func main() {
+	// runtime.SetCPUProfileRate(100000)
 	var proofmode bool
 	var buildMemory bool
 	var collectTrace bool
@@ -245,8 +248,35 @@ func main() {
 		},
 	}
 
+	f, err := os.Create("cpu.prof")
+	if err != nil {
+		fmt.Println("could not create CPU profile:", err)
+		return
+	}
+
+	memFile, err := os.Create("mem.prof")
+	if err != nil {
+		fmt.Println("could not create memory profile:", err)
+		return
+	}
+
+	if err := pprof.StartCPUProfile(f); err != nil {
+		fmt.Println("could not start CPU profile:", err)
+		f.Close()
+		return
+	}
+
 	if err := app.Run(os.Args); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	pprof.StopCPUProfile()
+	f.Close()
+
+	if err := pprof.WriteHeapProfile(memFile); err != nil {
+		fmt.Println("could not write memory profile:", err)
+		return
+	}
+	memFile.Close()
 }

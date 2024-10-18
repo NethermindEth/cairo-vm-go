@@ -145,10 +145,14 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 var zerobench = flag.Bool("zerobench", false, "run integration tests and generate benchmarks file")
 
 func TestCairoZeroFiles(t *testing.T) {
+	// roots := []string{
+	// 	"./cairo_zero_hint_tests/",
+	// 	"./cairo_zero_file_tests/",
+	// 	"./builtin_tests/",
+	// }
+
 	roots := []string{
-		"./cairo_zero_hint_tests/",
-		"./cairo_zero_file_tests/",
-		"./builtin_tests/",
+		"./cairo_files_benchmarks",
 	}
 
 	// filter is for debugging purposes
@@ -199,9 +203,9 @@ func TestCairoZeroFiles(t *testing.T) {
 
 	wg.Wait() // wait for all goroutines to finish
 
-	for _, root := range roots {
-		clean(root)
-	}
+	// for _, root := range roots {
+	// 	clean(root)
+	// }
 
 	if *zerobench {
 		WriteBenchMarksToFile(benchmarkMap)
