@@ -384,7 +384,8 @@ func (runner *ZeroRunner) BuildMemory() ([]byte, error) {
 
 // BuildTrace relocates the trace and returns it
 func (runner *ZeroRunner) BuildTrace() ([]byte, error) {
-	relocatedTrace := runner.vm.RelocateTrace()
+	relocatedTrace := make([]vm.Trace, len(runner.vm.Trace))
+	runner.vm.RelocateTrace(&relocatedTrace)
 	return vm.EncodeTrace(relocatedTrace), nil
 }
 
