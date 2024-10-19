@@ -99,7 +99,9 @@ func NewVirtualMachine(
 	// Initialize the trace if necesary
 	var trace []Context
 	if config.ProofMode || config.CollectTrace {
-		trace = make([]Context, 0)
+		// starknet defines a limit on the maximum number of computational steps that a transaction can contain when processed on the Starknet network.
+		// https://docs.starknet.io/tools/limits-and-triggers/
+		trace = make([]Context, 0, 10000000)
 	}
 
 	return &VirtualMachine{
@@ -156,6 +158,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 
 const RC_OFFSET_BITS = 16
 
+//go:nosplit
 func (vm *VirtualMachine) RunInstruction(instruction *asmb.Instruction) error {
 
 	var off0 int = int(instruction.OffDest) + (1 << (RC_OFFSET_BITS - 1))
@@ -533,15 +536,13 @@ func (vm *VirtualMachine) updateFp(instruction *asmb.Instruction, dstAddr *mem.M
 
 // It returns the trace after relocation, i.e, relocates pc, ap and fp for each step
 // to be their real address value
-func (vm *VirtualMachine) RelocateTrace() []Trace {
+func (vm *VirtualMachine) RelocateTrace(relocatedTrace *[]Trace) {
 	// one is added, because prover expect that the first element to be
 	// indexed on 1 instead of 0
-	relocatedTrace := make([]Trace, len(vm.Trace))
 	totalBytecode := vm.Memory.Segments[ProgramSegment].Len() + 1
 	for i := range vm.Trace {
-		relocatedTrace[i] = vm.Trace[i].Relocate(totalBytecode)
+		(*relocatedTrace)[i] = vm.Trace[i].Relocate(totalBytecode)
 	}
-	return relocatedTrace
 }
 
 // It returns all segments in memory but relocated as a single segment
@@ -555,17 +556,16 @@ func (vm *VirtualMachine) RelocateMemory() []*f.Element {
 	relocatedMemory := make([]*f.Element, maxMemoryUsed)
 	for i, segment := range vm.Memory.Segments {
 		for j := uint64(0); j < segment.RealLen(); j++ {
-			cell := segment.Data[j]
-			if !cell.Known() {
+			if !segment.Data[j].Known() {
 				continue
 			}
 
 			var felt *f.Element
-			if cell.IsAddress() {
-				addr, _ := cell.MemoryAddress()
+			if segment.Data[j].IsAddress() {
+				addr, _ := segment.Data[j].MemoryAddress()
 				felt = addr.Relocate(segmentsOffsets)
 			} else {
-				felt, _ = cell.FieldElement()
+				felt, _ = segment.Data[j].FieldElement()
 			}
 			relocatedMemory[segmentsOffsets[i]+j] = felt
 		}

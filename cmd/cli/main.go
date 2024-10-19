@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	// "runtime"
 	"runtime/pprof"
+	"runtime/trace"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
@@ -19,7 +20,6 @@ import (
 )
 
 func main() {
-	// runtime.SetCPUProfileRate(100000)
 	var proofmode bool
 	var buildMemory bool
 	var collectTrace bool
@@ -260,9 +260,23 @@ func main() {
 		return
 	}
 
+	// Trace profiling setup
+	traceFile, err := os.Create("trace.out")
+	if err != nil {
+		fmt.Println("could not create trace file:", err)
+		return
+	}
+
 	if err := pprof.StartCPUProfile(f); err != nil {
 		fmt.Println("could not start CPU profile:", err)
 		f.Close()
+		return
+	}
+
+	// Start tracing
+	if err := trace.Start(traceFile); err != nil {
+		fmt.Println("could not start trace:", err)
+		traceFile.Close()
 		return
 	}
 
@@ -273,6 +287,9 @@ func main() {
 
 	pprof.StopCPUProfile()
 	f.Close()
+
+	trace.Stop()
+	traceFile.Close()
 
 	if err := pprof.WriteHeapProfile(memFile); err != nil {
 		fmt.Println("could not write memory profile:", err)

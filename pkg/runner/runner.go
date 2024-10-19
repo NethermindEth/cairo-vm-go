@@ -377,6 +377,7 @@ func (runner *ZeroRunner) FinalizeSegments() error {
 }
 
 // BuildMemory relocates the memory and returns it
+// use string instead of byte[]
 func (runner *ZeroRunner) BuildMemory() ([]byte, error) {
 	relocatedMemory := runner.vm.RelocateMemory()
 	return vm.EncodeMemory(relocatedMemory), nil
@@ -384,7 +385,8 @@ func (runner *ZeroRunner) BuildMemory() ([]byte, error) {
 
 // BuildTrace relocates the trace and returns it
 func (runner *ZeroRunner) BuildTrace() ([]byte, error) {
-	relocatedTrace := runner.vm.RelocateTrace()
+	relocatedTrace := make([]vm.Trace, len(runner.vm.Trace))
+	runner.vm.RelocateTrace(&relocatedTrace)
 	return vm.EncodeTrace(relocatedTrace), nil
 }
 
