@@ -253,11 +253,7 @@ func (runner *Runner) initializeVm(
 
 // run until the program counter equals the `pc` parameter
 func (runner *Runner) RunUntilPc(pc *mem.MemoryAddress) error {
-	for i, data := range runner.vm.Memory.Segments[0].Data {
-		fmt.Println(i, data)
-	}
 	for !runner.vm.Context.Pc.Equal(pc) {
-		fmt.Println(runner.steps(), runner.vm.Context.Pc, pc, runner.vm.Context.Fp)
 		if runner.steps() >= runner.maxsteps {
 			return fmt.Errorf(
 				"pc %s step %d: max step limit exceeded (%d)",

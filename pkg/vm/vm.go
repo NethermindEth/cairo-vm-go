@@ -157,7 +157,6 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 const RC_OFFSET_BITS = 16
 
 func (vm *VirtualMachine) RunInstruction(instruction *a.Instruction) error {
-	// fmt.Println(instruction)
 	var off0 int = int(instruction.OffDest) + (1 << (RC_OFFSET_BITS - 1))
 	var off1 int = int(instruction.OffOp0) + (1 << (RC_OFFSET_BITS - 1))
 	var off2 int = int(instruction.OffOp1) + (1 << (RC_OFFSET_BITS - 1))

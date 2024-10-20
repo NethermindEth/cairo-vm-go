@@ -105,33 +105,9 @@ func LoadCairoProgram(cairoProgram *sn.StarknetProgram) (*Program, error) {
 		f := felt
 		bytecode[i] = &f
 	}
-	// bytecode := []*fp.Element{
-	// 	new(fp.Element).SetUint64(1226245742482522112),
-	// 	new(fp.Element).SetUint64(3),
-	// 	new(fp.Element).SetUint64(2345108766317314046),
-	// 	new(fp.Element).SetUint64(5189976364521848832),
-	// 	new(fp.Element).SetUint64(1),
-	// 	new(fp.Element).SetUint64(5189976364521848832),
-	// 	new(fp.Element).SetUint64(1),
-	// 	new(fp.Element).SetUint64(5189976364521848832),
-	// 	new(fp.Element).SetUint64(10),
-	// 	new(fp.Element).SetUint64(1226245742482522112),
-	// 	new(fp.Element).SetUint64(3),
-	// 	new(fp.Element).SetUint64(2345108766317314046),
-	// 	new(fp.Element).SetUint64(146226256843603965),
-	// 	new(fp.Element).SetUint64(4),
-	// 	new(fp.Element).SetUint64(5191102238658887680),
-	// 	new(fp.Element).SetUint64(2345108766317314046),
-	// 	new(fp.Element).SetUint64(5191102242953854976),
-	// 	new(fp.Element).SetUint64(5200109442208333824),
-	// 	new(fp.Element).SetUint64(5198702088799944701),
-	// 	new(fp.Element).SetUint64(1),
-	// 	new(fp.Element).SetUint64(1226245742482522112),
-	// 	new(fp.Element).SetUint64(0),
-	// 	new(fp.Element).SetUint64(2345108766317314046),
-	// 	new(fp.Element).SetUint64(2345108766317314046),
-	// }
-	// bytecode[21].SetString("3618502788666131213697322783095070105623107215331596699973092056135872020473")
+	// Add a `ret` instruction used in libfuncs that retrieve the current value of the `fp`
+	// and `pc` registers.
+	bytecode = append(bytecode, new(fp.Element).SetUint64(2345108766317314046))
 	entrypoints := extractCairoEntryPoints(cairoProgram)
 	builtins := extractCairoBuiltins(cairoProgram)
 
