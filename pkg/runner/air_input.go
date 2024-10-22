@@ -5,7 +5,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 )
 
-func (runner *ZeroRunner) GetAirPublicInput() (AirPublicInput, error) {
+func (runner *Runner) GetAirPublicInput() (AirPublicInput, error) {
 	rcMin, rcMax := runner.getPermRangeCheckLimits()
 
 	// TODO: refactor to reuse earlier computed relocated trace
@@ -52,7 +52,7 @@ type AirPublicMemoryEntry struct {
 	Page    uint16 `json:"page"`
 }
 
-func (runner *ZeroRunner) GetAirPrivateInput(tracePath, memoryPath string) (AirPrivateInput, error) {
+func (runner *Runner) GetAirPrivateInput(tracePath, memoryPath string) (AirPrivateInput, error) {
 	airPrivateInput := AirPrivateInput{
 		TracePath:  tracePath,
 		MemoryPath: memoryPath,
