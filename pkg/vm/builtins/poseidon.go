@@ -2,6 +2,9 @@ package builtins
 
 import (
 	"errors"
+	"fmt"
+	"math/big"
+	"sort"
 
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -61,4 +64,54 @@ func (p *Poseidon) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64
 
 func (p *Poseidon) String() string {
 	return PoseidonName
+}
+
+type AirPrivateBuiltinPoseidon struct {
+	Index   int    `json:"index"`
+	InputS0 string `json:"input_s0"`
+	InputS1 string `json:"input_s1"`
+	InputS2 string `json:"input_s2"`
+}
+
+func (p *Poseidon) GetAirPrivateInput(poseidonSegment *mem.Segment) []AirPrivateBuiltinPoseidon {
+	valueMapping := make(map[int]AirPrivateBuiltinPoseidon)
+	for index, value := range poseidonSegment.Data {
+		if !value.Known() {
+			continue
+		}
+		idx, stateIndex := index/cellsPerPoseidon, index%cellsPerPoseidon
+		if stateIndex >= inputCellsPerPoseidon {
+			continue
+		}
+
+		builtinValue, exists := valueMapping[idx]
+		if !exists {
+			builtinValue = AirPrivateBuiltinPoseidon{Index: idx}
+		}
+
+		valueBig := big.Int{}
+		value.Felt.BigInt(&valueBig)
+		valueHex := fmt.Sprintf("0x%x", &valueBig)
+		if stateIndex == 0 {
+			builtinValue.InputS0 = valueHex
+		} else if stateIndex == 1 {
+			builtinValue.InputS1 = valueHex
+		} else if stateIndex == 2 {
+			builtinValue.InputS2 = valueHex
+		}
+		valueMapping[idx] = builtinValue
+	}
+
+	values := make([]AirPrivateBuiltinPoseidon, 0)
+
+	sortedIndexes := make([]int, 0, len(valueMapping))
+	for index := range valueMapping {
+		sortedIndexes = append(sortedIndexes, index)
+	}
+	sort.Ints(sortedIndexes)
+	for _, index := range sortedIndexes {
+		value := valueMapping[index]
+		values = append(values, value)
+	}
+	return values
 }

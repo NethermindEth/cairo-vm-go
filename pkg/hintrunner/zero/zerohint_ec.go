@@ -257,7 +257,7 @@ func newDivModNSafeDivPlusOneHint() hinter.Hinter {
 			valueBig.Mul(resBig, bBig)
 			valueBig.Sub(valueBig, aBig)
 
-			newValueBig, err := secp_utils.SafeDiv(valueBig, nBig)
+			newValueBig, err := utils.SafeDiv(valueBig, nBig)
 			if err != nil {
 				return err
 			}

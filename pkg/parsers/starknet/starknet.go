@@ -4,90 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-type Builtin uint8
-
-const (
-	Output Builtin = iota + 1
-	RangeCheck
-	Pedersen
-	ECDSA
-	Keccak
-	Bitwise
-	ECOP
-	Poseidon
-	SegmentArena
-	RangeCheck96
-)
-
-func (b Builtin) MarshalJSON() ([]byte, error) {
-	switch b {
-	case Output:
-		return []byte("output"), nil
-	case RangeCheck:
-		return []byte("range_check"), nil
-	case RangeCheck96:
-		return []byte("range_check96"), nil
-	case Pedersen:
-		return []byte("pedersen"), nil
-	case ECDSA:
-		return []byte("ecdsa"), nil
-	case Keccak:
-		return []byte("keccak"), nil
-	case Bitwise:
-		return []byte("bitwise"), nil
-	case ECOP:
-		return []byte("ec_op"), nil
-	case Poseidon:
-		return []byte("poseidon"), nil
-	case SegmentArena:
-		return []byte("segment_arena"), nil
-
-	}
-	return nil, fmt.Errorf("marshal unknown builtin: %d", uint8(b))
-}
-
-func (b *Builtin) UnmarshalJSON(data []byte) error {
-	builtinName, err := strconv.Unquote(string(data))
-	if err != nil {
-		return fmt.Errorf("unmarshal builtin: %w", err)
-	}
-
-	switch builtinName {
-	case "output":
-		*b = Output
-	case "range_check":
-		*b = RangeCheck
-	case "range_check96":
-		*b = RangeCheck96
-	case "pedersen":
-		*b = Pedersen
-	case "ecdsa":
-		*b = ECDSA
-	case "keccak":
-		*b = Keccak
-	case "bitwise":
-		*b = Bitwise
-	case "ec_op":
-		*b = ECOP
-	case "poseidon":
-		*b = Poseidon
-	case "segment_arena":
-		*b = SegmentArena
-	default:
-		return fmt.Errorf("unmarshal unknown builtin: %s", builtinName)
-	}
-	return nil
-}
-
 type EntryPointByTypeInfo struct {
-	Selector fp.Element `json:"selector"`
-	Offset   fp.Element `json:"offset"`
-	Builtins []Builtin  `json:"builtins"`
+	Selector fp.Element             `json:"selector"`
+	Offset   fp.Element             `json:"offset"`
+	Builtins []builtins.BuiltinType `json:"builtins"`
 }
 
 type EntryPointByType struct {
@@ -103,10 +28,10 @@ type Arg struct {
 }
 
 type EntryPointByFunction struct {
-	Offset    int       `json:"offset"`
-	Builtins  []Builtin `json:"builtins"`
-	InputArgs []Arg     `json:"input_args"`
-	ReturnArg []Arg     `json:"return_arg"`
+	Offset    int                    `json:"offset"`
+	Builtins  []builtins.BuiltinType `json:"builtins"`
+	InputArgs []Arg                  `json:"input_args"`
+	ReturnArg []Arg                  `json:"return_arg"`
 }
 
 type Hints struct {

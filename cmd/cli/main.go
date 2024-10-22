@@ -1,17 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/zero"
-	cairoversion "github.com/NethermindEth/cairo-vm-go/pkg/parsers/cairo_version"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
-	runnerzero "github.com/NethermindEth/cairo-vm-go/pkg/runners/zero"
+	"github.com/NethermindEth/cairo-vm-go/pkg/runner"
 	"github.com/urfave/cli/v2"
 )
 
@@ -24,6 +25,8 @@ func main() {
 	var traceLocation string
 	var memoryLocation string
 	var layoutName string
+	var airPublicInputLocation string
+	var airPrivateInputLocation string
 	app := &cli.App{
 		Name:                 "cairo-vm",
 		Usage:                "A cairo virtual machine",
@@ -85,6 +88,18 @@ func main() {
 						Required:    false,
 						Destination: &layoutName,
 					},
+					&cli.StringFlag{
+						Name:        "air_public_input",
+						Usage:       "location to store the air_public_input",
+						Required:    false,
+						Destination: &airPublicInputLocation,
+					},
+					&cli.StringFlag{
+						Name:        "air_private_input",
+						Usage:       "location to store the air_private_input",
+						Required:    false,
+						Destination: &airPrivateInputLocation,
+					},
 				},
 				Action: func(ctx *cli.Context) error {
 					// TODO: move this action's body to a separate function to decrease the
@@ -135,6 +150,10 @@ func main() {
 						runnerMode = runnerzero.ProofModeCairo1
 					case proofmode && cairoVersion == 0:
 						runnerMode = runnerzero.ProofModeCairo0
+					}
+					program, err := runner.LoadCairoZeroProgram(zeroProgram)
+					if err != nil {
+						return fmt.Errorf("cannot load program: %w", err)
 					}
 					fmt.Println("Running....")
 					runner, err := runnerzero.NewRunner(runnerMode, program, hints, proofmode, collectTrace, maxsteps, layoutName)
@@ -187,6 +206,46 @@ func main() {
 						if memoryLocation != "" {
 							if err := os.WriteFile(memoryLocation, memory, 0644); err != nil {
 								return fmt.Errorf("cannot write relocated memory: %w", err)
+							}
+						}
+					}
+
+					if proofmode {
+						if airPublicInputLocation != "" {
+							airPublicInput, err := runner.GetAirPublicInput()
+							if err != nil {
+								return err
+							}
+							airPublicInputJson, err := json.MarshalIndent(airPublicInput, "", "  ")
+							if err != nil {
+								return err
+							}
+							err = os.WriteFile(airPublicInputLocation, airPublicInputJson, 0644)
+							if err != nil {
+								return fmt.Errorf("cannot write air_public_input: %w", err)
+							}
+						}
+
+						if airPrivateInputLocation != "" {
+							tracePath, err := filepath.Abs(traceLocation)
+							if err != nil {
+								return err
+							}
+							memoryPath, err := filepath.Abs(memoryLocation)
+							if err != nil {
+								return err
+							}
+							airPrivateInput, err := runner.GetAirPrivateInput(tracePath, memoryPath)
+							if err != nil {
+								return err
+							}
+							airPrivateInputJson, err := json.MarshalIndent(airPrivateInput, "", "  ")
+							if err != nil {
+								return err
+							}
+							err = os.WriteFile(airPrivateInputLocation, airPrivateInputJson, 0644)
+							if err != nil {
+								return fmt.Errorf("cannot write air_private_input: %w", err)
 							}
 						}
 					}

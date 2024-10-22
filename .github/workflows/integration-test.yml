@@ -18,7 +18,7 @@ jobs:
           python-version: "3.9"
 
       - name: Install cairo-lang
-        run: pip install cairo-lang==0.13.1
+        run: pip install cairo-lang==0.13.2
 
       - name: Install sympy
         run: pip install sympy==1.11.1

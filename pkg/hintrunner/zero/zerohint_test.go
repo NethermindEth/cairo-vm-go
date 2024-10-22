@@ -6,7 +6,6 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	runnerutil "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/utils"
-	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
@@ -57,7 +56,7 @@ type hintOperander struct {
 }
 
 type builtinReference struct {
-	builtin starknet.Builtin
+	builtin builtins.BuiltinType
 	offset  uint64
 }
 
@@ -135,7 +134,7 @@ func runHinterTests(t *testing.T, tests map[string][]hintTestCase) {
 			offset uint64
 			addr   memory.MemoryAddress
 		}
-		builtinsAllocated := map[starknet.Builtin]allocatedBuiltin{}
+		builtinsAllocated := map[builtins.BuiltinType]allocatedBuiltin{}
 		for _, o := range tc.operanders {
 			if o.Kind != reference {
 				continue

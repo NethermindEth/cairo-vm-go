@@ -95,6 +95,14 @@ func GetHintByName(hint starknet.Hint) (hinter.Hinter, error) {
 		return &AllocSegment{
 			Dst: parseCellRefer(args.Dst),
 		}, nil
+	case starknet.EvalCircuitName:
+		args := hint.Args.(*starknet.EvalCircuit)
+		return &EvalCircuit{
+			AddModN:   parseResOperand(args.NAddMods),
+			AddModPtr: parseResOperand(args.AddModPtr),
+			MulModN:   parseResOperand(args.NMulMods),
+			MulModPtr: parseResOperand(args.MulModPtr),
+		}, nil
 	case starknet.TestLessThanName:
 		args := hint.Args.(*starknet.TestLessThan)
 		return &TestLessThan{

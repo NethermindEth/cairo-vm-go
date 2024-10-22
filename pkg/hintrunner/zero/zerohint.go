@@ -24,7 +24,11 @@ func (hint *GenericZeroHinter) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRu
 }
 
 func GetZeroHints(cairoZeroJson *zero.ZeroProgram) (map[uint64][]hinter.Hinter, error) {
-	hints := make(map[uint64][]hinter.Hinter)
+	numHints := 0
+	for _, rawHints := range cairoZeroJson.Hints {
+		numHints += len(rawHints)
+	}
+	hints := make(map[uint64][]hinter.Hinter, numHints)
 	for counter, rawHints := range cairoZeroJson.Hints {
 		pc, err := strconv.ParseUint(counter, 10, 64)
 		if err != nil {
@@ -319,6 +323,8 @@ func GetHintFromCode(program *zero.ZeroProgram, rawHint zero.Hint) (hinter.Hinte
 	// Other hints
 	case allocSegmentCode:
 		return createAllocSegmentHinter()
+	case evalCircuitCode:
+		return createEvalCircuitHinter(resolver)
 	case memcpyContinueCopyingCode:
 		return createMemContinueHinter(resolver, false)
 	case memsetContinueLoopCode:

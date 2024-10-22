@@ -81,6 +81,35 @@ func createAllocSegmentHinter() (hinter.Hinter, error) {
 	return &core.AllocSegment{Dst: hinter.ApCellRef(0)}, nil
 }
 
+func createEvalCircuitHinter(resolver hintReferenceResolver) (hinter.Hinter, error) {
+	addModPtr, err := resolver.GetReference("add_mod_ptr")
+	if err != nil {
+		return nil, err
+	}
+
+	nAddMods, err := resolver.GetReference("add_mod_n")
+	if err != nil {
+		return nil, err
+	}
+
+	mulModPtr, err := resolver.GetReference("mul_mod_ptr")
+	if err != nil {
+		return nil, err
+	}
+
+	nMulMods, err := resolver.GetReference("mul_mod_n")
+	if err != nil {
+		return nil, err
+	}
+
+	return &core.EvalCircuit{
+		AddModN:   nAddMods,
+		AddModPtr: addModPtr,
+		MulModN:   nMulMods,
+		MulModPtr: mulModPtr,
+	}, nil
+}
+
 // VMEnterScope hint enters a new scope in the Cairo VM
 func createVMEnterScopeHinter() (hinter.Hinter, error) {
 	return &GenericZeroHinter{

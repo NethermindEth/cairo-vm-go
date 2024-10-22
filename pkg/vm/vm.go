@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math"
 
-	a "github.com/NethermindEth/cairo-vm-go/pkg/assembler"
+	asmb "github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -85,7 +85,7 @@ type VirtualMachine struct {
 	Trace   []Context
 	config  VirtualMachineConfig
 	// instructions cache
-	instructions map[uint64]*a.Instruction
+	instructions map[uint64]*asmb.Instruction
 	// RcLimitsMin and RcLimitsMax define the range of values of instructions offsets, used for checking the number of potential range checks holes
 	RcLimitsMin uint16
 	RcLimitsMax uint16
@@ -99,7 +99,9 @@ func NewVirtualMachine(
 	// Initialize the trace if necesary
 	var trace []Context
 	if config.ProofMode || config.CollectTrace {
-		trace = make([]Context, 0)
+		// starknet defines a limit on the maximum number of computational steps that a transaction can contain when processed on the Starknet network.
+		// https://docs.starknet.io/tools/limits-and-triggers/
+		trace = make([]Context, 0, 10000000)
 	}
 
 	return &VirtualMachine{
@@ -107,7 +109,7 @@ func NewVirtualMachine(
 		Memory:       memory,
 		Trace:        trace,
 		config:       config,
-		instructions: make(map[uint64]*a.Instruction),
+		instructions: make(map[uint64]*asmb.Instruction),
 		RcLimitsMin:  math.MaxUint16,
 		RcLimitsMax:  0,
 	}, nil
@@ -133,7 +135,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 			return fmt.Errorf("reading instruction: %w", err)
 		}
 
-		instruction, err = a.DecodeInstruction(bytecodeInstruction)
+		instruction, err = asmb.DecodeInstruction(bytecodeInstruction)
 		if err != nil {
 			return fmt.Errorf("decoding instruction: %w", err)
 		}
@@ -156,7 +158,9 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 
 const RC_OFFSET_BITS = 16
 
-func (vm *VirtualMachine) RunInstruction(instruction *a.Instruction) error {
+//go:nosplit
+func (vm *VirtualMachine) RunInstruction(instruction *asmb.Instruction) error {
+
 	var off0 int = int(instruction.OffDest) + (1 << (RC_OFFSET_BITS - 1))
 	var off1 int = int(instruction.OffOp0) + (1 << (RC_OFFSET_BITS - 1))
 	var off2 int = int(instruction.OffOp1) + (1 << (RC_OFFSET_BITS - 1))
@@ -217,9 +221,9 @@ func (vm *VirtualMachine) RunInstruction(instruction *a.Instruction) error {
 	return nil
 }
 
-func (vm *VirtualMachine) getDstAddr(instruction *a.Instruction) (mem.MemoryAddress, error) {
+func (vm *VirtualMachine) getDstAddr(instruction *asmb.Instruction) (mem.MemoryAddress, error) {
 	var dstRegister uint64
-	if instruction.DstRegister == a.Ap {
+	if instruction.DstRegister == asmb.Ap {
 		dstRegister = vm.Context.Ap
 	} else {
 		dstRegister = vm.Context.Fp
@@ -232,9 +236,9 @@ func (vm *VirtualMachine) getDstAddr(instruction *a.Instruction) (mem.MemoryAddr
 	return mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: addr}, nil
 }
 
-func (vm *VirtualMachine) getOp0Addr(instruction *a.Instruction) (mem.MemoryAddress, error) {
+func (vm *VirtualMachine) getOp0Addr(instruction *asmb.Instruction) (mem.MemoryAddress, error) {
 	var op0Register uint64
-	if instruction.Op0Register == a.Ap {
+	if instruction.Op0Register == asmb.Ap {
 		op0Register = vm.Context.Ap
 	} else {
 		op0Register = vm.Context.Fp
@@ -248,10 +252,10 @@ func (vm *VirtualMachine) getOp0Addr(instruction *a.Instruction) (mem.MemoryAddr
 	return mem.MemoryAddress{SegmentIndex: ExecutionSegment, Offset: addr}, nil
 }
 
-func (vm *VirtualMachine) getOp1Addr(instruction *a.Instruction, op0Addr *mem.MemoryAddress) (mem.MemoryAddress, error) {
+func (vm *VirtualMachine) getOp1Addr(instruction *asmb.Instruction, op0Addr *mem.MemoryAddress) (mem.MemoryAddress, error) {
 	var op1Address mem.MemoryAddress
 	switch instruction.Op1Source {
-	case a.Op0:
+	case asmb.Op0:
 		// in this case Op0 is being used as an address, and must be of unwrapped as it
 		op0Value, err := vm.Memory.ReadFromAddress(op0Addr)
 		if err != nil {
@@ -263,11 +267,11 @@ func (vm *VirtualMachine) getOp1Addr(instruction *a.Instruction, op0Addr *mem.Me
 			return mem.UnknownAddress, fmt.Errorf("op0 is not an address: %w", err)
 		}
 		op1Address = mem.MemoryAddress{SegmentIndex: op0Address.SegmentIndex, Offset: op0Address.Offset}
-	case a.Imm:
+	case asmb.Imm:
 		op1Address = vm.Context.AddressPc()
-	case a.FpPlusOffOp1:
+	case asmb.FpPlusOffOp1:
 		op1Address = vm.Context.AddressFp()
-	case a.ApPlusOffOp1:
+	case asmb.ApPlusOffOp1:
 		op1Address = vm.Context.AddressAp()
 	}
 
@@ -281,13 +285,13 @@ func (vm *VirtualMachine) getOp1Addr(instruction *a.Instruction, op0Addr *mem.Me
 
 // when there is an assertion with a substraction or division like : x = y - z
 // the compiler treats it as y = x + z. This means that the VM knows the
-// dstCell value and either op0Cell xor op1Cell. This function infers the
+// dstCell value and either op0Cell or op1Cell. This function infers the
 // unknow operand as well as the `res` auxiliar value
 func (vm *VirtualMachine) inferOperand(
-	instruction *a.Instruction, dstAddr *mem.MemoryAddress, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
+	instruction *asmb.Instruction, dstAddr *mem.MemoryAddress, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
 ) (mem.MemoryValue, error) {
-	if instruction.Opcode != a.OpCodeAssertEq ||
-		instruction.Res == a.Unconstrained ||
+	if instruction.Opcode != asmb.OpCodeAssertEq ||
+		instruction.Res == asmb.Unconstrained ||
 		!vm.Memory.KnownValueAtAddress(dstAddr) {
 		return mem.MemoryValue{}, nil
 	}
@@ -308,7 +312,7 @@ func (vm *VirtualMachine) inferOperand(
 		return mem.MemoryValue{}, nil
 	}
 
-	if instruction.Res == a.Op1 && !op1Value.Known() {
+	if instruction.Res == asmb.Op1 && !op1Value.Known() {
 		if err = vm.Memory.WriteToAddress(op1Addr, &dstValue); err != nil {
 			return mem.MemoryValue{}, err
 		}
@@ -326,7 +330,7 @@ func (vm *VirtualMachine) inferOperand(
 	}
 
 	var missingVal mem.MemoryValue
-	if instruction.Res == a.AddOperands {
+	if instruction.Res == asmb.AddOperands {
 		missingVal = mem.EmptyMemoryValueAs(dstValue.IsAddress())
 		err = missingVal.Sub(&dstValue, &knownOpValue)
 	} else {
@@ -344,12 +348,12 @@ func (vm *VirtualMachine) inferOperand(
 }
 
 func (vm *VirtualMachine) computeRes(
-	instruction *a.Instruction, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
+	instruction *asmb.Instruction, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
 ) (mem.MemoryValue, error) {
 	switch instruction.Res {
-	case a.Unconstrained:
+	case asmb.Unconstrained:
 		return mem.MemoryValue{}, nil
-	case a.Op1:
+	case asmb.Op1:
 		op1, err := vm.Memory.ReadFromAddress(op1Addr)
 		if err != nil {
 			return mem.UnknownValue, fmt.Errorf("cannot read op1: %w", err)
@@ -368,9 +372,9 @@ func (vm *VirtualMachine) computeRes(
 		}
 
 		res := mem.EmptyMemoryValueAs(op0.IsAddress() || op1.IsAddress())
-		if instruction.Res == a.AddOperands {
+		if instruction.Res == asmb.AddOperands {
 			err = res.Add(&op0, &op1)
-		} else if instruction.Res == a.MulOperands {
+		} else if instruction.Res == asmb.MulOperands {
 			err = res.Mul(&op0, &op1)
 		} else {
 			return mem.MemoryValue{}, fmt.Errorf("invalid res flag value: %d", instruction.Res)
@@ -380,13 +384,13 @@ func (vm *VirtualMachine) computeRes(
 }
 
 func (vm *VirtualMachine) opcodeAssertions(
-	instruction *a.Instruction,
+	instruction *asmb.Instruction,
 	dstAddr *mem.MemoryAddress,
 	op0Addr *mem.MemoryAddress,
 	res *mem.MemoryValue,
 ) error {
 	switch instruction.Opcode {
-	case a.OpCodeCall:
+	case asmb.OpCodeCall:
 		fpAddr := vm.Context.AddressFp()
 		fpMv := mem.MemoryValueFromMemoryAddress(&fpAddr)
 		// Store at [ap] the current fp
@@ -402,7 +406,7 @@ func (vm *VirtualMachine) opcodeAssertions(
 		if err := vm.Memory.WriteToAddress(op0Addr, &apMv); err != nil {
 			return err
 		}
-	case a.OpCodeAssertEq:
+	case asmb.OpCodeAssertEq:
 		// assert that the calculated res is stored in dst
 		if err := vm.Memory.WriteToAddress(dstAddr, res); err != nil {
 			return err
@@ -412,18 +416,18 @@ func (vm *VirtualMachine) opcodeAssertions(
 }
 
 func (vm *VirtualMachine) updatePc(
-	instruction *a.Instruction,
+	instruction *asmb.Instruction,
 	dstAddr *mem.MemoryAddress,
 	op1Addr *mem.MemoryAddress,
 	res *mem.MemoryValue,
 ) (mem.MemoryAddress, error) {
 	switch instruction.PcUpdate {
-	case a.PcUpdateNextInstr:
+	case asmb.PcUpdateNextInstr:
 		return mem.MemoryAddress{
 			SegmentIndex: vm.Context.Pc.SegmentIndex,
 			Offset:       vm.Context.Pc.Offset + uint64(instruction.Size()),
 		}, nil
-	case a.PcUpdateJump:
+	case asmb.PcUpdateJump:
 		// both address and felt are allowed here. It can be a felt when used
 		// with an immediate or a memory address holding a felt. It can be an address
 		// when a memory address holds a memory address
@@ -439,7 +443,7 @@ func (vm *VirtualMachine) updatePc(
 				fmt.Errorf("absolute jump: invalid jump location: %w", err)
 		}
 
-	case a.PcUpdateJumpRel:
+	case asmb.PcUpdateJumpRel:
 		val, err := res.FieldElement()
 		if err != nil {
 			return mem.UnknownAddress, fmt.Errorf("relative jump: %w", err)
@@ -447,7 +451,7 @@ func (vm *VirtualMachine) updatePc(
 		newPc := vm.Context.Pc
 		err = newPc.Add(&newPc, val)
 		return newPc, err
-	case a.PcUpdateJnz:
+	case asmb.PcUpdateJnz:
 		destMv, err := vm.Memory.ReadFromAddress(dstAddr)
 		if err != nil {
 			return mem.UnknownAddress, err
@@ -482,11 +486,11 @@ func (vm *VirtualMachine) updatePc(
 	return mem.UnknownAddress, fmt.Errorf("unkwon pc update value: %d", instruction.PcUpdate)
 }
 
-func (vm *VirtualMachine) updateAp(instruction *a.Instruction, res *mem.MemoryValue) (uint64, error) {
+func (vm *VirtualMachine) updateAp(instruction *asmb.Instruction, res *mem.MemoryValue) (uint64, error) {
 	switch instruction.ApUpdate {
-	case a.SameAp:
+	case asmb.SameAp:
 		return vm.Context.Ap, nil
-	case a.AddRes:
+	case asmb.AddRes:
 		apFelt := new(f.Element).SetUint64(vm.Context.Ap) // Convert ap value to felt
 
 		resFelt, err := res.FieldElement() // Extract the f.Element from MemoryValue
@@ -499,20 +503,20 @@ func (vm *VirtualMachine) updateAp(instruction *a.Instruction, res *mem.MemoryVa
 			return 0, fmt.Errorf("resulting AP value is too large to fit in uint64")
 		}
 		return newAp.Uint64(), nil // Return the addition as uint64
-	case a.Add1:
+	case asmb.Add1:
 		return vm.Context.Ap + 1, nil
-	case a.Add2:
+	case asmb.Add2:
 		return vm.Context.Ap + 2, nil
 	}
 	return 0, fmt.Errorf("cannot update ap, unknown ApUpdate flag: %d", instruction.ApUpdate)
 }
 
-func (vm *VirtualMachine) updateFp(instruction *a.Instruction, dstAddr *mem.MemoryAddress) (uint64, error) {
+func (vm *VirtualMachine) updateFp(instruction *asmb.Instruction, dstAddr *mem.MemoryAddress) (uint64, error) {
 	switch instruction.Opcode {
-	case a.OpCodeCall:
+	case asmb.OpCodeCall:
 		// [ap] and [ap + 1] are written to memory
 		return vm.Context.Ap + 2, nil
-	case a.OpCodeRet:
+	case asmb.OpCodeRet:
 		// [dst] should be a memory address of the form (executionSegment, fp - 2)
 		destMv, err := vm.Memory.ReadFromAddress(dstAddr)
 		if err != nil {
@@ -531,15 +535,13 @@ func (vm *VirtualMachine) updateFp(instruction *a.Instruction, dstAddr *mem.Memo
 
 // It returns the trace after relocation, i.e, relocates pc, ap and fp for each step
 // to be their real address value
-func (vm *VirtualMachine) RelocateTrace() []Trace {
+func (vm *VirtualMachine) RelocateTrace(relocatedTrace *[]Trace) {
 	// one is added, because prover expect that the first element to be
 	// indexed on 1 instead of 0
-	relocatedTrace := make([]Trace, len(vm.Trace))
 	totalBytecode := vm.Memory.Segments[ProgramSegment].Len() + 1
 	for i := range vm.Trace {
-		relocatedTrace[i] = vm.Trace[i].Relocate(totalBytecode)
+		(*relocatedTrace)[i] = vm.Trace[i].Relocate(totalBytecode)
 	}
-	return relocatedTrace
 }
 
 // It returns all segments in memory but relocated as a single segment
@@ -553,17 +555,16 @@ func (vm *VirtualMachine) RelocateMemory() []*f.Element {
 	relocatedMemory := make([]*f.Element, maxMemoryUsed)
 	for i, segment := range vm.Memory.Segments {
 		for j := uint64(0); j < segment.RealLen(); j++ {
-			cell := segment.Data[j]
-			if !cell.Known() {
+			if !segment.Data[j].Known() {
 				continue
 			}
 
 			var felt *f.Element
-			if cell.IsAddress() {
-				addr, _ := cell.MemoryAddress()
+			if segment.Data[j].IsAddress() {
+				addr, _ := segment.Data[j].MemoryAddress()
 				felt = addr.Relocate(segmentsOffsets)
 			} else {
-				felt, _ = cell.FieldElement()
+				felt, _ = segment.Data[j].FieldElement()
 			}
 			relocatedMemory[segmentsOffsets[i]+j] = felt
 		}
