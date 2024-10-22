@@ -13,15 +13,23 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-type ZeroRunner struct {
+type RunnerMode uint8
+
+const (
+	ExecutionMode RunnerMode = iota + 1
+	ProofModeCairo0
+	ProofModeCairo1
+)
+
+type Runner struct {
 	// core components
-	program    *ZeroProgram
+	program    *Program
 	vm         *vm.VirtualMachine
 	hintrunner hintrunner.HintRunner
 	// config
-	proofmode    bool
 	collectTrace bool
 	maxsteps     uint64
+	runnerMode   RunnerMode
 	// auxiliar
 	runFinished bool
 	layout      builtins.Layout
@@ -30,16 +38,16 @@ type ZeroRunner struct {
 type CairoRunner struct{}
 
 // Creates a new Runner of a Cairo Zero program
-func NewRunner(program *ZeroProgram, hints map[uint64][]hinter.Hinter, proofmode bool, collectTrace bool, maxsteps uint64, layoutName string) (ZeroRunner, error) {
+func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode RunnerMode, collectTrace bool, maxsteps uint64, layoutName string) (Runner, error) {
 	hintrunner := hintrunner.NewHintRunner(hints)
 	layout, err := builtins.GetLayout(layoutName)
 	if err != nil {
-		return ZeroRunner{}, err
+		return Runner{}, err
 	}
-	return ZeroRunner{
+	return Runner{
 		program:      program,
+		runnerMode:   runnerMode,
 		hintrunner:   hintrunner,
-		proofmode:    proofmode,
 		collectTrace: collectTrace,
 		maxsteps:     maxsteps,
 		layout:       layout,
@@ -48,7 +56,7 @@ func NewRunner(program *ZeroProgram, hints map[uint64][]hinter.Hinter, proofmode
 
 // RunEntryPoint is like Run, but it executes the program starting from the given PC offset.
 // This PC offset is expected to be a start from some function inside the loaded program.
-func (runner *ZeroRunner) RunEntryPoint(pc uint64) error {
+func (runner *Runner) RunEntryPoint(pc uint64) error {
 	if runner.runFinished {
 		return errors.New("cannot re-run using the same runner")
 	}
@@ -67,7 +75,11 @@ func (runner *ZeroRunner) RunEntryPoint(pc uint64) error {
 
 	returnFp := memory.AllocateEmptySegment()
 	mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
-	end, err := runner.initializeEntrypoint(pc, nil, &mvReturnFp, memory, stack)
+	cairo1FpOffset := uint64(0)
+	if runner.runnerMode == ProofModeCairo1 {
+		cairo1FpOffset = 2
+	}
+	end, err := runner.initializeEntrypoint(pc, nil, &mvReturnFp, memory, stack, cairo1FpOffset)
 	if err != nil {
 		return err
 	}
@@ -79,11 +91,10 @@ func (runner *ZeroRunner) RunEntryPoint(pc uint64) error {
 	return nil
 }
 
-func (runner *ZeroRunner) Run() error {
+func (runner *Runner) Run() error {
 	if runner.runFinished {
 		return errors.New("cannot re-run using the same runner")
 	}
-
 	end, err := runner.initializeMainEntrypoint()
 	if err != nil {
 		return fmt.Errorf("initializing main entry point: %w", err)
@@ -94,7 +105,7 @@ func (runner *ZeroRunner) Run() error {
 		return err
 	}
 
-	if runner.proofmode {
+	if runner.runnerMode == ProofModeCairo0 || runner.runnerMode == ProofModeCairo1 {
 		// +1 because proof mode require an extra instruction run
 		// pow2 because proof mode also requires that the trace is a power of two
 		pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
@@ -105,7 +116,7 @@ func (runner *ZeroRunner) Run() error {
 	return nil
 }
 
-func (runner *ZeroRunner) initializeSegments() (*mem.Memory, error) {
+func (runner *Runner) initializeSegments() (*mem.Memory, error) {
 	memory := mem.InitializeEmptyMemory()
 	_, err := memory.AllocateSegment(runner.program.Bytecode) // ProgramSegment
 	if err != nil {
@@ -116,7 +127,7 @@ func (runner *ZeroRunner) initializeSegments() (*mem.Memory, error) {
 	return memory, nil
 }
 
-func (runner *ZeroRunner) initializeMainEntrypoint() (mem.MemoryAddress, error) {
+func (runner *Runner) initializeMainEntrypoint() (mem.MemoryAddress, error) {
 	memory, err := runner.initializeSegments()
 	if err != nil {
 		return mem.UnknownAddress, err
@@ -126,8 +137,24 @@ func (runner *ZeroRunner) initializeMainEntrypoint() (mem.MemoryAddress, error) 
 	if err != nil {
 		return mem.UnknownAddress, err
 	}
-
-	if runner.proofmode {
+	switch runner.runnerMode {
+	case ExecutionMode:
+		returnFp := memory.AllocateEmptySegment()
+		mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
+		mainPCOffset, ok := runner.program.Entrypoints["main"]
+		if !ok {
+			return mem.UnknownAddress, errors.New("can't find an entrypoint for main")
+		}
+		return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 0)
+	case ProofModeCairo1:
+		returnFp := memory.AllocateEmptySegment()
+		mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
+		mainPCOffset, ok := runner.program.Entrypoints["main"]
+		if !ok {
+			return mem.UnknownAddress, errors.New("can't find an entrypoint for main")
+		}
+		return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 2)
+	case ProofModeCairo0:
 		initialPCOffset, ok := runner.program.Labels["__start__"]
 		if !ok {
 			return mem.UnknownAddress,
@@ -148,7 +175,7 @@ func (runner *ZeroRunner) initializeMainEntrypoint() (mem.MemoryAddress, error) 
 		if err := runner.initializeVm(&mem.MemoryAddress{
 			SegmentIndex: vm.ProgramSegment,
 			Offset:       initialPCOffset,
-		}, stack, memory); err != nil {
+		}, stack, memory, 0); err != nil {
 			return mem.UnknownAddress, err
 		}
 
@@ -156,33 +183,26 @@ func (runner *ZeroRunner) initializeMainEntrypoint() (mem.MemoryAddress, error) 
 		runner.vm.Context.Ap = 2
 		runner.vm.Context.Fp = 2
 		return mem.MemoryAddress{SegmentIndex: vm.ProgramSegment, Offset: endPcOffset}, nil
-	}
 
-	returnFp := memory.AllocateEmptySegment()
-	mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
-	mainPCOffset, ok := runner.program.Entrypoints["main"]
-	if !ok {
-		return mem.UnknownAddress, errors.New("can't find an entrypoint for main")
 	}
-	return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack)
+	return mem.UnknownAddress, errors.New("unknown runner mode")
 }
 
-func (runner *ZeroRunner) initializeEntrypoint(
-	initialPCOffset uint64, arguments []*fp.Element, returnFp *mem.MemoryValue, memory *mem.Memory, stack []mem.MemoryValue,
+func (runner *Runner) initializeEntrypoint(
+	initialPCOffset uint64, arguments []*fp.Element, returnFp *mem.MemoryValue, memory *mem.Memory, stack []mem.MemoryValue, cairo1FpOffset uint64,
 ) (mem.MemoryAddress, error) {
 	for i := range arguments {
 		stack = append(stack, mem.MemoryValueFromFieldElement(arguments[i]))
 	}
-	end := memory.AllocateEmptySegment()
-
-	stack = append(stack, *returnFp, mem.MemoryValueFromMemoryAddress(&end))
-	return end, runner.initializeVm(&mem.MemoryAddress{
+	endPC := memory.AllocateEmptySegment()
+	stack = append(stack, *returnFp, mem.MemoryValueFromMemoryAddress(&endPC))
+	return endPC, runner.initializeVm(&mem.MemoryAddress{
 		SegmentIndex: vm.ProgramSegment,
 		Offset:       initialPCOffset,
-	}, stack, memory)
+	}, stack, memory, cairo1FpOffset)
 }
 
-func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue, error) {
+func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue, error) {
 	builtinsSet := make(map[builtins.BuiltinType]bool)
 	for _, bRunner := range runner.layout.Builtins {
 		builtinsSet[bRunner.Builtin] = true
@@ -208,8 +228,8 @@ func (runner *ZeroRunner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryVa
 	return stack, nil
 }
 
-func (runner *ZeroRunner) initializeVm(
-	initialPC *mem.MemoryAddress, stack []mem.MemoryValue, memory *mem.Memory,
+func (runner *Runner) initializeVm(
+	initialPC *mem.MemoryAddress, stack []mem.MemoryValue, memory *mem.Memory, cairo1FpOffset uint64,
 ) error {
 	executionSegment := memory.Segments[vm.ExecutionSegment]
 	offset := executionSegment.Len()
@@ -220,18 +240,19 @@ func (runner *ZeroRunner) initializeVm(
 		}
 	}
 
+	initialFp := offset + uint64(len(stack)) + cairo1FpOffset
 	var err error
 	// initialize vm
 	runner.vm, err = vm.NewVirtualMachine(vm.Context{
 		Pc: *initialPC,
-		Ap: offset + stackSize,
-		Fp: offset + stackSize,
-	}, memory, vm.VirtualMachineConfig{ProofMode: runner.proofmode, CollectTrace: runner.collectTrace})
+		Ap: initialFp,
+		Fp: initialFp,
+	}, memory, vm.VirtualMachineConfig{ProofMode: runner.runnerMode == ProofModeCairo0 || runner.runnerMode == ProofModeCairo1, CollectTrace: runner.collectTrace})
 	return err
 }
 
 // run until the program counter equals the `pc` parameter
-func (runner *ZeroRunner) RunUntilPc(pc *mem.MemoryAddress) error {
+func (runner *Runner) RunUntilPc(pc *mem.MemoryAddress) error {
 	for !runner.vm.Context.Pc.Equal(pc) {
 		if runner.steps() >= runner.maxsteps {
 			return fmt.Errorf(
@@ -241,6 +262,7 @@ func (runner *ZeroRunner) RunUntilPc(pc *mem.MemoryAddress) error {
 				runner.maxsteps,
 			)
 		}
+
 		if err := runner.vm.RunStep(&runner.hintrunner); err != nil {
 			return fmt.Errorf("pc %s step %d: %w", runner.pc(), runner.steps(), err)
 		}
@@ -249,7 +271,7 @@ func (runner *ZeroRunner) RunUntilPc(pc *mem.MemoryAddress) error {
 }
 
 // run until the vm step count reaches the `steps` parameter
-func (runner *ZeroRunner) RunFor(steps uint64) error {
+func (runner *Runner) RunFor(steps uint64) error {
 	for runner.steps() < steps {
 		if runner.steps() >= runner.maxsteps {
 			return fmt.Errorf(
@@ -275,7 +297,7 @@ func (runner *ZeroRunner) RunFor(steps uint64) error {
 // until the checkUsedCells doesn't return any error.
 // Since this vm always finishes the run of the program at the number of steps that is a power of two in the proof mode,
 // there is no need to run additional steps before the loop.
-func (runner *ZeroRunner) EndRun() error {
+func (runner *Runner) EndRun() error {
 	for runner.checkUsedCells() != nil {
 		pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
 		if err := runner.RunFor(pow2Steps); err != nil {
@@ -287,7 +309,7 @@ func (runner *ZeroRunner) EndRun() error {
 
 // checkUsedCells returns error if not enough steps were made to allocate required number of cells for builtins
 // or there are not enough trace cells to fill the entire range check range
-func (runner *ZeroRunner) checkUsedCells() error {
+func (runner *Runner) checkUsedCells() error {
 	for _, bRunner := range runner.layout.Builtins {
 		builtinName := bRunner.Runner.String()
 		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtinName)
@@ -306,7 +328,7 @@ func (runner *ZeroRunner) checkUsedCells() error {
 }
 
 // Checks if there are not enough trace cells to fill the entire range check range. Each step has assigned a number of range check units. If the number of unused range check units is less than the range of potential values to be checked (defined by rcMin and rcMax), the number of trace cells must be increased, by running additional steps.
-func (runner *ZeroRunner) checkRangeCheckUsage() error {
+func (runner *Runner) checkRangeCheckUsage() error {
 	rcMin, rcMax := runner.getPermRangeCheckLimits()
 	var rcUnitsUsedByBuiltins uint64
 	for _, builtin := range runner.program.Builtins {
@@ -335,7 +357,7 @@ func (runner *ZeroRunner) checkRangeCheckUsage() error {
 }
 
 // getPermRangeCheckLimits returns the minimum and maximum values used by the range check units in the program. To find the values, maximum and minimum values from the range check segment are compared with maximum and minimum values of instructions offsets calculated during running the instructions.
-func (runner *ZeroRunner) getPermRangeCheckLimits() (uint16, uint16) {
+func (runner *Runner) getPermRangeCheckLimits() (uint16, uint16) {
 	rcMin, rcMax := runner.vm.RcLimitsMin, runner.vm.RcLimitsMax
 
 	for _, builtin := range runner.program.Builtins {
@@ -360,7 +382,7 @@ func (runner *ZeroRunner) getPermRangeCheckLimits() (uint16, uint16) {
 // FinalizeSegments calculates the final size of the builtins segments,
 // using number of allocated instances and memory cells per builtin instance.
 // Additionally it sets the final size of the program segment to the program size.
-func (runner *ZeroRunner) FinalizeSegments() error {
+func (runner *Runner) FinalizeSegments() error {
 	programSize := uint64(len(runner.program.Bytecode))
 	runner.vm.Memory.Segments[vm.ProgramSegment].Finalize(programSize)
 	for _, bRunner := range runner.layout.Builtins {
@@ -377,29 +399,29 @@ func (runner *ZeroRunner) FinalizeSegments() error {
 }
 
 // BuildMemory relocates the memory and returns it
-func (runner *ZeroRunner) BuildMemory() ([]byte, error) {
+func (runner *Runner) BuildMemory() ([]byte, error) {
 	relocatedMemory := runner.vm.RelocateMemory()
 	return vm.EncodeMemory(relocatedMemory), nil
 }
 
 // BuildTrace relocates the trace and returns it
-func (runner *ZeroRunner) BuildTrace() ([]byte, error) {
+func (runner *Runner) BuildTrace() ([]byte, error) {
 	relocatedTrace := make([]vm.Trace, len(runner.vm.Trace))
 	runner.vm.RelocateTrace(&relocatedTrace)
 	return vm.EncodeTrace(relocatedTrace), nil
 }
 
-func (runner *ZeroRunner) pc() mem.MemoryAddress {
+func (runner *Runner) pc() mem.MemoryAddress {
 	return runner.vm.Context.Pc
 }
 
-func (runner *ZeroRunner) steps() uint64 {
+func (runner *Runner) steps() uint64 {
 	return runner.vm.Step
 }
 
 // Gives the output of the last run. Panics if there hasn't
 // been any runs yet.
-func (runner *ZeroRunner) Output() []*fp.Element {
+func (runner *Runner) Output() []*fp.Element {
 	if runner.vm == nil {
 		panic("cannot get the output from an uninitialized runner")
 	}

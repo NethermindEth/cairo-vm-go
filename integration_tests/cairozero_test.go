@@ -60,7 +60,6 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		t.Error(err)
 		return
 	}
-
 	elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(name, compiledOutput)
 	if errorExpected {
 		// we let the code go on so that we can check if the go vm also raises an error

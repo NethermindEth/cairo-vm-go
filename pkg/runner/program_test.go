@@ -50,7 +50,7 @@ func TestLoadCairoZeroProgram(t *testing.T) {
 	program, err := LoadCairoZeroProgram(cairoZeroJson)
 	require.NoError(t, err)
 
-	require.Equal(t, &ZeroProgram{
+	require.Equal(t, &Program{
 		Bytecode: []*fp.Element{
 			stringToFelt("0x01"),
 			stringToFelt("0x02"),
