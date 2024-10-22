@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 )
 
@@ -8,7 +9,8 @@ func (runner *ZeroRunner) GetAirPublicInput() (AirPublicInput, error) {
 	rcMin, rcMax := runner.getPermRangeCheckLimits()
 
 	// TODO: refactor to reuse earlier computed relocated trace
-	relocatedTrace := runner.vm.RelocateTrace()
+	relocatedTrace := make([]vm.Trace, len(runner.vm.Trace))
+	runner.vm.RelocateTrace(&relocatedTrace)
 	firstTrace := relocatedTrace[0]
 	lastTrace := relocatedTrace[len(relocatedTrace)-1]
 	memorySegments := make(map[string]AirMemorySegmentEntry)
