@@ -95,6 +95,7 @@ func (runner *Runner) Run() error {
 	if runner.runFinished {
 		return errors.New("cannot re-run using the same runner")
 	}
+
 	end, err := runner.initializeMainEntrypoint()
 	if err != nil {
 		return fmt.Errorf("initializing main entry point: %w", err)
@@ -262,7 +263,6 @@ func (runner *Runner) RunUntilPc(pc *mem.MemoryAddress) error {
 				runner.maxsteps,
 			)
 		}
-
 		if err := runner.vm.RunStep(&runner.hintrunner); err != nil {
 			return fmt.Errorf("pc %s step %d: %w", runner.pc(), runner.steps(), err)
 		}
