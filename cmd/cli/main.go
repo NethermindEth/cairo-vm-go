@@ -107,18 +107,16 @@ func main() {
 						return fmt.Errorf("path to cairo file not set")
 					}
 
-					var hints map[uint64][]hinter.Hinter
-					var program *runner.Program
 					fmt.Printf("Loading program at %s\n", pathToFile)
 					zeroProgram, err := zero.ZeroProgramFromFile(pathToFile)
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
-					hints, err = hintrunner.GetZeroHints(zeroProgram)
+					hints, err := hintrunner.GetZeroHints(zeroProgram)
 					if err != nil {
 						return fmt.Errorf("cannot create hints: %w", err)
 					}
-					program, err = runner.LoadCairoZeroProgram(zeroProgram)
+					program, err := runner.LoadCairoZeroProgram(zeroProgram)
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
@@ -202,17 +200,15 @@ func main() {
 						return fmt.Errorf("path to cairo file not set")
 					}
 
-					var hints map[uint64][]hinter.Hinter
-					var program *runner.Program
 					cairoProgram, err := starknet.StarknetProgramFromFile(pathToFile)
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
-					hints, err = core.GetCairoHints(cairoProgram)
+					hints, err := core.GetCairoHints(cairoProgram)
 					if err != nil {
 						return fmt.Errorf("cannot get hints: %w", err)
 					}
-					program, err = runner.LoadCairoProgram(cairoProgram)
+					program, err := runner.LoadCairoProgram(cairoProgram)
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
