@@ -106,7 +106,6 @@ func main() {
 					if pathToFile == "" {
 						return fmt.Errorf("path to cairo file not set")
 					}
-
 					fmt.Printf("Loading program at %s\n", pathToFile)
 					zeroProgram, err := zero.ZeroProgramFromFile(pathToFile)
 					if err != nil {

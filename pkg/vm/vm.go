@@ -194,6 +194,7 @@ func (vm *VirtualMachine) RunInstruction(instruction *asmb.Instruction) error {
 			return fmt.Errorf("compute res: %w", err)
 		}
 	}
+
 	err = vm.opcodeAssertions(instruction, &dstAddr, &op0Addr, &res)
 	if err != nil {
 		return fmt.Errorf("opcode assertions: %w", err)
