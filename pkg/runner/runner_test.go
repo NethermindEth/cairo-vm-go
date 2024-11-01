@@ -483,7 +483,7 @@ func trimmedSegment(segment *memory.Segment) *memory.Segment {
 }
 
 func createProgram(code string) *Program {
-	bytecode, err := assembler.CasmToBytecode(code)
+	bytecode, _, err := assembler.CasmToBytecode(code)
 	if err != nil {
 		panic(err)
 	}

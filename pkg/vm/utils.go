@@ -12,7 +12,7 @@ func DefaultVirtualMachine() *VirtualMachine {
 }
 
 func defaultVirtualMachineWithCode(code string) *VirtualMachine {
-	bytecode, err := a.CasmToBytecode(code)
+	bytecode, _, err := a.CasmToBytecode(code)
 	if err != nil {
 		panic(err)
 	}

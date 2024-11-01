@@ -625,7 +625,7 @@ func TestCallAbsNegative(t *testing.T) {
 }
 
 func parseImmediateInstruction(casmCode string) (uint64, *f.Element) {
-	instructions, err := CasmToBytecode(casmCode)
+	instructions, _, err := CasmToBytecode(casmCode)
 	if err != nil {
 		panic(err)
 	}
@@ -638,7 +638,7 @@ func parseImmediateInstruction(casmCode string) (uint64, *f.Element) {
 }
 
 func parseSingleInstruction(casmCode string) uint64 {
-	instructions, err := CasmToBytecode(casmCode)
+	instructions, _, err := CasmToBytecode(casmCode)
 	if err != nil {
 		panic(err)
 	}

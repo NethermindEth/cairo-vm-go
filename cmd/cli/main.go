@@ -211,6 +211,12 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
+					entryCodeInstructions, err := runner.GetEntryCodeInstructions()
+					if err != nil {
+						return fmt.Errorf("cannot load entry code instructions: %w", err)
+					}
+					program.Bytecode = append(entryCodeInstructions, program.Bytecode...)
+					program.Bytecode = append(program.Bytecode, runner.GetFooterInstructions()...)
 					runnerMode := runner.ExecutionMode
 					if proofmode {
 						runnerMode = runner.ProofModeCairo1

@@ -72,9 +72,6 @@ func LoadCairoProgram(cairoProgram *sn.StarknetProgram) (*Program, error) {
 		f := felt
 		bytecode[i] = &f
 	}
-	// Add a `ret` instruction used in libfuncs that retrieve the current value of the `fp`
-	// and `pc` registers.
-	bytecode = append(bytecode, new(fp.Element).SetUint64(2345108766317314046))
 	entrypoints := extractCairoEntryPoints(cairoProgram)
 	builtins := extractCairoBuiltins(cairoProgram)
 

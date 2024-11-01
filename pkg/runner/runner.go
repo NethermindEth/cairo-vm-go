@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -248,7 +249,10 @@ func (runner *Runner) initializeVm(
 		Pc: *initialPC,
 		Ap: initialFp,
 		Fp: initialFp,
-	}, memory, vm.VirtualMachineConfig{ProofMode: runner.runnerMode == ProofModeCairo0 || runner.runnerMode == ProofModeCairo1, CollectTrace: runner.collectTrace})
+	}, memory, vm.VirtualMachineConfig{
+		ProofMode:    runner.runnerMode == ProofModeCairo0 || runner.runnerMode == ProofModeCairo1,
+		CollectTrace: runner.collectTrace,
+	})
 	return err
 }
 
@@ -440,4 +444,125 @@ func (runner *Runner) Output() []*fp.Element {
 		output = append(output, valueFelt)
 	}
 	return output
+}
+
+type InlineCasmContext struct {
+	instructions      []*fp.Element
+	currentCodeOffset int
+}
+
+func (ctx *InlineCasmContext) AddInlineCASM(code string) {
+	bytecode, total_size, err := assembler.CasmToBytecode(code)
+	if err != nil {
+		panic(err)
+	}
+	ctx.instructions = append(ctx.instructions, bytecode...)
+	ctx.currentCodeOffset += int(total_size)
+}
+
+func GetEntryCodeInstructions() ([]*fp.Element, error) {
+	//TODO: investigate how to implement function param types
+	paramTypes := []struct {
+		genericTypeId builtins.BuiltinType
+		size          int
+	}{}
+	codeOffset := 0
+
+	ctx := &InlineCasmContext{}
+
+	builtinOffset := map[builtins.BuiltinType]int{
+		builtins.PedersenType:     10,
+		builtins.RangeCheckType:   9,
+		builtins.BitwiseType:      8,
+		builtins.ECOPType:         7,
+		builtins.PoseidonType:     6,
+		builtins.RangeCheck96Type: 5,
+		builtins.AddModeType:      4,
+		builtins.MulModType:       3,
+	}
+
+	emulatedBuiltins := map[builtins.BuiltinType]struct{}{
+		1: {},
+	}
+
+	apOffset := 0
+	paramsSize := 0
+	for _, param := range paramTypes {
+		ty, size := param.genericTypeId, param.size
+		if _, inBuiltin := builtinOffset[ty]; !inBuiltin {
+			if _, emulated := emulatedBuiltins[ty]; !emulated && ty != 99 {
+				paramsSize += size
+			}
+		}
+	}
+	ctx.AddInlineCASM(
+		fmt.Sprintf("ap += %d;", paramsSize),
+	)
+	apOffset += paramsSize
+
+	for _, param := range paramTypes {
+		if param.genericTypeId == 99 {
+			ctx.AddInlineCASM(
+				`%{ memory[ap + 0] = segments.add() %}
+				%{ memory[ap + 1] = segments.add() %}
+				ap += 2;
+				[ap + 0] = 0, ap++;
+				[ap - 2] = [[ap - 3]];
+				[ap - 1] = [[ap - 3] + 1];
+				[ap - 1] = [[ap - 3] + 2];
+				apOffset += 3`,
+			)
+		}
+	}
+
+	usedArgs := 0
+	for _, param := range paramTypes {
+		ty, tySize := param.genericTypeId, param.size
+		if offset, isBuiltin := builtinOffset[ty]; isBuiltin {
+			ctx.AddInlineCASM(
+				fmt.Sprintf("[ap + 0] = [fp - %d], ap++;", offset),
+			)
+			apOffset += 1
+		} else if _, emulated := emulatedBuiltins[ty]; emulated {
+			ctx.AddInlineCASM(
+				`memory[ap + 0] = segments.add();
+				ap += 1;`,
+			)
+			apOffset += 1
+		} else if ty == 99 {
+			offset := apOffset - paramsSize
+			ctx.AddInlineCASM(
+				fmt.Sprintf("[ap + 0] = [ap - %d] + 3, ap++;", offset),
+			)
+			apOffset += 1
+		} else {
+			offset := apOffset - usedArgs
+			for i := 0; i < tySize; i++ {
+				ctx.AddInlineCASM(
+					fmt.Sprintf("[ap + 0] = [ap - %d], ap++;", offset),
+				)
+				apOffset += 1
+				usedArgs += 1
+			}
+		}
+	}
+
+	beforeFinalCall := ctx.currentCodeOffset
+	finalCallSize := 3
+	offset := finalCallSize + codeOffset
+	ctx.AddInlineCASM(fmt.Sprintf(`
+		call rel %d;
+		ret;
+	`, offset))
+	if beforeFinalCall+finalCallSize != ctx.currentCodeOffset {
+		return nil, errors.New("final call offset mismatch")
+	}
+
+	return ctx.instructions, nil
+}
+
+func GetFooterInstructions() []*fp.Element {
+	// Add a `ret` instruction used in libfuncs that retrieve the current value of the `fp`
+	// and `pc` registers.
+	return []*fp.Element{new(fp.Element).SetUint64(2345108766317314046)}
 }

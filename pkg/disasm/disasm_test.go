@@ -64,7 +64,7 @@ func TestDisasm(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			instList, err := assembler.CasmToBytecode(string(testCode))
+			instList, _, err := assembler.CasmToBytecode(string(testCode))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -76,7 +76,7 @@ func TestDisasm(t *testing.T) {
 				t.Fatal(err)
 			}
 			testCode2 := disasmProgToString(disassembled)
-			instList2, err := assembler.CasmToBytecode(testCode2)
+			instList2, _, err := assembler.CasmToBytecode(testCode2)
 			if err != nil {
 				t.Fatalf("generated casm parse error: %v\nprog:\n%s", err, testCode2)
 			}
