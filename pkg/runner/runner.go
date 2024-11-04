@@ -140,22 +140,18 @@ func (runner *Runner) initializeMainEntrypoint() (mem.MemoryAddress, error) {
 		return mem.UnknownAddress, err
 	}
 	switch runner.runnerMode {
-	case ExecutionMode:
+	case ExecutionMode, ProofModeCairo1:
 		returnFp := memory.AllocateEmptySegment()
 		mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
 		mainPCOffset, ok := runner.program.Entrypoints["main"]
 		if !ok {
 			return mem.UnknownAddress, errors.New("can't find an entrypoint for main")
 		}
-		return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 0)
-	case ProofModeCairo1:
-		returnFp := memory.AllocateEmptySegment()
-		mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
-		mainPCOffset, ok := runner.program.Entrypoints["main"]
-		if !ok {
-			return mem.UnknownAddress, errors.New("can't find an entrypoint for main")
+		if runner.runnerMode == ExecutionMode {
+			return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 0)
+		} else {
+			return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 2)
 		}
-		return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 2)
 	case ProofModeCairo0:
 		initialPCOffset, ok := runner.program.Labels["__start__"]
 		if !ok {
