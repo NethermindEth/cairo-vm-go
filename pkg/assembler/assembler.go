@@ -18,7 +18,7 @@ var parser *participle.Parser[CasmProgram] = participle.MustBuild[CasmProgram](
 	participle.UseLookahead(8),
 )
 
-// Given a CASM program it returns its encoded bytecode
+// Given a CASM program it returns its encoded bytecode and a total size of processed instructions
 func CasmToBytecode(code string) ([]*f.Element, uint8, error) {
 	casmAst, err := parser.ParseString("", code)
 	if err != nil {
