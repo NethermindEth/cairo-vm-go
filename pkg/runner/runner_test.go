@@ -27,7 +27,7 @@ func TestSimpleProgram(t *testing.T) {
     `)
 
 	hints := make(map[uint64][]hinter.Hinter)
-	runner, err := NewRunner(program, hints, false, false, math.MaxUint64, "plain")
+	runner, err := NewRunner(program, hints, ExecutionMode, false, math.MaxUint64, "plain")
 	require.NoError(t, err)
 
 	endPc, err := runner.initializeMainEntrypoint()
@@ -74,7 +74,7 @@ func TestStepLimitExceeded(t *testing.T) {
     `)
 
 	hints := make(map[uint64][]hinter.Hinter)
-	runner, err := NewRunner(program, hints, false, false, 3, "plain")
+	runner, err := NewRunner(program, hints, ExecutionMode, false, 3, "plain")
 	require.NoError(t, err)
 
 	endPc, err := runner.initializeMainEntrypoint()
@@ -133,7 +133,7 @@ func TestStepLimitExceededProofMode(t *testing.T) {
 		// when maxstep = 6, it fails executing the extra step required by proof mode
 		// when maxstep = 7, it fails trying to get the trace to be a power of 2
 		hints := make(map[uint64][]hinter.Hinter)
-		runner, err := NewRunner(program, hints, true, false, uint64(maxstep), "plain")
+		runner, err := NewRunner(program, hints, ProofModeCairo0, false, uint64(maxstep), "plain")
 		require.NoError(t, err)
 
 		err = runner.Run()
@@ -432,11 +432,11 @@ func TestModuloBuiltin(t *testing.T) {
 	// requireEqualSegments(t, createSegment(2048, 5), modulo)
 }
 
-func createRunner(code string, layoutName string, builtins ...builtins.BuiltinType) ZeroRunner {
+func createRunner(code string, layoutName string, builtins ...builtins.BuiltinType) Runner {
 	program := createProgramWithBuiltins(code, builtins...)
 
 	hints := make(map[uint64][]hinter.Hinter)
-	runner, err := NewRunner(program, hints, false, false, math.MaxUint64, layoutName)
+	runner, err := NewRunner(program, hints, ExecutionMode, false, math.MaxUint64, layoutName)
 	if err != nil {
 		panic(err)
 	}
@@ -482,13 +482,13 @@ func trimmedSegment(segment *memory.Segment) *memory.Segment {
 	return segment
 }
 
-func createProgram(code string) *ZeroProgram {
-	bytecode, err := assembler.CasmToBytecode(code)
+func createProgram(code string) *Program {
+	bytecode, _, err := assembler.CasmToBytecode(code)
 	if err != nil {
 		panic(err)
 	}
 
-	program := ZeroProgram{
+	program := Program{
 		Bytecode: bytecode,
 		Entrypoints: map[string]uint64{
 			"main": 0,
@@ -498,7 +498,7 @@ func createProgram(code string) *ZeroProgram {
 	return &program
 }
 
-func createProgramWithBuiltins(code string, builtins ...builtins.BuiltinType) *ZeroProgram {
+func createProgramWithBuiltins(code string, builtins ...builtins.BuiltinType) *Program {
 	program := createProgram(code)
 	program.Builtins = builtins
 	return program

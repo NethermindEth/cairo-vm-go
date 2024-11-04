@@ -359,31 +359,32 @@ func decodeInstructionFlags(instruction *Instruction, flags uint16) error {
 /*
 *    Instruction list into bytecode functions
  */
-func encodeInstructionListToBytecode(wordList []Word) ([]*f.Element, error) {
+func encodeInstructionListToBytecode(wordList []Word) ([]*f.Element, uint8, error) {
 	n := len(wordList)
 	bytecodes := make([]*f.Element, 0, n+(n/2)+1)
-
+	var total_size uint8
 	for i, word := range wordList {
 		switch w := word.(type) {
 		case Instruction:
+			total_size += w.Size()
 			bytecode, err := encodeOneInstruction(&w)
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			bytecodes = append(bytecodes, bytecode)
 
 		case Immediate:
 			imm, err := new(f.Element).SetString(w)
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			bytecodes = append(bytecodes, imm)
 
 		default:
-			return nil, fmt.Errorf("word %d is not an instruction or immediate", i)
+			return nil, 0, fmt.Errorf("word %d is not an instruction or immediate", i)
 		}
 	}
-	return bytecodes, nil
+	return bytecodes, total_size, nil
 }
 
 // break the instruction into 4 segments of 16 bits

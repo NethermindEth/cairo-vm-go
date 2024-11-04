@@ -18,16 +18,16 @@ var parser *participle.Parser[CasmProgram] = participle.MustBuild[CasmProgram](
 	participle.UseLookahead(8),
 )
 
-// Given a CASM program it returns its encoded bytecode
-func CasmToBytecode(code string) ([]*f.Element, error) {
+// Given a CASM program it returns its encoded bytecode and a total size of processed instructions
+func CasmToBytecode(code string) ([]*f.Element, uint8, error) {
 	casmAst, err := parser.ParseString("", code)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	// Ast To Instruction List
 	wordList, err := astToInstruction(casmAst)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	// Instruction to bytecode
 	return encodeInstructionListToBytecode(wordList)

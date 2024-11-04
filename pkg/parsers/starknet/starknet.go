@@ -9,16 +9,29 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-type EntryPointInfo struct {
+type EntryPointByTypeInfo struct {
 	Selector fp.Element             `json:"selector"`
 	Offset   fp.Element             `json:"offset"`
 	Builtins []builtins.BuiltinType `json:"builtins"`
 }
 
 type EntryPointByType struct {
-	External    []EntryPointInfo `json:"EXTERNAL"`
-	L1Handler   []EntryPointInfo `json:"L1_HANDLER"`
-	Constructor []EntryPointInfo `json:"CONSTRUCTOR"`
+	External    []EntryPointByTypeInfo `json:"EXTERNAL"`
+	L1Handler   []EntryPointByTypeInfo `json:"L1_HANDLER"`
+	Constructor []EntryPointByTypeInfo `json:"CONSTRUCTOR"`
+}
+
+type Arg struct {
+	GenericID string `json:"generic_id"`
+	Size      int    `json:"size"`
+	DebugName string `json:"debug_name"`
+}
+
+type EntryPointByFunction struct {
+	Offset    int                    `json:"offset"`
+	Builtins  []builtins.BuiltinType `json:"builtins"`
+	InputArgs []Arg                  `json:"input_args"`
+	ReturnArg []Arg                  `json:"return_arg"`
 }
 
 type Hints struct {
@@ -63,10 +76,11 @@ func (hints *Hints) MarshalJSON() ([]byte, error) {
 
 type StarknetProgram struct {
 	// Prime is fixed to be 0x800000000000011000000000000000000000000000000000000000000000001 and wont fit in a f.Felt
-	Bytecode        []fp.Element     `json:"bytecode"`
-	CompilerVersion string           `json:"compiler_version"`
-	EntryPoints     EntryPointByType `json:"entry_points_by_type"`
-	Hints           []Hints          `json:"hints" validate:"required"`
+	Bytecode              []fp.Element                    `json:"bytecode"`
+	CompilerVersion       string                          `json:"compiler_version"`
+	EntryPointsByType     EntryPointByType                `json:"entry_points_by_type"`
+	EntryPointsByFunction map[string]EntryPointByFunction `json:"entry_points_by_function"`
+	Hints                 []Hints                         `json:"hints" validate:"required"`
 }
 
 func StarknetProgramFromFile(pathToFile string) (*StarknetProgram, error) {
