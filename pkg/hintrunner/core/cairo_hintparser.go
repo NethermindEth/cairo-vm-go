@@ -142,6 +142,20 @@ func GetHintByName(hint starknet.Hint) (hinter.Hinter, error) {
 			quotient:  parseCellRefer(args.Quotient),
 			remainder: parseCellRefer(args.Remainder),
 		}, nil
+	case starknet.Uint256InvModNName:
+		args := hint.Args.(*starknet.Uint256InvModN)
+		return &Uint256InvModN{
+			B0:        parseResOperand(args.B0),
+			B1:        parseResOperand(args.B1),
+			N0:        parseResOperand(args.N0),
+			N1:        parseResOperand(args.N1),
+			G0OrNoInv: parseCellRefer(args.G0OrNoInv),
+			G1Option:  parseCellRefer(args.G1Option),
+			SOrR0:     parseCellRefer(args.SOrR0),
+			SOrR1:     parseCellRefer(args.SOrR1),
+			TOrK0:     parseCellRefer(args.TOrK0),
+			TOrK1:     parseCellRefer(args.TOrK1),
+		}, nil
 	case starknet.Uint256DivModName:
 		args := hint.Args.(*starknet.Uint256DivMod)
 		return &Uint256DivMod{
