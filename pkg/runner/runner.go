@@ -460,7 +460,6 @@ func (ctx *InlineCasmContext) AddInlineCASM(code string) {
 
 func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeForProof bool, initialGas uint64) ([]*fp.Element, error) {
 	paramTypes := function.InputArgs
-	codeOffset := 0
 	apOffset := 0
 	builtinOffset := 3
 	gotSegmentArena := false
@@ -494,17 +493,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 		paramsSize += param.Size
 	}
 
-	hasPostCalculationLoop := gotSegmentArena && finalizeForProof
-
-	localExprs := []struct{}{}
-	if hasPostCalculationLoop {
-		// TODO: Implement including local params
-	}
-
-	ctx.AddInlineCASM(
-		fmt.Sprintf("ap += %d;", paramsSize+len(localExprs)),
-	)
-	apOffset += paramsSize + len(localExprs)
+	apOffset += paramsSize
 	if gotSegmentArena {
 		// ctx.AddInlineCASM(
 		// 	`
@@ -517,7 +506,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 		// 		[ap - 1] = [[ap - 3] + 2];
 		// 	`,
 		// )
-		// apOffset += 3
+		apOffset += 3
 	}
 
 	usedArgs := 0
@@ -544,7 +533,6 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 			apOffset += 1
 		}
 	}
-
 	for _, param := range paramTypes {
 		offset := apOffset - usedArgs
 		for i := 0; i < param.Size; i++ {
@@ -556,16 +544,16 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 		}
 	}
 
-	beforeFinalCall := ctx.currentCodeOffset
-	finalCallSize := 3
-	offset := finalCallSize + codeOffset
-	ctx.AddInlineCASM(fmt.Sprintf(`
-		call rel %d;
-		ret;
-	`, offset))
-	if beforeFinalCall+finalCallSize != ctx.currentCodeOffset {
-		return nil, errors.New("final call offset mismatch")
+	ctx.AddInlineCASM(fmt.Sprintf("call rel %d;", apOffset))
+	for _, builtin := range function.Builtins {
+		if offset, isBuiltin := builtinsOffsetsMap[builtin]; isBuiltin {
+			ctx.AddInlineCASM(
+				fmt.Sprintf("[ap + 0] = [fp - %d], ap++;", offset),
+			)
+			apOffset += 1
+		}
 	}
+	ctx.AddInlineCASM("ret;")
 
 	return ctx.instructions, nil
 }

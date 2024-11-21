@@ -221,7 +221,6 @@ func main() {
 					}
 					program.Bytecode = append(entryCodeInstructions, program.Bytecode...)
 					program.Bytecode = append(program.Bytecode, runner.GetFooterInstructions()...)
-					fmt.Println(len(program.Bytecode))
 					runnerMode := runner.ExecutionMode
 					if proofmode {
 						runnerMode = runner.ProofModeCairo1
