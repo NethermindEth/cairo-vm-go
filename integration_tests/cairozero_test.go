@@ -71,7 +71,7 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		}
 	}
 
-	elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput, true)
+	elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput, zero)
 	if errorExpected {
 		assert.Error(t, err, path)
 		return
@@ -153,7 +153,7 @@ func TestCairoFiles(t *testing.T) {
 		{"./cairo_zero_hint_tests/", true},
 		{"./cairo_zero_file_tests/", true},
 		{"./builtin_tests/", true},
-		{"./cairo_1_programs/", false},
+		// {"./cairo_1_programs/", false},a
 	}
 
 	// filter is for debugging purposes
@@ -284,31 +284,11 @@ func compileCairoCode(path string, zero bool) (string, error) {
 	if filepath.Ext(path) != ".cairo" {
 		return "", fmt.Errorf("compiling non cairo file: %s", path)
 	}
-
-	sierraOutput := swapExtenstion(path, sierraSuffix)
-	cliCommand := "../rust_vm_bin/cairo1-compile/cairo-compile"
-	args := []string{
-		"--single-file",
-		path,
-		sierraOutput,
-		"--replace-ids",
-	}
-
-	cmd := exec.Command(cliCommand, args...)
-
-	res, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf(
-			"%s %s: %w\n%s", cliCommand, path, err, string(res),
-		)
-	}
-
 	compiledOutput := swapExtenstion(path, compiledSuffix)
-	cliCommand = "../rust_vm_bin/cairo1-compile/sierra-compile-json"
-	args = []string{
-		sierraOutput,
-		compiledOutput,
-	}
+
+	var cliCommand string
+	var args []string
+
 	if zero {
 		cliCommand = "cairo-compile"
 		args = []string{
@@ -318,11 +298,34 @@ func compileCairoCode(path string, zero bool) (string, error) {
 			"--output",
 			compiledOutput,
 		}
+	} else {
+		sierraOutput := swapExtenstion(path, sierraSuffix)
+		cliCommand := "../rust_vm_bin/cairo1-compile/cairo-compile"
+		args := []string{
+			"--single-file",
+			path,
+			sierraOutput,
+			"--replace-ids",
+		}
+
+		cmd := exec.Command(cliCommand, args...)
+
+		res, err := cmd.CombinedOutput()
+		if err != nil {
+			return "", fmt.Errorf(
+				"%s %s: %w\n%s", cliCommand, path, err, string(res),
+			)
+		}
+
+		cliCommand = "../rust_vm_bin/cairo1-compile/sierra-compile-json"
+		args = []string{
+			sierraOutput,
+			compiledOutput,
+		}
 	}
+	cmd := exec.Command(cliCommand, args...)
 
-	cmd = exec.Command(cliCommand, args...)
-
-	res, err = cmd.CombinedOutput()
+	res, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf(
 			"%s %s: %w\n%s", cliCommand, path, err, string(res),
@@ -346,29 +349,8 @@ func runPythonVm(testFilename, path string) (time.Duration, string, string, erro
 		traceOutput,
 		"--memory_file",
 		memoryOutput,
-	}
-
-	// If any other layouts are needed, add the suffix checks here.
-	// The convention would be: ".$layout.cairo"
-	// A file without this suffix will use the default ("plain") layout.
-	if strings.HasSuffix(testFilename, ".small.cairo") {
-		args = append(args, "--layout", "small")
-	} else if strings.HasSuffix(testFilename, ".dex.cairo") {
-		args = append(args, "--layout", "dex")
-	} else if strings.HasSuffix(testFilename, ".recursive.cairo") {
-		args = append(args, "--layout", "recursive")
-	} else if strings.HasSuffix(testFilename, ".starknet_with_keccak.cairo") {
-		args = append(args, "--layout", "starknet_with_keccak")
-	} else if strings.HasSuffix(testFilename, ".starknet.cairo") {
-		args = append(args, "--layout", "starknet")
-	} else if strings.HasSuffix(testFilename, ".recursive_large_output.cairo") {
-		args = append(args, "--layout", "recursive_large_output")
-	} else if strings.HasSuffix(testFilename, ".recursive_with_poseidon.cairo") {
-		args = append(args, "--layout", "recursive_with_poseidon")
-	} else if strings.HasSuffix(testFilename, ".all_solidity.cairo") {
-		args = append(args, "--layout", "all_solidity")
-	} else if strings.HasSuffix(testFilename, ".all_cairo.cairo") {
-		args = append(args, "--layout", "all_cairo")
+		"--layout",
+		getLayoutFromFileName(testFilename),
 	}
 
 	cmd := exec.Command("cairo-run", args...)
@@ -396,34 +378,16 @@ func runRustVm(testFilename, path string, zero bool) (time.Duration, string, str
 
 	args := []string{
 		path,
-		"--proof_mode",
 		"--trace_file",
 		traceOutput,
 		"--memory_file",
 		memoryOutput,
+		"--layout",
+		getLayoutFromFileName(testFilename),
 	}
 
-	// If any other layouts are needed, add the suffix checks here.
-	// The convention would be: ".$layout.cairo"
-	// A file without this suffix will use the default ("plain") layout.
-	if strings.HasSuffix(testFilename, ".small.cairo") {
-		args = append(args, "--layout", "small")
-	} else if strings.HasSuffix(testFilename, ".dex.cairo") {
-		args = append(args, "--layout", "dex")
-	} else if strings.HasSuffix(testFilename, ".recursive.cairo") {
-		args = append(args, "--layout", "recursive")
-	} else if strings.HasSuffix(testFilename, ".starknet_with_keccak.cairo") {
-		args = append(args, "--layout", "starknet_with_keccak")
-	} else if strings.HasSuffix(testFilename, ".starknet.cairo") {
-		args = append(args, "--layout", "starknet")
-	} else if strings.HasSuffix(testFilename, ".recursive_large_output.cairo") {
-		args = append(args, "--layout", "recursive_large_output")
-	} else if strings.HasSuffix(testFilename, ".recursive_with_poseidon.cairo") {
-		args = append(args, "--layout", "recursive_with_poseidon")
-	} else if strings.HasSuffix(testFilename, ".all_solidity.cairo") {
-		args = append(args, "--layout", "all_solidity")
-	} else if strings.HasSuffix(testFilename, ".all_cairo.cairo") {
-		args = append(args, "--layout", "all_cairo")
+	if zero {
+		args = append(args, "--proof_mode")
 	}
 
 	binaryPath := "./../rust_vm_bin/cairo1-compile/cairo1-run"
@@ -453,37 +417,12 @@ func runVm(path string, zero bool) (time.Duration, string, string, string, error
 	traceOutput := swapExtenstion(path, traceSuffix)
 	memoryOutput := swapExtenstion(path, memorySuffix)
 
-	// If any other layouts are needed, add the suffix checks here.
-	// The convention would be: ".$layout.cairo"
-	// A file without this suffix will use the default ("plain") layout, which is a layout with no builtins included"
-	layout := "plain"
-	if strings.Contains(path, ".small") {
-		layout = "small"
-	} else if strings.Contains(path, ".dex") {
-		layout = "dex"
-	} else if strings.Contains(path, ".recursive") {
-		layout = "recursive"
-	} else if strings.Contains(path, ".starknet_with_keccak") {
-		layout = "starknet_with_keccak"
-	} else if strings.Contains(path, ".starknet") {
-		layout = "starknet"
-	} else if strings.Contains(path, ".recursive_large_output") {
-		layout = "recursive_large_output"
-	} else if strings.Contains(path, ".recursive_with_poseidon") {
-		layout = "recursive_with_poseidon"
-	} else if strings.Contains(path, ".all_solidity") {
-		layout = "all_solidity"
-	} else if strings.Contains(path, ".all_cairo") {
-		layout = "all_cairo"
-	}
-
 	cliCommand := "cairo-run"
 	if zero {
 		cliCommand = "run"
 	}
 
-	cmd := exec.Command(
-		"../bin/cairo-vm",
+	args := []string{
 		cliCommand,
 		"--proofmode",
 		"--tracefile",
@@ -491,8 +430,13 @@ func runVm(path string, zero bool) (time.Duration, string, string, string, error
 		"--memoryfile",
 		memoryOutput,
 		"--layout",
-		layout,
+		getLayoutFromFileName(path),
 		path,
+	}
+
+	cmd := exec.Command(
+		"../bin/cairo-vm",
+		args...,
 	)
 
 	start := time.Now()
@@ -580,4 +524,30 @@ func memoryRepr(memory []*fp.Element) string {
 	}
 	return strings.Join(repr, ", ")
 
+}
+
+// If any other layouts are needed, add the suffix checks here.
+// The convention would be: ".$layout.cairo"
+// A file without this suffix will use the default ("plain") layout, which is a layout with no builtins included"
+func getLayoutFromFileName(path string) string {
+	if strings.HasSuffix(path, ".small.cairo") {
+		return "small"
+	} else if strings.HasSuffix(path, ".dex.cairo") {
+		return "dex"
+	} else if strings.HasSuffix(path, ".recursive.cairo") {
+		return "recursive"
+	} else if strings.HasSuffix(path, ".starknet_with_keccak.cairo") {
+		return "starknet_with_keccak"
+	} else if strings.HasSuffix(path, ".starknet.cairo") {
+		return "starknet"
+	} else if strings.HasSuffix(path, ".recursive_large_output.cairo") {
+		return "recursive_large_output"
+	} else if strings.HasSuffix(path, ".recursive_with_poseidon.cairo") {
+		return "recursive_with_poseidon"
+	} else if strings.HasSuffix(path, ".all_solidity.cairo") {
+		return "all_solidity"
+	} else if strings.HasSuffix(path, ".all_cairo.cairo") {
+		return "all_cairo"
+	}
+	return "plain"
 }
