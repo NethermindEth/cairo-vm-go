@@ -153,7 +153,7 @@ func TestCairoFiles(t *testing.T) {
 		{"./cairo_zero_hint_tests/", true},
 		{"./cairo_zero_file_tests/", true},
 		{"./builtin_tests/", true},
-		// {"./cairo_1_programs/", false},a
+		{"./cairo_1_programs/", false},
 	}
 
 	// filter is for debugging purposes
@@ -300,8 +300,8 @@ func compileCairoCode(path string, zero bool) (string, error) {
 		}
 	} else {
 		sierraOutput := swapExtenstion(path, sierraSuffix)
-		cliCommand := "../rust_vm_bin/cairo1-compile/cairo-compile"
-		args := []string{
+		cliCommand = "../rust_vm_bin/cairo1-compile/cairo-compile"
+		args = []string{
 			"--single-file",
 			path,
 			sierraOutput,
@@ -322,6 +322,7 @@ func compileCairoCode(path string, zero bool) (string, error) {
 			sierraOutput,
 			compiledOutput,
 		}
+
 	}
 	cmd := exec.Command(cliCommand, args...)
 
