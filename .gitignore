@@ -11,3 +11,4 @@ integration_tests/BenchMarks.txt
 .DS_Store
 .idea/
 vendor/
+corelib/

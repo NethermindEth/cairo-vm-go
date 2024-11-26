@@ -41,11 +41,17 @@ integration:
 	@echo "Running integration tests..."
 	@$(MAKE) build
 	@if [ $$? -eq 0 ]; then \
+		if [ ! -d ./rust_vm_bin/corelib ]; then \
+			git clone --depth=1 -b v2.9.0-dev.0 https://github.com/starkware-libs/cairo.git \
+			&& mv cairo/corelib ./rust_vm_bin/ \
+			&& rm -rf cairo/; \
+		fi; \
 		go test ./integration_tests/... -v; \
 	else \
 		echo "Integration tests were not run"; \
 		exit 1; \
 	fi
+
 
 testall:
 	@echo "Running all tests..."

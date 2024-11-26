@@ -269,6 +269,7 @@ func WriteBenchMarksToFile(benchmarkMap map[string][3]int) {
 
 const (
 	compiledSuffix = "_compiled.json"
+	sierraSuffix   = ".sierra"
 	pyTraceSuffix  = "_py_trace"
 	pyMemorySuffix = "_py_memory"
 	rsTraceSuffix  = "_rs_trace"
@@ -283,11 +284,29 @@ func compileCairoCode(path string, zero bool) (string, error) {
 	if filepath.Ext(path) != ".cairo" {
 		return "", fmt.Errorf("compiling non cairo file: %s", path)
 	}
-	compiledOutput := swapExtenstion(path, compiledSuffix)
 
-	cliCommand := "../rust_vm_bin/sierra-compile-json"
+	sierraOutput := swapExtenstion(path, sierraSuffix)
+	cliCommand := "../rust_vm_bin/cairo1-compile/cairo-compile"
 	args := []string{
+		"--single-file",
 		path,
+		sierraOutput,
+		"--replace-ids",
+	}
+
+	cmd := exec.Command(cliCommand, args...)
+
+	res, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf(
+			"%s %s: %w\n%s", cliCommand, path, err, string(res),
+		)
+	}
+
+	compiledOutput := swapExtenstion(path, compiledSuffix)
+	cliCommand = "../rust_vm_bin/cairo1-compile/sierra-compile-json"
+	args = []string{
+		sierraOutput,
 		compiledOutput,
 	}
 	if zero {
@@ -301,9 +320,9 @@ func compileCairoCode(path string, zero bool) (string, error) {
 		}
 	}
 
-	cmd := exec.Command(cliCommand, args...)
+	cmd = exec.Command(cliCommand, args...)
 
-	res, err := cmd.CombinedOutput()
+	res, err = cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf(
 			"%s %s: %w\n%s", cliCommand, path, err, string(res),
@@ -407,7 +426,7 @@ func runRustVm(testFilename, path string, zero bool) (time.Duration, string, str
 		args = append(args, "--layout", "all_cairo")
 	}
 
-	binaryPath := "./../rust_vm_bin/cairo1-run"
+	binaryPath := "./../rust_vm_bin/cairo1-compile/cairo1-run"
 	if zero {
 		binaryPath = "./../rust_vm_bin/cairo-vm-cli"
 	}
@@ -539,6 +558,7 @@ func swapExtenstion(path string, newSuffix string) string {
 
 func isGeneratedFile(path string) bool {
 	return strings.HasSuffix(path, compiledSuffix) ||
+		strings.HasSuffix(path, sierraSuffix) ||
 		strings.HasSuffix(path, pyTraceSuffix) ||
 		strings.HasSuffix(path, pyMemorySuffix) ||
 		strings.HasSuffix(path, traceSuffix) ||
