@@ -59,11 +59,9 @@ integration:
 		fi; \
 		if [ ! -f ./rust_vm_bin/cairo/cairo1-run ] || [ ! -f ./rust_vm_bin/cairo-vm-cli ]; then \
 			git clone https://github.com/lambdaclass/cairo-vm.git && \
-			cd cairo-vm/cairo1-run; \
-			cargo build --release; \
-			cd ../cairo-vm-cli; \
-			cargo build --release; \
-			cd ../../; \
+			cd cairo-vm/; \
+			cargo build --release --bin cairo-vm-cli --bin cairo1-run; \
+			cd ..; \
 			mv cairo-vm/target/release/cairo1-run ../cairo/ && \
 			mv cairo-vm/target/release/cairo-vm-cli ../../rust_vm_bin/ && \
 			rm -rf cairo-vm; \

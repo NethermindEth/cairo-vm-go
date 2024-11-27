@@ -59,8 +59,12 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		t.Error(err)
 		return
 	}
-
-	elapsedRs, rsTraceFile, rsMemoryFile, err := runRustVm(name, path, zero)
+	layout := getLayoutFromFileName(path)
+	rustVmFilePath := path
+	if zero {
+		rustVmFilePath = compiledOutput
+	}
+	elapsedRs, rsTraceFile, rsMemoryFile, err := runRustVm(name, rustVmFilePath, layout, zero)
 	if errorExpected {
 		// we let the code go on so that we can check if the go vm also raises an error
 		assert.Error(t, err, path)
@@ -71,7 +75,7 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		}
 	}
 
-	elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput, zero)
+	elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput, layout, zero)
 	if errorExpected {
 		assert.Error(t, err, path)
 		return
@@ -103,7 +107,7 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	}
 
 	if zero {
-		elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(name, compiledOutput)
+		elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(name, compiledOutput, layout)
 		if errorExpected {
 			// we let the code go on so that we can check if the go vm also raises an error
 			assert.Error(t, err, path)
@@ -300,7 +304,7 @@ func compileCairoCode(path string, zero bool) (string, error) {
 		}
 	} else {
 		sierraOutput := swapExtenstion(path, sierraSuffix)
-		cliCommand = "../rust_vm_bin/cairo1-compile/cairo-compile"
+		cliCommand = "../rust_vm_bin/cairo/cairo-compile"
 		args = []string{
 			"--single-file",
 			path,
@@ -317,7 +321,7 @@ func compileCairoCode(path string, zero bool) (string, error) {
 			)
 		}
 
-		cliCommand = "../rust_vm_bin/cairo1-compile/sierra-compile-json"
+		cliCommand = "../rust_vm_bin/cairo/sierra-compile-json"
 		args = []string{
 			sierraOutput,
 			compiledOutput,
@@ -338,7 +342,7 @@ func compileCairoCode(path string, zero bool) (string, error) {
 
 // given a path to a compiled cairo zero file, execute it using the
 // python vm and returns the trace and memory files location
-func runPythonVm(testFilename, path string) (time.Duration, string, string, error) {
+func runPythonVm(testFilename, path, layout string) (time.Duration, string, string, error) {
 	traceOutput := swapExtenstion(path, pyTraceSuffix)
 	memoryOutput := swapExtenstion(path, pyMemorySuffix)
 
@@ -351,7 +355,7 @@ func runPythonVm(testFilename, path string) (time.Duration, string, string, erro
 		"--memory_file",
 		memoryOutput,
 		"--layout",
-		getLayoutFromFileName(testFilename),
+		layout,
 	}
 
 	cmd := exec.Command("cairo-run", args...)
@@ -373,7 +377,7 @@ func runPythonVm(testFilename, path string) (time.Duration, string, string, erro
 
 // given a path to a compiled cairo zero file, execute it using the
 // rust vm and return the trace and memory files location
-func runRustVm(testFilename, path string, zero bool) (time.Duration, string, string, error) {
+func runRustVm(testFilename, path, layout string, zero bool) (time.Duration, string, string, error) {
 	traceOutput := swapExtenstion(path, rsTraceSuffix)
 	memoryOutput := swapExtenstion(path, rsMemorySuffix)
 
@@ -384,14 +388,14 @@ func runRustVm(testFilename, path string, zero bool) (time.Duration, string, str
 		"--memory_file",
 		memoryOutput,
 		"--layout",
-		getLayoutFromFileName(testFilename),
+		layout,
 	}
 
 	if zero {
 		args = append(args, "--proof_mode")
 	}
 
-	binaryPath := "./../rust_vm_bin/cairo1-compile/cairo1-run"
+	binaryPath := "./../rust_vm_bin/cairo/cairo1-run"
 	if zero {
 		binaryPath = "./../rust_vm_bin/cairo-vm-cli"
 	}
@@ -414,7 +418,7 @@ func runRustVm(testFilename, path string, zero bool) (time.Duration, string, str
 
 // given a path to a compiled cairo zero file, execute
 // it using our vm
-func runVm(path string, zero bool) (time.Duration, string, string, string, error) {
+func runVm(path, layout string, zero bool) (time.Duration, string, string, string, error) {
 	traceOutput := swapExtenstion(path, traceSuffix)
 	memoryOutput := swapExtenstion(path, memorySuffix)
 
@@ -422,7 +426,6 @@ func runVm(path string, zero bool) (time.Duration, string, string, string, error
 	if zero {
 		cliCommand = "run"
 	}
-
 	args := []string{
 		cliCommand,
 		"--proofmode",
@@ -431,7 +434,7 @@ func runVm(path string, zero bool) (time.Duration, string, string, string, error
 		"--memoryfile",
 		memoryOutput,
 		"--layout",
-		getLayoutFromFileName(path),
+		layout,
 		path,
 	}
 
