@@ -114,7 +114,8 @@ func (b BuiltinType) MarshalJSON() ([]byte, error) {
 		return []byte("Mul" + ModuloName), nil
 	case SegmentArenaType:
 		return []byte(SegmentArenaName), nil
-
+	case GasBuiltinType:
+		return []byte(GasBuiltinName), nil
 	}
 	return nil, fmt.Errorf("marshal unknown builtin: %d", uint8(b))
 }
