@@ -64,7 +64,7 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	if zero {
 		rustVmFilePath = compiledOutput
 	}
-	elapsedRs, rsTraceFile, rsMemoryFile, err := runRustVm(name, rustVmFilePath, layout, zero)
+	elapsedRs, rsTraceFile, rsMemoryFile, err := runRustVm(rustVmFilePath, layout, zero)
 	if errorExpected {
 		// we let the code go on so that we can check if the go vm also raises an error
 		assert.Error(t, err, path)
@@ -182,7 +182,7 @@ func TestCairoFiles(t *testing.T) {
 			path := filepath.Join(root.path, name)
 
 			errorExpected := false
-			if name == "range_check.small.cairo" {
+			if name == "range_check__small.cairo" {
 				errorExpected = true
 			}
 			if !filter.filtered(name) {
@@ -377,7 +377,7 @@ func runPythonVm(testFilename, path, layout string) (time.Duration, string, stri
 
 // given a path to a compiled cairo zero file, execute it using the
 // rust vm and return the trace and memory files location
-func runRustVm(testFilename, path, layout string, zero bool) (time.Duration, string, string, error) {
+func runRustVm(path, layout string, zero bool) (time.Duration, string, string, error) {
 	traceOutput := swapExtenstion(path, rsTraceSuffix)
 	memoryOutput := swapExtenstion(path, rsMemorySuffix)
 
@@ -534,23 +534,23 @@ func memoryRepr(memory []*fp.Element) string {
 // The convention would be: ".$layout.cairo"
 // A file without this suffix will use the default ("plain") layout, which is a layout with no builtins included"
 func getLayoutFromFileName(path string) string {
-	if strings.HasSuffix(path, ".small.cairo") {
+	if strings.HasSuffix(path, "__small.cairo") {
 		return "small"
-	} else if strings.HasSuffix(path, ".dex.cairo") {
+	} else if strings.HasSuffix(path, "__dex.cairo") {
 		return "dex"
-	} else if strings.HasSuffix(path, ".recursive.cairo") {
+	} else if strings.HasSuffix(path, "__recursive.cairo") {
 		return "recursive"
-	} else if strings.HasSuffix(path, ".starknet_with_keccak.cairo") {
+	} else if strings.HasSuffix(path, "__starknet_with_keccak.cairo") {
 		return "starknet_with_keccak"
-	} else if strings.HasSuffix(path, ".starknet.cairo") {
+	} else if strings.HasSuffix(path, "__starknet.cairo") {
 		return "starknet"
-	} else if strings.HasSuffix(path, ".recursive_large_output.cairo") {
+	} else if strings.HasSuffix(path, "__recursive_large_output.cairo") {
 		return "recursive_large_output"
-	} else if strings.HasSuffix(path, ".recursive_with_poseidon.cairo") {
+	} else if strings.HasSuffix(path, "__recursive_with_poseidon.cairo") {
 		return "recursive_with_poseidon"
-	} else if strings.HasSuffix(path, ".all_solidity.cairo") {
+	} else if strings.HasSuffix(path, "__all_solidity.cairo") {
 		return "all_solidity"
-	} else if strings.HasSuffix(path, ".all_cairo.cairo") {
+	} else if strings.HasSuffix(path, "__all_cairo.cairo") {
 		return "all_cairo"
 	}
 	return "plain"
