@@ -24,6 +24,7 @@ const (
 	RangeCheck96Type
 	AddModeType
 	MulModType
+	GasBuiltinType
 )
 
 func Runner(name BuiltinType) memory.BuiltinRunner {
@@ -149,6 +150,8 @@ func (b *BuiltinType) UnmarshalJSON(data []byte) error {
 		*b = MulModType
 	case SegmentArenaName:
 		*b = SegmentArenaType
+	case GasBuiltinName:
+		*b = GasBuiltinType
 	default:
 		return fmt.Errorf("unmarshal unknown builtin: %s", builtinName)
 	}
