@@ -21,18 +21,16 @@ import (
 
 const whitelistFile = "./list_tests_in_progress.txt"
 
-func writeToFile(content string) error {
+func writeToFile(content string) {
 	file, err := os.OpenFile(whitelistFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("failed to open file: %w", err)
+		panic(fmt.Errorf("failed to open file: %w", err))
 	}
 	defer file.Close()
 
 	if _, err := file.WriteString(content + "\n"); err != nil {
-		return fmt.Errorf("failed to write to file: %w", err)
+		panic(fmt.Errorf("failed to write to file: %w", err))
 	}
-
-	return nil
 }
 
 type Filter struct {
