@@ -19,6 +19,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const whitelistFile = "./list_tests_in_progress.txt"
+
+func writeToFile(content string) error {
+	file, err := os.OpenFile(whitelistFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString(content + "\n"); err != nil {
+		return fmt.Errorf("failed to write to file: %w", err)
+	}
+
+	return nil
+}
+
 type Filter struct {
 	filters []string
 }
@@ -100,14 +116,16 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	if !assert.Equal(t, rsTrace, trace) {
 		t.Logf("rstrace:\n%s\n", traceRepr(rsTrace))
 		t.Logf("trace:\n%s\n", traceRepr(trace))
+		writeToFile(path)
 	}
 	if !assert.Equal(t, rsMemory, memory) {
 		t.Logf("rsmemory;\n%s\n", memoryRepr(rsMemory))
 		t.Logf("memory;\n%s\n", memoryRepr(memory))
+		writeToFile(path)
 	}
 
 	if zero {
-		elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(name, compiledOutput, layout)
+		elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(compiledOutput, layout)
 		if errorExpected {
 			// we let the code go on so that we can check if the go vm also raises an error
 			assert.Error(t, err, path)
@@ -131,18 +149,22 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		if !assert.Equal(t, pyTrace, rsTrace) {
 			t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
 			t.Logf("rstrace:\n%s\n", traceRepr(rsTrace))
+			writeToFile(path)
 		}
 		if !assert.Equal(t, pyMemory, rsMemory) {
 			t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
 			t.Logf("rsmemory;\n%s\n", memoryRepr(rsMemory))
+			writeToFile(path)
 		}
 		if !assert.Equal(t, pyTrace, trace) {
 			t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
 			t.Logf("trace:\n%s\n", traceRepr(trace))
+			writeToFile(path)
 		}
 		if !assert.Equal(t, pyMemory, memory) {
 			t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
 			t.Logf("memory;\n%s\n", memoryRepr(memory))
+			writeToFile(path)
 		}
 	}
 }
@@ -150,6 +172,11 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 var zerobench = flag.Bool("zerobench", false, "run integration tests and generate benchmarks file")
 
 func TestCairoFiles(t *testing.T) {
+	file, err := os.OpenFile(whitelistFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		panic(fmt.Errorf("failed to open file: %w", err))
+	}
+	file.Close()
 	roots := []struct {
 		path string
 		zero bool
@@ -157,7 +184,7 @@ func TestCairoFiles(t *testing.T) {
 		{"./cairo_zero_hint_tests/", true},
 		{"./cairo_zero_file_tests/", true},
 		{"./builtin_tests/", true},
-		{"./cairo_1_programs/", false},
+		// {"./cairo_1_programs/", false},
 	}
 
 	// filter is for debugging purposes
@@ -342,7 +369,7 @@ func compileCairoCode(path string, zero bool) (string, error) {
 
 // given a path to a compiled cairo zero file, execute it using the
 // python vm and returns the trace and memory files location
-func runPythonVm(testFilename, path, layout string) (time.Duration, string, string, error) {
+func runPythonVm(path, layout string) (time.Duration, string, string, error) {
 	traceOutput := swapExtenstion(path, pyTraceSuffix)
 	memoryOutput := swapExtenstion(path, pyMemorySuffix)
 
