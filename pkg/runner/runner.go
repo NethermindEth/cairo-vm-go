@@ -209,12 +209,14 @@ func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue,
 	}
 	// check if all builtins from the program are in the layout
 	for _, programBuiltin := range runner.program.Builtins {
-		if _, found := builtinsSet[programBuiltin]; !found {
-			builtinName, err := programBuiltin.MarshalJSON()
-			if err != nil {
-				return []mem.MemoryValue{}, err
+		if programBuiltin != builtins.GasBuiltinType {
+			if _, found := builtinsSet[programBuiltin]; !found {
+				builtinName, err := programBuiltin.MarshalJSON()
+				if err != nil {
+					return []mem.MemoryValue{}, err
+				}
+				return []mem.MemoryValue{}, fmt.Errorf("builtin %s not found in the layout: %s", builtinName, runner.layout.Name)
 			}
-			return []mem.MemoryValue{}, fmt.Errorf("builtin %s not found in the layout: %s", builtinName, runner.layout.Name)
 		}
 	}
 	stack := []mem.MemoryValue{}
