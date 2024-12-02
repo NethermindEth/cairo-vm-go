@@ -5,6 +5,7 @@ cov.out
 cpu.out
 *.test
 integration_tests/BenchMarks.txt
+rust_vm_bin/
 
 # Local Env Specific
 .python-version
