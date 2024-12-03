@@ -3,10 +3,12 @@ package runner
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
@@ -458,103 +460,82 @@ func (ctx *InlineCasmContext) AddInlineCASM(code string) {
 	ctx.currentCodeOffset += int(total_size)
 }
 
-func GetEntryCodeInstructions() ([]*fp.Element, error) {
-	//TODO: investigate how to implement function param types
-	paramTypes := []struct {
-		genericTypeId builtins.BuiltinType
-		size          int
-	}{}
-	codeOffset := 0
+func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeForProof bool, initialGas uint64) ([]*fp.Element, error) {
+	paramTypes := function.InputArgs
+	apOffset := 0
+	builtinOffset := 3
+
+	builtinsOffsetsMap := map[builtins.BuiltinType]int{}
+	emulatedBuiltins := map[builtins.BuiltinType]struct{}{
+		builtins.SystemType: {},
+	}
+
+	for _, builtin := range []builtins.BuiltinType{
+		builtins.MulModType,
+		builtins.AddModeType,
+		builtins.RangeCheck96Type,
+		builtins.PoseidonType,
+		builtins.ECOPType,
+		builtins.BitwiseType,
+		builtins.RangeCheckType,
+		builtins.PedersenType,
+	} {
+		if slices.Contains(function.Builtins, builtin) {
+			builtinsOffsetsMap[builtins.BuiltinType(builtin)] = builtinOffset
+			builtinOffset += 1
+		}
+	}
 
 	ctx := &InlineCasmContext{}
-
-	builtinOffset := map[builtins.BuiltinType]int{
-		builtins.PedersenType:     10,
-		builtins.RangeCheckType:   9,
-		builtins.BitwiseType:      8,
-		builtins.ECOPType:         7,
-		builtins.PoseidonType:     6,
-		builtins.RangeCheck96Type: 5,
-		builtins.AddModeType:      4,
-		builtins.MulModType:       3,
-	}
-
-	emulatedBuiltins := map[builtins.BuiltinType]struct{}{
-		1: {},
-	}
-
-	apOffset := 0
 	paramsSize := 0
 	for _, param := range paramTypes {
-		ty, size := param.genericTypeId, param.size
-		if _, inBuiltin := builtinOffset[ty]; !inBuiltin {
-			if _, emulated := emulatedBuiltins[ty]; !emulated && ty != 99 {
-				paramsSize += size
-			}
-		}
+		paramsSize += param.Size
 	}
-	ctx.AddInlineCASM(
-		fmt.Sprintf("ap += %d;", paramsSize),
-	)
 	apOffset += paramsSize
-
-	for _, param := range paramTypes {
-		if param.genericTypeId == 99 {
-			ctx.AddInlineCASM(
-				`%{ memory[ap + 0] = segments.add() %}
-				%{ memory[ap + 1] = segments.add() %}
-				ap += 2;
-				[ap + 0] = 0, ap++;
-				[ap - 2] = [[ap - 3]];
-				[ap - 1] = [[ap - 3] + 1];
-				[ap - 1] = [[ap - 3] + 2];
-				apOffset += 3`,
-			)
-		}
-	}
-
 	usedArgs := 0
-	for _, param := range paramTypes {
-		ty, tySize := param.genericTypeId, param.size
-		if offset, isBuiltin := builtinOffset[ty]; isBuiltin {
+
+	for _, builtin := range function.Builtins {
+		if offset, isBuiltin := builtinsOffsetsMap[builtin]; isBuiltin {
 			ctx.AddInlineCASM(
 				fmt.Sprintf("[ap + 0] = [fp - %d], ap++;", offset),
 			)
 			apOffset += 1
-		} else if _, emulated := emulatedBuiltins[ty]; emulated {
+		} else if _, emulated := emulatedBuiltins[builtin]; emulated {
 			ctx.AddInlineCASM(
-				`memory[ap + 0] = segments.add();
-				ap += 1;`,
+				`
+					%{ memory[ap + 0] = segments.add() %}
+					ap += 1;
+				`,
 			)
 			apOffset += 1
-		} else if ty == 99 {
+		} else if builtin == builtins.SegmentArenaType {
 			offset := apOffset - paramsSize
 			ctx.AddInlineCASM(
 				fmt.Sprintf("[ap + 0] = [ap - %d] + 3, ap++;", offset),
 			)
 			apOffset += 1
-		} else {
-			offset := apOffset - usedArgs
-			for i := 0; i < tySize; i++ {
-				ctx.AddInlineCASM(
-					fmt.Sprintf("[ap + 0] = [ap - %d], ap++;", offset),
-				)
-				apOffset += 1
-				usedArgs += 1
-			}
+		} else if builtin == builtins.GasBuiltinType {
+			ctx.AddInlineCASM(
+				`
+					ap += 1;
+				`,
+			)
+			apOffset += 1
+			usedArgs += 1
 		}
 	}
-
-	beforeFinalCall := ctx.currentCodeOffset
-	finalCallSize := 3
-	offset := finalCallSize + codeOffset
-	ctx.AddInlineCASM(fmt.Sprintf(`
-		call rel %d;
-		ret;
-	`, offset))
-	if beforeFinalCall+finalCallSize != ctx.currentCodeOffset {
-		return nil, errors.New("final call offset mismatch")
+	for _, param := range paramTypes {
+		offset := apOffset - usedArgs
+		for i := 0; i < param.Size; i++ {
+			ctx.AddInlineCASM(
+				fmt.Sprintf("[ap + 0] = [ap - %d], ap++;", offset),
+			)
+			apOffset += param.Size
+			usedArgs += param.Size
+		}
 	}
+	ctx.AddInlineCASM(fmt.Sprintf("call rel %d;", apOffset+1))
+	ctx.AddInlineCASM("ret;")
 
 	return ctx.instructions, nil
 }

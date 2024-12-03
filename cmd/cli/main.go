@@ -203,6 +203,10 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
+					mainFunc, ok := cairoProgram.EntryPointsByFunction["main"]
+					if !ok {
+						return fmt.Errorf("cannot find main function")
+					}
 					hints, err := core.GetCairoHints(cairoProgram)
 					if err != nil {
 						return fmt.Errorf("cannot get hints: %w", err)
@@ -211,7 +215,7 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
-					entryCodeInstructions, err := runner.GetEntryCodeInstructions()
+					entryCodeInstructions, err := runner.GetEntryCodeInstructions(mainFunc, false, 0)
 					if err != nil {
 						return fmt.Errorf("cannot load entry code instructions: %w", err)
 					}

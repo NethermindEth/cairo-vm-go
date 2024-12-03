@@ -58,12 +58,12 @@ integration:
 			rm -rf ./cairo; \
 		fi; \
 		if [ ! -f ./rust_vm_bin/cairo/cairo1-run ] || [ ! -f ./rust_vm_bin/cairo-vm-cli ]; then \
+			cd ./rust_vm_bin; \
 			git clone https://github.com/lambdaclass/cairo-vm.git && \
 			cd cairo-vm/; \
 			cargo build --release --bin cairo-vm-cli --bin cairo1-run; \
-			cd ..; \
-			mv cairo-vm/target/release/cairo1-run ../cairo/ && \
-			mv cairo-vm/target/release/cairo-vm-cli ../../rust_vm_bin/ && \
+			mv cairo-vm/target/release/cairo1-run ./cairo/ && \
+			mv cairo-vm/target/release/cairo-vm-cli ../rust_vm_bin/ && \
 			rm -rf cairo-vm; \
 			cd ../../; \
 		fi; \
