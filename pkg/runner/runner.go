@@ -464,7 +464,6 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 	paramTypes := function.InputArgs
 	apOffset := 0
 	builtinOffset := 3
-	gotSegmentArena := false
 
 	builtinsOffsetsMap := map[builtins.BuiltinType]int{}
 	emulatedBuiltins := map[builtins.BuiltinType]struct{}{
@@ -484,8 +483,6 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 		if slices.Contains(function.Builtins, builtin) {
 			builtinsOffsetsMap[builtins.BuiltinType(builtin)] = builtinOffset
 			builtinOffset += 1
-		} else {
-			gotSegmentArena = true
 		}
 	}
 
@@ -494,23 +491,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 	for _, param := range paramTypes {
 		paramsSize += param.Size
 	}
-
 	apOffset += paramsSize
-	if gotSegmentArena {
-		// ctx.AddInlineCASM(
-		// 	`
-		// 		%{ memory[ap + 0] = segments.add() %}
-		// 		%{ memory[ap + 1] = segments.add() %}
-		// 		ap += 2;
-		// 		[ap + 0] = 0, ap++;
-		// 		[ap - 2] = [[ap - 3]];
-		// 		[ap - 1] = [[ap - 3] + 1];
-		// 		[ap - 1] = [[ap - 3] + 2];
-		// 	`,
-		// )
-		apOffset += 3
-	}
-
 	usedArgs := 0
 
 	for _, builtin := range function.Builtins {
@@ -533,6 +514,14 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 				fmt.Sprintf("[ap + 0] = [ap - %d] + 3, ap++;", offset),
 			)
 			apOffset += 1
+		} else if builtin == builtins.GasBuiltinType {
+			ctx.AddInlineCASM(
+				`
+					ap += 1;
+				`,
+			)
+			apOffset += 1
+			usedArgs += 1
 		}
 	}
 	for _, param := range paramTypes {
@@ -541,20 +530,11 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 			ctx.AddInlineCASM(
 				fmt.Sprintf("[ap + 0] = [ap - %d], ap++;", offset),
 			)
-			apOffset += 1
-			usedArgs += 1
+			apOffset += param.Size
+			usedArgs += param.Size
 		}
 	}
-
-	ctx.AddInlineCASM(fmt.Sprintf("call rel %d;", apOffset))
-	for _, builtin := range function.Builtins {
-		if offset, isBuiltin := builtinsOffsetsMap[builtin]; isBuiltin {
-			ctx.AddInlineCASM(
-				fmt.Sprintf("[ap + 0] = [fp - %d], ap++;", offset),
-			)
-			apOffset += 1
-		}
-	}
+	ctx.AddInlineCASM(fmt.Sprintf("call rel %d;", apOffset+1))
 	ctx.AddInlineCASM("ret;")
 
 	return ctx.instructions, nil

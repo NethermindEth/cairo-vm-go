@@ -82,9 +82,11 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	if errorExpected {
 		// we let the code go on so that we can check if the go vm also raises an error
 		assert.Error(t, err, path)
+		return
 	} else {
 		if err != nil {
 			t.Error(err)
+			writeToFile(path)
 			return
 		}
 	}
@@ -92,10 +94,12 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput, layout, zero)
 	if errorExpected {
 		assert.Error(t, err, path)
+		writeToFile(path)
 		return
 	} else {
 		if err != nil {
 			t.Error(err)
+			writeToFile(path)
 			return
 		}
 	}
@@ -103,11 +107,13 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	trace, memory, err := decodeProof(traceFile, memoryFile)
 	if err != nil {
 		t.Error(err)
+		writeToFile(path)
 		return
 	}
 	rsTrace, rsMemory, err := decodeProof(rsTraceFile, rsMemoryFile)
 	if err != nil {
 		t.Error(err)
+		writeToFile(path)
 		return
 	}
 
@@ -182,7 +188,7 @@ func TestCairoFiles(t *testing.T) {
 		{"./cairo_zero_hint_tests/", true},
 		{"./cairo_zero_file_tests/", true},
 		{"./builtin_tests/", true},
-		// {"./cairo_1_programs/", false},
+		{"./cairo_1_programs/", false},
 	}
 
 	// filter is for debugging purposes
