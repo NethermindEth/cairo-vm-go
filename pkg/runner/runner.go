@@ -7,6 +7,7 @@ import (
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
@@ -57,6 +58,34 @@ func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode Ru
 	}, nil
 }
 
+func AssembleProgram(cairoProgram *starknet.StarknetProgram) (Program, map[uint64][]hinter.Hinter, error) {
+	mainFunc, ok := cairoProgram.EntryPointsByFunction["main"]
+	if !ok {
+		return Program{}, nil, fmt.Errorf("cannot find main function")
+	}
+	program, err := LoadCairoProgram(cairoProgram)
+	if err != nil {
+		return Program{}, nil, fmt.Errorf("cannot load program: %w", err)
+	}
+	entryCodeInstructions, err := GetEntryCodeInstructions(mainFunc, false, 0)
+	if err != nil {
+		return Program{}, nil, fmt.Errorf("cannot load entry code instructions: %w", err)
+	}
+	program.Bytecode = append(entryCodeInstructions, program.Bytecode...)
+	program.Bytecode = append(program.Bytecode, GetFooterInstructions()...)
+
+	hints, err := core.GetCairoHints(cairoProgram)
+	if err != nil {
+		return Program{}, nil, fmt.Errorf("cannot get hints: %w", err)
+	}
+	offset := uint64(len(entryCodeInstructions))
+	shiftedHintsMap := make(map[uint64][]hinter.Hinter)
+	for key, value := range hints {
+		shiftedHintsMap[key+offset] = value
+	}
+	return *program, shiftedHintsMap, nil
+}
+
 // RunEntryPoint is like Run, but it executes the program starting from the given PC offset.
 // This PC offset is expected to be a start from some function inside the loaded program.
 func (runner *Runner) RunEntryPoint(pc uint64) error {
@@ -86,7 +115,10 @@ func (runner *Runner) RunEntryPoint(pc uint64) error {
 	if err != nil {
 		return err
 	}
-
+	err = runner.loadArguments(uint64(0), uint64(8979879877))
+	if err != nil {
+		return err
+	}
 	if err := runner.RunUntilPc(&end); err != nil {
 		return err
 	}
@@ -104,12 +136,16 @@ func (runner *Runner) Run() error {
 		return fmt.Errorf("initializing main entry point: %w", err)
 	}
 
+	err = runner.loadArguments(uint64(0), uint64(8979879877))
+	if err != nil {
+		return err
+	}
 	err = runner.RunUntilPc(&end)
 	if err != nil {
 		return err
 	}
 
-	if runner.runnerMode == ProofModeCairo0 || runner.runnerMode == ProofModeCairo1 {
+	if runner.isProofMode() {
 		// +1 because proof mode require an extra instruction run
 		// pow2 because proof mode also requires that the trace is a power of two
 		pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
@@ -222,12 +258,16 @@ func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue,
 	stack := []mem.MemoryValue{}
 	// adding to the stack only the builtins that are both in the program and in the layout
 	for _, bRunner := range runner.layout.Builtins {
-		builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
-		if utils.Contains(runner.program.Builtins, bRunner.Builtin) {
+		if utils.Contains(runner.program.Builtins, bRunner.Builtin) || runner.isProofMode() {
+			builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
 			stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
 		}
 	}
 	return stack, nil
+}
+
+func (runner *Runner) isProofMode() bool {
+	return runner.runnerMode == ProofModeCairo0 || runner.runnerMode == ProofModeCairo1
 }
 
 func (runner *Runner) initializeVm(
@@ -250,10 +290,16 @@ func (runner *Runner) initializeVm(
 		Ap: initialFp,
 		Fp: initialFp,
 	}, memory, vm.VirtualMachineConfig{
-		ProofMode:    runner.runnerMode == ProofModeCairo0 || runner.runnerMode == ProofModeCairo1,
+		ProofMode:    runner.isProofMode(),
 		CollectTrace: runner.collectTrace,
 	})
 	return err
+}
+
+func (runner *Runner) loadArguments(args, initialGas uint64) error {
+	mv := mem.MemoryValueFromUint(initialGas)
+	runner.vm.Memory.Segments[vm.ExecutionSegment].Write(runner.vm.Context.Ap+1, &mv)
+	return nil
 }
 
 // run until the program counter equals the `pc` parameter

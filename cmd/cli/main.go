@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
 	hintrunner "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/zero"
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
@@ -203,29 +202,15 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
-					mainFunc, ok := cairoProgram.EntryPointsByFunction["main"]
-					if !ok {
-						return fmt.Errorf("cannot find main function")
-					}
-					hints, err := core.GetCairoHints(cairoProgram)
+					program, hints, err := runner.AssembleProgram(cairoProgram)
 					if err != nil {
-						return fmt.Errorf("cannot get hints: %w", err)
+						return fmt.Errorf("cannot assemble program: %w", err)
 					}
-					program, err := runner.LoadCairoProgram(cairoProgram)
-					if err != nil {
-						return fmt.Errorf("cannot load program: %w", err)
-					}
-					entryCodeInstructions, err := runner.GetEntryCodeInstructions(mainFunc, false, 0)
-					if err != nil {
-						return fmt.Errorf("cannot load entry code instructions: %w", err)
-					}
-					program.Bytecode = append(entryCodeInstructions, program.Bytecode...)
-					program.Bytecode = append(program.Bytecode, runner.GetFooterInstructions()...)
 					runnerMode := runner.ExecutionMode
 					if proofmode {
 						runnerMode = runner.ProofModeCairo1
 					}
-					return runVM(*program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode)
+					return runVM(program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode)
 				},
 			},
 		},
