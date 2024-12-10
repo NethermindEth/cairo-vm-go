@@ -1045,7 +1045,7 @@ func TestU256InvModN(t *testing.T) {
 		N0Felt := f.NewElement(1)
 		N1Felt := f.NewElement(0)
 
-		hint := U256InvModN{
+		hint := Uint256InvModN{
 			B0:        hinter.Immediate(B0Felt),
 			B1:        hinter.Immediate(B1Felt),
 			N0:        hinter.Immediate(N0Felt),
@@ -1134,7 +1134,7 @@ func TestU256InvModN(t *testing.T) {
 		N0Felt := f.NewElement(100)
 		N1Felt := f.NewElement(0)
 
-		hint := U256InvModN{
+		hint := Uint256InvModN{
 			B0:        hinter.Immediate(B0Felt),
 			B1:        hinter.Immediate(B1Felt),
 			N0:        hinter.Immediate(N0Felt),
@@ -1223,7 +1223,7 @@ func TestU256InvModN(t *testing.T) {
 		N0Felt := f.NewElement(2)
 		N1Felt := f.NewElement(0)
 
-		hint := U256InvModN{
+		hint := Uint256InvModN{
 			B0:        hinter.Immediate(B0Felt),
 			B1:        hinter.Immediate(B1Felt),
 			N0:        hinter.Immediate(N0Felt),

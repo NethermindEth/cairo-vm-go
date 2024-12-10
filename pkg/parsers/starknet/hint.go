@@ -24,7 +24,7 @@ const (
 	TestLessThanOrEqualAddressName  HintName = "TestLessThanOrEqualAddress"
 	WideMul128Name                  HintName = "WideMul128"
 	DivModName                      HintName = "DivMod"
-	U256InvModName                  HintName = "U256InvMod"
+	Uint256InvModNName              HintName = "U256InvModN"
 	Uint256DivModName               HintName = "Uint256DivMod"
 	Uint512DivModByUint256Name      HintName = "Uint512DivModByUint256"
 	SquareRootName                  HintName = "SquareRoot"
@@ -115,7 +115,7 @@ type DivMod struct {
 	Remainder CellRef    `json:"remainder" validate:"required"`
 }
 
-type U256InvMod struct {
+type Uint256InvModN struct {
 	B0        ResOperand `json:"b0" validate:"required"`
 	B1        ResOperand `json:"b1" validate:"required"`
 	N0        ResOperand `json:"n0" validate:"required"`
@@ -483,11 +483,9 @@ func (h *Hint) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-
 	for k, v := range rawHint {
 		h.Name = HintName(k)
 		var args any
-
 		switch h.Name {
 		// Starknet hints
 		case SystemCallName:
@@ -509,8 +507,8 @@ func (h *Hint) UnmarshalJSON(data []byte) error {
 			args = &WideMul128{}
 		case DivModName:
 			args = &DivMod{}
-		case U256InvModName:
-			args = &U256InvMod{}
+		case Uint256InvModNName:
+			args = &Uint256InvModN{}
 		case Uint256DivModName:
 			args = &Uint256DivMod{}
 		case Uint512DivModByUint256Name:

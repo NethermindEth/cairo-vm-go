@@ -478,7 +478,7 @@ func (hint DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) e
 	return nil
 }
 
-type U256InvModN struct {
+type Uint256InvModN struct {
 	B0        hinter.Reference
 	B1        hinter.Reference
 	N0        hinter.Reference
@@ -491,11 +491,11 @@ type U256InvModN struct {
 	TOrK1     hinter.Reference
 }
 
-func (hint U256InvModN) String() string {
+func (hint Uint256InvModN) String() string {
 	return "U256InvModN"
 }
 
-func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+func (hint Uint256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	B0, err := hint.B0.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve B0 operand %s: %v", hint.B0, err)
