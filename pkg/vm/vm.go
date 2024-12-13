@@ -6,6 +6,7 @@ import (
 	"math"
 
 	asmb "github.com/NethermindEth/cairo-vm-go/pkg/assembler"
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -76,6 +77,7 @@ type VirtualMachineConfig struct {
 	ProofMode bool
 	// If true, the vm collects the relocated trace at the end of execution, without finalizing segments
 	CollectTrace bool
+	UserArgs     []starknet.CairoFuncArgs
 }
 
 type VirtualMachine struct {
@@ -83,12 +85,18 @@ type VirtualMachine struct {
 	Memory  *mem.Memory
 	Step    uint64
 	Trace   []Context
-	config  VirtualMachineConfig
+	Config  VirtualMachineConfig
 	// instructions cache
 	instructions map[uint64]*asmb.Instruction
 	// RcLimitsMin and RcLimitsMax define the range of values of instructions offsets, used for checking the number of potential range checks holes
 	RcLimitsMin uint16
 	RcLimitsMax uint16
+}
+
+func (vm *VirtualMachine) PrintMemory() {
+	for j, cell := range vm.Memory.Segments[ExecutionSegment].Data {
+		fmt.Printf("\tCell %d: %s\n", j, cell)
+	}
 }
 
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
@@ -108,7 +116,7 @@ func NewVirtualMachine(
 		Context:      initialContext,
 		Memory:       memory,
 		Trace:        trace,
-		config:       config,
+		Config:       config,
 		instructions: make(map[uint64]*asmb.Instruction),
 		RcLimitsMin:  math.MaxUint16,
 		RcLimitsMax:  0,
@@ -143,7 +151,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 	}
 
 	// store the trace before state change
-	if vm.config.ProofMode || vm.config.CollectTrace {
+	if vm.Config.ProofMode || vm.Config.CollectTrace {
 		vm.Trace = append(vm.Trace, vm.Context)
 	}
 

@@ -466,6 +466,8 @@ func runVm(path, layout string, zero bool) (time.Duration, string, string, strin
 		memoryOutput,
 		"--layout",
 		layout,
+		"--available_gas",
+		"9999999",
 		path,
 	}
 

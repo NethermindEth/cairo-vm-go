@@ -1929,3 +1929,31 @@ func (hint *FieldSqrt) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContex
 
 	return vm.Memory.WriteToAddress(&sqrtAddr, &sqrtVal)
 }
+
+type ExternalWriteArgsToMemory struct{}
+
+func (hint *ExternalWriteArgsToMemory) String() string {
+	return "ExternalWriteToMemory"
+}
+
+func (hint *ExternalWriteArgsToMemory) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+	userArgs := vm.Config.UserArgs
+	for _, arg := range userArgs {
+		if arg.Single != nil {
+			mv := mem.MemoryValueFromFieldElement(arg.Single)
+			err := vm.Memory.Write(1, vm.Context.Ap-uint64(len(userArgs)), &mv)
+			if err != nil {
+				return fmt.Errorf("write single arg: %v", err)
+			}
+		} else if arg.Array != nil {
+			arrayBase := vm.Memory.AllocateEmptySegment()
+			mv := mem.MemoryValueFromMemoryAddress(&arrayBase)
+			err := vm.Memory.Write(1, vm.Context.Ap, &mv)
+			if err != nil {
+				return fmt.Errorf("write array base: %v", err)
+			}
+			// TODO: Implement array writing
+		}
+	}
+	return nil
+}

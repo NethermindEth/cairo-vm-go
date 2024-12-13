@@ -12,6 +12,7 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	"github.com/NethermindEth/cairo-vm-go/pkg/runner"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/urfave/cli/v2"
 )
 
@@ -26,6 +27,8 @@ func main() {
 	var layoutName string
 	var airPublicInputLocation string
 	var airPrivateInputLocation string
+	var args string
+	var availableGas uint64
 	app := &cli.App{
 		Name:                 "cairo-vm",
 		Usage:                "A cairo virtual machine",
@@ -122,7 +125,7 @@ func main() {
 					if proofmode {
 						runnerMode = runner.ProofModeCairo0
 					}
-					return runVM(*program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode)
+					return runVM(*program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode, nil)
 				},
 			},
 			{
@@ -191,6 +194,18 @@ func main() {
 						Required:    false,
 						Destination: &airPrivateInputLocation,
 					},
+					&cli.StringFlag{
+						Name:        "args",
+						Usage:       "input arguments for the `main` function in the cairo progran",
+						Required:    false,
+						Destination: &args,
+					},
+					&cli.Uint64Flag{
+						Name:        "available_gas",
+						Usage:       "available gas for the VM execution",
+						Required:    false,
+						Destination: &availableGas,
+					},
 				},
 				Action: func(ctx *cli.Context) error {
 					pathToFile := ctx.Args().Get(0)
@@ -210,7 +225,19 @@ func main() {
 					if proofmode {
 						runnerMode = runner.ProofModeCairo1
 					}
-					return runVM(program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode)
+					userArgs, err := starknet.ParseCairoProgramArgs(args)
+					if err != nil {
+						return fmt.Errorf("cannot parse args: %w", err)
+					}
+					if availableGas > 0 {
+						// The first argument is the available gas
+						availableGasArg := starknet.CairoFuncArgs{
+							Single: new(fp.Element).SetUint64(availableGas),
+							Array:  nil,
+						}
+						userArgs = append([]starknet.CairoFuncArgs{availableGasArg}, userArgs...)
+					}
+					return runVM(program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode, userArgs)
 				},
 			},
 		},
@@ -236,6 +263,7 @@ func runVM(
 	airPrivateInputLocation string,
 	hints map[uint64][]hinter.Hinter,
 	runnerMode runner.RunnerMode,
+	userArgs []starknet.CairoFuncArgs,
 ) error {
 	fmt.Println("Running....")
 	runner, err := runner.NewRunner(&program, hints, runnerMode, collectTrace, maxsteps, layoutName)
@@ -248,11 +276,11 @@ func runVM(
 	// but these functions are implemented differently in both this and cairo-rs VMs
 	// and the difference is quite subtle.
 	if entrypointOffset == 0 {
-		if err := runner.Run(); err != nil {
+		if err := runner.Run(userArgs); err != nil {
 			return fmt.Errorf("runtime error: %w", err)
 		}
 	} else {
-		if err := runner.RunEntryPoint(entrypointOffset); err != nil {
+		if err := runner.RunEntryPoint(entrypointOffset, userArgs); err != nil {
 			return fmt.Errorf("runtime error (entrypoint=%d): %w", entrypointOffset, err)
 		}
 	}
