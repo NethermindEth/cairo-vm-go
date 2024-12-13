@@ -193,7 +193,7 @@ func TestParseStarknetProgramArgs(t *testing.T) {
 			args: "[1 2 3 4]",
 			expected: []CairoFuncArgs{
 				{
-					Single: new(fp.Element),
+					Single: nil,
 					Array: []fp.Element{
 						*new(fp.Element).SetUint64(1),
 						*new(fp.Element).SetUint64(2),
@@ -212,7 +212,7 @@ func TestParseStarknetProgramArgs(t *testing.T) {
 					Array:  nil,
 				},
 				{
-					Single: new(fp.Element),
+					Single: nil,
 					Array: []fp.Element{
 						*new(fp.Element).SetUint64(2),
 						*new(fp.Element).SetUint64(3),
@@ -224,7 +224,7 @@ func TestParseStarknetProgramArgs(t *testing.T) {
 					Array:  nil,
 				},
 				{
-					Single: new(fp.Element),
+					Single: nil,
 					Array: []fp.Element{
 						*new(fp.Element).SetUint64(6),
 						*new(fp.Element).SetUint64(7),
@@ -232,7 +232,7 @@ func TestParseStarknetProgramArgs(t *testing.T) {
 					},
 				},
 				{
-					Single: new(fp.Element),
+					Single: nil,
 					Array: []fp.Element{
 						*new(fp.Element).SetUint64(1),
 					},
@@ -246,7 +246,7 @@ func TestParseStarknetProgramArgs(t *testing.T) {
 					Array:  nil,
 				},
 				{
-					Single: new(fp.Element),
+					Single: nil,
 					Array: []fp.Element{
 						*new(fp.Element).SetUint64(12341341234),
 						*new(fp.Element).SetUint64(0),
