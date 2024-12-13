@@ -574,7 +574,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 		}
 	}
 	hints := map[uint64][]hinter.Hinter{
-		uint64(len(ctx.instructions)): []hinter.Hinter{
+		uint64(len(ctx.instructions)): {
 			&core.ExternalWriteArgsToMemory{},
 		},
 	}
