@@ -302,9 +302,6 @@ func (runner *Runner) RunUntilPc(pc *mem.MemoryAddress) error {
 				runner.maxsteps,
 			)
 		}
-		if runner.vm.Context.Pc.Offset == 3 {
-			runner.vm.PrintMemory()
-		}
 		if err := runner.vm.RunStep(&runner.hintrunner); err != nil {
 			return fmt.Errorf("pc %s step %d: %w", runner.pc(), runner.steps(), err)
 		}
@@ -531,7 +528,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 	}
 	apOffset += paramsSize
 	usedArgs := 0
-
+	writeArgsHint := false
 	for _, builtin := range function.Builtins {
 		if offset, isBuiltin := builtinsOffsetsMap[builtin]; isBuiltin {
 			ctx.AddInlineCASM(
@@ -571,11 +568,15 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 			apOffset += param.Size
 			usedArgs += param.Size
 		}
+		writeArgsHint = true
 	}
-	hints := map[uint64][]hinter.Hinter{
-		uint64(len(ctx.instructions)): {
-			&core.ExternalWriteArgsToMemory{},
-		},
+	var hints map[uint64][]hinter.Hinter
+	if writeArgsHint {
+		hints = map[uint64][]hinter.Hinter{
+			uint64(len(ctx.instructions)): {
+				&core.ExternalWriteArgsToMemory{},
+			},
+		}
 	}
 	ctx.AddInlineCASM(fmt.Sprintf("call rel %d;", apOffset+1))
 	ctx.AddInlineCASM("ret;")
