@@ -16,15 +16,19 @@ type HintRunner struct {
 }
 
 func NewHintRunner(hints map[uint64][]h.Hinter, userArgs []starknet.CairoFuncArgs) HintRunner {
-	return HintRunner{
-		// Context for certain hints that require it. Each manager is
-		// initialized only when required by the hint
-		context: *h.SetContextWithScope(
+	context := *h.InitializeDefaultContext()
+	if userArgs != nil {
+		context = *h.SetContextWithScope(
 			map[string]any{
 				"userArgs": userArgs,
 			},
-		),
-		hints: hints,
+		)
+	}
+	return HintRunner{
+		// Context for certain hints that require it. Each manager is
+		// initialized only when required by the hint
+		context: context,
+		hints:   hints,
 	}
 }
 
