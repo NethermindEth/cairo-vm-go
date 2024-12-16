@@ -266,7 +266,7 @@ func runVM(
 	userArgs []starknet.CairoFuncArgs,
 ) error {
 	fmt.Println("Running....")
-	runner, err := runner.NewRunner(&program, hints, runnerMode, collectTrace, maxsteps, layoutName)
+	runner, err := runner.NewRunner(&program, hints, runnerMode, collectTrace, maxsteps, layoutName, userArgs)
 	if err != nil {
 		return fmt.Errorf("cannot create runner: %w", err)
 	}
@@ -276,11 +276,11 @@ func runVM(
 	// but these functions are implemented differently in both this and cairo-rs VMs
 	// and the difference is quite subtle.
 	if entrypointOffset == 0 {
-		if err := runner.Run(userArgs); err != nil {
+		if err := runner.Run(); err != nil {
 			return fmt.Errorf("runtime error: %w", err)
 		}
 	} else {
-		if err := runner.RunEntryPoint(entrypointOffset, userArgs); err != nil {
+		if err := runner.RunEntryPoint(entrypointOffset); err != nil {
 			return fmt.Errorf("runtime error (entrypoint=%d): %w", entrypointOffset, err)
 		}
 	}

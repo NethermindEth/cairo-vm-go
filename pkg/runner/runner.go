@@ -42,8 +42,8 @@ type Runner struct {
 type CairoRunner struct{}
 
 // Creates a new Runner of a Cairo Zero program
-func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode RunnerMode, collectTrace bool, maxsteps uint64, layoutName string) (Runner, error) {
-	hintrunner := hintrunner.NewHintRunner(hints)
+func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode RunnerMode, collectTrace bool, maxsteps uint64, layoutName string, userArgs []starknet.CairoFuncArgs) (Runner, error) {
+	hintrunner := hintrunner.NewHintRunner(hints, userArgs)
 	layout, err := builtins.GetLayout(layoutName)
 	if err != nil {
 		return Runner{}, err
@@ -91,7 +91,7 @@ func AssembleProgram(cairoProgram *starknet.StarknetProgram) (Program, map[uint6
 
 // RunEntryPoint is like Run, but it executes the program starting from the given PC offset.
 // This PC offset is expected to be a start from some function inside the loaded program.
-func (runner *Runner) RunEntryPoint(pc uint64, userArgs []starknet.CairoFuncArgs) error {
+func (runner *Runner) RunEntryPoint(pc uint64) error {
 	if runner.runFinished {
 		return errors.New("cannot re-run using the same runner")
 	}
@@ -114,7 +114,7 @@ func (runner *Runner) RunEntryPoint(pc uint64, userArgs []starknet.CairoFuncArgs
 	if runner.runnerMode == ProofModeCairo1 {
 		cairo1FpOffset = 2
 	}
-	end, err := runner.initializeEntrypoint(pc, nil, &mvReturnFp, memory, stack, cairo1FpOffset, userArgs)
+	end, err := runner.initializeEntrypoint(pc, nil, &mvReturnFp, memory, stack, cairo1FpOffset)
 	if err != nil {
 		return err
 	}
@@ -125,12 +125,12 @@ func (runner *Runner) RunEntryPoint(pc uint64, userArgs []starknet.CairoFuncArgs
 	return nil
 }
 
-func (runner *Runner) Run(userArgs []starknet.CairoFuncArgs) error {
+func (runner *Runner) Run() error {
 	if runner.runFinished {
 		return errors.New("cannot re-run using the same runner")
 	}
 
-	end, err := runner.initializeMainEntrypoint(userArgs)
+	end, err := runner.initializeMainEntrypoint()
 	if err != nil {
 		return fmt.Errorf("initializing main entry point: %w", err)
 	}
@@ -162,7 +162,7 @@ func (runner *Runner) initializeSegments() (*mem.Memory, error) {
 	return memory, nil
 }
 
-func (runner *Runner) initializeMainEntrypoint(userArgs []starknet.CairoFuncArgs) (mem.MemoryAddress, error) {
+func (runner *Runner) initializeMainEntrypoint() (mem.MemoryAddress, error) {
 	memory, err := runner.initializeSegments()
 	if err != nil {
 		return mem.UnknownAddress, err
@@ -181,9 +181,9 @@ func (runner *Runner) initializeMainEntrypoint(userArgs []starknet.CairoFuncArgs
 			return mem.UnknownAddress, errors.New("can't find an entrypoint for main")
 		}
 		if runner.runnerMode == ExecutionMode {
-			return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 0, userArgs)
+			return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 0)
 		} else {
-			return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 2, userArgs)
+			return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 2)
 		}
 	case ProofModeCairo0:
 		initialPCOffset, ok := runner.program.Labels["__start__"]
@@ -206,7 +206,7 @@ func (runner *Runner) initializeMainEntrypoint(userArgs []starknet.CairoFuncArgs
 		if err := runner.initializeVm(&mem.MemoryAddress{
 			SegmentIndex: vm.ProgramSegment,
 			Offset:       initialPCOffset,
-		}, stack, memory, 0, userArgs); err != nil {
+		}, stack, memory, 0); err != nil {
 			return mem.UnknownAddress, err
 		}
 
@@ -220,7 +220,7 @@ func (runner *Runner) initializeMainEntrypoint(userArgs []starknet.CairoFuncArgs
 }
 
 func (runner *Runner) initializeEntrypoint(
-	initialPCOffset uint64, arguments []*fp.Element, returnFp *mem.MemoryValue, memory *mem.Memory, stack []mem.MemoryValue, cairo1FpOffset uint64, userArgs []starknet.CairoFuncArgs,
+	initialPCOffset uint64, arguments []*fp.Element, returnFp *mem.MemoryValue, memory *mem.Memory, stack []mem.MemoryValue, cairo1FpOffset uint64,
 ) (mem.MemoryAddress, error) {
 	for i := range arguments {
 		stack = append(stack, mem.MemoryValueFromFieldElement(arguments[i]))
@@ -230,7 +230,7 @@ func (runner *Runner) initializeEntrypoint(
 	return endPC, runner.initializeVm(&mem.MemoryAddress{
 		SegmentIndex: vm.ProgramSegment,
 		Offset:       initialPCOffset,
-	}, stack, memory, cairo1FpOffset, userArgs)
+	}, stack, memory, cairo1FpOffset)
 }
 
 func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue, error) {
@@ -266,7 +266,7 @@ func (runner *Runner) isProofMode() bool {
 }
 
 func (runner *Runner) initializeVm(
-	initialPC *mem.MemoryAddress, stack []mem.MemoryValue, memory *mem.Memory, cairo1FpOffset uint64, userArgs []starknet.CairoFuncArgs,
+	initialPC *mem.MemoryAddress, stack []mem.MemoryValue, memory *mem.Memory, cairo1FpOffset uint64,
 ) error {
 	executionSegment := memory.Segments[vm.ExecutionSegment]
 	offset := executionSegment.Len()
@@ -287,7 +287,6 @@ func (runner *Runner) initializeVm(
 	}, memory, vm.VirtualMachineConfig{
 		ProofMode:    runner.isProofMode(),
 		CollectTrace: runner.collectTrace,
-		UserArgs:     userArgs,
 	})
 	return err
 }

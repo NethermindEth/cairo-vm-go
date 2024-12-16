@@ -27,10 +27,10 @@ func TestSimpleProgram(t *testing.T) {
     `)
 
 	hints := make(map[uint64][]hinter.Hinter)
-	runner, err := NewRunner(program, hints, ExecutionMode, false, math.MaxUint64, "plain")
+	runner, err := NewRunner(program, hints, ExecutionMode, false, math.MaxUint64, "plain", nil)
 	require.NoError(t, err)
 
-	endPc, err := runner.initializeMainEntrypoint(nil)
+	endPc, err := runner.initializeMainEntrypoint()
 	require.NoError(t, err)
 
 	expectedPc := memory.MemoryAddress{SegmentIndex: 3, Offset: 0}
@@ -74,10 +74,10 @@ func TestStepLimitExceeded(t *testing.T) {
     `)
 
 	hints := make(map[uint64][]hinter.Hinter)
-	runner, err := NewRunner(program, hints, ExecutionMode, false, 3, "plain")
+	runner, err := NewRunner(program, hints, ExecutionMode, false, 3, "plain", nil)
 	require.NoError(t, err)
 
-	endPc, err := runner.initializeMainEntrypoint(nil)
+	endPc, err := runner.initializeMainEntrypoint()
 	require.NoError(t, err)
 
 	expectedPc := memory.MemoryAddress{SegmentIndex: 3, Offset: 0}
@@ -133,10 +133,10 @@ func TestStepLimitExceededProofMode(t *testing.T) {
 		// when maxstep = 6, it fails executing the extra step required by proof mode
 		// when maxstep = 7, it fails trying to get the trace to be a power of 2
 		hints := make(map[uint64][]hinter.Hinter)
-		runner, err := NewRunner(program, hints, ProofModeCairo0, false, uint64(maxstep), "plain")
+		runner, err := NewRunner(program, hints, ProofModeCairo0, false, uint64(maxstep), "plain", nil)
 		require.NoError(t, err)
 
-		err = runner.Run(nil)
+		err = runner.Run()
 		require.ErrorContains(t, err, "step limit exceeded")
 
 		executionSegment := runner.vm.Memory.Segments[vm.ExecutionSegment]
@@ -188,7 +188,7 @@ func TestBitwiseBuiltin(t *testing.T) {
         ret;
     `, "starknet_with_keccak", builtins.BitwiseType)
 
-	err := runner.Run(nil)
+	err := runner.Run()
 	require.NoError(t, err)
 
 	bitwise, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtins.BitwiseName)
@@ -204,7 +204,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
 	    ret;
 	`, "starknet_with_keccak", builtins.BitwiseType)
 
-	err := runner.Run(nil)
+	err := runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
 
 	// inferring second write to cell
@@ -212,7 +212,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
 	    [ap] = [[fp - 3] + 1];
 	    ret;
 	`, "starknet_with_keccak", builtins.BitwiseType)
-	err = runner.Run(nil)
+	err = runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
 
 	// trying to infer without writing before
@@ -221,7 +221,7 @@ func TestBitwiseBuiltinError(t *testing.T) {
         ret;
     `, "starknet_with_keccak", builtins.BitwiseType)
 
-	err = runner.Run(nil)
+	err = runner.Run()
 	require.ErrorContains(t, err, "input value at offset 0 is unknown")
 }
 
@@ -234,7 +234,7 @@ func TestOutputBuiltin(t *testing.T) {
         [ap + 1] = [[fp - 3] + 1];
         ret;
     `, "small", builtins.OutputType)
-	err := runner.Run(nil)
+	err := runner.Run()
 	require.NoError(t, err)
 
 	output := runner.Output()
@@ -264,7 +264,7 @@ func TestPedersenBuiltin(t *testing.T) {
     `, val1.Text(10), val2.Text(10), val3.Text(10))
 
 	runner := createRunner(code, "small", builtins.PedersenType)
-	err := runner.Run(nil)
+	err := runner.Run()
 	require.NoError(t, err)
 
 	pedersen, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtins.PedersenName)
@@ -277,14 +277,14 @@ func TestPedersenBuiltinError(t *testing.T) {
         [ap] = [[fp - 3]];
         ret;
     `, "small", builtins.PedersenType)
-	err := runner.Run(nil)
+	err := runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
 
 	runner = createRunner(`
         [ap] = [[fp - 3] + 2];
         ret;
     `, "small", builtins.PedersenType)
-	err = runner.Run(nil)
+	err = runner.Run()
 	require.ErrorContains(t, err, "input value at offset 0 is unknown")
 }
 
@@ -300,7 +300,7 @@ func TestRangeCheckBuiltin(t *testing.T) {
         ret;
     `, "small", builtins.RangeCheckType)
 
-	err := runner.Run(nil)
+	err := runner.Run()
 	require.NoError(t, err)
 
 	rangeCheck, ok := runner.vm.Memory.FindSegmentWithBuiltin("range_check")
@@ -321,7 +321,7 @@ func TestRangeCheckBuiltinError(t *testing.T) {
         ret;
     `, "small", builtins.RangeCheckType)
 
-	err := runner.Run(nil)
+	err := runner.Run()
 	require.ErrorContains(t, err, "check write: 2**128 <")
 
 	// second test fails due to reading unknown value
@@ -330,7 +330,7 @@ func TestRangeCheckBuiltinError(t *testing.T) {
         ret;
     `, "small", builtins.RangeCheckType)
 
-	err = runner.Run(nil)
+	err = runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
 }
 
@@ -346,7 +346,7 @@ func TestRangeCheck96Builtin(t *testing.T) {
         ret;
     `, "all_cairo", builtins.RangeCheck96Type)
 
-	err := runner.Run(nil)
+	err := runner.Run()
 	require.NoError(t, err)
 
 	rangeCheck96, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtins.RangeCheck96Name)
@@ -367,7 +367,7 @@ func TestRangeCheck96BuiltinError(t *testing.T) {
         ret;
     `, "all_cairo", builtins.RangeCheck96Type)
 
-	err := runner.Run(nil)
+	err := runner.Run()
 	require.ErrorContains(t, err, "check write: 2**96 <")
 
 	// second test fails due to reading unknown value
@@ -376,7 +376,7 @@ func TestRangeCheck96BuiltinError(t *testing.T) {
         ret;
     `, "all_cairo", builtins.RangeCheck96Type)
 
-	err = runner.Run(nil)
+	err = runner.Run()
 	require.ErrorContains(t, err, "cannot infer value")
 }
 
@@ -406,7 +406,7 @@ func TestEcOpBuiltin(t *testing.T) {
         ret;
     `, "starknet_with_keccak", builtins.ECOPType)
 
-	err := runner.Run(nil)
+	err := runner.Run()
 	require.NoError(t, err)
 }
 
@@ -423,7 +423,7 @@ func TestModuloBuiltin(t *testing.T) {
 	// 	ret;
 	// `, "small", sn.AddMod, sn.MulMod)
 
-	// err := runner.Run(nil)
+	// err := runner.Run()
 	// require.NoError(t, err)
 
 	// modulo, ok := runner.vm.Memory.FindSegmentWithBuiltin("add_mod")
@@ -436,7 +436,7 @@ func createRunner(code string, layoutName string, builtins ...builtins.BuiltinTy
 	program := createProgramWithBuiltins(code, builtins...)
 
 	hints := make(map[uint64][]hinter.Hinter)
-	runner, err := NewRunner(program, hints, ExecutionMode, false, math.MaxUint64, layoutName)
+	runner, err := NewRunner(program, hints, ExecutionMode, false, math.MaxUint64, layoutName, nil)
 	if err != nil {
 		panic(err)
 	}

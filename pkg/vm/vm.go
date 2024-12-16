@@ -6,7 +6,6 @@ import (
 	"math"
 
 	asmb "github.com/NethermindEth/cairo-vm-go/pkg/assembler"
-	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -77,7 +76,6 @@ type VirtualMachineConfig struct {
 	ProofMode bool
 	// If true, the vm collects the relocated trace at the end of execution, without finalizing segments
 	CollectTrace bool
-	UserArgs     []starknet.CairoFuncArgs
 }
 
 type VirtualMachine struct {

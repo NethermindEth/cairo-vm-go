@@ -1937,7 +1937,14 @@ func (hint *ExternalWriteArgsToMemory) String() string {
 }
 
 func (hint *ExternalWriteArgsToMemory) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-	userArgs := vm.Config.UserArgs
+	userArgsVar, err := ctx.ScopeManager.GetVariableValue("userArgs")
+	if err != nil {
+		return fmt.Errorf("get user args: %v", err)
+	}
+	userArgs, ok := userArgsVar.([]starknet.CairoFuncArgs)
+	if !ok {
+		return fmt.Errorf("expected user args to be a list of CairoFuncArgs")
+	}
 	for _, arg := range userArgs {
 		if arg.Single != nil {
 			mv := mem.MemoryValueFromFieldElement(arg.Single)
@@ -1955,5 +1962,6 @@ func (hint *ExternalWriteArgsToMemory) Execute(vm *VM.VirtualMachine, ctx *hinte
 			// TODO: Implement array writing
 		}
 	}
+	ctx.ScopeManager.ExitScope()
 	return nil
 }
