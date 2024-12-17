@@ -1962,9 +1962,5 @@ func (hint *ExternalWriteArgsToMemory) Execute(vm *VM.VirtualMachine, ctx *hinte
 			// TODO: Implement array writing
 		}
 	}
-	err = ctx.ScopeManager.ExitScope()
-	if err != nil {
-		return fmt.Errorf("exit scope: %v", err)
-	}
 	return nil
 }

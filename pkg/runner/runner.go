@@ -579,7 +579,13 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 			},
 		}
 	}
-	ctx.AddInlineCASM(fmt.Sprintf("call rel %d; ret;", ctx.currentCodeOffset))
+	_, endInstructionsSize, err := assembler.CasmToBytecode("call rel 0; ret;")
+	if err != nil {
+		return nil, nil, err
+	}
+	totalSize := uint64(endInstructionsSize) + uint64(ctx.currentCodeOffset)
+	//TODO: This will always result in 3 in the current form, but lets keep the calculation dynamic for the moment
+	ctx.AddInlineCASM(fmt.Sprintf("call rel %d; ret;", int(totalSize)-ctx.currentCodeOffset))
 	return ctx.instructions, hints, nil
 }
 
