@@ -459,16 +459,18 @@ func runVm(path, layout string, zero bool) (time.Duration, string, string, strin
 	}
 	args := []string{
 		cliCommand,
-		"--proofmode",
+		// "--proofmode",
 		"--tracefile",
 		traceOutput,
 		"--memoryfile",
 		memoryOutput,
 		"--layout",
 		layout,
-		path,
 	}
-
+	if !zero {
+		args = append(args, "--available_gas", "9999999")
+	}
+	args = append(args, path)
 	cmd := exec.Command(
 		"../bin/cairo-vm",
 		args...,

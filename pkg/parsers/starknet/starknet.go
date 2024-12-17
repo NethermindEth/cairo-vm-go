@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
@@ -94,4 +96,42 @@ func StarknetProgramFromFile(pathToFile string) (*StarknetProgram, error) {
 func StarknetProgramFromJSON(content json.RawMessage) (*StarknetProgram, error) {
 	var starknet StarknetProgram
 	return &starknet, json.Unmarshal(content, &starknet)
+}
+
+type CairoFuncArgs struct {
+	Single *fp.Element
+	Array  []fp.Element
+}
+
+func ParseCairoProgramArgs(input string) ([]CairoFuncArgs, error) {
+	re := regexp.MustCompile(`\[[^\]]*\]|\S+`)
+	tokens := re.FindAllString(input, -1)
+	var result []CairoFuncArgs
+	for _, token := range tokens {
+		if single, err := new(fp.Element).SetString(token); err == nil {
+			result = append(result, CairoFuncArgs{
+				Single: single,
+				Array:  nil,
+			})
+		} else if strings.HasPrefix(token, "[") && strings.HasSuffix(token, "]") {
+			arrayStr := strings.Trim(token, "[]")
+			arrayParts := strings.Fields(arrayStr)
+			var array []fp.Element
+			for _, part := range arrayParts {
+				single, err := new(fp.Element).SetString(part)
+				if err != nil {
+					return nil, fmt.Errorf("invalid felt value in array: %v", err)
+				}
+				array = append(array, *single)
+			}
+			result = append(result, CairoFuncArgs{
+				Single: nil,
+				Array:  array,
+			})
+		} else {
+			return nil, fmt.Errorf("invalid token: %s", token)
+		}
+	}
+
+	return result, nil
 }
