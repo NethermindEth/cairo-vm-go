@@ -557,6 +557,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 			)
 			apOffset += 1
 			usedArgs += 1
+			writeArgsHint = true
 		}
 	}
 	for _, param := range paramTypes {
@@ -578,9 +579,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 			},
 		}
 	}
-	ctx.AddInlineCASM(fmt.Sprintf("call rel %d;", apOffset+1))
-	ctx.AddInlineCASM("ret;")
-
+	ctx.AddInlineCASM(fmt.Sprintf("call rel %d; ret;", ctx.currentCodeOffset))
 	return ctx.instructions, hints, nil
 }
 
