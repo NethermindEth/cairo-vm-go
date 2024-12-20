@@ -1948,6 +1948,7 @@ func (hint *ExternalWriteArgsToMemory) Execute(vm *VM.VirtualMachine, ctx *hinte
 	for _, arg := range userArgs {
 		if arg.Single != nil {
 			mv := mem.MemoryValueFromFieldElement(arg.Single)
+			//TODO: Temporary solution, AP based, to be replaced with a proper memory allocation
 			err := vm.Memory.Write(1, vm.Context.Ap-uint64(len(userArgs)), &mv)
 			if err != nil {
 				return fmt.Errorf("write single arg: %v", err)
