@@ -18,11 +18,7 @@ type HintRunner struct {
 func NewHintRunner(hints map[uint64][]h.Hinter, userArgs []starknet.CairoFuncArgs) HintRunner {
 	context := *h.InitializeDefaultContext()
 	if userArgs != nil {
-		context = *h.SetContextWithScope(
-			map[string]any{
-				"userArgs": userArgs,
-			},
-		)
+		context.ScopeManager.AssignVariable("userArgs", userArgs)
 	}
 	return HintRunner{
 		// Context for certain hints that require it. Each manager is

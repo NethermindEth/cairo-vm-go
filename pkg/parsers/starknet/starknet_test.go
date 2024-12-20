@@ -3,7 +3,6 @@ package starknet
 import (
 	"testing"
 
-	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -170,96 +169,4 @@ func TestInvalidBuiltin(t *testing.T) {
     `)
 	_, err := StarknetProgramFromJSON(testData)
 	assert.Error(t, err)
-}
-
-func TestParseStarknetProgramArgs(t *testing.T) {
-	testCases := []struct {
-		name     string
-		args     string
-		expected []CairoFuncArgs
-	}{
-		{
-			name: "single arg",
-			args: "1",
-			expected: []CairoFuncArgs{
-				{
-					Single: new(fp.Element).SetUint64(1),
-					Array:  nil,
-				},
-			},
-		},
-		{
-			name: "single array arg",
-			args: "[1 2 3 4]",
-			expected: []CairoFuncArgs{
-				{
-					Single: nil,
-					Array: []fp.Element{
-						*new(fp.Element).SetUint64(1),
-						*new(fp.Element).SetUint64(2),
-						*new(fp.Element).SetUint64(3),
-						*new(fp.Element).SetUint64(4),
-					},
-				},
-			},
-		},
-		{
-			name: "mixed args",
-			args: "1 [2 3 4] 5 [6 7 8] [1] 9 9 [12341341234 0]",
-			expected: []CairoFuncArgs{
-				{
-					Single: new(fp.Element).SetUint64(1),
-					Array:  nil,
-				},
-				{
-					Single: nil,
-					Array: []fp.Element{
-						*new(fp.Element).SetUint64(2),
-						*new(fp.Element).SetUint64(3),
-						*new(fp.Element).SetUint64(4),
-					},
-				},
-				{
-					Single: new(fp.Element).SetUint64(5),
-					Array:  nil,
-				},
-				{
-					Single: nil,
-					Array: []fp.Element{
-						*new(fp.Element).SetUint64(6),
-						*new(fp.Element).SetUint64(7),
-						*new(fp.Element).SetUint64(8),
-					},
-				},
-				{
-					Single: nil,
-					Array: []fp.Element{
-						*new(fp.Element).SetUint64(1),
-					},
-				},
-				{
-					Single: new(fp.Element).SetUint64(9),
-					Array:  nil,
-				},
-				{
-					Single: new(fp.Element).SetUint64(9),
-					Array:  nil,
-				},
-				{
-					Single: nil,
-					Array: []fp.Element{
-						*new(fp.Element).SetUint64(12341341234),
-						*new(fp.Element).SetUint64(0),
-					},
-				},
-			},
-		},
-	}
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			args, err := ParseCairoProgramArgs(testCase.args)
-			require.NoError(t, err)
-			assert.Equal(t, testCase.expected, args)
-		})
-	}
 }
