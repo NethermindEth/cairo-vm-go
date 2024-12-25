@@ -83,7 +83,7 @@ type VirtualMachine struct {
 	Memory  *mem.Memory
 	Step    uint64
 	Trace   []Context
-	Config  VirtualMachineConfig
+	config  VirtualMachineConfig
 	// instructions cache
 	instructions map[uint64]*asmb.Instruction
 	// RcLimitsMin and RcLimitsMax define the range of values of instructions offsets, used for checking the number of potential range checks holes
@@ -116,7 +116,7 @@ func NewVirtualMachine(
 		Context:      initialContext,
 		Memory:       memory,
 		Trace:        trace,
-		Config:       config,
+		config:       config,
 		instructions: make(map[uint64]*asmb.Instruction),
 		RcLimitsMin:  math.MaxUint16,
 		RcLimitsMax:  0,
@@ -151,7 +151,7 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 	}
 
 	// store the trace before state change
-	if vm.Config.ProofMode || vm.Config.CollectTrace {
+	if vm.config.ProofMode || vm.config.CollectTrace {
 		vm.Trace = append(vm.Trace, vm.Context)
 	}
 
