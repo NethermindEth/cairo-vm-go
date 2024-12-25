@@ -47,7 +47,7 @@ integration:
 		if [ ! -d rust_vm_bin/cairo ]; then \
 			mkdir -p rust_vm_bin/cairo-lang; \
 		fi; \
-		if [ ! -f rust_vm_bin/cairo/cairo-compile ] || [ ! -f rust_vm_bin/cairo/sierra-compile-json ] || [ ! -d rust_vm_bin/corelib ]; then \
+		if [ ! -f ./rust_vm_bin/cairo-lang/cairo-compile ] || [ ! -f ./rust_vm_bin/cairo-lang/sierra-compile-json ] || [ ! -d rust_vm_bin/corelib ]; then \
 			cd rust_vm_bin; \
 			git clone --single-branch --branch feat/main-casm-json --depth=1 https://github.com/zmalatrax/cairo.git; \
 			mv cairo/corelib .; \
@@ -56,11 +56,11 @@ integration:
 			rm -rf cairo; \
 			cd ../; \
 		fi; \
-		if [ ! -f ./rust_vm_bin/cairo/cairo1-run ] || [ ! -f ./rust_vm_bin/cairo-vm-cli ]; then \
+		if [ ! -f ./rust_vm_bin/cairo-lang/cairo1-run ] || [ ! -f ./rust_vm_bin/cairo-vm-cli ]; then \
 			cd rust_vm_bin; \
 			git clone https://github.com/lambdaclass/cairo-vm.git; \
 			cd cairo-vm && cargo build --release --bin cairo-vm-cli --bin cairo1-run && cd ../; \
-			mv cairo-vm/target/release/cairo1-run cairo;\
+			mv cairo-vm/target/release/cairo1-run cairo-lang;\
 			mv cairo-vm/target/release/cairo-vm-cli . ; \
 			rm -rf cairo-vm; \
 			cd ../; \
