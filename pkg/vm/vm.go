@@ -92,8 +92,10 @@ type VirtualMachine struct {
 }
 
 func (vm *VirtualMachine) PrintMemory() {
-	for j, cell := range vm.Memory.Segments[ExecutionSegment].Data {
-		fmt.Printf("\tCell %d: %s\n", j, cell)
+	for i, _ := range vm.Memory.Segments {
+		for j, cell := range vm.Memory.Segments[i].Data {
+			fmt.Printf("%d:%d %s\n", i, j, cell)
+		}
 	}
 }
 

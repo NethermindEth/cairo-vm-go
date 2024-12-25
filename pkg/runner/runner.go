@@ -176,10 +176,8 @@ func (runner *Runner) initializeMainEntrypoint() (mem.MemoryAddress, error) {
 	case ExecutionMode, ProofModeCairo1:
 		returnFp := memory.AllocateEmptySegment()
 		mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
-		mainPCOffset, ok := runner.program.Entrypoints["main"]
-		if !ok {
-			return mem.UnknownAddress, errors.New("can't find an entrypoint for main")
-		}
+		// In Cairo mainPCOffset is equal to the offset of program segment base
+		mainPCOffset := uint64(0)
 		if runner.runnerMode == ExecutionMode {
 			return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 0)
 		} else {
@@ -276,7 +274,16 @@ func (runner *Runner) initializeVm(
 			return err
 		}
 	}
-
+	// Write builtins costs segment address to the end of the program segment
+	if runner.runnerMode == ProofModeCairo1 || runner.runnerMode == ExecutionMode {
+		builtinsCostSegmentAddress := memory.AllocateEmptySegment()
+		mv := mem.MemoryValueFromMemoryAddress(&builtinsCostSegmentAddress)
+		programSegment := memory.Segments[vm.ProgramSegment]
+		err := memory.Write(0, programSegment.Len(), &mv)
+		if err != nil {
+			return err
+		}
+	}
 	initialFp := offset + uint64(len(stack)) + cairo1FpOffset
 	var err error
 	// initialize vm
@@ -499,7 +506,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 	paramTypes := function.InputArgs
 	apOffset := 0
 	builtinOffset := 3
-
+	codeOffset := uint64(function.Offset)
 	builtinsOffsetsMap := map[builtins.BuiltinType]int{}
 	emulatedBuiltins := map[builtins.BuiltinType]struct{}{
 		builtins.SystemType: {},
@@ -528,7 +535,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 	}
 	apOffset += paramsSize
 	usedArgs := 0
-	writeArgsHint := false
+	var hints map[uint64][]hinter.Hinter
 	for _, builtin := range function.Builtins {
 		if offset, isBuiltin := builtinsOffsetsMap[builtin]; isBuiltin {
 			ctx.AddInlineCASM(
@@ -550,14 +557,14 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 			)
 			apOffset += 1
 		} else if builtin == builtins.GasBuiltinType {
-			ctx.AddInlineCASM(
-				`
-					ap += 1;
-				`,
-			)
+			hints = map[uint64][]hinter.Hinter{
+				uint64(ctx.currentCodeOffset): {
+					&core.ExternalWriteArgsToMemory{},
+				},
+			}
+			ctx.AddInlineCASM("ap += 1;")
 			apOffset += 1
 			usedArgs += 1
-			writeArgsHint = true
 		}
 	}
 	for _, param := range paramTypes {
@@ -569,23 +576,13 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 			apOffset += param.Size
 			usedArgs += param.Size
 		}
-		writeArgsHint = true
-	}
-	var hints map[uint64][]hinter.Hinter
-	if writeArgsHint {
-		hints = map[uint64][]hinter.Hinter{
-			uint64(len(ctx.instructions)): {
-				&core.ExternalWriteArgsToMemory{},
-			},
-		}
 	}
 	_, endInstructionsSize, err := assembler.CasmToBytecode("call rel 0; ret;")
 	if err != nil {
 		return nil, nil, err
 	}
-	totalSize := uint64(endInstructionsSize) + uint64(ctx.currentCodeOffset)
-	//TODO: This will always result in 3 in the current form, but lets keep the calculation dynamic for the moment
-	ctx.AddInlineCASM(fmt.Sprintf("call rel %d; ret;", int(totalSize)-ctx.currentCodeOffset))
+	totalSize := uint64(endInstructionsSize) + uint64(codeOffset)
+	ctx.AddInlineCASM(fmt.Sprintf("call rel %d; ret;", int(totalSize)))
 	return ctx.instructions, hints, nil
 }
 
