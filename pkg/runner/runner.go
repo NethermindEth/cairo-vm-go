@@ -3,10 +3,13 @@ package runner
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
+	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/core"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
@@ -39,8 +42,8 @@ type Runner struct {
 type CairoRunner struct{}
 
 // Creates a new Runner of a Cairo Zero program
-func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode RunnerMode, collectTrace bool, maxsteps uint64, layoutName string) (Runner, error) {
-	hintrunner := hintrunner.NewHintRunner(hints)
+func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode RunnerMode, collectTrace bool, maxsteps uint64, layoutName string, userArgs []starknet.CairoFuncArgs) (Runner, error) {
+	hintrunner := hintrunner.NewHintRunner(hints, userArgs)
 	layout, err := builtins.GetLayout(layoutName)
 	if err != nil {
 		return Runner{}, err
@@ -53,6 +56,37 @@ func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode Ru
 		maxsteps:     maxsteps,
 		layout:       layout,
 	}, nil
+}
+
+func AssembleProgram(cairoProgram *starknet.StarknetProgram) (Program, map[uint64][]hinter.Hinter, error) {
+	mainFunc, ok := cairoProgram.EntryPointsByFunction["main"]
+	if !ok {
+		return Program{}, nil, fmt.Errorf("cannot find main function")
+	}
+	program, err := LoadCairoProgram(cairoProgram)
+	if err != nil {
+		return Program{}, nil, fmt.Errorf("cannot load program: %w", err)
+	}
+	hints, err := core.GetCairoHints(cairoProgram)
+	if err != nil {
+		return Program{}, nil, fmt.Errorf("cannot get hints: %w", err)
+	}
+	entryCodeInstructions, entryCodeHints, err := GetEntryCodeInstructions(mainFunc, false)
+	if err != nil {
+		return Program{}, nil, fmt.Errorf("cannot load entry code instructions: %w", err)
+	}
+	program.Bytecode = append(entryCodeInstructions, program.Bytecode...)
+	program.Bytecode = append(program.Bytecode, GetFooterInstructions()...)
+
+	offset := uint64(len(entryCodeInstructions))
+	shiftedHintsMap := make(map[uint64][]hinter.Hinter)
+	for key, value := range hints {
+		shiftedHintsMap[key+offset] = value
+	}
+	for key, hint := range entryCodeHints {
+		shiftedHintsMap[key] = hint
+	}
+	return *program, shiftedHintsMap, nil
 }
 
 // RunEntryPoint is like Run, but it executes the program starting from the given PC offset.
@@ -84,7 +118,6 @@ func (runner *Runner) RunEntryPoint(pc uint64) error {
 	if err != nil {
 		return err
 	}
-
 	if err := runner.RunUntilPc(&end); err != nil {
 		return err
 	}
@@ -107,7 +140,7 @@ func (runner *Runner) Run() error {
 		return err
 	}
 
-	if runner.runnerMode == ProofModeCairo0 || runner.runnerMode == ProofModeCairo1 {
+	if runner.isProofMode() {
 		// +1 because proof mode require an extra instruction run
 		// pow2 because proof mode also requires that the trace is a power of two
 		pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
@@ -143,10 +176,8 @@ func (runner *Runner) initializeMainEntrypoint() (mem.MemoryAddress, error) {
 	case ExecutionMode, ProofModeCairo1:
 		returnFp := memory.AllocateEmptySegment()
 		mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
-		mainPCOffset, ok := runner.program.Entrypoints["main"]
-		if !ok {
-			return mem.UnknownAddress, errors.New("can't find an entrypoint for main")
-		}
+		// In Cairo mainPCOffset is equal to the offset of program segment base
+		mainPCOffset := uint64(0)
 		if runner.runnerMode == ExecutionMode {
 			return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 0)
 		} else {
@@ -220,12 +251,16 @@ func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue,
 	stack := []mem.MemoryValue{}
 	// adding to the stack only the builtins that are both in the program and in the layout
 	for _, bRunner := range runner.layout.Builtins {
-		builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
-		if utils.Contains(runner.program.Builtins, bRunner.Builtin) {
+		if utils.Contains(runner.program.Builtins, bRunner.Builtin) || runner.isProofMode() {
+			builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
 			stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
 		}
 	}
 	return stack, nil
+}
+
+func (runner *Runner) isProofMode() bool {
+	return runner.runnerMode == ProofModeCairo0 || runner.runnerMode == ProofModeCairo1
 }
 
 func (runner *Runner) initializeVm(
@@ -239,7 +274,16 @@ func (runner *Runner) initializeVm(
 			return err
 		}
 	}
-
+	// Write builtins costs segment address to the end of the program segment
+	if runner.runnerMode == ProofModeCairo1 || runner.runnerMode == ExecutionMode {
+		builtinsCostSegmentAddress := memory.AllocateEmptySegment()
+		mv := mem.MemoryValueFromMemoryAddress(&builtinsCostSegmentAddress)
+		programSegment := memory.Segments[vm.ProgramSegment]
+		err := memory.Write(0, programSegment.Len(), &mv)
+		if err != nil {
+			return err
+		}
+	}
 	initialFp := offset + uint64(len(stack)) + cairo1FpOffset
 	var err error
 	// initialize vm
@@ -248,7 +292,7 @@ func (runner *Runner) initializeVm(
 		Ap: initialFp,
 		Fp: initialFp,
 	}, memory, vm.VirtualMachineConfig{
-		ProofMode:    runner.runnerMode == ProofModeCairo0 || runner.runnerMode == ProofModeCairo1,
+		ProofMode:    runner.isProofMode(),
 		CollectTrace: runner.collectTrace,
 	})
 	return err
@@ -458,105 +502,88 @@ func (ctx *InlineCasmContext) AddInlineCASM(code string) {
 	ctx.currentCodeOffset += int(total_size)
 }
 
-func GetEntryCodeInstructions() ([]*fp.Element, error) {
-	//TODO: investigate how to implement function param types
-	paramTypes := []struct {
-		genericTypeId builtins.BuiltinType
-		size          int
-	}{}
-	codeOffset := 0
+func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeForProof bool) ([]*fp.Element, map[uint64][]hinter.Hinter, error) {
+	paramTypes := function.InputArgs
+	apOffset := 0
+	builtinOffset := 3
+	codeOffset := uint64(function.Offset)
+	builtinsOffsetsMap := map[builtins.BuiltinType]int{}
+	emulatedBuiltins := map[builtins.BuiltinType]struct{}{
+		builtins.SystemType: {},
+	}
+
+	for _, builtin := range []builtins.BuiltinType{
+		builtins.MulModType,
+		builtins.AddModeType,
+		builtins.RangeCheck96Type,
+		builtins.PoseidonType,
+		builtins.ECOPType,
+		builtins.BitwiseType,
+		builtins.RangeCheckType,
+		builtins.PedersenType,
+	} {
+		if slices.Contains(function.Builtins, builtin) {
+			builtinsOffsetsMap[builtins.BuiltinType(builtin)] = builtinOffset
+			builtinOffset += 1
+		}
+	}
 
 	ctx := &InlineCasmContext{}
-
-	builtinOffset := map[builtins.BuiltinType]int{
-		builtins.PedersenType:     10,
-		builtins.RangeCheckType:   9,
-		builtins.BitwiseType:      8,
-		builtins.ECOPType:         7,
-		builtins.PoseidonType:     6,
-		builtins.RangeCheck96Type: 5,
-		builtins.AddModeType:      4,
-		builtins.MulModType:       3,
-	}
-
-	emulatedBuiltins := map[builtins.BuiltinType]struct{}{
-		1: {},
-	}
-
-	apOffset := 0
 	paramsSize := 0
 	for _, param := range paramTypes {
-		ty, size := param.genericTypeId, param.size
-		if _, inBuiltin := builtinOffset[ty]; !inBuiltin {
-			if _, emulated := emulatedBuiltins[ty]; !emulated && ty != 99 {
-				paramsSize += size
-			}
-		}
+		paramsSize += param.Size
 	}
-	ctx.AddInlineCASM(
-		fmt.Sprintf("ap += %d;", paramsSize),
-	)
 	apOffset += paramsSize
-
-	for _, param := range paramTypes {
-		if param.genericTypeId == 99 {
-			ctx.AddInlineCASM(
-				`%{ memory[ap + 0] = segments.add() %}
-				%{ memory[ap + 1] = segments.add() %}
-				ap += 2;
-				[ap + 0] = 0, ap++;
-				[ap - 2] = [[ap - 3]];
-				[ap - 1] = [[ap - 3] + 1];
-				[ap - 1] = [[ap - 3] + 2];
-				apOffset += 3`,
-			)
-		}
-	}
-
 	usedArgs := 0
-	for _, param := range paramTypes {
-		ty, tySize := param.genericTypeId, param.size
-		if offset, isBuiltin := builtinOffset[ty]; isBuiltin {
+	var hints map[uint64][]hinter.Hinter
+	for _, builtin := range function.Builtins {
+		if offset, isBuiltin := builtinsOffsetsMap[builtin]; isBuiltin {
 			ctx.AddInlineCASM(
 				fmt.Sprintf("[ap + 0] = [fp - %d], ap++;", offset),
 			)
 			apOffset += 1
-		} else if _, emulated := emulatedBuiltins[ty]; emulated {
+		} else if _, emulated := emulatedBuiltins[builtin]; emulated {
 			ctx.AddInlineCASM(
-				`memory[ap + 0] = segments.add();
-				ap += 1;`,
+				`
+					%{ memory[ap + 0] = segments.add() %}
+					ap += 1;
+				`,
 			)
 			apOffset += 1
-		} else if ty == 99 {
+		} else if builtin == builtins.SegmentArenaType {
 			offset := apOffset - paramsSize
 			ctx.AddInlineCASM(
 				fmt.Sprintf("[ap + 0] = [ap - %d] + 3, ap++;", offset),
 			)
 			apOffset += 1
-		} else {
-			offset := apOffset - usedArgs
-			for i := 0; i < tySize; i++ {
-				ctx.AddInlineCASM(
-					fmt.Sprintf("[ap + 0] = [ap - %d], ap++;", offset),
-				)
-				apOffset += 1
-				usedArgs += 1
+		} else if builtin == builtins.GasBuiltinType {
+			hints = map[uint64][]hinter.Hinter{
+				uint64(ctx.currentCodeOffset): {
+					&core.ExternalWriteArgsToMemory{},
+				},
 			}
+			ctx.AddInlineCASM("ap += 1;")
+			apOffset += 1
+			usedArgs += 1
 		}
 	}
-
-	beforeFinalCall := ctx.currentCodeOffset
-	finalCallSize := 3
-	offset := finalCallSize + codeOffset
-	ctx.AddInlineCASM(fmt.Sprintf(`
-		call rel %d;
-		ret;
-	`, offset))
-	if beforeFinalCall+finalCallSize != ctx.currentCodeOffset {
-		return nil, errors.New("final call offset mismatch")
+	for _, param := range paramTypes {
+		offset := apOffset - usedArgs
+		for i := 0; i < param.Size; i++ {
+			ctx.AddInlineCASM(
+				fmt.Sprintf("[ap + 0] = [ap - %d], ap++;", offset),
+			)
+			apOffset += param.Size
+			usedArgs += param.Size
+		}
 	}
-
-	return ctx.instructions, nil
+	_, endInstructionsSize, err := assembler.CasmToBytecode("call rel 0; ret;")
+	if err != nil {
+		return nil, nil, err
+	}
+	totalSize := uint64(endInstructionsSize) + uint64(codeOffset)
+	ctx.AddInlineCASM(fmt.Sprintf("call rel %d; ret;", int(totalSize)))
+	return ctx.instructions, hints, nil
 }
 
 func GetFooterInstructions() []*fp.Element {

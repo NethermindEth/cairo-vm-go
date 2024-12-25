@@ -478,7 +478,7 @@ func (hint DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) e
 	return nil
 }
 
-type U256InvModN struct {
+type Uint256InvModN struct {
 	B0        hinter.Reference
 	B1        hinter.Reference
 	N0        hinter.Reference
@@ -491,11 +491,11 @@ type U256InvModN struct {
 	TOrK1     hinter.Reference
 }
 
-func (hint U256InvModN) String() string {
+func (hint Uint256InvModN) String() string {
 	return "U256InvModN"
 }
 
-func (hint U256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
+func (hint Uint256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) error {
 	B0, err := hint.B0.Resolve(vm)
 	if err != nil {
 		return fmt.Errorf("resolve B0 operand %s: %v", hint.B0, err)
@@ -1928,4 +1928,39 @@ func (hint *FieldSqrt) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContex
 	}
 
 	return vm.Memory.WriteToAddress(&sqrtAddr, &sqrtVal)
+}
+
+type ExternalWriteArgsToMemory struct{}
+
+func (hint *ExternalWriteArgsToMemory) String() string {
+	return "ExternalWriteToMemory"
+}
+
+func (hint *ExternalWriteArgsToMemory) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+	userArgsVar, err := ctx.ScopeManager.GetVariableValue("userArgs")
+	if err != nil {
+		return fmt.Errorf("get user args: %v", err)
+	}
+	userArgs, ok := userArgsVar.([]starknet.CairoFuncArgs)
+	if !ok {
+		return fmt.Errorf("expected user args to be a list of CairoFuncArgs")
+	}
+	for _, arg := range userArgs {
+		if arg.Single != nil {
+			mv := mem.MemoryValueFromFieldElement(arg.Single)
+			err := vm.Memory.Write(1, vm.Context.Ap, &mv)
+			if err != nil {
+				return fmt.Errorf("write single arg: %v", err)
+			}
+		} else if arg.Array != nil {
+			arrayBase := vm.Memory.AllocateEmptySegment()
+			mv := mem.MemoryValueFromMemoryAddress(&arrayBase)
+			err := vm.Memory.Write(1, vm.Context.Ap, &mv)
+			if err != nil {
+				return fmt.Errorf("write array base: %v", err)
+			}
+			// TODO: Implement array writing
+		}
+	}
+	return nil
 }
