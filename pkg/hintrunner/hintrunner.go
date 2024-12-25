@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	h "github.com/NethermindEth/cairo-vm-go/pkg/hintrunner/hinter"
+	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 )
 
@@ -14,11 +15,18 @@ type HintRunner struct {
 	hints map[uint64][]h.Hinter
 }
 
-func NewHintRunner(hints map[uint64][]h.Hinter) HintRunner {
+func NewHintRunner(hints map[uint64][]h.Hinter, userArgs []starknet.CairoFuncArgs) HintRunner {
+	context := *h.InitializeDefaultContext()
+	if userArgs != nil {
+		err := context.ScopeManager.AssignVariable("userArgs", userArgs)
+		if err != nil {
+			panic(fmt.Errorf("assign userArgs: %v", err))
+		}
+	}
 	return HintRunner{
 		// Context for certain hints that require it. Each manager is
 		// initialized only when required by the hint
-		context: *h.InitializeDefaultContext(),
+		context: context,
 		hints:   hints,
 	}
 }

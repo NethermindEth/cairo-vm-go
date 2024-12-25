@@ -1929,3 +1929,38 @@ func (hint *FieldSqrt) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContex
 
 	return vm.Memory.WriteToAddress(&sqrtAddr, &sqrtVal)
 }
+
+type ExternalWriteArgsToMemory struct{}
+
+func (hint *ExternalWriteArgsToMemory) String() string {
+	return "ExternalWriteToMemory"
+}
+
+func (hint *ExternalWriteArgsToMemory) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+	userArgsVar, err := ctx.ScopeManager.GetVariableValue("userArgs")
+	if err != nil {
+		return fmt.Errorf("get user args: %v", err)
+	}
+	userArgs, ok := userArgsVar.([]starknet.CairoFuncArgs)
+	if !ok {
+		return fmt.Errorf("expected user args to be a list of CairoFuncArgs")
+	}
+	for _, arg := range userArgs {
+		if arg.Single != nil {
+			mv := mem.MemoryValueFromFieldElement(arg.Single)
+			err := vm.Memory.Write(1, vm.Context.Ap, &mv)
+			if err != nil {
+				return fmt.Errorf("write single arg: %v", err)
+			}
+		} else if arg.Array != nil {
+			arrayBase := vm.Memory.AllocateEmptySegment()
+			mv := mem.MemoryValueFromMemoryAddress(&arrayBase)
+			err := vm.Memory.Write(1, vm.Context.Ap, &mv)
+			if err != nil {
+				return fmt.Errorf("write array base: %v", err)
+			}
+			// TODO: Implement array writing
+		}
+	}
+	return nil
+}

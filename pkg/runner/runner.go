@@ -42,8 +42,8 @@ type Runner struct {
 type CairoRunner struct{}
 
 // Creates a new Runner of a Cairo Zero program
-func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode RunnerMode, collectTrace bool, maxsteps uint64, layoutName string) (Runner, error) {
-	hintrunner := hintrunner.NewHintRunner(hints)
+func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode RunnerMode, collectTrace bool, maxsteps uint64, layoutName string, userArgs []starknet.CairoFuncArgs) (Runner, error) {
+	hintrunner := hintrunner.NewHintRunner(hints, userArgs)
 	layout, err := builtins.GetLayout(layoutName)
 	if err != nil {
 		return Runner{}, err
@@ -67,21 +67,24 @@ func AssembleProgram(cairoProgram *starknet.StarknetProgram) (Program, map[uint6
 	if err != nil {
 		return Program{}, nil, fmt.Errorf("cannot load program: %w", err)
 	}
-	entryCodeInstructions, err := GetEntryCodeInstructions(mainFunc, false, 0)
+	hints, err := core.GetCairoHints(cairoProgram)
+	if err != nil {
+		return Program{}, nil, fmt.Errorf("cannot get hints: %w", err)
+	}
+	entryCodeInstructions, entryCodeHints, err := GetEntryCodeInstructions(mainFunc, false)
 	if err != nil {
 		return Program{}, nil, fmt.Errorf("cannot load entry code instructions: %w", err)
 	}
 	program.Bytecode = append(entryCodeInstructions, program.Bytecode...)
 	program.Bytecode = append(program.Bytecode, GetFooterInstructions()...)
 
-	hints, err := core.GetCairoHints(cairoProgram)
-	if err != nil {
-		return Program{}, nil, fmt.Errorf("cannot get hints: %w", err)
-	}
 	offset := uint64(len(entryCodeInstructions))
 	shiftedHintsMap := make(map[uint64][]hinter.Hinter)
 	for key, value := range hints {
 		shiftedHintsMap[key+offset] = value
+	}
+	for key, hint := range entryCodeHints {
+		shiftedHintsMap[key] = hint
 	}
 	return *program, shiftedHintsMap, nil
 }
@@ -115,10 +118,6 @@ func (runner *Runner) RunEntryPoint(pc uint64) error {
 	if err != nil {
 		return err
 	}
-	err = runner.loadArguments(uint64(0), uint64(8979879877))
-	if err != nil {
-		return err
-	}
 	if err := runner.RunUntilPc(&end); err != nil {
 		return err
 	}
@@ -136,10 +135,6 @@ func (runner *Runner) Run() error {
 		return fmt.Errorf("initializing main entry point: %w", err)
 	}
 
-	err = runner.loadArguments(uint64(0), uint64(8979879877))
-	if err != nil {
-		return err
-	}
 	err = runner.RunUntilPc(&end)
 	if err != nil {
 		return err
@@ -181,10 +176,8 @@ func (runner *Runner) initializeMainEntrypoint() (mem.MemoryAddress, error) {
 	case ExecutionMode, ProofModeCairo1:
 		returnFp := memory.AllocateEmptySegment()
 		mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
-		mainPCOffset, ok := runner.program.Entrypoints["main"]
-		if !ok {
-			return mem.UnknownAddress, errors.New("can't find an entrypoint for main")
-		}
+		// In Cairo mainPCOffset is equal to the offset of program segment base
+		mainPCOffset := uint64(0)
 		if runner.runnerMode == ExecutionMode {
 			return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 0)
 		} else {
@@ -281,7 +274,16 @@ func (runner *Runner) initializeVm(
 			return err
 		}
 	}
-
+	// Write builtins costs segment address to the end of the program segment
+	if runner.runnerMode == ProofModeCairo1 || runner.runnerMode == ExecutionMode {
+		builtinsCostSegmentAddress := memory.AllocateEmptySegment()
+		mv := mem.MemoryValueFromMemoryAddress(&builtinsCostSegmentAddress)
+		programSegment := memory.Segments[vm.ProgramSegment]
+		err := memory.Write(0, programSegment.Len(), &mv)
+		if err != nil {
+			return err
+		}
+	}
 	initialFp := offset + uint64(len(stack)) + cairo1FpOffset
 	var err error
 	// initialize vm
@@ -294,12 +296,6 @@ func (runner *Runner) initializeVm(
 		CollectTrace: runner.collectTrace,
 	})
 	return err
-}
-
-func (runner *Runner) loadArguments(args, initialGas uint64) error {
-	mv := mem.MemoryValueFromUint(initialGas)
-	runner.vm.Memory.Segments[vm.ExecutionSegment].Write(runner.vm.Context.Ap+1, &mv)
-	return nil
 }
 
 // run until the program counter equals the `pc` parameter
@@ -506,11 +502,11 @@ func (ctx *InlineCasmContext) AddInlineCASM(code string) {
 	ctx.currentCodeOffset += int(total_size)
 }
 
-func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeForProof bool, initialGas uint64) ([]*fp.Element, error) {
+func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeForProof bool) ([]*fp.Element, map[uint64][]hinter.Hinter, error) {
 	paramTypes := function.InputArgs
 	apOffset := 0
 	builtinOffset := 3
-
+	codeOffset := uint64(function.Offset)
 	builtinsOffsetsMap := map[builtins.BuiltinType]int{}
 	emulatedBuiltins := map[builtins.BuiltinType]struct{}{
 		builtins.SystemType: {},
@@ -539,7 +535,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 	}
 	apOffset += paramsSize
 	usedArgs := 0
-
+	var hints map[uint64][]hinter.Hinter
 	for _, builtin := range function.Builtins {
 		if offset, isBuiltin := builtinsOffsetsMap[builtin]; isBuiltin {
 			ctx.AddInlineCASM(
@@ -561,11 +557,12 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 			)
 			apOffset += 1
 		} else if builtin == builtins.GasBuiltinType {
-			ctx.AddInlineCASM(
-				`
-					ap += 1;
-				`,
-			)
+			hints = map[uint64][]hinter.Hinter{
+				uint64(ctx.currentCodeOffset): {
+					&core.ExternalWriteArgsToMemory{},
+				},
+			}
+			ctx.AddInlineCASM("ap += 1;")
 			apOffset += 1
 			usedArgs += 1
 		}
@@ -580,10 +577,13 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 			usedArgs += param.Size
 		}
 	}
-	ctx.AddInlineCASM(fmt.Sprintf("call rel %d;", apOffset+1))
-	ctx.AddInlineCASM("ret;")
-
-	return ctx.instructions, nil
+	_, endInstructionsSize, err := assembler.CasmToBytecode("call rel 0; ret;")
+	if err != nil {
+		return nil, nil, err
+	}
+	totalSize := uint64(endInstructionsSize) + uint64(codeOffset)
+	ctx.AddInlineCASM(fmt.Sprintf("call rel %d; ret;", int(totalSize)))
+	return ctx.instructions, hints, nil
 }
 
 func GetFooterInstructions() []*fp.Element {
