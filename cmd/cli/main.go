@@ -121,9 +121,9 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
-					runnerMode := runner.ExecutionMode
+					runnerMode := runner.ExecutionModeZero
 					if proofmode {
-						runnerMode = runner.ProofModeCairo0
+						runnerMode = runner.ProofModeZero
 					}
 					return runVM(*program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode, nil)
 				},
@@ -221,9 +221,9 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot assemble program: %w", err)
 					}
-					runnerMode := runner.ExecutionMode
+					runnerMode := runner.ExecutionModeCairo
 					if proofmode {
-						runnerMode = runner.ProofModeCairo1
+						runnerMode = runner.ProofModeCairo
 					}
 					userArgs, err := starknet.ParseCairoProgramArgs(args)
 					if err != nil {

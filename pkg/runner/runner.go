@@ -20,9 +20,10 @@ import (
 type RunnerMode uint8
 
 const (
-	ExecutionMode RunnerMode = iota + 1
-	ProofModeCairo0
-	ProofModeCairo1
+	ExecutionModeZero RunnerMode = iota + 1
+	ProofModeZero
+	ExecutionModeCairo
+	ProofModeCairo
 )
 
 type Runner struct {
@@ -111,7 +112,7 @@ func (runner *Runner) RunEntryPoint(pc uint64) error {
 	returnFp := memory.AllocateEmptySegment()
 	mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
 	cairo1FpOffset := uint64(0)
-	if runner.runnerMode == ProofModeCairo1 {
+	if runner.runnerMode == ProofModeCairo {
 		cairo1FpOffset = 2
 	}
 	end, err := runner.initializeEntrypoint(pc, nil, &mvReturnFp, memory, stack, cairo1FpOffset)
@@ -173,17 +174,20 @@ func (runner *Runner) initializeMainEntrypoint() (mem.MemoryAddress, error) {
 		return mem.UnknownAddress, err
 	}
 	switch runner.runnerMode {
-	case ExecutionMode, ProofModeCairo1:
+	case ExecutionModeZero, ExecutionModeCairo, ProofModeCairo:
 		returnFp := memory.AllocateEmptySegment()
 		mvReturnFp := mem.MemoryValueFromMemoryAddress(&returnFp)
-		// In Cairo mainPCOffset is equal to the offset of program segment base
-		mainPCOffset := uint64(0)
-		if runner.runnerMode == ExecutionMode {
-			return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 0)
+		if runner.isCairoMode() {
+			// In Cairo mainPCOffset is equal to the offset of program segment base
+			return runner.initializeEntrypoint(uint64(0), nil, &mvReturnFp, memory, stack, 2)
 		} else {
-			return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 2)
+			mainPCOffset, ok := runner.program.Entrypoints["main"]
+			if !ok {
+				return mem.UnknownAddress, errors.New("can't find an entrypoint for main")
+			}
+			return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 0)
 		}
-	case ProofModeCairo0:
+	case ProofModeZero:
 		initialPCOffset, ok := runner.program.Labels["__start__"]
 		if !ok {
 			return mem.UnknownAddress,
@@ -260,7 +264,11 @@ func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue,
 }
 
 func (runner *Runner) isProofMode() bool {
-	return runner.runnerMode == ProofModeCairo0 || runner.runnerMode == ProofModeCairo1
+	return runner.runnerMode == ProofModeCairo || runner.runnerMode == ProofModeZero
+}
+
+func (runner *Runner) isCairoMode() bool {
+	return runner.runnerMode == ExecutionModeCairo || runner.runnerMode == ProofModeCairo
 }
 
 func (runner *Runner) initializeVm(
@@ -275,7 +283,7 @@ func (runner *Runner) initializeVm(
 		}
 	}
 	// Write builtins costs segment address to the end of the program segment
-	if runner.runnerMode == ProofModeCairo1 || runner.runnerMode == ExecutionMode {
+	if runner.isCairoMode() {
 		builtinsCostSegmentAddress := memory.AllocateEmptySegment()
 		mv := mem.MemoryValueFromMemoryAddress(&builtinsCostSegmentAddress)
 		programSegment := memory.Segments[vm.ProgramSegment]

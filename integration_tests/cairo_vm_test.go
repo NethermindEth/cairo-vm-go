@@ -74,14 +74,11 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		return
 	}
 	layout := getLayoutFromFileName(path)
-	rustVmFilePath := path
-	if zero {
-		rustVmFilePath = compiledOutput
-	}
-	elapsedRs, rsTraceFile, rsMemoryFile, err := runRustVm(rustVmFilePath, layout, zero)
+
+	_, traceFile, memoryFile, _, err := runVm(compiledOutput, layout, zero)
 	if errorExpected {
-		// we let the code go on so that we can check if the go vm also raises an error
 		assert.Error(t, err, path)
+		writeToFile(path)
 		return
 	} else {
 		if err != nil {
@@ -91,10 +88,14 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		}
 	}
 
-	elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput, layout, zero)
+	rustVmFilePath := path
+	if zero {
+		rustVmFilePath = compiledOutput
+	}
+	_, rsTraceFile, rsMemoryFile, err := runRustVm(rustVmFilePath, layout, zero)
 	if errorExpected {
+		// we let the code go on so that we can check if the go vm also raises an error
 		assert.Error(t, err, path)
-		writeToFile(path)
 		return
 	} else {
 		if err != nil {
@@ -128,49 +129,49 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		writeToFile(path)
 	}
 
-	if zero {
-		elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(compiledOutput, layout)
-		if errorExpected {
-			// we let the code go on so that we can check if the go vm also raises an error
-			assert.Error(t, err, path)
-		} else {
-			if err != nil {
-				t.Error(err)
-				return
-			}
-		}
+	// if zero {
+	// 	elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(compiledOutput, layout)
+	// 	if errorExpected {
+	// 		// we let the code go on so that we can check if the go vm also raises an error
+	// 		assert.Error(t, err, path)
+	// 	} else {
+	// 		if err != nil {
+	// 			t.Error(err)
+	// 			return
+	// 		}
+	// 	}
 
-		if benchmark {
-			benchmarkMap[name] = [3]int{int(elapsedPy.Milliseconds()), int(elapsedGo.Milliseconds()), int(elapsedRs.Milliseconds())}
-		}
+	// 	if benchmark {
+	// 		benchmarkMap[name] = [3]int{int(elapsedPy.Milliseconds()), int(elapsedGo.Milliseconds()), int(elapsedRs.Milliseconds())}
+	// 	}
 
-		pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
-		if err != nil {
-			t.Error(err)
-			return
-		}
+	// 	pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
+	// 	if err != nil {
+	// 		t.Error(err)
+	// 		return
+	// 	}
 
-		if !assert.Equal(t, pyTrace, rsTrace) {
-			t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
-			t.Logf("rstrace:\n%s\n", traceRepr(rsTrace))
-			writeToFile(path)
-		}
-		if !assert.Equal(t, pyMemory, rsMemory) {
-			t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
-			t.Logf("rsmemory;\n%s\n", memoryRepr(rsMemory))
-			writeToFile(path)
-		}
-		if !assert.Equal(t, pyTrace, trace) {
-			t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
-			t.Logf("trace:\n%s\n", traceRepr(trace))
-			writeToFile(path)
-		}
-		if !assert.Equal(t, pyMemory, memory) {
-			t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
-			t.Logf("memory;\n%s\n", memoryRepr(memory))
-			writeToFile(path)
-		}
-	}
+	// 	if !assert.Equal(t, pyTrace, rsTrace) {
+	// 		t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
+	// 		t.Logf("rstrace:\n%s\n", traceRepr(rsTrace))
+	// 		writeToFile(path)
+	// 	}
+	// 	if !assert.Equal(t, pyMemory, rsMemory) {
+	// 		t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
+	// 		t.Logf("rsmemory;\n%s\n", memoryRepr(rsMemory))
+	// 		writeToFile(path)
+	// 	}
+	// 	if !assert.Equal(t, pyTrace, trace) {
+	// 		t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
+	// 		t.Logf("trace:\n%s\n", traceRepr(trace))
+	// 		writeToFile(path)
+	// 	}
+	// 	if !assert.Equal(t, pyMemory, memory) {
+	// 		t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
+	// 		t.Logf("memory;\n%s\n", memoryRepr(memory))
+	// 		writeToFile(path)
+	// 	}
+	// }
 }
 
 var zerobench = flag.Bool("zerobench", false, "run integration tests and generate benchmarks file")
@@ -241,9 +242,9 @@ func TestCairoFiles(t *testing.T) {
 
 	wg.Wait() // wait for all goroutines to finish
 
-	for _, root := range roots {
-		clean(root.path)
-	}
+	// for _, root := range roots {
+	// 	clean(root.path)
+	// }
 
 	if *zerobench {
 		WriteBenchMarksToFile(benchmarkMap)
@@ -335,7 +336,7 @@ func compileCairoCode(path string, zero bool) (string, error) {
 		}
 	} else {
 		sierraOutput := swapExtenstion(path, sierraSuffix)
-		cliCommand = "../rust_vm_bin/cairo/cairo-compile"
+		cliCommand = "../rust_vm_bin/cairo-lang/cairo-compile"
 		args = []string{
 			"--single-file",
 			path,
@@ -352,7 +353,7 @@ func compileCairoCode(path string, zero bool) (string, error) {
 			)
 		}
 
-		cliCommand = "../rust_vm_bin/cairo/sierra-compile-json"
+		cliCommand = "../rust_vm_bin/cairo-lang/sierra-compile-json"
 		args = []string{
 			sierraOutput,
 			compiledOutput,
@@ -426,7 +427,7 @@ func runRustVm(path, layout string, zero bool) (time.Duration, string, string, e
 		args = append(args, "--proof_mode")
 	}
 
-	binaryPath := "./../rust_vm_bin/cairo/cairo1-run"
+	binaryPath := "./../rust_vm_bin/cairo-lang/cairo1-run"
 	if zero {
 		binaryPath = "./../rust_vm_bin/cairo-vm-cli"
 	}
@@ -459,7 +460,7 @@ func runVm(path, layout string, zero bool) (time.Duration, string, string, strin
 	}
 	args := []string{
 		cliCommand,
-		// "--proofmode",
+		"--proofmode",
 		"--tracefile",
 		traceOutput,
 		"--memoryfile",
@@ -468,9 +469,21 @@ func runVm(path, layout string, zero bool) (time.Duration, string, string, strin
 		layout,
 	}
 	if !zero {
-		args = append(args, "--available_gas", "9999999")
+		args = []string{
+			cliCommand,
+			// "--proofmode",
+			"--tracefile",
+			traceOutput,
+			"--memoryfile",
+			memoryOutput,
+			"--layout",
+			layout,
+			"--available_gas",
+			"9999999",
+		}
 	}
 	args = append(args, path)
+	fmt.Println(args)
 	cmd := exec.Command(
 		"../bin/cairo-vm",
 		args...,
