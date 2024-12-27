@@ -242,21 +242,22 @@ func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue,
 	}
 	// check if all builtins from the program are in the layout
 	for _, programBuiltin := range runner.program.Builtins {
-		if programBuiltin != builtins.GasBuiltinType {
-			if _, found := builtinsSet[programBuiltin]; !found {
-				builtinName, err := programBuiltin.MarshalJSON()
-				if err != nil {
-					return []mem.MemoryValue{}, err
-				}
-				return []mem.MemoryValue{}, fmt.Errorf("builtin %s not found in the layout: %s", builtinName, runner.layout.Name)
+		if programBuiltin == builtins.GasBuiltinType || programBuiltin == builtins.SegmentArenaType {
+			continue
+		}
+		if _, found := builtinsSet[programBuiltin]; !found {
+			builtinName, err := programBuiltin.MarshalJSON()
+			if err != nil {
+				return []mem.MemoryValue{}, err
 			}
+			return []mem.MemoryValue{}, fmt.Errorf("builtin %s not found in the layout: %s", builtinName, runner.layout.Name)
 		}
 	}
 	stack := []mem.MemoryValue{}
-	// adding to the stack only the builtins that are both in the program and in the layout
+
 	for _, bRunner := range runner.layout.Builtins {
-		if utils.Contains(runner.program.Builtins, bRunner.Builtin) || runner.isProofMode() {
-			builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
+		builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
+		if utils.Contains(runner.program.Builtins, bRunner.Builtin) {
 			stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
 		}
 	}
@@ -309,6 +310,11 @@ func (runner *Runner) initializeVm(
 // run until the program counter equals the `pc` parameter
 func (runner *Runner) RunUntilPc(pc *mem.MemoryAddress) error {
 	for !runner.vm.Context.Pc.Equal(pc) {
+		fmt.Println("pc", runner.pc(), "ap", runner.vm.Context.Ap, "fp", runner.vm.Context.Fp)
+		// if runner.steps() == 4 {
+		// 	runner.vm.PrintMemory()
+		// }
+		// runner.vm.PrintMemory()
 		if runner.steps() >= runner.maxsteps {
 			return fmt.Errorf(
 				"pc %s step %d: max step limit exceeded (%d)",
@@ -545,6 +551,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 	usedArgs := 0
 	var hints map[uint64][]hinter.Hinter
 	for _, builtin := range function.Builtins {
+		fmt.Println("builtin", builtin, builtin == builtins.GasBuiltinType)
 		if offset, isBuiltin := builtinsOffsetsMap[builtin]; isBuiltin {
 			ctx.AddInlineCASM(
 				fmt.Sprintf("[ap + 0] = [fp - %d], ap++;", offset),
@@ -565,6 +572,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 			)
 			apOffset += 1
 		} else if builtin == builtins.GasBuiltinType {
+			fmt.Println("builtin == builtins.GasBuiltinType")
 			hints = map[uint64][]hinter.Hinter{
 				uint64(ctx.currentCodeOffset): {
 					&core.ExternalWriteArgsToMemory{},

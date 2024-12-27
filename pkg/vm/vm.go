@@ -94,6 +94,9 @@ type VirtualMachine struct {
 func (vm *VirtualMachine) PrintMemory() {
 	for i := range vm.Memory.Segments {
 		for j, cell := range vm.Memory.Segments[i].Data {
+			if !cell.Known() {
+				continue
+			}
 			fmt.Printf("%d:%d %s\n", i, j, cell)
 		}
 	}

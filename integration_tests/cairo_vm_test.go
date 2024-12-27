@@ -242,9 +242,9 @@ func TestCairoFiles(t *testing.T) {
 
 	wg.Wait() // wait for all goroutines to finish
 
-	// for _, root := range roots {
-	// 	clean(root.path)
-	// }
+	for _, root := range roots {
+		clean(root.path)
+	}
 
 	if *zerobench {
 		WriteBenchMarksToFile(benchmarkMap)
@@ -483,7 +483,6 @@ func runVm(path, layout string, zero bool) (time.Duration, string, string, strin
 		}
 	}
 	args = append(args, path)
-	fmt.Println(args)
 	cmd := exec.Command(
 		"../bin/cairo-vm",
 		args...,
