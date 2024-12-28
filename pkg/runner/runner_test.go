@@ -434,9 +434,8 @@ func TestModuloBuiltin(t *testing.T) {
 
 func createRunner(code string, layoutName string, builtins ...builtins.BuiltinType) Runner {
 	program := createProgramWithBuiltins(code, builtins...)
-
 	hints := make(map[uint64][]hinter.Hinter)
-	runner, err := NewRunner(program, hints, ProofModeZero, false, math.MaxUint64, layoutName, nil)
+	runner, err := NewRunner(program, hints, ExecutionModeZero, false, math.MaxUint64, layoutName, nil)
 	if err != nil {
 		panic(err)
 	}

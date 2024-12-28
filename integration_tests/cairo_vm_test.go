@@ -75,7 +75,7 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	}
 	layout := getLayoutFromFileName(path)
 
-	_, traceFile, memoryFile, _, err := runVm(compiledOutput, layout, zero)
+	elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput, layout, zero)
 	if errorExpected {
 		assert.Error(t, err, path)
 		writeToFile(path)
@@ -92,7 +92,7 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	if zero {
 		rustVmFilePath = compiledOutput
 	}
-	_, rsTraceFile, rsMemoryFile, err := runRustVm(rustVmFilePath, layout, zero)
+	elapsedRs, rsTraceFile, rsMemoryFile, err := runRustVm(rustVmFilePath, layout, zero)
 	if errorExpected {
 		// we let the code go on so that we can check if the go vm also raises an error
 		assert.Error(t, err, path)
@@ -129,49 +129,39 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		writeToFile(path)
 	}
 
-	// if zero {
-	// 	elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(compiledOutput, layout)
-	// 	if errorExpected {
-	// 		// we let the code go on so that we can check if the go vm also raises an error
-	// 		assert.Error(t, err, path)
-	// 	} else {
-	// 		if err != nil {
-	// 			t.Error(err)
-	// 			return
-	// 		}
-	// 	}
+	if zero {
+		elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(compiledOutput, layout)
+		if errorExpected {
+			// we let the code go on so that we can check if the go vm also raises an error
+			assert.Error(t, err, path)
+		} else {
+			if err != nil {
+				t.Error(err)
+				return
+			}
+		}
 
-	// 	if benchmark {
-	// 		benchmarkMap[name] = [3]int{int(elapsedPy.Milliseconds()), int(elapsedGo.Milliseconds()), int(elapsedRs.Milliseconds())}
-	// 	}
+		if benchmark {
+			benchmarkMap[name] = [3]int{int(elapsedPy.Milliseconds()), int(elapsedGo.Milliseconds()), int(elapsedRs.Milliseconds())}
+		}
 
-	// 	pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
-	// 	if err != nil {
-	// 		t.Error(err)
-	// 		return
-	// 	}
+		pyTrace, pyMemory, err := decodeProof(pyTraceFile, pyMemoryFile)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
-	// 	if !assert.Equal(t, pyTrace, rsTrace) {
-	// 		t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
-	// 		t.Logf("rstrace:\n%s\n", traceRepr(rsTrace))
-	// 		writeToFile(path)
-	// 	}
-	// 	if !assert.Equal(t, pyMemory, rsMemory) {
-	// 		t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
-	// 		t.Logf("rsmemory;\n%s\n", memoryRepr(rsMemory))
-	// 		writeToFile(path)
-	// 	}
-	// 	if !assert.Equal(t, pyTrace, trace) {
-	// 		t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
-	// 		t.Logf("trace:\n%s\n", traceRepr(trace))
-	// 		writeToFile(path)
-	// 	}
-	// 	if !assert.Equal(t, pyMemory, memory) {
-	// 		t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
-	// 		t.Logf("memory;\n%s\n", memoryRepr(memory))
-	// 		writeToFile(path)
-	// 	}
-	// }
+		if !assert.Equal(t, pyTrace, trace) {
+			t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
+			t.Logf("trace:\n%s\n", traceRepr(trace))
+			writeToFile(path)
+		}
+		if !assert.Equal(t, pyMemory, memory) {
+			t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
+			t.Logf("memory;\n%s\n", memoryRepr(memory))
+			writeToFile(path)
+		}
+	}
 }
 
 var zerobench = flag.Bool("zerobench", false, "run integration tests and generate benchmarks file")

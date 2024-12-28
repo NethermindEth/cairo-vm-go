@@ -190,6 +190,7 @@ func (runner *Runner) initializeMainEntrypoint() (mem.MemoryAddress, error) {
 			return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 0)
 		}
 	case ProofModeZero:
+		fmt.Println("program: ", runner.program.Labels)
 		initialPCOffset, ok := runner.program.Labels["__start__"]
 		if !ok {
 			return mem.UnknownAddress,
@@ -295,7 +296,6 @@ func (runner *Runner) initializeVm(
 			return err
 		}
 	}
-	fmt.Println("offset", offset, "stackSize", stackSize, "cairo1FpOffset", cairo1FpOffset)
 	initialFp := offset + uint64(len(stack)) + cairo1FpOffset
 	var err error
 	// initialize vm
@@ -313,11 +313,6 @@ func (runner *Runner) initializeVm(
 // run until the program counter equals the `pc` parameter
 func (runner *Runner) RunUntilPc(pc *mem.MemoryAddress) error {
 	for !runner.vm.Context.Pc.Equal(pc) {
-		fmt.Println("pc", runner.pc(), "ap", runner.vm.Context.Ap, "fp", runner.vm.Context.Fp)
-		// if runner.steps() == 4 {
-		// 	runner.vm.PrintMemory()
-		// }
-		// runner.vm.PrintMemory()
 		if runner.steps() >= runner.maxsteps {
 			return fmt.Errorf(
 				"pc %s step %d: max step limit exceeded (%d)",
@@ -554,7 +549,6 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 	usedArgs := 0
 	var hints map[uint64][]hinter.Hinter
 	for _, builtin := range function.Builtins {
-		fmt.Println("builtin", builtin, builtin == builtins.GasBuiltinType)
 		if offset, isBuiltin := builtinsOffsetsMap[builtin]; isBuiltin {
 			ctx.AddInlineCASM(
 				fmt.Sprintf("[ap + 0] = [fp - %d], ap++;", offset),
@@ -575,7 +569,6 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 			)
 			apOffset += 1
 		} else if builtin == builtins.GasBuiltinType {
-			fmt.Println("builtin == builtins.GasBuiltinType")
 			hints = map[uint64][]hinter.Hinter{
 				uint64(ctx.currentCodeOffset): {
 					&core.ExternalWriteArgsToMemory{},
