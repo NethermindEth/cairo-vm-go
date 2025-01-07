@@ -266,10 +266,7 @@ func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue,
 	}
 	// Write builtins costs segment address to the end of the program segment
 	if runner.isCairoMode() {
-		builtinsCostSegmentAddress := memory.AllocateEmptySegment()
-		mv := mem.MemoryValueFromMemoryAddress(&builtinsCostSegmentAddress)
-		programSegment := memory.Segments[vm.ProgramSegment]
-		err := memory.Write(0, programSegment.Len(), &mv)
+		err := gasInitialization(memory)
 		if err != nil {
 			return nil, err
 		}
