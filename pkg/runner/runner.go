@@ -190,7 +190,6 @@ func (runner *Runner) initializeMainEntrypoint() (mem.MemoryAddress, error) {
 			return runner.initializeEntrypoint(mainPCOffset, nil, &mvReturnFp, memory, stack, 0)
 		}
 	case ProofModeZero:
-		fmt.Println("program: ", runner.program.Labels)
 		initialPCOffset, ok := runner.program.Labels["__start__"]
 		if !ok {
 			return mem.UnknownAddress,
@@ -259,9 +258,16 @@ func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue,
 	stack := []mem.MemoryValue{}
 
 	for _, bRunner := range runner.layout.Builtins {
-		builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
-		if utils.Contains(runner.program.Builtins, bRunner.Builtin) {
-			stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
+		if runner.isCairoMode() {
+			if utils.Contains(runner.program.Builtins, bRunner.Builtin) {
+				builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
+				stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
+			}
+		} else {
+			builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
+			if utils.Contains(runner.program.Builtins, bRunner.Builtin) {
+				stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
+			}
 		}
 	}
 	// Write builtins costs segment address to the end of the program segment
