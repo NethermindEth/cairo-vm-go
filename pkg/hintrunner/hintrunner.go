@@ -19,6 +19,7 @@ func NewHintRunner(hints map[uint64][]h.Hinter, userArgs []starknet.CairoFuncArg
 	context := *h.InitializeDefaultContext()
 	if userArgs != nil {
 		err := context.ScopeManager.AssignVariable("userArgs", userArgs)
+		// Error handling: this condition should never be true, since the context was initialized above
 		if err != nil {
 			panic(fmt.Errorf("assign userArgs: %v", err))
 		}

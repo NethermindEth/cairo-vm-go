@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
-	"github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 )
 
@@ -12,9 +11,6 @@ type TokenGasCost uint8
 
 const (
 	ConstToken TokenGasCost = iota + 1
-	HoleToken
-	RangeCheckToken
-	RangeCheck96Token
 	PedersenToken
 	PoseidonToken
 	BitwiseToken
@@ -23,6 +19,8 @@ const (
 	MulModToken
 )
 
+// Approximated costs token types
+// Src: https://github.com/starkware-libs/cairo/blob/9ac17df38f28f267e03a6522d12031976a66d305/crates/cairo-lang-runner/src/lib.rs#L109
 func getTokenGasCost(token TokenGasCost) (uint64, error) {
 	switch token {
 	case ConstToken:
@@ -44,7 +42,7 @@ func getTokenGasCost(token TokenGasCost) (uint64, error) {
 	}
 }
 
-func gasInitialization(memory *memory.Memory) error {
+func gasInitialization(memory *mem.Memory) error {
 	builtinsCostSegmentAddress := memory.AllocateEmptySegment()
 	mv := mem.MemoryValueFromMemoryAddress(&builtinsCostSegmentAddress)
 	programSegment := memory.Segments[vm.ProgramSegment]
