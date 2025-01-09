@@ -523,9 +523,6 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 	builtinOffset := 3
 	codeOffset := uint64(function.Offset)
 	builtinsOffsetsMap := map[builtins.BuiltinType]int{}
-	emulatedBuiltins := map[builtins.BuiltinType]struct{}{
-		builtins.SystemType: {},
-	}
 
 	for _, builtin := range []builtins.BuiltinType{
 		builtins.MulModType,
@@ -555,14 +552,6 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 		if offset, isBuiltin := builtinsOffsetsMap[builtin]; isBuiltin {
 			ctx.AddInlineCASM(
 				fmt.Sprintf("[ap + 0] = [fp - %d], ap++;", offset),
-			)
-			apOffset += 1
-		} else if _, emulated := emulatedBuiltins[builtin]; emulated {
-			ctx.AddInlineCASM(
-				`
-					%{ memory[ap + 0] = segments.add() %}
-					ap += 1;
-				`,
 			)
 			apOffset += 1
 		} else if builtin == builtins.SegmentArenaType {
