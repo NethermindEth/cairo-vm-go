@@ -25,7 +25,6 @@ const (
 	AddModeType
 	MulModType
 	GasBuiltinType
-	SystemType
 )
 
 func Runner(name BuiltinType) memory.BuiltinRunner {
