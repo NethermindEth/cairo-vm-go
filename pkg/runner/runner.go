@@ -316,6 +316,9 @@ func (runner *Runner) initializeVm(
 // run until the program counter equals the `pc` parameter
 func (runner *Runner) RunUntilPc(pc *mem.MemoryAddress) error {
 	for !runner.vm.Context.Pc.Equal(pc) {
+		if runner.vm.Context.Pc.Offset == 166 {
+			runner.vm.PrintMemory()
+		}
 		if runner.steps() >= runner.maxsteps {
 			return fmt.Errorf(
 				"pc %s step %d: max step limit exceeded (%d)",
@@ -541,13 +544,46 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 	}
 
 	ctx := &InlineCasmContext{}
+
+	gotSegmentArena := false
+	for _, builtin := range function.Builtins {
+		if builtin == builtins.SegmentArenaType {
+			gotSegmentArena = true
+		}
+	}
+
+	hints := make(map[uint64][]hinter.Hinter)
+
+	if gotSegmentArena {
+		hints[uint64(ctx.currentCodeOffset)] = []hinter.Hinter{
+			&core.AllocSegment{
+				Dst: hinter.ApCellRef(0),
+			},
+			&core.AllocSegment{
+				Dst: hinter.ApCellRef(1),
+			},
+		}
+		ctx.AddInlineCASM(
+			"[ap+2] = 0, ap++;",
+		)
+		ctx.AddInlineCASM(
+			"[ap] = [[ap-1]], ap++;",
+		)
+		ctx.AddInlineCASM(
+			`
+			[ap] = [[ap-2]+1], ap++;
+			[ap-1] = [[ap-3]+2];
+			`,
+		)
+		apOffset += 3
+	}
+
 	paramsSize := 0
 	for _, param := range paramTypes {
 		paramsSize += param.Size
 	}
 	apOffset += paramsSize
 	usedArgs := 0
-	var hints map[uint64][]hinter.Hinter
 	for _, builtin := range function.Builtins {
 		if offset, isBuiltin := builtinsOffsetsMap[builtin]; isBuiltin {
 			ctx.AddInlineCASM(
@@ -561,10 +597,8 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 			)
 			apOffset += 1
 		} else if builtin == builtins.GasBuiltinType {
-			hints = map[uint64][]hinter.Hinter{
-				uint64(ctx.currentCodeOffset): {
-					&core.ExternalWriteArgsToMemory{},
-				},
+			hints[uint64(ctx.currentCodeOffset)] = []hinter.Hinter{
+				&core.ExternalWriteArgsToMemory{},
 			}
 			ctx.AddInlineCASM("ap += 1;")
 			apOffset += 1
