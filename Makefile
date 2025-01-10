@@ -41,31 +41,29 @@ integration:
 	@echo "Running integration tests..."
 	@$(MAKE) build
 	@if [ $$? -eq 0 ]; then \
-		if [ ! -d ./rust_vm_bin ]; then \
-			mkdir -p ./rust_vm_bin; \
+		if [ ! -d rust_vm_bin ]; then \
+			mkdir -p rust_vm_bin; \
 		fi; \
-		if [ ! -d ./rust_vm_bin/cairo ]; then \
-			mkdir -p ./rust_vm_bin/cairo; \
+		if [ ! -d rust_vm_bin/cairo ]; then \
+			mkdir -p rust_vm_bin/cairo-lang; \
 		fi; \
-		if [ ! -f ./rust_vm_bin/cairo/cairo-compile ] || [ ! -f ./rust_vm_bin/cairo/sierra-compile-json ] || [ ! -d ./rust_vm_bin/corelib ]; then \
-			cd ./rust_vm_bin/cairo; \
+		if [ ! -f ./rust_vm_bin/cairo-lang/cairo-compile ] || [ ! -f ./rust_vm_bin/cairo-lang/sierra-compile-json ] || [ ! -d rust_vm_bin/corelib ]; then \
+			cd rust_vm_bin; \
 			git clone --single-branch --branch feat/main-casm-json --depth=1 https://github.com/zmalatrax/cairo.git; \
-			mv cairo/corelib ../../rust_vm_bin/; \
-			cd cairo/crates/bin && \
-			cargo build --release --bin cairo-compile --bin sierra-compile-json && \
-			cd ../../../; \
-			mv cairo/target/release/cairo-compile cairo/target/release/sierra-compile-json ../cairo/ && \
-			rm -rf ./cairo; \
+			mv cairo/corelib .; \
+			cd cairo/crates/bin && cargo build --release --bin cairo-compile --bin sierra-compile-json && cd ../../../; \
+			mv cairo/target/release/cairo-compile cairo/target/release/sierra-compile-json cairo-lang; \
+			rm -rf cairo; \
+			cd ../; \
 		fi; \
-		if [ ! -f ./rust_vm_bin/cairo/cairo1-run ] || [ ! -f ./rust_vm_bin/cairo-vm-cli ]; then \
-			git clone https://github.com/lambdaclass/cairo-vm.git && \
-			cd cairo-vm/; \
-			cargo build --release --bin cairo-vm-cli --bin cairo1-run; \
-			cd ..; \
-			mv cairo-vm/target/release/cairo1-run ../cairo/ && \
-			mv cairo-vm/target/release/cairo-vm-cli ../../rust_vm_bin/ && \
+		if [ ! -f ./rust_vm_bin/cairo-lang/cairo1-run ] || [ ! -f ./rust_vm_bin/cairo-vm-cli ]; then \
+			cd rust_vm_bin; \
+			git clone https://github.com/lambdaclass/cairo-vm.git; \
+			cd cairo-vm && cargo build --release --bin cairo-vm-cli --bin cairo1-run && cd ../; \
+			mv cairo-vm/target/release/cairo1-run cairo-lang;\
+			mv cairo-vm/target/release/cairo-vm-cli . ; \
 			rm -rf cairo-vm; \
-			cd ../../; \
+			cd ../; \
 		fi; \
 		go test ./integration_tests/... -v; \
 	else \

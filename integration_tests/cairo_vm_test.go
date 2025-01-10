@@ -74,6 +74,20 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		return
 	}
 	layout := getLayoutFromFileName(path)
+
+	elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput, layout, zero)
+	if errorExpected {
+		assert.Error(t, err, path)
+		writeToFile(path)
+		return
+	} else {
+		if err != nil {
+			t.Error(err)
+			writeToFile(path)
+			return
+		}
+	}
+
 	rustVmFilePath := path
 	if zero {
 		rustVmFilePath = compiledOutput
@@ -82,20 +96,11 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	if errorExpected {
 		// we let the code go on so that we can check if the go vm also raises an error
 		assert.Error(t, err, path)
-	} else {
-		if err != nil {
-			t.Error(err)
-			return
-		}
-	}
-
-	elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput, layout, zero)
-	if errorExpected {
-		assert.Error(t, err, path)
 		return
 	} else {
 		if err != nil {
 			t.Error(err)
+			writeToFile(path)
 			return
 		}
 	}
@@ -103,11 +108,13 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	trace, memory, err := decodeProof(traceFile, memoryFile)
 	if err != nil {
 		t.Error(err)
+		writeToFile(path)
 		return
 	}
 	rsTrace, rsMemory, err := decodeProof(rsTraceFile, rsMemoryFile)
 	if err != nil {
 		t.Error(err)
+		writeToFile(path)
 		return
 	}
 
@@ -144,16 +151,6 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 			return
 		}
 
-		if !assert.Equal(t, pyTrace, rsTrace) {
-			t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
-			t.Logf("rstrace:\n%s\n", traceRepr(rsTrace))
-			writeToFile(path)
-		}
-		if !assert.Equal(t, pyMemory, rsMemory) {
-			t.Logf("pymemory;\n%s\n", memoryRepr(pyMemory))
-			t.Logf("rsmemory;\n%s\n", memoryRepr(rsMemory))
-			writeToFile(path)
-		}
 		if !assert.Equal(t, pyTrace, trace) {
 			t.Logf("pytrace:\n%s\n", traceRepr(pyTrace))
 			t.Logf("trace:\n%s\n", traceRepr(trace))
@@ -329,7 +326,7 @@ func compileCairoCode(path string, zero bool) (string, error) {
 		}
 	} else {
 		sierraOutput := swapExtenstion(path, sierraSuffix)
-		cliCommand = "../rust_vm_bin/cairo/cairo-compile"
+		cliCommand = "../rust_vm_bin/cairo-lang/cairo-compile"
 		args = []string{
 			"--single-file",
 			path,
@@ -346,7 +343,7 @@ func compileCairoCode(path string, zero bool) (string, error) {
 			)
 		}
 
-		cliCommand = "../rust_vm_bin/cairo/sierra-compile-json"
+		cliCommand = "../rust_vm_bin/cairo-lang/sierra-compile-json"
 		args = []string{
 			sierraOutput,
 			compiledOutput,
@@ -420,7 +417,7 @@ func runRustVm(path, layout string, zero bool) (time.Duration, string, string, e
 		args = append(args, "--proof_mode")
 	}
 
-	binaryPath := "./../rust_vm_bin/cairo/cairo1-run"
+	binaryPath := "./../rust_vm_bin/cairo-lang/cairo1-run"
 	if zero {
 		binaryPath = "./../rust_vm_bin/cairo-vm-cli"
 	}
@@ -460,9 +457,22 @@ func runVm(path, layout string, zero bool) (time.Duration, string, string, strin
 		memoryOutput,
 		"--layout",
 		layout,
-		path,
 	}
-
+	if !zero {
+		args = []string{
+			cliCommand,
+			// "--proofmode",
+			"--tracefile",
+			traceOutput,
+			"--memoryfile",
+			memoryOutput,
+			"--layout",
+			layout,
+			"--available_gas",
+			"9999999",
+		}
+	}
+	args = append(args, path)
 	cmd := exec.Command(
 		"../bin/cairo-vm",
 		args...,

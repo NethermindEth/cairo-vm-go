@@ -91,6 +91,17 @@ type VirtualMachine struct {
 	RcLimitsMax uint16
 }
 
+func (vm *VirtualMachine) PrintMemory() {
+	for i := range vm.Memory.Segments {
+		for j, cell := range vm.Memory.Segments[i].Data {
+			if !cell.Known() {
+				continue
+			}
+			fmt.Printf("%d:%d %s\n", i, j, cell)
+		}
+	}
+}
+
 // NewVirtualMachine creates a VM from the program bytecode using a specified config.
 func NewVirtualMachine(
 	initialContext Context, memory *mem.Memory, config VirtualMachineConfig,
