@@ -14,6 +14,7 @@ import (
 	VM "github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -431,45 +432,31 @@ func (hint DivMod) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerContext) e
 		return fmt.Errorf("cannot be divided by zero, rhs: %v", rhsFelt)
 	}
 
-	lhsvalue := uint256.Int(lhsFelt.Bits())
-	rhsvalue := uint256.Int(rhsFelt.Bits())
+	lhsBig := big.NewInt(0)
+	lhsFelt.BigInt(lhsBig)
+	rhsBig := big.NewInt(0)
+	rhsFelt.BigInt(rhsBig)
+	quoBig, remBig := new(big.Int).DivMod(lhsBig, rhsBig, new(big.Int))
 
-	// get quotient
-	quo := uint256.Int{}
-	quo.Div(&lhsvalue, &rhsvalue)
-
-	quotient := f.Element{}
-	quoVal := quo.Uint64()
-	quotient.SetUint64(quoVal)
-
+	quotient := new(f.Element).SetBigInt(quoBig)
+	remainder := new(f.Element).SetBigInt(remBig)
 	quotientAddr, err := hint.quotient.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get quotient cell: %v", err)
 	}
 
-	quotientVal := mem.MemoryValueFromFieldElement(&quotient)
+	quotientVal := mem.MemoryValueFromFieldElement(quotient)
 	err = vm.Memory.WriteToAddress(&quotientAddr, &quotientVal)
 	if err != nil {
 		return fmt.Errorf("write cell: %v", err)
 	}
-
-	// get remainder: lhs - (rhs * quotient)
-	temp := uint256.Int{}
-	temp.Mul(&rhsvalue, &quo)
-
-	rem := uint256.Int{}
-	rem.Sub(&lhsvalue, &temp)
-
-	remainder := f.Element{}
-	remVal := rem.Uint64()
-	remainder.SetUint64(remVal)
 
 	remainderAddr, err := hint.remainder.Get(vm)
 	if err != nil {
 		return fmt.Errorf("get remainder cell: %v", err)
 	}
 
-	remainderVal := mem.MemoryValueFromFieldElement(&remainder)
+	remainderVal := mem.MemoryValueFromFieldElement(remainder)
 	err = vm.Memory.WriteToAddress(&remainderAddr, &remainderVal)
 	if err != nil {
 		return fmt.Errorf("write cell: %v", err)
@@ -667,6 +654,9 @@ func (hint Uint256InvModN) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerCo
 	} else {
 		r.Rem(&r, n)
 
+		if r.Cmp(big.NewInt(0)) == -1 {
+			r.Add(&r, n)
+		}
 		k := new(big.Int).Mul(&r, b)
 		k.Sub(k, big.NewInt(1))
 		k.Div(k, n)
@@ -1868,7 +1858,8 @@ func (hint *RandomEcPoint) Execute(vm *VM.VirtualMachine, _ *hinter.HintRunnerCo
 	}
 
 	xVal := mem.MemoryValueFromFieldElement(&randomX)
-	yVal := mem.MemoryValueFromFieldElement(randomYSquared.Square(&randomYSquared))
+	sqrt := new(fp.Element).Sqrt(&randomYSquared)
+	yVal := mem.MemoryValueFromFieldElement(sqrt)
 
 	xAddr, err := hint.x.Get(vm)
 	if err != nil {

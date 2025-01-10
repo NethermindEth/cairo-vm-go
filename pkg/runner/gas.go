@@ -50,7 +50,9 @@ func gasInitialization(memory *mem.Memory) error {
 	if err != nil {
 		return err
 	}
+
 	preCostTokenTypes := []TokenGasCost{PedersenToken, PoseidonToken, BitwiseToken, EcOpToken, AddModToken, MulModToken}
+
 	for _, token := range preCostTokenTypes {
 		cost, err := getTokenGasCost(token)
 		if err != nil {
