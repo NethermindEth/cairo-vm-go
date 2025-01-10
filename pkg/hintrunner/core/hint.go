@@ -1246,7 +1246,6 @@ func (hint *InitSquashData) String() string {
 
 func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
 	// todo(rodro): Don't know if it could be called multiple times, or
-	fmt.Println(ctx.SquashedDictionaryManager.Keys, ctx.SquashedDictionaryManager.KeyToIndices)
 	err := hinter.InitializeSquashedDictionaryManager(ctx)
 	if err != nil {
 		return err
