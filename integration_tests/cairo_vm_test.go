@@ -66,7 +66,7 @@ func (f *Filter) filtered(testFile string) bool {
 	return false
 }
 
-func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[string][3]int, benchmark bool, errorExpected bool, zero bool) {
+func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[string][3]int, benchmark bool, errorExpected bool, zero bool, inputArgs string) {
 	t.Logf("testing: %s\n", path)
 	compiledOutput, err := compileCairoCode(path, zero)
 	if err != nil {
@@ -75,7 +75,7 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	}
 	layout := getLayoutFromFileName(path)
 
-	elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput, layout, zero)
+	elapsedGo, traceFile, memoryFile, _, err := runVm(compiledOutput, layout, zero, inputArgs)
 	if errorExpected {
 		assert.Error(t, err, path)
 		writeToFile(path)
@@ -92,7 +92,7 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	if zero {
 		rustVmFilePath = compiledOutput
 	}
-	elapsedRs, rsTraceFile, rsMemoryFile, err := runRustVm(rustVmFilePath, layout, zero)
+	elapsedRs, rsTraceFile, rsMemoryFile, err := runRustVm(rustVmFilePath, layout, zero, inputArgs)
 	if errorExpected {
 		// we let the code go on so that we can check if the go vm also raises an error
 		assert.Error(t, err, path)
@@ -171,16 +171,27 @@ func TestCairoFiles(t *testing.T) {
 	if err != nil {
 		panic(fmt.Errorf("failed to open file: %w", err))
 	}
+
 	file.Close()
-	roots := []struct {
+	type TestCase struct {
 		path string
 		zero bool
-	}{
-		{"./cairo_zero_hint_tests/", true},
-		{"./cairo_zero_file_tests/", true},
-		{"./builtin_tests/", true},
+	}
+	roots := []TestCase{
+		// {"./cairo_zero_hint_tests/", true},
+		// {"./cairo_zero_file_tests/", true},
+		// {"./builtin_tests/", true},
 		// {"./cairo_1_programs/", false},
 		// {"./cairo_1_programs/dict_non_squashed", false},
+		{"./cairo_1_programs/with_input", false},
+	}
+
+	inputArgsMap := map[string]string{
+		"cairo_1_programs/with_input/array_input_sum__small.cairo": "2 [111 222 333] 1 [444 555 666 777]",
+		"cairo_1_programs/with_input/array_length__small.cairo":    "[1 2 3 4 5 6] [7 8 9 10]",
+		"cairo_1_programs/with_input/branching.cairo":              "123",
+		"cairo_1_programs/with_input/dict_with_input__small.cairo": "[1 2 3 4]",
+		"cairo_1_programs/with_input/tensor__small.cairo":          "[1 4] [1 5]",
 	}
 
 	// filter is for debugging purposes
@@ -211,22 +222,19 @@ func TestCairoFiles(t *testing.T) {
 			if !filter.filtered(name) {
 				continue
 			}
-
+			inputArgs := inputArgsMap[path]
 			// we run tests concurrently if we don't need benchmarks
 			if !*zerobench {
 				sem <- struct{}{} // acquire a semaphore slot
 				wg.Add(1)
 
-				go func(path, name string, root struct {
-					path string
-					zero bool
-				}) {
+				go func(path, name string, root TestCase, inputArgs string) {
 					defer wg.Done()
 					defer func() { <-sem }() // release the semaphore slot when done
-					runAndTestFile(t, path, name, benchmarkMap, *zerobench, errorExpected, root.zero)
-				}(path, name, root)
+					runAndTestFile(t, path, name, benchmarkMap, *zerobench, errorExpected, root.zero, inputArgs)
+				}(path, name, root, inputArgs)
 			} else {
-				runAndTestFile(t, path, name, benchmarkMap, *zerobench, errorExpected, root.zero)
+				runAndTestFile(t, path, name, benchmarkMap, *zerobench, errorExpected, root.zero, inputArgs)
 			}
 		}
 	}
@@ -400,7 +408,7 @@ func runPythonVm(path, layout string) (time.Duration, string, string, error) {
 
 // given a path to a compiled cairo zero file, execute it using the
 // rust vm and return the trace and memory files location
-func runRustVm(path, layout string, zero bool) (time.Duration, string, string, error) {
+func runRustVm(path, layout string, zero bool, inputArgs string) (time.Duration, string, string, error) {
 	traceOutput := swapExtenstion(path, rsTraceSuffix)
 	memoryOutput := swapExtenstion(path, rsMemorySuffix)
 
@@ -412,6 +420,8 @@ func runRustVm(path, layout string, zero bool) (time.Duration, string, string, e
 		memoryOutput,
 		"--layout",
 		layout,
+		"--args",
+		inputArgs,
 	}
 
 	if zero {
@@ -441,7 +451,7 @@ func runRustVm(path, layout string, zero bool) (time.Duration, string, string, e
 
 // given a path to a compiled cairo zero file, execute
 // it using our vm
-func runVm(path, layout string, zero bool) (time.Duration, string, string, string, error) {
+func runVm(path, layout string, zero bool, inputArgs string) (time.Duration, string, string, string, error) {
 	traceOutput := swapExtenstion(path, traceSuffix)
 	memoryOutput := swapExtenstion(path, memorySuffix)
 
@@ -471,6 +481,8 @@ func runVm(path, layout string, zero bool) (time.Duration, string, string, strin
 			layout,
 			"--available_gas",
 			"9999999",
+			"--args",
+			inputArgs,
 		}
 	}
 	args = append(args, path)

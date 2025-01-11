@@ -59,10 +59,24 @@ func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode Ru
 	}, nil
 }
 
-func AssembleProgram(cairoProgram *starknet.StarknetProgram) (Program, map[uint64][]hinter.Hinter, error) {
+func AssembleProgram(cairoProgram *starknet.StarknetProgram, userArgs []starknet.CairoFuncArgs) (Program, map[uint64][]hinter.Hinter, error) {
 	mainFunc, ok := cairoProgram.EntryPointsByFunction["main"]
 	if !ok {
 		return Program{}, nil, fmt.Errorf("cannot find main function")
+	}
+	expectedArgsSize, actualArgsSize := 0, 0
+	for _, arg := range mainFunc.InputArgs {
+		expectedArgsSize += arg.Size
+	}
+	for _, arg := range userArgs {
+		if arg.Single != nil {
+			actualArgsSize += 1
+		} else {
+			actualArgsSize += 2
+		}
+	}
+	if expectedArgsSize != actualArgsSize {
+		return Program{}, nil, fmt.Errorf("missing arguments for main function")
 	}
 	program, err := LoadCairoProgram(cairoProgram)
 	if err != nil {
@@ -603,16 +617,15 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 			usedArgs += 1
 		}
 	}
+	offset := apOffset - usedArgs
 	for _, param := range paramTypes {
-		offset := apOffset - usedArgs
 		for i := 0; i < param.Size; i++ {
 			ctx.AddInlineCASM(
 				fmt.Sprintf("[ap + 0] = [ap - %d], ap++;", offset),
 			)
-			apOffset += param.Size
-			usedArgs += param.Size
 		}
 	}
+
 	_, endInstructionsSize, err := assembler.CasmToBytecode("call rel 0; ret;")
 	if err != nil {
 		return nil, nil, err

@@ -217,17 +217,17 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
-					program, hints, err := runner.AssembleProgram(cairoProgram)
+					userArgs, err := starknet.ParseCairoProgramArgs(args)
+					if err != nil {
+						return fmt.Errorf("cannot parse args: %w", err)
+					}
+					program, hints, err := runner.AssembleProgram(cairoProgram, userArgs)
 					if err != nil {
 						return fmt.Errorf("cannot assemble program: %w", err)
 					}
 					runnerMode := runner.ExecutionModeCairo
 					if proofmode {
 						runnerMode = runner.ProofModeCairo
-					}
-					userArgs, err := starknet.ParseCairoProgramArgs(args)
-					if err != nil {
-						return fmt.Errorf("cannot parse args: %w", err)
 					}
 					if availableGas > 0 {
 						// The first argument is the available gas
