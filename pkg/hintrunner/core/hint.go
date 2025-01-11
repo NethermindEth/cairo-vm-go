@@ -1238,7 +1238,8 @@ func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunne
 	// todo(rodro): Don't know if it could be called multiple times, or
 	err := hinter.InitializeSquashedDictionaryManager(ctx)
 	if err != nil {
-		return err
+		ctx.SquashedDictionaryManager = hinter.SquashedDictionaryManager{}
+		_ = hinter.InitializeSquashedDictionaryManager(ctx)
 	}
 
 	dictAccessPtr, err := hinter.ResolveAsAddress(vm, hint.DictAccesses)
