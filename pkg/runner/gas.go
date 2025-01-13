@@ -50,7 +50,7 @@ func gasInitialization(memory *mem.Memory) error {
 	if err != nil {
 		return err
 	}
-
+	// The order of the tokens is relevant, source: https://github.com/starkware-libs/cairo/blob/f6aaaa306804257bfc15d65b5ab6b90e141b54ec/crates/cairo-lang-sierra/src/extensions/modules/gas.rs#L194
 	preCostTokenTypes := []TokenGasCost{PedersenToken, PoseidonToken, BitwiseToken, EcOpToken, AddModToken, MulModToken}
 
 	for _, token := range preCostTokenTypes {
