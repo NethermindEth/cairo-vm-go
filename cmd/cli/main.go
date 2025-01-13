@@ -12,7 +12,6 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	"github.com/NethermindEth/cairo-vm-go/pkg/runner"
-	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/urfave/cli/v2"
 )
 
@@ -221,21 +220,13 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot parse args: %w", err)
 					}
-					program, hints, err := runner.AssembleProgram(cairoProgram, userArgs)
+					program, hints, userArgs, err := runner.AssembleProgram(cairoProgram, userArgs, availableGas)
 					if err != nil {
 						return fmt.Errorf("cannot assemble program: %w", err)
 					}
 					runnerMode := runner.ExecutionModeCairo
 					if proofmode {
 						runnerMode = runner.ProofModeCairo
-					}
-					if availableGas > 0 {
-						// The first argument is the available gas
-						availableGasArg := starknet.CairoFuncArgs{
-							Single: new(fp.Element).SetUint64(availableGas),
-							Array:  nil,
-						}
-						userArgs = append([]starknet.CairoFuncArgs{availableGasArg}, userArgs...)
 					}
 					return runVM(program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode, userArgs)
 				},

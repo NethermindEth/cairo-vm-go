@@ -181,8 +181,8 @@ func TestCairoFiles(t *testing.T) {
 		// {"./cairo_zero_hint_tests/", true},
 		// {"./cairo_zero_file_tests/", true},
 		// {"./builtin_tests/", true},
-		// {"./cairo_1_programs/", false},
-		// {"./cairo_1_programs/dict_non_squashed", false},
+		{"./cairo_1_programs/", false},
+		{"./cairo_1_programs/dict_non_squashed", false},
 		{"./cairo_1_programs/with_input", false},
 	}
 

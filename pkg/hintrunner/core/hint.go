@@ -1938,29 +1938,47 @@ func (hint *ExternalWriteArgsToMemory) String() string {
 }
 
 func (hint *ExternalWriteArgsToMemory) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-	userArgsVar, err := ctx.ScopeManager.GetVariableValue("userArgs")
+	userArgs, err := hinter.GetVariableAs[[]starknet.CairoFuncArgs](&ctx.ScopeManager, "userArgs")
 	if err != nil {
 		return fmt.Errorf("get user args: %v", err)
 	}
-	userArgs, ok := userArgsVar.([]starknet.CairoFuncArgs)
-	if !ok {
-		return fmt.Errorf("expected user args to be a list of CairoFuncArgs")
+	apOffset, err := hinter.GetVariableAs[uint64](&ctx.ScopeManager, "apOffset")
+	if err != nil {
+		return fmt.Errorf("get ap offset: %v", err)
 	}
+	fmt.Println("apOffset", apOffset, "ap.offset", vm.Context.Ap)
+	apOffset += vm.Context.Ap
 	for _, arg := range userArgs {
 		if arg.Single != nil {
 			mv := mem.MemoryValueFromFieldElement(arg.Single)
-			err := vm.Memory.Write(1, vm.Context.Ap, &mv)
+			err := vm.Memory.Write(1, apOffset, &mv)
 			if err != nil {
 				return fmt.Errorf("write single arg: %v", err)
 			}
+			apOffset++
 		} else if arg.Array != nil {
 			arrayBase := vm.Memory.AllocateEmptySegment()
 			mv := mem.MemoryValueFromMemoryAddress(&arrayBase)
-			err := vm.Memory.Write(1, vm.Context.Ap, &mv)
+			err := vm.Memory.Write(1, apOffset, &mv)
 			if err != nil {
 				return fmt.Errorf("write array base: %v", err)
 			}
-			// TODO: Implement array writing
+			apOffset++
+			arrayEnd := arrayBase
+			for _, val := range arg.Array {
+				arrayEnd.Offset += 1
+				mv := mem.MemoryValueFromFieldElement(&val)
+				err := vm.Memory.Write(arrayEnd.SegmentIndex, arrayEnd.Offset, &mv)
+				if err != nil {
+					return fmt.Errorf("write array element: %v", err)
+				}
+			}
+			mv = mem.MemoryValueFromMemoryAddress(&arrayEnd)
+			err = vm.Memory.Write(1, apOffset, &mv)
+			if err != nil {
+				return fmt.Errorf("write array end: %v", err)
+			}
+			apOffset++
 		}
 	}
 	return nil

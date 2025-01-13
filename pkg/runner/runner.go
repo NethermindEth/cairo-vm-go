@@ -44,11 +44,20 @@ type CairoRunner struct{}
 
 // Creates a new Runner of a Cairo Zero program
 func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode RunnerMode, collectTrace bool, maxsteps uint64, layoutName string, userArgs []starknet.CairoFuncArgs) (Runner, error) {
-	hintrunner := hintrunner.NewHintRunner(hints, userArgs)
 	layout, err := builtins.GetLayout(layoutName)
 	if err != nil {
 		return Runner{}, err
 	}
+	writeApOffset := uint64(len(program.Builtins))
+	for _, builtin := range program.Builtins {
+		if builtin == builtins.SegmentArenaType {
+			writeApOffset += 3
+		}
+		if builtin == builtins.GasBuiltinType {
+			writeApOffset -= 1
+		}
+	}
+	hintrunner := hintrunner.NewHintRunner(hints, userArgs, writeApOffset)
 	return Runner{
 		program:      program,
 		runnerMode:   runnerMode,
@@ -59,10 +68,10 @@ func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode Ru
 	}, nil
 }
 
-func AssembleProgram(cairoProgram *starknet.StarknetProgram, userArgs []starknet.CairoFuncArgs) (Program, map[uint64][]hinter.Hinter, error) {
+func AssembleProgram(cairoProgram *starknet.StarknetProgram, userArgs []starknet.CairoFuncArgs, availableGas uint64) (Program, map[uint64][]hinter.Hinter, []starknet.CairoFuncArgs, error) {
 	mainFunc, ok := cairoProgram.EntryPointsByFunction["main"]
 	if !ok {
-		return Program{}, nil, fmt.Errorf("cannot find main function")
+		return Program{}, nil, nil, fmt.Errorf("cannot find main function")
 	}
 	expectedArgsSize, actualArgsSize := 0, 0
 	for _, arg := range mainFunc.InputArgs {
@@ -76,19 +85,35 @@ func AssembleProgram(cairoProgram *starknet.StarknetProgram, userArgs []starknet
 		}
 	}
 	if expectedArgsSize != actualArgsSize {
-		return Program{}, nil, fmt.Errorf("missing arguments for main function")
+		return Program{}, nil, nil, fmt.Errorf("missing arguments for main function")
 	}
 	program, err := LoadCairoProgram(cairoProgram)
 	if err != nil {
-		return Program{}, nil, fmt.Errorf("cannot load program: %w", err)
+		return Program{}, nil, nil, fmt.Errorf("cannot load program: %w", err)
+	}
+	gotGasBuiltin := false
+	for _, b := range program.Builtins {
+		if b == builtins.GasBuiltinType {
+			gotGasBuiltin = true
+			break
+		}
+	}
+	if availableGas > 0 && gotGasBuiltin {
+		// The first argument is the available gas
+		availableGasArg := starknet.CairoFuncArgs{
+			Single: new(fp.Element).SetUint64(availableGas),
+			Array:  nil,
+		}
+		userArgs = append([]starknet.CairoFuncArgs{availableGasArg}, userArgs...)
 	}
 	hints, err := core.GetCairoHints(cairoProgram)
 	if err != nil {
-		return Program{}, nil, fmt.Errorf("cannot get hints: %w", err)
+		return Program{}, nil, nil, fmt.Errorf("cannot get hints: %w", err)
 	}
-	entryCodeInstructions, entryCodeHints, err := GetEntryCodeInstructions(mainFunc, false)
+
+	entryCodeInstructions, entryCodeHints, err := GetEntryCodeInstructions(mainFunc, gotGasBuiltin)
 	if err != nil {
-		return Program{}, nil, fmt.Errorf("cannot load entry code instructions: %w", err)
+		return Program{}, nil, nil, fmt.Errorf("cannot load entry code instructions: %w", err)
 	}
 	program.Bytecode = append(entryCodeInstructions, program.Bytecode...)
 	program.Bytecode = append(program.Bytecode, GetFooterInstructions()...)
@@ -101,7 +126,7 @@ func AssembleProgram(cairoProgram *starknet.StarknetProgram, userArgs []starknet
 	for key, hint := range entryCodeHints {
 		shiftedHintsMap[key] = hint
 	}
-	return *program, shiftedHintsMap, nil
+	return *program, shiftedHintsMap, userArgs, nil
 }
 
 // RunEntryPoint is like Run, but it executes the program starting from the given PC offset.
@@ -329,7 +354,12 @@ func (runner *Runner) initializeVm(
 
 // run until the program counter equals the `pc` parameter
 func (runner *Runner) RunUntilPc(pc *mem.MemoryAddress) error {
+	// runner.vm.PrintMemory()
 	for !runner.vm.Context.Pc.Equal(pc) {
+		fmt.Println("pc", runner.vm.Context.Pc, "ap", runner.vm.Context.Ap, "fp", runner.vm.Context.Fp)
+		if runner.vm.Context.Pc.Offset == 102 {
+			runner.vm.PrintMemory()
+		}
 		if runner.steps() >= runner.maxsteps {
 			return fmt.Errorf(
 				"pc %s step %d: max step limit exceeded (%d)",
@@ -531,7 +561,7 @@ func (ctx *InlineCasmContext) AddInlineCASM(code string) {
 	ctx.currentCodeOffset += int(total_size)
 }
 
-func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeForProof bool) ([]*fp.Element, map[uint64][]hinter.Hinter, error) {
+func GetEntryCodeInstructions(function starknet.EntryPointByFunction, gotGasBuiltin bool) ([]*fp.Element, map[uint64][]hinter.Hinter, error) {
 	paramTypes := function.InputArgs
 	apOffset := 0
 	builtinOffset := 3
@@ -594,8 +624,6 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 		paramsSize += param.Size
 	}
 	apOffset += paramsSize
-	usedArgs := 0
-
 	for _, builtin := range function.Builtins {
 		if offset, isBuiltin := builtinsOffsetsMap[builtin]; isBuiltin {
 			ctx.AddInlineCASM(
@@ -608,22 +636,24 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, finalizeFo
 				fmt.Sprintf("[ap + 0] = [ap - %d] + 3, ap++;", offset),
 			)
 			apOffset += 1
-		} else if builtin == builtins.GasBuiltinType {
-			hints[uint64(ctx.currentCodeOffset)] = []hinter.Hinter{
-				&core.ExternalWriteArgsToMemory{},
-			}
-			ctx.AddInlineCASM("ap += 1;")
-			apOffset += 1
-			usedArgs += 1
 		}
 	}
-	offset := apOffset - usedArgs
+
+	if gotGasBuiltin {
+		ctx.AddInlineCASM("ap += 1;")
+		apOffset += 1
+	}
+
 	for _, param := range paramTypes {
-		for i := 0; i < param.Size; i++ {
-			ctx.AddInlineCASM(
-				fmt.Sprintf("[ap + 0] = [ap - %d], ap++;", offset),
-			)
-		}
+		ctx.AddInlineCASM(
+			fmt.Sprintf("ap+=%d;", param.Size),
+		)
+	}
+
+	if gotGasBuiltin || paramsSize > 0 {
+		hints[uint64(0)] = append(hints[uint64(0)], []hinter.Hinter{
+			&core.ExternalWriteArgsToMemory{},
+		}...)
 	}
 
 	_, endInstructionsSize, err := assembler.CasmToBytecode("call rel 0; ret;")
