@@ -641,7 +641,6 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, gotGasBuil
 
 	if gotGasBuiltin {
 		ctx.AddInlineCASM("ap += 1;")
-		apOffset += 1
 	}
 
 	for _, param := range paramTypes {
