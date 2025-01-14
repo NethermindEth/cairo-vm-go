@@ -1143,7 +1143,8 @@ func (hint *Felt252DictEntryInit) Execute(vm *VM.VirtualMachine, ctx *hinter.Hin
 
 	prevValue, err := ctx.DictionaryManager.At(dictPtr, key)
 	if err != nil {
-		return fmt.Errorf("get dictionary entry: %w", err)
+		mv := mem.MemoryValueFromFieldElement(&utils.FeltZero)
+		prevValue = &mv
 	}
 	if prevValue == nil {
 		mv := mem.EmptyMemoryValueAsFelt()
@@ -1234,10 +1235,10 @@ func (hint *InitSquashData) String() string {
 }
 
 func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-	// todo(rodro): Don't know if it could be called multiple times, or
 	err := hinter.InitializeSquashedDictionaryManager(ctx)
 	if err != nil {
-		return err
+		ctx.SquashedDictionaryManager = hinter.SquashedDictionaryManager{}
+		_ = hinter.InitializeSquashedDictionaryManager(ctx)
 	}
 
 	dictAccessPtr, err := hinter.ResolveAsAddress(vm, hint.DictAccesses)
@@ -1272,7 +1273,7 @@ func (hint *InitSquashData) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunne
 
 	// sort the keys in descending order
 	sort.Slice(ctx.SquashedDictionaryManager.Keys, func(i, j int) bool {
-		return ctx.SquashedDictionaryManager.Keys[i].Cmp(&ctx.SquashedDictionaryManager.Keys[j]) < 0
+		return ctx.SquashedDictionaryManager.Keys[i].Cmp(&ctx.SquashedDictionaryManager.Keys[j]) > 0
 	})
 
 	// if the first key is bigger than 2^128, signal it
@@ -1401,10 +1402,14 @@ func (hint *ShouldContinueSquashLoop) Execute(vm *VM.VirtualMachine, ctx *hinter
 	}
 
 	var shouldContinueLoop f.Element
-	if lastIndices, err := ctx.SquashedDictionaryManager.LastIndices(); err == nil && len(lastIndices) <= 1 {
-		shouldContinueLoop.SetOne()
-	} else if err != nil {
+	lastIndices, err := ctx.SquashedDictionaryManager.LastIndices()
+	if err != nil {
 		return fmt.Errorf("get last indices: %w", err)
+	}
+	if len(lastIndices) > 1 {
+		shouldContinueLoop.SetOne()
+	} else {
+		shouldContinueLoop.SetZero()
 	}
 
 	mv := mem.MemoryValueFromFieldElement(&shouldContinueLoop)
@@ -1425,11 +1430,15 @@ func (hint *GetNextDictKey) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunne
 		return fmt.Errorf("get next key address: %w", err)
 	}
 
-	nextKey, err := ctx.SquashedDictionaryManager.PopKey()
+	_, err = ctx.SquashedDictionaryManager.PopKey()
 	if err != nil {
 		return fmt.Errorf("pop key: %w", err)
 	}
 
+	nextKey, err := ctx.SquashedDictionaryManager.LastKey()
+	if err != nil {
+		return fmt.Errorf("get last key: %w", err)
+	}
 	mv := mem.MemoryValueFromFieldElement(&nextKey)
 	return vm.Memory.WriteToAddress(&nextKeyAddr, &mv)
 }
