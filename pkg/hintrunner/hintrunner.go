@@ -15,17 +15,15 @@ type HintRunner struct {
 	hints map[uint64][]h.Hinter
 }
 
-func NewHintRunner(hints map[uint64][]h.Hinter, userArgs []starknet.CairoFuncArgs, writeApOffset uint64) HintRunner {
+func NewHintRunner(hints map[uint64][]h.Hinter, userArgs []starknet.CairoFuncArgs, writeApOffset uint64, availableGas uint64) HintRunner {
 	context := *h.InitializeDefaultContext()
-	if userArgs != nil {
-		err := context.ScopeManager.AssignVariables(map[string]any{
-			"userArgs": userArgs,
-			"apOffset": writeApOffset,
-		})
-		// Error handling: this condition should never be true, since the context was initialized above
-		if err != nil {
-			panic(fmt.Errorf("assign userArgs: %v", err))
-		}
+	err := context.ScopeManager.AssignVariables(map[string]any{
+		"userArgs": userArgs,
+		"apOffset": writeApOffset,
+		"gas":      availableGas,
+	})
+	if err != nil {
+		panic(fmt.Sprintf("assign variables: %v", err))
 	}
 	return HintRunner{
 		// Context for certain hints that require it. Each manager is

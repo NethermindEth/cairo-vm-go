@@ -124,7 +124,7 @@ func main() {
 					if proofmode {
 						runnerMode = runner.ProofModeZero
 					}
-					return runVM(*program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode, nil)
+					return runVM(*program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode, nil, 0)
 				},
 			},
 			{
@@ -228,7 +228,7 @@ func main() {
 					if proofmode {
 						runnerMode = runner.ProofModeCairo
 					}
-					return runVM(program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode, userArgs)
+					return runVM(program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode, userArgs, availableGas)
 				},
 			},
 		},
@@ -255,9 +255,10 @@ func runVM(
 	hints map[uint64][]hinter.Hinter,
 	runnerMode runner.RunnerMode,
 	userArgs []starknet.CairoFuncArgs,
+	availableGas uint64,
 ) error {
 	fmt.Println("Running....")
-	runner, err := runner.NewRunner(&program, hints, runnerMode, collectTrace, maxsteps, layoutName, userArgs)
+	runner, err := runner.NewRunner(&program, hints, runnerMode, collectTrace, maxsteps, layoutName, userArgs, availableGas)
 	if err != nil {
 		return fmt.Errorf("cannot create runner: %w", err)
 	}

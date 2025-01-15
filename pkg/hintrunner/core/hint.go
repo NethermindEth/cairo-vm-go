@@ -1946,7 +1946,6 @@ func (hint *ExternalWriteArgsToMemory) Execute(vm *VM.VirtualMachine, ctx *hinte
 	if err != nil {
 		return fmt.Errorf("get ap offset: %v", err)
 	}
-	fmt.Println("apOffset", apOffset, "ap.offset", vm.Context.Ap)
 	apOffset += vm.Context.Ap
 	for _, arg := range userArgs {
 		if arg.Single != nil {
@@ -1980,6 +1979,25 @@ func (hint *ExternalWriteArgsToMemory) Execute(vm *VM.VirtualMachine, ctx *hinte
 			}
 			apOffset++
 		}
+	}
+	return nil
+}
+
+type ExternalWriteGasToMemory struct{}
+
+func (hint *ExternalWriteGasToMemory) String() string {
+	return "ExternalWriteGasToMemory"
+}
+
+func (hint *ExternalWriteGasToMemory) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+	gas, err := hinter.GetVariableAs[uint64](&ctx.ScopeManager, "gas")
+	if err != nil {
+		return fmt.Errorf("get gas: %v", err)
+	}
+	gasVal := mem.MemoryValueFromUint(gas)
+	err = vm.Memory.Write(1, vm.Context.Ap, &gasVal)
+	if err != nil {
+		return fmt.Errorf("write gas: %v", err)
 	}
 	return nil
 }
