@@ -601,6 +601,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction) ([]*fp.Ele
 		paramsSize += param.Size
 	}
 	apOffset += paramsSize
+
 	for _, builtin := range function.Builtins {
 		if offset, isBuiltin := builtinsOffsetsMap[builtin]; isBuiltin {
 			ctx.AddInlineCASM(
