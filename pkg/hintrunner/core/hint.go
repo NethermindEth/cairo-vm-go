@@ -1965,12 +1965,12 @@ func (hint *ExternalWriteArgsToMemory) Execute(vm *VM.VirtualMachine, ctx *hinte
 			apOffset++
 			arrayEnd := arrayBase
 			for _, val := range arg.Array {
-				arrayEnd.Offset += 1
 				mv := mem.MemoryValueFromFieldElement(&val)
 				err := vm.Memory.Write(arrayEnd.SegmentIndex, arrayEnd.Offset, &mv)
 				if err != nil {
 					return fmt.Errorf("write array element: %v", err)
 				}
+				arrayEnd.Offset += 1
 			}
 			mv = mem.MemoryValueFromMemoryAddress(&arrayEnd)
 			err = vm.Memory.Write(1, apOffset, &mv)
