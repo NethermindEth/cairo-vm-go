@@ -181,11 +181,12 @@ func TestCairoFiles(t *testing.T) {
 		{"./cairo_zero_hint_tests/", true},
 		{"./cairo_zero_file_tests/", true},
 		{"./builtin_tests/", true},
-		{"./cairo_1_programs/", false},
-		{"./cairo_1_programs/dict_non_squashed", false},
-		{"./cairo_1_programs/with_input", false},
+		// {"./cairo_1_programs/", false},
+		// {"./cairo_1_programs/dict_non_squashed", false},
+		// {"./cairo_1_programs/with_input", false},
 	}
 
+	// inputArgsMap is used to provide input arguments to the tests that require them. Whenever the args are needed for the new files, they can simply be added here.
 	inputArgsMap := map[string]string{
 		"cairo_1_programs/with_input/array_input_sum__small.cairo": "2 [111 222 333] 1 [444 555 666 777]",
 		"cairo_1_programs/with_input/array_length__small.cairo":    "[1 2 3 4 5 6] [7 8 9 10]",

@@ -48,13 +48,8 @@ func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode Ru
 	if err != nil {
 		return Runner{}, err
 	}
-	writeApOffset := uint64(len(program.Builtins))
-	for _, builtin := range program.Builtins {
-		if builtin == builtins.SegmentArenaType {
-			writeApOffset += 3
-		}
-	}
-	hintrunner := hintrunner.NewHintRunner(hints, userArgs, writeApOffset, availableGas)
+	newHintRunnerContext := getNewHintRunnerContext(program, userArgs, availableGas)
+	hintrunner := hintrunner.NewHintRunner(hints, &newHintRunnerContext)
 	return Runner{
 		program:      program,
 		runnerMode:   runnerMode,
@@ -63,6 +58,37 @@ func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode Ru
 		maxsteps:     maxsteps,
 		layout:       layout,
 	}, nil
+}
+
+func getNewHintRunnerContext(program *Program, userArgs []starknet.CairoFuncArgs, availableGas uint64) hinter.HintRunnerContext {
+	// The writeApOffset is the offset where the user arguments will be written. It is added to the current AP in the ExternalWriteArgsToMemory hint.
+	// The writeApOffset is significant for Cairo programs, because of the prepended Entry Code instructions.
+	// In the entry code instructions the builtins bases (excluding gas, segment arena and output) are written to the memory,
+	// thus the writeApOffset should be increased by the number of builtins.
+	// In the entry code the instructions for programs utilizing the SegmentArena are also prepended. The SegmentArena is a builtin that requires 4 cells:
+	//  * segment_arena_ptr
+	//  * info_segment_ptr
+	//  * 0
+	//  * segment_arena_ptr + 3
+	// But the builtin itself shouldn't be included in len(builtins), therefore the writeApOffset should be increased by 3.
+	writeApOffset := uint64(len(program.Builtins))
+	for _, builtin := range program.Builtins {
+		if builtin == builtins.SegmentArenaType {
+			writeApOffset += 3
+		}
+	}
+
+	newHintrunnerContext := *hinter.InitializeDefaultContext()
+	err := newHintrunnerContext.ScopeManager.AssignVariables(map[string]any{
+		"userArgs": userArgs,
+		"apOffset": writeApOffset,
+		"gas":      availableGas,
+	})
+	// Error handling: this condition should never be true, since the context was initialized above
+	if err != nil {
+		panic(fmt.Sprintf("assign variables: %v", err))
+	}
+	return newHintrunnerContext
 }
 
 func AssembleProgram(cairoProgram *starknet.StarknetProgram, userArgs []starknet.CairoFuncArgs, availableGas uint64) (Program, map[uint64][]hinter.Hinter, []starknet.CairoFuncArgs, error) {
@@ -621,12 +647,14 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction) ([]*fp.Ele
 		}
 	}
 
+	// Incrementing the AP for the input args, because their values are written to memory by the VM in the ExternalWriteArgsToMemory hint.
 	for _, param := range paramTypes {
 		ctx.AddInlineCASM(
 			fmt.Sprintf("ap+=%d;", param.Size),
 		)
 	}
 
+	// The hint can be executed before the first instruction, because the AP correction was calculated based on the input arguments.
 	if paramsSize > 0 {
 		hints[uint64(0)] = append(hints[uint64(0)], []hinter.Hinter{
 			&core.ExternalWriteArgsToMemory{},

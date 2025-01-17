@@ -1941,6 +1941,8 @@ func (hint *ExternalWriteArgsToMemory) Execute(vm *VM.VirtualMachine, ctx *hinte
 	if err != nil {
 		return fmt.Errorf("get user args: %v", err)
 	}
+	// The apOffset is the AP correction, which represents the memory slots taken up by the values created by the entry code instructions.
+	// It is calculated in the `getNewHintRunnerContext()` method.
 	apOffset, err := hinter.GetVariableAs[uint64](&ctx.ScopeManager, "apOffset")
 	if err != nil {
 		return fmt.Errorf("get ap offset: %v", err)
@@ -1955,6 +1957,10 @@ func (hint *ExternalWriteArgsToMemory) Execute(vm *VM.VirtualMachine, ctx *hinte
 			}
 			apOffset++
 		} else if arg.Array != nil {
+			// The array is stored in memory as follows:
+			// Each array gets assigned a new segment (the pointer is stored in the arrayBase).
+			// arrayBase and arrayEnd pointers are written to the Execution Segment consecutively.
+			// Then, the array elements are written to the newly created array segment.
 			arrayBase := vm.Memory.AllocateEmptySegment()
 			mv := mem.MemoryValueFromMemoryAddress(&arrayBase)
 			err := vm.Memory.Write(1, apOffset, &mv)
@@ -1989,6 +1995,9 @@ func (hint *ExternalWriteGasToMemory) String() string {
 }
 
 func (hint *ExternalWriteGasToMemory) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+	// ExternalWriteGasToMemory is a separate hint, that writes the gas value to the memory.
+	// The gas value is written to the memory cell reserved by the instruction generated in entry code, which is dependent on the ordering of builtins list.
+	// Therefore the writing of the gas value to the memory is done in a separate hint.
 	gas, err := hinter.GetVariableAs[uint64](&ctx.ScopeManager, "gas")
 	if err != nil {
 		return fmt.Errorf("get gas: %v", err)
