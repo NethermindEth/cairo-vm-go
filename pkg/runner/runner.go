@@ -65,10 +65,16 @@ func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode Ru
 	}, nil
 }
 
-func AssembleProgram(cairoProgram *starknet.StarknetProgram, userArgs []starknet.CairoFuncArgs, availableGas uint64) (Program, map[uint64][]hinter.Hinter, []starknet.CairoFuncArgs, error) {
+func AssembleProgram(cairoProgram *starknet.StarknetProgram, userArgs []starknet.CairoFuncArgs, availableGas uint64, proofmode bool) (Program, map[uint64][]hinter.Hinter, []starknet.CairoFuncArgs, error) {
 	mainFunc, ok := cairoProgram.EntryPointsByFunction["main"]
 	if !ok {
 		return Program{}, nil, nil, fmt.Errorf("cannot find main function")
+	}
+	if proofmode {
+		err := CheckOnlyArrayFeltInputAndReturntValue(mainFunc)
+		if err != nil {
+			return Program{}, nil, nil, err
+		}
 	}
 	expectedArgsSize, actualArgsSize := 0, 0
 	for _, arg := range mainFunc.InputArgs {
@@ -646,4 +652,20 @@ func GetFooterInstructions() []*fp.Element {
 	// Add a `ret` instruction used in libfuncs that retrieve the current value of the `fp`
 	// and `pc` registers.
 	return []*fp.Element{new(fp.Element).SetUint64(2345108766317314046)}
+}
+
+func CheckOnlyArrayFeltInputAndReturntValue(mainFunc starknet.EntryPointByFunction) error {
+	if len(mainFunc.InputArgs) != 1 {
+		return fmt.Errorf("main function should have only one input argument")
+	}
+	if len(mainFunc.ReturnArg) != 1 {
+		return fmt.Errorf("main function should have only one return argument")
+	}
+	if mainFunc.InputArgs[0].Size != 2 || mainFunc.InputArgs[0].DebugName != "Array<felt252>" {
+		return fmt.Errorf("main function input argument should be Felt Array")
+	}
+	if mainFunc.ReturnArg[0].Size != 3 || mainFunc.ReturnArg[0].DebugName != "core::panics::PanicResult::<(core::array::Array::<core::felt252>)>" {
+		return fmt.Errorf("main function return argument should be Felt Array")
+	}
+	return nil
 }

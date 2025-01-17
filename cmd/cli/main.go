@@ -220,7 +220,7 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot parse args: %w", err)
 					}
-					program, hints, userArgs, err := runner.AssembleProgram(cairoProgram, userArgs, availableGas)
+					program, hints, userArgs, err := runner.AssembleProgram(cairoProgram, userArgs, availableGas, proofmode)
 					if err != nil {
 						return fmt.Errorf("cannot assemble program: %w", err)
 					}

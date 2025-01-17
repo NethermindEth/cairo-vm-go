@@ -192,6 +192,7 @@ func TestCairoFiles(t *testing.T) {
 		"cairo_1_programs/with_input/branching.cairo":              "123",
 		"cairo_1_programs/with_input/dict_with_input__small.cairo": "[1 2 3 4]",
 		"cairo_1_programs/with_input/tensor__small.cairo":          "[1 4] [1 5]",
+		"cairo_1_programs/with_input/proofmode__small.cairo":       "[1 2 3 4 5]",
 	}
 
 	// filter is for debugging purposes
@@ -472,7 +473,7 @@ func runVm(path, layout string, zero bool, inputArgs string) (time.Duration, str
 	if !zero {
 		args = []string{
 			cliCommand,
-			// "--proofmode",
+			"--proofmode",
 			"--tracefile",
 			traceOutput,
 			"--memoryfile",
