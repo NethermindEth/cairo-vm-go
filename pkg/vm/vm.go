@@ -169,7 +169,6 @@ func (vm *VirtualMachine) RunStep(hintRunner HintRunner) error {
 
 const RC_OFFSET_BITS = 16
 
-//go:nosplit
 func (vm *VirtualMachine) RunInstruction(instruction *asmb.Instruction) error {
 
 	var off0 int = int(instruction.OffDest) + (1 << (RC_OFFSET_BITS - 1))
