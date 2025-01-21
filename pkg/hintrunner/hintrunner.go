@@ -15,6 +15,9 @@ type HintRunner struct {
 }
 
 func NewHintRunner(hints map[uint64][]h.Hinter, newHintRunnerContext *h.HintRunnerContext) HintRunner {
+	if newHintRunnerContext == nil {
+		newHintRunnerContext = h.InitializeDefaultContext()
+	}
 	return HintRunner{
 		// Context for certain hints that require it. Each manager is
 		// initialized only when required by the hint

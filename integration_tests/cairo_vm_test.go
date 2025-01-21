@@ -421,17 +421,17 @@ func runRustVm(path, layout string, zero bool, inputArgs string) (time.Duration,
 		memoryOutput,
 		"--layout",
 		layout,
-		"--args",
-		inputArgs,
 	}
 
 	if zero {
 		args = append(args, "--proof_mode")
 	}
 
-	binaryPath := "./../rust_vm_bin/cairo-lang/cairo1-run"
-	if zero {
-		binaryPath = "./../rust_vm_bin/cairo-vm-cli"
+	binaryPath := "./../rust_vm_bin/cairo-vm-cli"
+
+	if !zero {
+		args = append(args, "--args", inputArgs)
+		binaryPath = "./../rust_vm_bin/cairo-lang/cairo1-run"
 	}
 	cmd := exec.Command(binaryPath, args...)
 
