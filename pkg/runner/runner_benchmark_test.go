@@ -233,7 +233,7 @@ func BenchmarkRunnerWithFibonacci(b *testing.B) {
 			panic(err)
 		}
 
-		runner, err := NewRunner(program, hints, ProofModeZero, false, math.MaxUint64, "plain", nil)
+		runner, err := NewRunner(program, hints, ProofModeZero, false, math.MaxUint64, "plain", nil, 0)
 		if err != nil {
 			panic(err)
 		}

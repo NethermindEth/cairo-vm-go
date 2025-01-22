@@ -12,7 +12,6 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	"github.com/NethermindEth/cairo-vm-go/pkg/runner"
-	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/urfave/cli/v2"
 )
 
@@ -125,7 +124,7 @@ func main() {
 					if proofmode {
 						runnerMode = runner.ProofModeZero
 					}
-					return runVM(*program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode, nil)
+					return runVM(*program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode, nil, 0)
 				},
 			},
 			{
@@ -217,7 +216,11 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("cannot load program: %w", err)
 					}
-					program, hints, err := runner.AssembleProgram(cairoProgram)
+					userArgs, err := starknet.ParseCairoProgramArgs(args)
+					if err != nil {
+						return fmt.Errorf("cannot parse args: %w", err)
+					}
+					program, hints, userArgs, err := runner.AssembleProgram(cairoProgram, userArgs, availableGas)
 					if err != nil {
 						return fmt.Errorf("cannot assemble program: %w", err)
 					}
@@ -225,19 +228,7 @@ func main() {
 					if proofmode {
 						runnerMode = runner.ProofModeCairo
 					}
-					userArgs, err := starknet.ParseCairoProgramArgs(args)
-					if err != nil {
-						return fmt.Errorf("cannot parse args: %w", err)
-					}
-					if availableGas > 0 {
-						// The first argument is the available gas
-						availableGasArg := starknet.CairoFuncArgs{
-							Single: new(fp.Element).SetUint64(availableGas),
-							Array:  nil,
-						}
-						userArgs = append([]starknet.CairoFuncArgs{availableGasArg}, userArgs...)
-					}
-					return runVM(program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode, userArgs)
+					return runVM(program, proofmode, maxsteps, entrypointOffset, collectTrace, traceLocation, buildMemory, memoryLocation, layoutName, airPublicInputLocation, airPrivateInputLocation, hints, runnerMode, userArgs, availableGas)
 				},
 			},
 		},
@@ -264,9 +255,10 @@ func runVM(
 	hints map[uint64][]hinter.Hinter,
 	runnerMode runner.RunnerMode,
 	userArgs []starknet.CairoFuncArgs,
+	availableGas uint64,
 ) error {
 	fmt.Println("Running....")
-	runner, err := runner.NewRunner(&program, hints, runnerMode, collectTrace, maxsteps, layoutName, userArgs)
+	runner, err := runner.NewRunner(&program, hints, runnerMode, collectTrace, maxsteps, layoutName, userArgs, availableGas)
 	if err != nil {
 		return fmt.Errorf("cannot create runner: %w", err)
 	}

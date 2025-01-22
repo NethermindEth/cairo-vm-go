@@ -1937,30 +1937,75 @@ func (hint *ExternalWriteArgsToMemory) String() string {
 }
 
 func (hint *ExternalWriteArgsToMemory) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-	userArgsVar, err := ctx.ScopeManager.GetVariableValue("userArgs")
+	userArgs, err := hinter.GetVariableAs[[]starknet.CairoFuncArgs](&ctx.ScopeManager, "userArgs")
 	if err != nil {
 		return fmt.Errorf("get user args: %v", err)
 	}
-	userArgs, ok := userArgsVar.([]starknet.CairoFuncArgs)
-	if !ok {
-		return fmt.Errorf("expected user args to be a list of CairoFuncArgs")
+	// The apOffset is the AP correction, which represents the memory slots taken up by the values created by the entry code instructions.
+	// It is calculated in the `getNewHintRunnerContext()` method.
+	apOffset, err := hinter.GetVariableAs[uint64](&ctx.ScopeManager, "apOffset")
+	if err != nil {
+		return fmt.Errorf("get ap offset: %v", err)
 	}
+	apOffset += vm.Context.Ap
 	for _, arg := range userArgs {
 		if arg.Single != nil {
 			mv := mem.MemoryValueFromFieldElement(arg.Single)
-			err := vm.Memory.Write(1, vm.Context.Ap, &mv)
+			err := vm.Memory.Write(1, apOffset, &mv)
 			if err != nil {
 				return fmt.Errorf("write single arg: %v", err)
 			}
+			apOffset++
 		} else if arg.Array != nil {
+			// The array is stored in memory as follows:
+			// Each array gets assigned a new segment (the pointer is stored in the arrayBase).
+			// arrayBase and arrayEnd pointers are written to the Execution Segment consecutively.
+			// Then, the array elements are written to the newly created array segment.
 			arrayBase := vm.Memory.AllocateEmptySegment()
 			mv := mem.MemoryValueFromMemoryAddress(&arrayBase)
-			err := vm.Memory.Write(1, vm.Context.Ap, &mv)
+			err := vm.Memory.Write(1, apOffset, &mv)
 			if err != nil {
 				return fmt.Errorf("write array base: %v", err)
 			}
-			// TODO: Implement array writing
+			apOffset++
+			arrayEnd := arrayBase
+			for _, val := range arg.Array {
+				mv := mem.MemoryValueFromFieldElement(&val)
+				err := vm.Memory.Write(arrayEnd.SegmentIndex, arrayEnd.Offset, &mv)
+				if err != nil {
+					return fmt.Errorf("write array element: %v", err)
+				}
+				arrayEnd.Offset += 1
+			}
+			mv = mem.MemoryValueFromMemoryAddress(&arrayEnd)
+			err = vm.Memory.Write(1, apOffset, &mv)
+			if err != nil {
+				return fmt.Errorf("write array end: %v", err)
+			}
+			apOffset++
 		}
+	}
+	return nil
+}
+
+type ExternalWriteGasToMemory struct{}
+
+func (hint *ExternalWriteGasToMemory) String() string {
+	return "ExternalWriteGasToMemory"
+}
+
+func (hint *ExternalWriteGasToMemory) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+	// ExternalWriteGasToMemory is a separate hint, that writes the gas value to the memory.
+	// The gas value is written to the memory cell reserved by the instruction generated in entry code, which is dependent on the ordering of builtins list.
+	// Therefore the writing of the gas value to the memory is done in a separate hint.
+	gas, err := hinter.GetVariableAs[uint64](&ctx.ScopeManager, "gas")
+	if err != nil {
+		return fmt.Errorf("get gas: %v", err)
+	}
+	gasVal := mem.MemoryValueFromUint(gas)
+	err = vm.Memory.Write(1, vm.Context.Ap, &gasVal)
+	if err != nil {
+		return fmt.Errorf("write gas: %v", err)
 	}
 	return nil
 }
