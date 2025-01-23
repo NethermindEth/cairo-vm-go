@@ -791,7 +791,11 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 			ctx.AddInlineCASM(fmt.Sprintf("[ap] = [fp + %d], ap++;", i))
 		}
 	} else {
-		// TODO: Writing the final builtins into the top of the stack.
+		// Writing the final builtins into the top of the stack.
+		for _, b := range function.Builtins {
+			offset := builtinsOffsetsMap[b]
+			ctx.AddInlineCASM(fmt.Sprintf("[ap] = [fp - %d], ap++;", offset))
+		}
 
 	}
 	if proofmode {
