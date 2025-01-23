@@ -661,7 +661,8 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 		for i, b := range function.Builtins {
 			// assert [fp + i] == [fp - builtin_offset]
 			offset := builtinsOffsetsMap[b]
-			ctx.AddInlineCASM(fmt.Sprintf("[fp+%d] = [ap-%d];", i, offset))
+			// increment the offset by 1 to account for the skipped output builtin
+			ctx.AddInlineCASM(fmt.Sprintf("[fp+%d] = [ap-%d];", i+1, offset))
 		}
 		outputs := []string{}
 
@@ -709,7 +710,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 
 			ctx.AddInlineCASM(
 				fmt.Sprintf(`
-					[%s] = [ap] + %s, ap++;
+					%s = [ap] + %s, ap++;
 					[ap-1] = [[ap-2]];
 					[ap] = [ap-1], ap++;
 					[ap] = %s, ap++;
@@ -719,9 +720,9 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 
 					[ap] = [[ap-2]], ap++;
 					[ap-1] = [[ap-2]];
-					[ap-4] = [ap] + 1, ap++;
-					[ap] = [ap-4] + 1, ap++;
-					[ap] = [ap-4] + 1;
+					[ap-4] = [ap]+1, ap++;
+					[ap] = [ap-4]+1, ap++;
+					[ap] = [ap-4]+1;
 					jmp rel -8 if [ap-3] != 0;
 				`, arrayEndPtr, arrayStartPtr, arrayStartPtr),
 			)
@@ -733,7 +734,24 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 		if gotSegmentArena {
 			offset := 2 + len(function.Builtins)
 			segmentArenaPtr := fmt.Sprintf("[fp + %d]", offset)
-			fmt.Println(segmentArenaPtr)
+			ctx.AddInlineCASM(fmt.Sprintf(`
+				[ap]=[%s-2], ap++;
+				[ap]=[%s-1], ap++;
+				[ap-1]=[ap-2];
+				jmp rel 4 if [ap-2] != 0;
+				jpm rel 19;
+				[ap]=[[%s-3], ap++;
+				[ap-3] = [ap]+1;
+				jmp rel 4 if [ap-1] != 0;
+				jmp rel 12;
+				[ap]=[[ap-2]+1], ap++;
+				[ap] = [[ap-3]+3], ap++;
+        		[ap-1] = [ap-2] + 1;
+        		[ap] = [ap-4] + 3, ap++;
+        		[ap-4] = [ap] + 1, ap++;
+        		jmp rel -12;
+				`, segmentArenaPtr, segmentArenaPtr, segmentArenaPtr,
+			))
 		}
 
 		// Copying the final builtins from locals into the top of the stack.

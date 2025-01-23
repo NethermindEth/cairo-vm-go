@@ -187,12 +187,14 @@ func TestCairoFiles(t *testing.T) {
 	}
 
 	inputArgsMap := map[string]string{
-		"cairo_1_programs/with_input/array_input_sum__small.cairo": "2 [111 222 333] 1 [444 555 666 777]",
-		"cairo_1_programs/with_input/array_length__small.cairo":    "[1 2 3 4 5 6] [7 8 9 10]",
-		"cairo_1_programs/with_input/branching.cairo":              "123",
-		"cairo_1_programs/with_input/dict_with_input__small.cairo": "[1 2 3 4]",
-		"cairo_1_programs/with_input/tensor__small.cairo":          "[1 4] [1 5]",
-		"cairo_1_programs/with_input/proofmode__small.cairo":       "[1 2 3 4 5]",
+		"cairo_1_programs/with_input/array_input_sum__small.cairo":         "2 [111 222 333] 1 [444 555 666 777]",
+		"cairo_1_programs/with_input/array_length__small.cairo":            "[1 2 3 4 5 6] [7 8 9 10]",
+		"cairo_1_programs/with_input/branching.cairo":                      "123",
+		"cairo_1_programs/with_input/dict_with_input__small.cairo":         "[1 2 3 4]",
+		"cairo_1_programs/with_input/tensor__small.cairo":                  "[1 4] [1 5]",
+		"cairo_1_programs/with_input/proofmode__small.cairo":               "[1 2 3 4 5]",
+		"cairo_1_programs/with_input/proofmode_with_builtins__small.cairo": "[1 2 3 4 5]",
+		"cairo_1_programs/with_input/proofmode_segment_arena__small.cairo": "[1 2 3 4 5]",
 	}
 
 	// filter is for debugging purposes
