@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	"github.com/NethermindEth/cairo-vm-go/pkg/hintrunner"
@@ -99,7 +100,7 @@ func AssembleProgram(cairoProgram *starknet.StarknetProgram, userArgs []starknet
 		return Program{}, nil, nil, fmt.Errorf("cannot get hints: %w", err)
 	}
 
-	entryCodeInstructions, entryCodeHints, err := GetEntryCodeInstructions(mainFunc)
+	entryCodeInstructions, entryCodeHints, err := GetEntryCodeInstructions(mainFunc, proofmode)
 	if err != nil {
 		return Program{}, nil, nil, fmt.Errorf("cannot load entry code instructions: %w", err)
 	}
@@ -544,12 +545,17 @@ func (ctx *InlineCasmContext) AddInlineCASM(code string) {
 	ctx.currentCodeOffset += int(total_size)
 }
 
-func GetEntryCodeInstructions(function starknet.EntryPointByFunction) ([]*fp.Element, map[uint64][]hinter.Hinter, error) {
+// Function derived from the cairo-lang-runner crate.
+// https://github.com/starkware-libs/cairo/blob/40a7b60687682238f7f71ef7c59c986cc5733915/crates/cairo-lang-runner/src/lib.rs#L703
+// / Returns the instructions to add to the beginning of the code to successfully call the main
+// / function, as well as the builtins required to execute the program.
+func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode bool) ([]*fp.Element, map[uint64][]hinter.Hinter, error) {
 	paramTypes := function.InputArgs
 	apOffset := 0
 	builtinOffset := 3
 	codeOffset := uint64(function.Offset)
 	builtinsOffsetsMap := map[builtins.BuiltinType]int{}
+	ctx := &InlineCasmContext{}
 
 	for _, builtin := range []builtins.BuiltinType{
 		builtins.MulModType,
@@ -567,7 +573,11 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction) ([]*fp.Ele
 		}
 	}
 
-	ctx := &InlineCasmContext{}
+	if proofmode {
+		builtinsOffsetsMap[builtins.OutputType] = 0
+		// Increment the length of the builtins by 1 to account for the output builtin
+		ctx.AddInlineCASM(fmt.Sprintf("ap += %d;", len(function.Builtins)+1))
+	}
 
 	gotSegmentArena := false
 	for _, builtin := range function.Builtins {
@@ -607,7 +617,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction) ([]*fp.Ele
 		paramsSize += param.Size
 	}
 	apOffset += paramsSize
-
+	gotGasBuiltin := false
 	for _, builtin := range function.Builtins {
 		if offset, isBuiltin := builtinsOffsetsMap[builtin]; isBuiltin {
 			ctx.AddInlineCASM(
@@ -624,6 +634,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction) ([]*fp.Ele
 			hints[uint64(ctx.currentCodeOffset)] = append(hints[uint64(ctx.currentCodeOffset)], &core.ExternalWriteGasToMemory{})
 			ctx.AddInlineCASM("ap += 1;")
 			apOffset += 1
+			gotGasBuiltin = true
 		}
 	}
 
@@ -645,6 +656,99 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction) ([]*fp.Ele
 	}
 	totalSize := uint64(endInstructionsSize) + uint64(codeOffset)
 	ctx.AddInlineCASM(fmt.Sprintf("call rel %d; ret;", int(totalSize)))
+	outputPtr := fmt.Sprintf("[fp-%d]", len(function.Builtins)+2)
+	if proofmode {
+		for i, b := range function.Builtins {
+			// assert [fp + i] == [fp - builtin_offset]
+			offset := builtinsOffsetsMap[b]
+			ctx.AddInlineCASM(fmt.Sprintf("[fp+%d] = [ap-%d];", i, offset))
+		}
+		outputs := []string{}
+
+		lastReturnArg := function.ReturnArgs[len(function.ReturnArgs)-1]
+		for i := function.ReturnArgs[len(function.ReturnArgs)-1].Size + 1; i >= 1; i-- {
+			outputs = append(outputs, fmt.Sprintf("[ap-%d]", i))
+		}
+
+		arrayStartPtr, arrayEndPtr := outputs[0], outputs[1]
+		if strings.HasPrefix(lastReturnArg.DebugName, "core::panics::PanicResult") {
+			// assert panic_flag = *(output_ptr++);
+			panicFlag := outputs[0]
+			ctx.AddInlineCASM(fmt.Sprintf("%s = [%s];", panicFlag, outputPtr))
+			arrayStartPtr, arrayEndPtr = outputs[1], outputs[2]
+		}
+
+		ctx.AddInlineCASM(
+			fmt.Sprintf(`
+				%s = [ap] + %s, ap++;
+				[ap-1] = [%s+1];
+				[ap] = [ap-1], ap++;
+				[ap] = %s, ap++;
+				[ap] = %s + 1, ap++;
+				jmp rel 4 if [ap-3] != 0;
+				jmp rel 12;
+
+				[ap] = [[ap-2]], ap++;
+				[ap-1] = [[ap-2]];
+				[ap-4] = [ap] + 1, ap++;
+				[ap] = [ap-4] + 1, ap++;
+				[ap] = [ap-4] + 1, ap++;
+				jmp rel -8 if [ap-3] != 0;
+			`, arrayEndPtr, arrayStartPtr, outputPtr, arrayStartPtr, outputPtr),
+		)
+		if paramsSize != 0 {
+			offset := 2 * len(function.Builtins)
+			if gotSegmentArena {
+				offset += 4
+			}
+			if gotGasBuiltin {
+				offset += 1
+			}
+			arrayStartPtr := fmt.Sprintf("[fp+%d]", offset)
+			arrayEndPtr := fmt.Sprintf("[fp+%d]", offset+1)
+
+			ctx.AddInlineCASM(
+				fmt.Sprintf(`
+					[%s] = [ap] + %s, ap++;
+					[ap-1] = [[ap-2]];
+					[ap] = [ap-1], ap++;
+					[ap] = %s, ap++;
+					[ap] = [ap-4]+1, ap++;
+					jmp rel 4 if [ap-3] != 0;
+					jmp rel 12;
+
+					[ap] = [[ap-2]], ap++;
+					[ap-1] = [[ap-2]];
+					[ap-4] = [ap] + 1, ap++;
+					[ap] = [ap-4] + 1, ap++;
+					[ap] = [ap-4] + 1;
+					jmp rel -8 if [ap-3] != 0;
+				`, arrayEndPtr, arrayStartPtr, arrayStartPtr),
+			)
+		}
+		// After we are done writing into the output segment, we can write the final output_ptr into locals:
+		// The last instruction will write the final output ptr so we can find it in [ap - 1]
+		ctx.AddInlineCASM("[fp] = [[ap - 1]];")
+
+		if gotSegmentArena {
+			offset := 2 + len(function.Builtins)
+			segmentArenaPtr := fmt.Sprintf("[fp + %d]", offset)
+			fmt.Println(segmentArenaPtr)
+		}
+
+		// Copying the final builtins from locals into the top of the stack.
+		for i := range function.Builtins {
+			ctx.AddInlineCASM(fmt.Sprintf("[ap] = [fp + %d], ap++;", i))
+		}
+	} else {
+		// TODO: Writing the final builtins into the top of the stack.
+
+	}
+	if proofmode {
+		ctx.AddInlineCASM("jmp rel 0;")
+	} else {
+		ctx.AddInlineCASM("ret;")
+	}
 	return ctx.instructions, hints, nil
 }
 
@@ -658,13 +762,13 @@ func CheckOnlyArrayFeltInputAndReturntValue(mainFunc starknet.EntryPointByFuncti
 	if len(mainFunc.InputArgs) != 1 {
 		return fmt.Errorf("main function should have only one input argument")
 	}
-	if len(mainFunc.ReturnArg) != 1 {
+	if len(mainFunc.ReturnArgs) != 1 {
 		return fmt.Errorf("main function should have only one return argument")
 	}
 	if mainFunc.InputArgs[0].Size != 2 || mainFunc.InputArgs[0].DebugName != "Array<felt252>" {
 		return fmt.Errorf("main function input argument should be Felt Array")
 	}
-	if mainFunc.ReturnArg[0].Size != 3 || mainFunc.ReturnArg[0].DebugName != "core::panics::PanicResult::<(core::array::Array::<core::felt252>)>" {
+	if mainFunc.ReturnArgs[0].Size != 3 || mainFunc.ReturnArgs[0].DebugName != "core::panics::PanicResult::<(core::array::Array::<core::felt252>)>" {
 		return fmt.Errorf("main function return argument should be Felt Array")
 	}
 	return nil
