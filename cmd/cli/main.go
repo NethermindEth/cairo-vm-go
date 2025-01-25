@@ -258,7 +258,7 @@ func runVM(
 	availableGas uint64,
 ) error {
 	fmt.Println("Running....")
-	runner, err := runner.NewRunner(&program, hints, runnerMode, collectTrace, maxsteps, layoutName, userArgs, availableGas)
+	cairoRunner, err := runner.NewRunner(&program, hints, runnerMode, collectTrace, maxsteps, layoutName, userArgs, availableGas)
 	if err != nil {
 		return fmt.Errorf("cannot create runner: %w", err)
 	}
@@ -268,25 +268,34 @@ func runVM(
 	// but these functions are implemented differently in both this and cairo-rs VMs
 	// and the difference is quite subtle.
 	if entrypointOffset == 0 {
-		if err := runner.Run(); err != nil {
+		if err := cairoRunner.Run(); err != nil {
 			return fmt.Errorf("runtime error: %w", err)
 		}
 	} else {
-		if err := runner.RunEntryPoint(entrypointOffset); err != nil {
+		if err := cairoRunner.RunEntryPoint(entrypointOffset); err != nil {
 			return fmt.Errorf("runtime error (entrypoint=%d): %w", entrypointOffset, err)
 		}
 	}
+
+	if airPublicInputLocation != "" {
+		if runnerMode == runner.ProofModeCairo {
+			fmt.Println("finalizing builtins for cairo")
+		} else if runnerMode == runner.ExecutionModeCairo {
+			fmt.Println("finalizing builtins for cairo")
+		}
+
+	}
 	if proofmode {
-		if err := runner.EndRun(); err != nil {
+		if err := cairoRunner.EndRun(); err != nil {
 			return fmt.Errorf("cannot end run: %w", err)
 		}
-		if err := runner.FinalizeSegments(); err != nil {
+		if err := cairoRunner.FinalizeSegments(); err != nil {
 			return fmt.Errorf("cannot finalize segments: %w", err)
 		}
 	}
 
 	if proofmode || collectTrace {
-		trace, err := runner.BuildTrace()
+		trace, err := cairoRunner.BuildTrace()
 		if err != nil {
 			return fmt.Errorf("cannot build trace: %w", err)
 		}
@@ -299,7 +308,7 @@ func runVM(
 	}
 
 	if proofmode || buildMemory {
-		memory, err := runner.BuildMemory()
+		memory, err := cairoRunner.BuildMemory()
 		if err != nil {
 			return fmt.Errorf("cannot build memory: %w", err)
 		}
@@ -313,7 +322,7 @@ func runVM(
 
 	if proofmode {
 		if airPublicInputLocation != "" {
-			airPublicInput, err := runner.GetAirPublicInput()
+			airPublicInput, err := cairoRunner.GetAirPublicInput()
 			if err != nil {
 				return err
 			}
@@ -336,7 +345,7 @@ func runVM(
 			if err != nil {
 				return err
 			}
-			airPrivateInput, err := runner.GetAirPrivateInput(tracePath, memoryPath)
+			airPrivateInput, err := cairoRunner.GetAirPrivateInput(tracePath, memoryPath)
 			if err != nil {
 				return err
 			}
@@ -352,7 +361,7 @@ func runVM(
 	}
 
 	fmt.Println("Success!")
-	output := runner.Output()
+	output := cairoRunner.Output()
 	if len(output) > 0 {
 		fmt.Println("Program output:")
 		for _, val := range output {

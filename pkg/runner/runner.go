@@ -49,7 +49,7 @@ func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode Ru
 	if err != nil {
 		return Runner{}, err
 	}
-	newHintRunnerContext := getNewHintRunnerContext(program, userArgs, availableGas)
+	newHintRunnerContext := getNewHintRunnerContext(program, userArgs, availableGas, runnerMode == ProofModeCairo || runnerMode == ProofModeZero)
 	hintrunner := hintrunner.NewHintRunner(hints, &newHintRunnerContext)
 	return Runner{
 		program:      program,
@@ -61,7 +61,7 @@ func NewRunner(program *Program, hints map[uint64][]hinter.Hinter, runnerMode Ru
 	}, nil
 }
 
-func getNewHintRunnerContext(program *Program, userArgs []starknet.CairoFuncArgs, availableGas uint64) hinter.HintRunnerContext {
+func getNewHintRunnerContext(program *Program, userArgs []starknet.CairoFuncArgs, availableGas uint64, proofmode bool) hinter.HintRunnerContext {
 	// The writeApOffset is the offset where the user arguments will be written. It is added to the current AP in the ExternalWriteArgsToMemory hint.
 	// The writeApOffset is significant for Cairo programs, because of the prepended Entry Code instructions.
 	// In the entry code instructions the builtins bases (excluding gas, segment arena and output) are written to the memory,
@@ -77,6 +77,9 @@ func getNewHintRunnerContext(program *Program, userArgs []starknet.CairoFuncArgs
 		if builtin == builtins.SegmentArenaType {
 			writeApOffset += 3
 		}
+	}
+	if proofmode {
+		writeApOffset += uint64(len(program.Builtins)) - 1
 	}
 
 	newHintrunnerContext := *hinter.InitializeDefaultContext()
@@ -814,10 +817,10 @@ func GetFooterInstructions() []*fp.Element {
 
 func CheckOnlyArrayFeltInputAndReturntValue(mainFunc starknet.EntryPointByFunction) error {
 	if len(mainFunc.InputArgs) != 1 {
-		return fmt.Errorf("main function should have only one input argument")
+		return fmt.Errorf("main function in proofmode should have felt252 array as input argument")
 	}
 	if len(mainFunc.ReturnArgs) != 1 {
-		return fmt.Errorf("main function should have only one return argument")
+		return fmt.Errorf("main function in proofmode should have an felt252 array as return argument")
 	}
 	if mainFunc.InputArgs[0].Size != 2 || mainFunc.InputArgs[0].DebugName != "Array<felt252>" {
 		return fmt.Errorf("main function input argument should be Felt Array")

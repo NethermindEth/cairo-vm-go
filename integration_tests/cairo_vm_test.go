@@ -184,6 +184,7 @@ func TestCairoFiles(t *testing.T) {
 		{"./cairo_1_programs/", false},
 		{"./cairo_1_programs/dict_non_squashed", false},
 		{"./cairo_1_programs/with_input", false},
+		{"./cairo_1_programs/serialized_output", false},
 	}
 
 	inputArgsMap := map[string]string{
@@ -423,8 +424,6 @@ func runRustVm(path, layout string, zero bool, inputArgs string) (time.Duration,
 		memoryOutput,
 		"--layout",
 		layout,
-		"--args",
-		inputArgs,
 	}
 
 	if zero {
