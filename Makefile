@@ -44,7 +44,7 @@ integration:
 		if [ ! -d rust_vm_bin ]; then \
 			mkdir -p rust_vm_bin; \
 		fi; \
-		if [ ! -d rust_vm_bin/cairo ]; then \
+		if [ ! -d rust_vm_bin/cairo-lang ]; then \
 			mkdir -p rust_vm_bin/cairo-lang; \
 		fi; \
 		if [ ! -f ./rust_vm_bin/cairo-lang/cairo-compile ] || [ ! -f ./rust_vm_bin/cairo-lang/sierra-compile-json ] || [ ! -d rust_vm_bin/corelib ]; then \
@@ -53,6 +53,14 @@ integration:
 			mv cairo/corelib .; \
 			cd cairo/crates/bin && cargo build --release --bin cairo-compile --bin sierra-compile-json && cd ../../../; \
 			mv cairo/target/release/cairo-compile cairo/target/release/sierra-compile-json cairo-lang; \
+			rm -rf cairo; \
+			cd ../; \
+		fi; \
+		if [ ! -f ./rust_vm_bin/cairo-lang/cairo-run ]; then \
+			cd rust_vm_bin; \
+			git clone https://github.com/starkware-libs/cairo.git; \
+			cd cairo/crates/bin && cargo build --release --bin cairo-run && cd ../../../;
+			mv cairo/target/release/cairo-run cairo-lang; \
 			rm -rf cairo; \
 			cd ../; \
 		fi; \
