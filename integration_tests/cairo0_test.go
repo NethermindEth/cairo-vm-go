@@ -107,7 +107,7 @@ func runAndTestCairoZeroFile(t *testing.T, path string, name string, benchmarkMa
 	}
 }
 
-var zerobench = flag.Bool("cairobench", false, "run integration tests and generate benchmarks file")
+var zerobench = flag.Bool("zerobench", false, "run integration tests and generate benchmarks file")
 
 func TestCairoZeroFiles(t *testing.T) {
 	file, err := os.OpenFile(whitelistFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)

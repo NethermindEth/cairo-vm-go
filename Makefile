@@ -59,7 +59,7 @@ integration:
 		if [ ! -f ./rust_vm_bin/cairo-lang/cairo-run ]; then \
 			cd rust_vm_bin; \
 			git clone https://github.com/starkware-libs/cairo.git; \
-			cd cairo/crates/bin && cargo build --release --bin cairo-run && cd ../../../;
+			cd cairo/crates/bin && cargo build --release --bin cairo-run && cd ../../../; \
 			mv cairo/target/release/cairo-run cairo-lang; \
 			rm -rf cairo; \
 			cd ../; \

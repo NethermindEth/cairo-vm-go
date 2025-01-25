@@ -313,7 +313,7 @@ func runVmCairo1(path, layout string, inputArgs string, proofmode bool) (time.Du
 	}
 
 	if proofmode {
-		args = append(args, "--proof_mode")
+		args = append(args, "--proofmode")
 	}
 
 	args = append(args, path)
