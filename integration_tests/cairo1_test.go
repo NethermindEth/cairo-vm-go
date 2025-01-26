@@ -364,17 +364,15 @@ func runCairoRunner(path string) ([]fp.Element, error) {
 		)
 	}
 	rsOutput := string(rsOutputByte)
-
 	// Extract memory values from output string
-	memoryStart := strings.Index(rsOutput, "Full memory: [") + 13
-	memoryEnd := strings.Index(rsOutput, "]")
-	if memoryStart < 13 || memoryEnd == -1 {
+	memoryStart := strings.Index(rsOutput, "Full memory: [") + 14
+	memoryEnd := strings.LastIndex(rsOutput, "]") - 2
+	if memoryStart < 14 || memoryEnd == -1 {
 		writeToFile(path)
 		return nil, fmt.Errorf("Could not find memory values in output")
 	}
 	memoryStr := rsOutput[memoryStart:memoryEnd]
 	memoryStrs := strings.Split(memoryStr, ", ")
-
 	// Convert strings to fp.Elements
 	runnerMemory := make([]fp.Element, 0, len(memoryStrs))
 	for _, str := range memoryStrs {
@@ -388,6 +386,6 @@ func runCairoRunner(path string) ([]fp.Element, error) {
 		}
 		runnerMemory = append(runnerMemory, *elem)
 	}
-	fmt.Println(runnerMemory)
+
 	return runnerMemory, nil
 }
