@@ -44,34 +44,45 @@ integration:
 		if [ ! -d rust_vm_bin ]; then \
 			mkdir -p rust_vm_bin; \
 		fi; \
-		if [ ! -d rust_vm_bin/cairo-lang ]; then \
-			mkdir -p rust_vm_bin/cairo-lang; \
+		if [ ! -d rust_vm_bin/scj/scj ]; then \
+			mkdir -p rust_vm_bin/scj/scj; \
 		fi; \
-		if [ ! -f ./rust_vm_bin/cairo-lang/cairo-compile ] || [ ! -f ./rust_vm_bin/cairo-lang/sierra-compile-json ] || [ ! -d rust_vm_bin/corelib ]; then \
-			cd rust_vm_bin; \
-			git clone --single-branch --branch feat/main-casm-json --depth=1 https://github.com/zmalatrax/cairo.git; \
-			mv cairo/corelib .; \
-			cd cairo/crates/bin && cargo build --release --bin cairo-compile --bin sierra-compile-json && cd ../../../; \
-			mv cairo/target/release/cairo-compile cairo/target/release/sierra-compile-json cairo-lang; \
-			rm -rf cairo; \
-			cd ../; \
+		if [ ! -d rust_vm_bin/starkware/starkware ]; then \
+			mkdir -p rust_vm_bin/starkware/starkware; \
 		fi; \
-		if [ ! -f ./rust_vm_bin/cairo-lang/cairo-run ]; then \
-			cd rust_vm_bin; \
-			git clone https://github.com/starkware-libs/cairo.git; \
-			cd cairo/crates/bin && cargo build --release --bin cairo-run && cd ../../../; \
-			mv cairo/target/release/cairo-run cairo-lang; \
-			rm -rf cairo; \
-			cd ../; \
+		if [ ! -d rust_vm_bin/lambdaclass/lambdaclass ]; then \
+			mkdir -p rust_vm_bin/lambdaclass/lambdaclass; \
 		fi; \
-		if [ ! -f ./rust_vm_bin/cairo-lang/cairo1-run ] || [ ! -f ./rust_vm_bin/cairo-vm-cli ]; then \
-			cd rust_vm_bin; \
-			git clone https://github.com/lambdaclass/cairo-vm.git; \
-			cd cairo-vm && cargo build --release --bin cairo-vm-cli --bin cairo1-run && cd ../; \
-			mv cairo-vm/target/release/cairo1-run cairo-lang;\
-			mv cairo-vm/target/release/cairo-vm-cli . ; \
-			rm -rf cairo-vm; \
-			cd ../; \
+		if [ ! -f ./rust_vm_bin/scj/scj/sierra-compile-json ]; then \
+			cd rust_vm_bin/scj/scj && \
+			git clone --single-branch --branch feat/main-casm-json --depth=1 https://github.com/zmalatrax/cairo.git && \
+			cd cairo/crates/bin && cargo build --release --bin sierra-compile-json && \
+			cd ../../../ && \
+			mv cairo/target/release/sierra-compile-json . && \
+			mv cairo/corelib ../ && \
+			rm -rf cairo && \
+			cd ../../../; \
+		fi; \
+		if [ ! -f ./rust_vm_bin/starkware/starkware/cairo-run ] || [ ! -f ./rust_vm_bin/starkware/starkware/cairo-compile ]; then \
+			cd rust_vm_bin/starkware/starkware && \
+			git clone https://github.com/starkware-libs/cairo.git && \
+			mv cairo/corelib ../ && \
+			cd cairo/crates/bin && cargo build --release --bin cairo-compile --bin cairo-run && \
+			cd ../../../ && \
+			mv cairo/target/release/cairo-compile cairo/target/release/cairo-run . && \
+			rm -rf cairo && \
+			cd ../../../; \
+		fi; \
+		if [ ! -f ./rust_vm_bin/lambdaclass/lambdaclass/cairo1-run ] || [ ! -f ./rust_vm_bin/lambdaclass/lambdaclass/cairo-vm-cli ]; then \
+			cd rust_vm_bin/lambdaclass/lambdaclass && \
+			git clone https://github.com/lambdaclass/cairo-vm.git && \
+			cd cairo-vm/cairo1-run && make deps && \
+			cd ../../cairo-vm && cargo build --release --bin cairo-vm-cli --bin cairo1-run && \
+			cd ../ && \
+			mv cairo-vm/target/release/cairo1-run cairo-vm/target/release/cairo-vm-cli . && \
+			mv cairo-vm/cairo1-run/corelib ../ && \
+			rm -rf cairo-vm && \
+			cd ../../../; \
 		fi; \
 		go test ./integration_tests/... -v; \
 	else \

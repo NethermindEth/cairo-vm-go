@@ -226,7 +226,7 @@ func compileCairoCode(path string) (string, error) {
 	var args []string
 
 	sierraOutput := swapExtenstion(path, sierraSuffix)
-	cliCommand = "../rust_vm_bin/cairo-lang/cairo-compile"
+	cliCommand = "../rust_vm_bin/starkware/starkware/cairo-compile"
 	args = []string{
 		"--single-file",
 		path,
@@ -243,7 +243,7 @@ func compileCairoCode(path string) (string, error) {
 		)
 	}
 
-	cliCommand = "../rust_vm_bin/cairo-lang/sierra-compile-json"
+	cliCommand = "../rust_vm_bin/scj/scj/sierra-compile-json"
 	args = []string{
 		sierraOutput,
 		compiledOutput,
@@ -283,7 +283,7 @@ func runRustVmCairo1(path, layout string, inputArgs string, proofmode bool) (tim
 		args = append(args, "--proof_mode")
 	}
 
-	cmd := exec.Command("./../rust_vm_bin/cairo-lang/cairo1-run", args...)
+	cmd := exec.Command("./../rust_vm_bin/lambdaclass/lambdaclass/cairo1-run", args...)
 
 	start := time.Now()
 
@@ -293,7 +293,7 @@ func runRustVmCairo1(path, layout string, inputArgs string, proofmode bool) (tim
 
 	if err != nil {
 		return 0, "", "", fmt.Errorf(
-			"%s %s: %w\n%s", "./../rust_vm_bin/cairo-lang/cairo1-run", path, err, string(res),
+			"%s %s: %w\n%s", "./../rust_vm_bin/lambdaclass/lambdaclass/cairo1-run", path, err, string(res),
 		)
 	}
 
@@ -348,7 +348,6 @@ func runVmCairo1(path, layout string, inputArgs string, proofmode bool) (time.Du
 
 func runCairoRunner(path string) ([]fp.Element, error) {
 	args := []string{
-		"--",
 		"--single-file",
 		path,
 		"--available-gas",
@@ -356,7 +355,7 @@ func runCairoRunner(path string) ([]fp.Element, error) {
 		"--print-full-memory",
 	}
 
-	cmd := exec.Command("./../rust_vm_bin/cairo-lang/cairo-run", args...)
+	cmd := exec.Command("./../rust_vm_bin/starkware/starkware/cairo-run", args...)
 	rsOutputByte, err := cmd.CombinedOutput()
 
 	if err != nil {

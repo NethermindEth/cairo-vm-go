@@ -261,7 +261,7 @@ func runRustVmZero(path, layout string) (time.Duration, string, string, error) {
 		"--proof_mode",
 	}
 
-	binaryPath := "./../rust_vm_bin/cairo-vm-cli"
+	binaryPath := "./../rust_vm_bin/lambdaclass/lambdaclass/cairo-vm-cli"
 
 	cmd := exec.Command(binaryPath, args...)
 
