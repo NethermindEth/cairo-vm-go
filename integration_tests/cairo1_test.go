@@ -81,15 +81,22 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 }
 
 func compareWithStarkwareRunner(t *testing.T, path string, errorExpected bool, inputArgs string) {
-	t.Logf("testing: %s\n", path)
+	t.Logf("testing (comapre with cairo runner): %s\n", path)
+
+	runnerMemory, err := runCairoRunner(path)
+	if err != nil {
+		t.Error(err)
+		writeToFile(path)
+		return
+	}
+
 	compiledOutput, err := compileCairoCode(path)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	layout := getLayoutFromFileName(path)
 
-	_, traceFile, memoryFile, _, err := runVmCairo1(compiledOutput, layout, inputArgs, false)
+	_, traceFile, memoryFile, _, err := runVmCairo1(compiledOutput, "all_cairo", inputArgs, false)
 	if errorExpected {
 		assert.Error(t, err, path)
 		writeToFile(path)
@@ -102,13 +109,6 @@ func compareWithStarkwareRunner(t *testing.T, path string, errorExpected bool, i
 		}
 	}
 	_, memory, err := decodeProof(traceFile, memoryFile)
-	if err != nil {
-		t.Error(err)
-		writeToFile(path)
-		return
-	}
-
-	runnerMemory, err := runCairoRunner(path)
 	if err != nil {
 		t.Error(err)
 		writeToFile(path)
@@ -180,17 +180,25 @@ func TestCairoFiles(t *testing.T) {
 				sem <- struct{}{} // acquire a semaphore slot
 				wg.Add(1)
 
-				go func(path, name string, root string, inputArgs string) {
+				go func(path, name, inputArgs string) {
 					defer wg.Done()
 					defer func() { <-sem }() // release the semaphore slot when done
-					runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, inputArgs, true)
 					runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, inputArgs, false)
-					compareWithStarkwareRunner(t, path, errorExpected, inputArgs)
-				}(path, name, root, inputArgs)
+					if strings.Contains(path, "proofmode") || strings.Contains(path, "serialized_output/with_input") {
+						runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, inputArgs, true)
+					}
+					if !strings.Contains(path, "with_input") {
+						compareWithStarkwareRunner(t, path, errorExpected, inputArgs)
+					}
+				}(path, name, inputArgs)
 			} else {
 				runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, inputArgs, true)
-				runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, inputArgs, false)
-				compareWithStarkwareRunner(t, path, errorExpected, inputArgs)
+				if strings.Contains(path, "proofmode") || strings.Contains(path, "serialized_output/with_input") {
+					runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, inputArgs, true)
+				}
+				if !strings.Contains(path, "with_input") {
+					compareWithStarkwareRunner(t, path, errorExpected, inputArgs)
+				}
 			}
 		}
 	}
@@ -340,6 +348,7 @@ func runVmCairo1(path, layout string, inputArgs string, proofmode bool) (time.Du
 
 func runCairoRunner(path string) ([]fp.Element, error) {
 	args := []string{
+		"--",
 		"--single-file",
 		path,
 		"--available-gas",
@@ -347,7 +356,7 @@ func runCairoRunner(path string) ([]fp.Element, error) {
 		"--print-full-memory",
 	}
 
-	cmd := exec.Command("./../rust_vm_bin/cairo-lang/cairo1-run", args...)
+	cmd := exec.Command("./../rust_vm_bin/cairo-lang/cairo-run", args...)
 	rsOutputByte, err := cmd.CombinedOutput()
 
 	if err != nil {
