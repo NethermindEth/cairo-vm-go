@@ -770,6 +770,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 		if gotSegmentArena {
 			offset := 2 + len(function.Builtins)
 			segmentArenaPtr := fmt.Sprintf("[fp + %d]", offset)
+			hints[uint64(ctx.currentCodeOffset)] = append(hints[uint64(ctx.currentCodeOffset)], &core.RelocateAllDictionaries{})
 			ctx.AddInlineCASM(fmt.Sprintf(`
 				[ap]=[%s-2], ap++;
 				[ap]=[%s-1], ap++;
