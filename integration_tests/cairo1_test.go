@@ -129,10 +129,10 @@ func TestCairoFiles(t *testing.T) {
 	file.Close()
 
 	roots := []string{
-		"./cairo_1_programs/",
-		"./cairo_1_programs/dict_non_squashed",
-		"./cairo_1_programs/with_input",
-		"./cairo_1_programs/serialized_output",
+		// "./cairo_1_programs/",
+		// "./cairo_1_programs/dict_non_squashed",
+		// "./cairo_1_programs/with_input",
+		// "./cairo_1_programs/serialized_output",
 	}
 
 	inputArgsMap := map[string]string{

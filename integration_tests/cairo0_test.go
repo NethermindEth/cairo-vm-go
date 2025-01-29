@@ -74,7 +74,7 @@ func runAndTestCairoZeroFile(t *testing.T, path string, name string, benchmarkMa
 		writeToFile(path)
 	}
 
-	elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVmZero(compiledOutput, layout)
+	elapsedPy, pyTraceFile, pyMemoryFile, err := runPythonVm(compiledOutput, layout)
 	if errorExpected {
 		// we let the code go on so that we can check if the go vm also raises an error
 		assert.Error(t, err, path)
@@ -211,7 +211,7 @@ func compileCairoZeroCode(path string) (string, error) {
 
 // given a path to a compiled cairo zero file, execute it using the
 // python vm and returns the trace and memory files location
-func runPythonVmZero(path, layout string) (time.Duration, string, string, error) {
+func runPythonVm(path, layout string) (time.Duration, string, string, error) {
 	traceOutput := swapExtenstion(path, pyTraceSuffix)
 	memoryOutput := swapExtenstion(path, pyMemorySuffix)
 
