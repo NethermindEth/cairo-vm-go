@@ -191,6 +191,8 @@ func (segment *Segment) String() string {
 // Represents the whole VM memory divided into segments
 type Memory struct {
 	Segments []*Segment
+	// TemporarySegments is a map of temporary segments, key is the segment index, value is the segment
+	TemporarySegments map[uint64]*Segment
 }
 
 // todo(rodro): can the amount of segments be known before hand?
@@ -223,6 +225,15 @@ func (memory *Memory) AllocateEmptySegment() MemoryAddress {
 	memory.Segments = append(memory.Segments, EmptySegment())
 	return MemoryAddress{
 		SegmentIndex: uint64(len(memory.Segments) - 1),
+		Offset:       0,
+	}
+}
+
+// Allocates an empty temporary segment and returns its index
+func (memory *Memory) AllocateEmptyTemporarySegment() MemoryAddress {
+	memory.TemporarySegments[uint64(len(memory.TemporarySegments))] = EmptySegment()
+	return MemoryAddress{
+		SegmentIndex: -uint64(len(memory.TemporarySegments)),
 		Offset:       0,
 	}
 }

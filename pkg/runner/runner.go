@@ -84,9 +84,10 @@ func getNewHintRunnerContext(program *Program, userArgs []starknet.CairoFuncArgs
 
 	newHintrunnerContext := *hinter.InitializeDefaultContext()
 	err := newHintrunnerContext.ScopeManager.AssignVariables(map[string]any{
-		"userArgs": userArgs,
-		"apOffset": writeApOffset,
-		"gas":      availableGas,
+		"userArgs":             userArgs,
+		"apOffset":             writeApOffset,
+		"gas":                  availableGas,
+		"useTemporarySegments": proofmode,
 	})
 	// Error handling: this condition should never be true, since the context was initialized above
 	if err != nil {

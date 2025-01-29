@@ -1075,7 +1075,11 @@ func (hint *AllocFelt252Dict) String() string {
 	return "AllocFelt252Dict"
 }
 func (hint *AllocFelt252Dict) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-	hinter.InitializeDictionaryManager(ctx)
+	useTemporarySegments, err := hinter.GetVariableAs[bool](&ctx.ScopeManager, "useTemporarySegments")
+	if err != nil {
+		return fmt.Errorf("get useTemporarySegments: %w", err)
+	}
+	hinter.InitializeDictionaryManager(ctx, useTemporarySegments)
 
 	arenaPtr, err := hinter.ResolveAsAddress(vm, hint.SegmentArenaPtr)
 	if err != nil {

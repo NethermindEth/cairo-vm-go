@@ -38,19 +38,27 @@ func (d *Dictionary) InitNumber() uint64 {
 type DictionaryManager struct {
 	// a map that links a segment index to a dictionary
 	dictionaries map[uint64]Dictionary
+	// useTemporarySegments is a flag that indicates if the dictionaries should located in temporary segments, and later relocated to memory segments
+	useTemporarySegments bool
 }
 
-func InitializeDictionaryManager(ctx *HintRunnerContext) {
+func InitializeDictionaryManager(ctx *HintRunnerContext, useTemporarySegments bool) {
 	if ctx.DictionaryManager.dictionaries == nil {
 		ctx.DictionaryManager.dictionaries = make(map[uint64]Dictionary)
 	}
+	ctx.DictionaryManager.useTemporarySegments = useTemporarySegments
 }
 
 // It creates a new segment which will hold dictionary values. It links this
 // segment with the current dictionary and returns the address that points
 // to the start of this segment
 func (dm *DictionaryManager) NewDictionary(vm *VM.VirtualMachine) mem.MemoryAddress {
-	newDictAddr := vm.Memory.AllocateEmptySegment()
+	var newDictAddr mem.MemoryAddress
+	if dm.useTemporarySegments {
+		newDictAddr = vm.Memory.AllocateEmptyTemporarySegment()
+	} else {
+		newDictAddr = vm.Memory.AllocateEmptySegment()
+	}
 	dm.dictionaries[newDictAddr.SegmentIndex] = Dictionary{
 		data: make(map[f.Element]*mem.MemoryValue),
 		idx:  uint64(len(dm.dictionaries)),
@@ -87,12 +95,32 @@ func (dm *DictionaryManager) Set(dictAddr *mem.MemoryAddress, key *f.Element, va
 }
 
 // Relocates all dictionaries into a single segment if proofmode is enabled
-func (dm *DictionaryManager) RelocateAllDictionaries(vm *VM.VirtualMachine) {
+// In LambdaClass VM there is add_relocation_rule() used, which is used only to relocate dictionaries / in specific hint. Thus we relocate dictionaries right away.
+func (dm *DictionaryManager) RelocateAllDictionaries(vm *VM.VirtualMachine) error {
 	segmentAddr := vm.Memory.AllocateEmptySegment()
-	for segment, dict := range dm.dictionaries {
-		dict.Relocate(vm)
-
+	for key, dict := range dm.dictionaries {
+		for _, value := range dict.data {
+			if value.IsAddress() {
+				addr, err := value.MemoryAddress()
+				if err != nil {
+					return err
+				}
+				element := -key + addr.Offset
+				mv := mem.MemoryValueFromUint(element)
+				err = vm.Memory.WriteToAddress(&segmentAddr, &mv)
+				if err != nil {
+					return err
+				}
+			} else {
+				err := vm.Memory.WriteToAddress(&segmentAddr, value)
+				if err != nil {
+					return err
+				}
+			}
+			segmentAddr.Offset++
+		}
 	}
+	return nil
 }
 
 // Used to keep track of squashed dictionaries
