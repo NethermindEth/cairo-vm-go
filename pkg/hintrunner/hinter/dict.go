@@ -86,8 +86,9 @@ func (dm *DictionaryManager) Set(dictAddr *mem.MemoryAddress, key *f.Element, va
 	return fmt.Errorf("no dictionary at address %s", dictAddr)
 }
 
-// / Relocates all dictionaries into a single segment if proofmode is enabled
+// Relocates all dictionaries into a single segment if proofmode is enabled
 func (dm *DictionaryManager) RelocateAllDictionaries(vm *VM.VirtualMachine) {
+	segmentAddr := vm.Memory.AllocateEmptySegment()
 	for segment, dict := range dm.dictionaries {
 		dict.Relocate(vm)
 
