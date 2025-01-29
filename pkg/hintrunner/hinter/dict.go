@@ -86,6 +86,14 @@ func (dm *DictionaryManager) Set(dictAddr *mem.MemoryAddress, key *f.Element, va
 	return fmt.Errorf("no dictionary at address %s", dictAddr)
 }
 
+// / Relocates all dictionaries into a single segment if proofmode is enabled
+func (dm *DictionaryManager) RelocateAllDictionaries(vm *VM.VirtualMachine) {
+	for segment, dict := range dm.dictionaries {
+		dict.Relocate(vm)
+
+	}
+}
+
 // Used to keep track of squashed dictionaries
 type SquashedDictionaryManager struct {
 	// A map from each key to a list of indices where the key is present

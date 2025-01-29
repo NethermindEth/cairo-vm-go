@@ -2009,3 +2009,14 @@ func (hint *ExternalWriteGasToMemory) Execute(vm *VM.VirtualMachine, ctx *hinter
 	}
 	return nil
 }
+
+type RelocateAllDictionaries struct{}
+
+func (hint *RelocateAllDictionaries) String() string {
+	return "RelocateAllDictionaries"
+}
+
+func (hint *RelocateAllDictionaries) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+	ctx.DictionaryManager.RelocateAllDictionaries(vm)
+	return nil
+}
