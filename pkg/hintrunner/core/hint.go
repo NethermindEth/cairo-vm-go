@@ -1075,7 +1075,11 @@ func (hint *AllocFelt252Dict) String() string {
 	return "AllocFelt252Dict"
 }
 func (hint *AllocFelt252Dict) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-	hinter.InitializeDictionaryManager(ctx)
+	useTemporarySegments, err := hinter.GetVariableAs[bool](&ctx.ScopeManager, "useTemporarySegments")
+	if err != nil {
+		return fmt.Errorf("get useTemporarySegments: %w", err)
+	}
+	hinter.InitializeDictionaryManager(ctx, useTemporarySegments)
 
 	arenaPtr, err := hinter.ResolveAsAddress(vm, hint.SegmentArenaPtr)
 	if err != nil {
@@ -2006,6 +2010,20 @@ func (hint *ExternalWriteGasToMemory) Execute(vm *VM.VirtualMachine, ctx *hinter
 	err = vm.Memory.Write(1, vm.Context.Ap, &gasVal)
 	if err != nil {
 		return fmt.Errorf("write gas: %v", err)
+	}
+	return nil
+}
+
+type RelocateAllDictionaries struct{}
+
+func (hint *RelocateAllDictionaries) String() string {
+	return "RelocateAllDictionaries"
+}
+
+func (hint *RelocateAllDictionaries) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+	err := ctx.DictionaryManager.RelocateAllDictionaries(vm)
+	if err != nil {
+		return fmt.Errorf("relocate all dictionaries: %w", err)
 	}
 	return nil
 }

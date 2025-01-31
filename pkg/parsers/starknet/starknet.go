@@ -28,10 +28,10 @@ type Arg struct {
 }
 
 type EntryPointByFunction struct {
-	Offset    int                    `json:"offset"`
-	Builtins  []builtins.BuiltinType `json:"builtins"`
-	InputArgs []Arg                  `json:"input_args"`
-	ReturnArg []Arg                  `json:"return_arg"`
+	Offset     int                    `json:"offset"`
+	Builtins   []builtins.BuiltinType `json:"builtins"`
+	InputArgs  []Arg                  `json:"input_args"`
+	ReturnArgs []Arg                  `json:"return_arg"`
 }
 
 type Hints struct {
