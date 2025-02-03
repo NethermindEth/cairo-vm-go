@@ -82,7 +82,8 @@ type ModBuiltin struct {
 	// powers required to do the corresponding shift
 	shiftPowers [N_WORDS]big.Int
 	// k value that bounds p when finding unknown value in fillValue function
-	kBound *big.Int
+	kBound      *big.Int
+	stopPointer uint64
 }
 
 func NewModBuiltin(ratio uint64, wordBitLen uint64, batchSize uint64, modBuiltinType ModBuiltinType) *ModBuiltin {
@@ -596,4 +597,16 @@ func FillMemory(mem *memory.Memory, addModInputAddress memory.MemoryAddress, nAd
 		}
 	}
 	return nil
+}
+
+func (m *ModBuiltin) GetCellsPerInstance() uint64 {
+	return CELLS_PER_MOD
+}
+
+func (m *ModBuiltin) GetStopPointer() uint64 {
+	return m.stopPointer
+}
+
+func (m *ModBuiltin) SetStopPointer(stopPointer uint64) {
+	m.stopPointer = stopPointer
 }

@@ -7,6 +7,7 @@ import (
 
 	asmb "github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -679,4 +680,52 @@ func DecodeMemory(content []byte) []*f.Element {
 		memory[memIndex] = &felt
 	}
 	return memory
+}
+
+func (vm *VirtualMachine) BuiltinsFinalStackFromStackPointerDict(builtinNameToStackPointer map[builtins.BuiltinType]uint64) error {
+	for builtin, stackPointer := range builtinNameToStackPointer {
+		builtinRunner := builtins.Runner(builtin)
+		var builtinRunnerSegment *mem.Segment
+		var ok bool
+		var builtinRunnerSegmentIndex uint64
+		for i := range vm.Memory.Segments {
+			if vm.Memory.Segments[i].BuiltinRunner.String() == builtinRunner.String() {
+				builtinRunnerSegment, ok, builtinRunnerSegmentIndex = vm.Memory.Segments[i], true, uint64(i)
+			}
+		}
+		if !ok {
+			return fmt.Errorf("builtin runner segment not found")
+		}
+		stop_pointer_addr := stackPointer - 1
+		stop_pointer_mv, err := vm.Memory.ReadFromAddress(&mem.MemoryAddress{
+			SegmentIndex: 1,
+			Offset:       stop_pointer_addr,
+		})
+		if err != nil {
+			return err
+		}
+		stop_pointer, err := stop_pointer_mv.MemoryAddress()
+		if err != nil {
+			return err
+		}
+		if stop_pointer.SegmentIndex != builtinRunnerSegmentIndex {
+			return fmt.Errorf("stop pointer segment index mismatch")
+		}
+		stopPointerOffset := stop_pointer.Offset
+		var used uint64
+		if builtin == builtins.OutputType {
+			used = builtinRunnerSegment.Len()
+		} else {
+			numInstances := (builtinRunnerSegment.Len() - 1 + builtinRunner.GetCellsPerInstance()) / builtinRunner.GetCellsPerInstance()
+			if builtin == builtins.SegmentArenaType {
+				numInstances += 1
+			}
+			used = numInstances * builtinRunner.GetCellsPerInstance()
+		}
+		if stopPointerOffset != used {
+			return fmt.Errorf("stop pointer offset mismatch")
+		}
+		builtinRunner.SetStopPointer(stopPointerOffset)
+	}
+	return nil
 }
