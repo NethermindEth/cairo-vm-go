@@ -277,20 +277,26 @@ func runVM(
 		}
 	}
 
-	if airPublicInputLocation != "" {
-		if runnerMode == runner.ProofModeCairo {
-			fmt.Println("finalizing builtins for cairo")
-		} else if runnerMode == runner.ExecutionModeCairo {
-			fmt.Println("finalizing builtins for cairo")
-		}
-
-	}
-	if proofmode {
+	if runnerMode == runner.ProofModeZero {
 		if err := cairoRunner.EndRun(); err != nil {
 			return fmt.Errorf("cannot end run: %w", err)
 		}
 		if err := cairoRunner.FinalizeSegments(); err != nil {
 			return fmt.Errorf("cannot finalize segments: %w", err)
+		}
+	}
+
+	if runnerMode == runner.ExecutionModeCairo || runnerMode == runner.ProofModeCairo {
+		if err := cairoRunner.EndRun(); err != nil {
+			return fmt.Errorf("cannot end run: %w", err)
+		}
+		if airPublicInputLocation != "" {
+			cairoRunner.FinalizeBuiltins()
+		}
+		if runnerMode == runner.ProofModeCairo {
+			if err := cairoRunner.FinalizeSegments(); err != nil {
+				return fmt.Errorf("cannot finalize segments: %w", err)
+			}
 		}
 	}
 

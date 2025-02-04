@@ -13,6 +13,9 @@ type BuiltinRunner interface {
 	CheckWrite(segment *Segment, offset uint64, value *MemoryValue) error
 	InferValue(segment *Segment, offset uint64) error
 	GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error)
+	GetCellsPerInstance() uint64
+	GetStopPointer() uint64
+	SetStopPointer(stopPointer uint64)
 }
 
 type NoBuiltin struct{}
@@ -32,6 +35,16 @@ func (b *NoBuiltin) String() string {
 func (b *NoBuiltin) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
 	return 0, nil
 }
+
+func (b *NoBuiltin) GetCellsPerInstance() uint64 {
+	return 0
+}
+
+func (b *NoBuiltin) GetStopPointer() uint64 {
+	return 0
+}
+
+func (b *NoBuiltin) SetStopPointer(stopPointer uint64) {}
 
 type Segment struct {
 	Data []MemoryValue

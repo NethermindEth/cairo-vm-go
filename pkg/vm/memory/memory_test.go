@@ -185,6 +185,16 @@ func (b *testBuiltin) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uin
 	return 0, nil
 }
 
+func (b *testBuiltin) GetCellsPerInstance() uint64 {
+	return 0
+}
+
+func (b *testBuiltin) GetStopPointer() uint64 {
+	return 0
+}
+
+func (b *testBuiltin) SetStopPointer(stopPointer uint64) {}
+
 func TestSegmentBuiltin(t *testing.T) {
 	segment := EmptySegment().WithBuiltinRunner(&testBuiltin{})
 

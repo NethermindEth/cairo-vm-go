@@ -32,9 +32,9 @@ func Runner(name BuiltinType) memory.BuiltinRunner {
 	case OutputType:
 		return &Output{}
 	case RangeCheckType:
-		return &RangeCheck{0, 8}
+		return &RangeCheck{0, 8, 0}
 	case RangeCheck96Type:
-		return &RangeCheck{0, 6}
+		return &RangeCheck{0, 6, 0}
 	case PedersenType:
 		return &Pedersen{}
 	case ECDSAType:

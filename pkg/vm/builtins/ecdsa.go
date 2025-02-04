@@ -19,8 +19,9 @@ const (
 )
 
 type ECDSA struct {
-	Signatures map[uint64]ecdsa.Signature
-	ratio      uint64
+	Signatures  map[uint64]ecdsa.Signature
+	ratio       uint64
+	stopPointer uint64
 }
 
 // verify_ecdsa_signature(message_hash, public_key, sig_r, sig_s)
@@ -209,4 +210,16 @@ func (e *ECDSA) GetAirPrivateInput(ecdsaSegment *memory.Segment) ([]AirPrivateBu
 		values = append(values, AirPrivateBuiltinECDSA{Index: int(idx), PubKey: pubKeyHex, Msg: msgHex, SignatureInput: signatureInput})
 	}
 	return values, nil
+}
+
+func (e *ECDSA) GetCellsPerInstance() uint64 {
+	return cellsPerECDSA
+}
+
+func (e *ECDSA) GetStopPointer() uint64 {
+	return e.stopPointer
+}
+
+func (e *ECDSA) SetStopPointer(stopPointer uint64) {
+	e.stopPointer = stopPointer
 }

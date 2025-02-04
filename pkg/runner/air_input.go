@@ -17,17 +17,22 @@ func (runner *Runner) GetAirPublicInput() (AirPublicInput, error) {
 	// TODO: you need to calculate this for each builtin
 	memorySegments["program"] = AirMemorySegmentEntry{BeginAddr: firstTrace.Pc, StopPtr: lastTrace.Pc}
 	memorySegments["execution"] = AirMemorySegmentEntry{BeginAddr: firstTrace.Ap, StopPtr: lastTrace.Ap}
+	memorySegmentsAddresses, err := runner.GetAirMemorySegmentsAddresses()
+	if err != nil {
+		return AirPublicInput{}, err
+	}
+	for name, segment := range memorySegmentsAddresses {
+		memorySegments[name] = segment
+	}
 
 	return AirPublicInput{
-		Layout:        runner.layout.Name,
-		RcMin:         rcMin,
-		RcMax:         rcMax,
-		NSteps:        len(runner.vm.Trace),
-		DynamicParams: nil,
-		// TODO: yet to be implemented fully
+		Layout:         runner.layout.Name,
+		RcMin:          rcMin,
+		RcMax:          rcMax,
+		NSteps:         len(runner.vm.Trace),
+		DynamicParams:  nil,
 		MemorySegments: memorySegments,
-		// TODO: yet to be implemented
-		PublicMemory: make([]AirPublicMemoryEntry, 0),
+		PublicMemory:   make([]AirPublicMemoryEntry, 0),
 	}, nil
 }
 
