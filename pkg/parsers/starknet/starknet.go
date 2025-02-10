@@ -22,7 +22,13 @@ type EntryPointByType struct {
 }
 
 type Arg struct {
-	GenericID string `json:"generic_id"`
+	GenericID      string         `json:"generic_id"`
+	Size           int            `json:"size"`
+	DebugName      string         `json:"debug_name"`
+	PanicInnerType PanicInnerType `json:"panic_inner_type"`
+}
+
+type PanicInnerType struct {
 	Size      int    `json:"size"`
 	DebugName string `json:"debug_name"`
 }

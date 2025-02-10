@@ -233,7 +233,7 @@ func (memory *Memory) AllocateEmptySegment() MemoryAddress {
 func (memory *Memory) AllocateEmptyTemporarySegment() MemoryAddress {
 	memory.TemporarySegments[uint64(len(memory.TemporarySegments))] = EmptySegment()
 	return MemoryAddress{
-		SegmentIndex: -uint64(len(memory.TemporarySegments)),
+		SegmentIndex: uint64(len(memory.TemporarySegments)),
 		Offset:       0,
 	}
 }

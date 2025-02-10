@@ -105,7 +105,7 @@ func (dm *DictionaryManager) RelocateAllDictionaries(vm *VM.VirtualMachine) erro
 				if err != nil {
 					return err
 				}
-				element := -key + addr.Offset
+				element := key + addr.Offset
 				mv := mem.MemoryValueFromUint(element)
 				err = vm.Memory.WriteToAddress(&segmentAddr, &mv)
 				if err != nil {

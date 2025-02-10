@@ -133,6 +133,7 @@ func TestCairoFiles(t *testing.T) {
 		// "./cairo_1_programs/dict_non_squashed",
 		// "./cairo_1_programs/with_input",
 		// "./cairo_1_programs/serialized_output",
+		// "./cairo_1_programs/serialized_output/with_input",
 	}
 
 	inputArgsMap := map[string]string{

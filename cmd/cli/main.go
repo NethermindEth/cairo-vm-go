@@ -276,15 +276,6 @@ func runVM(
 			return fmt.Errorf("runtime error (entrypoint=%d): %w", entrypointOffset, err)
 		}
 	}
-
-	if airPublicInputLocation != "" {
-		if runnerMode == runner.ProofModeCairo {
-			fmt.Println("finalizing builtins for cairo")
-		} else if runnerMode == runner.ExecutionModeCairo {
-			fmt.Println("finalizing builtins for cairo")
-		}
-
-	}
 	if proofmode {
 		if err := cairoRunner.EndRun(); err != nil {
 			return fmt.Errorf("cannot end run: %w", err)
