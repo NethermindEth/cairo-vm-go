@@ -145,6 +145,12 @@ func TestCairoFiles(t *testing.T) {
 		"cairo_1_programs/with_input/proofmode__small.cairo":               "[1 2 3 4 5]",
 		"cairo_1_programs/with_input/proofmode_with_builtins__small.cairo": "[1 2 3 4 5]",
 		"cairo_1_programs/with_input/proofmode_segment_arena__small.cairo": "[1 2 3 4 5]",
+
+		"cairo_1_programs/serialized_output/with_input/array_input_sum__small.cairo": "2 [111 222 333] 1 [444 555 666 777]",
+		"cairo_1_programs/serialized_output/with_input/array_length__small.cairo":    "[1 2 3 4 5 6] [7 8 9 10]",
+		"cairo_1_programs/serialized_output/with_input/branching.cairo":              "123",
+		"cairo_1_programs/serialized_output/with_input/dict_with_input__small.cairo": "[1 2 3 4]",
+		"cairo_1_programs/serialized_output/with_input/tensor__small.cairo":          "[1 4] [1 5]",
 	}
 
 	// filter is for debugging purposes
@@ -226,33 +232,15 @@ func compileCairoCode(path string) (string, error) {
 	var cliCommand string
 	var args []string
 
-	sierraOutput := swapExtenstion(path, sierraSuffix)
-	cliCommand = "../rust_vm_bin/starkware/starkware/cairo-compile"
+	cliCommand = "../rust_vm_bin/scj/scj/sierra-compile-json"
 	args = []string{
-		"--single-file",
 		path,
-		sierraOutput,
-		"--replace-ids",
+		compiledOutput,
 	}
 
 	cmd := exec.Command(cliCommand, args...)
 
 	res, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf(
-			"%s %s: %w\n%s", cliCommand, path, err, string(res),
-		)
-	}
-
-	cliCommand = "../rust_vm_bin/scj/scj/sierra-compile-json"
-	args = []string{
-		sierraOutput,
-		compiledOutput,
-	}
-
-	cmd = exec.Command(cliCommand, args...)
-
-	res, err = cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf(
 			"%s %s: %w\n%s", cliCommand, path, err, string(res),
