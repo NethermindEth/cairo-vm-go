@@ -723,6 +723,21 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 	ctx.AddInlineCASM("call rel 0;")
 	callRelArgLocation := len(ctx.instructions) - 1
 	outputPtr := fmt.Sprintf("[fp-%d]", len(programBuiltins)+2)
+
+	adjustedRetOffset := 0
+	for _, retArgs := range function.ReturnArgs {
+		adjustedRetOffset += retArgs.Size
+	}
+	for _, builtin := range function.Builtins {
+		adjustedRetOffset += 1
+		_, ok := builtinsOffsetsMap[builtin]
+		if ok {
+			builtinsOffsetsMap[builtin] = adjustedRetOffset
+		} else {
+			continue
+		}
+	}
+
 	if proofmode {
 		for i, b := range programBuiltins {
 			if b == builtins.OutputType {
@@ -731,7 +746,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 			// assert [fp + i] == [fp - builtin_offset]
 			offset, ok := builtinsOffsetsMap[b]
 			if ok {
-				ctx.AddInlineCASM(fmt.Sprintf("[fp+%d] = [ap-%d];", i, offset+1))
+				ctx.AddInlineCASM(fmt.Sprintf("[fp+%d] = [ap-%d];", i, offset))
 			}
 		}
 
@@ -759,8 +774,6 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 			ctx.AddInlineCASM(fmt.Sprintf("%s = [%s];", deref(ApRegister, panicFlag), outputPtr))
 			arrayStartPtr, arrayEndPtr = outputs[1], outputs[2]
 		}
-		// todo: in line 791, sometimes we increase by 1, sometimes by 2. Why?
-		// todo: in line 788 sometimes we increase the deref by 1, and sometimes not. Why?
 		ctx.AddInlineCASM(
 			fmt.Sprintf(`
 				%s = [ap] + %s, ap++;
