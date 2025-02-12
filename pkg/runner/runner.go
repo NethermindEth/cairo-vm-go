@@ -136,7 +136,7 @@ func AssembleProgram(cairoProgram *starknet.StarknetProgram, userArgs []starknet
 	entryCodeInstructions, entryCodeHints, currentCodeOffset, builtins, gotGasBuiltin, gotSegmentArena, err := GetEntryCodeInstructions(mainFunc, proofmode)
 
 	program.Builtins = builtins
-	program.GotGasBuiltin = gotGasBuiltin
+	program.GotGasBuiltin = gotGasBuiltin && availableGas > 0
 	program.GotSegmentArenaBuiltin = gotSegmentArena
 
 	if err != nil {
@@ -148,9 +148,6 @@ func AssembleProgram(cairoProgram *starknet.StarknetProgram, userArgs []starknet
 		program.Labels["__end__"] = uint64(currentCodeOffset) - 2
 	}
 
-	if err != nil {
-		return Program{}, nil, nil, fmt.Errorf("cannot load entry code instructions: %w", err)
-	}
 	program.Bytecode = append(entryCodeInstructions, program.Bytecode...)
 	program.Bytecode = append(program.Bytecode, GetFooterInstructions()...)
 
@@ -365,7 +362,7 @@ func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue,
 		}
 	}
 	// Write builtins costs segment address to the end of the program segment if gas builtin is present
-	if runner.isCairoMode() && runner.program.GotGasBuiltin {
+	if runner.program.GotGasBuiltin {
 		err := gasInitialization(memory)
 		if err != nil {
 			return nil, err
@@ -376,10 +373,6 @@ func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue,
 
 func (runner *Runner) isProofMode() bool {
 	return runner.runnerMode == ProofModeCairo || runner.runnerMode == ProofModeZero
-}
-
-func (runner *Runner) isCairoMode() bool {
-	return runner.runnerMode == ExecutionModeCairo || runner.runnerMode == ProofModeCairo
 }
 
 func (runner *Runner) initializeVm(
@@ -644,7 +637,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 		if slices.Contains(function.Builtins, builtin) {
 			builtinsOffsetsMap[builtin] = builtinOffset
 			builtinOffset += 1
-			programBuiltins = append(programBuiltins, builtin)
+			programBuiltins = append([]builtins.BuiltinType{builtin}, programBuiltins...)
 		}
 	}
 
@@ -728,6 +721,12 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 	for _, retArgs := range function.ReturnArgs {
 		adjustedRetOffset += retArgs.Size
 	}
+
+	// builtins have to be ordered by the highest id to generate proper offsets
+	for i, j := 0, len(function.Builtins)-1; i < j; i, j = i+1, j-1 {
+		function.Builtins[i], function.Builtins[j] = function.Builtins[j], function.Builtins[i]
+	}
+
 	for _, builtin := range function.Builtins {
 		adjustedRetOffset += 1
 		_, ok := builtinsOffsetsMap[builtin]
@@ -768,16 +767,18 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 		}
 
 		arrayStartPtr, arrayEndPtr := outputs[0], outputs[1]
+		outputPtrIncremented := 0
 		if strings.HasPrefix(lastReturnArg.DebugName, "core::panics::PanicResult") {
 			// assert panic_flag = *(output_ptr++);
 			panicFlag := outputs[0]
 			ctx.AddInlineCASM(fmt.Sprintf("%s = [%s];", deref(ApRegister, panicFlag), outputPtr))
 			arrayStartPtr, arrayEndPtr = outputs[1], outputs[2]
+			outputPtrIncremented = 1
 		}
 		ctx.AddInlineCASM(
 			fmt.Sprintf(`
 				%s = [ap] + %s, ap++;
-				[ap-1] = [%s+1];
+				[ap-1] = [%s+%d];
 				[ap] = [ap-1], ap++;
 				[ap] = %s, ap++;
 				[ap] = %s + 2, ap++;
@@ -790,7 +791,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 				[ap] = [ap-4] + 1, ap++;
 				[ap] = [ap-4] + 1, ap++;
 				jmp rel -8 if [ap-3] != 0;
-			`, deref(ApRegister, arrayEndPtr), deref(ApRegister, arrayStartPtr), outputPtr, deref(ApRegister, arrayStartPtr-2), outputPtr),
+			`, deref(ApRegister, arrayEndPtr), deref(ApRegister, arrayStartPtr), outputPtr, outputPtrIncremented, deref(ApRegister, arrayStartPtr-2), outputPtr),
 		)
 		if paramsSize != 0 {
 			offset := 2*len(programBuiltins) - 1
@@ -856,9 +857,9 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 		}
 	} else {
 		// Writing the final builtins into the top of the stack.
-		for _, b := range programBuiltins {
+		for i, b := range programBuiltins {
 			offset := builtinsOffsetsMap[b]
-			ctx.AddInlineCASM(fmt.Sprintf("[ap] = [fp - %d], ap++;", offset))
+			ctx.AddInlineCASM(fmt.Sprintf("[ap] = [ap - %d], ap++;", offset+i))
 		}
 
 	}

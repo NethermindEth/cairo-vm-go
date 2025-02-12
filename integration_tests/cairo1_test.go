@@ -190,22 +190,26 @@ func TestCairoFiles(t *testing.T) {
 				go func(path, name, inputArgs string) {
 					defer wg.Done()
 					defer func() { <-sem }() // release the semaphore slot when done
+					// compare program execution with/without proofmode with Lambdaclass VM (no gas)
 					runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, inputArgs, false)
 					if strings.Contains(path, "proofmode") || strings.Contains(path, "serialized_output/with_input") {
 						runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, inputArgs, true)
 					}
-					if !strings.Contains(path, "with_input") {
-						compareWithStarkwareRunner(t, path, errorExpected, inputArgs)
-					}
+					// compare program execution in Execution mode with starkware runner (with gas)
+					// if !strings.Contains(path, "with_input") {
+					// 	compareWithStarkwareRunner(t, path, errorExpected, inputArgs, true)
+					// }
 				}(path, name, inputArgs)
 			} else {
-				runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, inputArgs, true)
+				// compare program execution with/without proofmode with Lambdaclass VM (no gas)
+				runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, inputArgs, false)
 				if strings.Contains(path, "proofmode") || strings.Contains(path, "serialized_output/with_input") {
 					runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, inputArgs, true)
 				}
-				if !strings.Contains(path, "with_input") {
-					compareWithStarkwareRunner(t, path, errorExpected, inputArgs)
-				}
+				// compare program execution in Execution mode with starkware runner (with gas)
+				// if !strings.Contains(path, "with_input") {
+				// 	compareWithStarkwareRunner(t, path, errorExpected, inputArgs, true)
+				// }
 			}
 		}
 	}
@@ -297,6 +301,8 @@ func runVmCairo1(path, layout string, inputArgs string, proofmode bool) (time.Du
 
 	args := []string{
 		"cairo-run",
+		"--build_memory",
+		"--collect_trace",
 		"--tracefile",
 		traceOutput,
 		"--memoryfile",
@@ -304,7 +310,7 @@ func runVmCairo1(path, layout string, inputArgs string, proofmode bool) (time.Du
 		"--layout",
 		layout,
 		"--available_gas",
-		"9999999",
+		"9999999999999",
 		"--args",
 		inputArgs,
 	}

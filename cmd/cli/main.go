@@ -285,7 +285,7 @@ func runVM(
 		}
 	}
 
-	if proofmode || collectTrace {
+	if runnerMode == runner.ProofModeZero || collectTrace {
 		trace, err := cairoRunner.BuildTrace()
 		if err != nil {
 			return fmt.Errorf("cannot build trace: %w", err)
@@ -298,7 +298,7 @@ func runVM(
 		}
 	}
 
-	if proofmode || buildMemory {
+	if runnerMode == runner.ProofModeZero || buildMemory {
 		memory, err := cairoRunner.BuildMemory()
 		if err != nil {
 			return fmt.Errorf("cannot build memory: %w", err)
