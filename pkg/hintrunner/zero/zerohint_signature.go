@@ -14,7 +14,7 @@ import (
 )
 
 // VerifyZero hint verifies that a packed value is zero modulo the secp256k1 prime
-// and stores in memory the quotient of the modular divison of the packed value by
+// and stores in memory the quotient of the modular division of the packed value by
 // secp256k1 prime
 //
 // `newVerifyZeroHint` takes 2 operanders as arguments
@@ -91,7 +91,7 @@ func createVerifyZeroHinter(resolver hintReferenceResolver) (hinter.Hinter, erro
 }
 
 // VerifyZeroV3 hint verifies that a packed value is zero modulo the Curve25519 prime
-// and stores in memory the quotient of the modular divison of the packed value by
+// and stores in memory the quotient of the modular division of the packed value by
 // Curve25519 prime
 //
 // `newVerifyZeroV3Hint` takes 2 operanders as arguments
