@@ -1,6 +1,6 @@
 use core::keccak::cairo_keccak;
 
-fn main() -> felt252 {
+fn main() {
     let mut arr = ArrayTrait::new();
     arr.append(1);
     arr.append(2);

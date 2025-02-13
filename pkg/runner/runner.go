@@ -122,7 +122,7 @@ func AssembleProgram(cairoProgram *starknet.StarknetProgram, userArgs []starknet
 		}
 	}
 	if expectedArgsSize != actualArgsSize {
-		return Program{}, nil, nil, fmt.Errorf("missing arguments for main function")
+		return Program{}, nil, nil, fmt.Errorf("missing arguments for main function, expected size: %d, got: %d", expectedArgsSize, actualArgsSize)
 	}
 	program, err := LoadCairoProgram(cairoProgram)
 	if err != nil {
@@ -334,7 +334,7 @@ func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue,
 	// check if all builtins from the program are in the layout
 	for _, programBuiltin := range runner.program.Builtins {
 		switch programBuiltin {
-		case builtins.SegmentArenaType, builtins.GasBuiltinType:
+		case builtins.SegmentArenaType, builtins.GasBuiltinType, builtins.OutputType:
 			continue
 		default:
 			if _, found := builtinsSet[programBuiltin]; !found {
@@ -362,12 +362,12 @@ func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue,
 		}
 	}
 	// Write builtins costs segment address to the end of the program segment if gas builtin is present
-	if runner.program.GotGasBuiltin {
-		err := gasInitialization(memory)
-		if err != nil {
-			return nil, err
-		}
-	}
+	// if runner.program.GotGasBuiltin {
+	// 	err := gasInitialization(memory)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 	return stack, nil
 }
 
@@ -773,7 +773,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 			panicFlag := outputs[0]
 			ctx.AddInlineCASM(fmt.Sprintf("%s = [%s];", deref(ApRegister, panicFlag), outputPtr))
 			arrayStartPtr, arrayEndPtr = outputs[1], outputs[2]
-			outputPtrIncremented = 1
+			outputPtrIncremented += 1
 		}
 		ctx.AddInlineCASM(
 			fmt.Sprintf(`
@@ -781,7 +781,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 				[ap-1] = [%s+%d];
 				[ap] = [ap-1], ap++;
 				[ap] = %s, ap++;
-				[ap] = %s + 2, ap++;
+				[ap] = %s + %d, ap++;
 				jmp rel 4 if [ap-3] != 0;
 				jmp rel 12;
 
@@ -791,7 +791,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 				[ap] = [ap-4] + 1, ap++;
 				[ap] = [ap-4] + 1, ap++;
 				jmp rel -8 if [ap-3] != 0;
-			`, deref(ApRegister, arrayEndPtr), deref(ApRegister, arrayStartPtr), outputPtr, outputPtrIncremented, deref(ApRegister, arrayStartPtr-2), outputPtr),
+			`, deref(ApRegister, arrayEndPtr), deref(ApRegister, arrayStartPtr), outputPtr, outputPtrIncremented, deref(ApRegister, arrayStartPtr-2), outputPtr, outputPtrIncremented+1),
 		)
 		if paramsSize != 0 {
 			offset := 2*len(programBuiltins) - 1
@@ -838,7 +838,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 				jmp rel 4 if [ap-2] != 0;
 				jmp rel 19;
 				[ap]=[%s-3], ap++;
-				[ap-3] = [ap]+1;
+				[ap-3] = [ap]+1, ap++;
 				jmp rel 4 if [ap-1] != 0;
 				jmp rel 12;
 				[ap]=[[ap-2]+1], ap++;
