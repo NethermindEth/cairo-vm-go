@@ -347,7 +347,7 @@ func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue,
 			}
 		} else {
 			builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
-			if utils.Contains(runner.program.Builtins, bRunner.Builtin) {
+			if slices.Contains(runner.program.Builtins, bRunner.Builtin) {
 				stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
 			}
 		}
