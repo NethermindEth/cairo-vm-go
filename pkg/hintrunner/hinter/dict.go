@@ -38,7 +38,7 @@ func (d *Dictionary) InitNumber() uint64 {
 type DictionaryManager struct {
 	// a map that links a segment index to a dictionary
 	dictionaries map[uint64]Dictionary
-	// useTemporarySegments is a flag that indicates if the dictionaries should located in temporary segments, and later relocated to memory segments
+	// useTemporarySegments is a flag that indicates if the dictionaries should be located in temporary segments, and later relocated to memory segments
 	useTemporarySegments bool
 }
 

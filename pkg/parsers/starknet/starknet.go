@@ -28,6 +28,8 @@ type Arg struct {
 	PanicInnerType PanicInnerType `json:"panic_inner_type"`
 }
 
+// Return type can either be a generic type or structure of generic types
+// It can also be the previously mentioned, but wrapped in a panic
 type PanicInnerType struct {
 	Size      int    `json:"size"`
 	DebugName string `json:"debug_name"`

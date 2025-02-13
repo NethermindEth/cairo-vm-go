@@ -196,9 +196,9 @@ func TestCairoFiles(t *testing.T) {
 						runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, inputArgs, true)
 					}
 					// compare program execution in Execution mode with starkware runner (with gas)
-					// if !strings.Contains(path, "with_input") {
-					// 	compareWithStarkwareRunner(t, path, errorExpected, inputArgs, true)
-					// }
+					if !strings.Contains(path, "with_input") {
+						compareWithStarkwareRunner(t, path, errorExpected, inputArgs)
+					}
 				}(path, name, inputArgs)
 			} else {
 				// compare program execution with/without proofmode with Lambdaclass VM (no gas)
@@ -207,9 +207,9 @@ func TestCairoFiles(t *testing.T) {
 					runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, inputArgs, true)
 				}
 				// compare program execution in Execution mode with starkware runner (with gas)
-				// if !strings.Contains(path, "with_input") {
-				// 	compareWithStarkwareRunner(t, path, errorExpected, inputArgs, true)
-				// }
+				if !strings.Contains(path, "with_input") {
+					compareWithStarkwareRunner(t, path, errorExpected, inputArgs)
+				}
 			}
 		}
 	}
