@@ -32,7 +32,7 @@ var rc = [24]uint64{
 	0x8000000080008008,
 }
 
-// keccakF1600 applies the Keccak permutation to a 1600b-wide
+// KeccakF1600 applies the Keccak permutation to a 1600b-wide
 // state represented as a slice of 25 uint64s.
 func KeccakF1600(a *[25]uint64) {
 	// Implementation translated from Keccak-inplace.c
