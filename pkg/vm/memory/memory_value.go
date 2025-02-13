@@ -238,6 +238,17 @@ func (mv *MemoryValue) Known() bool {
 	return mv.Kind != unknownMemoryValue
 }
 
+func (mv *MemoryValue) IsZero() bool {
+	switch mv.Kind {
+	case addrMemoryValue:
+		return false
+	case feltMemoryValue:
+		return mv.Felt.IsZero()
+	default:
+		return false
+	}
+}
+
 func (mv *MemoryValue) Equal(other *MemoryValue) bool {
 	if mv.IsAddress() && other.IsAddress() {
 		return mv.addrUnsafe().Equal(other.addrUnsafe())

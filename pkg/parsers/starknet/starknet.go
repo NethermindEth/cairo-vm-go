@@ -22,16 +22,24 @@ type EntryPointByType struct {
 }
 
 type Arg struct {
-	GenericID string `json:"generic_id"`
+	GenericID      string         `json:"generic_id"`
+	Size           int            `json:"size"`
+	DebugName      string         `json:"debug_name"`
+	PanicInnerType PanicInnerType `json:"panic_inner_type"`
+}
+
+// Return type can either be a generic type or structure of generic types
+// It can also be the previously mentioned, but wrapped in a panic
+type PanicInnerType struct {
 	Size      int    `json:"size"`
 	DebugName string `json:"debug_name"`
 }
 
 type EntryPointByFunction struct {
-	Offset    int                    `json:"offset"`
-	Builtins  []builtins.BuiltinType `json:"builtins"`
-	InputArgs []Arg                  `json:"input_args"`
-	ReturnArg []Arg                  `json:"return_arg"`
+	Offset     int                    `json:"offset"`
+	Builtins   []builtins.BuiltinType `json:"builtins"`
+	InputArgs  []Arg                  `json:"input_args"`
+	ReturnArgs []Arg                  `json:"return_arg"`
 }
 
 type Hints struct {

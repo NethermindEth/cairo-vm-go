@@ -17,7 +17,9 @@ type Program struct {
 	// it stores the start and end label pcs
 	Labels map[string]uint64
 	// builtins
-	Builtins []builtins.BuiltinType
+	Builtins               []builtins.BuiltinType
+	GotGasBuiltin          bool
+	GotSegmentArenaBuiltin bool
 }
 
 type CairoProgram struct{}
@@ -78,7 +80,7 @@ func LoadCairoProgram(cairoProgram *sn.StarknetProgram) (*Program, error) {
 	return &Program{
 		Bytecode:    bytecode,
 		Entrypoints: entrypoints,
-		Labels:      nil,
+		Labels:      map[string]uint64{},
 		Builtins:    builtins,
 	}, nil
 }
