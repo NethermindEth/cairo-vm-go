@@ -55,21 +55,21 @@ integration:
 		fi; \
 		if [ ! -f ./rust_vm_bin/scj/scj/sierra-compile-json ]; then \
 			cd rust_vm_bin/scj/scj && \
-			git clone --single-branch --branch feat/main-casm-json --depth=1 https://github.com/zmalatrax/cairo.git && \
-			cd cairo/crates/bin && cargo build --release --bin sierra-compile-json && \
+			git clone --single-branch --branch feat/main-casm-json --depth=1 https://github.com/MaksymMalicki/cairo-fork.git && \
+			cd cairo-fork/crates/bin && cargo build --release --bin sierra-compile-json && \
 			cd ../../../ && \
-			mv cairo/target/release/sierra-compile-json . && \
-			mv cairo/corelib ../ && \
-			rm -rf cairo && \
+			mv cairo-fork/target/release/sierra-compile-json . && \
+			mv cairo-fork/corelib ../ && \
+			rm -rf cairo-fork && \
 			cd ../../../; \
 		fi; \
-		if [ ! -f ./rust_vm_bin/starkware/starkware/cairo-run ] || [ ! -f ./rust_vm_bin/starkware/starkware/cairo-compile ]; then \
+		if [ ! -f ./rust_vm_bin/starkware/starkware/cairo-run ]; then \
 			cd rust_vm_bin/starkware/starkware && \
 			git clone https://github.com/starkware-libs/cairo.git && \
 			mv cairo/corelib ../ && \
-			cd cairo/crates/bin && cargo build --release --bin cairo-compile --bin cairo-run && \
+			cd cairo/crates/bin && cargo build --release --bin cairo-run && \
 			cd ../../../ && \
-			mv cairo/target/release/cairo-compile cairo/target/release/cairo-run . && \
+			mv cairo/target/release/cairo-run . && \
 			rm -rf cairo && \
 			cd ../../../; \
 		fi; \

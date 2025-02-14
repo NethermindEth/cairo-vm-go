@@ -276,7 +276,7 @@ func runVM(
 			return fmt.Errorf("runtime error (entrypoint=%d): %w", entrypointOffset, err)
 		}
 	}
-
+  
 	if runnerMode == runner.ProofModeZero {
 		if err := cairoRunner.EndRun(); err != nil {
 			return fmt.Errorf("cannot end run: %w", err)
@@ -339,6 +339,12 @@ func runVM(
 			err = os.WriteFile(airPublicInputLocation, airPublicInputJson, 0644)
 			if err != nil {
 				return fmt.Errorf("cannot write air_public_input: %w", err)
+			}
+			// todo: remove after merge of https://github.com/NethermindEth/cairo-vm-go/pull/686
+			if runnerMode == runner.ProofModeCairo {
+				if err := cairoRunner.FinalizeSegments(); err != nil {
+					return fmt.Errorf("cannot finalize segments: %w", err)
+				}
 			}
 		}
 

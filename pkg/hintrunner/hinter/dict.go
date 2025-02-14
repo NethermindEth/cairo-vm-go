@@ -38,7 +38,7 @@ func (d *Dictionary) InitNumber() uint64 {
 type DictionaryManager struct {
 	// a map that links a segment index to a dictionary
 	dictionaries map[uint64]Dictionary
-	// useTemporarySegments is a flag that indicates if the dictionaries should located in temporary segments, and later relocated to memory segments
+	// useTemporarySegments is a flag that indicates if the dictionaries should be located in temporary segments, and later relocated to memory segments
 	useTemporarySegments bool
 }
 
@@ -105,7 +105,7 @@ func (dm *DictionaryManager) RelocateAllDictionaries(vm *VM.VirtualMachine) erro
 				if err != nil {
 					return err
 				}
-				element := -key + addr.Offset
+				element := key + addr.Offset
 				mv := mem.MemoryValueFromUint(element)
 				err = vm.Memory.WriteToAddress(&segmentAddr, &mv)
 				if err != nil {

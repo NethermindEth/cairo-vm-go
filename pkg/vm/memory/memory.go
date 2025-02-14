@@ -205,7 +205,7 @@ func (segment *Segment) String() string {
 type Memory struct {
 	Segments []*Segment
 	// TemporarySegments is a map of temporary segments, key is the segment index, value is the segment
-	TemporarySegments map[uint64]*Segment
+	TemporarySegments []*Segment
 }
 
 // todo(rodro): can the amount of segments be known before hand?
@@ -244,9 +244,9 @@ func (memory *Memory) AllocateEmptySegment() MemoryAddress {
 
 // Allocates an empty temporary segment and returns its index
 func (memory *Memory) AllocateEmptyTemporarySegment() MemoryAddress {
-	memory.TemporarySegments[uint64(len(memory.TemporarySegments))] = EmptySegment()
+	memory.TemporarySegments = append(memory.TemporarySegments, EmptySegment())
 	return MemoryAddress{
-		SegmentIndex: -uint64(len(memory.TemporarySegments)),
+		SegmentIndex: uint64(len(memory.TemporarySegments)),
 		Offset:       0,
 	}
 }

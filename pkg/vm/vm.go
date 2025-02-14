@@ -298,7 +298,7 @@ func (vm *VirtualMachine) getOp1Addr(instruction *asmb.Instruction, op0Addr *mem
 // when there is an assertion with a substraction or division like : x = y - z
 // the compiler treats it as y = x + z. This means that the VM knows the
 // dstCell value and either op0Cell or op1Cell. This function infers the
-// unknow operand as well as the `res` auxiliar value
+// unknow operand as well as the `res` auxiliary value
 func (vm *VirtualMachine) inferOperand(
 	instruction *asmb.Instruction, dstAddr *mem.MemoryAddress, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
 ) (mem.MemoryValue, error) {
@@ -468,12 +468,7 @@ func (vm *VirtualMachine) updatePc(
 		if err != nil {
 			return mem.UnknownAddress, err
 		}
-		dest, err := destMv.FieldElement()
-		if err != nil {
-			return mem.UnknownAddress, err
-		}
-
-		if dest.IsZero() {
+		if destMv.IsZero() {
 			return mem.MemoryAddress{
 				SegmentIndex: vm.Context.Pc.SegmentIndex,
 				Offset:       vm.Context.Pc.Offset + uint64(instruction.Size()),
@@ -495,7 +490,7 @@ func (vm *VirtualMachine) updatePc(
 		return newPc, err
 
 	}
-	return mem.UnknownAddress, fmt.Errorf("unkwon pc update value: %d", instruction.PcUpdate)
+	return mem.UnknownAddress, fmt.Errorf("unknown pc update value: %d", instruction.PcUpdate)
 }
 
 func (vm *VirtualMachine) updateAp(instruction *asmb.Instruction, res *mem.MemoryValue) (uint64, error) {
