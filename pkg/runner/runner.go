@@ -341,7 +341,7 @@ func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue,
 
 	for _, bRunner := range runner.layout.Builtins {
 		if runner.runnerMode == ExecutionModeCairo {
-			if utils.Contains(runner.program.Builtins, bRunner.Builtin) {
+			if slices.Contains(runner.program.Builtins, bRunner.Builtin) {
 				builtinSegment := memory.AllocateBuiltinSegment(bRunner.Runner)
 				stack = append(stack, mem.MemoryValueFromMemoryAddress(&builtinSegment))
 			}
@@ -353,12 +353,13 @@ func (runner *Runner) initializeBuiltins(memory *mem.Memory) ([]mem.MemoryValue,
 		}
 	}
 	// Write builtins costs segment address to the end of the program segment if gas builtin is present
-	// if runner.program.GotGasBuiltin {
-	// 	err := gasInitialization(memory)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
+	// todo: remove false on comparison with starkware runner
+	if runner.program.GotGasBuiltin && false {
+		err := gasInitialization(memory)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return stack, nil
 }
 
