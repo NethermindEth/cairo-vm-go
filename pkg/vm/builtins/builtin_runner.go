@@ -59,6 +59,41 @@ func Runner(name BuiltinType) memory.BuiltinRunner {
 	}
 }
 
+func BuiltinTypeFromName(name string) BuiltinType {
+	switch name {
+	case OutputName:
+		return OutputType
+	case RangeCheckName:
+		return RangeCheckType
+	case RangeCheck96Name:
+		return RangeCheck96Type
+	case PedersenName:
+		return PedersenType
+	case ECDSAName:
+		return ECDSAType
+	case KeccakName:
+		return KeccakType
+	case BitwiseName:
+		return BitwiseType
+	case EcOpName:
+		return ECOPType
+	case PoseidonName:
+		return PoseidonType
+	case "Add" + ModuloName:
+		return AddModeType
+	case "Mul" + ModuloName:
+		return MulModType
+	case SegmentArenaName:
+		return SegmentArenaType
+	case GasBuiltinName:
+		return GasBuiltinType
+	case SystemBuiltinName:
+		return SystemBuiltinType
+	default:
+		panic("Unknown builtin")
+	}
+}
+
 // GetBuiltinAllocatedInstances calculates the number of instances of given builtin for current step and builtin ratio.
 // Ratio parameter defines the ratio between the number of steps to the number of builtin instances. It means that this builtin is expected to be used once every 'ratio' steps of the execution.
 // cellsPerInstance defines the number of cells that one instance of the builtin occupies.

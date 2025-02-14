@@ -678,18 +678,16 @@ func DecodeMemory(content []byte) []*f.Element {
 }
 
 func (vm *VirtualMachine) BuiltinsFinalStackFromStackPointerDict(builtinNameToStackPointer map[builtins.BuiltinType]uint64) error {
-	for builtin, stackPointer := range builtinNameToStackPointer {
-		builtinRunner := builtins.Runner(builtin)
-		var builtinRunnerSegment *mem.Segment
-		var ok bool
-		var builtinRunnerSegmentIndex uint64
-		for i := range vm.Memory.Segments {
-			if vm.Memory.Segments[i].BuiltinRunner.String() == builtinRunner.String() {
-				builtinRunnerSegment, ok, builtinRunnerSegmentIndex = vm.Memory.Segments[i], true, uint64(i)
-			}
+
+	for segmentIndex, segment := range vm.Memory.Segments {
+		if segment.BuiltinRunner == nil {
+			continue
 		}
+		builtinRunner := segment.BuiltinRunner
+		builtinType := builtins.BuiltinTypeFromName(builtinRunner.String())
+		stackPointer, ok := builtinNameToStackPointer[builtinType]
 		if !ok {
-			return fmt.Errorf("builtin runner segment not found")
+			return fmt.Errorf("builtin %s not found in stack pointer dict", builtinRunner.String())
 		}
 		stop_pointer_addr := stackPointer - 1
 		stop_pointer_mv, err := vm.Memory.ReadFromAddress(&mem.MemoryAddress{
@@ -703,16 +701,16 @@ func (vm *VirtualMachine) BuiltinsFinalStackFromStackPointerDict(builtinNameToSt
 		if err != nil {
 			return err
 		}
-		if stop_pointer.SegmentIndex != builtinRunnerSegmentIndex {
+		if stop_pointer.SegmentIndex != uint64(segmentIndex) {
 			return fmt.Errorf("stop pointer segment index mismatch")
 		}
 		stopPointerOffset := stop_pointer.Offset
 		var used uint64
-		if builtin == builtins.OutputType {
-			used = builtinRunnerSegment.Len()
+		if builtinType == builtins.OutputType {
+			used = segment.Len()
 		} else {
-			numInstances := (builtinRunnerSegment.Len() - 1 + builtinRunner.GetCellsPerInstance()) / builtinRunner.GetCellsPerInstance()
-			if builtin == builtins.SegmentArenaType {
+			numInstances := (segment.Len() - 1 + builtinRunner.GetCellsPerInstance()) / builtinRunner.GetCellsPerInstance()
+			if builtinType == builtins.SegmentArenaType {
 				numInstances += 1
 			}
 			used = numInstances * builtinRunner.GetCellsPerInstance()
@@ -722,5 +720,6 @@ func (vm *VirtualMachine) BuiltinsFinalStackFromStackPointerDict(builtinNameToSt
 		}
 		builtinRunner.SetStopPointer(stopPointerOffset)
 	}
+
 	return nil
 }
