@@ -7,6 +7,7 @@ import (
 
 	asmb "github.com/NethermindEth/cairo-vm-go/pkg/assembler"
 	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
 	mem "github.com/NethermindEth/cairo-vm-go/pkg/vm/memory"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -674,4 +675,51 @@ func DecodeMemory(content []byte) []*f.Element {
 		memory[memIndex] = &felt
 	}
 	return memory
+}
+
+func (vm *VirtualMachine) BuiltinsFinalStackFromStackPointerDict(builtinNameToStackPointer map[builtins.BuiltinType]uint64) error {
+
+	for segmentIndex, segment := range vm.Memory.Segments {
+		if segment.BuiltinRunner == nil {
+			continue
+		}
+		builtinRunner := segment.BuiltinRunner
+		builtinType := builtins.BuiltinTypeFromName(builtinRunner.String())
+		stackPointer, ok := builtinNameToStackPointer[builtinType]
+		if !ok {
+			return fmt.Errorf("builtin %s not found in stack pointer dict", builtinRunner.String())
+		}
+		stop_pointer_addr := stackPointer - 1
+		stop_pointer_mv, err := vm.Memory.ReadFromAddress(&mem.MemoryAddress{
+			SegmentIndex: 1,
+			Offset:       stop_pointer_addr,
+		})
+		if err != nil {
+			return err
+		}
+		stop_pointer, err := stop_pointer_mv.MemoryAddress()
+		if err != nil {
+			return err
+		}
+		if stop_pointer.SegmentIndex != uint64(segmentIndex) {
+			return fmt.Errorf("stop pointer segment index mismatch")
+		}
+		stopPointerOffset := stop_pointer.Offset
+		var used uint64
+		if builtinType == builtins.OutputType {
+			used = segment.Len()
+		} else {
+			numInstances := (segment.Len() - 1 + builtinRunner.GetCellsPerInstance()) / builtinRunner.GetCellsPerInstance()
+			if builtinType == builtins.SegmentArenaType {
+				numInstances += 1
+			}
+			used = numInstances * builtinRunner.GetCellsPerInstance()
+		}
+		if stopPointerOffset != used {
+			return fmt.Errorf("stop pointer offset mismatch")
+		}
+		builtinRunner.SetStopPointer(stopPointerOffset)
+	}
+
+	return nil
 }

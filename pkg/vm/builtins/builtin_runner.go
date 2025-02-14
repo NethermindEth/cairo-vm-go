@@ -33,9 +33,9 @@ func Runner(name BuiltinType) memory.BuiltinRunner {
 	case OutputType:
 		return &Output{}
 	case RangeCheckType:
-		return &RangeCheck{0, 8}
+		return &RangeCheck{0, 8, 0}
 	case RangeCheck96Type:
-		return &RangeCheck{0, 6}
+		return &RangeCheck{0, 6, 0}
 	case PedersenType:
 		return &Pedersen{}
 	case ECDSAType:
@@ -54,6 +54,41 @@ func Runner(name BuiltinType) memory.BuiltinRunner {
 		return &ModBuiltin{modBuiltinType: Mul}
 	case SegmentArenaType:
 		panic("Not implemented")
+	default:
+		panic("Unknown builtin")
+	}
+}
+
+func BuiltinTypeFromName(name string) BuiltinType {
+	switch name {
+	case OutputName:
+		return OutputType
+	case RangeCheckName:
+		return RangeCheckType
+	case RangeCheck96Name:
+		return RangeCheck96Type
+	case PedersenName:
+		return PedersenType
+	case ECDSAName:
+		return ECDSAType
+	case KeccakName:
+		return KeccakType
+	case BitwiseName:
+		return BitwiseType
+	case EcOpName:
+		return ECOPType
+	case PoseidonName:
+		return PoseidonType
+	case "Add" + ModuloName:
+		return AddModeType
+	case "Mul" + ModuloName:
+		return MulModType
+	case SegmentArenaName:
+		return SegmentArenaType
+	case GasBuiltinName:
+		return GasBuiltinType
+	case SystemBuiltinName:
+		return SystemBuiltinType
 	default:
 		panic("Unknown builtin")
 	}

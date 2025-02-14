@@ -28,8 +28,9 @@ var feltThree fp.Element = fp.Element(
 	})
 
 type EcOp struct {
-	ratio uint64
-	cache map[uint64]fp.Element
+	ratio       uint64
+	cache       map[uint64]fp.Element
+	stopPointer uint64
 }
 
 func (e *EcOp) String() string {
@@ -293,4 +294,16 @@ func (e *EcOp) GetAirPrivateInput(ecOpSegment *mem.Segment) []AirPrivateBuiltinE
 		values = append(values, value)
 	}
 	return values
+}
+
+func (e *EcOp) GetCellsPerInstance() uint64 {
+	return cellsPerEcOp
+}
+
+func (e *EcOp) GetStopPointer() uint64 {
+	return e.stopPointer
+}
+
+func (e *EcOp) SetStopPointer(stopPointer uint64) {
+	e.stopPointer = stopPointer
 }
