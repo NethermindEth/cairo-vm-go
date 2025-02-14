@@ -858,7 +858,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 	} else {
 		ctx.AddInlineCASM("ret;")
 	}
-  
+
 	ctx.instructions[callRelArgLocation] = new(fp.Element).SetUint64(uint64(ctx.currentCodeOffset) + codeOffsetBeforeCallRel)
 	return ctx.instructions, hints, ctx.currentCodeOffset, programBuiltins, gotGasBuiltin, gotSegmentArena
 }
@@ -896,7 +896,7 @@ func CheckOnlyArrayFeltInputAndReturntValue(mainFunc starknet.EntryPointByFuncti
 	if mainFunc.InputArgs[0].Size != 2 || mainFunc.InputArgs[0].DebugName != "Array<felt252>" {
 		return fmt.Errorf("main function input argument should be Felt Array")
 	}
-  
+
 	// Check if return type is either:
 	// 1. PanicResult with inner type of Array<felt252> with size 3
 	// 2. Array<felt252> with size 2

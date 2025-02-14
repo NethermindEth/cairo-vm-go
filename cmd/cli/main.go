@@ -276,27 +276,29 @@ func runVM(
 			return fmt.Errorf("runtime error (entrypoint=%d): %w", entrypointOffset, err)
 		}
 	}
-  
-	if runnerMode == runner.ProofModeZero {
-		if err := cairoRunner.EndRun(); err != nil {
-			return fmt.Errorf("cannot end run: %w", err)
-		}
+
+	if err := cairoRunner.EndRun(); err != nil {
+		return fmt.Errorf("cannot end run: %w", err)
+	}
+	switch runnerMode {
+	case runner.ProofModeZero:
 		if err := cairoRunner.FinalizeSegments(); err != nil {
 			return fmt.Errorf("cannot finalize segments: %w", err)
 		}
-	}
-
-	if runnerMode == runner.ExecutionModeCairo || runnerMode == runner.ProofModeCairo {
-		if err := cairoRunner.EndRun(); err != nil {
-			return fmt.Errorf("cannot end run: %w", err)
-		}
+	case runner.ExecutionModeCairo:
 		if airPublicInputLocation != "" {
-			cairoRunner.FinalizeBuiltins()
-		}
-		if runnerMode == runner.ProofModeCairo {
-			if err := cairoRunner.FinalizeSegments(); err != nil {
-				return fmt.Errorf("cannot finalize segments: %w", err)
+			if err := cairoRunner.FinalizeBuiltins(); err != nil {
+				return fmt.Errorf("cannot finalize builtins: %w", err)
 			}
+		}
+	case runner.ProofModeCairo:
+		if airPublicInputLocation != "" {
+			if err := cairoRunner.FinalizeBuiltins(); err != nil {
+				return fmt.Errorf("cannot finalize builtins: %w", err)
+			}
+		}
+		if err := cairoRunner.FinalizeSegments(); err != nil {
+			return fmt.Errorf("cannot finalize segments: %w", err)
 		}
 	}
 
