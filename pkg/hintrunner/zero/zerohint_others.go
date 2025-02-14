@@ -781,7 +781,7 @@ func createNormalizeAddressHinter(resolver hintReferenceResolver) (hinter.Hinter
 	return newNormalizeAddressHint(isSmall, addr), nil
 }
 
-// Sha256AndBlake2sInput hint writes 1 or 0 at `full_word` address, wether `n_bytes“
+// Sha256AndBlake2sInput hint writes 1 or 0 at `full_word` address, whether `n_bytes“
 // is greater than or equal to 4 or not
 //
 // `newSha256AndBlake2sInputHint` takes 2 arguments

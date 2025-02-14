@@ -36,7 +36,7 @@ type Runner struct {
 	collectTrace bool
 	maxsteps     uint64
 	runnerMode   RunnerMode
-	// auxiliar
+	// auxiliary
 	runFinished bool
 	layout      builtins.Layout
 }

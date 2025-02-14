@@ -38,7 +38,7 @@ func createUsortEnterScopeHinter() (hinter.Hinter, error) {
 	return newUsortEnterScopeHint(), nil
 }
 
-// UsortBody hint sorts the input array of field elements. The sorting results in generation of output array without duplicates and multiplicites array, where each element represents the number of times the corresponding element in the output array appears in the input array. The output and multiplicities arrays are written to the new, separate segments in memory.
+// UsortBody hint sorts the input array of field elements. The sorting results in generation of output array without duplicates and multiplicities array, where each element represents the number of times the corresponding element in the output array appears in the input array. The output and multiplicities arrays are written to the new, separate segments in memory.
 //
 // `newSplit64Hint` takes 5 operanders as arguments
 //   - `input` is the pointer to the base of input array of field elements
