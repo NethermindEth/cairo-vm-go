@@ -67,7 +67,7 @@ integration:
 			cd rust_vm_bin/starkware/starkware && \
 			git clone https://github.com/starkware-libs/cairo.git && \
 			mv cairo/corelib ../ && \
-			cd cairo/crates/bin && cargo build --bin cairo-run && \
+			cd cairo/crates/bin && cargo build --release --bin cairo-run && \
 			cd ../../../ && \
 			mv cairo/target/release/cairo-run . && \
 			rm -rf cairo && \
