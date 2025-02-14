@@ -467,12 +467,7 @@ func (vm *VirtualMachine) updatePc(
 		if err != nil {
 			return mem.UnknownAddress, err
 		}
-		dest, err := destMv.FieldElement()
-		if err != nil {
-			return mem.UnknownAddress, err
-		}
-
-		if dest.IsZero() {
+		if destMv.IsZero() {
 			return mem.MemoryAddress{
 				SegmentIndex: vm.Context.Pc.SegmentIndex,
 				Offset:       vm.Context.Pc.Offset + uint64(instruction.Size()),
@@ -494,7 +489,7 @@ func (vm *VirtualMachine) updatePc(
 		return newPc, err
 
 	}
-	return mem.UnknownAddress, fmt.Errorf("unkwon pc update value: %d", instruction.PcUpdate)
+	return mem.UnknownAddress, fmt.Errorf("unknown pc update value: %d", instruction.PcUpdate)
 }
 
 func (vm *VirtualMachine) updateAp(instruction *asmb.Instruction, res *mem.MemoryValue) (uint64, error) {
