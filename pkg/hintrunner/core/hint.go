@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
+	"strings"
 
 	"github.com/holiman/uint256"
 
@@ -2025,5 +2026,142 @@ func (hint *RelocateAllDictionaries) Execute(vm *VM.VirtualMachine, ctx *hinter.
 	if err != nil {
 		return fmt.Errorf("relocate all dictionaries: %w", err)
 	}
+	return nil
+}
+
+type SystemCall struct {
+	system hinter.Reference
+}
+
+func (hint *SystemCall) String() string {
+	return "SystemCall"
+}
+
+func (hint *SystemCall) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
+	systemPtrMv, err := hint.system.Resolve(vm)
+	if err != nil {
+		return fmt.Errorf("resolve system pointer: %w", err)
+	}
+	systemPtr, err := systemPtrMv.MemoryAddress()
+	if err != nil {
+		return fmt.Errorf("expected system pointer to be an address: %w", err)
+	}
+	systemPtr.Offset += 1
+	if err != nil {
+		return fmt.Errorf("add offset to system pointer: %w", err)
+	}
+	selector, err := vm.Memory.ReadFromAddressAsElement(systemPtr)
+	if err != nil {
+		return fmt.Errorf("read selector: %w", err)
+	}
+	systemPtr.Offset += 1
+	gasCounterFelt, err := vm.Memory.ReadFromAddressAsElement(systemPtr)
+	if err != nil {
+		return fmt.Errorf("read gas counter: %w", err)
+	}
+	gasCounter := gasCounterFelt.Uint64()
+	systemPtr.Offset += 1
+
+	executeHandler := func(values []mem.MemoryValue, revertReason []fp.Element, err error) error {
+		if err != nil {
+			gasCounterMv := mem.MemoryValueFromUint(gasCounter)
+			vm.Memory.WriteToAddress(systemPtr, &gasCounterMv)
+			systemPtr.Offset += 1
+			zeroMv := mem.MemoryValueFromInt(0)
+			vm.Memory.WriteToAddress(systemPtr, &zeroMv)
+			systemPtr.Offset += 1
+			for _, value := range values {
+				err = vm.Memory.WriteToAddress(systemPtr, &value)
+				if err != nil {
+					return fmt.Errorf("write return value: %w", err)
+				}
+				systemPtr.Offset += 1
+			}
+
+		} else {
+			gasCounterMv := mem.MemoryValueFromUint(gasCounter)
+			vm.Memory.WriteToAddress(systemPtr, &gasCounterMv)
+			systemPtr.Offset += 1
+			oneMv := mem.MemoryValueFromInt(1)
+			vm.Memory.WriteToAddress(systemPtr, &oneMv)
+			systemPtr.Offset += 1
+			for _, value := range revertReason {
+				valMv := mem.MemoryValueFromFieldElement(&value)
+				err = vm.Memory.WriteToAddress(systemPtr, &valMv)
+				if err != nil {
+					return fmt.Errorf("write revert reason: %w", err)
+				}
+				systemPtr.Offset += 1
+			}
+
+		}
+		return nil
+	}
+
+	selectorStr := string(selector.Bytes()[8])
+	selectorStr = strings.TrimLeft(selectorStr, "\x00")
+
+	switch selectorStr {
+	case "Keccak":
+		startPtrMv, err := vm.Memory.ReadFromAddress(systemPtr)
+		if err != nil {
+			return fmt.Errorf("read start pointer: %w", err)
+		}
+		startPtr, err := startPtrMv.MemoryAddress()
+		if err != nil {
+			return fmt.Errorf("expected start pointer to be an address: %w", err)
+		}
+		systemPtr.Offset += 1
+		endPtrMv, err := vm.Memory.ReadFromAddress(systemPtr)
+		if err != nil {
+			return fmt.Errorf("read end pointer: %w", err)
+		}
+		endPtr, err := endPtrMv.MemoryAddress()
+		if err != nil {
+			return fmt.Errorf("expected end pointer to be an address: %w", err)
+		}
+		systemPtr.Offset += 1
+		arraySize := endPtr.Offset - startPtr.Offset
+		valuesArrayFelt, err := vm.Memory.GetConsecutiveMemoryValues(*startPtr, arraySize)
+		if err != nil {
+			return fmt.Errorf("get consecutive memory values: %w", err)
+		}
+
+		if len(valuesArrayFelt)%17 != 0 {
+			return fmt.Errorf("invalid keccak input size")
+		}
+
+		valuesArray := make([]uint64, len(valuesArrayFelt))
+		for i, valueMemoryValue := range valuesArrayFelt {
+			valuesArray[i], err = valueMemoryValue.Uint64()
+			if err != nil {
+				return err
+			}
+		}
+		fmt.Println(valuesArray)
+		var state [25]uint64
+
+		for i := 0; i < len(valuesArray); i += 17 {
+			gasCounter -= 180000
+
+			for j := 0; j < 17 && i+j < len(valuesArray); j++ {
+				state[j] ^= valuesArray[i+j]
+			}
+
+			builtins.KeccakF1600(&state)
+		}
+
+		res1 := new(big.Int).Lsh(big.NewInt(int64(state[1])), 64)
+		res1 = res1.Add(res1, big.NewInt(int64(state[0])))
+
+		res2 := new(big.Int).Lsh(big.NewInt(int64(state[3])), 64)
+		res2 = res2.Add(res2, big.NewInt(int64(state[2])))
+
+		executeHandler([]mem.MemoryValue{
+			mem.MemoryValueFromUint(res1.Uint64()),
+			mem.MemoryValueFromUint(res2.Uint64()),
+		}, []fp.Element{}, nil)
+	}
+
 	return nil
 }
