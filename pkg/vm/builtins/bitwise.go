@@ -18,7 +18,8 @@ const (
 )
 
 type Bitwise struct {
-	ratio uint64
+	ratio       uint64
+	stopPointer uint64
 }
 
 func (b *Bitwise) CheckWrite(
@@ -149,4 +150,16 @@ func (b *Bitwise) GetAirPrivateInput(bitwiseSegment *memory.Segment) []AirPrivat
 		values = append(values, value)
 	}
 	return values
+}
+
+func (b *Bitwise) GetCellsPerInstance() uint64 {
+	return cellsPerBitwise
+}
+
+func (b *Bitwise) GetStopPointer() uint64 {
+	return b.stopPointer
+}
+
+func (b *Bitwise) SetStopPointer(stopPointer uint64) {
+	b.stopPointer = stopPointer
 }

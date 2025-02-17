@@ -276,19 +276,33 @@ func runVM(
 			return fmt.Errorf("runtime error (entrypoint=%d): %w", entrypointOffset, err)
 		}
 	}
-	if proofmode {
-		if err := cairoRunner.EndRun(); err != nil {
-			return fmt.Errorf("cannot end run: %w", err)
+
+	if err := cairoRunner.EndRun(); err != nil {
+		return fmt.Errorf("cannot end run: %w", err)
+	}
+	switch runnerMode {
+	case runner.ProofModeZero:
+		if err := cairoRunner.FinalizeSegments(); err != nil {
+			return fmt.Errorf("cannot finalize segments: %w", err)
 		}
-		// todo: remove after merge of https://github.com/NethermindEth/cairo-vm-go/pull/686
-		if runnerMode == runner.ProofModeZero {
-			if err := cairoRunner.FinalizeSegments(); err != nil {
-				return fmt.Errorf("cannot finalize segments: %w", err)
+	case runner.ExecutionModeCairo:
+		if airPublicInputLocation != "" {
+			if err := cairoRunner.FinalizeBuiltins(); err != nil {
+				return fmt.Errorf("cannot finalize builtins: %w", err)
 			}
+		}
+	case runner.ProofModeCairo:
+		if airPublicInputLocation != "" {
+			if err := cairoRunner.FinalizeBuiltins(); err != nil {
+				return fmt.Errorf("cannot finalize builtins: %w", err)
+			}
+		}
+		if err := cairoRunner.FinalizeSegments(); err != nil {
+			return fmt.Errorf("cannot finalize segments: %w", err)
 		}
 	}
 
-	if runnerMode == runner.ProofModeZero || collectTrace {
+	if proofmode || collectTrace {
 		trace, err := cairoRunner.BuildTrace()
 		if err != nil {
 			return fmt.Errorf("cannot build trace: %w", err)
@@ -301,7 +315,7 @@ func runVM(
 		}
 	}
 
-	if runnerMode == runner.ProofModeZero || buildMemory {
+	if proofmode || buildMemory {
 		memory, err := cairoRunner.BuildMemory()
 		if err != nil {
 			return fmt.Errorf("cannot build memory: %w", err)

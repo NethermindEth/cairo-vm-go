@@ -27,8 +27,9 @@ const (
 )
 
 type Keccak struct {
-	ratio uint64
-	cache map[uint64]fp.Element
+	ratio       uint64
+	cache       map[uint64]fp.Element
+	stopPointer uint64
 }
 
 func (k *Keccak) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
@@ -157,4 +158,16 @@ func (k *Keccak) GetAirPrivateInput(keccakSegment *memory.Segment) []AirPrivateB
 		values = append(values, value)
 	}
 	return values
+}
+
+func (k *Keccak) GetCellsPerInstance() uint64 {
+	return cellsPerKeccak
+}
+
+func (k *Keccak) GetStopPointer() uint64 {
+	return k.stopPointer
+}
+
+func (k *Keccak) SetStopPointer(stopPointer uint64) {
+	k.stopPointer = stopPointer
 }

@@ -26,6 +26,7 @@ const (
 type RangeCheck struct {
 	ratio            uint64
 	RangeCheckNParts uint64
+	stopPointer      uint64
 }
 
 func (r *RangeCheck) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
@@ -112,4 +113,16 @@ func (r *RangeCheck) GetAirPrivateInput(rangeCheckSegment *memory.Segment) []Air
 		values = append(values, AirPrivateBuiltinRangeCheck{Index: index, Value: valueHex})
 	}
 	return values
+}
+
+func (r *RangeCheck) GetCellsPerInstance() uint64 {
+	return cellsPerRangeCheck
+}
+
+func (r *RangeCheck) GetStopPointer() uint64 {
+	return r.stopPointer
+}
+
+func (r *RangeCheck) SetStopPointer(stopPointer uint64) {
+	r.stopPointer = stopPointer
 }

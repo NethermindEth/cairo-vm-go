@@ -16,8 +16,9 @@ const inputCellsPerPoseidon = 3
 const instancesPerComponentPoseidon = 1
 
 type Poseidon struct {
-	ratio uint64
-	cache map[uint64]fp.Element
+	ratio       uint64
+	cache       map[uint64]fp.Element
+	stopPointer uint64
 }
 
 func (p *Poseidon) CheckWrite(segment *mem.Segment, offset uint64, value *mem.MemoryValue) error {
@@ -114,4 +115,16 @@ func (p *Poseidon) GetAirPrivateInput(poseidonSegment *mem.Segment) []AirPrivate
 		values = append(values, value)
 	}
 	return values
+}
+
+func (b *Poseidon) GetCellsPerInstance() uint64 {
+	return cellsPerPoseidon
+}
+
+func (p *Poseidon) GetStopPointer() uint64 {
+	return p.stopPointer
+}
+
+func (p *Poseidon) SetStopPointer(stopPointer uint64) {
+	p.stopPointer = stopPointer
 }
