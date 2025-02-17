@@ -157,10 +157,6 @@ func TestCairoFiles(t *testing.T) {
 
 	// Walk through all directories recursively
 	err = filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
-		// todo: remove once the CI passes
-		if true {
-			return filepath.SkipDir
-		}
 		if err != nil {
 			return err
 		}
@@ -233,7 +229,7 @@ func compileCairoCode(path string) (string, error) {
 	var cliCommand string
 	var args []string
 
-	cliCommand = "../rust_vm_bin/scj/scj/sierra-compile-json"
+	cliCommand = "../rust_vm_bin/ctj/ctj/cairo-to-json"
 	args = []string{
 		path,
 		compiledOutput,
