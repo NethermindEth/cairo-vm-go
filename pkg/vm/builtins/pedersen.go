@@ -18,7 +18,8 @@ const (
 )
 
 type Pedersen struct {
-	ratio uint64
+	ratio       uint64
+	stopPointer uint64
 }
 
 func (p *Pedersen) CheckWrite(segment *mem.Segment, offset uint64, value *mem.MemoryValue) error {
@@ -113,4 +114,16 @@ func (p *Pedersen) GetAirPrivateInput(pedersenSegment *mem.Segment) []AirPrivate
 		values = append(values, value)
 	}
 	return values
+}
+
+func (p *Pedersen) GetCellsPerInstance() uint64 {
+	return cellsPerPedersen
+}
+
+func (p *Pedersen) GetStopPointer() uint64 {
+	return p.stopPointer
+}
+
+func (p *Pedersen) SetStopPointer(stopPointer uint64) {
+	p.stopPointer = stopPointer
 }

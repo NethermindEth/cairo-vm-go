@@ -9,7 +9,9 @@ import (
 
 const OutputName = "output"
 
-type Output struct{}
+type Output struct {
+	stopPointer uint64
+}
 
 func (o *Output) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
 	if !value.IsFelt() {
@@ -28,4 +30,16 @@ func (o *Output) String() string {
 
 func (o *Output) GetAllocatedSize(segmentUsedSize uint64, vmCurrentStep uint64) (uint64, error) {
 	return segmentUsedSize, nil
+}
+
+func (o *Output) GetCellsPerInstance() uint64 {
+	return 0
+}
+
+func (o *Output) GetStopPointer() uint64 {
+	return o.stopPointer
+}
+
+func (o *Output) SetStopPointer(stopPointer uint64) {
+	o.stopPointer = stopPointer
 }

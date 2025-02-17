@@ -81,6 +81,9 @@ func getNewHintRunnerContext(program *Program, userArgs []starknet.CairoFuncArgs
 	if program.GotGasBuiltin {
 		writeApOffset += 1
 	}
+	if proofmode {
+		writeApOffset += uint64(len(program.Builtins)) - 1
+	}
 
 	newHintrunnerContext := *hinter.InitializeDefaultContext()
 	err := newHintrunnerContext.ScopeManager.AssignVariables(map[string]any{
@@ -855,6 +858,7 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 	} else {
 		ctx.AddInlineCASM("ret;")
 	}
+
 	ctx.instructions[callRelArgLocation] = new(fp.Element).SetUint64(uint64(ctx.currentCodeOffset) + codeOffsetBeforeCallRel)
 	return ctx.instructions, hints, ctx.currentCodeOffset, programBuiltins, gotGasBuiltin, gotSegmentArena
 }
@@ -863,6 +867,23 @@ func GetFooterInstructions() []*fp.Element {
 	// Add a `ret` instruction used in libfuncs that retrieve the current value of the `fp`
 	// and `pc` registers.
 	return []*fp.Element{new(fp.Element).SetUint64(2345108766317314046)}
+}
+
+func (runner *Runner) FinalizeBuiltins() error {
+	// Finalization of builtins is done only in proofmode with air public input
+	// It could also be implemented in execution mode, if cairo pie output was
+	// implemented.
+	if runner.runnerMode == ProofModeCairo {
+		builtinNameToStackPointer := map[builtins.BuiltinType]uint64{}
+		for i, builtin := range runner.program.Builtins {
+			builtinNameToStackPointer[builtin] = runner.vm.Context.Ap - uint64(len(runner.program.Builtins)-i-1)
+		}
+		err := runner.vm.BuiltinsFinalStackFromStackPointerDict(builtinNameToStackPointer)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func CheckOnlyArrayFeltInputAndReturntValue(mainFunc starknet.EntryPointByFunction) error {
@@ -891,4 +912,22 @@ func CheckOnlyArrayFeltInputAndReturntValue(mainFunc starknet.EntryPointByFuncti
 		return fmt.Errorf("main function return argument should be either PanicResult of size 3 or Felt Array of size 2")
 	}
 	return nil
+}
+
+func (runner *Runner) GetAirMemorySegmentsAddresses() (map[string]AirMemorySegmentEntry, error) {
+	segmentsOffsets, _ := runner.vm.Memory.RelocationOffsets()
+	memorySegmentsAddresses := make(map[string]AirMemorySegmentEntry)
+	for segmentIndex, segment := range runner.vm.Memory.Segments {
+		if segment.BuiltinRunner == nil {
+			continue
+		}
+		if segmentIndex >= len(segmentsOffsets) {
+			return nil, fmt.Errorf("segment index %d not found in segments offsets", segmentIndex)
+		}
+		bRunner := segment.BuiltinRunner
+		stopPtr := bRunner.GetStopPointer()
+		baseOffset := segmentsOffsets[segmentIndex]
+		memorySegmentsAddresses[bRunner.String()] = AirMemorySegmentEntry{BeginAddr: baseOffset, StopPtr: baseOffset + stopPtr}
+	}
+	return memorySegmentsAddresses, nil
 }
