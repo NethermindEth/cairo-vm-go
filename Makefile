@@ -44,8 +44,8 @@ integration:
 		if [ ! -d rust_vm_bin ]; then \
 			mkdir -p rust_vm_bin; \
 		fi; \
-		if [ ! -d rust_vm_bin/scj/scj ]; then \
-			mkdir -p rust_vm_bin/scj/scj; \
+		if [ ! -d rust_vm_bin/ctj/ctj ]; then \
+			mkdir -p rust_vm_bin/ctj/ctj; \
 		fi; \
 		if [ ! -d rust_vm_bin/starkware/starkware ]; then \
 			mkdir -p rust_vm_bin/starkware/starkware; \
@@ -53,14 +53,14 @@ integration:
 		if [ ! -d rust_vm_bin/lambdaclass/lambdaclass ]; then \
 			mkdir -p rust_vm_bin/lambdaclass/lambdaclass; \
 		fi; \
-		if [ ! -f ./rust_vm_bin/scj/scj/sierra-compile-json ]; then \
-			cd rust_vm_bin/scj/scj && \
-			git clone --single-branch --branch feat/main-casm-json --depth=1 https://github.com/MaksymMalicki/cairo-fork.git && \
-			cd cairo-fork/crates/bin && cargo build --release --bin sierra-compile-json && \
+		if [ ! -f ./rust_vm_bin/ctj/ctj/cairo-to-json ]; then \
+			cd rust_vm_bin/ctj/ctj && \
+			git clone --single-branch --branch cairo-to-json --depth=1 https://github.com/MaksymMalicki/cairo-json.git && \
+			cd cairo-json/crates/bin && cargo build --release --bin cairo-to-json && \
 			cd ../../../ && \
-			mv cairo-fork/target/release/sierra-compile-json . && \
-			mv cairo-fork/corelib ../ && \
-			rm -rf cairo-fork && \
+			mv cairo-json/target/release/cairo-to-json . && \
+			mv cairo-json/corelib ../ && \
+			rm -rf cairo-json && \
 			cd ../../../; \
 		fi; \
 		if [ ! -f ./rust_vm_bin/starkware/starkware/cairo-run ]; then \
