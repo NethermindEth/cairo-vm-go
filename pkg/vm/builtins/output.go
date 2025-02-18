@@ -11,6 +11,7 @@ const OutputName = "output"
 
 type Output struct {
 	stopPointer uint64
+	pages       []Page
 }
 
 func (o *Output) CheckWrite(segment *memory.Segment, offset uint64, value *memory.MemoryValue) error {
@@ -42,4 +43,28 @@ func (o *Output) GetStopPointer() uint64 {
 
 func (o *Output) SetStopPointer(stopPointer uint64) {
 	o.stopPointer = stopPointer
+}
+
+type Page struct {
+	start uint64
+	size  uint64
+}
+
+func (output *Output) GetOutputPublicMemory(outputSegment memory.Segment) []memory.PublicMemoryOffset {
+	publicMemory := make([]memory.PublicMemoryOffset, outputSegment.Len())
+
+	for i := uint64(0); i < outputSegment.Len(); i++ {
+		publicMemory[i] = memory.PublicMemoryOffset{
+			Address: uint16(i),
+			Page:    0,
+		}
+	}
+
+	for _, page := range output.pages {
+		for index := uint64(0); index < page.size; index++ {
+			publicMemory[page.start+index].Page = uint16(page.start)
+		}
+	}
+	return publicMemory
+
 }

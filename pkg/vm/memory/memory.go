@@ -49,8 +49,9 @@ func (b *NoBuiltin) SetStopPointer(stopPointer uint64) {}
 type Segment struct {
 	Data []MemoryValue
 	// the max index where a value was written
-	LastIndex     int
-	BuiltinRunner BuiltinRunner
+	LastIndex           int
+	BuiltinRunner       BuiltinRunner
+	PublicMemoryOffsets []PublicMemoryOffset
 }
 
 func (segment *Segment) WithBuiltinRunner(builtinRunner BuiltinRunner) *Segment {
@@ -163,8 +164,16 @@ func (segment *Segment) IncreaseSegmentSize(newSize uint64) {
 	segment.Data = newSegmentData
 }
 
-func (segment *Segment) Finalize(newSize uint64) {
-	segment.LastIndex = int(newSize - 1)
+func (segment *Segment) Finalize(newSize uint64, publicMemoryOffsets []PublicMemoryOffset) {
+	if newSize > 0 {
+		segment.LastIndex = int(newSize - 1)
+	}
+	segment.PublicMemoryOffsets = append(segment.PublicMemoryOffsets, publicMemoryOffsets...)
+}
+
+type PublicMemoryOffset struct {
+	Address uint16
+	Page    uint16
 }
 
 //func (segment *Segment) String() string {

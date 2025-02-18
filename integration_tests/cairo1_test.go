@@ -24,7 +24,7 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	}
 	layout := getLayoutFromFileName(path)
 
-	elapsedGo, traceFile, memoryFile, _, err := runVmCairo1(compiledOutput, layout, inputArgs, proofmode)
+	elapsedGo, traceFile, memoryFile, _, airPublicInputFile, err := runVmCairo1(compiledOutput, layout, inputArgs, proofmode)
 	if errorExpected {
 		assert.Error(t, err, path)
 		writeToFile(path)
@@ -37,7 +37,7 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		}
 	}
 
-	elapsedRs, rsTraceFile, rsMemoryFile, err := runRustVmCairo1(path, layout, inputArgs, proofmode)
+	elapsedRs, rsTraceFile, rsMemoryFile, rsAirPublicInputFile, err := runRustVmCairo1(path, layout, inputArgs, proofmode)
 	if errorExpected {
 		// we let the code go on so that we can check if the go vm also raises an error
 		assert.Error(t, err, path)
@@ -73,6 +73,11 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		t.Logf("memory;\n%s\n", memoryRepr(memory))
 		writeToFile(path)
 	}
+	if !assert.Equal(t, rsAirPublicInputFile, airPublicInputFile) {
+		t.Logf("rsAirPublicInputFile: %s\n", rsAirPublicInputFile)
+		t.Logf("airPublicInputFile: %s\n", airPublicInputFile)
+		writeToFile(path)
+	}
 
 	if benchmark {
 		benchmarkMap[name] = []int{int(elapsedGo.Milliseconds()), int(elapsedRs.Milliseconds())}
@@ -95,7 +100,7 @@ func compareWithStarkwareRunner(t *testing.T, path string, errorExpected bool, i
 		return
 	}
 
-	_, traceFile, memoryFile, _, err := runVmCairo1(compiledOutput, "all_cairo", inputArgs, false)
+	_, traceFile, memoryFile, _, _, err := runVmCairo1(compiledOutput, "all_cairo", inputArgs, false)
 	if errorExpected {
 		assert.Error(t, err, path)
 		writeToFile(path)
@@ -253,10 +258,10 @@ func compileCairoCode(path string) (string, error) {
 
 // given a path to a compiled cairo1 file, execute it using the
 // rust vm and return the trace and memory files location
-func runRustVmCairo1(path, layout string, inputArgs string, proofmode bool) (time.Duration, string, string, error) {
+func runRustVmCairo1(path, layout string, inputArgs string, proofmode bool) (time.Duration, string, string, string, error) {
 	traceOutput := swapExtenstion(path, rsTraceSuffix)
 	memoryOutput := swapExtenstion(path, rsMemorySuffix)
-
+	airPublicInput := swapExtenstion(path, airPublicInputSuffix)
 	args := []string{
 		path,
 		"--trace_file",
@@ -267,6 +272,8 @@ func runRustVmCairo1(path, layout string, inputArgs string, proofmode bool) (tim
 		layout,
 		"--args",
 		inputArgs,
+		"--air_public_input",
+		airPublicInput,
 	}
 
 	if proofmode {
@@ -282,19 +289,20 @@ func runRustVmCairo1(path, layout string, inputArgs string, proofmode bool) (tim
 	elapsed := time.Since(start)
 
 	if err != nil {
-		return 0, "", "", fmt.Errorf(
+		return 0, "", "", "", fmt.Errorf(
 			"%s %s: %w\n%s", "./../rust_vm_bin/lambdaclass/lambdaclass/cairo1-run", path, err, string(res),
 		)
 	}
 
-	return elapsed, traceOutput, memoryOutput, nil
+	return elapsed, traceOutput, memoryOutput, airPublicInput, nil
 }
 
 // given a path to a compiled cairo1 file, execute
 // it using our vm
-func runVmCairo1(path, layout string, inputArgs string, proofmode bool) (time.Duration, string, string, string, error) {
+func runVmCairo1(path, layout string, inputArgs string, proofmode bool) (time.Duration, string, string, string, string, error) {
 	traceOutput := swapExtenstion(path, traceSuffix)
 	memoryOutput := swapExtenstion(path, memorySuffix)
+	airPublicInput := swapExtenstion(path, airPublicInputSuffix)
 
 	args := []string{
 		"cairo-run",
@@ -310,6 +318,8 @@ func runVmCairo1(path, layout string, inputArgs string, proofmode bool) (time.Du
 		"9999999999999",
 		"--args",
 		inputArgs,
+		"--air_public_input",
+		airPublicInput,
 	}
 
 	if proofmode {
@@ -330,12 +340,12 @@ func runVmCairo1(path, layout string, inputArgs string, proofmode bool) (time.Du
 	elapsed := time.Since(start)
 
 	if err != nil {
-		return 0, "", "", string(res), fmt.Errorf(
+		return 0, "", "", "", string(res), fmt.Errorf(
 			"cairo-vm run %s: %w\n%s", path, err, string(res),
 		)
 	}
 
-	return elapsed, traceOutput, memoryOutput, string(res), nil
+	return elapsed, traceOutput, memoryOutput, string(res), airPublicInput, nil
 }
 
 func runCairoRunner(path string) ([]fp.Element, error) {

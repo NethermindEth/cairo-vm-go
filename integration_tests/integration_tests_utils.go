@@ -112,14 +112,15 @@ func WriteBenchMarksToFile(benchmarkMap map[string][]int) {
 }
 
 const (
-	compiledSuffix = "_compiled.json"
-	sierraSuffix   = ".sierra"
-	pyTraceSuffix  = "_py_trace"
-	pyMemorySuffix = "_py_memory"
-	rsTraceSuffix  = "_rs_trace"
-	rsMemorySuffix = "_rs_memory"
-	traceSuffix    = "_trace"
-	memorySuffix   = "_memory"
+	compiledSuffix       = "_compiled.json"
+	sierraSuffix         = ".sierra"
+	pyTraceSuffix        = "_py_trace"
+	pyMemorySuffix       = "_py_memory"
+	rsTraceSuffix        = "_rs_trace"
+	rsMemorySuffix       = "_rs_memory"
+	traceSuffix          = "_trace"
+	memorySuffix         = "_memory"
+	airPublicInputSuffix = "_air_public_input"
 )
 
 func clean(root string) {

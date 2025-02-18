@@ -1153,7 +1153,7 @@ func TestMemoryRelocationWithFelt(t *testing.T) {
 		},
 	)
 
-	res := vm.RelocateMemory()
+	res, _ := vm.RelocateMemory()
 
 	expected := []*f.Element{
 		nil,
@@ -1214,7 +1214,7 @@ func TestMemoryRelocationWithAddress(t *testing.T) {
 		},
 	)
 
-	res := vm.RelocateMemory()
+	res, _ := vm.RelocateMemory()
 
 	expected := []*f.Element{
 		nil,

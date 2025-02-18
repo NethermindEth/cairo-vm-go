@@ -12,6 +12,8 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	"github.com/NethermindEth/cairo-vm-go/pkg/runner"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/urfave/cli/v2"
 )
 
@@ -314,15 +316,16 @@ func runVM(
 			}
 		}
 	}
-
+	var segmentsOffsets []uint64
+	var relocatedMemory []*fp.Element
 	if proofmode || buildMemory {
-		memory, err := cairoRunner.BuildMemory()
+		relocatedMemory, segmentsOffsets = cairoRunner.BuildMemory()
 		if err != nil {
 			return fmt.Errorf("cannot build memory: %w", err)
 		}
 
 		if memoryLocation != "" {
-			if err := os.WriteFile(memoryLocation, memory, 0644); err != nil {
+			if err := os.WriteFile(memoryLocation, vm.EncodeMemory(relocatedMemory), 0644); err != nil {
 				return fmt.Errorf("cannot write relocated memory: %w", err)
 			}
 		}
@@ -330,7 +333,8 @@ func runVM(
 
 	if proofmode {
 		if airPublicInputLocation != "" {
-			airPublicInput, err := cairoRunner.GetAirPublicInput()
+			publicMemoryAddresses := cairoRunner.GetPublicMemoryAddresses(segmentsOffsets)
+			airPublicInput, err := cairoRunner.GetAirPublicInput(relocatedMemory, publicMemoryAddresses)
 			if err != nil {
 				return err
 			}
