@@ -238,7 +238,7 @@ func compileCairoCode(path string) (string, error) {
 	var cliCommand string
 	var args []string
 
-	cliCommand = "../rust_vm_bin/scj/scj/sierra-compile-json"
+	cliCommand = "../rust_vm_bin/ctj/ctj/cairo-to-json"
 	args = []string{
 		path,
 		compiledOutput,
