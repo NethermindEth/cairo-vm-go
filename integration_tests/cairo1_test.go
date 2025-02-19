@@ -74,9 +74,22 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		writeToFile(path)
 	}
 	if proofmode {
-		if !assert.Equal(t, rsAirPublicInputFile, airPublicInputFile) {
-			t.Logf("rsAirPublicInputFile: %s\n", rsAirPublicInputFile)
-			t.Logf("airPublicInputFile: %s\n", airPublicInputFile)
+		rsAirPublicInput, err := getAirPublicInputFile(rsAirPublicInputFile)
+		if err != nil {
+			t.Error(err)
+			writeToFile(path)
+			return
+		}
+		airPublicInput, err := getAirPublicInputFile(airPublicInputFile)
+		if err != nil {
+			t.Error(err)
+			writeToFile(path)
+			return
+		}
+
+		if !assert.Equal(t, rsAirPublicInput, airPublicInput) {
+			t.Logf("rsAirPublicInput: %s\n", rsAirPublicInputFile)
+			t.Logf("airPublicInput: %s\n", airPublicInputFile)
 			writeToFile(path)
 		}
 	}

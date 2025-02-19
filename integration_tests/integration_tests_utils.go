@@ -1,12 +1,14 @@
 package integrationtests
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/tabwriter"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/runner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/joho/godotenv"
@@ -195,6 +197,18 @@ func decodeProof(traceLocation string, memoryLocation string) ([]vm.Trace, []*fp
 	decodedMemory := vm.DecodeMemory(memory)
 
 	return decodedTrace, decodedMemory, nil
+}
+
+func getAirPublicInputFile(airPublicInputPath string) (runner.AirPublicInput, error) {
+	airPublicInputFile, err := os.ReadFile(airPublicInputPath)
+	if err != nil {
+		return runner.AirPublicInput{}, err
+	}
+	var airPublicInput runner.AirPublicInput
+	if err := json.Unmarshal(airPublicInputFile, &airPublicInput); err != nil {
+		return runner.AirPublicInput{}, err
+	}
+	return airPublicInput, nil
 }
 
 // Given a certain file, it swaps its extension with a new suffix
