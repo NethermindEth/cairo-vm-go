@@ -12,6 +12,8 @@ import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/parsers/starknet"
 	zero "github.com/NethermindEth/cairo-vm-go/pkg/parsers/zero"
 	"github.com/NethermindEth/cairo-vm-go/pkg/runner"
+	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/urfave/cli/v2"
 )
 
@@ -277,11 +279,11 @@ func runVM(
 		}
 	}
 
-	if err := cairoRunner.EndRun(); err != nil {
-		return fmt.Errorf("cannot end run: %w", err)
-	}
 	switch runnerMode {
 	case runner.ProofModeZero:
+		if err := cairoRunner.EndRun(); err != nil {
+			return fmt.Errorf("cannot end run: %w", err)
+		}
 		if err := cairoRunner.FinalizeSegments(); err != nil {
 			return fmt.Errorf("cannot finalize segments: %w", err)
 		}
@@ -292,6 +294,9 @@ func runVM(
 			}
 		}
 	case runner.ProofModeCairo:
+		if err := cairoRunner.EndRun(); err != nil {
+			return fmt.Errorf("cannot end run: %w", err)
+		}
 		if airPublicInputLocation != "" {
 			if err := cairoRunner.FinalizeBuiltins(); err != nil {
 				return fmt.Errorf("cannot finalize builtins: %w", err)
@@ -314,15 +319,16 @@ func runVM(
 			}
 		}
 	}
-
+	var segmentsOffsets []uint64
+	var relocatedMemory []*fp.Element
 	if proofmode || buildMemory {
-		memory, err := cairoRunner.BuildMemory()
+		relocatedMemory, segmentsOffsets = cairoRunner.BuildMemory()
 		if err != nil {
 			return fmt.Errorf("cannot build memory: %w", err)
 		}
 
 		if memoryLocation != "" {
-			if err := os.WriteFile(memoryLocation, memory, 0644); err != nil {
+			if err := os.WriteFile(memoryLocation, vm.EncodeMemory(relocatedMemory), 0644); err != nil {
 				return fmt.Errorf("cannot write relocated memory: %w", err)
 			}
 		}
@@ -330,7 +336,8 @@ func runVM(
 
 	if proofmode {
 		if airPublicInputLocation != "" {
-			airPublicInput, err := cairoRunner.GetAirPublicInput()
+			publicMemoryAddresses := cairoRunner.GetPublicMemoryAddresses(segmentsOffsets)
+			airPublicInput, err := cairoRunner.GetAirPublicInput(relocatedMemory, publicMemoryAddresses)
 			if err != nil {
 				return err
 			}
@@ -341,12 +348,6 @@ func runVM(
 			err = os.WriteFile(airPublicInputLocation, airPublicInputJson, 0644)
 			if err != nil {
 				return fmt.Errorf("cannot write air_public_input: %w", err)
-			}
-			// todo: remove after merge of https://github.com/NethermindEth/cairo-vm-go/pull/686
-			if runnerMode == runner.ProofModeCairo {
-				if err := cairoRunner.FinalizeSegments(); err != nil {
-					return fmt.Errorf("cannot finalize segments: %w", err)
-				}
 			}
 		}
 

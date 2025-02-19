@@ -81,9 +81,6 @@ func getNewHintRunnerContext(program *Program, userArgs []starknet.CairoFuncArgs
 	if program.GotGasBuiltin {
 		writeApOffset += 1
 	}
-	if proofmode {
-		writeApOffset += uint64(len(program.Builtins)) - 1
-	}
 
 	newHintrunnerContext := *hinter.InitializeDefaultContext()
 	err := newHintrunnerContext.ScopeManager.AssignVariables(map[string]any{
@@ -289,7 +286,13 @@ func (runner *Runner) initializeMainEntrypoint() (mem.MemoryAddress, error) {
 			vm.ProgramSegment,
 			len(runner.program.Bytecode)+2,
 		), mem.EmptyMemoryValueAsFelt()}, stack...)
-
+		executionSegment := memory.Segments[vm.ExecutionSegment]
+		for i := 0; i < len(stack); i++ {
+			executionSegment.PublicMemoryOffsets = append(executionSegment.PublicMemoryOffsets, mem.PublicMemoryOffset{
+				Address: uint16(i) + 1,
+				Page:    0,
+			})
+		}
 		if err := runner.initializeVm(&mem.MemoryAddress{
 			SegmentIndex: vm.ProgramSegment,
 			Offset:       initialPCOffset,
@@ -527,7 +530,14 @@ func (runner *Runner) getPermRangeCheckLimits() (uint16, uint16) {
 // Additionally it sets the final size of the program segment to the program size.
 func (runner *Runner) FinalizeSegments() error {
 	programSize := uint64(len(runner.program.Bytecode))
-	runner.vm.Memory.Segments[vm.ProgramSegment].Finalize(programSize)
+	publicMemory := make([]mem.PublicMemoryOffset, len(runner.program.Bytecode))
+	for i := 0; i < len(runner.program.Bytecode); i++ {
+		publicMemory[i] = mem.PublicMemoryOffset{
+			Address: uint16(i),
+			Page:    0,
+		}
+	}
+	runner.vm.Memory.Segments[vm.ProgramSegment].Finalize(programSize, publicMemory)
 	for _, bRunner := range runner.layout.Builtins {
 		builtinSegment, ok := runner.vm.Memory.FindSegmentWithBuiltin(bRunner.Runner.String())
 		if ok {
@@ -535,16 +545,25 @@ func (runner *Runner) FinalizeSegments() error {
 			if err != nil {
 				return fmt.Errorf("builtin %s: %v", bRunner.Runner.String(), err)
 			}
-			builtinSegment.Finalize(size)
+
+			if bRunner.Runner.String() == builtins.OutputName {
+				bRunner, ok := bRunner.Runner.(*builtins.Output)
+				if !ok {
+					return fmt.Errorf("builtin %s: %v", bRunner.String(), err)
+				}
+				builtinSegment.Finalize(size, bRunner.GetOutputPublicMemory(*builtinSegment))
+				continue
+			}
+			builtinSegment.Finalize(size, nil)
+
 		}
 	}
 	return nil
 }
 
 // BuildMemory relocates the memory and returns it
-func (runner *Runner) BuildMemory() ([]byte, error) {
-	relocatedMemory := runner.vm.RelocateMemory()
-	return vm.EncodeMemory(relocatedMemory), nil
+func (runner *Runner) BuildMemory() ([]*fp.Element, []uint64) {
+	return runner.vm.RelocateMemory()
 }
 
 // BuildTrace relocates the trace and returns it
@@ -918,7 +937,7 @@ func (runner *Runner) GetAirMemorySegmentsAddresses() (map[string]AirMemorySegme
 	segmentsOffsets, _ := runner.vm.Memory.RelocationOffsets()
 	memorySegmentsAddresses := make(map[string]AirMemorySegmentEntry)
 	for segmentIndex, segment := range runner.vm.Memory.Segments {
-		if segment.BuiltinRunner == nil {
+		if segment.BuiltinRunner.String() == "no builtin" {
 			continue
 		}
 		if segmentIndex >= len(segmentsOffsets) {
@@ -930,4 +949,8 @@ func (runner *Runner) GetAirMemorySegmentsAddresses() (map[string]AirMemorySegme
 		memorySegmentsAddresses[bRunner.String()] = AirMemorySegmentEntry{BeginAddr: baseOffset, StopPtr: baseOffset + stopPtr}
 	}
 	return memorySegmentsAddresses, nil
+}
+
+func (runner *Runner) GetPublicMemoryAddresses(segmentOffsets []uint64) []vm.PublicMemoryAddress {
+	return runner.vm.GetPublicMemoryAddresses(segmentOffsets)
 }
