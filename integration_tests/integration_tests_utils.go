@@ -120,7 +120,7 @@ const (
 	rsMemorySuffix       = "_rs_memory"
 	traceSuffix          = "_trace"
 	memorySuffix         = "_memory"
-	airPublicInputSuffix = "_air_public_input"
+	airPublicInputSuffix = "_air_public_input.json"
 )
 
 func clean(root string) {
@@ -151,7 +151,8 @@ func isGeneratedFile(path string) bool {
 		strings.HasSuffix(path, pyTraceSuffix) ||
 		strings.HasSuffix(path, pyMemorySuffix) ||
 		strings.HasSuffix(path, traceSuffix) ||
-		strings.HasSuffix(path, memorySuffix)
+		strings.HasSuffix(path, memorySuffix) ||
+		strings.HasSuffix(path, airPublicInputSuffix)
 }
 
 // If any other layouts are needed, add the suffix checks here.

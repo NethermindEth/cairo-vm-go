@@ -26,12 +26,12 @@ func (runner *Runner) GetAirPublicInput(relocatedMemory []*fp.Element, publicMem
 	}
 	publicMemory := make([]AirPublicMemoryEntry, len(publicMemoryAddresses))
 
-	for _, address := range publicMemoryAddresses {
-		publicMemory = append(publicMemory, AirPublicMemoryEntry{
+	for i, address := range publicMemoryAddresses {
+		publicMemory[i] = AirPublicMemoryEntry{
 			Address: address.Address,
 			Page:    address.Page,
-			Value:   relocatedMemory[address.Address].String(),
-		})
+			Value:   "0x" + relocatedMemory[address.Address].Text(16),
+		}
 	}
 
 	return AirPublicInput{

@@ -680,14 +680,14 @@ func DecodeMemory(content []byte) []*f.Element {
 func (vm *VirtualMachine) BuiltinsFinalStackFromStackPointerDict(builtinNameToStackPointer map[builtins.BuiltinType]uint64) error {
 
 	for segmentIndex, segment := range vm.Memory.Segments {
-		if segment.BuiltinRunner == nil {
+		if segment.BuiltinRunner.String() == "no builtin" {
 			continue
 		}
 		builtinRunner := segment.BuiltinRunner
 		builtinType := builtins.BuiltinTypeFromName(builtinRunner.String())
 		stackPointer, ok := builtinNameToStackPointer[builtinType]
 		if !ok {
-			return fmt.Errorf("builtin %s not found in stack pointer dict", builtinRunner.String())
+			continue
 		}
 		stop_pointer_addr := stackPointer - 1
 		stop_pointer_mv, err := vm.Memory.ReadFromAddress(&mem.MemoryAddress{

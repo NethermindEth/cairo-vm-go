@@ -81,9 +81,6 @@ func getNewHintRunnerContext(program *Program, userArgs []starknet.CairoFuncArgs
 	if program.GotGasBuiltin {
 		writeApOffset += 1
 	}
-	if proofmode {
-		writeApOffset += uint64(len(program.Builtins)) - 1
-	}
 
 	newHintrunnerContext := *hinter.InitializeDefaultContext()
 	err := newHintrunnerContext.ScopeManager.AssignVariables(map[string]any{
@@ -940,7 +937,7 @@ func (runner *Runner) GetAirMemorySegmentsAddresses() (map[string]AirMemorySegme
 	segmentsOffsets, _ := runner.vm.Memory.RelocationOffsets()
 	memorySegmentsAddresses := make(map[string]AirMemorySegmentEntry)
 	for segmentIndex, segment := range runner.vm.Memory.Segments {
-		if segment.BuiltinRunner == nil {
+		if segment.BuiltinRunner.String() == "no builtin" {
 			continue
 		}
 		if segmentIndex >= len(segmentsOffsets) {
