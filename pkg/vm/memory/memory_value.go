@@ -14,7 +14,7 @@ import (
 // during execution, addresses has two locators: the segment they belong to and the location
 // inside that segment
 type MemoryAddress struct {
-	SegmentIndex uint64
+	SegmentIndex int
 	Offset       uint64
 }
 
@@ -162,7 +162,7 @@ func MemoryValueFromUint[T constraints.Unsigned](v T) MemoryValue {
 func MemoryValueFromSegmentAndOffset[T constraints.Integer](segmentIndex, offset T) MemoryValue {
 	return MemoryValueFromMemoryAddress(
 		&MemoryAddress{
-			SegmentIndex: uint64(segmentIndex),
+			SegmentIndex: int(segmentIndex),
 			Offset:       uint64(offset),
 		},
 	)

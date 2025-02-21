@@ -23,7 +23,7 @@ func addr(offset uint64) *memory.MemoryAddress {
 	}
 }
 
-func addrWithSegment(segment, offset uint64) *memory.MemoryAddress {
+func addrWithSegment(segment int, offset uint64) *memory.MemoryAddress {
 	return &memory.MemoryAddress{
 		SegmentIndex: segment,
 		Offset:       offset,

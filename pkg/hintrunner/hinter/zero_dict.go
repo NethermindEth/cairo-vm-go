@@ -46,12 +46,12 @@ func (d *ZeroDictionary) setFreeOffset(freeOffset uint64) {
 // Used to manage dictionaries creation
 type ZeroDictionaryManager struct {
 	// a map that links a segment index to a dictionary
-	Dictionaries map[uint64]ZeroDictionary
+	Dictionaries map[int]ZeroDictionary
 }
 
 func NewZeroDictionaryManager() ZeroDictionaryManager {
 	return ZeroDictionaryManager{
-		Dictionaries: make(map[uint64]ZeroDictionary),
+		Dictionaries: make(map[int]ZeroDictionary),
 	}
 }
 
