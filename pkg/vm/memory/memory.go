@@ -469,7 +469,7 @@ func (memory *Memory) AddRelocationRule(segmentIndex int, addr MemoryAddress) {
 
 func (memory *Memory) RelocateTemporarySegments() error {
 	if len(memory.relocationRules) == 0 || len(memory.TemporarySegments) == 0 {
-		return fmt.Errorf("no relocation rules or temporary segments")
+		return nil
 	}
 	for i, segment := range memory.Segments {
 		for j := uint64(0); j < segment.RealLen(); j++ {
