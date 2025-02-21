@@ -467,9 +467,9 @@ func (memory *Memory) AddRelocationRule(segmentIndex int, addr MemoryAddress) {
 	memory.relocationRules[segmentIndex] = addr
 }
 
-func (memory *Memory) RelocateTemporarySegments() {
+func (memory *Memory) RelocateTemporarySegments() error {
 	if len(memory.relocationRules) == 0 || len(memory.TemporarySegments) == 0 {
-		return
+		return fmt.Errorf("no relocation rules or temporary segments")
 	}
 	for i, segment := range memory.Segments {
 		for j := uint64(0); j < segment.RealLen(); j++ {
@@ -500,9 +500,12 @@ func (memory *Memory) RelocateTemporarySegments() {
 
 		for _, cell := range dataSegment.Data {
 			if cell.Known() {
-				memory.Write(baseAddr.SegmentIndex, baseAddr.Offset, &cell)
+				if err := memory.Write(baseAddr.SegmentIndex, baseAddr.Offset, &cell); err != nil {
+					return err
+				}
 				baseAddr.Offset++
 			}
 		}
 	}
+	return nil
 }

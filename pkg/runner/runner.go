@@ -441,7 +441,9 @@ func (runner *Runner) RunFor(steps uint64) error {
 // Since this vm always finishes the run of the program at the number of steps that is a power of two in the proof mode,
 // there is no need to run additional steps before the loop.
 func (runner *Runner) EndRun() error {
-	runner.RelocateTemporarySegments()
+	if err := runner.RelocateTemporarySegments(); err != nil {
+		return err
+	}
 	for runner.checkUsedCells() != nil {
 		pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
 		if err := runner.RunFor(pow2Steps); err != nil {
@@ -602,8 +604,11 @@ func (runner *Runner) Output() []*fp.Element {
 	return output
 }
 
-func (runner *Runner) RelocateTemporarySegments() {
-	runner.vm.Memory.RelocateTemporarySegments()
+func (runner *Runner) RelocateTemporarySegments() error {
+	if err := runner.vm.Memory.RelocateTemporarySegments(); err != nil {
+		return err
+	}
+	return nil
 }
 
 type InlineCasmContext struct {
