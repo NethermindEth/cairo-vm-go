@@ -412,7 +412,7 @@ func (vm *VirtualMachine) opcodeAssertions(
 
 		apMv := mem.MemoryValueFromSegmentAndOffset(
 			vm.Context.Pc.SegmentIndex,
-			vm.Context.Pc.Offset+uint64(instruction.Size()),
+			int(vm.Context.Pc.Offset+uint64(instruction.Size())),
 		)
 		// Write in [ap + 1] the next instruction to execute
 		if err := vm.Memory.WriteToAddress(op0Addr, &apMv); err != nil {
@@ -701,7 +701,7 @@ func (vm *VirtualMachine) BuiltinsFinalStackFromStackPointerDict(builtinNameToSt
 		if err != nil {
 			return err
 		}
-		if stop_pointer.SegmentIndex != uint64(segmentIndex) {
+		if stop_pointer.SegmentIndex != segmentIndex {
 			return fmt.Errorf("stop pointer segment index mismatch")
 		}
 		stopPointerOffset := stop_pointer.Offset

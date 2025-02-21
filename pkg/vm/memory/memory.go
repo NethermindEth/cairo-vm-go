@@ -215,6 +215,7 @@ type Memory struct {
 	Segments []*Segment
 	// TemporarySegments is a map of temporary segments, key is the segment index, value is the segment
 	TemporarySegments []*Segment
+	relocationRules   map[int]MemoryAddress
 }
 
 // todo(rodro): can the amount of segments be known before hand?
@@ -222,6 +223,9 @@ func InitializeEmptyMemory() *Memory {
 	return &Memory{
 		// capacity 4 should be enough for the minimum amount of segments
 		Segments: make([]*Segment, 0, 4),
+		// allocate 1 empty temporary segment, so that the real first segment indes is 1, indexed by -1 in temporary address
+		TemporarySegments: []*Segment{EmptySegment()},
+		relocationRules:   make(map[int]MemoryAddress),
 	}
 }
 
@@ -237,7 +241,7 @@ func (memory *Memory) AllocateSegment(data []*f.Element) (MemoryAddress, error) 
 	}
 	memory.Segments = append(memory.Segments, newSegment)
 	return MemoryAddress{
-		SegmentIndex: uint64(len(memory.Segments) - 1),
+		SegmentIndex: len(memory.Segments) - 1,
 		Offset:       0,
 	}, nil
 }
@@ -246,7 +250,7 @@ func (memory *Memory) AllocateSegment(data []*f.Element) (MemoryAddress, error) 
 func (memory *Memory) AllocateEmptySegment() MemoryAddress {
 	memory.Segments = append(memory.Segments, EmptySegment())
 	return MemoryAddress{
-		SegmentIndex: uint64(len(memory.Segments) - 1),
+		SegmentIndex: len(memory.Segments) - 1,
 		Offset:       0,
 	}
 }
@@ -255,7 +259,7 @@ func (memory *Memory) AllocateEmptySegment() MemoryAddress {
 func (memory *Memory) AllocateEmptyTemporarySegment() MemoryAddress {
 	memory.TemporarySegments = append(memory.TemporarySegments, EmptySegment())
 	return MemoryAddress{
-		SegmentIndex: uint64(len(memory.TemporarySegments)),
+		SegmentIndex: -(len(memory.TemporarySegments) - 1),
 		Offset:       0,
 	}
 }
@@ -265,21 +269,32 @@ func (memory *Memory) AllocateBuiltinSegment(builtinRunner BuiltinRunner) Memory
 	builtinSegment := EmptySegment().WithBuiltinRunner(builtinRunner)
 	memory.Segments = append(memory.Segments, builtinSegment)
 	return MemoryAddress{
-		SegmentIndex: uint64(len(memory.Segments) - 1),
+		SegmentIndex: len(memory.Segments) - 1,
 		Offset:       0,
 	}
 }
 
 // Writes to a given segment index and offset a new memory value. Errors if writing
 // to an unallocated segment or if overwriting a different memory value
-func (memory *Memory) Write(segmentIndex uint64, offset uint64, value *MemoryValue) error {
-	if segmentIndex >= uint64(len(memory.Segments)) {
-		return fmt.Errorf("segment %d: unallocated", segmentIndex)
+func (memory *Memory) Write(segmentIndex int, offset uint64, value *MemoryValue) error {
+	if segmentIndex >= 0 {
+		if segmentIndex >= len(memory.Segments) {
+			return fmt.Errorf("segment %d: unallocated", segmentIndex)
+		}
+		if err := memory.Segments[segmentIndex].Write(offset, value); err != nil {
+			return fmt.Errorf("segment %d, offset %d: %w", segmentIndex, offset, err)
+		}
+		return nil
+	} else {
+		segmentIndex = -segmentIndex
+		if segmentIndex >= len(memory.TemporarySegments) {
+			return fmt.Errorf("temporary segment %d: unallocated", segmentIndex)
+		}
+		if err := memory.TemporarySegments[segmentIndex].Write(offset, value); err != nil {
+			return fmt.Errorf("temporary segment %d, offset %d: %w", segmentIndex, offset, err)
+		}
+		return nil
 	}
-	if err := memory.Segments[segmentIndex].Write(offset, value); err != nil {
-		return fmt.Errorf("segment %d, offset %d: %w", segmentIndex, offset, err)
-	}
-	return nil
 }
 
 // Writes to a memory address a new memory value. Errors if writing to an unallocated
@@ -290,15 +305,27 @@ func (memory *Memory) WriteToAddress(address *MemoryAddress, value *MemoryValue)
 
 // Reads a memory value given the segment index and offset. Errors if reading from
 // an unallocated segment or if reading an unknown memory value
-func (memory *Memory) Read(segmentIndex uint64, offset uint64) (MemoryValue, error) {
-	if segmentIndex >= uint64(len(memory.Segments)) {
-		return MemoryValue{}, fmt.Errorf("segment %d: unallocated", segmentIndex)
+func (memory *Memory) Read(segmentIndex int, offset uint64) (MemoryValue, error) {
+	if segmentIndex >= 0 {
+		if segmentIndex >= len(memory.Segments) {
+			return MemoryValue{}, fmt.Errorf("segment %d: unallocated", segmentIndex)
+		}
+		mv, err := memory.Segments[segmentIndex].Read(offset)
+		if err != nil {
+			return MemoryValue{}, fmt.Errorf("segment %d, offset %d: %w", segmentIndex, offset, err)
+		}
+		return mv, nil
+	} else {
+		segmentIndex = -segmentIndex
+		if segmentIndex >= len(memory.TemporarySegments) {
+			return MemoryValue{}, fmt.Errorf("temporary segment %d: unallocated", segmentIndex)
+		}
+		mv, err := memory.TemporarySegments[segmentIndex].Read(offset)
+		if err != nil {
+			return MemoryValue{}, fmt.Errorf("temporary segment %d, offset %d: %w", segmentIndex, offset, err)
+		}
+		return mv, nil
 	}
-	mv, err := memory.Segments[segmentIndex].Read(offset)
-	if err != nil {
-		return MemoryValue{}, fmt.Errorf("segment %d, offset %d: %w", segmentIndex, offset, err)
-	}
-	return mv, nil
 }
 
 // Reads a memory value given an address. Errors if reading from
@@ -308,7 +335,7 @@ func (memory *Memory) ReadFromAddress(address *MemoryAddress) (MemoryValue, erro
 }
 
 // Works the same as `Read` but `MemoryValue` is converted to `Element` first
-func (memory *Memory) ReadAsElement(segmentIndex uint64, offset uint64) (f.Element, error) {
+func (memory *Memory) ReadAsElement(segmentIndex int, offset uint64) (f.Element, error) {
 	mv, err := memory.Read(segmentIndex, offset)
 	if err != nil {
 		return f.Element{}, err
@@ -345,11 +372,19 @@ func (memory *Memory) ReadFromAddressAsAddress(address *MemoryAddress) (MemoryAd
 
 // Given a segment index and offset, returns the memory value at that position, without
 // modifying it in any way. Errors if peeking from an unallocated segment
-func (memory *Memory) Peek(segmentIndex uint64, offset uint64) (MemoryValue, error) {
-	if segmentIndex >= uint64(len(memory.Segments)) {
-		return MemoryValue{}, fmt.Errorf("segment %d: unallocated", segmentIndex)
+func (memory *Memory) Peek(segmentIndex int, offset uint64) (MemoryValue, error) {
+	if segmentIndex >= 0 {
+		if segmentIndex >= len(memory.Segments) {
+			return MemoryValue{}, fmt.Errorf("segment %d: unallocated", segmentIndex)
+		}
+		return memory.Segments[segmentIndex].Peek(offset), nil
+	} else {
+		segmentIndex = -segmentIndex
+		if segmentIndex >= len(memory.TemporarySegments) {
+			return MemoryValue{}, fmt.Errorf("temporary segment %d: unallocated", segmentIndex)
+		}
+		return memory.TemporarySegments[segmentIndex].Peek(offset), nil
 	}
-	return memory.Segments[segmentIndex].Peek(offset), nil
 }
 
 // Given an address returns the memory value at that position, without
@@ -360,12 +395,21 @@ func (memory *Memory) PeekFromAddress(address *MemoryAddress) (MemoryValue, erro
 
 // Given a segment index and offset returns true if the value at that address
 // is known
-func (memory *Memory) KnownValue(segment uint64, offset uint64) bool {
-	if segment >= uint64(len(memory.Segments)) ||
-		offset >= uint64(len(memory.Segments[segment].Data)) {
-		return false
+func (memory *Memory) KnownValue(segment int, offset uint64) bool {
+	if segment >= 0 {
+		if segment >= len(memory.Segments) ||
+			offset >= uint64(len(memory.Segments[segment].Data)) {
+			return false
+		}
+		return memory.Segments[segment].Data[offset].Known()
+	} else {
+		segment = -segment
+		if segment >= len(memory.TemporarySegments) ||
+			offset >= uint64(len(memory.TemporarySegments[segment].Data)) {
+			return false
+		}
+		return memory.TemporarySegments[segment].Data[offset].Known()
 	}
-	return memory.Segments[segment].Data[offset].Known()
 }
 
 // Given an address returns true if it contains a known value
@@ -385,6 +429,7 @@ func (memory *Memory) RelocationOffsets() ([]uint64, uint64) {
 	segmentsOffsets[0] = 1
 	for i, segment := range memory.Segments {
 		segmentLength := segment.Len()
+		fmt.Println("segmentLength", segmentLength)
 		maxMemoryUsed += segmentLength
 		segmentsOffsets[i+1] = segmentsOffsets[i] + segmentLength
 	}
@@ -416,4 +461,48 @@ func (memory *Memory) WriteToNthStructField(addr MemoryAddress, value MemoryValu
 		return err
 	}
 	return memory.WriteToAddress(&nAddr, &value)
+}
+
+func (memory *Memory) AddRelocationRule(segmentIndex int, addr MemoryAddress) {
+	memory.relocationRules[segmentIndex] = addr
+}
+
+func (memory *Memory) RelocateTemporarySegments() {
+	if len(memory.relocationRules) == 0 || len(memory.TemporarySegments) == 0 {
+		return
+	}
+	for i, segment := range memory.Segments {
+		for j := uint64(0); j < segment.RealLen(); j++ {
+			if !segment.Data[j].Known() {
+				continue
+			}
+
+			if segment.Data[j].IsAddress() {
+				addr, _ := segment.Data[j].MemoryAddress()
+				if addr.SegmentIndex < 0 {
+					rule, ok := memory.relocationRules[-addr.SegmentIndex]
+					if ok {
+						newAddr := MemoryAddress{SegmentIndex: rule.SegmentIndex, Offset: rule.Offset + addr.Offset}
+						memory.Segments[i].Data[j] = MemoryValueFromMemoryAddress(&newAddr)
+					}
+				}
+			}
+		}
+	}
+
+	for index := len(memory.TemporarySegments) - 1; index >= 0; index-- {
+		baseAddr, ok := memory.relocationRules[index]
+		if !ok {
+			continue
+		}
+
+		dataSegment := memory.TemporarySegments[index]
+
+		for _, cell := range dataSegment.Data {
+			if cell.Known() {
+				memory.Write(baseAddr.SegmentIndex, baseAddr.Offset, &cell)
+				baseAddr.Offset++
+			}
+		}
+	}
 }

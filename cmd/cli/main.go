@@ -301,9 +301,10 @@ func runVM(
 			if err := cairoRunner.FinalizeBuiltins(); err != nil {
 				return fmt.Errorf("cannot finalize builtins: %w", err)
 			}
-		}
-		if err := cairoRunner.FinalizeSegments(); err != nil {
-			return fmt.Errorf("cannot finalize segments: %w", err)
+
+			if err := cairoRunner.FinalizeSegments(); err != nil {
+				return fmt.Errorf("cannot finalize segments: %w", err)
+			}
 		}
 	}
 
