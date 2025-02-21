@@ -92,8 +92,11 @@ type VirtualMachine struct {
 	RcLimitsMax uint16
 }
 
-func (vm *VirtualMachine) PrintMemory() {
+func (vm *VirtualMachine) PrintMemory(skipBytecode bool) {
 	for i := range vm.Memory.Segments {
+		if skipBytecode && i == ProgramSegment {
+			continue
+		}
 		for j, cell := range vm.Memory.Segments[i].Data {
 			if !cell.Known() {
 				continue

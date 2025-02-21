@@ -670,15 +670,27 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 	}
 	hints := make(map[uint64][]hinter.Hinter)
 
+	paramsSize := 0
+	for _, param := range paramTypes {
+		paramsSize += param.Size
+	}
+
+	// The hint can be executed before the first instruction, because the AP correction was calculated based on the input arguments.
+	if paramsSize > 0 {
+		hints[uint64(0)] = append(hints[uint64(0)], []hinter.Hinter{
+			&core.ExternalWriteArgsToMemory{},
+		}...)
+	}
+
 	if gotSegmentArena {
-		hints[uint64(ctx.currentCodeOffset)] = []hinter.Hinter{
+		hints[uint64(ctx.currentCodeOffset)] = append(hints[uint64(ctx.currentCodeOffset)], []hinter.Hinter{
 			&core.AllocSegment{
 				Dst: hinter.ApCellRef(0),
 			},
 			&core.AllocSegment{
 				Dst: hinter.ApCellRef(1),
 			},
-		}
+		}...)
 		ctx.AddInlineCASM(
 			"[ap+2] = 0, ap++;",
 		)
@@ -694,10 +706,6 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 		apOffset += 3
 	}
 
-	paramsSize := 0
-	for _, param := range paramTypes {
-		paramsSize += param.Size
-	}
 	apOffset += paramsSize
 	gotGasBuiltin := false
 
@@ -726,13 +734,6 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 		ctx.AddInlineCASM(
 			fmt.Sprintf("ap+=%d;", param.Size),
 		)
-	}
-
-	// The hint can be executed before the first instruction, because the AP correction was calculated based on the input arguments.
-	if paramsSize > 0 {
-		hints[uint64(0)] = append(hints[uint64(0)], []hinter.Hinter{
-			&core.ExternalWriteArgsToMemory{},
-		}...)
 	}
 
 	codeOffsetBeforeCallRel := uint64(codeOffset) - uint64(ctx.currentCodeOffset)

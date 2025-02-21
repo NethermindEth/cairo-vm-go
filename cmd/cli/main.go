@@ -287,12 +287,6 @@ func runVM(
 		if err := cairoRunner.FinalizeSegments(); err != nil {
 			return fmt.Errorf("cannot finalize segments: %w", err)
 		}
-	case runner.ExecutionModeCairo:
-		if airPublicInputLocation != "" {
-			if err := cairoRunner.FinalizeBuiltins(); err != nil {
-				return fmt.Errorf("cannot finalize builtins: %w", err)
-			}
-		}
 	case runner.ProofModeCairo:
 		if err := cairoRunner.EndRun(); err != nil {
 			return fmt.Errorf("cannot end run: %w", err)
@@ -320,6 +314,7 @@ func runVM(
 			}
 		}
 	}
+
 	var segmentsOffsets []uint64
 	var relocatedMemory []*fp.Element
 	if proofmode || buildMemory {
