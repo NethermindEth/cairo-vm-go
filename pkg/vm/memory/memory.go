@@ -490,7 +490,7 @@ func (memory *Memory) RelocateTemporarySegments() error {
 		}
 	}
 
-	for index := len(memory.TemporarySegments) - 1; index >= 0; index-- {
+	for index := 0; index < len(memory.TemporarySegments); index++ {
 		baseAddr, ok := memory.relocationRules[index]
 		if !ok {
 			continue
