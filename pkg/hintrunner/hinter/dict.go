@@ -54,10 +54,6 @@ func InitializeDictionaryManager(ctx *HintRunnerContext, useTemporarySegments bo
 	ctx.DictionaryManager.useTemporarySegments = useTemporarySegments
 }
 
-func (dm *DictionaryManager) GetUseTemporarySegments() bool {
-	return dm.useTemporarySegments
-}
-
 // It creates a new segment which will hold dictionary values. It links this
 // segment with the current dictionary and returns the address that points
 // to the start of this segment

@@ -223,7 +223,7 @@ func InitializeEmptyMemory() *Memory {
 	return &Memory{
 		// capacity 4 should be enough for the minimum amount of segments
 		Segments: make([]*Segment, 0, 4),
-		// allocate 1 empty temporary segment, so that the real first segment indes is 1, indexed by -1 in temporary address
+		// allocate 1 empty temporary segment, so that the real first segment index is 1, indexed by -1 in temporary address
 		TemporarySegments: []*Segment{EmptySegment()},
 		relocationRules:   make(map[int]MemoryAddress),
 	}
@@ -429,7 +429,6 @@ func (memory *Memory) RelocationOffsets() ([]uint64, uint64) {
 	segmentsOffsets[0] = 1
 	for i, segment := range memory.Segments {
 		segmentLength := segment.Len()
-		fmt.Println("segmentLength", segmentLength)
 		maxMemoryUsed += segmentLength
 		segmentsOffsets[i+1] = segmentsOffsets[i] + segmentLength
 	}
@@ -468,7 +467,9 @@ func (memory *Memory) AddRelocationRule(segmentIndex int, addr MemoryAddress) {
 }
 
 func (memory *Memory) RelocateTemporarySegments() error {
-	if len(memory.relocationRules) == 0 || len(memory.TemporarySegments) == 0 {
+	// We check if the length of the temporary segments is 1 because the first temporary is added during initialization
+	// for proper indexing, and is always empty
+	if len(memory.relocationRules) == 0 || len(memory.TemporarySegments)-1 == 0 {
 		return nil
 	}
 	for i, segment := range memory.Segments {
@@ -480,8 +481,7 @@ func (memory *Memory) RelocateTemporarySegments() error {
 			if segment.Data[j].IsAddress() {
 				addr, _ := segment.Data[j].MemoryAddress()
 				if addr.SegmentIndex < 0 {
-					rule, ok := memory.relocationRules[-addr.SegmentIndex]
-					if ok {
+					if rule, ok := memory.relocationRules[-addr.SegmentIndex]; ok {
 						newAddr := MemoryAddress{SegmentIndex: rule.SegmentIndex, Offset: rule.Offset + addr.Offset}
 						memory.Segments[i].Data[j] = MemoryValueFromMemoryAddress(&newAddr)
 					}
