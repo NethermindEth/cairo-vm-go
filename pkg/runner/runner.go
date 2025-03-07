@@ -222,9 +222,6 @@ func (runner *Runner) initializeSegments() (*mem.Memory, error) {
 	}
 
 	memory.AllocateEmptySegment() // ExecutionSegment
-	if runner.isProofMode() {
-		memory.TemporarySegments = []*mem.Segment{}
-	}
 	return memory, nil
 }
 
@@ -444,6 +441,11 @@ func (runner *Runner) RunFor(steps uint64) error {
 // Since this vm always finishes the run of the program at the number of steps that is a power of two in the proof mode,
 // there is no need to run additional steps before the loop.
 func (runner *Runner) EndRun() error {
+	if runner.runnerMode == ProofModeCairo {
+		if err := runner.RelocateTemporarySegments(); err != nil {
+			return err
+		}
+	}
 	for runner.checkUsedCells() != nil {
 		pow2Steps := utils.NextPowerOfTwo(runner.vm.Step + 1)
 		if err := runner.RunFor(pow2Steps); err != nil {
@@ -604,6 +606,13 @@ func (runner *Runner) Output() []*fp.Element {
 	return output
 }
 
+func (runner *Runner) RelocateTemporarySegments() error {
+	if err := runner.vm.Memory.RelocateTemporarySegments(); err != nil {
+		return err
+	}
+	return nil
+}
+
 type InlineCasmContext struct {
 	instructions      []*fp.Element
 	currentCodeOffset int
@@ -661,15 +670,27 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 	}
 	hints := make(map[uint64][]hinter.Hinter)
 
+	paramsSize := 0
+	for _, param := range paramTypes {
+		paramsSize += param.Size
+	}
+
+	// The hint can be executed before the first instruction, because the AP correction was calculated based on the input arguments.
+	if paramsSize > 0 {
+		hints[uint64(0)] = append(hints[uint64(0)], []hinter.Hinter{
+			&core.ExternalWriteArgsToMemory{},
+		}...)
+	}
+
 	if gotSegmentArena {
-		hints[uint64(ctx.currentCodeOffset)] = []hinter.Hinter{
+		hints[uint64(ctx.currentCodeOffset)] = append(hints[uint64(ctx.currentCodeOffset)], []hinter.Hinter{
 			&core.AllocSegment{
 				Dst: hinter.ApCellRef(0),
 			},
 			&core.AllocSegment{
 				Dst: hinter.ApCellRef(1),
 			},
-		}
+		}...)
 		ctx.AddInlineCASM(
 			"[ap+2] = 0, ap++;",
 		)
@@ -685,10 +706,6 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 		apOffset += 3
 	}
 
-	paramsSize := 0
-	for _, param := range paramTypes {
-		paramsSize += param.Size
-	}
 	apOffset += paramsSize
 	gotGasBuiltin := false
 
@@ -717,13 +734,6 @@ func GetEntryCodeInstructions(function starknet.EntryPointByFunction, proofmode 
 		ctx.AddInlineCASM(
 			fmt.Sprintf("ap+=%d;", param.Size),
 		)
-	}
-
-	// The hint can be executed before the first instruction, because the AP correction was calculated based on the input arguments.
-	if paramsSize > 0 {
-		hints[uint64(0)] = append(hints[uint64(0)], []hinter.Hinter{
-			&core.ExternalWriteArgsToMemory{},
-		}...)
 	}
 
 	codeOffsetBeforeCallRel := uint64(codeOffset) - uint64(ctx.currentCodeOffset)
