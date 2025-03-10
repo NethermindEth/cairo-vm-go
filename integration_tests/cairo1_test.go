@@ -100,7 +100,7 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 }
 
 func compareWithStarkwareRunner(t *testing.T, path string, errorExpected bool, inputArgs string) {
-	t.Logf("testing (comapre with cairo runner): %s\n", path)
+	t.Logf("testing (compare with cairo runner): %s\n", path)
 
 	runnerMemory, err := runCairoRunner(path)
 	if err != nil {

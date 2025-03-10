@@ -176,7 +176,7 @@ func ecop(p *point, q *point, m, alpha *fp.Element) (point, error) {
 			partialSum = ecadd(&partialSum, &doublePoint)
 		}
 
-		// todo(rodro): This loop can be optimized, potentially innecesary shift operations
+		// todo(rodro): This loop can be optimized, potentially innecessary shift operations
 		doublePoint = ecdouble(&doublePoint, alpha)
 		scalar.Rsh(&scalar, 1)
 	}
