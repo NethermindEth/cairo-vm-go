@@ -12,7 +12,7 @@ Before you make your changes, check to see if an [issue](https://github.com/Neth
 
 If you spot something new or want to change something, please make sure there isn't already an [issue](https://github.com/NethermindEth/cairo-vm-go/issues) related to it.
 
-If no issue addresses your problem, please open a new one with an accurate description of the problem. Please add, if possible, labels to have an overview of what they are targetting, and having an easier time filtering them out.
+If no issue addresses your problem, please open a new one with an accurate description of the problem. Please add, if possible, labels to have an overview of what they are targeting, and having an easier time filtering them out.
 
 ### Making Pull Requests
 
