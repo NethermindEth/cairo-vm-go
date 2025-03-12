@@ -1,6 +1,7 @@
 module github.com/NethermindEth/cairo-vm-go
 
 go 1.21
+toolchain go1.23.7
 
 require (
 	github.com/bits-and-blooms/bitset v1.8.0 // indirect
@@ -17,9 +18,9 @@ require (
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	golang.org/x/net v0.10.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
-	golang.org/x/text v0.10.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
@@ -32,6 +33,6 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.25.7
-	golang.org/x/crypto v0.10.0
+	golang.org/x/crypto v0.35.0
 	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
 )
