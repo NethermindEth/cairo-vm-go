@@ -111,7 +111,7 @@ func NewVirtualMachine(
 	initialContext Context, memory *mem.Memory, config VirtualMachineConfig,
 ) (*VirtualMachine, error) {
 
-	// Initialize the trace if necesary
+	// Initialize the trace if necessary
 	var trace []Context
 	if config.ProofMode || config.CollectTrace {
 		// starknet defines a limit on the maximum number of computational steps that a transaction can contain when processed on the Starknet network.
