@@ -14,6 +14,7 @@ type Dictionary struct {
 	data map[f.Element]*mem.MemoryValue
 	// Unique id assigned at the moment of creation
 	idx uint64
+	end mem.MemoryAddress
 }
 
 // Gets the memory value at certain key
@@ -29,6 +30,10 @@ func (d *Dictionary) Set(key *f.Element, value *mem.MemoryValue) {
 	d.data[*key] = value
 }
 
+func (d *Dictionary) SetEnd(end mem.MemoryAddress) {
+	d.end = end
+}
+
 // Returns the initialization number when the dictionary was created
 func (d *Dictionary) InitNumber() uint64 {
 	return d.idx
@@ -37,14 +42,14 @@ func (d *Dictionary) InitNumber() uint64 {
 // Used to manage dictionaries creation
 type DictionaryManager struct {
 	// a map that links a segment index to a dictionary
-	dictionaries map[uint64]Dictionary
+	dictionaries map[int]Dictionary
 	// useTemporarySegments is a flag that indicates if the dictionaries should be located in temporary segments, and later relocated to memory segments
 	useTemporarySegments bool
 }
 
 func InitializeDictionaryManager(ctx *HintRunnerContext, useTemporarySegments bool) {
 	if ctx.DictionaryManager.dictionaries == nil {
-		ctx.DictionaryManager.dictionaries = make(map[uint64]Dictionary)
+		ctx.DictionaryManager.dictionaries = make(map[int]Dictionary)
 	}
 	ctx.DictionaryManager.useTemporarySegments = useTemporarySegments
 }
@@ -89,6 +94,8 @@ func (dm *DictionaryManager) At(dictAddr *mem.MemoryAddress, key *f.Element) (*m
 func (dm *DictionaryManager) Set(dictAddr *mem.MemoryAddress, key *f.Element, value *mem.MemoryValue) error {
 	if dict, ok := dm.dictionaries[dictAddr.SegmentIndex]; ok {
 		dict.Set(key, value)
+		dict.SetEnd(*dictAddr)
+		dm.dictionaries[dictAddr.SegmentIndex] = dict
 		return nil
 	}
 	return fmt.Errorf("no dictionary at address %s", dictAddr)
@@ -96,31 +103,12 @@ func (dm *DictionaryManager) Set(dictAddr *mem.MemoryAddress, key *f.Element, va
 
 // Relocates all dictionaries into a single segment if proofmode is enabled
 // In LambdaClass VM there is add_relocation_rule() used, which is used only to relocate dictionaries / in specific hint. Thus we relocate dictionaries right away.
-func (dm *DictionaryManager) RelocateAllDictionaries(vm *VM.VirtualMachine) error {
+func (dm *DictionaryManager) RelocateAllDictionaries(vm *VM.VirtualMachine) {
 	segmentAddr := vm.Memory.AllocateEmptySegment()
 	for key, dict := range dm.dictionaries {
-		for _, value := range dict.data {
-			if value.IsAddress() {
-				addr, err := value.MemoryAddress()
-				if err != nil {
-					return err
-				}
-				element := key + addr.Offset
-				mv := mem.MemoryValueFromUint(element)
-				err = vm.Memory.WriteToAddress(&segmentAddr, &mv)
-				if err != nil {
-					return err
-				}
-			} else {
-				err := vm.Memory.WriteToAddress(&segmentAddr, value)
-				if err != nil {
-					return err
-				}
-			}
-			segmentAddr.Offset++
-		}
+		vm.Memory.AddRelocationRule(-key, segmentAddr)
+		segmentAddr.Offset += dict.end.Offset + 1
 	}
-	return nil
 }
 
 // Used to keep track of squashed dictionaries

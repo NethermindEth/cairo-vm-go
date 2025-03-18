@@ -23,7 +23,7 @@ build:
 	@mkdir -p $(BINARY_DIR)
 	@go build -o $(BINARY_DIR)/$(BINARY_NAME) cmd/cli/main.go
 	@if [ $$? -eq 0 ]; then \
-		echo "Build completed succesfully!"; \
+		echo "Build completed successfully!"; \
 	else \
 		echo "Build failed."; \
 		exit 1; \

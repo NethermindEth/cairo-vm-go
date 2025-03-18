@@ -92,8 +92,11 @@ type VirtualMachine struct {
 	RcLimitsMax uint16
 }
 
-func (vm *VirtualMachine) PrintMemory() {
+func (vm *VirtualMachine) PrintMemory(skipBytecode bool) {
 	for i := range vm.Memory.Segments {
+		if skipBytecode && i == ProgramSegment {
+			continue
+		}
 		for j, cell := range vm.Memory.Segments[i].Data {
 			if !cell.Known() {
 				continue
@@ -108,7 +111,7 @@ func NewVirtualMachine(
 	initialContext Context, memory *mem.Memory, config VirtualMachineConfig,
 ) (*VirtualMachine, error) {
 
-	// Initialize the trace if necesary
+	// Initialize the trace if necessary
 	var trace []Context
 	if config.ProofMode || config.CollectTrace {
 		// starknet defines a limit on the maximum number of computational steps that a transaction can contain when processed on the Starknet network.
@@ -412,7 +415,7 @@ func (vm *VirtualMachine) opcodeAssertions(
 
 		apMv := mem.MemoryValueFromSegmentAndOffset(
 			vm.Context.Pc.SegmentIndex,
-			vm.Context.Pc.Offset+uint64(instruction.Size()),
+			int(vm.Context.Pc.Offset+uint64(instruction.Size())),
 		)
 		// Write in [ap + 1] the next instruction to execute
 		if err := vm.Memory.WriteToAddress(op0Addr, &apMv); err != nil {
@@ -554,7 +557,7 @@ func (vm *VirtualMachine) RelocateTrace(relocatedTrace *[]Trace) {
 // It returns all segments in memory but relocated as a single segment
 // Each element is a pointer to a field element, if the cell was not accessed,
 // nil is stored instead
-func (vm *VirtualMachine) RelocateMemory() []*f.Element {
+func (vm *VirtualMachine) RelocateMemory() ([]*f.Element, []uint64) {
 	segmentsOffsets, maxMemoryUsed := vm.Memory.RelocationOffsets()
 	// the prover expect first element of the relocated memory to start at index 1,
 	// this way we fill relocatedMemory starting from zero, but the actual value
@@ -576,7 +579,7 @@ func (vm *VirtualMachine) RelocateMemory() []*f.Element {
 			relocatedMemory[segmentsOffsets[i]+j] = felt
 		}
 	}
-	return relocatedMemory
+	return relocatedMemory, segmentsOffsets
 }
 
 const ctxSize = 3 * 8
@@ -680,14 +683,14 @@ func DecodeMemory(content []byte) []*f.Element {
 func (vm *VirtualMachine) BuiltinsFinalStackFromStackPointerDict(builtinNameToStackPointer map[builtins.BuiltinType]uint64) error {
 
 	for segmentIndex, segment := range vm.Memory.Segments {
-		if segment.BuiltinRunner == nil {
+		if segment.BuiltinRunner.String() == "no builtin" {
 			continue
 		}
 		builtinRunner := segment.BuiltinRunner
 		builtinType := builtins.BuiltinTypeFromName(builtinRunner.String())
 		stackPointer, ok := builtinNameToStackPointer[builtinType]
 		if !ok {
-			return fmt.Errorf("builtin %s not found in stack pointer dict", builtinRunner.String())
+			continue
 		}
 		stop_pointer_addr := stackPointer - 1
 		stop_pointer_mv, err := vm.Memory.ReadFromAddress(&mem.MemoryAddress{
@@ -701,7 +704,7 @@ func (vm *VirtualMachine) BuiltinsFinalStackFromStackPointerDict(builtinNameToSt
 		if err != nil {
 			return err
 		}
-		if stop_pointer.SegmentIndex != uint64(segmentIndex) {
+		if stop_pointer.SegmentIndex != segmentIndex {
 			return fmt.Errorf("stop pointer segment index mismatch")
 		}
 		stopPointerOffset := stop_pointer.Offset
@@ -722,4 +725,23 @@ func (vm *VirtualMachine) BuiltinsFinalStackFromStackPointerDict(builtinNameToSt
 	}
 
 	return nil
+}
+
+type PublicMemoryAddress struct {
+	Address uint16
+	Page    uint16
+}
+
+func (vm *VirtualMachine) GetPublicMemoryAddresses(segmentsOffsets []uint64) []PublicMemoryAddress {
+	var publicMemoryAddresses []PublicMemoryAddress
+	for i, segment := range vm.Memory.Segments {
+		publicMemoryOffsets := segment.PublicMemoryOffsets
+		for _, offset := range publicMemoryOffsets {
+			publicMemoryAddresses = append(publicMemoryAddresses, PublicMemoryAddress{
+				Address: uint16(segmentsOffsets[i] + uint64(offset.Address)),
+				Page:    uint16(offset.Page),
+			})
+		}
+	}
+	return publicMemoryAddresses
 }

@@ -1,12 +1,14 @@
 package integrationtests
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/tabwriter"
 
+	"github.com/NethermindEth/cairo-vm-go/pkg/runner"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/joho/godotenv"
@@ -112,14 +114,15 @@ func WriteBenchMarksToFile(benchmarkMap map[string][]int) {
 }
 
 const (
-	compiledSuffix = "_compiled.json"
-	sierraSuffix   = ".sierra"
-	pyTraceSuffix  = "_py_trace"
-	pyMemorySuffix = "_py_memory"
-	rsTraceSuffix  = "_rs_trace"
-	rsMemorySuffix = "_rs_memory"
-	traceSuffix    = "_trace"
-	memorySuffix   = "_memory"
+	compiledSuffix       = "_compiled.json"
+	sierraSuffix         = ".sierra"
+	pyTraceSuffix        = "_py_trace"
+	pyMemorySuffix       = "_py_memory"
+	rsTraceSuffix        = "_rs_trace"
+	rsMemorySuffix       = "_rs_memory"
+	traceSuffix          = "_trace"
+	memorySuffix         = "_memory"
+	airPublicInputSuffix = "_air_public_input.json"
 )
 
 func clean(root string) {
@@ -150,7 +153,8 @@ func isGeneratedFile(path string) bool {
 		strings.HasSuffix(path, pyTraceSuffix) ||
 		strings.HasSuffix(path, pyMemorySuffix) ||
 		strings.HasSuffix(path, traceSuffix) ||
-		strings.HasSuffix(path, memorySuffix)
+		strings.HasSuffix(path, memorySuffix) ||
+		strings.HasSuffix(path, airPublicInputSuffix)
 }
 
 // If any other layouts are needed, add the suffix checks here.
@@ -193,6 +197,18 @@ func decodeProof(traceLocation string, memoryLocation string) ([]vm.Trace, []*fp
 	decodedMemory := vm.DecodeMemory(memory)
 
 	return decodedTrace, decodedMemory, nil
+}
+
+func getAirPublicInputFile(airPublicInputPath string) (runner.AirPublicInput, error) {
+	airPublicInputFile, err := os.ReadFile(airPublicInputPath)
+	if err != nil {
+		return runner.AirPublicInput{}, err
+	}
+	var airPublicInput runner.AirPublicInput
+	if err := json.Unmarshal(airPublicInputFile, &airPublicInput); err != nil {
+		return runner.AirPublicInput{}, err
+	}
+	return airPublicInput, nil
 }
 
 // Given a certain file, it swaps its extension with a new suffix

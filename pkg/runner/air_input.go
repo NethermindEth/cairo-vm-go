@@ -3,9 +3,10 @@ package runner
 import (
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm"
 	"github.com/NethermindEth/cairo-vm-go/pkg/vm/builtins"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
-func (runner *Runner) GetAirPublicInput() (AirPublicInput, error) {
+func (runner *Runner) GetAirPublicInput(relocatedMemory []*fp.Element, publicMemoryAddresses []vm.PublicMemoryAddress) (AirPublicInput, error) {
 	rcMin, rcMax := runner.getPermRangeCheckLimits()
 
 	// TODO: refactor to reuse earlier computed relocated trace
@@ -14,7 +15,6 @@ func (runner *Runner) GetAirPublicInput() (AirPublicInput, error) {
 	firstTrace := relocatedTrace[0]
 	lastTrace := relocatedTrace[len(relocatedTrace)-1]
 	memorySegments := make(map[string]AirMemorySegmentEntry)
-	// TODO: you need to calculate this for each builtin
 	memorySegments["program"] = AirMemorySegmentEntry{BeginAddr: firstTrace.Pc, StopPtr: lastTrace.Pc}
 	memorySegments["execution"] = AirMemorySegmentEntry{BeginAddr: firstTrace.Ap, StopPtr: lastTrace.Ap}
 	memorySegmentsAddresses, err := runner.GetAirMemorySegmentsAddresses()
@@ -24,6 +24,15 @@ func (runner *Runner) GetAirPublicInput() (AirPublicInput, error) {
 	for name, segment := range memorySegmentsAddresses {
 		memorySegments[name] = segment
 	}
+	publicMemory := make([]AirPublicMemoryEntry, len(publicMemoryAddresses))
+
+	for i, address := range publicMemoryAddresses {
+		publicMemory[i] = AirPublicMemoryEntry{
+			Address: address.Address,
+			Page:    address.Page,
+			Value:   "0x" + relocatedMemory[address.Address].Text(16),
+		}
+	}
 
 	return AirPublicInput{
 		Layout:         runner.layout.Name,
@@ -32,7 +41,7 @@ func (runner *Runner) GetAirPublicInput() (AirPublicInput, error) {
 		NSteps:         len(runner.vm.Trace),
 		DynamicParams:  nil,
 		MemorySegments: memorySegments,
-		PublicMemory:   make([]AirPublicMemoryEntry, 0),
+		PublicMemory:   publicMemory,
 	}, nil
 }
 

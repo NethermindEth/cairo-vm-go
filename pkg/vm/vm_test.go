@@ -1153,7 +1153,7 @@ func TestMemoryRelocationWithFelt(t *testing.T) {
 		},
 	)
 
-	res := vm.RelocateMemory()
+	res, _ := vm.RelocateMemory()
 
 	expected := []*f.Element{
 		nil,
@@ -1214,7 +1214,7 @@ func TestMemoryRelocationWithAddress(t *testing.T) {
 		},
 	)
 
-	res := vm.RelocateMemory()
+	res, _ := vm.RelocateMemory()
 
 	expected := []*f.Element{
 		nil,
@@ -1366,13 +1366,13 @@ func newElementPtr(val uint64) *f.Element {
 }
 
 type memoryWrite struct {
-	SegmentIndex uint64
+	SegmentIndex int
 	Offset       uint64
 	Value        any
 }
 
 func updateMemoryWithValues(memory *mem.Memory, valuesToWrite []memoryWrite) {
-	var max_segment uint64 = 0
+	var max_segment int = 0
 	for _, toWrite := range valuesToWrite {
 		// wrap any inside a memory value
 		val, err := mem.MemoryValueFromAny(toWrite.Value)

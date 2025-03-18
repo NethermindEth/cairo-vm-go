@@ -45,6 +45,7 @@ func TestSimpleProgram(t *testing.T) {
 	assert.Equal(
 		t,
 		createSegment(
+			nil,
 			// return fp
 			&memory.MemoryAddress{SegmentIndex: 2, Offset: 0},
 			// next pc
@@ -91,6 +92,7 @@ func TestStepLimitExceeded(t *testing.T) {
 	assert.Equal(
 		t,
 		createSegment(
+			nil,
 			// return fp
 			&memory.MemoryAddress{SegmentIndex: 2, Offset: 0},
 			// next pc
@@ -144,6 +146,10 @@ func TestStepLimitExceededProofMode(t *testing.T) {
 		assert.Equal(
 			t,
 			createSegment(
+				[]memory.PublicMemoryOffset{
+					{Page: 0, Address: 1},
+					{Page: 0, Address: 2},
+				},
 				// return fp
 				&memory.MemoryAddress{SegmentIndex: 0, Offset: uint64(len(program.Bytecode) + 2)},
 				// next pc
@@ -194,7 +200,7 @@ func TestBitwiseBuiltin(t *testing.T) {
 	bitwise, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtins.BitwiseName)
 	require.True(t, ok)
 
-	requireEqualSegments(t, createSegment(14, 7, 6, 9, 15), bitwise)
+	requireEqualSegments(t, createSegment(nil, 14, 7, 6, 9, 15), bitwise)
 }
 
 func TestBitwiseBuiltinError(t *testing.T) {
@@ -269,7 +275,7 @@ func TestPedersenBuiltin(t *testing.T) {
 
 	pedersen, ok := runner.vm.Memory.FindSegmentWithBuiltin(builtins.PedersenName)
 	require.True(t, ok)
-	requireEqualSegments(t, createSegment(&val1, &val2, &val3), pedersen)
+	requireEqualSegments(t, createSegment(nil, &val1, &val2, &val3), pedersen)
 }
 
 func TestPedersenBuiltinError(t *testing.T) {
@@ -310,7 +316,7 @@ func TestRangeCheckBuiltin(t *testing.T) {
 	felt, err = felt.SetString("0xffffffffffffffffffffffffffffffff")
 	require.NoError(t, err)
 
-	requireEqualSegments(t, createSegment(5, felt), rangeCheck)
+	requireEqualSegments(t, createSegment(nil, 5, felt), rangeCheck)
 }
 
 func TestRangeCheckBuiltinError(t *testing.T) {
@@ -356,7 +362,7 @@ func TestRangeCheck96Builtin(t *testing.T) {
 	felt, err = felt.SetString("0xffffffffffffffffffffffff")
 	require.NoError(t, err)
 
-	requireEqualSegments(t, createSegment(5, felt), rangeCheck96)
+	requireEqualSegments(t, createSegment(nil, 5, felt), rangeCheck96)
 }
 
 func TestRangeCheck96BuiltinError(t *testing.T) {
@@ -444,7 +450,7 @@ func createRunner(code string, layoutName string, builtins ...builtins.BuiltinTy
 }
 
 // utility to create segments easier
-func createSegment(values ...any) *memory.Segment {
+func createSegment(publicMemoryOffsets []memory.PublicMemoryOffset, values ...any) *memory.Segment {
 	data := make([]memory.MemoryValue, len(values))
 	for i := range values {
 		if values[i] != nil {
@@ -456,8 +462,9 @@ func createSegment(values ...any) *memory.Segment {
 		}
 	}
 	s := &memory.Segment{
-		Data:      data,
-		LastIndex: len(data) - 1,
+		Data:                data,
+		LastIndex:           len(data) - 1,
+		PublicMemoryOffsets: publicMemoryOffsets,
 	}
 	s.WithBuiltinRunner(&memory.NoBuiltin{})
 	return s

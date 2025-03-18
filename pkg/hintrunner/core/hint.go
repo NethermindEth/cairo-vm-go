@@ -2022,10 +2022,7 @@ func (hint *RelocateAllDictionaries) String() string {
 }
 
 func (hint *RelocateAllDictionaries) Execute(vm *VM.VirtualMachine, ctx *hinter.HintRunnerContext) error {
-	err := ctx.DictionaryManager.RelocateAllDictionaries(vm)
-	if err != nil {
-		return fmt.Errorf("relocate all dictionaries: %w", err)
-	}
+	ctx.DictionaryManager.RelocateAllDictionaries(vm)
 	return nil
 }
 
