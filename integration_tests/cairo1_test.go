@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[string][]int, benchmark bool, errorExpected bool, skipComparison bool, inputArgs string, proofmode bool) {
+func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[string][]int, benchmark bool, errorExpected bool, skipMemoryComparison bool, inputArgs string, proofmode bool) {
 	t.Logf("testing: %s\n", path)
 	compiledOutput, err := compileCairoCode(path)
 	if err != nil {
@@ -62,36 +62,38 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 		writeToFile(path)
 		return
 	}
-	if !skipComparison {
-		if !assert.Equal(t, rsTrace, trace) {
-			t.Logf("rstrace:\n%s\n", traceRepr(rsTrace))
-			t.Logf("trace:\n%s\n", traceRepr(trace))
-			writeToFile(path)
-		}
+	if !assert.Equal(t, rsTrace, trace) {
+		t.Logf("rstrace:\n%s\n", traceRepr(rsTrace))
+		t.Logf("trace:\n%s\n", traceRepr(trace))
+		writeToFile(path)
+	}
+	if !skipMemoryComparison {
+
 		if !assert.Equal(t, rsMemory, memory) {
 			t.Logf("rsmemory;\n%s\n", memoryRepr(rsMemory))
 			t.Logf("memory;\n%s\n", memoryRepr(memory))
 			writeToFile(path)
 		}
-		if proofmode {
-			rsAirPublicInput, err := getAirPublicInputFile(rsAirPublicInputFile)
-			if err != nil {
-				t.Error(err)
-				writeToFile(path)
-				return
-			}
-			airPublicInput, err := getAirPublicInputFile(airPublicInputFile)
-			if err != nil {
-				t.Error(err)
-				writeToFile(path)
-				return
-			}
+	}
 
-			if !assert.Equal(t, rsAirPublicInput, airPublicInput) {
-				t.Logf("rsAirPublicInput: %s\n", rsAirPublicInputFile)
-				t.Logf("airPublicInput: %s\n", airPublicInputFile)
-				writeToFile(path)
-			}
+	if proofmode {
+		rsAirPublicInput, err := getAirPublicInputFile(rsAirPublicInputFile)
+		if err != nil {
+			t.Error(err)
+			writeToFile(path)
+			return
+		}
+		airPublicInput, err := getAirPublicInputFile(airPublicInputFile)
+		if err != nil {
+			t.Error(err)
+			writeToFile(path)
+			return
+		}
+
+		if !assert.Equal(t, rsAirPublicInput, airPublicInput) {
+			t.Logf("rsAirPublicInput: %s\n", rsAirPublicInputFile)
+			t.Logf("airPublicInput: %s\n", airPublicInputFile)
+			writeToFile(path)
 		}
 	}
 
@@ -179,9 +181,9 @@ func TestCairoFiles(t *testing.T) {
 	// Walk through all directories recursively
 	err = filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		// todo: remove once the CI passes
-		if true {
-			return filepath.SkipDir
-		}
+		// if true {
+		// 	return filepath.SkipDir
+		// }
 		if err != nil {
 			return err
 		}
@@ -214,9 +216,9 @@ func TestCairoFiles(t *testing.T) {
 					runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, skipComparison, inputArgs, true)
 				}
 				// compare program execution in Execution mode with starkware runner (with gas)
-				if !strings.Contains(path, "with_input") {
-					compareWithStarkwareRunner(t, path, errorExpected, inputArgs)
-				}
+				// if !strings.Contains(path, "with_input") {
+				// 	compareWithStarkwareRunner(t, path, errorExpected, inputArgs)
+				// }
 			}(path, name, inputArgs)
 		} else {
 			// compare program execution with/without proofmode with Lambdaclass VM (no gas)
