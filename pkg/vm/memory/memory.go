@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/NethermindEth/cairo-vm-go/pkg/utils"
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
@@ -158,7 +157,7 @@ func (segment *Segment) IncreaseSegmentSize(newSize uint64) {
 	if cap(segmentData) > int(newSize) {
 		newSegmentData = segmentData[:cap(segmentData)]
 	} else {
-		newSegmentData = make([]MemoryValue, utils.Max(newSize, uint64(len(segmentData)*2)))
+		newSegmentData = make([]MemoryValue, max(newSize, uint64(len(segmentData)*2)))
 		copy(newSegmentData, segmentData)
 	}
 	segment.Data = newSegmentData
