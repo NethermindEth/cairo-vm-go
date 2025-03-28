@@ -55,7 +55,7 @@ func newGetHighLenHint(len_hi, scalar_u, scalar_v hinter.Reference) hinter.Hinte
 			bitLenU := scalarUD2.BitLen()
 			bitLenV := scalarVD2.BitLen()
 
-			lenHi := utils.Max(bitLenU, bitLenV) - 1
+			lenHi := max(bitLenU, bitLenV) - 1
 
 			lenHiAddr, err := len_hi.Get(vm)
 			if err != nil {

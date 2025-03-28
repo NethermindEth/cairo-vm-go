@@ -138,7 +138,7 @@ func newUnsafeKeccakHint(data, length, high, low hinter.Reference) hinter.Hinter
 				word := uint256.Int(wordFelt.Bits())
 
 				//>		n_bytes = min(16, length - byte_i)
-				nBytes := utils.Min(lengthVal-i, 16)
+				nBytes := min(lengthVal-i, 16)
 
 				//>		assert 0 <= word < 2 ** (8 * n_bytes)
 				if uint64(word.BitLen()) >= 8*nBytes {

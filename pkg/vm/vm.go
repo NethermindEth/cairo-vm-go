@@ -179,10 +179,10 @@ func (vm *VirtualMachine) RunInstruction(instruction *asmb.Instruction) error {
 	var off1 int = int(instruction.OffOp0) + (1 << (RC_OFFSET_BITS - 1))
 	var off2 int = int(instruction.OffOp1) + (1 << (RC_OFFSET_BITS - 1))
 
-	value := uint16(utils.Max(off0, utils.Max(off1, off2)))
-	vm.RcLimitsMax = utils.Max(vm.RcLimitsMax, value)
-	value = uint16(utils.Min(off0, utils.Min(off1, off2)))
-	vm.RcLimitsMin = utils.Min(vm.RcLimitsMin, value)
+	value := uint16(max(off0, max(off1, off2)))
+	vm.RcLimitsMax = max(vm.RcLimitsMax, value)
+	value = uint16(min(off0, min(off1, off2)))
+	vm.RcLimitsMin = min(vm.RcLimitsMin, value)
 	dstAddr, err := vm.getDstAddr(instruction)
 	if err != nil {
 		return fmt.Errorf("dst cell: %w", err)
