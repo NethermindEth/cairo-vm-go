@@ -298,6 +298,11 @@ func GetHintByName(hint starknet.Hint) (hinter.Hinter, error) {
 			val:  parseResOperand(args.Val),
 			sqrt: parseCellRefer(args.Sqrt),
 		}, nil
+	case starknet.SystemCallName:
+		args := hint.Args.(*starknet.SystemCall)
+		return &SystemCall{
+			system: parseResOperand(args.System),
+		}, nil
 	default:
 		return nil, fmt.Errorf("unknown hint: %v", hint.Name)
 	}
