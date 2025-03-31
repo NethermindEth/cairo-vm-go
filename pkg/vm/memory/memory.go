@@ -3,6 +3,7 @@ package memory
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
@@ -191,22 +192,24 @@ type PublicMemoryOffset struct {
 //}
 
 func (segment *Segment) String() string {
-	header := fmt.Sprintf(
+	var header strings.Builder
+	header.WriteString(fmt.Sprintf(
 		"%s real len: %d real cap: %d len: %d\n",
 		segment.BuiltinRunner,
 		len(segment.Data),
 		cap(segment.Data),
 		segment.Len(),
-	)
+	))
+
 	for i := range segment.Data {
 		if i < int(segment.Len())-5 {
 			continue
 		}
 		if segment.Data[i].Known() {
-			header += fmt.Sprintf("[%d]-> %s\n", i, segment.Data[i].String())
+			header.WriteString(fmt.Sprintf("[%d]-> %s\n", i, segment.Data[i].String()))
 		}
 	}
-	return header
+	return header.String()
 }
 
 // Represents the whole VM memory divided into segments
