@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -102,44 +101,6 @@ func runAndTestFile(t *testing.T, path string, name string, benchmarkMap map[str
 	}
 }
 
-func compareWithStarkwareRunner(t *testing.T, path string, errorExpected bool, inputArgs string) {
-	t.Logf("testing (compare with cairo runner): %s\n", path)
-
-	runnerMemory, err := runCairoRunner(path)
-	if err != nil {
-		t.Error(err)
-		writeToFile(path)
-		return
-	}
-
-	compiledOutput, err := compileCairoCode(path)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	_, traceFile, memoryFile, _, _, err := runVmCairo1(compiledOutput, "all_cairo", inputArgs, false)
-	if errorExpected {
-		assert.Error(t, err, path)
-		writeToFile(path)
-		return
-	} else {
-		if err != nil {
-			t.Error(err)
-			writeToFile(path)
-			return
-		}
-	}
-	_, memory, err := decodeProof(traceFile, memoryFile)
-	if err != nil {
-		t.Error(err)
-		writeToFile(path)
-		return
-	}
-
-	assert.Equal(t, runnerMemory, memory)
-}
-
 var cairobench = flag.Bool("cairobench", false, "run integration tests and generate benchmarks file")
 
 func TestCairoFiles(t *testing.T) {
@@ -180,10 +141,6 @@ func TestCairoFiles(t *testing.T) {
 
 	// Walk through all directories recursively
 	err = filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
-		// todo: remove once the CI passes
-		if true {
-			return filepath.SkipDir
-		}
 		if err != nil {
 			return err
 		}
@@ -215,10 +172,6 @@ func TestCairoFiles(t *testing.T) {
 				if strings.Contains(path, "proofmode") || strings.Contains(path, "serialized_output/with_input") {
 					runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, skipComparison, inputArgs, true)
 				}
-				// compare program execution in Execution mode with starkware runner (with gas)
-				// if !strings.Contains(path, "with_input") {
-				// 	compareWithStarkwareRunner(t, path, errorExpected, inputArgs)
-				// }
 			}(path, name, inputArgs)
 		} else {
 			// compare program execution with/without proofmode with Lambdaclass VM (no gas)
@@ -226,10 +179,6 @@ func TestCairoFiles(t *testing.T) {
 			if strings.Contains(path, "proofmode") || strings.Contains(path, "serialized_output/with_input") {
 				runAndTestFile(t, path, name, benchmarkMap, *cairobench, errorExpected, skipComparison, inputArgs, true)
 			}
-			// compare program execution in Execution mode with starkware runner (with gas)
-			// if !strings.Contains(path, "with_input") {
-			// 	compareWithStarkwareRunner(t, path, errorExpected, inputArgs)
-			// }
 		}
 		return nil
 	})
@@ -370,47 +319,4 @@ func runVmCairo1(path, layout string, inputArgs string, proofmode bool) (time.Du
 	}
 
 	return elapsed, traceOutput, memoryOutput, string(res), airPublicInput, nil
-}
-
-func runCairoRunner(path string) ([]fp.Element, error) {
-	args := []string{
-		"--single-file",
-		path,
-		"--available-gas",
-		"9999999",
-		"--print-full-memory",
-	}
-
-	cmd := exec.Command("./../rust_vm_bin/starkware/starkware/cairo-run", args...)
-	rsOutputByte, err := cmd.CombinedOutput()
-
-	if err != nil {
-		return nil, fmt.Errorf(
-			"cairo-vm run %s: %w\n%s", path, err, string(rsOutputByte),
-		)
-	}
-	rsOutput := string(rsOutputByte)
-	// Extract memory values from output string
-	memoryStart := strings.Index(rsOutput, "Full memory: [") + 14
-	memoryEnd := strings.LastIndex(rsOutput, "]") - 2
-	if memoryStart < 14 || memoryEnd == -1 {
-		writeToFile(path)
-		return nil, fmt.Errorf("Could not find memory values in output")
-	}
-	memoryStr := rsOutput[memoryStart:memoryEnd]
-	memoryStrs := strings.Split(memoryStr, ", ")
-	runnerMemory := make([]fp.Element, 0, len(memoryStrs))
-	for _, str := range memoryStrs {
-		if str == "_" {
-			runnerMemory = append(runnerMemory, fp.Element{})
-			continue
-		}
-		elem, err := new(fp.Element).SetString(str)
-		if err != nil {
-			return nil, fmt.Errorf("Could not parse memory value: %s", str)
-		}
-		runnerMemory = append(runnerMemory, *elem)
-	}
-
-	return runnerMemory, nil
 }
