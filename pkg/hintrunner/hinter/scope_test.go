@@ -9,7 +9,7 @@ import (
 func TestScope(t *testing.T) {
 	sm := DefaultNewScopeManager()
 
-	// Assing variable n and get its current value
+	// Assign variable n and get its current value
 	err := sm.AssignVariable("n", 3)
 	require.NoError(t, err)
 

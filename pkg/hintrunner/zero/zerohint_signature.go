@@ -387,7 +387,7 @@ func createDivModSafeDivHinter() (hinter.Hinter, error) {
 	return newDivModSafeDivHint(), nil
 }
 
-// DivModNPackedDivmodV1 hint caculates the division modulo N for packed values
+// DivModNPackedDivmodV1 hint calculates the division modulo N for packed values
 //
 // `newDivModNPackedDivmodV1Hint` takes 2 operanders as arguments
 //   - `a` is the packed value that will be divided
