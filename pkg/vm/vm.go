@@ -301,7 +301,7 @@ func (vm *VirtualMachine) getOp1Addr(instruction *asmb.Instruction, op0Addr *mem
 // when there is an assertion with a substraction or division like : x = y - z
 // the compiler treats it as y = x + z. This means that the VM knows the
 // dstCell value and either op0Cell or op1Cell. This function infers the
-// unknow operand as well as the `res` auxiliary value
+// unknown operand as well as the `res` auxiliary value
 func (vm *VirtualMachine) inferOperand(
 	instruction *asmb.Instruction, dstAddr *mem.MemoryAddress, op0Addr *mem.MemoryAddress, op1Addr *mem.MemoryAddress,
 ) (mem.MemoryValue, error) {

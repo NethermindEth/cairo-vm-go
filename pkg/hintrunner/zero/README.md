@@ -136,7 +136,7 @@ There are four hint blocks in this code. Notice the `excluded` variable is defin
 The current solution uses the `HintRunnerContext` structure, which is passed down to the implementation of each hint. This structure contains a `ScopeManager` that will handle all the operations related to scope, such as:
 - Creating a new scope: Use method `EnterScope()` when the hint code uses `vm_enter_scope()` method.
 - Exiting current scope: Use method `ExitScope()` when the hint uses `vm_exit_scope()` method.
-- Variable declaration and assingment: Just like the `excluded` variable in the first hint block of the previous example. Use `AssignVariable()` method.
+- Variable declaration and assignment: Just like the `excluded` variable in the first hint block of the previous example. Use `AssignVariable()` method.
 - Accessing variable values: Just like the `excluded` variable in the last three hint blocks of the previous example. Use `GetVariableValue()` method.
 
 Check [scope.go](../hinter/scope.go) file for details in the implementation.
