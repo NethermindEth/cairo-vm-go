@@ -7,6 +7,13 @@ import (
 	f "github.com/consensys/gnark-crypto/ecc/stark-curve/fp"
 )
 
+// maxSegmentSize bounds how large a single memory segment may grow. A memory access at an offset beyond
+// this returns an error instead of letting IncreaseSegmentSize call make() with an attacker-controlled
+// size, which panics ("makeslice: len out of range") and crashes the process on a malformed/malicious
+// program. The limit is intentionally generous (no legitimate execution approaches it) — maintainers may
+// tune it to the intended memory model.
+const maxSegmentSize = 1 << 34
+
 type BuiltinRunner interface {
 	fmt.Stringer
 	CheckWrite(segment *Segment, offset uint64, value *MemoryValue) error
@@ -98,6 +105,9 @@ func (segment *Segment) RealLen() uint64 {
 // different memory value
 func (segment *Segment) Write(offset uint64, value *MemoryValue) error {
 	if offset >= segment.RealLen() {
+		if offset >= maxSegmentSize {
+			return fmt.Errorf("memory offset %d exceeds max segment size %d", offset, maxSegmentSize)
+		}
 		segment.IncreaseSegmentSize(offset + 1)
 	}
 	if offset >= segment.Len() {
@@ -119,6 +129,9 @@ func (segment *Segment) Write(offset uint64, value *MemoryValue) error {
 // Reads a memory value from a specified offset at the segment
 func (segment *Segment) Read(offset uint64) (MemoryValue, error) {
 	if offset >= segment.RealLen() {
+		if offset >= maxSegmentSize {
+			return UnknownValue, fmt.Errorf("memory offset %d exceeds max segment size %d", offset, maxSegmentSize)
+		}
 		segment.IncreaseSegmentSize(offset + 1)
 	}
 
