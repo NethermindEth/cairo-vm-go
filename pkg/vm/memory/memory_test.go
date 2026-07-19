@@ -291,3 +291,18 @@ func defaultSegment(anyData ...any) Segment {
 		BuiltinRunner: &NoBuiltin{},
 	}
 }
+
+// TestSegmentReadWriteHugeOffsetReturnsError verifies that a memory access at an absurd, program-controlled
+// offset returns an error instead of panicking in IncreaseSegmentSize's make() ("makeslice: len out of range"),
+// which previously crashed the process on a malformed program (e.g. the overflowing_dict fixture).
+func TestSegmentReadWriteHugeOffsetReturnsError(t *testing.T) {
+	huge := uint64(0x80000000000001) // > maxSegmentSize
+	seg := &Segment{Data: make([]MemoryValue, 0), BuiltinRunner: &NoBuiltin{}}
+	_, err := seg.Read(huge)
+	require.Error(t, err, "Read at a huge offset must error, not panic")
+
+	seg2 := &Segment{Data: make([]MemoryValue, 0), BuiltinRunner: &NoBuiltin{}}
+	v := EmptyMemoryValueAsFelt()
+	err = seg2.Write(huge, &v)
+	require.Error(t, err, "Write at a huge offset must error, not panic")
+}
