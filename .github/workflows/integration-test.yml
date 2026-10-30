@@ -8,12 +8,13 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Python 3.9 for cairo-lang 0.13.2 is available on this runner.
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.9"
 
